@@ -236,7 +236,9 @@ export default function Persona({
             active: formData.active ?? true,
             default_persona: formData.defaultPersona ?? false,
             department_id:
-              formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
+              formData.departmentId ||
+              effectiveProfile?.primaryDepartmentId ||
+              "",
           },
           {
             onSuccess: () => {
@@ -264,7 +266,9 @@ export default function Persona({
             active: formData.active ?? true,
             default_persona: formData.defaultPersona ?? false,
             department_id:
-              formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
+              formData.departmentId ||
+              effectiveProfile?.primaryDepartmentId ||
+              "",
           },
           {
             onSuccess: () => {
@@ -401,9 +405,10 @@ export default function Persona({
               </div>
             )}
 
-            {/* Active/Inactive and Default Persona Switches */}
-            <div className="space-y-4">
-              <div className="flex flex-col gap-2">
+            {/* Switches - Horizontal Layout */}
+            <div className="flex gap-8">
+              {/* Persona Active Switch */}
+              <div className="flex items-center gap-2">
                 <Label htmlFor="active" className="text-sm">
                   Persona Active
                 </Label>
@@ -426,7 +431,7 @@ export default function Persona({
 
               {/* Default Persona Switch - Only for superadmin */}
               {effectiveProfile?.role === "superadmin" && (
-                <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
                   <Label htmlFor="defaultPersona" className="text-sm">
                     Default Persona
                   </Label>
@@ -643,114 +648,110 @@ export default function Persona({
               </div>
             </div>
 
-            <div className={`grid gap-4 grid-cols-1`}>
-              {formData?.modelId !== undefined && !isLoading ? (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="modelId">Text Model *</Label>
-                    <Select
-                      value={formData?.modelId}
-                      onValueChange={(value) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          modelId: value,
-                        }))
-                      }
-                      required
-                      disabled={isReadonly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {modelOptions.map((model) => (
-                          <SelectItem key={model.id} value={model.id}>
-                            {model.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
-
-            <div className={`grid gap-4 grid-cols-1`}>
-              {formData?.reasoning !== undefined && !isLoading ? (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="reasoning">Reasoning Effort</Label>
-                    <Select
-                      value={formData?.reasoning || "none"}
-                      onValueChange={(value) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          reasoning: value as
-                            | "none"
-                            | "minimal"
-                            | "low"
-                            | "medium"
-                            | "high",
-                        }))
-                      }
-                      disabled={isReadonly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select reasoning effort" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {(personaData?.reasoning_options || []).map(
-                          (option) => (
-                            <SelectItem key={option} value={option}>
-                              {option.charAt(0).toUpperCase() + option.slice(1)}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="temperature">
-                Temperature:{" "}
-                {formData?.temperature !== undefined
-                  ? formData.temperature.toFixed(2)
-                  : "0.00"}
-              </Label>
-              {formData?.temperature !== undefined && !isLoading ? (
-                <>
-                  <Slider
-                    id="temperature"
-                    data-testid="temperature-slider"
-                    min={personaData?.temperature_lower ?? 0}
-                    max={personaData?.temperature_upper ?? 1}
-                    step={0.01}
-                    value={[formData?.temperature || 0]}
+            {/* Text Model, Reasoning Effort, and Temperature - 3 Column Grid */}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+              {/* Text Model */}
+              <div className="space-y-2">
+                <Label htmlFor="modelId">Text Model *</Label>
+                {formData?.modelId !== undefined && !isLoading ? (
+                  <Select
+                    value={formData?.modelId}
                     onValueChange={(value) =>
                       setFormData((prev) => ({
                         ...prev,
-                        temperature: value[0] || 0,
+                        modelId: value,
                       }))
                     }
-                    className="w-full"
+                    required
                     disabled={isReadonly}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Deterministic</span>
-                    <span>Creative</span>
-                  </div>
-                </>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modelOptions.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+
+              {/* Reasoning Effort */}
+              <div className="space-y-2">
+                <Label htmlFor="reasoning">Reasoning Effort</Label>
+                {formData?.reasoning !== undefined && !isLoading ? (
+                  <Select
+                    value={formData?.reasoning || "none"}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        reasoning: value as
+                          | "none"
+                          | "minimal"
+                          | "low"
+                          | "medium"
+                          | "high",
+                      }))
+                    }
+                    disabled={isReadonly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reasoning effort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {(personaData?.reasoning_options || []).map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option.charAt(0).toUpperCase() + option.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+
+              {/* Temperature */}
+              <div className="space-y-2">
+                <Label htmlFor="temperature">
+                  Temperature:{" "}
+                  {formData?.temperature !== undefined
+                    ? formData.temperature.toFixed(2)
+                    : "0.00"}
+                </Label>
+                {formData?.temperature !== undefined && !isLoading ? (
+                  <>
+                    <Slider
+                      id="temperature"
+                      data-testid="temperature-slider"
+                      min={personaData?.temperature_lower ?? 0}
+                      max={personaData?.temperature_upper ?? 1}
+                      step={0.01}
+                      value={[formData?.temperature || 0]}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          temperature: value[0] || 0,
+                        }))
+                      }
+                      className="w-full"
+                      disabled={isReadonly}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Deterministic</span>
+                      <span>Creative</span>
+                    </div>
+                  </>
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
