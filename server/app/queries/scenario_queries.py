@@ -1155,3 +1155,150 @@ class ScenarioQueries:
         ORDER BY p.name, pi.name
         """
         return (query, [department_ids])
+
+    def get_scenario_detail_default_complete(
+        self, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build consolidated query for scenario detail default with all data in ONE query."""
+        query = """
+        WITH user_departments AS (
+            SELECT DISTINCT d.id
+            FROM departments d
+            JOIN profile_departments pd ON pd.department_id = d.id
+            WHERE pd.profile_id = $1 AND d.active = true
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id IN (SELECT id FROM user_departments)
+        ),
+        persona_data AS (
+            SELECT 
+                p.id,
+                p.name,
+                COALESCE(p.description, '') as description,
+                p.color,
+                p.icon
+            FROM personas p
+            WHERE p.department_id IN (SELECT id FROM user_departments) 
+            AND p.active = true
+            ORDER BY p.name
+        ),
+        persona_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'name', p.name,
+                        'description', p.description,
+                        'color', p.color,
+                        'icon', p.icon
+                    )
+                ),
+                '{}'::jsonb
+            ) as mapping
+            FROM persona_data p
+        ),
+        document_data AS (
+            SELECT 
+                d.id,
+                d.name,
+                d.type::text as description
+            FROM documents d
+            WHERE d.department_id IN (SELECT id FROM user_departments)
+            AND d.active = true
+            ORDER BY d.name
+        ),
+        document_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.name,
+                        'description', d.description
+                    )
+                ),
+                '{}'::jsonb
+            ) as mapping
+            FROM document_data d
+        ),
+        parameter_data AS (
+            SELECT DISTINCT 
+                p.id,
+                p.name,
+                COALESCE(p.description, '') as description
+            FROM parameters p
+            WHERE p.department_id IN (SELECT id FROM user_departments)
+            AND p.active = true
+            ORDER BY p.name
+        ),
+        parameter_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'name', p.name,
+                        'description', p.description
+                    )
+                ),
+                '{}'::jsonb
+            ) as mapping
+            FROM parameter_data p
+        ),
+        parameter_item_data AS (
+            SELECT 
+                pi.id,
+                pi.name,
+                COALESCE(pi.description, '') as description,
+                pi.parameter_id,
+                p.name as parameter_name
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id IN (SELECT id FROM user_departments)
+            AND p.active = true
+            ORDER BY p.name, pi.name
+        ),
+        parameter_item_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    pi.id::text,
+                    jsonb_build_object(
+                        'name', pi.name,
+                        'description', pi.description,
+                        'parameter_id', pi.parameter_id::text,
+                        'parameter_name', pi.parameter_name
+                    )
+                ),
+                '{}'::jsonb
+            ) as mapping
+            FROM parameter_item_data pi
+        )
+        SELECT 
+            COALESCE(
+                (SELECT array_agg(id::text ORDER BY id) FROM user_departments),
+                ARRAY[]::text[]
+            ) as department_ids,
+            COALESCE(
+                (SELECT array_agg(id::text) FROM persona_data),
+                ARRAY[]::text[]
+            ) as valid_persona_ids,
+            COALESCE(
+                (SELECT array_agg(id::text) FROM document_data),
+                ARRAY[]::text[]
+            ) as valid_document_ids,
+            (SELECT mapping FROM department_mapping_data) as department_mapping,
+            (SELECT mapping FROM persona_mapping_data) as persona_mapping,
+            (SELECT mapping FROM document_mapping_data) as document_mapping,
+            (SELECT mapping FROM parameter_mapping_data) as parameter_mapping,
+            (SELECT mapping FROM parameter_item_mapping_data) as parameter_item_mapping
+        """
+        return (query, [profile_id])

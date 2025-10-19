@@ -70,6 +70,12 @@ class ScenarioInSimulation(BaseModel):
     position: int  # From simulation_scenarios junction table
     parameter_item_ids: list[str]  # For displaying badges
 
+    # Statistics fields
+    usage_count: int  # Number of all chats (regardless of completion)
+    success_rate: int  # Percentage (0-100) of completed chats that passed
+    last_used: str | None  # ISO timestamp or None
+    can_remove: bool  # True if usage_count == 0
+
 
 class ParameterItem(BaseModel):
     """Parameter data for dropdown."""

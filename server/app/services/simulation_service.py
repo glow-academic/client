@@ -183,6 +183,10 @@ class SimulationService(BaseService):
                             default_scenario=s_data.get("default_scenario", False),
                             position=s_data.get("position", 0),
                             parameter_item_ids=s_data.get("parameter_item_ids", []),
+                            usage_count=s_data.get("usage_count", 0),
+                            success_rate=s_data.get("success_rate", 0),
+                            last_used=s_data.get("last_used"),
+                            can_remove=s_data.get("can_remove", True),
                         )
                     )
 

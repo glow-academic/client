@@ -100,3 +100,101 @@ async def test_get_scenario_detail_invalid_id(
         await svc.get_scenario_detail(
             ScenarioDetailRequest(scenarioId=fake_id, profileId=admin_id)
         )
+
+
+# ============================================================================
+# GET SCENARIO DETAIL DEFAULT TESTS
+# ============================================================================
+
+
+async def test_get_scenario_detail_default(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting default scenario detail for a profile."""
+    admin_id = await get_superadmin_alias(db)
+
+    svc = ScenarioService(db)
+    from app.schemas.scenarios import ScenarioDetailDefaultRequest
+
+    resp = await svc.get_scenario_detail_default(
+        ScenarioDetailDefaultRequest(profileId=admin_id)
+    )
+
+    # Should return empty scenario structure with all valid options
+    assert resp is not None
+    assert resp.name == ""
+    assert resp.problem_statement == ""
+    assert resp.active is True
+    assert resp.can_edit is True
+
+    # CRITICAL: Verify department info is populated
+    assert len(resp.valid_department_ids) > 0, "valid_department_ids should be populated for superadmin"
+    assert resp.department_id is not None, "department_id should be set to first valid department"
+    assert resp.department_id in resp.valid_department_ids, "department_id should be in valid_department_ids"
+
+    # CRITICAL: Verify persona_mapping is populated when valid_persona_ids exist
+    if len(resp.valid_persona_ids) > 0:
+        assert len(resp.persona_mapping) > 0, "persona_mapping should be populated when valid_persona_ids exist"
+        # Verify at least one persona is mapped correctly
+        first_persona_id = resp.valid_persona_ids[0]
+        assert first_persona_id in resp.persona_mapping, f"Persona {first_persona_id} should be in persona_mapping"
+        persona_item = resp.persona_mapping[first_persona_id]
+        assert hasattr(persona_item, 'name') and len(persona_item.name) > 0, "Persona mapping should have valid name"
+        assert hasattr(persona_item, 'description'), "Persona mapping should have description field"
+        assert hasattr(persona_item, 'color') and len(persona_item.color) > 0, "Persona mapping should have color"
+        assert hasattr(persona_item, 'icon') and len(persona_item.icon) > 0, "Persona mapping should have icon"
+
+    # CRITICAL: Verify document_mapping is populated when valid_document_ids exist
+    if len(resp.valid_document_ids) > 0:
+        assert len(resp.document_mapping) > 0, "document_mapping should be populated when valid_document_ids exist"
+        # Verify at least one document is mapped correctly
+        first_doc_id = resp.valid_document_ids[0]
+        assert first_doc_id in resp.document_mapping, f"Document {first_doc_id} should be in document_mapping"
+        doc_item = resp.document_mapping[first_doc_id]
+        assert hasattr(doc_item, 'name') and len(doc_item.name) > 0, "Document mapping should have valid name"
+        assert hasattr(doc_item, 'description'), "Document mapping should have description field"
+
+    # CRITICAL: Verify parameter_mapping is populated
+    if len(resp.parameter_mapping) > 0:
+        first_param_id = next(iter(resp.parameter_mapping.keys()))
+        param_item = resp.parameter_mapping[first_param_id]
+        assert hasattr(param_item, 'name') and len(param_item.name) > 0, "Parameter mapping should have valid name"
+        assert hasattr(param_item, 'description'), "Parameter mapping should have description field"
+
+    # CRITICAL: Verify parameter_item_mapping is populated
+    if len(resp.parameter_item_mapping) > 0:
+        first_item_id = next(iter(resp.parameter_item_mapping.keys()))
+        item = resp.parameter_item_mapping[first_item_id]
+        assert hasattr(item, 'name') and len(item.name) > 0, "Parameter item mapping should have valid name"
+        assert hasattr(item, 'description'), "Parameter item mapping should have description field"
+        assert hasattr(item, 'parameter_id') and len(item.parameter_id) > 0, "Parameter item should have parameter_id"
+        assert hasattr(item, 'parameter_name') and len(item.parameter_name) > 0, "Parameter item should have parameter_name"
+
+    # CRITICAL: Verify department_mapping is populated when valid_department_ids exist
+    if len(resp.valid_department_ids) > 0:
+        assert len(resp.department_mapping) > 0, "department_mapping should be populated when valid_department_ids exist"
+        # Verify at least one department is mapped correctly
+        first_dept_id = resp.valid_department_ids[0]
+        assert first_dept_id in resp.department_mapping, f"Department {first_dept_id} should be in department_mapping"
+        dept_item = resp.department_mapping[first_dept_id]
+        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
+        assert hasattr(dept_item, 'description'), "Department mapping should have description field"
+
+
+async def test_get_scenario_detail_default_no_departments(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting default scenario detail for a profile with no departments."""
+    # Create a profile with no department associations
+    profile_id = await db.fetchval(
+        "INSERT INTO profiles(first_name, last_name, alias, role) "
+        "VALUES('Test', 'User', 'testuser', 'guest') RETURNING id"
+    )
+
+    svc = ScenarioService(db)
+    from app.schemas.scenarios import ScenarioDetailDefaultRequest
+
+    with pytest.raises(ValueError, match="No accessible departments found for user"):
+        await svc.get_scenario_detail_default(
+            ScenarioDetailDefaultRequest(profileId=str(profile_id))
+        )

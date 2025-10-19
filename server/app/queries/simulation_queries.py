@@ -901,6 +901,51 @@ class SimulationQueries:
             WHERE ss.simulation_id = $1 AND ss.active = true
             ORDER BY ss.position
         ),
+        scenario_statistics AS (
+            SELECT 
+                ss.scenario_id,
+                -- Find root scenario: if parent_id = child_id exists, that's the root, otherwise use scenario itself
+                COALESCE(
+                    (SELECT st.parent_id 
+                     FROM scenario_tree st 
+                     WHERE st.child_id = ss.scenario_id 
+                       AND st.parent_id = st.child_id 
+                     LIMIT 1),
+                    ss.scenario_id
+                ) as root_scenario_id,
+                -- Usage: count of ALL chats with this root scenario (regardless of completion)
+                COUNT(DISTINCT sc.id) as usage_count,
+                -- Success rate: percentage of completed chats that passed
+                CASE 
+                    WHEN COUNT(DISTINCT CASE WHEN sc.completed = true THEN sc.id END) > 0 
+                    THEN ROUND(
+                        (COUNT(DISTINCT CASE WHEN sc.completed = true AND scg.passed = true THEN sc.id END)::numeric / 
+                         COUNT(DISTINCT CASE WHEN sc.completed = true THEN sc.id END)::numeric) * 100
+                    )
+                    ELSE 0 
+                END as success_rate,
+                -- Last used: most recent chat created_at
+                MAX(sc.created_at) as last_used_date
+            FROM simulation_scenarios ss
+            LEFT JOIN simulation_chats sc ON (
+                -- Match chats where scenario_id is in the tree with ss.scenario_id as root
+                sc.scenario_id IN (
+                    SELECT st2.child_id 
+                    FROM scenario_tree st2 
+                    WHERE st2.parent_id = COALESCE(
+                        (SELECT st3.parent_id 
+                         FROM scenario_tree st3 
+                         WHERE st3.child_id = ss.scenario_id 
+                           AND st3.parent_id = st3.child_id),
+                        ss.scenario_id
+                    )
+                )
+                OR sc.scenario_id = ss.scenario_id
+            )
+            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            WHERE ss.simulation_id = $1
+            GROUP BY ss.scenario_id
+        ),
         scenarios_list_data AS (
             SELECT COALESCE(
                 jsonb_agg(
@@ -914,13 +959,18 @@ class SimulationQueries:
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
                             FROM unnest(sb.parameter_item_ids) as pid
-                        )
+                        ),
+                        'usage_count', COALESCE(stats.usage_count, 0),
+                        'success_rate', COALESCE(stats.success_rate, 0),
+                        'last_used', stats.last_used_date,
+                        'can_remove', COALESCE(stats.usage_count, 0) = 0
                     ) ORDER BY sb.position
                 ),
                 '[]'::jsonb
             ) as scenarios_list,
             COALESCE(ARRAY_AGG(sb.scenario_id::text), ARRAY[]::text[]) as scenario_ids
             FROM simulation_scenarios_base sb
+            LEFT JOIN scenario_statistics stats ON stats.scenario_id = sb.scenario_id
         ),
         valid_scenarios AS (
             SELECT ARRAY_AGG(s.id::text) as ids

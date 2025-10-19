@@ -75,6 +75,12 @@ export const ScenarioInSimulationSchema = z.object({
   default_scenario: z.boolean(),
   position: z.number(),
   parameter_item_ids: z.array(z.string()),
+
+  // Statistics fields
+  usage_count: z.number(),
+  success_rate: z.number(),
+  last_used: z.string().nullable(),
+  can_remove: z.boolean(),
 });
 
 // Parameter item schemas

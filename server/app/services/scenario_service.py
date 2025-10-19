@@ -451,11 +451,16 @@ class ScenarioService(BaseService):
         self, request: ScenarioDetailDefaultRequest
     ) -> ScenarioDetailResponse:
         """Get default scenario structure for creation mode."""
-        # Get user's accessible department IDs
-        query, params = self.queries.get_departments_for_profile(request.profileId)
-        dept_results = await self.conn.fetch(query, *params)
+        # Get all data in ONE consolidated query
+        query, params = self.queries.get_scenario_detail_default_complete(
+            request.profileId
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        dept_ids = [str(row["id"]) for row in dept_results]
+        if not result:
+            raise ValueError("Failed to fetch default scenario data")
+
+        dept_ids = result["department_ids"] or []
 
         if not dept_ids:
             raise ValueError("No accessible departments found for user")
@@ -463,69 +468,73 @@ class ScenarioService(BaseService):
         # Default department (first accessible)
         default_dept_id = dept_ids[0]
 
-        # Get valid personas
-        query, params = self.queries.get_valid_personas_for_departments(dept_ids)
-        persona_results = await self.conn.fetch(query, *params)
+        # Extract data from consolidated query result
+        valid_persona_ids = result["valid_persona_ids"] or []
+        valid_document_ids = result["valid_document_ids"] or []
 
-        valid_persona_ids = [str(row["id"]) for row in persona_results]
-        persona_mapping = {
-            str(row["id"]): PersonaMappingItem(
-                name=row["name"],
-                description=row["description"],
-                color=row["color"],
-                icon=row["icon"],
-            )
-            for row in persona_results
-        }
+        # Parse JSONB mappings (may be string or dict)
+        import json
 
-        # Get valid documents
-        query, params = self.queries.get_valid_documents_for_departments(dept_ids)
-        doc_results = await self.conn.fetch(query, *params)
+        persona_mapping_data = result.get("persona_mapping") or {}
+        if isinstance(persona_mapping_data, str):
+            persona_mapping_data = json.loads(persona_mapping_data)
+        persona_mapping = {}
+        if isinstance(persona_mapping_data, dict):
+            for pid, pdata in persona_mapping_data.items():
+                if isinstance(pdata, dict):
+                    persona_mapping[pid] = PersonaMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                        color=pdata.get("color", ""),
+                        icon=pdata.get("icon", ""),
+                    )
 
-        valid_document_ids = [str(row["id"]) for row in doc_results]
-        document_mapping = {
-            str(row["id"]): DocumentMappingItem(
-                name=row["name"], description=row["description"]
-            )
-            for row in doc_results
-        }
+        document_mapping_data = result.get("document_mapping") or {}
+        if isinstance(document_mapping_data, str):
+            document_mapping_data = json.loads(document_mapping_data)
+        document_mapping = {}
+        if isinstance(document_mapping_data, dict):
+            for did, ddata in document_mapping_data.items():
+                if isinstance(ddata, dict):
+                    document_mapping[did] = DocumentMappingItem(
+                        name=ddata.get("name", ""), description=ddata.get("description", "")
+                    )
 
-        # Get all parameters for valid departments
-        query, params = self.queries.get_active_parameters_for_departments(dept_ids)
-        param_results = await self.conn.fetch(query, *params)
+        parameter_mapping_data = result.get("parameter_mapping") or {}
+        if isinstance(parameter_mapping_data, str):
+            parameter_mapping_data = json.loads(parameter_mapping_data)
+        parameter_mapping = {}
+        if isinstance(parameter_mapping_data, dict):
+            for param_id, pdata in parameter_mapping_data.items():
+                if isinstance(pdata, dict):
+                    parameter_mapping[param_id] = ParameterMappingItem(
+                        name=pdata.get("name", ""), description=pdata.get("description", "")
+                    )
 
-        parameter_mapping = {
-            str(row["id"]): ParameterMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in param_results
-        }
+        parameter_item_mapping_data = result.get("parameter_item_mapping") or {}
+        if isinstance(parameter_item_mapping_data, str):
+            parameter_item_mapping_data = json.loads(parameter_item_mapping_data)
+        parameter_item_mapping = {}
+        if isinstance(parameter_item_mapping_data, dict):
+            for piid, pidata in parameter_item_mapping_data.items():
+                if isinstance(pidata, dict):
+                    parameter_item_mapping[piid] = ParameterItemMappingItem(
+                        name=pidata.get("name", ""),
+                        description=pidata.get("description", ""),
+                        parameter_id=pidata.get("parameter_id", ""),
+                        parameter_name=pidata.get("parameter_name", ""),
+                    )
 
-        # Get all parameter items
-        query, params = self.queries.get_active_parameter_items_for_departments(
-            dept_ids
-        )
-        param_item_results = await self.conn.fetch(query, *params)
-
-        parameter_item_mapping = {
-            str(row["id"]): ParameterItemMappingItem(
-                name=row["name"],
-                description=row["description"] or "",
-                parameter_id=str(row["parameter_id"]),
-                parameter_name=row["parameter_name"],
-            )
-            for row in param_item_results
-        }
-
-        # Get department mapping
+        department_mapping_data = result.get("department_mapping") or {}
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
         department_mapping = {}
-        query, params = self.queries.get_departments_by_ids(dept_ids)
-        dept_mapping_results = await self.conn.fetch(query, *params)
-
-        for row in dept_mapping_results:
-            department_mapping[str(row["id"])] = DepartmentMappingItem(
-                name=row["title"], description=row["description"]
-            )
+        if isinstance(department_mapping_data, dict):
+            for did, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""), description=ddata.get("description", "")
+                    )
 
         # Return empty scenario with all valid options
         return ScenarioDetailResponse(

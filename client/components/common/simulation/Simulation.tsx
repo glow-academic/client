@@ -38,7 +38,7 @@ import {
   useUpdateSimulation as useUpdateSimulationV2,
 } from "@/lib/api/v2/hooks/simulations";
 import type { SimulationDetailResponse } from "@/lib/api/v2/schemas/simulations";
-import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
+import { BarChart3, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationScenarioPicker } from "./SimulationScenarioPicker";
 
@@ -158,6 +158,14 @@ export default function Simulation({ simulationId }: SimulationProps) {
       setOriginalFormData(formDataFromServer);
       // Set current scenario IDs from server (already ordered by position)
       setCurrentScenarioIds(simulationData.scenario_ids);
+
+      // Initialize scenario active states from server data
+      const activeStates: Record<string, boolean> = {};
+      simulationData.scenarios.forEach((s) => {
+        activeStates[s.scenario_id] = s.active;
+      });
+      setScenarioActiveStates(activeStates);
+      setOriginalActiveStates(activeStates);
     } else if (!isEditMode && simulationData) {
       setFormData(initialFormData);
       setOriginalFormData(initialFormData);
@@ -186,6 +194,14 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   // State for managing scenario IDs
   const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
+
+  // State for managing scenario active toggles (staged changes)
+  const [scenarioActiveStates, setScenarioActiveStates] = useState<
+    Record<string, boolean>
+  >({});
+  const [originalActiveStates, setOriginalActiveStates] = useState<
+    Record<string, boolean>
+  >({});
 
   const handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
     e.preventDefault();
@@ -356,7 +372,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.inputGuardrailActive !== original.inputGuardrailActive ||
       current.imageInputActive !== original.imageInputActive ||
       current.hintsEnabled !== original.hintsEnabled ||
-      JSON.stringify(currentScenarioIds) !== JSON.stringify(originalScenarioIds)
+      JSON.stringify(currentScenarioIds) !== JSON.stringify(originalScenarioIds) ||
+      JSON.stringify(scenarioActiveStates) !== JSON.stringify(originalActiveStates)
     );
   }, [
     formData,
@@ -364,7 +381,31 @@ export default function Simulation({ simulationId }: SimulationProps) {
     isEditMode,
     currentScenarioIds,
     simulationData,
+    scenarioActiveStates,
+    originalActiveStates,
   ]);
+
+  // Helper function to format last used date
+  const formatLastUsed = (date: string | null): string => {
+    if (!date) return "Never";
+    const d = new Date(date);
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Helper function to remove a scenario
+  const handleRemoveScenario = (scenarioId: string) => {
+    setCurrentScenarioIds((prev) => prev.filter((id) => id !== scenarioId));
+    // Also remove from active states if present
+    setScenarioActiveStates((prev) => {
+      const newStates = { ...prev };
+      delete newStates[scenarioId];
+      return newStates;
+    });
+  };
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
 
@@ -680,12 +721,30 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   simulationData?.scenario_mapping[scenarioId];
                 if (!scenarioData) return null;
 
+                // Determine if this is an existing scenario (in original server data)
+                const isExistingScenario =
+                  simulationData?.scenario_ids.includes(scenarioId) ?? false;
+
+                // Get scenario statistics from scenarios array (only for existing scenarios)
+                const scenarioStats = simulationData?.scenarios.find(
+                  (s) => s.scenario_id === scenarioId
+                );
+
+                // Determine if Remove button should show
+                const shouldShowRemove = isExistingScenario
+                  ? scenarioStats?.can_remove ?? false
+                  : true; // New scenarios always show remove
+
+                // Get active state for styling
+                const isScenarioActive =
+                  scenarioActiveStates[scenarioId] ?? true;
+
                 return (
                   <Card
                     key={scenarioId}
-                    className={`p-3 min-h-[180px] cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                    className={`p-4 cursor-move hover:shadow-md transition-all ${
                       draggedScenario === scenarioId ? "opacity-50" : ""
-                    }`}
+                    } ${!isScenarioActive ? "opacity-50 bg-muted" : ""}`}
                     draggable={!isReadonly}
                     onDragStart={(e) =>
                       !isReadonly && handleDragStartScenario(e, scenarioId)
@@ -693,52 +752,71 @@ export default function Simulation({ simulationId }: SimulationProps) {
                     onDragOver={handleDragOver}
                     onDrop={(e) => !isReadonly && handleDrop(e, scenarioId)}
                   >
-                    <div className="space-y-3 h-full flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-sm">
-                            {scenarioData.name || "Unnamed Scenario"}
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            {!isReadonly && (
-                              <>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => editScenario(scenarioId)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Pencil className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const newScenarioIds =
-                                      currentScenarioIds.filter(
-                                        (id) => id !== scenarioId
-                                      );
-                                    handleScenarioSelection(newScenarioIds);
-                                  }}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-3">
+                      {/* Header: Title and Active Switch */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-medium text-sm flex-1">
+                          {scenarioData.name || "Unnamed Scenario"}
+                        </h4>
+                        {isExistingScenario && !isReadonly && (
+                          <Switch
+                            checked={scenarioActiveStates[scenarioId] ?? true}
+                            onCheckedChange={(checked) =>
+                              setScenarioActiveStates((prev) => ({
+                                ...prev,
+                                [scenarioId]: checked,
+                              }))
+                            }
+                          />
+                        )}
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {scenarioData.description || "No description provided"}
+                      </p>
+
+                      {/* Statistics Row - Only for existing scenarios */}
+                      {isExistingScenario && scenarioStats && (
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">
+                          <div className="flex items-center gap-1">
+                            <BarChart3 className="h-3 w-3" />
+                            <span>Usage: {scenarioStats.usage_count}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>
+                              Last: {formatLastUsed(scenarioStats.last_used)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span>Success: {scenarioStats.success_rate}%</span>
                           </div>
                         </div>
+                      )}
 
-                        <div className="space-y-2 mt-2">
-                          <p className="text-xs text-muted-foreground line-clamp-3">
-                            {scenarioData.description ||
-                              "No description provided"}
-                          </p>
-                          {/* Parameter badges - available in scenarioData.parameter_item_ids */}
-                        </div>
+                      {/* Action Buttons */}
+                      <div className="flex items-center justify-between border-t pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => editScenario(scenarioId)}
+                        >
+                          View Details
+                        </Button>
+
+                        {!isReadonly && shouldShowRemove && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleRemoveScenario(scenarioId)}
+                          >
+                            Remove
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>
