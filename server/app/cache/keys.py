@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 16  # Bumped: Documents now resolve scenario_ids to root scenarios using scenario_tree
+GLOBAL_CACHE_VERSION = 18  # Bumped: Added default parameter restriction - only superadmin can edit/delete default parameters
 
 # Namespaces
 NS_ANALYTICS = "analytics"

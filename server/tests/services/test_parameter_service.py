@@ -166,3 +166,135 @@ async def test_get_parameter_detail_not_found(
     svc = ParameterService(db)
     with pytest.raises(ValueError, match="Parameter not found"):
         await svc.get_parameter_detail(request)
+
+
+@pytest.mark.asyncio
+async def test_parameter_can_edit_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_edit permission logic for parameters based on active scenario links via parameter_items."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get admin profile (only admin/superadmin have access to parameters, not instructional)
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'superadmin') LIMIT 1")
+    
+    if not admin_result:
+        pytest.skip("Need admin/superadmin profile")
+    
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.parameters import ParametersFilters
+    
+    svc = ParameterService(db)
+    resp_admin = await svc.get_parameters_list(
+        ParametersFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Parameters with active scenario links (via parameter_items): cannot edit
+    # 2. Default parameters: only superadmin can edit (admin cannot)
+    # 3. Other parameters: admin, superadmin can edit
+    
+    # Check if user is admin or superadmin
+    user_role = await db.fetchval("SELECT role FROM profiles WHERE id = $1", admin_id)
+    
+    for parameter in resp_admin.parameters:
+        # Get active scenario link counts from database
+        # (through parameter_items -> scenario_parameter_items)
+        active_scenario_count = await db.fetchval("""
+            SELECT COUNT(DISTINCT spi.scenario_id)
+            FROM parameter_items pi
+            JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+            WHERE pi.parameter_id = $1 AND spi.active = true
+        """, parameter.parameter_id)
+        
+        # Rule 1: Parameters with active scenario links - nobody can edit
+        if active_scenario_count > 0:
+            assert parameter.can_edit == False, \
+                f"Parameter {parameter.name} with {active_scenario_count} active scenario links should not be editable"
+        
+        # Rule 2: Default parameters - only superadmin can edit
+        elif parameter.default_parameter:
+            if user_role == 'superadmin':
+                assert parameter.can_edit == True, \
+                    f"Superadmin should be able to edit default parameter {parameter.name}"
+            else:
+                assert parameter.can_edit == False, \
+                    f"Admin should NOT be able to edit default parameter {parameter.name}"
+        
+        # Rule 3: Non-default parameters without active scenario links - admin/superadmin can edit
+        else:
+            assert parameter.can_edit == True, \
+                f"Admin should be able to edit non-default parameter {parameter.name} without active scenario links"
+
+
+@pytest.mark.asyncio
+async def test_parameter_can_delete_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_delete permission logic for parameters based on all scenario links via parameter_items."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get admin profile
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'superadmin') LIMIT 1")
+    
+    if not admin_result:
+        pytest.skip("Need admin/superadmin profile")
+    
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.parameters import ParametersFilters
+    
+    svc = ParameterService(db)
+    resp_admin = await svc.get_parameters_list(
+        ParametersFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Parameters with ANY scenario links (via parameter_items, active or inactive): cannot delete
+    # 2. Default parameters: only superadmin can delete (admin cannot)
+    # 3. Other parameters: admin, superadmin can delete
+    
+    # Check if user is admin or superadmin
+    user_role = await db.fetchval("SELECT role FROM profiles WHERE id = $1", admin_id)
+    
+    for parameter in resp_admin.parameters:
+        # Get total scenario link count from database
+        # (through parameter_items -> scenario_parameter_items)
+        total_scenario_links = await db.fetchval("""
+            SELECT COUNT(DISTINCT spi.scenario_id)
+            FROM parameter_items pi
+            JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+            WHERE pi.parameter_id = $1
+        """, parameter.parameter_id)
+        
+        # Rule 1: Parameters with any scenario links - nobody can delete
+        if total_scenario_links > 0:
+            assert parameter.can_delete == False, \
+                f"Parameter {parameter.name} with {total_scenario_links} scenario links should not be deletable"
+        
+        # Rule 2: Default parameters (unlinked) - only superadmin can delete
+        elif parameter.default_parameter:
+            if user_role == 'superadmin':
+                assert parameter.can_delete == True, \
+                    f"Superadmin should be able to delete unlinked default parameter {parameter.name}"
+            else:
+                assert parameter.can_delete == False, \
+                    f"Admin should NOT be able to delete default parameter {parameter.name}"
+        
+        # Rule 3: Non-default unlinked parameters - admin/superadmin can delete
+        else:
+            assert parameter.can_delete == True, \
+                f"Admin should be able to delete unlinked non-default parameter {parameter.name}"

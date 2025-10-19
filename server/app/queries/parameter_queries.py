@@ -11,21 +11,29 @@ class ParameterQueries:
     ) -> tuple[str, list[Any]]:
         """Build query for parameters list with item counts and permissions."""
         query = """
-        WITH parameter_item_counts AS (
+        WITH parameter_active_scenario_links AS (
+            SELECT 
+                pi.parameter_id,
+                COUNT(DISTINCT spi.scenario_id) as active_scenario_count
+            FROM parameter_items pi
+            JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+            WHERE spi.active = true
+            GROUP BY pi.parameter_id
+        ),
+        parameter_all_scenario_links AS (
+            SELECT 
+                pi.parameter_id,
+                COUNT(DISTINCT spi.scenario_id) as total_scenario_links
+            FROM parameter_items pi
+            JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+            GROUP BY pi.parameter_id
+        ),
+        parameter_item_counts AS (
             SELECT 
                 parameter_id,
                 COUNT(*) as num_items
             FROM parameter_items
             GROUP BY parameter_id
-        ),
-        parameter_item_usage AS (
-            SELECT DISTINCT 
-                pi.parameter_id,
-                COUNT(DISTINCT spi.scenario_id) as usage_count
-            FROM parameter_items pi
-            JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
-            WHERE spi.active = true
-            GROUP BY pi.parameter_id
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
@@ -38,19 +46,25 @@ class ParameterQueries:
             p.active,
             p.default_parameter,
             COALESCE(pic.num_items, 0) as num_items,
-            COALESCE(piu.usage_count, 0) as usage_count,
+            COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
+            COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
             CASE 
+                WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
+                WHEN p.default_parameter = true AND up.role != 'superadmin' THEN false
                 WHEN up.role IN ('admin', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             CASE 
-                WHEN up.role IN ('admin', 'superadmin') AND COALESCE(piu.usage_count, 0) = 0 THEN true
+                WHEN COALESCE(pasl_all.total_scenario_links, 0) > 0 THEN false
+                WHEN p.default_parameter = true AND up.role != 'superadmin' THEN false
+                WHEN up.role IN ('admin', 'superadmin') THEN true
                 ELSE false
             END as can_delete,
             true as can_duplicate
         FROM parameters p
         LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
-        LEFT JOIN parameter_item_usage piu ON piu.parameter_id = p.id
+        LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
+        LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id
         CROSS JOIN user_profile up
         WHERE p.department_id = ANY($1)
         ORDER BY p.name
