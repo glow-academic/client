@@ -9,7 +9,7 @@ class PersonaQueries:
     def list_personas(
         self, department_ids: list[str], profile_id: str
     ) -> tuple[str, list[Any]]:
-        """Build query for personas list with permissions."""
+        """Build query for personas list with permissions and embedded scenario mapping."""
         query = """
         WITH persona_scenarios AS (
             SELECT 
@@ -44,6 +44,31 @@ class PersonaQueries:
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
+        ),
+        all_scenario_ids AS (
+            SELECT DISTINCT unnest(scenario_ids) as scenario_id
+            FROM persona_data
+        ),
+        scenario_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    s.id::text,
+                    jsonb_build_object(
+                        'name', s.name,
+                        'description', COALESCE(s.problem_statement, ''),
+                        'active', s.active,
+                        'persona_id', NULL,
+                        'persona_mapping', '{}'::jsonb,
+                        'document_mapping', '{}'::jsonb,
+                        'parameter_item_mapping', '{}'::jsonb,
+                        'parameter_item_ids', ARRAY[]::text[],
+                        'document_ids', ARRAY[]::text[]
+                    )
+                ) FILTER (WHERE s.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM all_scenario_ids asi
+            LEFT JOIN scenarios s ON s.id = asi.scenario_id
         )
         SELECT 
             pd.persona_id,
@@ -70,18 +95,15 @@ class PersonaQueries:
             CASE 
                 WHEN pd.num_scenarios > 0 THEN false
                 ELSE true
-            END as can_delete
+            END as can_delete,
+            sm.mapping as scenario_mapping
         FROM persona_data pd
         CROSS JOIN user_profile up
+        CROSS JOIN scenario_mapping_data sm
         ORDER BY pd.persona_name
         """
 
         return (query, [department_ids, profile_id])
-
-    def get_scenario_mapping(self, scenario_ids: list[str]) -> tuple[str, list[Any]]:
-        """Build query for scenario mapping."""
-        query = "SELECT id, name, problem_statement FROM scenarios WHERE id = ANY($1)"
-        return (query, [scenario_ids])
 
     def get_persona_by_id(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to get persona by ID."""

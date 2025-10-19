@@ -1,32 +1,21 @@
 """Provider service layer - business logic for provider and model operations."""
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
-from app.schemas.providers import (
-    CreateModelRequest,
-    CreateModelResponse,
-    CreateProviderRequest,
-    CreateProviderResponse,
-    DeleteModelRequest,
-    DeleteModelResponse,
-    DeleteProviderRequest,
-    DeleteProviderResponse,
-    ModelDetailRequest,
-    ModelDetailResponse,
-    ModelItem,
-    ProviderDetailRequest,
-    ProviderDetailResponse,
-    ProvidersFilters,
-    ProvidersListResponse,
-    ProviderWithModels,
-    UpdateModelRequest,
-    UpdateModelResponse,
-    UpdateProviderRequest,
-    UpdateProviderResponse,
-)
+from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
+                                   CreateProviderRequest,
+                                   CreateProviderResponse, DeleteModelRequest,
+                                   DeleteModelResponse, DeleteProviderRequest,
+                                   DeleteProviderResponse, ModelDetailRequest,
+                                   ModelDetailResponse, ModelItem,
+                                   ProviderDetailRequest,
+                                   ProviderDetailResponse, ProvidersFilters,
+                                   ProvidersListResponse, ProviderWithModels,
+                                   UpdateModelRequest, UpdateModelResponse,
+                                   UpdateProviderRequest,
+                                   UpdateProviderResponse)
 from app.services.base import BaseService, with_cache
 from app.utils.auth import encrypt_api_key
 
@@ -44,81 +33,57 @@ class ProviderService(BaseService):
         self, filters: ProvidersFilters
     ) -> ProvidersListResponse:
         """Get providers list with nested models (hierarchical)."""
-        # Get providers
-        query, params = self.queries.list_providers(
+        # Get complete providers data with models and usage (consolidated query)
+        query, params = self.queries.list_providers_complete(
             filters.departmentIds, filters.profileId
         )
         providers_result = await self.conn.fetch(query, *params)
 
         providers = []
-        provider_ids = []
 
         for row in providers_result:
-            providers.append(
-                ProviderWithModels(
-                    provider_id=str(row["provider_id"]),
-                    name=row["name"],
-                    description=row["description"],
-                    can_edit=row["can_edit"],
-                    can_delete=False,  # Will be determined after checking models usage
-                    models=[],  # Will be populated below
-                )
+            # Parse JSONB models
+            models = []
+            models_data = row.get("models_json")
+
+            if models_data and isinstance(models_data, list):
+                for model_obj in models_data:
+                    if isinstance(model_obj, dict):
+                        # Calculate total usage from both sources
+                        total_usage = model_obj.get(
+                            "persona_usage_count", 0
+                        ) + model_obj.get("agent_usage_count", 0)
+                        is_in_use = total_usage > 0
+
+                        # Handle updated_at - it might be a string or datetime
+                        updated_at = model_obj.get("updated_at", "")
+                        if hasattr(updated_at, "isoformat"):
+                            updated_at = updated_at.isoformat()
+                        elif not isinstance(updated_at, str):
+                            updated_at = str(updated_at)
+
+                        model_item = ModelItem(
+                            model_id=model_obj.get("model_id", ""),
+                            name=model_obj.get("name", ""),
+                            description=model_obj.get("description", ""),
+                            active=model_obj.get("active", False),
+                            custom_model=model_obj.get("custom_model", False),
+                            updated_at=updated_at,
+                            can_edit=True,
+                            can_delete=not is_in_use,
+                        )
+                        models.append(model_item)
+
+            # Create provider with models
+            provider = ProviderWithModels(
+                provider_id=str(row["provider_id"]),
+                name=row["name"],
+                description=row["description"],
+                can_edit=row["can_edit"],
+                can_delete=all(m.can_delete for m in models) if models else True,
+                models=models,
             )
-            provider_ids.append(str(row["provider_id"]))
-
-        # Get all models for these providers
-        if provider_ids:
-            query, params = self.queries.get_models_for_providers(provider_ids)
-            models_result = await self.conn.fetch(query, *params)
-
-            # Get model usage
-            model_ids = [str(m["model_id"]) for m in models_result]
-            model_usage: dict[str, int] = {}
-
-            if model_ids:
-                # Check personas usage
-                query, params = self.queries.check_model_usage_personas(model_ids)
-                personas_usage = await self.conn.fetch(query, *params)
-                for row in personas_usage:
-                    model_usage[str(row["model_id"])] = (
-                        model_usage.get(str(row["model_id"]), 0) + row["usage_count"]
-                    )
-
-                # Check agents usage
-                query, params = self.queries.check_model_usage_agents(model_ids)
-                agents_usage = await self.conn.fetch(query, *params)
-                for row in agents_usage:
-                    model_usage[str(row["model_id"])] = (
-                        model_usage.get(str(row["model_id"]), 0) + row["usage_count"]
-                    )
-
-            # Build model items and add to providers
-            for model in models_result:
-                model_id = str(model["model_id"])
-                provider_id = str(model["provider_id"])
-                is_in_use = model_usage.get(model_id, 0) > 0
-
-                model_item = ModelItem(
-                    model_id=model_id,
-                    name=model["name"],
-                    description=model["description"],
-                    active=model["active"],
-                    custom_model=model["custom_model"],
-                    updated_at=model["updated_at"].isoformat(),
-                    can_edit=True,  # All models can be edited
-                    can_delete=not is_in_use,
-                )
-
-                # Find provider and add model
-                for provider in providers:
-                    if provider.provider_id == provider_id:
-                        provider.models.append(model_item)
-                        break
-
-            # Update provider can_delete based on models usage
-            for provider in providers:
-                # Provider can be deleted if all its models can be deleted
-                provider.can_delete = all(m.can_delete for m in provider.models)
+            providers.append(provider)
 
         return ProvidersListResponse(providers=providers)
 

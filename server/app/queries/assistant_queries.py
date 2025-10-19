@@ -54,7 +54,7 @@ class AssistantQueries:
             -- Provider data
             pr.id::text as provider_id,
             pr.name as provider_name,
-            pr.base_url,
+            COALESCE(pe.base_url, '') as base_url,
             pr.api_key
 
         FROM assistant_chats ac
@@ -63,67 +63,117 @@ class AssistantQueries:
         INNER JOIN agents a ON a.id = da.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         WHERE ac.id = $1
         """
 
         params: list[Any] = [chat_id, department_id]
         return query, params
 
-    def get_messages_for_chat(self, chat_id: str) -> tuple[str, list[Any]]:
+    def get_assistant_run_context_complete(
+        self, chat_id: str, department_id: str
+    ) -> tuple[str, list[Any]]:
         """
-        Get all messages for a chat, ordered chronologically.
+        Get complete assistant run context in ONE optimized query.
+        
+        Fetches chat, profile, agent, model, provider, messages, and tool calls
+        using CTEs and JSONB aggregation to eliminate parallel queries.
 
         Args:
             chat_id: UUID of the assistant chat
+            department_id: UUID of the department
 
         Returns:
             Tuple of (query, params)
         """
         query = """
+        WITH chat_context AS (
+            SELECT 
+                -- Chat data
+                ac.id::text as chat_id,
+                ac.title,
+                ac.trace_id,
+                ac.profile_id::text,
+                
+                -- Profile data
+                p.role as user_role,
+                p.first_name as user_first_name,
+                p.last_name as user_last_name,
+                
+                -- Agent data (via department_agents junction)
+                a.id::text as agent_id,
+                a.name as agent_name,
+                a.system_prompt,
+                a.temperature,
+                a.reasoning,
+                
+                -- Model data
+                m.id::text as model_id,
+                m.name as model_name,
+                m.custom_model,
+                
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            COALESCE(pe.base_url, '') as base_url,
+            pr.api_key
+        FROM assistant_chats ac
+        INNER JOIN profiles p ON p.id = ac.profile_id
+        INNER JOIN department_agents da ON da.department_id = $2 AND da.role = 'assistant'
+        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN models m ON m.id = a.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+        WHERE ac.id = $1
+        ),
+        chat_messages AS (
+            SELECT 
+                COALESCE(
+                    jsonb_agg(jsonb_build_object(
+                        'id', id,
+                        'created_at', created_at,
+                        'updated_at', updated_at,
+                        'chat_id', chat_id,
+                        'role', role,
+                        'content', content,
+                        'completed', completed
+                    ) ORDER BY created_at ASC),
+                    '[]'::jsonb
+                ) as messages
+            FROM assistant_messages
+            WHERE chat_id = $1
+        ),
+        chat_tool_calls AS (
+            SELECT 
+                COALESCE(
+                    jsonb_agg(jsonb_build_object(
+                        'id', id,
+                        'created_at', created_at,
+                        'updated_at', updated_at,
+                        'chat_id', chat_id,
+                        'tool_name', tool_name,
+                        'tool_type', tool_type,
+                        'tool_arguments', tool_arguments,
+                        'tool_result', tool_result,
+                        'completed', completed
+                    ) ORDER BY created_at ASC),
+                    '[]'::jsonb
+                ) as tool_calls
+            FROM assistant_tool_calls
+            WHERE chat_id = $1
+        )
         SELECT 
-            id,
-            created_at,
-            updated_at,
-            chat_id,
-            role,
-            content,
-            completed
-        FROM assistant_messages
-        WHERE chat_id = $1
-        ORDER BY created_at ASC
+            cc.*,
+            cm.messages,
+            ctc.tool_calls
+        FROM chat_context cc
+        CROSS JOIN chat_messages cm
+        CROSS JOIN chat_tool_calls ctc
         """
 
-        params: list[Any] = [chat_id]
+        params: list[Any] = [chat_id, department_id]
         return query, params
 
-    def get_tool_calls_for_chat(self, chat_id: str) -> tuple[str, list[Any]]:
-        """
-        Get all tool calls for a chat, ordered chronologically.
-
-        Args:
-            chat_id: UUID of the assistant chat
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = """
-        SELECT 
-            id,
-            created_at,
-            updated_at,
-            chat_id,
-            tool_name,
-            tool_type,
-            tool_arguments,
-            tool_result,
-            completed
-        FROM assistant_tool_calls
-        WHERE chat_id = $1
-        ORDER BY created_at ASC
-        """
-
-        params: list[Any] = [chat_id]
-        return query, params
 
     def update_chat_title(self, chat_id: str, title: str) -> tuple[str, list[Any]]:
         """
@@ -334,82 +384,116 @@ class AssistantQueries:
         params: list[Any] = [tool_result, completed, tool_call_id]
         return query, params
 
-    def get_chats_in_timeframe(self, cutoff_date: datetime) -> tuple[str, list[Any]]:
+
+
+    def get_usage_stats_complete(self, cutoff_date: datetime) -> tuple[str, list[Any]]:
         """
-        Get all assistant chats created after cutoff date.
+        Get complete usage statistics in ONE optimized query.
+        
+        Eliminates N+1 queries by fetching chats, messages, tool_calls,
+        and top user profiles using CTEs and JSONB aggregation.
 
         Args:
-            cutoff_date: Minimum creation date
+            cutoff_date: Minimum creation date for analysis
 
         Returns:
             Tuple of (query, params)
         """
         query = """
-        SELECT id, profile_id, created_at
-        FROM assistant_chats
-        WHERE created_at >= $1
+        WITH chats_data AS (
+            SELECT 
+                id,
+                created_at,
+                profile_id
+            FROM assistant_chats
+            WHERE created_at >= $1
+        ),
+        messages_data AS (
+            SELECT 
+                id,
+                chat_id,
+                completed,
+                created_at
+            FROM assistant_messages
+            WHERE created_at >= $1
+        ),
+        tool_calls_data AS (
+            SELECT 
+                id,
+                chat_id,
+                tool_name,
+                completed,
+                created_at
+            FROM assistant_tool_calls
+            WHERE created_at >= $1
+        ),
+        user_counts AS (
+            SELECT 
+                profile_id,
+                COUNT(*) as chat_count
+            FROM chats_data
+            WHERE profile_id IS NOT NULL
+            GROUP BY profile_id
+            ORDER BY chat_count DESC
+            LIMIT 10
+        ),
+        top_users_profiles AS (
+            SELECT 
+                p.id::text as user_id,
+                p.first_name,
+                p.last_name,
+                p.alias,
+                p.role,
+                uc.chat_count
+            FROM user_counts uc
+            JOIN profiles p ON p.id = uc.profile_id
+        )
+        SELECT
+            COALESCE(
+                (SELECT jsonb_agg(jsonb_build_object(
+                    'id', cd.id::text,
+                    'created_at', cd.created_at,
+                    'profile_id', cd.profile_id::text
+                ))
+                FROM chats_data cd),
+                '[]'::jsonb
+            ) as chats,
+            COALESCE(
+                (SELECT jsonb_agg(jsonb_build_object(
+                    'id', md.id::text,
+                    'chat_id', md.chat_id::text,
+                    'completed', md.completed,
+                    'created_at', md.created_at
+                ))
+                FROM messages_data md),
+                '[]'::jsonb
+            ) as messages,
+            COALESCE(
+                (SELECT jsonb_agg(jsonb_build_object(
+                    'id', tcd.id::text,
+                    'chat_id', tcd.chat_id::text,
+                    'tool_name', tcd.tool_name,
+                    'completed', tcd.completed,
+                    'created_at', tcd.created_at
+                ))
+                FROM tool_calls_data tcd),
+                '[]'::jsonb
+            ) as tool_calls,
+            COALESCE(
+                (SELECT jsonb_agg(jsonb_build_object(
+                    'user_id', tup.user_id,
+                    'first_name', tup.first_name,
+                    'last_name', tup.last_name,
+                    'alias', tup.alias,
+                    'role', tup.role,
+                    'chat_count', tup.chat_count
+                ))
+                FROM top_users_profiles tup),
+                '[]'::jsonb
+            ) as top_users_profiles
         """
 
         params: list[Any] = [cutoff_date]
-        return query, params
-
-    def get_messages_in_timeframe(self, cutoff_date: datetime) -> tuple[str, list[Any]]:
-        """
-        Get all assistant messages created after cutoff date.
-
-        Args:
-            cutoff_date: Minimum creation date
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = """
-        SELECT id, chat_id, completed, created_at
-        FROM assistant_messages
-        WHERE created_at >= $1
-        """
-
-        params: list[Any] = [cutoff_date]
-        return query, params
-
-    def get_tool_calls_in_timeframe(
-        self, cutoff_date: datetime
-    ) -> tuple[str, list[Any]]:
-        """
-        Get all assistant tool calls created after cutoff date.
-
-        Args:
-            cutoff_date: Minimum creation date
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = """
-        SELECT id, chat_id, tool_name, completed, created_at
-        FROM assistant_tool_calls
-        WHERE created_at >= $1
-        """
-
-        params: list[Any] = [cutoff_date]
-        return query, params
-
-    def get_profile_by_id(self, profile_id: UUID) -> tuple[str, list[Any]]:
-        """
-        Get profile details by ID.
-
-        Args:
-            profile_id: UUID of the profile
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = """
-        SELECT id, first_name, last_name, alias, role
-        FROM profiles
-        WHERE id = $1
-        """
-
-        params: list[Any] = [str(profile_id)]
         return query, params
 
 

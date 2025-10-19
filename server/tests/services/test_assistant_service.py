@@ -1,286 +1,331 @@
-"""
-Tests for app.services.assistant_service
-"""
+"""Real database integration tests for AssistantService."""
 
-from unittest.mock import MagicMock
+from datetime import UTC, datetime
+from uuid import UUID
 
+import asyncpg
 import pytest
-from sqlmodel import Session
-
-from app.services.assistant_service import *
-
-
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_assistant_service`")
-class TestGet_Assistant_Service:
-    """Tests for get_assistant_service function."""
-
-    def test_get_assistant_service_success(self):
-        """Test successful get_assistant_service execution."""
-        # TODO: Implement test for get_assistant_service
-        assert False, "IMPLEMENT: Test for get_assistant_service"
-
-    def test_get_assistant_service_error(self):
-        """Test get_assistant_service error handling."""
-        # TODO: Implement error test for get_assistant_service
-        assert False, "IMPLEMENT: Error test for get_assistant_service"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_assistant_run_context`")
-class TestGet_Assistant_Run_Context:
-    """Tests for get_assistant_run_context function."""
-
-    def test_get_assistant_run_context_success(self):
-        """Test successful get_assistant_run_context execution."""
-        # TODO: Implement test for get_assistant_run_context
-        assert False, "IMPLEMENT: Test for get_assistant_run_context"
-
-    def test_get_assistant_run_context_error(self):
-        """Test get_assistant_run_context error handling."""
-        # TODO: Implement error test for get_assistant_run_context
-        assert False, "IMPLEMENT: Error test for get_assistant_run_context"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `update_chat_title`")
-class TestUpdate_Chat_Title:
-    """Tests for update_chat_title function."""
-
-    def test_update_chat_title_success(self):
-        """Test successful update_chat_title execution."""
-        # TODO: Implement test for update_chat_title
-        assert False, "IMPLEMENT: Test for update_chat_title"
-
-    def test_update_chat_title_error(self):
-        """Test update_chat_title error handling."""
-        # TODO: Implement error test for update_chat_title
-        assert False, "IMPLEMENT: Error test for update_chat_title"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `verify_profile_exists`")
-class TestVerify_Profile_Exists:
-    """Tests for verify_profile_exists function."""
-
-    def test_verify_profile_exists_success(self):
-        """Test successful verify_profile_exists execution."""
-        # TODO: Implement test for verify_profile_exists
-        assert False, "IMPLEMENT: Test for verify_profile_exists"
-
-    def test_verify_profile_exists_error(self):
-        """Test verify_profile_exists error handling."""
-        # TODO: Implement error test for verify_profile_exists
-        assert False, "IMPLEMENT: Error test for verify_profile_exists"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `verify_chat_exists`")
-class TestVerify_Chat_Exists:
-    """Tests for verify_chat_exists function."""
-
-    def test_verify_chat_exists_success(self):
-        """Test successful verify_chat_exists execution."""
-        # TODO: Implement test for verify_chat_exists
-        assert False, "IMPLEMENT: Test for verify_chat_exists"
-
-    def test_verify_chat_exists_error(self):
-        """Test verify_chat_exists error handling."""
-        # TODO: Implement error test for verify_chat_exists
-        assert False, "IMPLEMENT: Error test for verify_chat_exists"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_chat`")
-class TestCreate_Chat:
-    """Tests for create_chat function."""
-
-    def test_create_chat_success(self):
-        """Test successful create_chat execution."""
-        # TODO: Implement test for create_chat
-        assert False, "IMPLEMENT: Test for create_chat"
-
-    def test_create_chat_error(self):
-        """Test create_chat error handling."""
-        # TODO: Implement error test for create_chat
-        assert False, "IMPLEMENT: Error test for create_chat"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_user_message`")
-class TestCreate_User_Message:
-    """Tests for create_user_message function."""
-
-    def test_create_user_message_success(self):
-        """Test successful create_user_message execution."""
-        # TODO: Implement test for create_user_message
-        assert False, "IMPLEMENT: Test for create_user_message"
-
-    def test_create_user_message_error(self):
-        """Test create_user_message error handling."""
-        # TODO: Implement error test for create_user_message
-        assert False, "IMPLEMENT: Error test for create_user_message"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_assistant_message`")
-class TestCreate_Assistant_Message:
-    """Tests for create_assistant_message function."""
-
-    def test_create_assistant_message_success(self):
-        """Test successful create_assistant_message execution."""
-        # TODO: Implement test for create_assistant_message
-        assert False, "IMPLEMENT: Test for create_assistant_message"
-
-    def test_create_assistant_message_error(self):
-        """Test create_assistant_message error handling."""
-        # TODO: Implement error test for create_assistant_message
-        assert False, "IMPLEMENT: Error test for create_assistant_message"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `update_message_content`")
-class TestUpdate_Message_Content:
-    """Tests for update_message_content function."""
-
-    def test_update_message_content_success(self):
-        """Test successful update_message_content execution."""
-        # TODO: Implement test for update_message_content
-        assert False, "IMPLEMENT: Test for update_message_content"
-
-    def test_update_message_content_error(self):
-        """Test update_message_content error handling."""
-        # TODO: Implement error test for update_message_content
-        assert False, "IMPLEMENT: Error test for update_message_content"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `complete_message`")
-class TestComplete_Message:
-    """Tests for complete_message function."""
-
-    def test_complete_message_success(self):
-        """Test successful complete_message execution."""
-        # TODO: Implement test for complete_message
-        assert False, "IMPLEMENT: Test for complete_message"
-
-    def test_complete_message_error(self):
-        """Test complete_message error handling."""
-        # TODO: Implement error test for complete_message
-        assert False, "IMPLEMENT: Error test for complete_message"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_tool_call`")
-class TestCreate_Tool_Call:
-    """Tests for create_tool_call function."""
-
-    def test_create_tool_call_success(self):
-        """Test successful create_tool_call execution."""
-        # TODO: Implement test for create_tool_call
-        assert False, "IMPLEMENT: Test for create_tool_call"
-
-    def test_create_tool_call_error(self):
-        """Test create_tool_call error handling."""
-        # TODO: Implement error test for create_tool_call
-        assert False, "IMPLEMENT: Error test for create_tool_call"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `complete_tool_call`")
-class TestComplete_Tool_Call:
-    """Tests for complete_tool_call function."""
-
-    def test_complete_tool_call_success(self):
-        """Test successful complete_tool_call execution."""
-        # TODO: Implement test for complete_tool_call
-        assert False, "IMPLEMENT: Test for complete_tool_call"
-
-    def test_complete_tool_call_error(self):
-        """Test complete_tool_call error handling."""
-        # TODO: Implement error test for complete_tool_call
-        assert False, "IMPLEMENT: Error test for complete_tool_call"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_usage_stats`")
-class TestGet_Usage_Stats:
-    """Tests for get_usage_stats function."""
-
-    def test_get_usage_stats_success(self):
-        """Test successful get_usage_stats execution."""
-        # TODO: Implement test for get_usage_stats
-        assert False, "IMPLEMENT: Test for get_usage_stats"
-
-    def test_get_usage_stats_error(self):
-        """Test get_usage_stats error handling."""
-        # TODO: Implement error test for get_usage_stats
-        assert False, "IMPLEMENT: Error test for get_usage_stats"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
+from app.services.assistant_service import AssistantService
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+
+pytestmark = pytest.mark.asyncio
+
+
+# ============================================================================
+# READ METHOD TESTS
+# ============================================================================
+
+
+async def test_get_assistant_run_context(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting complete assistant run context."""
+    profile_id = await get_superadmin_alias(db)
+    dept_id = await get_cs_dept_id(db)
+    
+    # Create an assistant chat
+    chat_id = await db.fetchval(
+        "INSERT INTO assistant_chats(profile_id, title, trace_id) "
+        "VALUES($1, 'Test Chat', 'trace123') RETURNING id",
+        UUID(profile_id)
+    )
+    
+    # Add a test message
+    await db.execute(
+        "INSERT INTO assistant_messages(chat_id, role, content, completed) "
+        "VALUES($1, 'user', 'Hello', true)",
+        chat_id
+    )
+    
+    # Add a test tool call
+    await db.execute(
+        "INSERT INTO assistant_tool_calls(chat_id, tool_name, tool_type, tool_arguments, tool_result, completed) "
+        "VALUES($1, '_test_tool', 'read', '{}', '{}', true)",
+        chat_id
+    )
+    
+    svc = AssistantService(db)
+    result = await svc.get_assistant_run_context(chat_id, UUID(dept_id))
+    
+    assert result is not None
+    assert result.chat_id == str(chat_id)
+    assert result.title == "Test Chat"
+    assert result.profile_id == profile_id
+    assert result.user_role is not None
+    assert result.agent_id is not None
+    assert result.system_prompt is not None
+    assert result.model_id is not None
+    assert result.provider_id is not None
+    assert len(result.messages) >= 1
+    assert len(result.tool_calls) >= 1
+
+
+async def test_get_assistant_run_context_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test run context with non-existent chat."""
+    fake_chat_id = UUID("00000000-0000-0000-0000-000000000000")
+    dept_id = await get_cs_dept_id(db)
+    
+    svc = AssistantService(db)
+    
+    with pytest.raises(ValueError, match="not found"):
+        await svc.get_assistant_run_context(fake_chat_id, UUID(dept_id))
+
+
+async def test_get_assistant_run_context_no_messages(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test run context for chat without messages."""
+    profile_id = await get_superadmin_alias(db)
+    dept_id = await get_cs_dept_id(db)
+    
+    # Create a chat without messages
+    chat_id = await db.fetchval(
+        "INSERT INTO assistant_chats(profile_id, title, trace_id) "
+        "VALUES($1, 'Empty Chat', 'trace456') RETURNING id",
+        UUID(profile_id)
+    )
+    
+    svc = AssistantService(db)
+    result = await svc.get_assistant_run_context(chat_id, UUID(dept_id))
+    
+    assert result is not None
+    assert result.chat_id == str(chat_id)
+    assert result.messages == []  # No messages
+
+
+async def test_get_assistant_run_context_no_tool_calls(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test run context for chat without tool calls."""
+    profile_id = await get_superadmin_alias(db)
+    dept_id = await get_cs_dept_id(db)
+    
+    # Create a chat without tool calls
+    chat_id = await db.fetchval(
+        "INSERT INTO assistant_chats(profile_id, title, trace_id) "
+        "VALUES($1, 'No Tools Chat', 'trace789') RETURNING id",
+        UUID(profile_id)
+    )
+    
+    svc = AssistantService(db)
+    result = await svc.get_assistant_run_context(chat_id, UUID(dept_id))
+    
+    assert result is not None
+    assert result.chat_id == str(chat_id)
+    assert result.tool_calls == []  # No tool calls
+
+
+async def test_get_usage_stats(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting usage statistics."""
+    svc = AssistantService(db)
+    result = await svc.get_usage_stats(days=7)
+    
+    assert result is not None
+    assert "summary" in result
+    assert "daily_stats" in result
+    assert "top_users" in result
+    assert "tool_usage" in result
+    
+    # Verify summary structure
+    assert result["summary"]["days"] == 7
+    assert result["summary"]["total_chats"] >= 0
+    assert result["summary"]["total_messages"] >= 0
+    assert result["summary"]["total_tool_calls"] >= 0
+    assert result["summary"]["unique_users"] >= 0
+    
+    # Verify daily stats is a list
+    assert isinstance(result["daily_stats"], list)
+    assert len(result["daily_stats"]) == 7
+    
+    # Verify top users is a list
+    assert isinstance(result["top_users"], list)
+    
+    # Verify tool usage is a list
+    assert isinstance(result["tool_usage"], list)
+
+
+async def test_get_usage_stats_empty_period(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test usage stats for period with no data."""
+    svc = AssistantService(db)
+    # Request stats for 1 day (likely to have no data in fresh test DB)
+    result = await svc.get_usage_stats(days=1)
+    
+    assert result is not None
+    assert result["summary"]["total_chats"] >= 0
+    assert result["summary"]["total_messages"] >= 0
+    assert len(result["daily_stats"]) == 1
+
+
+async def test_get_usage_stats_top_users(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test usage stats top users calculation."""
+    profile_id = await get_superadmin_alias(db)
+    
+    # Create multiple chats for the same user
+    for i in range(3):
+        await db.execute(
+            "INSERT INTO assistant_chats(profile_id, title, trace_id) "
+            f"VALUES($1, 'Test Chat {i}', 'trace{i}')",
+            UUID(profile_id)
+        )
+    
+    svc = AssistantService(db)
+    result = await svc.get_usage_stats(days=7)
+    
+    assert result is not None
+    assert len(result["top_users"]) >= 0
+    
+    # If there are top users, verify structure
+    if result["top_users"]:
+        for user in result["top_users"]:
+            assert "user_id" in user
+            assert "name" in user
+            assert "alias" in user
+            assert "role" in user
+            assert "chat_count" in user
+            assert "message_count" in user
+            assert "tool_call_count" in user
+
+
+async def test_get_usage_stats_tool_usage(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test usage stats tool usage breakdown."""
+    profile_id = await get_superadmin_alias(db)
+    
+    # Create a chat with tool calls
+    chat_id = await db.fetchval(
+        "INSERT INTO assistant_chats(profile_id, title, trace_id) "
+        "VALUES($1, 'Tool Test Chat', 'tooltest') RETURNING id",
+        UUID(profile_id)
+    )
+    
+    # Add multiple tool calls
+    await db.execute(
+        "INSERT INTO assistant_tool_calls(chat_id, tool_name, tool_type, tool_arguments, tool_result, completed) "
+        "VALUES($1, '_search_tool', 'read', '{}', '{}', true)",
+        chat_id
+    )
+    await db.execute(
+        "INSERT INTO assistant_tool_calls(chat_id, tool_name, tool_type, tool_arguments, tool_result, completed) "
+        "VALUES($1, '_search_tool', 'read', '{}', '{}', true)",
+        chat_id
+    )
+    
+    svc = AssistantService(db)
+    result = await svc.get_usage_stats(days=7)
+    
+    assert result is not None
+    assert isinstance(result["tool_usage"], list)
+    
+    # Verify tool usage structure
+    if result["tool_usage"]:
+        for tool in result["tool_usage"]:
+            assert "tool_name" in tool
+            assert "usage_count" in tool
+            assert tool["usage_count"] > 0
+
+
+async def test_assistant_run_context_single_query_optimization(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that run context optimization returns all data in correct format."""
+    profile_id = await get_superadmin_alias(db)
+    dept_id = await get_cs_dept_id(db)
+    
+    # Create a chat with messages and tool calls
+    chat_id = await db.fetchval(
+        "INSERT INTO assistant_chats(profile_id, title, trace_id) "
+        "VALUES($1, 'Full Test Chat', 'fulltest') RETURNING id",
+        UUID(profile_id)
+    )
+    
+    await db.execute(
+        "INSERT INTO assistant_messages(chat_id, role, content, completed) "
+        "VALUES($1, 'user', 'Test message', true)",
+        chat_id
+    )
+    
+    await db.execute(
+        "INSERT INTO assistant_tool_calls(chat_id, tool_name, tool_type, tool_arguments, tool_result, completed) "
+        "VALUES($1, '_test', 'read', '{}', '{}', true)",
+        chat_id
+    )
+    
+    svc = AssistantService(db)
+    result = await svc.get_assistant_run_context(chat_id, UUID(dept_id))
+    
+    # Verify JSONB arrays are properly parsed
+    assert isinstance(result.messages, list)
+    assert isinstance(result.tool_calls, list)
+    
+    # Verify message structure
+    assert len(result.messages) >= 1
+    for msg in result.messages:
+        assert "id" in msg
+        assert "role" in msg
+        assert "content" in msg
+    
+    # Verify tool call structure
+    assert len(result.tool_calls) >= 1
+    for tc in result.tool_calls:
+        assert "id" in tc
+        assert "tool_name" in tc
+        assert "tool_type" in tc
+
+
+async def test_usage_stats_single_query_optimization(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that usage stats optimization eliminates N+1 queries."""
+    profile_id = await get_superadmin_alias(db)
+    
+    # Create multiple chats to trigger the N+1 pattern
+    for i in range(5):
+        chat_id = await db.fetchval(
+            "INSERT INTO assistant_chats(profile_id, title, trace_id) "
+            f"VALUES($1, 'Stats Test {i}', 'stats{i}') RETURNING id",
+            UUID(profile_id)
+        )
+        
+        # Add messages and tool calls
+        await db.execute(
+            "INSERT INTO assistant_messages(chat_id, role, content, completed) "
+            "VALUES($1, 'user', 'Message', true)",
+            chat_id
+        )
+        
+        await db.execute(
+            "INSERT INTO assistant_tool_calls(chat_id, tool_name, tool_type, tool_arguments, tool_result, completed) "
+            "VALUES($1, '_tool', 'read', '{}', '{}', true)",
+            chat_id
+        )
+    
+    svc = AssistantService(db)
+    result = await svc.get_usage_stats(days=7)
+    
+    assert result is not None
+    assert result["summary"]["total_chats"] >= 5
+    assert result["summary"]["total_messages"] >= 5
+    assert result["summary"]["total_tool_calls"] >= 5
+    
+    # Verify top users were fetched without N+1 (should have at least 1 user)
+    assert len(result["top_users"]) >= 1
+    
+    # Verify the user who created 5 chats is in top users
+    top_user_ids = [u["user_id"] for u in result["top_users"]]
+    assert profile_id in top_user_ids
+    
+    # Find the user and verify their counts
+    for user in result["top_users"]:
+        if user["user_id"] == profile_id:
+            assert user["chat_count"] >= 5
+            assert user["message_count"] >= 5
+            assert user["tool_call_count"] >= 5

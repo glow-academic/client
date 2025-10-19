@@ -3,30 +3,19 @@
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.persona_queries import PersonaQueries
-from app.schemas.base import (
-    DepartmentMappingItem,
-    ModelMappingItem,
-)
-from app.schemas.personas import (
-    CreatePersonaRequest,
-    CreatePersonaResponse,
-    DebugInfoItem,
-    DeletePersonaRequest,
-    DeletePersonaResponse,
-    DuplicatePersonaRequest,
-    DuplicatePersonaResponse,
-    PersonaDetailDefaultRequest,
-    PersonaDetailRequest,
-    PersonaDetailResponse,
-    PersonaItem,
-    PersonasFilters,
-    PersonasListResponse,
-    UpdatePersonaRequest,
-    UpdatePersonaResponse,
-)
+from app.schemas.base import DepartmentMappingItem, ModelMappingItem
+from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
+                                  DebugInfoItem, DeletePersonaRequest,
+                                  DeletePersonaResponse,
+                                  DuplicatePersonaRequest,
+                                  DuplicatePersonaResponse,
+                                  PersonaDetailDefaultRequest,
+                                  PersonaDetailRequest, PersonaDetailResponse,
+                                  PersonaItem, PersonasFilters,
+                                  PersonasListResponse, UpdatePersonaRequest,
+                                  UpdatePersonaResponse)
 from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
@@ -54,6 +43,30 @@ class PersonaService(BaseService):
         scenario_mapping = {}
         model_mapping = {}
 
+        # Parse scenario_mapping from first row (same across all rows)
+        if result:
+            first_row = result[0]
+
+            # Parse scenario mapping from JSONB with type safety
+            if first_row.get("scenario_mapping") and isinstance(
+                first_row["scenario_mapping"], dict
+            ):
+                for sid, sdata in first_row["scenario_mapping"].items():
+                    if isinstance(sdata, dict):
+                        from app.schemas.base import ScenarioMappingItem
+
+                        scenario_mapping[sid] = ScenarioMappingItem(
+                            name=sdata.get("name", ""),
+                            description=sdata.get("description", ""),
+                            persona_id=None,
+                            persona_mapping={},
+                            document_mapping={},
+                            parameter_item_mapping={},
+                            parameter_item_ids=[],
+                            document_ids=[],
+                        )
+
+        # Build persona items
         for row in result:
             # Convert UUID arrays to string arrays
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
@@ -81,18 +94,6 @@ class PersonaService(BaseService):
                 model_mapping[str(row["model_id"])] = ModelMappingItem(
                     name=row["model_name"], description=row["model_description"] or ""
                 )
-
-        # Get scenario mapping with enhanced data
-        if scenario_ids_to_fetch := list(
-            set([sid for p in personas for sid in p.scenario_ids])
-        ):
-            # Create scenario service locally (avoid anti-pattern)
-            from app.services.scenario_service import ScenarioService
-
-            scenario_service = ScenarioService(self.conn)
-            scenario_mapping = await scenario_service.build_enhanced_scenario_mapping(
-                scenario_ids_to_fetch
-            )
 
         return PersonasListResponse(
             personas=personas,

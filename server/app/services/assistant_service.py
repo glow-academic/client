@@ -1,12 +1,12 @@
 """Assistant service layer - business logic for assistant agent execution."""
 
 import asyncio
+import json
 from datetime import UTC
 from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.assistant_queries import AssistantQueries
 from app.schemas.assistant import AssistantRunContext
@@ -30,11 +30,10 @@ class AssistantService(BaseService):
         self, chat_id: UUID, department_id: UUID
     ) -> AssistantRunContext:
         """
-        Get all data needed to run assistant agent with optimized queries.
+        Get all data needed to run assistant agent in ONE optimized query.
 
-        This method reduces database round trips by:
-        1. Fetching chat/profile/agent/model/provider in one JOIN query
-        2. Fetching messages and tool calls in parallel
+        This method reduces database round trips by fetching chat/profile/agent/
+        model/provider/messages/tool_calls all in a single query with JSONB aggregation.
 
         Args:
             chat_id: UUID of the assistant chat
@@ -49,60 +48,59 @@ class AssistantService(BaseService):
         chat_id_str = str(chat_id)
         department_id_str = str(department_id)
 
-        # 1. Get main context with optimized JOIN query
-        query, params = self.queries.get_assistant_run_context(
+        # Get all context data in ONE optimized query
+        query, params = self.queries.get_assistant_run_context_complete(
             chat_id_str, department_id_str
         )
-        context_row = await self.conn.fetchrow(query, *params)
+        result = await self.conn.fetchrow(query, *params)
 
-        if not context_row:
+        if not result:
             raise ValueError(
                 f"Chat {chat_id_str} not found or no assistant agent configured for department {department_id_str}"
             )
 
-        # 2. Get messages and tool calls in parallel
-        messages_query, messages_params = self.queries.get_messages_for_chat(
-            chat_id_str
-        )
-        tool_calls_query, tool_calls_params = self.queries.get_tool_calls_for_chat(
-            chat_id_str
-        )
+        # Parse messages from JSONB (may be string or list)
+        messages: list[dict[str, Any]] = []
+        messages_data = result['messages']
+        if isinstance(messages_data, str):
+            messages_data = json.loads(messages_data)
+        if messages_data and isinstance(messages_data, list):
+            messages = messages_data
 
-        messages_result, tool_calls_result = await asyncio.gather(
-            self.conn.fetch(messages_query, *messages_params),
-            self.conn.fetch(tool_calls_query, *tool_calls_params),
-        )
+        # Parse tool_calls from JSONB (may be string or list)
+        tool_calls: list[dict[str, Any]] = []
+        tool_calls_data = result['tool_calls']
+        if isinstance(tool_calls_data, str):
+            tool_calls_data = json.loads(tool_calls_data)
+        if tool_calls_data and isinstance(tool_calls_data, list):
+            tool_calls = tool_calls_data
 
-        # 3. Convert database records to dicts
-        messages: list[dict[str, Any]] = [dict(row) for row in messages_result]
-        tool_calls: list[dict[str, Any]] = [dict(row) for row in tool_calls_result]
-
-        # 4. Build and return context
+        # Build and return context
         return AssistantRunContext(
             # Chat data
-            chat_id=context_row["chat_id"],
-            title=context_row["title"],
-            trace_id=context_row["trace_id"],
-            profile_id=context_row["profile_id"],
+            chat_id=result["chat_id"],
+            title=result["title"],
+            trace_id=result["trace_id"],
+            profile_id=result["profile_id"],
             # Profile data
-            user_role=context_row["user_role"],
-            user_first_name=context_row["user_first_name"],
-            user_last_name=context_row["user_last_name"],
+            user_role=result["user_role"],
+            user_first_name=result["user_first_name"],
+            user_last_name=result["user_last_name"],
             # Agent data
-            agent_id=context_row["agent_id"],
-            agent_name=context_row["agent_name"],
-            system_prompt=context_row["system_prompt"],
-            temperature=float(context_row["temperature"]),
-            reasoning=context_row["reasoning"],
+            agent_id=result["agent_id"],
+            agent_name=result["agent_name"],
+            system_prompt=result["system_prompt"],
+            temperature=float(result["temperature"]),
+            reasoning=result["reasoning"],
             # Model data
-            model_id=context_row["model_id"],
-            model_name=context_row["model_name"],
-            custom_model=context_row["custom_model"],
+            model_id=result["model_id"],
+            model_name=result["model_name"],
+            custom_model=result["custom_model"],
             # Provider data
-            provider_id=context_row["provider_id"],
-            provider_name=context_row["provider_name"],
-            base_url=context_row["base_url"],
-            api_key=context_row["api_key"],
+            provider_id=result["provider_id"],
+            provider_name=result["provider_name"],
+            base_url=result["base_url"],
+            api_key=result["api_key"],
             # Conversation data
             messages=messages,
             tool_calls=tool_calls,
@@ -364,29 +362,76 @@ class AssistantService(BaseService):
         Returns:
             Dict containing summary, daily_stats, top_users, and tool_usage
         """
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
 
-        cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
-        # Fetch data in parallel
-        chats_query, chats_params = self.queries.get_chats_in_timeframe(cutoff_date)
-        messages_query, messages_params = self.queries.get_messages_in_timeframe(
-            cutoff_date
-        )
-        tool_calls_query, tool_calls_params = self.queries.get_tool_calls_in_timeframe(
-            cutoff_date
-        )
+        # Get all usage data in ONE optimized query (eliminates N+1)
+        query, params = self.queries.get_usage_stats_complete(cutoff_date)
+        result = await self.conn.fetchrow(query, *params)
 
-        chats_rows, messages_rows, tool_calls_rows = await asyncio.gather(
-            self.conn.fetch(chats_query, *chats_params),
-            self.conn.fetch(messages_query, *messages_params),
-            self.conn.fetch(tool_calls_query, *tool_calls_params),
-        )
+        # Helper to parse datetime from JSONB (may be string or datetime)
+        def parse_datetime(val: Any) -> datetime:
+            if isinstance(val, str):
+                # Parse ISO format string to timezone-aware datetime
+                dt = datetime.fromisoformat(val.replace('Z', '+00:00'))
+                # Ensure timezone-aware
+                if dt.tzinfo is None:
+                    from datetime import timezone
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt
+            # If already datetime, ensure it's timezone-aware
+            if isinstance(val, datetime) and val.tzinfo is None:
+                from datetime import timezone
+                return val.replace(tzinfo=timezone.utc)
+            return val
 
-        # Convert to lists of dicts for easier processing
-        chats = [dict(row) for row in chats_rows]
-        messages = [dict(row) for row in messages_rows]
-        tool_calls = [dict(row) for row in tool_calls_rows]
+        # Parse chats from JSONB (may be string or list)
+        chats = []
+        chats_data = result['chats']
+        if isinstance(chats_data, str):
+            chats_data = json.loads(chats_data)
+        if chats_data and isinstance(chats_data, list):
+            # Convert created_at strings to datetime objects
+            chats = [
+                {**c, "created_at": parse_datetime(c.get("created_at"))} 
+                if c.get("created_at") else c
+                for c in chats_data
+            ]
+
+        # Parse messages from JSONB (may be string or list)
+        messages = []
+        messages_data = result['messages']
+        if isinstance(messages_data, str):
+            messages_data = json.loads(messages_data)
+        if messages_data and isinstance(messages_data, list):
+            # Convert created_at strings to datetime objects
+            messages = [
+                {**m, "created_at": parse_datetime(m.get("created_at"))} 
+                if m.get("created_at") else m
+                for m in messages_data
+            ]
+
+        # Parse tool_calls from JSONB (may be string or list)
+        tool_calls = []
+        tool_calls_data = result['tool_calls']
+        if isinstance(tool_calls_data, str):
+            tool_calls_data = json.loads(tool_calls_data)
+        if tool_calls_data and isinstance(tool_calls_data, list):
+            # Convert created_at strings to datetime objects
+            tool_calls = [
+                {**tc, "created_at": parse_datetime(tc.get("created_at"))} 
+                if tc.get("created_at") else tc
+                for tc in tool_calls_data
+            ]
+
+        # Parse top users profiles from JSONB (may be string or list)
+        top_users_profiles_raw = []
+        top_users_data = result['top_users_profiles']
+        if isinstance(top_users_data, str):
+            top_users_data = json.loads(top_users_data)
+        if top_users_data and isinstance(top_users_data, list):
+            top_users_profiles_raw = top_users_data
 
         # Overall summary
         total_chats = len(chats)
@@ -395,7 +440,7 @@ class AssistantService(BaseService):
 
         # Count unique users
         unique_users = len(
-            set(chat["profile_id"] for chat in chats if chat["profile_id"])
+            set(chat["profile_id"] for chat in chats if chat.get("profile_id"))
         )
 
         # Count completed vs incomplete
@@ -404,12 +449,12 @@ class AssistantService(BaseService):
                 chat
                 for chat in chats
                 if any(
-                    msg["completed"] for msg in messages if msg["chat_id"] == chat["id"]
+                    msg.get("completed") for msg in messages if msg.get("chat_id") == chat.get("id")
                 )
             ]
         )
 
-        completed_tool_calls = len([tc for tc in tool_calls if tc["completed"]])
+        completed_tool_calls = len([tc for tc in tool_calls if tc.get("completed")])
 
         # Daily breakdown
         daily_stats = []
@@ -417,12 +462,12 @@ class AssistantService(BaseService):
             day_start = cutoff_date + timedelta(days=i)
             day_end = day_start + timedelta(days=1)
 
-            day_chats = [c for c in chats if day_start <= c["created_at"] < day_end]
+            day_chats = [c for c in chats if day_start <= c.get("created_at") < day_end]
             day_messages = [
-                m for m in messages if day_start <= m["created_at"] < day_end
+                m for m in messages if day_start <= m.get("created_at") < day_end
             ]
             day_tool_calls = [
-                tc for tc in tool_calls if day_start <= tc["created_at"] < day_end
+                tc for tc in tool_calls if day_start <= tc.get("created_at") < day_end
             ]
 
             daily_stats.append(
@@ -432,55 +477,37 @@ class AssistantService(BaseService):
                     "messages": len(day_messages),
                     "tool_calls": len(day_tool_calls),
                     "unique_users": len(
-                        set(c["profile_id"] for c in day_chats if c["profile_id"])
+                        set(c.get("profile_id") for c in day_chats if c.get("profile_id"))
                     ),
                 }
             )
 
-        # Top users by chat count
-        user_chat_counts: dict[Any, int] = {}
-        for chat in chats:
-            if chat["profile_id"]:
-                user_chat_counts[chat["profile_id"]] = (
-                    user_chat_counts.get(chat["profile_id"], 0) + 1
-                )
-
-        # Get user details for top users
+        # Build top users list from pre-fetched profiles
         top_users = []
-        for profile_id, chat_count in sorted(
-            user_chat_counts.items(), key=lambda x: x[1], reverse=True
-        )[:10]:
-            profile_query, profile_params = self.queries.get_profile_by_id(profile_id)
-            profile_row = await self.conn.fetchrow(profile_query, *profile_params)
-
-            if profile_row:
+        for user_profile in top_users_profiles_raw:
+            if isinstance(user_profile, dict):
+                user_id = user_profile.get("user_id")
+                chat_count = user_profile.get("chat_count", 0)
+                
+                # Calculate message and tool call counts for this user
+                user_chats_ids = [c.get("id") for c in chats if c.get("profile_id") == user_id]
                 user_messages = len(
-                    [
-                        m
-                        for m in messages
-                        if m["chat_id"]
-                        in [c["id"] for c in chats if c["profile_id"] == profile_id]
-                    ]
+                    [m for m in messages if m.get("chat_id") in user_chats_ids]
                 )
                 user_tool_calls = len(
-                    [
-                        tc
-                        for tc in tool_calls
-                        if tc["chat_id"]
-                        in [c["id"] for c in chats if c["profile_id"] == profile_id]
-                    ]
+                    [tc for tc in tool_calls if tc.get("chat_id") in user_chats_ids]
                 )
 
-                name = f"{profile_row['first_name']} {profile_row['last_name']}".strip()
+                name = f"{user_profile.get('first_name', '')} {user_profile.get('last_name', '')}".strip()
                 if not name:
-                    name = profile_row["alias"]
+                    name = user_profile.get("alias", "")
 
                 top_users.append(
                     {
-                        "user_id": str(profile_row["id"]),
+                        "user_id": user_id,
                         "name": name,
-                        "alias": profile_row["alias"],
-                        "role": profile_row["role"],
+                        "alias": user_profile.get("alias", ""),
+                        "role": user_profile.get("role", ""),
                         "chat_count": chat_count,
                         "message_count": user_messages,
                         "tool_call_count": user_tool_calls,
@@ -490,8 +517,9 @@ class AssistantService(BaseService):
         # Tool usage breakdown
         tool_usage: dict[str, int] = {}
         for tc in tool_calls:
-            tool_name = tc["tool_name"]
-            tool_usage[tool_name] = tool_usage.get(tool_name, 0) + 1
+            tool_name = tc.get("tool_name")
+            if tool_name:
+                tool_usage[tool_name] = tool_usage.get(tool_name, 0) + 1
 
         tool_usage_list = [
             {"tool_name": name, "usage_count": count}

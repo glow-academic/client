@@ -1,322 +1,168 @@
 """
-Tests for app.services.persona_service
+Tests for persona_service - list and search methods.
 """
 
-from unittest.mock import MagicMock
-
-import pytest
-from sqlmodel import Session
-
-from app.services.persona_service import *
-
-
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
-
-
+import asyncpg
 import pytest
 
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_persona_service`")
-class TestGet_Persona_Service:
-    """Tests for get_persona_service function."""
-
-    def test_get_persona_service_success(self):
-        """Test successful get_persona_service execution."""
-        # TODO: Implement test for get_persona_service
-        assert False, "IMPLEMENT: Test for get_persona_service"
-
-    def test_get_persona_service_error(self):
-        """Test get_persona_service error handling."""
-        # TODO: Implement error test for get_persona_service
-        assert False, "IMPLEMENT: Error test for get_persona_service"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_personas_list`")
-class TestGet_Personas_List:
-    """Tests for get_personas_list function."""
-
-    def test_get_personas_list_success(self):
-        """Test successful get_personas_list execution."""
-        # TODO: Implement test for get_personas_list
-        assert False, "IMPLEMENT: Test for get_personas_list"
-
-    def test_get_personas_list_error(self):
-        """Test get_personas_list error handling."""
-        # TODO: Implement error test for get_personas_list
-        assert False, "IMPLEMENT: Error test for get_personas_list"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `duplicate_persona`")
-class TestDuplicate_Persona:
-    """Tests for duplicate_persona function."""
-
-    def test_duplicate_persona_success(self):
-        """Test successful duplicate_persona execution."""
-        # TODO: Implement test for duplicate_persona
-        assert False, "IMPLEMENT: Test for duplicate_persona"
-
-    def test_duplicate_persona_error(self):
-        """Test duplicate_persona error handling."""
-        # TODO: Implement error test for duplicate_persona
-        assert False, "IMPLEMENT: Error test for duplicate_persona"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `delete_persona`")
-class TestDelete_Persona:
-    """Tests for delete_persona function."""
-
-    def test_delete_persona_success(self):
-        """Test successful delete_persona execution."""
-        # TODO: Implement test for delete_persona
-        assert False, "IMPLEMENT: Test for delete_persona"
-
-    def test_delete_persona_error(self):
-        """Test delete_persona error handling."""
-        # TODO: Implement error test for delete_persona
-        assert False, "IMPLEMENT: Error test for delete_persona"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_persona_detail`")
-class TestGet_Persona_Detail:
-    """Tests for get_persona_detail function."""
-
-    def test_get_persona_detail_success(self):
-        """Test successful get_persona_detail execution."""
-        # TODO: Implement test for get_persona_detail
-        assert False, "IMPLEMENT: Test for get_persona_detail"
-
-    def test_get_persona_detail_error(self):
-        """Test get_persona_detail error handling."""
-        # TODO: Implement error test for get_persona_detail
-        assert False, "IMPLEMENT: Error test for get_persona_detail"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_persona_detail_default`")
-class TestGet_Persona_Detail_Default:
-    """Tests for get_persona_detail_default function."""
-
-    def test_get_persona_detail_default_success(self):
-        """Test successful get_persona_detail_default execution."""
-        # TODO: Implement test for get_persona_detail_default
-        assert False, "IMPLEMENT: Test for get_persona_detail_default"
-
-    def test_get_persona_detail_default_error(self):
-        """Test get_persona_detail_default error handling."""
-        # TODO: Implement error test for get_persona_detail_default
-        assert False, "IMPLEMENT: Error test for get_persona_detail_default"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_persona`")
-class TestCreate_Persona:
-    """Tests for create_persona function."""
-
-    def test_create_persona_success(self):
-        """Test successful create_persona execution."""
-        # TODO: Implement test for create_persona
-        assert False, "IMPLEMENT: Test for create_persona"
-
-    def test_create_persona_error(self):
-        """Test create_persona error handling."""
-        # TODO: Implement error test for create_persona
-        assert False, "IMPLEMENT: Error test for create_persona"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `update_persona`")
-class TestUpdate_Persona:
-    """Tests for update_persona function."""
-
-    def test_update_persona_success(self):
-        """Test successful update_persona execution."""
-        # TODO: Implement test for update_persona
-        assert False, "IMPLEMENT: Test for update_persona"
-
-    def test_update_persona_error(self):
-        """Test update_persona error handling."""
-        # TODO: Implement error test for update_persona
-        assert False, "IMPLEMENT: Error test for update_persona"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `search_personas`")
-class TestSearch_Personas:
-    """Tests for search_personas function."""
-
-    def test_search_personas_success(self):
-        """Test successful search_personas execution."""
-        # TODO: Implement test for search_personas
-        assert False, "IMPLEMENT: Test for search_personas"
-
-    def test_search_personas_error(self):
-        """Test search_personas error handling."""
-        # TODO: Implement error test for search_personas
-        assert False, "IMPLEMENT: Error test for search_personas"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_persona_response_times`")
-class TestGet_Persona_Response_Times:
-    """Tests for get_persona_response_times function."""
-
-    def test_get_persona_response_times_success(self):
-        """Test successful get_persona_response_times execution."""
-        # TODO: Implement test for get_persona_response_times
-        assert False, "IMPLEMENT: Test for get_persona_response_times"
-
-    def test_get_persona_response_times_error(self):
-        """Test get_persona_response_times error handling."""
-        # TODO: Implement error test for get_persona_response_times
-        assert False, "IMPLEMENT: Error test for get_persona_response_times"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_persona_overview`")
-class TestGet_Persona_Overview:
-    """Tests for get_persona_overview function."""
-
-    def test_get_persona_overview_success(self):
-        """Test successful get_persona_overview execution."""
-        # TODO: Implement test for get_persona_overview
-        assert False, "IMPLEMENT: Test for get_persona_overview"
-
-    def test_get_persona_overview_error(self):
-        """Test get_persona_overview error handling."""
-        # TODO: Implement error test for get_persona_overview
-        assert False, "IMPLEMENT: Error test for get_persona_overview"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
+from app.schemas.personas import PersonasFilters
+from app.services.persona_service import PersonaService
+
+# --- Helper Functions ---
+
+
+async def get_test_dept_id(db: asyncpg.Connection) -> str:
+    """Get a test department ID from the database."""
+    result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not result:
+        raise ValueError("No departments found in test database")
+    return str(result['id'])
+
+
+async def get_test_profile_id(db: asyncpg.Connection) -> str:
+    """Get a test profile ID from the database."""
+    result = await db.fetchrow("SELECT id FROM profiles LIMIT 1")
+    if not result:
+        raise ValueError("No profiles found in test database")
+    return str(result['id'])
+
+
+# --- Tests ---
+
+
+@pytest.mark.asyncio
+async def test_get_personas_list(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting personas list with embedded mappings."""
+    # Setup - Get test data IDs
+    dept_id = await get_test_dept_id(db)
+    profile_id = await get_test_profile_id(db)
+
+    # Create filters
+    filters = PersonasFilters(
+        departmentIds=[dept_id],
+        profileId=profile_id
+    )
+
+    # Execute - Call the service method
+    svc = PersonaService(db)
+    result = await svc.get_personas_list(filters)
+
+    # Assert - Check basic structure
+    assert result is not None
+    assert hasattr(result, 'personas')
+    assert hasattr(result, 'scenario_mapping')
+    assert hasattr(result, 'model_mapping')
+
+    # Check that personas is a list (could be empty)
+    assert isinstance(result.personas, list)
+    assert len(result.personas) >= 0
+
+    # Check that mappings are dicts (could be empty)
+    assert isinstance(result.scenario_mapping, dict)
+    assert isinstance(result.model_mapping, dict)
+
+    # If personas exist, check basic fields
+    if result.personas:
+        persona = result.personas[0]
+        assert hasattr(persona, 'persona_id')
+        assert hasattr(persona, 'name')
+        assert hasattr(persona, 'scenario_ids')
+        assert hasattr(persona, 'model_id')
+        assert isinstance(persona.scenario_ids, list)
+
+
+@pytest.mark.asyncio
+async def test_get_personas_list_empty_departments(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting personas list with no departments returns empty list."""
+    # Setup
+    profile_id = await get_test_profile_id(db)
+
+    # Create filters with empty department list
+    filters = PersonasFilters(
+        departmentIds=[],
+        profileId=profile_id
+    )
+
+    # Execute
+    svc = PersonaService(db)
+    result = await svc.get_personas_list(filters)
+
+    # Assert - Should return empty list but valid structure
+    assert result is not None
+    assert isinstance(result.personas, list)
+    assert len(result.personas) == 0
+    assert isinstance(result.scenario_mapping, dict)
+    assert isinstance(result.model_mapping, dict)
+
+
+@pytest.mark.asyncio
+async def test_search_personas(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test searching personas by name."""
+    # Setup
+    svc = PersonaService(db)
+
+    # Get a persona name to search for
+    persona_result = await db.fetchrow("SELECT name FROM personas LIMIT 1")
+
+    if persona_result and persona_result['name']:
+        # Use first word of name as search query
+        search_query = persona_result['name'].split()[0]
+
+        # Execute
+        result = await svc.search_personas(search_query, limit=10)
+
+        # Assert - Check basic structure
+        assert isinstance(result, list)
+        assert len(result) >= 0
+
+        # If results exist, check structure
+        if result:
+            item = result[0]
+            assert 'id' in item
+            assert 'name' in item
+            assert 'score' in item
+            assert 'description' in item
+            assert isinstance(item['score'], (int, float))
+    else:
+        # No personas in database, just test empty search
+        result = await svc.search_personas("nonexistent", limit=10)
+        assert isinstance(result, list)
+        assert len(result) == 0
+
+
+@pytest.mark.asyncio
+async def test_search_personas_empty_query(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test searching with empty query returns empty list."""
+    # Setup
+    svc = PersonaService(db)
+
+    # Execute - Empty search query
+    result = await svc.search_personas("", limit=10)
+
+    # Assert - Should return empty list
+    assert isinstance(result, list)
+    assert len(result) == 0
+
+
+@pytest.mark.asyncio
+async def test_search_personas_limit(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test searching personas respects limit parameter."""
+    # Setup
+    svc = PersonaService(db)
+
+    # Execute - Search with small limit
+    result = await svc.search_personas("persona", limit=2)
+
+    # Assert - Should not exceed limit
+    assert isinstance(result, list)
+    assert len(result) <= 2
