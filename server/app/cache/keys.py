@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 10  # Bumped: Simulations list now shows num_cohorts instead of num_scenarios
+GLOBAL_CACHE_VERSION = 11  # Bumped: Practice+default simulations cannot be deleted; simplified permission logic
 
 # Namespaces
 NS_ANALYTICS = "analytics"

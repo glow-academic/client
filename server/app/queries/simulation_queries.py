@@ -124,17 +124,16 @@ class SimulationQueries:
         SELECT 
             sd.*,
             CASE 
-                WHEN up.role IN ('admin', 'instructional', 'superadmin') 
-                     AND (sd.default_simulation = false OR up.role = 'superadmin')
-                     AND sd.active_cohort_count = 0
-                THEN true
+                WHEN sd.active_cohort_count > 0 THEN false
+                WHEN sd.default_simulation = true AND up.role != 'superadmin' THEN false
+                WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             CASE 
-                WHEN up.role IN ('admin', 'instructional', 'superadmin') 
-                     AND (sd.default_simulation = false OR up.role = 'superadmin')
-                     AND sd.total_cohort_links = 0
-                THEN true
+                WHEN sd.default_simulation = true AND sd.practice_simulation = true THEN false
+                WHEN sd.total_cohort_links > 0 THEN false
+                WHEN sd.default_simulation = true AND up.role != 'superadmin' THEN false
+                WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_delete,
             true as can_duplicate,

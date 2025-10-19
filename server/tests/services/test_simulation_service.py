@@ -528,6 +528,35 @@ async def test_simulations_list_shows_cohort_count(
 
 
 @pytest.mark.asyncio
+async def test_simulation_practice_default_cannot_be_deleted(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that simulations marked as both practice AND default cannot be deleted by anyone."""
+    # Setup
+    dept_id = await get_test_dept_id(db)
+    superadmin_id = await db.fetchval("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
+    
+    if not superadmin_id:
+        pytest.skip("No superadmin profile found")
+    
+    superadmin_id = str(superadmin_id)
+    
+    # Execute
+    from app.schemas.simulations import SimulationsFilters
+    
+    svc = SimulationService(db)
+    result = await svc.get_simulations_list(
+        SimulationsFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    
+    # Assert - Find simulations that are both practice and default
+    for simulation in result.simulations:
+        if simulation.practice_simulation and simulation.default_simulation:
+            assert simulation.can_delete == False, \
+                f"Simulation {simulation.name} marked as practice+default should NOT be deletable (even by superadmin)"
+
+
+@pytest.mark.asyncio
 async def test_simulation_can_edit_permissions(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
@@ -565,10 +594,10 @@ async def test_simulation_can_edit_permissions(
         SimulationsFilters(departmentIds=[dept_id], profileId=admin_id)
     )
     
-    # Test rules (same as scenarios, but checking cohort links instead of simulation links):
+    # Test rules:
     # 1. Simulations with active cohort links: cannot edit
-    # 2. Simulations with default_simulation=true: only superadmin can edit (if no active cohort links)
-    # 3. Other simulations: admin and superadmin can edit
+    # 2. Default simulations: only superadmin can edit
+    # 3. Other simulations: instructional, admin, superadmin can edit
     
     for sim_sa in resp_superadmin.simulations:
         # Get cohort link counts from database
@@ -592,19 +621,19 @@ async def test_simulation_can_edit_permissions(
             assert sim_admin.can_edit == False, \
                 f"Simulation {sim_admin.name} with {active_cohort_count} active cohort links should not be editable (admin)"
         
-        # Rule 2: Unlinked default simulations - only superadmin can edit
-        elif sim_sa.default_simulation and active_cohort_count == 0:
+        # Rule 2: Default simulations - only superadmin can edit
+        elif sim_sa.default_simulation:
             assert sim_sa.can_edit == True, \
-                f"Superadmin should be able to edit unlinked default simulation {sim_sa.name}"
+                f"Superadmin should be able to edit default simulation {sim_sa.name}"
             assert sim_admin.can_edit == False, \
                 f"Admin should NOT be able to edit default simulation {sim_admin.name}"
         
-        # Rule 3: Unlinked, non-default simulations - both can edit
+        # Rule 3: Non-default simulations without active cohort links - all can edit
         elif not sim_sa.default_simulation and active_cohort_count == 0:
             assert sim_sa.can_edit == True, \
-                f"Superadmin should be able to edit unlinked non-default simulation {sim_sa.name}"
+                f"Superadmin should be able to edit non-default simulation {sim_sa.name}"
             assert sim_admin.can_edit == True, \
-                f"Admin should be able to edit unlinked non-default simulation {sim_admin.name}"
+                f"Admin should be able to edit non-default simulation {sim_admin.name}"
 
 
 @pytest.mark.asyncio
@@ -645,9 +674,10 @@ async def test_simulation_can_delete_permissions(
     )
     
     # Test rules:
-    # 1. Simulations with ANY cohort links (active or inactive): cannot delete
-    # 2. Simulations with default_simulation=true: only superadmin can delete (if no links)
-    # 3. Other simulations: admin and superadmin can delete (if no links)
+    # 1. Practice + Default simulations: NEVER deletable (highest priority)
+    # 2. Simulations with ANY cohort links: cannot delete
+    # 3. Default simulations (not practice): only superadmin can delete (if no links)
+    # 4. Other simulations: instructional, admin, superadmin can delete (if no links)
     
     for sim_sa in resp_superadmin.simulations:
         # Get total cohort link count from database
@@ -664,21 +694,28 @@ async def test_simulation_can_delete_permissions(
         if not sim_admin:
             continue
         
-        # Rule 1: Simulations with any cohort links - nobody can delete
-        if total_cohort_links > 0:
+        # Rule 1: Practice + Default simulations - NEVER deletable
+        if sim_sa.default_simulation and sim_sa.practice_simulation:
+            assert sim_sa.can_delete == False, \
+                f"Simulation {sim_sa.name} (practice+default) should NEVER be deletable"
+            assert sim_admin.can_delete == False, \
+                f"Simulation {sim_admin.name} (practice+default) should NEVER be deletable"
+        
+        # Rule 2: Simulations with any cohort links - nobody can delete
+        elif total_cohort_links > 0:
             assert sim_sa.can_delete == False, \
                 f"Simulation {sim_sa.name} with {total_cohort_links} cohort links should not be deletable (superadmin)"
             assert sim_admin.can_delete == False, \
                 f"Simulation {sim_admin.name} with {total_cohort_links} cohort links should not be deletable (admin)"
         
-        # Rule 2: Unlinked default simulations - only superadmin can delete
-        elif sim_sa.default_simulation and total_cohort_links == 0:
+        # Rule 3: Unlinked default simulations (not practice) - only superadmin can delete
+        elif sim_sa.default_simulation and not sim_sa.practice_simulation and total_cohort_links == 0:
             assert sim_sa.can_delete == True, \
-                f"Superadmin should be able to delete unlinked default simulation {sim_sa.name}"
+                f"Superadmin should be able to delete unlinked default (non-practice) simulation {sim_sa.name}"
             assert sim_admin.can_delete == False, \
                 f"Admin should NOT be able to delete default simulation {sim_admin.name}"
         
-        # Rule 3: Unlinked, non-default simulations - both can delete
+        # Rule 4: Unlinked, non-default simulations - all can delete
         elif not sim_sa.default_simulation and total_cohort_links == 0:
             assert sim_sa.can_delete == True, \
                 f"Superadmin should be able to delete unlinked non-default simulation {sim_sa.name}"
