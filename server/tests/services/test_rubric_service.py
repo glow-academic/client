@@ -1,214 +1,97 @@
 """
-Tests for app.services.rubric_service
+Tests for rubric_service - list methods.
 """
 
-from unittest.mock import MagicMock
-
+import asyncpg
 import pytest
-from sqlmodel import Session
-
-from app.services.rubric_service import *
-
-
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_rubric_service`")
-class TestGet_Rubric_Service:
-    """Tests for get_rubric_service function."""
-
-    def test_get_rubric_service_success(self):
-        """Test successful get_rubric_service execution."""
-        # TODO: Implement test for get_rubric_service
-        assert False, "IMPLEMENT: Test for get_rubric_service"
-
-    def test_get_rubric_service_error(self):
-        """Test get_rubric_service error handling."""
-        # TODO: Implement error test for get_rubric_service
-        assert False, "IMPLEMENT: Error test for get_rubric_service"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_rubrics_list`")
-class TestGet_Rubrics_List:
-    """Tests for get_rubrics_list function."""
-
-    def test_get_rubrics_list_success(self):
-        """Test successful get_rubrics_list execution."""
-        # TODO: Implement test for get_rubrics_list
-        assert False, "IMPLEMENT: Test for get_rubrics_list"
-
-    def test_get_rubrics_list_error(self):
-        """Test get_rubrics_list error handling."""
-        # TODO: Implement error test for get_rubrics_list
-        assert False, "IMPLEMENT: Error test for get_rubrics_list"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_rubric_detail`")
-class TestGet_Rubric_Detail:
-    """Tests for get_rubric_detail function."""
-
-    def test_get_rubric_detail_success(self):
-        """Test successful get_rubric_detail execution."""
-        # TODO: Implement test for get_rubric_detail
-        assert False, "IMPLEMENT: Test for get_rubric_detail"
-
-    def test_get_rubric_detail_error(self):
-        """Test get_rubric_detail error handling."""
-        # TODO: Implement error test for get_rubric_detail
-        assert False, "IMPLEMENT: Error test for get_rubric_detail"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_rubric_detail_default`")
-class TestGet_Rubric_Detail_Default:
-    """Tests for get_rubric_detail_default function."""
-
-    def test_get_rubric_detail_default_success(self):
-        """Test successful get_rubric_detail_default execution."""
-        # TODO: Implement test for get_rubric_detail_default
-        assert False, "IMPLEMENT: Test for get_rubric_detail_default"
-
-    def test_get_rubric_detail_default_error(self):
-        """Test get_rubric_detail_default error handling."""
-        # TODO: Implement error test for get_rubric_detail_default
-        assert False, "IMPLEMENT: Error test for get_rubric_detail_default"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_rubric`")
-class TestCreate_Rubric:
-    """Tests for create_rubric function."""
-
-    def test_create_rubric_success(self):
-        """Test successful create_rubric execution."""
-        # TODO: Implement test for create_rubric
-        assert False, "IMPLEMENT: Test for create_rubric"
-
-    def test_create_rubric_error(self):
-        """Test create_rubric error handling."""
-        # TODO: Implement error test for create_rubric
-        assert False, "IMPLEMENT: Error test for create_rubric"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `update_rubric`")
-class TestUpdate_Rubric:
-    """Tests for update_rubric function."""
-
-    def test_update_rubric_success(self):
-        """Test successful update_rubric execution."""
-        # TODO: Implement test for update_rubric
-        assert False, "IMPLEMENT: Test for update_rubric"
-
-    def test_update_rubric_error(self):
-        """Test update_rubric error handling."""
-        # TODO: Implement error test for update_rubric
-        assert False, "IMPLEMENT: Error test for update_rubric"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `duplicate_rubric`")
-class TestDuplicate_Rubric:
-    """Tests for duplicate_rubric function."""
-
-    def test_duplicate_rubric_success(self):
-        """Test successful duplicate_rubric execution."""
-        # TODO: Implement test for duplicate_rubric
-        assert False, "IMPLEMENT: Test for duplicate_rubric"
-
-    def test_duplicate_rubric_error(self):
-        """Test duplicate_rubric error handling."""
-        # TODO: Implement error test for duplicate_rubric
-        assert False, "IMPLEMENT: Error test for duplicate_rubric"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `delete_rubric`")
-class TestDelete_Rubric:
-    """Tests for delete_rubric function."""
-
-    def test_delete_rubric_success(self):
-        """Test successful delete_rubric execution."""
-        # TODO: Implement test for delete_rubric
-        assert False, "IMPLEMENT: Test for delete_rubric"
-
-    def test_delete_rubric_error(self):
-        """Test delete_rubric error handling."""
-        # TODO: Implement error test for delete_rubric
-        assert False, "IMPLEMENT: Error test for delete_rubric"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
+from app.schemas.rubrics import RubricsFilters
+from app.services.rubric_service import RubricService
+
+# --- Helper Functions ---
+
+
+async def get_test_dept_id(db: asyncpg.Connection) -> str:
+    """Get a test department ID from the database."""
+    result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not result:
+        raise ValueError("No departments found in test database")
+    return str(result['id'])
+
+
+async def get_test_profile_id(db: asyncpg.Connection) -> str:
+    """Get a test profile ID from the database."""
+    result = await db.fetchrow("SELECT id FROM profiles LIMIT 1")
+    if not result:
+        raise ValueError("No profiles found in test database")
+    return str(result['id'])
+
+
+# --- Tests ---
+
+
+@pytest.mark.asyncio
+async def test_get_rubrics_list(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting rubrics list with embedded hierarchical structure."""
+    # Setup - Get test data IDs
+    dept_id = await get_test_dept_id(db)
+    profile_id = await get_test_profile_id(db)
+
+    # Create filters
+    filters = RubricsFilters(
+        departmentIds=[dept_id],
+        profileId=profile_id
+    )
+
+    # Execute - Call the service method
+    svc = RubricService(db)
+    result = await svc.get_rubrics_list(filters)
+
+    # Assert - Check basic structure
+    assert result is not None
+    assert hasattr(result, 'rubrics')
+    assert hasattr(result, 'standard_groups_mapping')
+    assert hasattr(result, 'standards_mapping')
+
+    # Check that rubrics is a list (could be empty)
+    assert isinstance(result.rubrics, list)
+    assert len(result.rubrics) >= 0
+
+    # Check that mappings are dicts (could be empty)
+    assert isinstance(result.standard_groups_mapping, dict)
+    assert isinstance(result.standards_mapping, dict)
+
+    # If rubrics exist, check hierarchical structure
+    if result.rubrics:
+        rubric = result.rubrics[0]
+        assert hasattr(rubric, 'rubric_id')
+        assert hasattr(rubric, 'name')
+        assert hasattr(rubric, 'standard_groups')
+        assert isinstance(rubric.standard_groups, dict)
+
+
+@pytest.mark.asyncio
+async def test_get_rubrics_list_empty_departments(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting rubrics list with no departments returns empty list."""
+    # Setup
+    profile_id = await get_test_profile_id(db)
+
+    # Create filters with empty department list
+    filters = RubricsFilters(
+        departmentIds=[],
+        profileId=profile_id
+    )
+
+    # Execute
+    svc = RubricService(db)
+    result = await svc.get_rubrics_list(filters)
+
+    # Assert - Should return empty list but valid structure
+    assert result is not None
+    assert isinstance(result.rubrics, list)
+    assert len(result.rubrics) == 0
+    assert isinstance(result.standard_groups_mapping, dict)
+    assert isinstance(result.standards_mapping, dict)

@@ -4,7 +4,6 @@ Tests for persona_service - list and search methods.
 
 import asyncpg
 import pytest
-
 from app.schemas.personas import PersonasFilters
 from app.services.persona_service import PersonaService
 

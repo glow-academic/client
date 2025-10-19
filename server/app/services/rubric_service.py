@@ -3,31 +3,21 @@
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.rubric_queries import RubricQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.rubrics import (
-    CreateRubricRequest,
-    CreateRubricResponse,
-    DeleteRubricRequest,
-    DeleteRubricResponse,
-    DuplicateRubricRequest,
-    DuplicateRubricResponse,
-    RubricDetailDefaultRequest,
-    RubricDetailRequest,
-    RubricDetailResponse,
-    RubricItem,
-    RubricsFilters,
-    RubricsListResponse,
-    StandardGroupDetail,
-    StandardGroupMappingDetail,
-    StandardGroupMappingItem,
-    StandardMappingItem,
-    UpdateRubricRequest,
-    UpdateRubricResponse,
-)
+from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
+                                 DeleteRubricRequest, DeleteRubricResponse,
+                                 DuplicateRubricRequest,
+                                 DuplicateRubricResponse,
+                                 RubricDetailDefaultRequest,
+                                 RubricDetailRequest, RubricDetailResponse,
+                                 RubricItem, RubricsFilters,
+                                 RubricsListResponse, StandardGroupDetail,
+                                 StandardGroupMappingDetail,
+                                 StandardGroupMappingItem, StandardMappingItem,
+                                 UpdateRubricRequest, UpdateRubricResponse)
 from app.services.base import BaseService, with_cache
 
 
@@ -42,16 +32,56 @@ class RubricService(BaseService):
     @with_cache(lambda self, filters: keys.rubric_list(filters))
     async def get_rubrics_list(self, filters: RubricsFilters) -> RubricsListResponse:
         """Get rubrics list with hierarchical structure and permissions."""
-        # Get rubrics
+        # Get rubrics with embedded hierarchical data
         query, params = self.queries.list_rubrics(
             filters.departmentIds, filters.profileId
         )
         rubrics_result = await self.conn.fetch(query, *params)
 
         rubrics = []
-        rubric_ids = []
+        standard_groups_mapping = {}
+        standards_mapping = {}
 
+        # Parse mappings from first row (same across all rows)
+        if rubrics_result:
+            first_row = rubrics_result[0]
+
+            # Parse standard_groups_mapping from JSONB with type safety
+            if first_row.get("standard_groups_mapping") and isinstance(
+                first_row["standard_groups_mapping"], dict
+            ):
+                for group_id, gdata in first_row["standard_groups_mapping"].items():
+                    if isinstance(gdata, dict):
+                        standard_groups_mapping[group_id] = StandardGroupMappingItem(
+                            name=gdata.get("name", ""),
+                            description=gdata.get("description", ""),
+                            points=gdata.get("points", 0),
+                            passPoints=gdata.get("passPoints", 0),
+                        )
+
+            # Parse standards_mapping from JSONB with type safety
+            if first_row.get("standards_mapping") and isinstance(
+                first_row["standards_mapping"], dict
+            ):
+                for standard_id, sdata in first_row["standards_mapping"].items():
+                    if isinstance(sdata, dict):
+                        standards_mapping[standard_id] = StandardMappingItem(
+                            name=sdata.get("name", ""),
+                            description=sdata.get("description", ""),
+                            points=sdata.get("points", 0),
+                        )
+
+        # Build rubric items with hierarchical structure
         for row in rubrics_result:
+            # Parse standard_groups structure for this rubric
+            standard_groups_dict = {}
+            if row.get("standard_groups") and isinstance(row["standard_groups"], dict):
+                for group_id, standards_list in row["standard_groups"].items():
+                    if isinstance(standards_list, list):
+                        standard_groups_dict[group_id] = standards_list
+                    else:
+                        standard_groups_dict[group_id] = []
+
             rubrics.append(
                 RubricItem(
                     rubric_id=str(row["rubric_id"]),
@@ -62,58 +92,9 @@ class RubricService(BaseService):
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],
-                    standard_groups={},  # Will be populated below
+                    standard_groups=standard_groups_dict,
                 )
             )
-            rubric_ids.append(str(row["rubric_id"]))
-
-        # Get all standard groups for these rubrics
-        standard_groups_mapping = {}
-        group_ids = []
-
-        if rubric_ids:
-            query, params = self.queries.get_standard_groups_for_rubrics(rubric_ids)
-            groups_result = await self.conn.fetch(query, *params)
-
-            for group in groups_result:
-                group_id = str(group["id"])
-                rubric_id = str(group["rubric_id"])
-                group_ids.append(group_id)
-
-                standard_groups_mapping[group_id] = StandardGroupMappingItem(
-                    name=group["name"],
-                    description=group["description"] or "",
-                    points=group["points"],
-                    passPoints=group["passpoints"],
-                )
-
-                # Find the rubric and add group_id
-                for rubric in rubrics:
-                    if rubric.rubric_id == rubric_id:
-                        if rubric_id not in rubric.standard_groups:
-                            rubric.standard_groups[group_id] = []
-
-        # Get all standards for these groups
-        standards_mapping = {}
-
-        if group_ids:
-            query, params = self.queries.get_standards_for_groups(group_ids)
-            standards_result = await self.conn.fetch(query, *params)
-
-            for standard in standards_result:
-                standard_id = str(standard["id"])
-                group_id = str(standard["standard_group_id"])
-
-                standards_mapping[standard_id] = StandardMappingItem(
-                    name=standard["name"],
-                    description=standard["description"] or "",
-                    points=standard["points"],
-                )
-
-                # Add standard_id to the appropriate group in the appropriate rubric
-                for rubric in rubrics:
-                    if group_id in rubric.standard_groups:
-                        rubric.standard_groups[group_id].append(standard_id)
 
         return RubricsListResponse(
             rubrics=rubrics,

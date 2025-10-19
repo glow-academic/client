@@ -11,33 +11,25 @@ import uuid
 import zipfile
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.extensions import CSV_FOLDER, UPLOAD_FOLDER
 from app.queries.document_queries import DocumentQueries
-from app.schemas.base import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ParameterItemMappingItem,
-)
-from app.schemas.documents import (
-    BulkDeleteDocumentsRequest,
-    BulkUpdateDocumentsRequest,
-    DeleteDocumentRequest,
-    DeleteDocumentResponse,
-    DocumentDetailBulkRequest,
-    DocumentDetailBulkResponse,
-    DocumentDetailRequest,
-    DocumentDetailResponse,
-    DocumentItem,
-    DocumentsFilters,
-    DocumentsListResponse,
-    FinalizeUploadRequest,
-    FinalizeUploadResponse,
-    GenerateCertificateRequest,
-    UpdateDocumentRequest,
-    UpdateDocumentResponse,
-)
+from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
+                              ParameterItemMappingItem)
+from app.schemas.documents import (BulkDeleteDocumentsRequest,
+                                   BulkUpdateDocumentsRequest,
+                                   DeleteDocumentRequest,
+                                   DeleteDocumentResponse,
+                                   DocumentDetailBulkRequest,
+                                   DocumentDetailBulkResponse,
+                                   DocumentDetailRequest,
+                                   DocumentDetailResponse, DocumentItem,
+                                   DocumentsFilters, DocumentsListResponse,
+                                   FinalizeUploadRequest,
+                                   FinalizeUploadResponse,
+                                   GenerateCertificateRequest,
+                                   UpdateDocumentRequest,
+                                   UpdateDocumentResponse)
 from app.services.base import BaseService, with_cache
 from app.utils.mime_utils import get_content_type
 
@@ -71,7 +63,59 @@ class DocumentService(BaseService):
         # Build response
         documents = []
         scenario_mapping = {}
+        parameter_item_mapping = {}
+        department_mapping: DepartmentMapping = {}
 
+        # Parse mappings from first row (same across all rows)
+        if result:
+            first_row = result[0]
+
+            # Parse scenario mapping from JSONB with type safety
+            if first_row.get("scenario_mapping") and isinstance(
+                first_row["scenario_mapping"], dict
+            ):
+                from app.schemas.base import ScenarioMappingItem
+
+                for sid, sdata in first_row["scenario_mapping"].items():
+                    if isinstance(sdata, dict):
+                        scenario_mapping[sid] = ScenarioMappingItem(
+                            name=sdata.get("name", ""),
+                            description=sdata.get("description", ""),
+                            persona_id=None,
+                            persona_mapping={},
+                            document_mapping={},
+                            parameter_item_mapping={},
+                            parameter_item_ids=[],
+                            document_ids=[],
+                        )
+
+            # Parse parameter_item mapping from JSONB with type safety
+            if first_row.get("parameter_item_mapping") and isinstance(
+                first_row["parameter_item_mapping"], dict
+            ):
+                for pid, pdata in first_row["parameter_item_mapping"].items():
+                    if isinstance(pdata, dict):
+                        parameter_item_mapping[pid] = ParameterItemMappingItem(
+                            name=pdata.get("name", ""),
+                            description=pdata.get("description", ""),
+                            parameter_id=str(pdata["parameter_id"])
+                            if pdata.get("parameter_id")
+                            else "",
+                            parameter_name=pdata.get("parameter_name", ""),
+                        )
+
+            # Parse department mapping from JSONB with type safety
+            if first_row.get("department_mapping") and isinstance(
+                first_row["department_mapping"], dict
+            ):
+                for did, ddata in first_row["department_mapping"].items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
+        # Build document items
         for row in result:
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
             parameter_item_ids = [str(pid) for pid in (row["parameter_item_ids"] or [])]
@@ -96,46 +140,6 @@ class DocumentService(BaseService):
                     parameter_item_ids=parameter_item_ids,
                 )
             )
-
-        # Get scenario mapping with enhanced data
-        if scenario_ids_to_fetch := list(
-            set([sid for d in documents for sid in d.scenario_ids])
-        ):
-            # Create scenario service locally to avoid storing service dependencies
-            from app.services.scenario_service import ScenarioService
-
-            scenario_service = ScenarioService(self.conn)
-            scenario_mapping = await scenario_service.build_enhanced_scenario_mapping(
-                scenario_ids_to_fetch
-            )
-
-        # Build parameter_item_mapping (all items as valid options for now)
-        # TODO: Query document_parameter_items junction table for specific items per document
-        query, params = self.queries.get_parameter_items_for_departments(
-            filters.departmentIds
-        )
-        param_results = await self.conn.fetch(query, *params)
-
-        parameter_item_mapping = {
-            str(row["id"]): ParameterItemMappingItem(
-                name=row["name"],
-                description=row["description"] or "",
-                parameter_id=str(row["parameter_id"]),
-                parameter_name=row["parameter_name"],
-            )
-            for row in param_results
-        }
-
-        # Build department_mapping
-        query, params = self.queries.get_departments_mapping(filters.departmentIds)
-        dept_results = await self.conn.fetch(query, *params)
-
-        department_mapping: DepartmentMapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in dept_results
-        }
 
         return DocumentsListResponse(
             documents=documents,
@@ -818,20 +822,13 @@ class DocumentService(BaseService):
             from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import (
-                ParagraphStyle,  # type: ignore
-                getSampleStyleSheet,
-            )
+            from reportlab.lib.styles import ParagraphStyle  # type: ignore
+            from reportlab.lib.styles import getSampleStyleSheet
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import (
-                Frame,  # type: ignore
-                PageTemplate,
-                Paragraph,
-                SimpleDocTemplate,
-                Spacer,
-                Table,
-                TableStyle,
-            )
+            from reportlab.platypus import Frame  # type: ignore
+            from reportlab.platypus import (PageTemplate, Paragraph,
+                                            SimpleDocTemplate, Spacer, Table,
+                                            TableStyle)
 
             # Create PDF in memory
             buffer = io.BytesIO()

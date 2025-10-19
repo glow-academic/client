@@ -1,232 +1,90 @@
 """
-Tests for app.services.parameter_service
+Tests for parameter_service - list methods.
 """
 
-from unittest.mock import MagicMock
-
+import asyncpg
 import pytest
-from sqlmodel import Session
-
-from app.services.parameter_service import *
-
-
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_parameter_service`")
-class TestGet_Parameter_Service:
-    """Tests for get_parameter_service function."""
-
-    def test_get_parameter_service_success(self):
-        """Test successful get_parameter_service execution."""
-        # TODO: Implement test for get_parameter_service
-        assert False, "IMPLEMENT: Test for get_parameter_service"
-
-    def test_get_parameter_service_error(self):
-        """Test get_parameter_service error handling."""
-        # TODO: Implement error test for get_parameter_service
-        assert False, "IMPLEMENT: Error test for get_parameter_service"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_parameters_list`")
-class TestGet_Parameters_List:
-    """Tests for get_parameters_list function."""
-
-    def test_get_parameters_list_success(self):
-        """Test successful get_parameters_list execution."""
-        # TODO: Implement test for get_parameters_list
-        assert False, "IMPLEMENT: Test for get_parameters_list"
-
-    def test_get_parameters_list_error(self):
-        """Test get_parameters_list error handling."""
-        # TODO: Implement error test for get_parameters_list
-        assert False, "IMPLEMENT: Error test for get_parameters_list"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_parameter_detail`")
-class TestGet_Parameter_Detail:
-    """Tests for get_parameter_detail function."""
-
-    def test_get_parameter_detail_success(self):
-        """Test successful get_parameter_detail execution."""
-        # TODO: Implement test for get_parameter_detail
-        assert False, "IMPLEMENT: Test for get_parameter_detail"
-
-    def test_get_parameter_detail_error(self):
-        """Test get_parameter_detail error handling."""
-        # TODO: Implement error test for get_parameter_detail
-        assert False, "IMPLEMENT: Error test for get_parameter_detail"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_parameter_detail_default`")
-class TestGet_Parameter_Detail_Default:
-    """Tests for get_parameter_detail_default function."""
-
-    def test_get_parameter_detail_default_success(self):
-        """Test successful get_parameter_detail_default execution."""
-        # TODO: Implement test for get_parameter_detail_default
-        assert False, "IMPLEMENT: Test for get_parameter_detail_default"
-
-    def test_get_parameter_detail_default_error(self):
-        """Test get_parameter_detail_default error handling."""
-        # TODO: Implement error test for get_parameter_detail_default
-        assert False, "IMPLEMENT: Error test for get_parameter_detail_default"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_parameter`")
-class TestCreate_Parameter:
-    """Tests for create_parameter function."""
-
-    def test_create_parameter_success(self):
-        """Test successful create_parameter execution."""
-        # TODO: Implement test for create_parameter
-        assert False, "IMPLEMENT: Test for create_parameter"
-
-    def test_create_parameter_error(self):
-        """Test create_parameter error handling."""
-        # TODO: Implement error test for create_parameter
-        assert False, "IMPLEMENT: Error test for create_parameter"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `update_parameter`")
-class TestUpdate_Parameter:
-    """Tests for update_parameter function."""
-
-    def test_update_parameter_success(self):
-        """Test successful update_parameter execution."""
-        # TODO: Implement test for update_parameter
-        assert False, "IMPLEMENT: Test for update_parameter"
-
-    def test_update_parameter_error(self):
-        """Test update_parameter error handling."""
-        # TODO: Implement error test for update_parameter
-        assert False, "IMPLEMENT: Error test for update_parameter"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `duplicate_parameter`")
-class TestDuplicate_Parameter:
-    """Tests for duplicate_parameter function."""
-
-    def test_duplicate_parameter_success(self):
-        """Test successful duplicate_parameter execution."""
-        # TODO: Implement test for duplicate_parameter
-        assert False, "IMPLEMENT: Test for duplicate_parameter"
-
-    def test_duplicate_parameter_error(self):
-        """Test duplicate_parameter error handling."""
-        # TODO: Implement error test for duplicate_parameter
-        assert False, "IMPLEMENT: Error test for duplicate_parameter"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `delete_parameter`")
-class TestDelete_Parameter:
-    """Tests for delete_parameter function."""
-
-    def test_delete_parameter_success(self):
-        """Test successful delete_parameter execution."""
-        # TODO: Implement test for delete_parameter
-        assert False, "IMPLEMENT: Test for delete_parameter"
-
-    def test_delete_parameter_error(self):
-        """Test delete_parameter error handling."""
-        # TODO: Implement error test for delete_parameter
-        assert False, "IMPLEMENT: Error test for delete_parameter"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_parameter_item`")
-class TestCreate_Parameter_Item:
-    """Tests for create_parameter_item function."""
-
-    def test_create_parameter_item_success(self):
-        """Test successful create_parameter_item execution."""
-        # TODO: Implement test for create_parameter_item
-        assert False, "IMPLEMENT: Test for create_parameter_item"
-
-    def test_create_parameter_item_error(self):
-        """Test create_parameter_item error handling."""
-        # TODO: Implement error test for create_parameter_item
-        assert False, "IMPLEMENT: Error test for create_parameter_item"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
+from app.schemas.parameters import ParametersFilters
+from app.services.parameter_service import ParameterService
+
+# --- Helper Functions ---
+
+
+async def get_test_dept_id(db: asyncpg.Connection) -> str:
+    """Get a test department ID from the database."""
+    result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not result:
+        raise ValueError("No departments found in test database")
+    return str(result['id'])
+
+
+async def get_test_profile_id(db: asyncpg.Connection) -> str:
+    """Get a test profile ID from the database."""
+    result = await db.fetchrow("SELECT id FROM profiles LIMIT 1")
+    if not result:
+        raise ValueError("No profiles found in test database")
+    return str(result['id'])
+
+
+# --- Tests ---
+
+
+@pytest.mark.asyncio
+async def test_get_parameters_list(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting parameters list (already optimized)."""
+    # Setup - Get test data IDs
+    dept_id = await get_test_dept_id(db)
+    profile_id = await get_test_profile_id(db)
+
+    # Create filters
+    filters = ParametersFilters(
+        departmentIds=[dept_id],
+        profileId=profile_id
+    )
+
+    # Execute - Call the service method
+    svc = ParameterService(db)
+    result = await svc.get_parameters_list(filters)
+
+    # Assert - Check basic structure
+    assert result is not None
+    assert hasattr(result, 'parameters')
+
+    # Check that parameters is a list (could be empty)
+    assert isinstance(result.parameters, list)
+    assert len(result.parameters) >= 0
+
+    # If parameters exist, check basic fields
+    if result.parameters:
+        parameter = result.parameters[0]
+        assert hasattr(parameter, 'parameter_id')
+        assert hasattr(parameter, 'name')
+        assert hasattr(parameter, 'num_items')
+        assert hasattr(parameter, 'can_edit')
+        assert hasattr(parameter, 'can_delete')
+
+
+@pytest.mark.asyncio
+async def test_get_parameters_list_empty_departments(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting parameters list with no departments returns empty list."""
+    # Setup
+    profile_id = await get_test_profile_id(db)
+
+    # Create filters with empty department list
+    filters = ParametersFilters(
+        departmentIds=[],
+        profileId=profile_id
+    )
+
+    # Execute
+    svc = ParameterService(db)
+    result = await svc.get_parameters_list(filters)
+
+    # Assert - Should return empty list but valid structure
+    assert result is not None
+    assert isinstance(result.parameters, list)
+    assert len(result.parameters) == 0

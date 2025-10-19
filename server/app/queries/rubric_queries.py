@@ -9,7 +9,7 @@ class RubricQueries:
     def list_rubrics(
         self, department_ids: list[str], profile_id: str
     ) -> tuple[str, list[Any]]:
-        """Build query for rubrics list with permissions and hierarchical structure."""
+        """Build query for rubrics list with permissions and embedded hierarchical structure."""
         query = """
         WITH rubric_usage AS (
             SELECT 
@@ -20,65 +20,94 @@ class RubricQueries:
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
+        ),
+        rubric_data AS (
+            SELECT 
+                r.id as rubric_id,
+                r.name,
+                r.description,
+                r.points,
+                r.pass_points as passPoints,
+                COALESCE(ru.usage_count, 0) as usage_count,
+                CASE 
+                    WHEN up.role IN ('admin', 'superadmin') THEN true
+                    ELSE false
+                END as can_edit,
+                CASE 
+                    WHEN up.role IN ('admin', 'superadmin') AND COALESCE(ru.usage_count, 0) = 0 THEN true
+                    ELSE false
+                END as can_delete,
+                true as can_duplicate
+            FROM rubrics r
+            LEFT JOIN rubric_usage ru ON ru.rubric_id = r.id
+            CROSS JOIN user_profile up
+            WHERE r.department_id = ANY($1)
+        ),
+        all_rubric_ids AS (
+            SELECT DISTINCT rubric_id FROM rubric_data
+        ),
+        rubric_groups_structure AS (
+            SELECT 
+                sg.rubric_id,
+                jsonb_object_agg(
+                    sg.id::text,
+                    COALESCE(
+                        (SELECT jsonb_agg(s.id::text ORDER BY s.name)
+                         FROM standards s
+                         WHERE s.standard_group_id = sg.id),
+                        '[]'::jsonb
+                    )
+                ) as groups_structure
+            FROM standard_groups sg
+            WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+            GROUP BY sg.rubric_id
+        ),
+        standard_groups_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    sg.id::text,
+                    jsonb_build_object(
+                        'name', sg.name,
+                        'description', COALESCE(sg.description, ''),
+                        'points', sg.points,
+                        'passPoints', sg.pass_points
+                    )
+                ) FILTER (WHERE sg.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM standard_groups sg
+            WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+        ),
+        standards_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    s.id::text,
+                    jsonb_build_object(
+                        'name', s.name,
+                        'description', COALESCE(s.description, ''),
+                        'points', s.points
+                    )
+                ) FILTER (WHERE s.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM standards s
+            WHERE s.standard_group_id IN (
+                SELECT id FROM standard_groups WHERE rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+            )
         )
         SELECT 
-            r.id as rubric_id,
-            r.name,
-            r.description,
-            r.points,
-            r.pass_points as passPoints,
-            COALESCE(ru.usage_count, 0) as usage_count,
-            CASE 
-                WHEN up.role IN ('admin', 'superadmin') THEN true
-                ELSE false
-            END as can_edit,
-            CASE 
-                WHEN up.role IN ('admin', 'superadmin') AND COALESCE(ru.usage_count, 0) = 0 THEN true
-                ELSE false
-            END as can_delete,
-            true as can_duplicate
-        FROM rubrics r
-        LEFT JOIN rubric_usage ru ON ru.rubric_id = r.id
-        CROSS JOIN user_profile up
-        WHERE r.department_id = ANY($1)
-        ORDER BY r.name
+            rd.*,
+            COALESCE(rgs.groups_structure, '{}'::jsonb) as standard_groups,
+            sgm.mapping as standard_groups_mapping,
+            sm.mapping as standards_mapping
+        FROM rubric_data rd
+        LEFT JOIN rubric_groups_structure rgs ON rgs.rubric_id = rd.rubric_id
+        CROSS JOIN standard_groups_mapping_data sgm
+        CROSS JOIN standards_mapping_data sm
+        ORDER BY rd.name
         """
 
         return (query, [department_ids, profile_id])
-
-    def get_standard_groups_for_rubrics(
-        self, rubric_ids: list[str]
-    ) -> tuple[str, list[Any]]:
-        """Build query to get standard groups for rubrics."""
-        query = """
-        SELECT 
-            id,
-            rubric_id,
-            name,
-            short_name,
-            description,
-            points,
-            pass_points as passPoints
-        FROM standard_groups
-        WHERE rubric_id = ANY($1)
-        ORDER BY rubric_id, name
-        """
-        return (query, [rubric_ids])
-
-    def get_standards_for_groups(self, group_ids: list[str]) -> tuple[str, list[Any]]:
-        """Build query to get standards for standard groups."""
-        query = """
-        SELECT 
-            id,
-            standard_group_id,
-            name,
-            description,
-            points
-        FROM standards
-        WHERE standard_group_id = ANY($1)
-        ORDER BY standard_group_id, name
-        """
-        return (query, [group_ids])
 
     def get_rubric_by_id(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to get rubric by ID."""

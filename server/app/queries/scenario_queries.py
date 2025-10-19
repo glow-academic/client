@@ -205,6 +205,213 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
+    def get_scenario_detail_complete(
+        self, scenario_id: str, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get complete scenario detail with all relationships and mappings in single query.
+
+        Consolidates 16 separate queries into 1 mega-query with JSONB aggregations.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH 
+        user_profile AS (
+            SELECT role FROM profiles WHERE id = $2
+        ),
+        user_departments AS (
+            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
+            FROM profile_departments pd
+            WHERE pd.profile_id = $2
+        ),
+        scenario_core AS (
+            SELECT 
+                s.id,
+                s.name,
+                s.problem_statement,
+                s.active,
+                s.default_scenario,
+                s.generated,
+                s.department_id,
+                st.parent_id::text as parent_scenario_id
+            FROM scenarios s
+            LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
+            WHERE s.id = $1
+        ),
+        scenario_persona AS (
+            SELECT persona_id::text
+            FROM scenario_personas
+            WHERE scenario_id = $1 AND active = true
+            LIMIT 1
+        ),
+        scenario_documents_agg AS (
+            SELECT ARRAY_AGG(document_id::text ORDER BY document_id) as document_ids
+            FROM scenario_documents
+            WHERE scenario_id = $1 AND active = true
+        ),
+        scenario_objectives_data AS (
+            SELECT 
+                COALESCE(ARRAY_AGG(scenario_id::text || '_' || idx::text ORDER BY idx), ARRAY[]::text[]) as objective_ids,
+                COALESCE(jsonb_object_agg(
+                    scenario_id::text || '_' || idx::text,
+                    jsonb_build_object('name', objective, 'description', objective)
+                ) FILTER (WHERE objective IS NOT NULL), '{}'::jsonb) as objective_mapping
+            FROM scenario_objectives
+            WHERE scenario_id = $1
+        ),
+        scenario_simulations_agg AS (
+            SELECT 
+                COALESCE(ARRAY_AGG(DISTINCT simulation_id::text), ARRAY[]::text[]) as simulation_ids,
+                COUNT(DISTINCT CASE WHEN s.active THEN simulation_id END) as active_usage_count
+            FROM simulation_scenarios ss
+            JOIN simulations s ON s.id = ss.simulation_id
+            WHERE ss.scenario_id = $1 AND ss.active = true
+        ),
+        scenario_parameters_data AS (
+            SELECT 
+                COALESCE(jsonb_object_agg(
+                    pi.parameter_id::text,
+                    jsonb_build_object(
+                        'parameter_item_ids', COALESCE((
+                            SELECT jsonb_agg(spi2.parameter_item_id::text ORDER BY spi2.parameter_item_id)
+                            FROM scenario_parameter_items spi2
+                            JOIN parameter_items pi2 ON pi2.id = spi2.parameter_item_id
+                            WHERE spi2.scenario_id = $1 AND pi2.parameter_id = pi.parameter_id AND spi2.active = true
+                        ), '[]'::jsonb),
+                        'valid_parameter_item_ids', COALESCE((
+                            SELECT jsonb_agg(id::text ORDER BY id)
+                            FROM parameter_items
+                            WHERE parameter_id = pi.parameter_id
+                        ), '[]'::jsonb)
+                    )
+                ), '{}'::jsonb) as parameters_json
+            FROM (
+                SELECT DISTINCT pi.parameter_id 
+                FROM scenario_parameter_items spi
+                JOIN parameter_items pi ON pi.id = spi.parameter_item_id
+                WHERE spi.scenario_id = $1 AND spi.active = true
+            ) pi
+        ),
+        all_parameter_item_ids AS (
+            SELECT DISTINCT unnest(ARRAY(
+                SELECT jsonb_array_elements_text(
+                    value->'parameter_item_ids'
+                )::uuid
+                FROM scenario_parameters_data, jsonb_each(parameters_json)
+                WHERE jsonb_typeof(value->'parameter_item_ids') = 'array'
+            )) as param_item_id
+        ),
+        valid_personas_data AS (
+            SELECT 
+                COALESCE(ARRAY_AGG(p.id::text ORDER BY p.name), ARRAY[]::text[]) as valid_persona_ids,
+                COALESCE(jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'name', p.name,
+                        'description', COALESCE(p.description, ''),
+                        'color', p.color,
+                        'icon', p.icon
+                    )
+                ), '{}'::jsonb) as persona_mapping
+            FROM (
+                SELECT DISTINCT ON (p.id) p.*
+                FROM personas p, user_departments ud
+                WHERE p.department_id = ANY(ud.dept_ids)
+            ) p
+        ),
+        valid_documents_data AS (
+            SELECT 
+                COALESCE(ARRAY_AGG(d.id::text ORDER BY d.name), ARRAY[]::text[]) as valid_document_ids,
+                COALESCE(jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object('name', d.name, 'description', COALESCE(d.type::text, ''))
+                ), '{}'::jsonb) as document_mapping
+            FROM (
+                SELECT DISTINCT ON (d.id) d.*
+                FROM documents d, user_departments ud
+                WHERE d.department_id = ANY(ud.dept_ids)
+            ) d
+        ),
+        simulation_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                s.id::text,
+                jsonb_build_object('name', s.title, 'description', COALESCE(s.description, ''))
+            ), '{}'::jsonb) as simulation_mapping
+            FROM simulations s
+            WHERE s.id = ANY(
+                COALESCE((SELECT simulation_ids::uuid[] FROM scenario_simulations_agg), ARRAY[]::uuid[])
+            )
+        ),
+        parameter_mapping_data AS (
+            SELECT 
+                COALESCE(jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''))
+                ), '{}'::jsonb) as parameter_mapping,
+                COALESCE(jsonb_object_agg(
+                    pi.id::text,
+                    jsonb_build_object(
+                        'name', pi.name,
+                        'description', COALESCE(pi.description, ''),
+                        'parameter_id', pi.parameter_id::text,
+                        'parameter_name', p.name
+                    )
+                ), '{}'::jsonb) as parameter_item_mapping
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE pi.id IN (SELECT param_item_id FROM all_parameter_item_ids)
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object('name', d.title, 'description', COALESCE(d.description, ''))
+            ), '{}'::jsonb) as department_mapping
+            FROM departments d, user_departments ud
+            WHERE d.id = ANY(ud.dept_ids)
+        )
+        SELECT 
+            sc.id,
+            sc.name,
+            sc.problem_statement,
+            sc.active,
+            sc.default_scenario,
+            sc.generated,
+            sc.department_id::text,
+            sc.parent_scenario_id,
+            sp.persona_id,
+            COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
+            COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,
+            COALESCE(ssa.simulation_ids, ARRAY[]::text[]) as simulation_ids,
+            COALESCE(spd.parameters_json, '{}'::jsonb) as parameters_json,
+            COALESCE(vpd.valid_persona_ids, ARRAY[]::text[]) as valid_persona_ids,
+            COALESCE(vdd.valid_document_ids, ARRAY[]::text[]) as valid_document_ids,
+            (SELECT dept_ids FROM user_departments) as valid_department_ids,
+            COALESCE(ssa.active_usage_count, 0) as active_usage_count,
+            up.role as user_role,
+            sod.objective_mapping,
+            vpd.persona_mapping,
+            vdd.document_mapping,
+            smd.simulation_mapping,
+            pmd.parameter_mapping,
+            pmd.parameter_item_mapping,
+            dmd.department_mapping
+        FROM scenario_core sc
+        CROSS JOIN user_profile up
+        LEFT JOIN scenario_persona sp ON true
+        LEFT JOIN scenario_documents_agg sd ON true
+        LEFT JOIN scenario_objectives_data sod ON true
+        LEFT JOIN scenario_simulations_agg ssa ON true
+        LEFT JOIN scenario_parameters_data spd ON true
+        CROSS JOIN valid_personas_data vpd
+        CROSS JOIN valid_documents_data vdd
+        CROSS JOIN simulation_mapping_data smd
+        CROSS JOIN parameter_mapping_data pmd
+        CROSS JOIN department_mapping_data dmd
+        """
+        return (query, [scenario_id, profile_id])
+
     def get_scenario_persona(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's persona."""
         query = """

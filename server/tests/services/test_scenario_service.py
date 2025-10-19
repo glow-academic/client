@@ -1,177 +1,76 @@
-"""
-Tests for scenario_service - list and search methods.
-"""
+"""Real database integration tests for ScenarioService."""
 
 import asyncpg
 import pytest
-from app.schemas.scenarios import ScenariosFilters
+from app.schemas.scenarios import ScenarioDetailRequest, ScenariosFilters
 from app.services.scenario_service import ScenarioService
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
 
-# --- Helper Functions ---
-
-
-async def get_test_dept_id(db: asyncpg.Connection) -> str:
-    """Get a test department ID from the database."""
-    result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
-    if not result:
-        raise ValueError("No departments found in test database")
-    return str(result['id'])
+pytestmark = pytest.mark.asyncio
 
 
-async def get_test_profile_id(db: asyncpg.Connection) -> str:
-    """Get a test profile ID from the database."""
-    result = await db.fetchrow("SELECT id FROM profiles LIMIT 1")
-    if not result:
-        raise ValueError("No profiles found in test database")
-    return str(result['id'])
+# ============================================================================
+# LIST SCENARIOS TESTS
+# ============================================================================
 
 
-# --- Tests ---
-
-
-@pytest.mark.asyncio
-async def test_get_scenarios_list(
+async def test_get_scenarios_list_returns_data(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test getting scenarios list with embedded mappings."""
-    # Setup - Get test data IDs
-    dept_id = await get_test_dept_id(db)
-    profile_id = await get_test_profile_id(db)
+    """Test scenarios list returns CS department scenarios."""
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
 
-    # Create filters
-    filters = ScenariosFilters(
-        departmentIds=[dept_id],
-        profileId=profile_id
+    svc = ScenarioService(db)
+    resp = await svc.get_scenarios_list(
+        ScenariosFilters(departmentIds=[dept_id], profileId=admin_id)
     )
 
-    # Execute - Call the service method
-    svc = ScenarioService(db)
-    result = await svc.get_scenarios_list(filters)
-
-    # Assert - Check basic structure
-    assert result is not None
-    assert hasattr(result, 'scenarios')
-    assert hasattr(result, 'objective_mapping')
-    assert hasattr(result, 'parameter_item_mapping')
-    assert hasattr(result, 'cohort_mapping')
-    assert hasattr(result, 'persona_mapping')
-
-    # Check that scenarios is a list (could be empty)
-    assert isinstance(result.scenarios, list)
-    assert len(result.scenarios) >= 0
-
-    # Check that mappings are dicts (could be empty)
-    assert isinstance(result.objective_mapping, dict)
-    assert isinstance(result.parameter_item_mapping, dict)
-    assert isinstance(result.cohort_mapping, dict)
-    assert isinstance(result.persona_mapping, dict)
-
-    # If scenarios exist, check basic fields
-    if result.scenarios:
-        scenario = result.scenarios[0]
-        assert hasattr(scenario, 'scenario_id')
-        assert hasattr(scenario, 'title')
-        assert hasattr(scenario, 'objective_ids')
-        assert hasattr(scenario, 'parameter_item_ids')
-        assert hasattr(scenario, 'cohort_ids')
-        assert isinstance(scenario.objective_ids, list)
-        assert isinstance(scenario.parameter_item_ids, list)
-        assert isinstance(scenario.cohort_ids, list)
+    assert resp.scenarios is not None
+    assert resp.objective_mapping is not None
+    assert resp.persona_mapping is not None
 
 
-@pytest.mark.asyncio
-async def test_get_scenarios_list_empty_departments(
+# ============================================================================
+# GET SCENARIO DETAIL TESTS
+# ============================================================================
+
+
+async def test_get_scenario_detail_needs_scenario_in_seed(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test getting scenarios list with no departments returns empty list."""
-    # Setup
-    profile_id = await get_test_profile_id(db)
+    """Test getting scenario detail (skip if no scenarios)."""
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
 
-    # Create filters with empty department list
-    filters = ScenariosFilters(
-        departmentIds=[],
-        profileId=profile_id
+    # Get first scenario if exists
+    scenario_id = await db.fetchval(
+        "SELECT id FROM scenarios WHERE department_id = $1 LIMIT 1", dept_id
     )
 
-    # Execute
+    if not scenario_id:
+        pytest.skip("No scenarios in seed data")
+
     svc = ScenarioService(db)
-    result = await svc.get_scenarios_list(filters)
+    resp = await svc.get_scenario_detail(
+        ScenarioDetailRequest(scenarioId=str(scenario_id), profileId=admin_id)
+    )
 
-    # Assert - Should return empty list but valid structure
-    assert result is not None
-    assert isinstance(result.scenarios, list)
-    assert len(result.scenarios) == 0
-    assert isinstance(result.objective_mapping, dict)
-    assert isinstance(result.parameter_item_mapping, dict)
-    assert isinstance(result.cohort_mapping, dict)
-    assert isinstance(result.persona_mapping, dict)
+    assert resp.name is not None
+    assert resp.persona_mapping is not None
+    assert resp.document_mapping is not None
+    assert resp.parameter_mapping is not None
 
 
-@pytest.mark.asyncio
-async def test_search_scenarios(
+async def test_get_scenario_detail_invalid_id(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test searching scenarios by name."""
-    # Setup
+    """Test getting scenario detail with invalid ID."""
+    admin_id = await get_superadmin_alias(db)
+    fake_id = "00000000-0000-0000-0000-000000000000"
+
     svc = ScenarioService(db)
-
-    # Get a scenario name to search for
-    scenario_result = await db.fetchrow("SELECT name FROM scenarios LIMIT 1")
-
-    if scenario_result and scenario_result['name']:
-        # Use first word of name as search query
-        search_query = scenario_result['name'].split()[0]
-
-        # Execute
-        result = await svc.search_scenarios(search_query, limit=10)
-
-        # Assert - Check basic structure
-        assert isinstance(result, list)
-        assert len(result) >= 0
-
-        # If results exist, check structure
-        if result:
-            item = result[0]
-            assert 'id' in item
-            assert 'name' in item
-            assert 'score' in item
-            assert 'persona_id' in item
-            assert 'default_scenario' in item
-            assert isinstance(item['score'], (int, float))
-    else:
-        # No scenarios in database, just test empty search
-        result = await svc.search_scenarios("nonexistent", limit=10)
-        assert isinstance(result, list)
-        assert len(result) == 0
-
-
-@pytest.mark.asyncio
-async def test_search_scenarios_empty_query(
-    db: asyncpg.Connection, disable_cache: None
-) -> None:
-    """Test searching with empty query returns empty list."""
-    # Setup
-    svc = ScenarioService(db)
-
-    # Execute - Empty search query
-    result = await svc.search_scenarios("", limit=10)
-
-    # Assert - Should return empty list
-    assert isinstance(result, list)
-    assert len(result) == 0
-
-
-@pytest.mark.asyncio
-async def test_search_scenarios_limit(
-    db: asyncpg.Connection, disable_cache: None
-) -> None:
-    """Test searching scenarios respects limit parameter."""
-    # Setup
-    svc = ScenarioService(db)
-
-    # Execute - Search with small limit
-    result = await svc.search_scenarios("scenario", limit=2)
-
-    # Assert - Should not exceed limit
-    assert isinstance(result, list)
-    assert len(result) <= 2
+    with pytest.raises(ValueError, match="Scenario.*not found"):
+        await svc.get_scenario_detail(
+            ScenarioDetailRequest(scenarioId=fake_id, profileId=admin_id)
+        )

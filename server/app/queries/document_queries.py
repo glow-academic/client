@@ -9,8 +9,7 @@ class DocumentQueries:
     def list_documents(
         self, department_ids: list[str], profile_id: str
     ) -> tuple[str, list[Any]]:
-        """Build query for documents list with permissions and relationships."""
-        # TODO: Create document_parameter_items junction table and query specific items per document
+        """Build query for documents list with permissions and embedded mappings."""
         query = """
         WITH document_scenarios AS (
             SELECT 
@@ -38,6 +37,62 @@ class DocumentQueries:
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
+        ),
+        all_scenario_ids AS (
+            SELECT DISTINCT unnest(scenario_ids) as scenario_id
+            FROM document_data
+        ),
+        scenario_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    s.id::text,
+                    jsonb_build_object(
+                        'name', s.name,
+                        'description', COALESCE(s.problem_statement, ''),
+                        'active', s.active,
+                        'persona_id', NULL,
+                        'persona_mapping', '{}'::jsonb,
+                        'document_mapping', '{}'::jsonb,
+                        'parameter_item_mapping', '{}'::jsonb,
+                        'parameter_item_ids', ARRAY[]::text[],
+                        'document_ids', ARRAY[]::text[]
+                    )
+                ) FILTER (WHERE s.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM all_scenario_ids asi
+            LEFT JOIN scenarios s ON s.id = asi.scenario_id
+        ),
+        parameter_item_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    pi.id::text,
+                    jsonb_build_object(
+                        'name', pi.name,
+                        'description', COALESCE(pi.description, ''),
+                        'parameter_id', pi.parameter_id::text,
+                        'parameter_name', p.name
+                    )
+                ) FILTER (WHERE pi.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = ANY($1)
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id = ANY($1)
         )
         SELECT 
             dd.*,
@@ -49,9 +104,15 @@ class DocumentQueries:
             CASE 
                 WHEN up.role IN ('admin', 'superadmin') THEN true
                 ELSE false
-            END as can_delete
+            END as can_delete,
+            sm.mapping as scenario_mapping,
+            pim.mapping as parameter_item_mapping,
+            dm.mapping as department_mapping
         FROM document_data dd
         CROSS JOIN user_profile up
+        CROSS JOIN scenario_mapping_data sm
+        CROSS JOIN parameter_item_mapping_data pim
+        CROSS JOIN department_mapping_data dm
         ORDER BY dd.updated_at DESC
         """
 
@@ -59,11 +120,6 @@ class DocumentQueries:
 
     # get_tag_mapping removed - simulation_tags table dropped
     # Use get_parameter_item_mapping instead
-
-    def get_scenario_mapping(self, scenario_ids: list[str]) -> tuple[str, list[Any]]:
-        """Build query for scenario mapping."""
-        query = "SELECT id, name FROM scenarios WHERE id = ANY($1)"
-        return (query, [scenario_ids])
 
     def get_document_by_id(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to get document by ID."""
