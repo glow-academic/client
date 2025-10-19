@@ -15,8 +15,13 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { LogItem } from "@/lib/api/v2/schemas/logs";
+import { formatTimestamp, getLogLevelVariant } from "@/utils/logs/log-utils";
+import { FileText } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { LogsDataTableToolbar } from "./LogsDataTableToolbar";
 
@@ -69,59 +74,220 @@ export function LogsDataTable({
     { id: "created_at", desc: true }, // Default to descending order by date
   ]);
 
-  // Define columns inline with proper JSONB access
+  // Define columns with rich visual styling
   const columns = React.useMemo<ColumnDef<LogItem>[]>(
     () => [
       {
+        accessorKey: "created_at",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Created At" />
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm">
+            {formatTimestamp(row.getValue("created_at"))}
+          </div>
+        ),
+        enableSorting: true,
+        filterFn: (row, id, value) => {
+          if (!value || (!value.from && !value.to)) return true;
+          const created = row.getValue(id) as string | null;
+          if (!created) return false;
+          const createdMs = new Date(created).getTime();
+          const fromMs = value?.from
+            ? new Date(value.from).getTime()
+            : undefined;
+          const toMs = value?.to ? new Date(value.to).getTime() : undefined;
+          if (fromMs && createdMs < fromMs) return false;
+          if (toMs && createdMs > toMs) return false;
+          return true;
+        },
+      },
+      {
         accessorKey: "log_id",
-        header: "ID",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="ID" />
+        ),
+        cell: ({ row }) => (
+          <div className="font-medium">{row.getValue("log_id")}</div>
+        ),
+        enableSorting: true,
       },
       {
         accessorKey: "event",
-        header: "Event",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Event" />
+        ),
+        cell: ({ row }) => {
+          const event = row.getValue("event") as string;
+          return (
+            <span className="truncate max-w-xs inline-block">{event}</span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const event = (row.getValue(id) as string) ?? "";
+          return value.includes(event);
+        },
+        enableSorting: true,
       },
       {
         accessorKey: "level",
-        header: "Level",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Level" />
+        ),
+        cell: ({ row }) => {
+          const level = row.getValue("level") as string;
+          return (
+            <Badge variant={getLogLevelVariant(level)}>
+              {level.toUpperCase()}
+            </Badge>
+          );
+        },
+        filterFn: (row, id, value) => {
+          return value.includes(row.getValue(id));
+        },
+        enableSorting: true,
       },
       {
         accessorKey: "actor_name",
-        header: "Actor",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Actor" />
+        ),
+        cell: ({ row }) => {
+          const actorName = row.getValue("actor_name") as string | null;
+          return actorName ? (
+            <span className="font-mono text-xs">{actorName}</span>
+          ) : (
+            <span className="text-muted-foreground">N/A</span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
       },
       {
         id: "context_component",
-        accessorFn: (row) => row.context?.component || "",
-        header: "Component",
+        accessorFn: (row) => row.context?.component || null,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Component" />
+        ),
+        cell: ({ row }) => {
+          const v =
+            (row.getValue("context_component") as string | null) ?? null;
+          return v ? v : <span className="text-muted-foreground">N/A</span>;
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
       },
       {
         id: "context_function",
-        accessorFn: (row) => row.context?.function || "",
-        header: "Function",
+        accessorFn: (row) => row.context?.function || null,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Function" />
+        ),
+        cell: ({ row }) => {
+          const v = (row.getValue("context_function") as string | null) ?? null;
+          return v ? v : <span className="text-muted-foreground">N/A</span>;
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
       },
       {
         id: "context_provider",
-        accessorFn: (row) => row.context?.provider || "",
-        header: "Provider",
+        accessorFn: (row) => row.context?.provider || null,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Provider" />
+        ),
+        cell: ({ row }) => {
+          const provider =
+            (row.getValue("context_provider") as string | null) ?? null;
+          return provider ? (
+            provider
+          ) : (
+            <span className="text-muted-foreground">N/A</span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
       },
       {
         id: "context_model",
-        accessorFn: (row) => row.context?.model || "",
-        header: "Model",
+        accessorFn: (row) => row.context?.model || null,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Model" />
+        ),
+        cell: ({ row }) => {
+          const model =
+            (row.getValue("context_model") as string | null) ?? null;
+          return model ? (
+            model
+          ) : (
+            <span className="text-muted-foreground">N/A</span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
       },
       {
         accessorKey: "correlation_id",
-        header: "Correlation ID",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Correlation" />
+        ),
+        cell: ({ row }) => {
+          const corr = (row.getValue("correlation_id") as string | null) ?? "";
+          return (
+            <span className="font-mono text-xs truncate inline-block max-w-[160px]">
+              {corr}
+            </span>
+          );
+        },
+        enableSorting: true,
       },
       {
-        accessorKey: "created_at",
-        header: "Created At",
+        id: "context",
+        accessorKey: "context",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Context" />
+        ),
         cell: ({ row }) => {
-          const date = row.getValue("created_at") as string;
-          return new Date(date).toLocaleString();
+          const context = row.getValue("context");
+          return context ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onViewLog(row.original)}
+              className="h-8 px-2"
+            >
+              <FileText className="h-3 w-3 mr-1" />
+              View JSON
+            </Button>
+          ) : (
+            <span className="text-muted-foreground">None</span>
+          );
         },
+        enableSorting: false,
       },
     ],
-    []
+    [onViewLog]
   );
 
   const table = useReactTable({

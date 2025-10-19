@@ -21,7 +21,7 @@ import {
   DialogContent,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useLogsList, useLogger } from "@/lib/api/v2/hooks/logs";
+import { useLogger, useLogsList } from "@/lib/api/v2/hooks/logs";
 
 export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<LogItem | null>(null);
@@ -80,9 +80,9 @@ export default function Logs() {
   // Filter options using V2 typed JSONB fields
   const levelOptions = useMemo(
     () => [
-      { value: "info", label: "Info" },
-      { value: "warn", label: "Warn" },
       { value: "error", label: "Error" },
+      { value: "warn", label: "Warn" },
+      { value: "info", label: "Info" },
       { value: "debug", label: "Debug" },
     ],
     []
