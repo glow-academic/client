@@ -6,7 +6,8 @@ from typing import Any
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.queries.persona_queries import PersonaQueries
-from app.schemas.base import DepartmentMappingItem, ModelMappingItem
+from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
+                              ReasoningMappingItem)
 from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   DebugInfoItem, DeletePersonaRequest,
                                   DeletePersonaResponse,
@@ -330,6 +331,31 @@ class PersonaService(BaseService):
 
         reasoning_options = ["minimal", "low", "medium", "high"]
 
+        # Build reasoning_mapping following the reasoning_effort enum
+        # Matches database enum: ('none', 'minimal', 'low', 'medium', 'high')
+        reasoning_mapping = {
+            "none": ReasoningMappingItem(
+                name="None",
+                description="No extended reasoning"
+            ),
+            "minimal": ReasoningMappingItem(
+                name="Minimal",
+                description="Basic reasoning for straightforward tasks"
+            ),
+            "low": ReasoningMappingItem(
+                name="Low",
+                description="Light reasoning for simple problem-solving"
+            ),
+            "medium": ReasoningMappingItem(
+                name="Medium",
+                description="Balanced reasoning for moderate complexity"
+            ),
+            "high": ReasoningMappingItem(
+                name="High",
+                description="Deep reasoning for complex, multi-step problems"
+            ),
+        }
+
         return PersonaDetailResponse(
             # Basic fields
             name=persona["name"],
@@ -360,6 +386,7 @@ class PersonaService(BaseService):
             temperature_upper=2.0,
             # Mappings
             model_mapping=model_mapping,
+            reasoning_mapping=reasoning_mapping,
             department_mapping=department_mapping,
             # Debug info
             debug_info=debug_info,

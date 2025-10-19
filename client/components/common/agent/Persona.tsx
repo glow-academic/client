@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { useProfile } from "@/contexts/profile-context";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { ModelPicker } from "@/components/common/forms/ModelPicker";
+import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -29,13 +31,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -133,15 +128,6 @@ export default function Persona({
 
   const { mutate: createPersona } = useCreatePersonaV2();
   const { mutate: updatePersona } = useUpdatePersonaV2();
-
-  // Extract data from v2 response
-  const modelOptions = useMemo(() => {
-    if (!personaData?.model_mapping) return [];
-    return Object.entries(personaData.model_mapping).map(([id, info]) => ({
-      id,
-      name: info.name,
-    }));
-  }, [personaData?.model_mapping]);
 
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
@@ -654,28 +640,20 @@ export default function Persona({
               <div className="space-y-2">
                 <Label htmlFor="modelId">Text Model *</Label>
                 {formData?.modelId !== undefined && !isLoading ? (
-                  <Select
-                    value={formData?.modelId}
-                    onValueChange={(value) =>
+                  <ModelPicker
+                    mapping={personaData?.model_mapping || {}}
+                    validIds={personaData?.valid_model_ids || []}
+                    selectedIds={formData?.modelId ? [formData.modelId] : []}
+                    onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,
-                        modelId: value,
+                        modelId: ids[0] || "",
                       }))
                     }
-                    required
+                    placeholder="Select a model"
                     disabled={isReadonly}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelOptions.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    multiSelect={false}
+                  />
                 ) : (
                   <Skeleton className="h-10 w-full" />
                 )}
@@ -685,12 +663,16 @@ export default function Persona({
               <div className="space-y-2">
                 <Label htmlFor="reasoning">Reasoning Effort</Label>
                 {formData?.reasoning !== undefined && !isLoading ? (
-                  <Select
-                    value={formData?.reasoning || "none"}
-                    onValueChange={(value) =>
+                  <ReasoningPicker
+                    mapping={personaData?.reasoning_mapping || {}}
+                    validIds={["none", "minimal", "low", "medium", "high"]}
+                    selectedIds={
+                      formData?.reasoning ? [formData.reasoning] : ["none"]
+                    }
+                    onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,
-                        reasoning: value as
+                        reasoning: (ids[0] || "none") as
                           | "none"
                           | "minimal"
                           | "low"
@@ -698,20 +680,10 @@ export default function Persona({
                           | "high",
                       }))
                     }
+                    placeholder="Select reasoning effort"
                     disabled={isReadonly}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select reasoning effort" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {(personaData?.reasoning_options || []).map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option.charAt(0).toUpperCase() + option.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    multiSelect={false}
+                  />
                 ) : (
                   <Skeleton className="h-10 w-full" />
                 )}

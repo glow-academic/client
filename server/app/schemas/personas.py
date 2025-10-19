@@ -3,7 +3,8 @@
 
 from pydantic import BaseModel
 
-from .base import DepartmentMapping, ModelMapping, ScenarioMapping
+from .base import (DepartmentMapping, ModelMapping, ReasoningMapping,
+                   ScenarioMapping)
 
 
 class PersonasFilters(BaseModel):
@@ -117,6 +118,7 @@ class PersonaDetailResponse(BaseModel):
 
     # Mappings
     model_mapping: ModelMapping
+    reasoning_mapping: ReasoningMapping
     department_mapping: DepartmentMapping
 
     # Debug info

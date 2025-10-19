@@ -109,6 +109,12 @@ class ModelMappingItem(MappingItem):
     pass
 
 
+class ReasoningMappingItem(MappingItem):
+    """Reasoning mapping item - extends MappingItem"""
+
+    pass
+
+
 class ObjectiveMappingItem(MappingItem):
     """Objective mapping item - extends MappingItem"""
 
@@ -147,6 +153,7 @@ AgentMapping = dict[str, AgentMappingItem]
 ProviderMapping = dict[str, ProviderMappingItem]
 ScenarioMapping = dict[str, ScenarioMappingItem]
 ModelMapping = dict[str, ModelMappingItem]
+ReasoningMapping = dict[str, ReasoningMappingItem]
 ObjectiveMapping = dict[str, ObjectiveMappingItem]
 ProfileMapping = dict[str, ProfileMappingItem]
 StandardGroupsMapping = dict[str, StandardGroupMappingItem]

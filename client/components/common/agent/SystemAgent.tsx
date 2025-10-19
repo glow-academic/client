@@ -35,10 +35,10 @@ import {
   useCreateAgent as useCreateAgentV2,
   useUpdateAgent as useUpdateAgentV2,
 } from "@/lib/api/v2/hooks/agents";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { Bug, Eye } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 interface SystemAgentFormData {
   name?: string;
@@ -326,11 +326,13 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               )}
             </div>
 
-            <div className={`grid gap-4 grid-cols-1`}>
-              {formData?.modelId !== undefined && !isLoading ? (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="modelId">Text Model *</Label>
+            {/* Text Model, Reasoning Effort, and Temperature - 3 Column Grid */}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+              {/* Text Model */}
+              <div className="space-y-2">
+                <Label htmlFor="modelId">Text Model *</Label>
+                {formData?.modelId !== undefined && !isLoading ? (
+                  <>
                     <Select
                       value={formData?.modelId}
                       onValueChange={(value) =>
@@ -356,79 +358,72 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                         {errors.modelId}
                       </p>
                     )}
-                  </div>
-                </>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
+                  </>
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
 
-            <div className={`grid gap-4 grid-cols-1`}>
-              {formData?.reasoning !== undefined && !isLoading ? (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="reasoning">Reasoning Effort</Label>
-                    <Select
-                      value={formData?.reasoning || "none"}
-                      onValueChange={(value) =>
-                        handleInputChange(
-                          "reasoning",
-                          value as
-                            | "none"
-                            | "minimal"
-                            | "low"
-                            | "medium"
-                            | "high"
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select reasoning effort" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {reasoningOptions.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option.charAt(0).toUpperCase() + option.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="temperature">
-                Temperature:{" "}
-                {formData?.temperature !== undefined
-                  ? formData.temperature.toFixed(2)
-                  : "0.00"}
-              </Label>
-              {formData?.temperature !== undefined && !isLoading ? (
-                <>
-                  <Slider
-                    id="temperature"
-                    data-testid="temperature-slider"
-                    min={temperatureLower}
-                    max={temperatureUpper}
-                    step={0.01}
-                    value={[formData?.temperature || 0]}
+              {/* Reasoning Effort */}
+              <div className="space-y-2">
+                <Label htmlFor="reasoning">Reasoning Effort</Label>
+                {formData?.reasoning !== undefined && !isLoading ? (
+                  <Select
+                    value={formData?.reasoning || "none"}
                     onValueChange={(value) =>
-                      handleInputChange("temperature", value[0] || 0)
+                      handleInputChange(
+                        "reasoning",
+                        value as "none" | "minimal" | "low" | "medium" | "high"
+                      )
                     }
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Deterministic</span>
-                    <span>Creative</span>
-                  </div>
-                </>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reasoning effort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {reasoningOptions.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option.charAt(0).toUpperCase() + option.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+
+              {/* Temperature */}
+              <div className="space-y-2">
+                <Label htmlFor="temperature">
+                  Temperature:{" "}
+                  {formData?.temperature !== undefined
+                    ? formData.temperature.toFixed(2)
+                    : "0.00"}
+                </Label>
+                {formData?.temperature !== undefined && !isLoading ? (
+                  <>
+                    <Slider
+                      id="temperature"
+                      data-testid="temperature-slider"
+                      min={temperatureLower}
+                      max={temperatureUpper}
+                      step={0.01}
+                      value={[formData?.temperature || 0]}
+                      onValueChange={(value) =>
+                        handleInputChange("temperature", value[0] || 0)
+                      }
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Deterministic</span>
+                      <span>Creative</span>
+                    </div>
+                  </>
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

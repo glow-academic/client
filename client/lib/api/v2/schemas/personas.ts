@@ -7,6 +7,7 @@ import { z } from "zod";
 import {
   DepartmentMappingSchema,
   ModelMappingSchema,
+  ReasoningMappingSchema,
   ScenarioMappingSchema,
 } from "./base";
 
@@ -147,6 +148,7 @@ export const PersonaDetailResponseSchema = z.object({
 
   // Mappings (using centralized types)
   model_mapping: ModelMappingSchema,
+  reasoning_mapping: ReasoningMappingSchema,
   department_mapping: DepartmentMappingSchema,
 
   // Debug info

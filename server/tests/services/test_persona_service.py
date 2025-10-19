@@ -199,6 +199,8 @@ async def test_get_persona_detail_optimized(
     # Check mappings exist
     assert result.model_mapping is not None
     assert isinstance(result.model_mapping, dict)
+    assert result.reasoning_mapping is not None
+    assert isinstance(result.reasoning_mapping, dict)
     assert result.department_mapping is not None
     assert isinstance(result.department_mapping, dict)
     
@@ -223,6 +225,15 @@ async def test_get_persona_detail_optimized(
         dept_item = result.department_mapping[result.department_id]
         assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
         assert hasattr(dept_item, 'description'), "Department mapping should have description field"
+    
+    # CRITICAL: Verify reasoning_mapping contains all expected levels
+    assert len(result.reasoning_mapping) == 5, "reasoning_mapping should have 5 levels (none, minimal, low, medium, high)"
+    expected_reasoning_levels = ["none", "minimal", "low", "medium", "high"]
+    for level in expected_reasoning_levels:
+        assert level in result.reasoning_mapping, f"Reasoning level '{level}' should be in reasoning_mapping"
+        reasoning_item = result.reasoning_mapping[level]
+        assert hasattr(reasoning_item, 'name') and len(reasoning_item.name) > 0, f"Reasoning level '{level}' should have valid name"
+        assert hasattr(reasoning_item, 'description') and len(reasoning_item.description) > 0, f"Reasoning level '{level}' should have valid description"
     
     # Check permission flags exist
     assert isinstance(result.can_edit, bool)

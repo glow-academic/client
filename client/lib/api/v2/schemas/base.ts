@@ -215,6 +215,7 @@ export const ScenarioMappingSchema = z.record(
   ScenarioMappingItemSchema
 );
 export const ModelMappingSchema = MappingSchema;
+export const ReasoningMappingSchema = MappingSchema;
 export const ParameterItemMappingSchema = z.record(
   z.string(),
   ParameterItemMappingItemSchema
@@ -239,6 +240,7 @@ export type AgentMapping = z.infer<typeof AgentMappingSchema>;
 export type ProviderMapping = z.infer<typeof ProviderMappingSchema>;
 export type ScenarioMapping = z.infer<typeof ScenarioMappingSchema>;
 export type ModelMapping = z.infer<typeof ModelMappingSchema>;
+export type ReasoningMapping = z.infer<typeof ReasoningMappingSchema>;
 export type ParameterItemMapping = z.infer<typeof ParameterItemMappingSchema>;
 export type ObjectiveMapping = z.infer<typeof ObjectiveMappingSchema>;
 export type ProfileMapping = z.infer<typeof ProfileMappingSchema>;
