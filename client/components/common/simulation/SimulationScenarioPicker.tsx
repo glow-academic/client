@@ -9,7 +9,15 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown, Filter, Play, X } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  FileText,
+  Filter,
+  Play,
+  User,
+  X,
+} from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -42,26 +50,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type {
-  MappingItem,
-  ParameterItemMappingItem,
-} from "@/lib/api/v2/schemas/base";
+import type { ScenarioMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 
-// Extended mapping item for scenarios with parameter item IDs
-export interface ScenarioMappingItemExt extends MappingItem {
-  parameterItemIds?: string[];
-  updatedAt?: string;
-}
+// Filter key constants
+const NO_PERSONA_KEY = "__no_persona__";
+const NO_DOCUMENTS_KEY = "__no_documents__";
+const NO_PARAMS_KEY = "__no_params__";
 
 export interface SimulationScenarioPickerProps<
-  T extends ScenarioMappingItemExt = ScenarioMappingItemExt,
+  T extends ScenarioMappingItem = ScenarioMappingItem,
 > extends PopoverProps {
   scenarioMapping: Record<string, T>;
   validScenarioIds: string[];
   selectedScenarioIds: string[];
   onSelect: (ids: string[]) => void;
-  parameterItemMapping: Record<string, ParameterItemMappingItem>;
   label?: string;
   placeholder?: string;
   description?: string;
@@ -73,13 +76,12 @@ export interface SimulationScenarioPickerProps<
 }
 
 export function SimulationScenarioPicker<
-  T extends ScenarioMappingItemExt = ScenarioMappingItemExt,
+  T extends ScenarioMappingItem = ScenarioMappingItem,
 >({
   scenarioMapping,
   validScenarioIds,
   selectedScenarioIds,
   onSelect,
-  parameterItemMapping,
   label = "Scenarios",
   placeholder = "Select scenarios...",
   description = "Select one or more scenarios to assign to the simulation.",
@@ -90,6 +92,10 @@ export function SimulationScenarioPicker<
 }: SimulationScenarioPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
   const [filterPopoverOpen, setFilterPopoverOpen] = React.useState(false);
+  const [filterPersonaIds, setFilterPersonaIds] = React.useState<string[]>([]);
+  const [filterDocumentIds, setFilterDocumentIds] = React.useState<string[]>(
+    []
+  );
   const [filterParameterItemIds, setFilterParameterItemIds] = React.useState<
     string[]
   >([]);
@@ -101,42 +107,216 @@ export function SimulationScenarioPicker<
       ...scenarioMapping[id],
     }));
 
-    // Sort by updatedAt desc, then name
-    return scenarios.sort((a, b) => {
-      const ad = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-      const bd = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-      if (bd !== ad) return bd - ad;
-      return (a.name || "").localeCompare(b.name || "");
-    });
+    // Sort by name
+    return scenarios.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   }, [validScenarioIds, scenarioMapping]);
+
+  // Build persona filter options
+  const personaOptions = React.useMemo(() => {
+    const personaMap = new Map<
+      string,
+      { name: string; color: string; icon: string; count: number }
+    >();
+    let hasNoPersona = false;
+
+    baseScenarios.forEach((sc) => {
+      if (!sc.persona_id) {
+        hasNoPersona = true;
+      } else {
+        const persona = Object.entries(sc.persona_mapping || {}).find(
+          ([id]) => id === sc.persona_id
+        )?.[1];
+        if (persona) {
+          const existing = personaMap.get(sc.persona_id);
+          personaMap.set(sc.persona_id, {
+            name: persona.name,
+            color: persona.color,
+            icon: persona.icon,
+            count: (existing?.count || 0) + 1,
+          });
+        }
+      }
+    });
+
+    const options = Array.from(personaMap.entries()).map(([id, data]) => ({
+      id,
+      ...data,
+    }));
+
+    // Sort by count desc, then name
+    options.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+    if (hasNoPersona) {
+      options.push({
+        id: NO_PERSONA_KEY,
+        name: "No Persona",
+        color: "#gray",
+        icon: "user-x",
+        count: baseScenarios.filter((sc) => !sc.persona_id).length,
+      });
+    }
+
+    return options;
+  }, [baseScenarios]);
+
+  // Build document filter options
+  const documentOptions = React.useMemo(() => {
+    const documentMap = new Map<
+      string,
+      { name: string; description: string; count: number }
+    >();
+    let hasNoDocuments = false;
+
+    baseScenarios.forEach((sc) => {
+      if (!sc.document_ids || sc.document_ids.length === 0) {
+        hasNoDocuments = true;
+      } else {
+        sc.document_ids.forEach((docId) => {
+          const doc = sc.document_mapping?.[docId];
+          if (doc) {
+            const existing = documentMap.get(docId);
+            documentMap.set(docId, {
+              name: doc.name,
+              description: doc.description,
+              count: (existing?.count || 0) + 1,
+            });
+          }
+        });
+      }
+    });
+
+    const options = Array.from(documentMap.entries()).map(([id, data]) => ({
+      id,
+      ...data,
+    }));
+
+    // Sort by count desc, then name
+    options.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+    if (hasNoDocuments) {
+      options.push({
+        id: NO_DOCUMENTS_KEY,
+        name: "No Documents",
+        description: "",
+        count: baseScenarios.filter(
+          (sc) => !sc.document_ids || sc.document_ids.length === 0
+        ).length,
+      });
+    }
+
+    return options;
+  }, [baseScenarios]);
 
   // Build frequency-ranked parameter item options across base scenarios
   const parameterItemOptions = React.useMemo(() => {
-    const countMap = new Map<string, number>();
-    baseScenarios.forEach((sc) => {
-      (sc.parameterItemIds || []).forEach((id) => {
-        countMap.set(id, (countMap.get(id) || 0) + 1);
-      });
-    });
-    const rows = Array.from(countMap.entries())
-      .filter(([id]) => Boolean(parameterItemMapping[id]))
-      .map(([id, count]) => {
-        const item = parameterItemMapping[id]!;
-        const label = `${item.parameter_name}: ${item.name}`;
-        return { id, label, count };
-      });
-    rows.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-    return rows;
-  }, [baseScenarios, parameterItemMapping]);
+    const countMap = new Map<
+      string,
+      {
+        name: string;
+        parameterName: string;
+        description: string;
+        count: number;
+      }
+    >();
+    let hasNoParams = false;
 
-  // Apply parameter item filters (all-of) - baseScenarios is already sorted
-  const filteredScenarios = React.useMemo(() => {
-    if (filterParameterItemIds.length === 0) return baseScenarios;
-    return baseScenarios.filter((sc) => {
-      const ids = new Set(sc.parameterItemIds || []);
-      return filterParameterItemIds.every((id) => ids.has(id));
+    baseScenarios.forEach((sc) => {
+      if (!sc.parameter_item_ids || sc.parameter_item_ids.length === 0) {
+        hasNoParams = true;
+      } else {
+        sc.parameter_item_ids.forEach((paramId) => {
+          const param = sc.parameter_item_mapping?.[paramId];
+          if (param) {
+            const existing = countMap.get(paramId);
+            countMap.set(paramId, {
+              name: param.name,
+              parameterName: param.parameter_name,
+              description: param.description,
+              count: (existing?.count || 0) + 1,
+            });
+          }
+        });
+      }
     });
-  }, [baseScenarios, filterParameterItemIds]);
+
+    const options = Array.from(countMap.entries()).map(([id, data]) => ({
+      id,
+      label: `${data.parameterName}: ${data.name}`,
+      ...data,
+    }));
+
+    // Sort by count desc, then label
+    options.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+    if (hasNoParams) {
+      options.push({
+        id: NO_PARAMS_KEY,
+        label: "No Parameter Items",
+        name: "No Parameter Items",
+        parameterName: "",
+        description: "",
+        count: baseScenarios.filter(
+          (sc) => !sc.parameter_item_ids || sc.parameter_item_ids.length === 0
+        ).length,
+      });
+    }
+
+    return options;
+  }, [baseScenarios]);
+
+  // Apply filters with AND logic across groups
+  const filteredScenarios = React.useMemo(() => {
+    return baseScenarios.filter((scenario) => {
+      // Persona filter (OR within group)
+      if (filterPersonaIds.length > 0) {
+        const hasNoPersona = filterPersonaIds.includes(NO_PERSONA_KEY);
+        const matchesPersona =
+          scenario.persona_id && filterPersonaIds.includes(scenario.persona_id);
+        if (!hasNoPersona && !matchesPersona) return false;
+        if (hasNoPersona && scenario.persona_id !== null && !matchesPersona)
+          return false;
+      }
+
+      // Document filter (OR within group)
+      if (filterDocumentIds.length > 0) {
+        const hasNoDocuments = filterDocumentIds.includes(NO_DOCUMENTS_KEY);
+        const matchesDocument = scenario.document_ids?.some((id) =>
+          filterDocumentIds.includes(id)
+        );
+        if (!hasNoDocuments && !matchesDocument) return false;
+        if (
+          hasNoDocuments &&
+          scenario.document_ids &&
+          scenario.document_ids.length > 0 &&
+          !matchesDocument
+        )
+          return false;
+      }
+
+      // Parameter item filter (OR within group)
+      if (filterParameterItemIds.length > 0) {
+        const hasNoParams = filterParameterItemIds.includes(NO_PARAMS_KEY);
+        const matchesParam = scenario.parameter_item_ids?.some((id) =>
+          filterParameterItemIds.includes(id)
+        );
+        if (!hasNoParams && !matchesParam) return false;
+        if (
+          hasNoParams &&
+          scenario.parameter_item_ids &&
+          scenario.parameter_item_ids.length > 0 &&
+          !matchesParam
+        )
+          return false;
+      }
+
+      return true;
+    });
+  }, [
+    baseScenarios,
+    filterPersonaIds,
+    filterDocumentIds,
+    filterParameterItemIds,
+  ]);
 
   const [peekedScenario, setPeekedScenario] = React.useState<
     ({ id: string } & T) | undefined
@@ -181,7 +361,10 @@ export function SimulationScenarioPicker<
 
   // Helper to render parameter badges in hover (keep for richer preview)
   const getScenarioParameterBadges = (scenario: { id: string } & T) => {
-    if (!scenario.parameterItemIds || scenario.parameterItemIds.length === 0) {
+    if (
+      !scenario.parameter_item_ids ||
+      scenario.parameter_item_ids.length === 0
+    ) {
       return [];
     }
     const badges: {
@@ -189,8 +372,8 @@ export function SimulationScenarioPicker<
       value: string;
       parameterId: string;
     }[] = [];
-    scenario.parameterItemIds.forEach((parameterItemId) => {
-      const parameterItem = parameterItemMapping[parameterItemId];
+    scenario.parameter_item_ids.forEach((parameterItemId) => {
+      const parameterItem = scenario.parameter_item_mapping?.[parameterItemId];
       if (parameterItem) {
         badges.push({
           parameterName: parameterItem.parameter_name,
@@ -315,7 +498,9 @@ export function SimulationScenarioPicker<
                           title="Filter by parameters"
                           className={cn(
                             "relative hover:bg-accent overflow-visible h-8 w-8 p-0",
-                            filterParameterItemIds.length > 0
+                            filterPersonaIds.length > 0 ||
+                              filterDocumentIds.length > 0 ||
+                              filterParameterItemIds.length > 0
                               ? "text-primary"
                               : "text-muted-foreground"
                           )}
@@ -325,7 +510,9 @@ export function SimulationScenarioPicker<
                           }}
                         >
                           <Filter className="h-4 w-4" />
-                          {filterParameterItemIds.length > 0 &&
+                          {(filterPersonaIds.length > 0 ||
+                            filterDocumentIds.length > 0 ||
+                            filterParameterItemIds.length > 0) &&
                             !filterPopoverOpen && (
                               <span
                                 className="absolute top-0 right-0 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background z-10"
@@ -335,25 +522,112 @@ export function SimulationScenarioPicker<
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent
-                        title="Filter by parameters"
-                        className="w-80 max-h-[30vh] p-0"
+                        title="Filter scenarios"
+                        className="w-80 max-h-[500px] p-0"
                         align="end"
                         side="top"
                         sideOffset={8}
                       >
-                        <div className="max-h-[30vh] flex flex-col">
-                          <div className="flex-1 overflow-y-auto p-4 space-y-4 mb-2">
-                            <div className="space-y-2">
-                              <div className="text-sm font-medium">
-                                Parameters
+                        <div className="max-h-[500px] flex flex-col">
+                          <ScrollArea className="flex-1 overflow-y-auto p-4 space-y-4 mb-2 max-h-[400px]">
+                            {/* Personas Section */}
+                            {personaOptions.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                  <User className="h-4 w-4" />
+                                  <span>Personas</span>
+                                </div>
+                                <div className="space-y-2 pl-6">
+                                  {personaOptions.map((opt) => {
+                                    const checked = filterPersonaIds.includes(
+                                      opt.id
+                                    );
+                                    return (
+                                      <label
+                                        key={opt.id}
+                                        className="flex items-center gap-2 text-sm cursor-pointer"
+                                      >
+                                        <Checkbox
+                                          checked={checked}
+                                          onCheckedChange={(isChecked) => {
+                                            setFilterPersonaIds((prev) => {
+                                              if (isChecked) {
+                                                if (prev.includes(opt.id))
+                                                  return prev;
+                                                return [...prev, opt.id];
+                                              }
+                                              return prev.filter(
+                                                (x) => x !== opt.id
+                                              );
+                                            });
+                                          }}
+                                        />
+                                        <span className="truncate">
+                                          {opt.name}
+                                        </span>
+                                        <span className="ml-auto text-xs text-muted-foreground">
+                                          {opt.count}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                              <ScrollArea className="max-h-48 pr-2">
-                                <div className="space-y-2">
-                                  {parameterItemOptions.length === 0 && (
-                                    <div className="text-sm text-muted-foreground">
-                                      No parameter items available
-                                    </div>
-                                  )}
+                            )}
+
+                            {/* Documents Section */}
+                            {documentOptions.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                  <FileText className="h-4 w-4" />
+                                  <span>Documents</span>
+                                </div>
+                                <div className="space-y-2 pl-6">
+                                  {documentOptions.map((opt) => {
+                                    const checked = filterDocumentIds.includes(
+                                      opt.id
+                                    );
+                                    return (
+                                      <label
+                                        key={opt.id}
+                                        className="flex items-center gap-2 text-sm cursor-pointer"
+                                      >
+                                        <Checkbox
+                                          checked={checked}
+                                          onCheckedChange={(isChecked) => {
+                                            setFilterDocumentIds((prev) => {
+                                              if (isChecked) {
+                                                if (prev.includes(opt.id))
+                                                  return prev;
+                                                return [...prev, opt.id];
+                                              }
+                                              return prev.filter(
+                                                (x) => x !== opt.id
+                                              );
+                                            });
+                                          }}
+                                        />
+                                        <span className="truncate">
+                                          {opt.name}
+                                        </span>
+                                        <span className="ml-auto text-xs text-muted-foreground">
+                                          {opt.count}
+                                        </span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Parameter Items Section */}
+                            {parameterItemOptions.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                  <Filter className="h-4 w-4" />
+                                  <span>Parameter Items</span>
+                                </div>
+                                <div className="space-y-2 pl-6">
                                   {parameterItemOptions.map((opt) => {
                                     const checked =
                                       filterParameterItemIds.includes(opt.id);
@@ -389,21 +663,39 @@ export function SimulationScenarioPicker<
                                     );
                                   })}
                                 </div>
-                              </ScrollArea>
-                            </div>
-                          </div>
+                              </div>
+                            )}
+
+                            {/* Empty state */}
+                            {personaOptions.length === 0 &&
+                              documentOptions.length === 0 &&
+                              parameterItemOptions.length === 0 && (
+                                <div className="text-sm text-muted-foreground text-center py-4">
+                                  No filters available
+                                </div>
+                              )}
+                          </ScrollArea>
                           <div className="p-2 border-t flex justify-between items-center">
                             <div className="text-xs text-muted-foreground">
-                              {filterParameterItemIds.length} selected
+                              {filterPersonaIds.length +
+                                filterDocumentIds.length +
+                                filterParameterItemIds.length}{" "}
+                              selected
                             </div>
                             <div className="flex gap-2">
-                              {filterParameterItemIds.length > 0 && (
+                              {(filterPersonaIds.length > 0 ||
+                                filterDocumentIds.length > 0 ||
+                                filterParameterItemIds.length > 0) && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => setFilterParameterItemIds([])}
+                                  onClick={() => {
+                                    setFilterPersonaIds([]);
+                                    setFilterDocumentIds([]);
+                                    setFilterParameterItemIds([]);
+                                  }}
                                 >
-                                  Clear
+                                  Clear All
                                 </Button>
                               )}
                               <Button
@@ -451,14 +743,14 @@ export function SimulationScenarioPicker<
   );
 }
 
-interface ScenarioItemProps<T extends ScenarioMappingItemExt> {
+interface ScenarioItemProps<T extends ScenarioMappingItem> {
   scenario: { id: string } & T;
   isSelected: boolean;
   onSelect: () => void;
   onPeek: (scenario: { id: string } & T) => void;
 }
 
-function ScenarioItem<T extends ScenarioMappingItemExt>({
+function ScenarioItem<T extends ScenarioMappingItem>({
   scenario,
   isSelected,
   onSelect,

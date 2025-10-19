@@ -707,9 +707,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 validScenarioIds={simulationData?.valid_scenario_ids || []}
                 selectedScenarioIds={currentScenarioIds}
                 onSelect={handleScenarioSelection}
-                parameterItemMapping={
-                  simulationData?.parameter_item_mapping || {}
-                }
                 label=""
                 placeholder="Select scenarios..."
                 description="Choose scenarios to include in this simulation"
