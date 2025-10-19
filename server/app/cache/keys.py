@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 6  # Bumped: Fixed to only show root scenarios (parent_id = child_id in scenario_tree)
+GLOBAL_CACHE_VERSION = 7  # Bumped: Updated scenario/simulation can_edit and can_delete permission logic
 
 # Namespaces
 NS_ANALYTICS = "analytics"

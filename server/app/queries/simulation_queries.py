@@ -29,6 +29,21 @@ class SimulationQueries:
             FROM simulation_attempts sa
             GROUP BY sa.simulation_id
         ),
+        simulation_active_cohort_links AS (
+            SELECT 
+                cs.simulation_id,
+                COUNT(*) as active_cohort_count
+            FROM cohort_simulations cs
+            WHERE cs.active = true
+            GROUP BY cs.simulation_id
+        ),
+        simulation_all_cohort_links AS (
+            SELECT 
+                cs.simulation_id,
+                COUNT(*) as total_cohort_links
+            FROM cohort_simulations cs
+            GROUP BY cs.simulation_id
+        ),
         simulation_data AS (
             SELECT 
                 s.id as simulation_id,
@@ -41,11 +56,15 @@ class SimulationQueries:
                 s.rubric_id,
                 COALESCE(ss.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ss.num_scenarios, 0) as num_scenarios,
-                COALESCE(sa.attempt_count, 0) as attempt_count
+                COALESCE(sa.attempt_count, 0) as attempt_count,
+                COALESCE(sacl.active_cohort_count, 0) as active_cohort_count,
+                COALESCE(salcl.total_cohort_links, 0) as total_cohort_links
             FROM simulations s
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
             LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id
+            LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
+            LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
             WHERE s.department_id = ANY($1)
         ),
         user_profile AS (
@@ -103,11 +122,17 @@ class SimulationQueries:
         SELECT 
             sd.*,
             CASE 
-                WHEN up.role IN ('admin', 'superadmin') THEN true
+                WHEN up.role IN ('admin', 'superadmin') 
+                     AND (sd.default_simulation = false OR up.role = 'superadmin')
+                     AND sd.active_cohort_count = 0
+                THEN true
                 ELSE false
             END as can_edit,
             CASE 
-                WHEN up.role IN ('admin', 'superadmin') AND sd.attempt_count = 0 THEN true
+                WHEN up.role IN ('admin', 'superadmin') 
+                     AND (sd.default_simulation = false OR up.role = 'superadmin')
+                     AND sd.total_cohort_links = 0
+                THEN true
                 ELSE false
             END as can_delete,
             true as can_duplicate,

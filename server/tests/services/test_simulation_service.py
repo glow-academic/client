@@ -499,6 +499,165 @@ async def test_scenario_mapping_resolves_to_root(
 
 
 @pytest.mark.asyncio
+async def test_simulation_can_edit_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_edit permission logic for simulations based on cohort links."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get superadmin and admin profiles
+    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
+    admin_result = await db.fetchrow("""
+        SELECT p.id FROM profiles p
+        JOIN profile_departments pd ON pd.profile_id = p.id
+        WHERE p.role = 'admin' AND pd.department_id = $1
+        LIMIT 1
+    """, dept_id)
+    
+    if not superadmin_result or not admin_result:
+        pytest.skip("Need both superadmin and admin profiles")
+    
+    superadmin_id = str(superadmin_result["id"])
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.simulations import SimulationsFilters
+    
+    svc = SimulationService(db)
+    resp_superadmin = await svc.get_simulations_list(
+        SimulationsFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    resp_admin = await svc.get_simulations_list(
+        SimulationsFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules (same as scenarios, but checking cohort links instead of simulation links):
+    # 1. Simulations with active cohort links: cannot edit
+    # 2. Simulations with default_simulation=true: only superadmin can edit (if no active cohort links)
+    # 3. Other simulations: admin and superadmin can edit
+    
+    for sim_sa in resp_superadmin.simulations:
+        # Get cohort link counts from database
+        active_cohort_count = await db.fetchval("""
+            SELECT COUNT(*) FROM cohort_simulations 
+            WHERE simulation_id = $1 AND active = true
+        """, sim_sa.simulation_id)
+        
+        sim_admin = next(
+            (s for s in resp_admin.simulations if s.simulation_id == sim_sa.simulation_id),
+            None
+        )
+        
+        if not sim_admin:
+            continue
+        
+        # Rule 1: Simulations with active cohort links - nobody can edit
+        if active_cohort_count > 0:
+            assert sim_sa.can_edit == False, \
+                f"Simulation {sim_sa.name} with {active_cohort_count} active cohort links should not be editable (superadmin)"
+            assert sim_admin.can_edit == False, \
+                f"Simulation {sim_admin.name} with {active_cohort_count} active cohort links should not be editable (admin)"
+        
+        # Rule 2: Unlinked default simulations - only superadmin can edit
+        elif sim_sa.default_simulation and active_cohort_count == 0:
+            assert sim_sa.can_edit == True, \
+                f"Superadmin should be able to edit unlinked default simulation {sim_sa.name}"
+            assert sim_admin.can_edit == False, \
+                f"Admin should NOT be able to edit default simulation {sim_admin.name}"
+        
+        # Rule 3: Unlinked, non-default simulations - both can edit
+        elif not sim_sa.default_simulation and active_cohort_count == 0:
+            assert sim_sa.can_edit == True, \
+                f"Superadmin should be able to edit unlinked non-default simulation {sim_sa.name}"
+            assert sim_admin.can_edit == True, \
+                f"Admin should be able to edit unlinked non-default simulation {sim_admin.name}"
+
+
+@pytest.mark.asyncio
+async def test_simulation_can_delete_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_delete permission logic for simulations based on cohort links."""
+    # Setup
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
+    admin_result = await db.fetchrow("""
+        SELECT p.id FROM profiles p
+        JOIN profile_departments pd ON pd.profile_id = p.id
+        WHERE p.role = 'admin' AND pd.department_id = $1
+        LIMIT 1
+    """, dept_id)
+    
+    if not superadmin_result or not admin_result:
+        pytest.skip("Need both superadmin and admin profiles")
+    
+    superadmin_id = str(superadmin_result["id"])
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.simulations import SimulationsFilters
+    
+    svc = SimulationService(db)
+    resp_superadmin = await svc.get_simulations_list(
+        SimulationsFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    resp_admin = await svc.get_simulations_list(
+        SimulationsFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Simulations with ANY cohort links (active or inactive): cannot delete
+    # 2. Simulations with default_simulation=true: only superadmin can delete (if no links)
+    # 3. Other simulations: admin and superadmin can delete (if no links)
+    
+    for sim_sa in resp_superadmin.simulations:
+        # Get total cohort link count from database
+        total_cohort_links = await db.fetchval("""
+            SELECT COUNT(*) FROM cohort_simulations 
+            WHERE simulation_id = $1
+        """, sim_sa.simulation_id)
+        
+        sim_admin = next(
+            (s for s in resp_admin.simulations if s.simulation_id == sim_sa.simulation_id),
+            None
+        )
+        
+        if not sim_admin:
+            continue
+        
+        # Rule 1: Simulations with any cohort links - nobody can delete
+        if total_cohort_links > 0:
+            assert sim_sa.can_delete == False, \
+                f"Simulation {sim_sa.name} with {total_cohort_links} cohort links should not be deletable (superadmin)"
+            assert sim_admin.can_delete == False, \
+                f"Simulation {sim_admin.name} with {total_cohort_links} cohort links should not be deletable (admin)"
+        
+        # Rule 2: Unlinked default simulations - only superadmin can delete
+        elif sim_sa.default_simulation and total_cohort_links == 0:
+            assert sim_sa.can_delete == True, \
+                f"Superadmin should be able to delete unlinked default simulation {sim_sa.name}"
+            assert sim_admin.can_delete == False, \
+                f"Admin should NOT be able to delete default simulation {sim_admin.name}"
+        
+        # Rule 3: Unlinked, non-default simulations - both can delete
+        elif not sim_sa.default_simulation and total_cohort_links == 0:
+            assert sim_sa.can_delete == True, \
+                f"Superadmin should be able to delete unlinked non-default simulation {sim_sa.name}"
+            assert sim_admin.can_delete == True, \
+                f"Admin should be able to delete unlinked non-default simulation {sim_admin.name}"
+
+
+@pytest.mark.asyncio
 async def test_scenario_ordering_active_first(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
