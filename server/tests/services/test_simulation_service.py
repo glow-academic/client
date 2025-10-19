@@ -59,7 +59,7 @@ async def test_get_simulations_list(
     assert isinstance(result.scenario_mapping, dict)
     assert isinstance(result.rubric_mapping, dict)
 
-    # If simulations exist, check basic fields
+    # If simulations exist, check basic fields and validate mappings
     if result.simulations:
         sim = result.simulations[0]
         assert hasattr(sim, "simulation_id")
@@ -67,6 +67,23 @@ async def test_get_simulations_list(
         assert hasattr(sim, "scenario_ids")
         assert hasattr(sim, "rubric_id")
         assert isinstance(sim.scenario_ids, list)
+        
+        # CRITICAL: Verify rubric_mapping is populated when rubric_id exists
+        if sim.rubric_id:
+            assert len(result.rubric_mapping) > 0, "rubric_mapping should be populated when simulations have rubrics"
+            assert sim.rubric_id in result.rubric_mapping, f"Rubric {sim.rubric_id} should be in rubric_mapping"
+            rubric_item = result.rubric_mapping[sim.rubric_id]
+            assert hasattr(rubric_item, 'name') and len(rubric_item.name) > 0, "Rubric mapping should have valid name"
+            assert hasattr(rubric_item, 'description'), "Rubric mapping should have description field"
+        
+        # CRITICAL: Verify scenario_mapping is populated when scenario_ids exist
+        if len(sim.scenario_ids) > 0:
+            assert len(result.scenario_mapping) > 0, "scenario_mapping should be populated when simulations have scenarios"
+            first_scenario_id = sim.scenario_ids[0]
+            assert first_scenario_id in result.scenario_mapping, f"Scenario {first_scenario_id} should be in scenario_mapping"
+            scenario_item = result.scenario_mapping[first_scenario_id]
+            assert hasattr(scenario_item, 'name') and len(scenario_item.name) > 0, "Scenario mapping should have valid name"
+            assert hasattr(scenario_item, 'description'), "Scenario mapping should have description field"
 
 
 @pytest.mark.asyncio
@@ -218,6 +235,23 @@ async def test_get_simulation_detail_single_query(
     assert isinstance(result.department_mapping, dict)
     assert isinstance(result.parameter_mapping, dict)
     assert isinstance(result.parameter_item_mapping, dict)
+    
+    # CRITICAL: Verify rubric_mapping is populated when rubric_id exists
+    if result.rubric_id:
+        assert len(result.rubric_mapping) > 0, "rubric_mapping should be populated when simulation has rubric"
+        assert result.rubric_id in result.rubric_mapping, f"Rubric {result.rubric_id} should be in rubric_mapping"
+        rubric_item = result.rubric_mapping[result.rubric_id]
+        assert hasattr(rubric_item, 'name') and len(rubric_item.name) > 0, "Rubric mapping should have valid name"
+        assert hasattr(rubric_item, 'description'), "Rubric mapping should have description field"
+    
+    # CRITICAL: Verify scenario_mapping is populated when scenario_ids exist
+    if len(result.scenario_ids) > 0:
+        assert len(result.scenario_mapping) > 0, "scenario_mapping should be populated when simulation has scenarios"
+        first_scenario_id = result.scenario_ids[0]
+        assert first_scenario_id in result.scenario_mapping, f"Scenario {first_scenario_id} should be in scenario_mapping"
+        scenario_item = result.scenario_mapping[first_scenario_id]
+        assert hasattr(scenario_item, 'name') and len(scenario_item.name) > 0, "Scenario mapping should have valid name"
+        assert hasattr(scenario_item, 'description'), "Scenario mapping should have description field"
 
     # Parameter data
     assert hasattr(result, "parameters")

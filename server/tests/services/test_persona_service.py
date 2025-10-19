@@ -208,6 +208,22 @@ async def test_get_persona_detail_optimized(
     assert result.valid_department_ids is not None
     assert isinstance(result.valid_department_ids, list)
     
+    # CRITICAL: Verify model_mapping is populated when model_id exists
+    if result.model_id:
+        assert len(result.model_mapping) > 0, "model_mapping should be populated when persona has model"
+        assert result.model_id in result.model_mapping, f"Model {result.model_id} should be in model_mapping"
+        model_item = result.model_mapping[result.model_id]
+        assert hasattr(model_item, 'name') and len(model_item.name) > 0, "Model mapping should have valid name"
+        assert hasattr(model_item, 'description'), "Model mapping should have description field"
+    
+    # CRITICAL: Verify department_mapping is populated when department_id exists
+    if result.department_id:
+        assert len(result.department_mapping) > 0, "department_mapping should be populated when persona has department"
+        assert result.department_id in result.department_mapping, f"Department {result.department_id} should be in department_mapping"
+        dept_item = result.department_mapping[result.department_id]
+        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
+        assert hasattr(dept_item, 'description'), "Department mapping should have description field"
+    
     # Check permission flags exist
     assert isinstance(result.can_edit, bool)
     assert isinstance(result.can_duplicate, bool)

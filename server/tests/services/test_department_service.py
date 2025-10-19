@@ -77,6 +77,15 @@ async def test_get_department_detail_success(
     # Check structure exists (may be empty if no agents in seed data)
     assert isinstance(resp.valid_agent_ids, list)
     assert isinstance(resp.agent_mapping, dict)
+    
+    # CRITICAL: Verify agent_mapping is populated when valid_agent_ids exist
+    if len(resp.valid_agent_ids) > 0:
+        assert len(resp.agent_mapping) > 0, "agent_mapping should be populated when department has valid agents"
+        first_agent_id = resp.valid_agent_ids[0]
+        assert first_agent_id in resp.agent_mapping, f"Agent {first_agent_id} should be in agent_mapping"
+        agent_item = resp.agent_mapping[first_agent_id]
+        assert hasattr(agent_item, 'name') and len(agent_item.name) > 0, "Agent mapping should have valid name"
+        assert hasattr(agent_item, 'description'), "Agent mapping should have description field"
 
 
 async def test_get_department_detail_has_agent_mappings(
@@ -131,3 +140,12 @@ async def test_get_department_detail_default_success(
     assert resp.active is True
     assert resp.valid_agent_ids is not None
     assert resp.agent_mapping is not None
+    
+    # CRITICAL: Verify agent_mapping is populated when valid_agent_ids exist
+    if len(resp.valid_agent_ids) > 0:
+        assert len(resp.agent_mapping) > 0, "agent_mapping should be populated when department has valid agents"
+        first_agent_id = resp.valid_agent_ids[0]
+        assert first_agent_id in resp.agent_mapping, f"Agent {first_agent_id} should be in agent_mapping"
+        agent_item = resp.agent_mapping[first_agent_id]
+        assert hasattr(agent_item, 'name') and len(agent_item.name) > 0, "Agent mapping should have valid name"
+        assert hasattr(agent_item, 'description'), "Agent mapping should have description field"

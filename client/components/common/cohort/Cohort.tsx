@@ -36,11 +36,11 @@ import {
   useUpdateCohort,
 } from "@/lib/api/v2/hooks/cohorts";
 import { ProfileRole } from "@/lib/api/v2/schemas/base";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
 import CohortStaff from "./staff/CohortStaff";
-import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 
 export interface CohortProps {
   cohortId?: string;
@@ -90,8 +90,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     departmentId: "",
   };
 
-  const [formData, setFormData] =
-    useState<FormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [originalFormData, setOriginalFormData] =
     useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -393,7 +392,9 @@ export default function Cohort({ cohortId }: CohortProps) {
           title: formData.title || "",
           description: formData.description || "",
           department_id:
-            formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
+            formData.departmentId ||
+            effectiveProfile?.primaryDepartmentId ||
+            "",
           active: formData.active ?? true,
           default_cohort: formData.defaultCohort ?? false,
           simulation_ids: currentSimulationIds,
@@ -407,7 +408,9 @@ export default function Cohort({ cohortId }: CohortProps) {
           title: formData.title || "",
           description: formData.description || "",
           department_id:
-            formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
+            formData.departmentId ||
+            effectiveProfile?.primaryDepartmentId ||
+            "",
           active: formData.active || true,
           default_cohort: formData.defaultCohort ?? false,
           simulation_ids: currentSimulationIds,
@@ -527,25 +530,6 @@ export default function Cohort({ cohortId }: CohortProps) {
           )}
         </div>
 
-        {/* Active/Inactive Switch */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="active" className="text-sm">
-            Cohort Active
-          </Label>
-          {formData.active !== undefined && !isLoading ? (
-            <Switch
-              id="active"
-              checked={formData.active ?? true}
-              onCheckedChange={(checked) =>
-                handleInputChange("active", checked)
-              }
-              disabled={isReadonly}
-            />
-          ) : (
-            <Skeleton className="h-6 w-11" />
-          )}
-        </div>
-
         {/* Department Selection - Only for superadmin */}
         {effectiveProfile?.role === "superadmin" && (
           <div className="space-y-2">
@@ -570,18 +554,19 @@ export default function Cohort({ cohortId }: CohortProps) {
           </div>
         )}
 
-        {/* Default Cohort Switch - Only for superadmin */}
-        {effectiveProfile?.role === "superadmin" && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="defaultCohort" className="text-sm">
-              Default Cohort
+        {/* Switches - Horizontal Layout */}
+        <div className="flex gap-8">
+          {/* Active/Inactive Switch */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="active" className="text-sm">
+              Cohort Active
             </Label>
-            {formData.defaultCohort !== undefined && !isLoading ? (
+            {formData.active !== undefined && !isLoading ? (
               <Switch
-                id="defaultCohort"
-                checked={formData.defaultCohort ?? false}
+                id="active"
+                checked={formData.active ?? true}
                 onCheckedChange={(checked) =>
-                  handleInputChange("defaultCohort", checked)
+                  handleInputChange("active", checked)
                 }
                 disabled={isReadonly}
               />
@@ -589,7 +574,28 @@ export default function Cohort({ cohortId }: CohortProps) {
               <Skeleton className="h-6 w-11" />
             )}
           </div>
-        )}
+
+          {/* Default Cohort Switch - Only for superadmin */}
+          {effectiveProfile?.role === "superadmin" && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="defaultCohort" className="text-sm">
+                Default Cohort
+              </Label>
+              {formData.defaultCohort !== undefined && !isLoading ? (
+                <Switch
+                  id="defaultCohort"
+                  checked={formData.defaultCohort ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("defaultCohort", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Simulations */}
         <div className="space-y-2">

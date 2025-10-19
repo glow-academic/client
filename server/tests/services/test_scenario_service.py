@@ -62,6 +62,31 @@ async def test_get_scenario_detail_needs_scenario_in_seed(
     assert resp.persona_mapping is not None
     assert resp.document_mapping is not None
     assert resp.parameter_mapping is not None
+    
+    # CRITICAL: Verify persona_mapping is populated when persona_id exists
+    if resp.persona_id:
+        assert len(resp.persona_mapping) > 0, "persona_mapping should be populated when scenario has persona"
+        assert resp.persona_id in resp.persona_mapping, f"Persona {resp.persona_id} should be in persona_mapping"
+        persona_item = resp.persona_mapping[resp.persona_id]
+        assert hasattr(persona_item, 'name') and len(persona_item.name) > 0, "Persona mapping should have valid name"
+        assert hasattr(persona_item, 'description'), "Persona mapping should have description field"
+    
+    # CRITICAL: Verify document_mapping is populated when document_ids exist
+    if resp.document_ids and len(resp.document_ids) > 0:
+        assert len(resp.document_mapping) > 0, "document_mapping should be populated when scenario has documents"
+        first_doc_id = resp.document_ids[0]
+        assert first_doc_id in resp.document_mapping, f"Document {first_doc_id} should be in document_mapping"
+        doc_item = resp.document_mapping[first_doc_id]
+        assert hasattr(doc_item, 'name') and len(doc_item.name) > 0, "Document mapping should have valid name"
+        assert hasattr(doc_item, 'description'), "Document mapping should have description field"
+    
+    # CRITICAL: Verify parameter_mapping is populated when parameter_item_ids exist
+    if resp.parameter_item_ids and len(resp.parameter_item_ids) > 0:
+        assert len(resp.parameter_item_mapping) > 0, "parameter_item_mapping should be populated when scenario has parameter items"
+        first_param_id = resp.parameter_item_ids[0]
+        assert first_param_id in resp.parameter_item_mapping, f"Parameter item {first_param_id} should be in parameter_item_mapping"
+        param_item = resp.parameter_item_mapping[first_param_id]
+        assert hasattr(param_item, 'name') and len(param_item.name) > 0, "Parameter item mapping should have valid name"
 
 
 async def test_get_scenario_detail_invalid_id(

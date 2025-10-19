@@ -144,6 +144,14 @@ async def test_get_document_detail_optimized(
     assert isinstance(result.valid_department_ids, list)
     assert result.valid_parameter_item_ids is not None
     assert isinstance(result.valid_parameter_item_ids, list)
+    
+    # CRITICAL: Verify department_mapping is populated when department_id exists
+    if result.department_id:
+        assert len(result.department_mapping) > 0, "department_mapping should be populated when document has department"
+        assert result.department_id in result.department_mapping, f"Department {result.department_id} should be in department_mapping"
+        dept_item = result.department_mapping[result.department_id]
+        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
+        assert hasattr(dept_item, 'description'), "Department mapping should have description field"
 
 
 @pytest.mark.asyncio
@@ -185,3 +193,12 @@ async def test_get_document_detail_bulk_optimized(
     assert isinstance(result.valid_department_ids, list)
     assert result.valid_parameter_item_ids is not None
     assert isinstance(result.valid_parameter_item_ids, list)
+    
+    # CRITICAL: Verify department_mapping is populated when department_ids exist
+    if len(result.department_ids) > 0:
+        assert len(result.department_mapping) > 0, "department_mapping should be populated when documents have departments"
+        first_dept_id = result.department_ids[0]
+        assert first_dept_id in result.department_mapping, f"Department {first_dept_id} should be in department_mapping"
+        dept_item = result.department_mapping[first_dept_id]
+        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
+        assert hasattr(dept_item, 'description'), "Department mapping should have description field"

@@ -127,6 +127,14 @@ async def test_get_parameter_detail_optimized(
     assert result.valid_department_ids is not None
     assert isinstance(result.valid_department_ids, list)
     
+    # CRITICAL: Verify department_mapping is populated when department_id exists
+    if result.department_id:
+        assert len(result.department_mapping) > 0, "department_mapping should be populated when parameter has department"
+        assert result.department_id in result.department_mapping, f"Department {result.department_id} should be in department_mapping"
+        dept_item = result.department_mapping[result.department_id]
+        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
+        assert hasattr(dept_item, 'description'), "Department mapping should have description field"
+    
     # Check parameter items
     assert result.parameter_items is not None
     assert isinstance(result.parameter_items, list)
