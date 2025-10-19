@@ -1,51 +1,37 @@
 """Cohort service layer - business logic for cohort operations."""
 
+import json
 import os
 import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from dotenv import load_dotenv
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.cohort_queries import CohortQueries
 from app.queries.staff_queries import StaffQueries
-from app.schemas.base import (
-    CohortMapping,
-    CohortMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ProfileMappingItem,
-    SimulationMappingItem,
-)
-from app.schemas.cohorts import (
-    AddProfilesToCohortRequest,
-    AddProfilesToCohortResponse,
-    CohortDetailDefaultRequest,
-    CohortDetailRequest,
-    CohortDetailResponse,
-    CohortDetailWithProfilesRequest,
-    CohortDetailWithProfilesResponse,
-    CohortItem,
-    CohortsFilters,
-    CohortsListResponse,
-    CreateCohortRequest,
-    CreateCohortResponse,
-    DeleteCohortRequest,
-    DeleteCohortResponse,
-    DuplicateCohortRequest,
-    DuplicateCohortResponse,
-    LeaveCohortRequest,
-    LeaveCohortResponse,
-    RemoveProfilesFromCohortRequest,
-    RemoveProfilesFromCohortResponse,
-    UpdateCohortRequest,
-    UpdateCohortResponse,
-)
+from app.schemas.base import (CohortMapping, CohortMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              ProfileMappingItem, SimulationMappingItem)
+from app.schemas.cohorts import (AddProfilesToCohortRequest,
+                                 AddProfilesToCohortResponse,
+                                 CohortDetailDefaultRequest,
+                                 CohortDetailRequest, CohortDetailResponse,
+                                 CohortDetailWithProfilesRequest,
+                                 CohortDetailWithProfilesResponse, CohortItem,
+                                 CohortsFilters, CohortsListResponse,
+                                 CreateCohortRequest, CreateCohortResponse,
+                                 DeleteCohortRequest, DeleteCohortResponse,
+                                 DuplicateCohortRequest,
+                                 DuplicateCohortResponse, LeaveCohortRequest,
+                                 LeaveCohortResponse,
+                                 RemoveProfilesFromCohortRequest,
+                                 RemoveProfilesFromCohortResponse,
+                                 UpdateCohortRequest, UpdateCohortResponse)
 from app.schemas.staff import StaffItem
 from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -162,33 +148,41 @@ class CohortService(BaseService):
         if not cohort:
             raise ValueError(f"Cohort not found: {request.cohortId}")
 
-        # Parse simulation mapping from JSONB
+        # Parse simulation mapping from JSONB (may be string or dict)
         simulation_mapping = {}
-        if cohort["simulation_mapping"] and isinstance(
-            cohort["simulation_mapping"], dict
-        ):
-            for sid, sdata in cohort["simulation_mapping"].items():
-                simulation_mapping[sid] = SimulationMappingItem(
-                    name=sdata["name"], description=sdata["description"]
-                )
+        simulation_mapping_data = cohort["simulation_mapping"]
+        if isinstance(simulation_mapping_data, str):
+            simulation_mapping_data = json.loads(simulation_mapping_data)
+        if simulation_mapping_data and isinstance(simulation_mapping_data, dict):
+            for sid, sdata in simulation_mapping_data.items():
+                if isinstance(sdata, dict):
+                    simulation_mapping[sid] = SimulationMappingItem(
+                        name=sdata["name"], description=sdata["description"]
+                    )
 
-        # Parse profile mapping from JSONB
+        # Parse profile mapping from JSONB (may be string or dict)
         profile_mapping = {}
-        if cohort["profile_mapping"] and isinstance(cohort["profile_mapping"], dict):
-            for pid, pdata in cohort["profile_mapping"].items():
-                profile_mapping[pid] = ProfileMappingItem(
-                    name=pdata["name"], description=pdata["description"]
-                )
+        profile_mapping_data = cohort["profile_mapping"]
+        if isinstance(profile_mapping_data, str):
+            profile_mapping_data = json.loads(profile_mapping_data)
+        if profile_mapping_data and isinstance(profile_mapping_data, dict):
+            for pid, pdata in profile_mapping_data.items():
+                if isinstance(pdata, dict):
+                    profile_mapping[pid] = ProfileMappingItem(
+                        name=pdata["name"], description=pdata["description"]
+                    )
 
-        # Parse department mapping from JSONB
+        # Parse department mapping from JSONB (may be string or dict)
         department_mapping = {}
-        if cohort["department_mapping"] and isinstance(
-            cohort["department_mapping"], dict
-        ):
-            for did, ddata in cohort["department_mapping"].items():
-                department_mapping[did] = DepartmentMappingItem(
-                    name=ddata["name"], description=ddata["description"]
-                )
+        department_mapping_data = cohort["department_mapping"]
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
+        if department_mapping_data and isinstance(department_mapping_data, dict):
+            for did, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata["name"], description=ddata["description"]
+                    )
 
         return CohortDetailResponse(
             title=cohort["title"],
@@ -229,33 +223,41 @@ class CohortService(BaseService):
         if not cohort:
             raise ValueError("No cohorts found for user's departments")
 
-        # Parse simulation mapping from JSONB
+        # Parse simulation mapping from JSONB (may be string or dict)
         simulation_mapping = {}
-        if cohort["simulation_mapping"] and isinstance(
-            cohort["simulation_mapping"], dict
-        ):
-            for sid, sdata in cohort["simulation_mapping"].items():
-                simulation_mapping[sid] = SimulationMappingItem(
-                    name=sdata["name"], description=sdata["description"]
-                )
+        simulation_mapping_data = cohort["simulation_mapping"]
+        if isinstance(simulation_mapping_data, str):
+            simulation_mapping_data = json.loads(simulation_mapping_data)
+        if simulation_mapping_data and isinstance(simulation_mapping_data, dict):
+            for sid, sdata in simulation_mapping_data.items():
+                if isinstance(sdata, dict):
+                    simulation_mapping[sid] = SimulationMappingItem(
+                        name=sdata["name"], description=sdata["description"]
+                    )
 
-        # Parse profile mapping from JSONB
+        # Parse profile mapping from JSONB (may be string or dict)
         profile_mapping = {}
-        if cohort["profile_mapping"] and isinstance(cohort["profile_mapping"], dict):
-            for pid, pdata in cohort["profile_mapping"].items():
-                profile_mapping[pid] = ProfileMappingItem(
-                    name=pdata["name"], description=pdata["description"]
-                )
+        profile_mapping_data = cohort["profile_mapping"]
+        if isinstance(profile_mapping_data, str):
+            profile_mapping_data = json.loads(profile_mapping_data)
+        if profile_mapping_data and isinstance(profile_mapping_data, dict):
+            for pid, pdata in profile_mapping_data.items():
+                if isinstance(pdata, dict):
+                    profile_mapping[pid] = ProfileMappingItem(
+                        name=pdata["name"], description=pdata["description"]
+                    )
 
-        # Parse department mapping from JSONB
+        # Parse department mapping from JSONB (may be string or dict)
         department_mapping = {}
-        if cohort["department_mapping"] and isinstance(
-            cohort["department_mapping"], dict
-        ):
-            for did, ddata in cohort["department_mapping"].items():
-                department_mapping[did] = DepartmentMappingItem(
-                    name=ddata["name"], description=ddata["description"]
-                )
+        department_mapping_data = cohort["department_mapping"]
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
+        if department_mapping_data and isinstance(department_mapping_data, dict):
+            for did, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata["name"], description=ddata["description"]
+                    )
 
         return CohortDetailResponse(
             title=cohort["title"],
