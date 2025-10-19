@@ -1,12 +1,12 @@
 """Model run service layer - business logic for tracking model usage and tokens."""
 
-from datetime import datetime, timedelta, timezone, tzinfo
-from typing import Literal, Optional, Tuple
+from datetime import UTC, datetime, timedelta, tzinfo
+from typing import Literal
 from uuid import UUID
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
-from app.extensions import get_query_client
 from app.queries.model_run_queries import ModelRunQueries
 from app.services.base import BaseService
 
@@ -25,7 +25,7 @@ class ModelRunService(BaseService):
         model_id: UUID,
         entity_id: UUID,
         entity_type: Literal["agent", "persona"],
-        profile_id: Optional[UUID] = None,
+        profile_id: UUID | None = None,
     ) -> UUID:
         """
         Create a model run with all junction records in a single transaction.
@@ -50,7 +50,9 @@ class ModelRunService(BaseService):
             ValueError: If entity_type is invalid
         """
         if entity_type not in ["agent", "persona"]:
-            raise ValueError(f"Invalid entity_type: {entity_type}. Must be 'agent' or 'persona'")
+            raise ValueError(
+                f"Invalid entity_type: {entity_type}. Must be 'agent' or 'persona'"
+            )
 
         department_id_str = str(department_id)
         model_id_str = str(model_id)
@@ -92,7 +94,7 @@ class ModelRunService(BaseService):
         if profile_id is not None:
             tags_to_invalidate.append(keys.tag_profile_by_id(profile_id_str))
         tags_to_invalidate.append(keys.tag_profile_all())
-        
+
         # Agent or assistant cache (model runs are linked)
         if entity_type == "agent":
             tags_to_invalidate.append(keys.tag_agent_by_id(entity_id_str))
@@ -100,7 +102,7 @@ class ModelRunService(BaseService):
         else:
             # For personas, invalidate assistant caches as they're closely related
             tags_to_invalidate.append(keys.tag_assistant_all())
-        
+
         await self._invalidate_cache(tags_to_invalidate)
 
         return UUID(model_run_id_str)
@@ -129,8 +131,8 @@ class ModelRunService(BaseService):
         await self.conn.execute(query, *params)
 
     async def check_rate_limit(
-        self, profile_id: Optional[UUID]
-    ) -> Tuple[bool, Optional[str]]:
+        self, profile_id: UUID | None
+    ) -> tuple[bool, str | None]:
         """
         Check if the profile has exceeded their daily request limit.
 
@@ -149,17 +151,17 @@ class ModelRunService(BaseService):
         # Fetch profile rate limit
         query, params = self.queries.get_profile_rate_limit(str(profile_id))
         profile = await self.conn.fetchrow(query, *params)
-        
+
         if not profile:
             return False, "Profile not found."
 
-        req_per_day = profile['req_per_day']
+        req_per_day = profile["req_per_day"]
         if req_per_day is None:
             # Unlimited requests allowed
             return True, None
 
         # Calculate the start of the current day in UTC
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 
         # Count model runs for this profile since the start of the day
@@ -170,29 +172,38 @@ class ModelRunService(BaseService):
 
         if len(model_runs_today) >= req_per_day:
             # Find the earliest run today to determine when the next request is allowed
-            earliest_run = min(model_runs_today, key=lambda run: run['created_at'])
+            earliest_run = min(model_runs_today, key=lambda run: run["created_at"])
             # Next available time is 24h after the earliest run today
-            next_allowed_utc = earliest_run['created_at'] + timedelta(days=1)
-            
+            next_allowed_utc = earliest_run["created_at"] + timedelta(days=1)
+
             # Convert to US/Eastern for user-friendly display using zoneinfo (Python 3.9+)
             eastern_tz: tzinfo
             try:
                 from zoneinfo import ZoneInfo
+
                 eastern_tz = ZoneInfo("America/New_York")
             except ImportError:
                 # Fallback for Python <3.9: use UTC and indicate as such
-                eastern_tz = timezone.utc
+                eastern_tz = UTC
 
             next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
             # Use %-I for Linux, but on Windows use %#I. We'll use %-I and fallback if ValueError.
             try:
-                formatted_time = next_allowed_et.strftime("%-I:%M %p ET").replace("AM", "am").replace("PM", "pm")
+                formatted_time = (
+                    next_allowed_et.strftime("%-I:%M %p ET")
+                    .replace("AM", "am")
+                    .replace("PM", "pm")
+                )
             except ValueError:
-                formatted_time = next_allowed_et.strftime("%#I:%M %p ET").replace("AM", "am").replace("PM", "pm")
-            
+                formatted_time = (
+                    next_allowed_et.strftime("%#I:%M %p ET")
+                    .replace("AM", "am")
+                    .replace("PM", "pm")
+                )
+
             return (
                 False,
-                f"You've reached your daily request limit. You can make your next request after {formatted_time}."
+                f"You've reached your daily request limit. You can make your next request after {formatted_time}.",
             )
 
         return True, None

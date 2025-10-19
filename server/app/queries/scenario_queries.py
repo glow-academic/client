@@ -1,14 +1,14 @@
 """Scenario queries - SQL query builders."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class ScenarioQueries:
     """Query builders for scenario operations."""
 
     def list_scenarios(
-        self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str], profile_id: str
+    ) -> tuple[str, list[Any]]:
         """Build query for scenarios list with all relationships."""
         query = """
         WITH scenario_objectives AS (
@@ -92,8 +92,8 @@ class ScenarioQueries:
         return (query, [department_ids, profile_id])
 
     def get_objective_mapping(
-        self, scenario_ids: List[str], idxs: List[int]
-    ) -> Tuple[str, List[Any]]:
+        self, scenario_ids: list[str], idxs: list[int]
+    ) -> tuple[str, list[Any]]:
         """Build query for objective mapping."""
         query = """
         SELECT 
@@ -109,8 +109,8 @@ class ScenarioQueries:
         return (query, [scenario_ids, idxs])
 
     def get_parameter_item_mapping(
-        self, parameter_item_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, parameter_item_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query for parameter item mapping."""
         query = """
         SELECT 
@@ -126,23 +126,17 @@ class ScenarioQueries:
         """
         return (query, [parameter_item_ids])
 
-    def get_cohort_mapping(
-        self, cohort_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_cohort_mapping(self, cohort_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for cohort mapping."""
         query = "SELECT id, title as name, COALESCE(description, '') as description FROM cohorts WHERE id = ANY($1)"
         return (query, [cohort_ids])
 
-    def get_persona_mapping(
-        self, persona_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_persona_mapping(self, persona_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for persona mapping."""
         query = "SELECT id, name, COALESCE(description, '') as description, color, icon FROM personas WHERE id = ANY($1)"
         return (query, [persona_ids])
 
-    def get_scenario_by_id(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_by_id(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario by ID."""
         query = """
         SELECT 
@@ -156,9 +150,7 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_scenario_persona(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_persona(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's persona."""
         query = """
         SELECT persona_id FROM scenario_personas 
@@ -166,9 +158,7 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_scenario_documents(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_documents(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's documents."""
         query = """
         SELECT document_id FROM scenario_documents 
@@ -176,9 +166,7 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_scenario_objectives(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_objectives(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's objectives."""
         query = """
         SELECT (scenario_id::text || '_' || idx::text) as objective_id, objective
@@ -188,9 +176,7 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_scenario_parameters(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_parameters(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's parameters."""
         query = """
         SELECT 
@@ -203,8 +189,8 @@ class ScenarioQueries:
         return (query, [scenario_id])
 
     def get_valid_parameter_items(
-        self, parameter_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, parameter_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query for valid parameter items."""
         query = """
         SELECT 
@@ -215,9 +201,7 @@ class ScenarioQueries:
         """
         return (query, [parameter_ids])
 
-    def get_scenario_simulations(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_simulations(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's simulations."""
         query = """
         SELECT simulation_id FROM simulation_scenarios 
@@ -225,9 +209,7 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_valid_personas(
-        self, dept_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_valid_personas(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for valid personas."""
         query = """
         SELECT id, name FROM personas 
@@ -236,9 +218,7 @@ class ScenarioQueries:
         """
         return (query, [dept_ids])
 
-    def get_valid_documents(
-        self, dept_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_valid_documents(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for valid documents."""
         query = """
         SELECT id, name FROM documents 
@@ -247,23 +227,17 @@ class ScenarioQueries:
         """
         return (query, [dept_ids])
 
-    def get_simulation_mapping(
-        self, sim_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_simulation_mapping(self, sim_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for simulation mapping."""
         query = "SELECT id, title FROM simulations WHERE id = ANY($1)"
         return (query, [sim_ids])
 
-    def get_document_mapping(
-        self, doc_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_document_mapping(self, doc_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for document mapping."""
         query = "SELECT id, name FROM documents WHERE id = ANY($1)"
         return (query, [doc_ids])
 
-    def get_parameter_mapping(
-        self, param_item_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_parameter_mapping(self, param_item_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for parameter mapping."""
         query = """
         SELECT DISTINCT
@@ -276,9 +250,7 @@ class ScenarioQueries:
         """
         return (query, [param_item_ids])
 
-    def get_default_scenario(
-        self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_default_scenario(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query for default scenario."""
         query = """
         WITH user_departments AS (
@@ -301,7 +273,7 @@ class ScenarioQueries:
 
     def create_scenario(self) -> str:
         """Build query to create scenario.
-        
+
         Params order: name, problem_statement, department_id, active, default_scenario
         """
         return """
@@ -318,7 +290,7 @@ class ScenarioQueries:
 
     def insert_scenario_persona(self) -> str:
         """Build query to insert scenario persona.
-        
+
         Params order: scenario_id, persona_id
         """
         return """
@@ -328,7 +300,7 @@ class ScenarioQueries:
 
     def insert_scenario_document(self) -> str:
         """Build query to insert scenario document.
-        
+
         Params order: scenario_id, document_id
         """
         return """
@@ -338,7 +310,7 @@ class ScenarioQueries:
 
     def insert_scenario_objective(self) -> str:
         """Build query to insert scenario objective.
-        
+
         Params order: scenario_id, idx, objective
         """
         return """
@@ -348,7 +320,7 @@ class ScenarioQueries:
 
     def insert_scenario_parameter(self) -> str:
         """Build query to insert scenario parameter.
-        
+
         Params order: scenario_id, parameter_item_id
         """
         return """
@@ -356,14 +328,14 @@ class ScenarioQueries:
         VALUES ($1, $2, true)
         """
 
-    def get_scenario_name(self, scenario_id: str) -> Tuple[str, List[Any]]:
+    def get_scenario_name(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario name."""
         query = "SELECT name FROM scenarios WHERE id = $1"
         return (query, [scenario_id])
 
     def update_scenario(self) -> str:
         """Build query to update scenario.
-        
+
         Params order: name, problem_statement, department_id, active, default_scenario, scenario_id
         """
         return """
@@ -377,39 +349,29 @@ class ScenarioQueries:
         WHERE id = $6
         """
 
-    def delete_scenario_personas(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def delete_scenario_personas(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to delete scenario personas."""
         query = "DELETE FROM scenario_personas WHERE scenario_id = $1"
         return (query, [scenario_id])
 
-    def delete_scenario_documents(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def delete_scenario_documents(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to delete scenario documents."""
         query = "DELETE FROM scenario_documents WHERE scenario_id = $1"
         return (query, [scenario_id])
 
-    def delete_scenario_objectives(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def delete_scenario_objectives(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to delete scenario objectives."""
         query = "DELETE FROM scenario_objectives WHERE scenario_id = $1"
         return (query, [scenario_id])
 
-    def delete_scenario_parameters(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def delete_scenario_parameters(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to delete scenario parameters."""
         query = """
         DELETE FROM scenario_parameter_items WHERE scenario_id = $1
         """
         return (query, [scenario_id])
 
-    def get_scenario_for_duplicate(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_for_duplicate(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario data for duplication."""
         query = """
         SELECT 
@@ -425,7 +387,7 @@ class ScenarioQueries:
 
     def insert_duplicate_scenario(self) -> str:
         """Build query to insert duplicate scenario.
-        
+
         Params order: name, problem_statement, department_id
         """
         return """
@@ -448,7 +410,7 @@ class ScenarioQueries:
 
     def copy_scenario_personas(self) -> str:
         """Build query to copy scenario personas.
-        
+
         Params order: new_scenario_id, original_scenario_id
         """
         return """
@@ -460,7 +422,7 @@ class ScenarioQueries:
 
     def copy_scenario_documents(self) -> str:
         """Build query to copy scenario documents.
-        
+
         Params order: new_scenario_id, original_scenario_id
         """
         return """
@@ -472,7 +434,7 @@ class ScenarioQueries:
 
     def copy_scenario_objectives(self) -> str:
         """Build query to copy scenario objectives.
-        
+
         Params order: new_scenario_id, original_scenario_id
         """
         return """
@@ -484,7 +446,7 @@ class ScenarioQueries:
 
     def copy_scenario_parameters(self) -> str:
         """Build query to copy scenario parameters.
-        
+
         Params order: new_scenario_id, original_scenario_id
         """
         return """
@@ -494,9 +456,7 @@ class ScenarioQueries:
         WHERE scenario_id = $2
         """
 
-    def check_scenario_usage(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def check_scenario_usage(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to check scenario usage."""
         query = """
         SELECT COUNT(*) as usage_count
@@ -505,14 +465,14 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def delete_scenario(self, scenario_id: str) -> Tuple[str, List[Any]]:
+    def delete_scenario(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to delete scenario."""
         query = "DELETE FROM scenarios WHERE id = $1"
         return (query, [scenario_id])
 
     def get_enhanced_scenario_mapping(
-        self, scenario_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, scenario_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query for enhanced scenario mapping with nested data."""
         query = """
         SELECT 
@@ -533,7 +493,7 @@ class ScenarioQueries:
         return (query, [scenario_ids])
 
     # Queries for randomly_fill_scenario_attributes
-    def get_scenario_persona_link(self, scenario_id: str) -> Tuple[str, List[Any]]:
+    def get_scenario_persona_link(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's active persona link."""
         query = """
         SELECT persona_id
@@ -543,12 +503,12 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_active_personas(self) -> Tuple[str, List[Any]]:
+    def get_active_personas(self) -> tuple[str, list[Any]]:
         """Build query to get all active personas."""
         query = "SELECT id FROM personas WHERE active = true"
         return (query, [])
 
-    def get_scenario_document_links(self, scenario_id: str) -> Tuple[str, List[Any]]:
+    def get_scenario_document_links(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's document links."""
         query = """
         SELECT document_id FROM scenario_documents 
@@ -556,7 +516,7 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_scenario_parameter_links(self, scenario_id: str) -> Tuple[str, List[Any]]:
+    def get_scenario_parameter_links(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's parameter item links."""
         query = """
         SELECT parameter_item_id FROM scenario_parameter_items 
@@ -564,22 +524,26 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_active_documents(self) -> Tuple[str, List[Any]]:
+    def get_active_documents(self) -> tuple[str, list[Any]]:
         """Build query to get all active documents with details."""
         query = "SELECT id, name, type, file_path FROM documents WHERE active = true"
         return (query, [])
 
-    def get_active_parameters(self) -> Tuple[str, List[Any]]:
+    def get_active_parameters(self) -> tuple[str, list[Any]]:
         """Build query to get all active parameters."""
         query = "SELECT id, name FROM parameters WHERE active = true"
         return (query, [])
 
-    def get_parameter_items_by_parameter(self, parameter_id: str) -> Tuple[str, List[Any]]:
+    def get_parameter_items_by_parameter(
+        self, parameter_id: str
+    ) -> tuple[str, list[Any]]:
         """Build query to get parameter items for a parameter."""
         query = "SELECT id, name FROM parameter_items WHERE parameter_id = $1"
         return (query, [parameter_id])
 
-    def get_parameter_items_batch(self, parameter_item_ids: List[str]) -> Tuple[str, List[Any]]:
+    def get_parameter_items_batch(
+        self, parameter_item_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get parameter items with their parameter_id."""
         query = """
         SELECT id, parameter_id FROM parameter_items 
@@ -589,7 +553,7 @@ class ScenarioQueries:
 
     def insert_scenario_variant(self) -> str:
         """Build query to insert a scenario variant.
-        
+
         Params order: name, problem_statement, department_id, generated, active, default_scenario
         """
         return """
@@ -600,7 +564,7 @@ class ScenarioQueries:
 
     def insert_scenario_tree_edge(self) -> str:
         """Build query to insert scenario tree edge.
-        
+
         Params order: parent_scenario_id, child_scenario_id, active
         """
         return """
@@ -610,7 +574,7 @@ class ScenarioQueries:
 
     def insert_scenario_persona_link(self) -> str:
         """Build query to insert scenario-persona link.
-        
+
         Params order: scenario_id, persona_id, active
         """
         return """
@@ -620,7 +584,7 @@ class ScenarioQueries:
 
     def insert_scenario_document_link(self) -> str:
         """Build query to insert scenario-document link.
-        
+
         Params order: scenario_id, document_id, active
         """
         return """
@@ -630,7 +594,7 @@ class ScenarioQueries:
 
     def insert_scenario_parameter_link(self) -> str:
         """Build query to insert scenario-parameter_item link.
-        
+
         Params order: scenario_id, parameter_item_id, active
         """
         return """
@@ -639,17 +603,21 @@ class ScenarioQueries:
         """
 
     # Queries for suggest_randomized_sections
-    def get_persona_by_id(self, persona_id: str) -> Tuple[str, List[Any]]:
+    def get_persona_by_id(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to get persona by ID."""
         query = "SELECT id, name, description FROM personas WHERE id = $1"
         return (query, [persona_id])
 
-    def get_documents_by_ids(self, document_ids: List[str]) -> Tuple[str, List[Any]]:
+    def get_documents_by_ids(self, document_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to get documents by IDs."""
-        query = "SELECT id, name, type, file_path FROM documents WHERE id = ANY($1::uuid[])"
+        query = (
+            "SELECT id, name, type, file_path FROM documents WHERE id = ANY($1::uuid[])"
+        )
         return (query, [document_ids])
 
-    def get_parameter_items_with_details(self, parameter_item_ids: List[str]) -> Tuple[str, List[Any]]:
+    def get_parameter_items_with_details(
+        self, parameter_item_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get parameter items with full details."""
         query = """
         SELECT id, name, description, value, parameter_id 
@@ -658,7 +626,9 @@ class ScenarioQueries:
         """
         return (query, [parameter_item_ids])
 
-    def get_parameters_with_items(self, parameter_ids: List[str]) -> Tuple[str, List[Any]]:
+    def get_parameters_with_items(
+        self, parameter_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get parameters with their items."""
         query = """
         SELECT 
@@ -679,11 +649,11 @@ class ScenarioQueries:
 
     def search_scenarios_fuzzy(
         self, where_clause: str, limit: int
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build fuzzy search query for scenarios by name and problem_statement.
         Uses dynamic WHERE clause built by search utilities.
-        
+
         Params: Built dynamically by search utilities, plus limit at end
         """
         query = f"""
@@ -699,8 +669,8 @@ class ScenarioQueries:
         return (query, [limit])
 
     def get_scenario_personas_batch(
-        self, scenario_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, scenario_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get persona associations for multiple scenarios."""
         query = """
             SELECT scenario_id, persona_id
@@ -710,15 +680,15 @@ class ScenarioQueries:
         """
         return (query, [scenario_ids])
 
-    def get_scenario_overview_complete(self, scenario_id: Any) -> Tuple[str, List[Any]]:
+    def get_scenario_overview_complete(self, scenario_id: Any) -> tuple[str, list[Any]]:
         """Build optimized query to get scenario overview with all related data in ONE query.
-        
-        Fetches scenario + simulations + persona using LEFT JOINs and JSON aggregation 
+
+        Fetches scenario + simulations + persona using LEFT JOINs and JSON aggregation
         to avoid N+1 queries.
-        
+
         Args:
             scenario_id: UUID of the scenario
-            
+
         Returns:
             Tuple of (query string, params list)
         """
@@ -750,8 +720,8 @@ class ScenarioQueries:
         return (query, [scenario_id])
 
     def get_valid_parameter_items_for_parameters(
-        self, parameter_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, parameter_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get valid parameter items for given parameters."""
         query = """
         SELECT 
@@ -762,7 +732,7 @@ class ScenarioQueries:
         """
         return (query, [parameter_ids])
 
-    def get_departments_for_profile(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_departments_for_profile(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get departments for a profile."""
         query = """
         SELECT DISTINCT d.id
@@ -773,8 +743,8 @@ class ScenarioQueries:
         return (query, [profile_id])
 
     def get_valid_personas_for_departments(
-        self, department_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get valid personas for departments."""
         query = """
         SELECT id, name, COALESCE(description, '') as description, color, icon 
@@ -785,8 +755,8 @@ class ScenarioQueries:
         return (query, [department_ids])
 
     def get_valid_documents_for_departments(
-        self, department_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get valid documents for departments."""
         query = """
         SELECT id, name, type::text as description 
@@ -797,8 +767,8 @@ class ScenarioQueries:
         return (query, [department_ids])
 
     def get_simulations_by_ids(
-        self, simulation_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, simulation_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get simulations by IDs."""
         query = """
         SELECT id, title, COALESCE(description, '') as description 
@@ -807,14 +777,14 @@ class ScenarioQueries:
         """
         return (query, [simulation_ids])
 
-    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile role."""
         query = "SELECT role FROM profiles WHERE id = $1"
         return (query, [profile_id])
 
     def get_departments_by_ids(
-        self, department_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get departments by IDs."""
         query = """
         SELECT id, title, COALESCE(description, '') as description 
@@ -826,8 +796,8 @@ class ScenarioQueries:
     # ===== Additional queries for scenario detail and list building =====
 
     def get_scenario_documents_aggregated(
-        self, scenario_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, scenario_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get aggregated document IDs per scenario."""
         query = """
         SELECT scenario_id, ARRAY_AGG(document_id) as document_ids
@@ -837,9 +807,7 @@ class ScenarioQueries:
         """
         return (query, [scenario_ids])
 
-    def get_documents_mapping(
-        self, document_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_documents_mapping(self, document_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to get documents mapping with type as description."""
         query = """
         SELECT id, name, type::text as description
@@ -848,9 +816,7 @@ class ScenarioQueries:
         """
         return (query, [document_ids])
 
-    def get_scenario_basic_with_tree(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_basic_with_tree(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario with tree parent relationship."""
         query = """
         SELECT 
@@ -868,8 +834,8 @@ class ScenarioQueries:
         return (query, [scenario_id])
 
     def get_parameters_from_items(
-        self, parameter_item_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, parameter_item_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get parameters from parameter items."""
         query = """
         SELECT DISTINCT
@@ -883,8 +849,8 @@ class ScenarioQueries:
         return (query, [parameter_item_ids])
 
     def get_parameter_items_full(
-        self, parameter_item_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, parameter_item_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get full parameter items with parameter name."""
         query = """
         SELECT 
@@ -900,9 +866,7 @@ class ScenarioQueries:
         """
         return (query, [parameter_item_ids])
 
-    def check_scenario_active_usage(
-        self, scenario_id: str
-    ) -> Tuple[str, List[Any]]:
+    def check_scenario_active_usage(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to check if scenario is used by active simulations."""
         query = """
         SELECT COUNT(*) as usage_count
@@ -915,8 +879,8 @@ class ScenarioQueries:
         return (query, [scenario_id])
 
     def get_active_parameters_for_departments(
-        self, department_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get active parameters for departments."""
         query = """
         SELECT DISTINCT p.id, p.name, p.description
@@ -927,8 +891,8 @@ class ScenarioQueries:
         return (query, [department_ids])
 
     def get_active_parameter_items_for_departments(
-        self, department_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get active parameter items with parameter name."""
         query = """
         SELECT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
@@ -938,4 +902,3 @@ class ScenarioQueries:
         ORDER BY p.name, pi.name
         """
         return (query, [department_ids])
-

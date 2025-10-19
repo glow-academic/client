@@ -1,13 +1,20 @@
 """Analytics request and response schemas."""
 
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from .base import (ParameterItemMapping, ParameterMapping, PersonaMapping,
-                   RubricMapping, ScenarioMapping, SimulationMapping,
-                   StandardGroupsMapping, StandardsMapping)
+from .base import (
+    ParameterItemMapping,
+    ParameterMapping,
+    PersonaMapping,
+    RubricMapping,
+    ScenarioMapping,
+    SimulationMapping,
+    StandardGroupsMapping,
+    StandardsMapping,
+)
 
 
 # Enums
@@ -45,11 +52,11 @@ class AnalyticsFilters(BaseModel):
 
     startDate: str
     endDate: str
-    cohortIds: Optional[List[str]] = None
-    roles: Optional[List[str]] = None
-    simulationFilters: Optional[List[SimulationFilter]] = None
-    profileId: Optional[str] = None
-    departmentIds: Optional[List[str]] = None
+    cohortIds: list[str] | None = None
+    roles: list[str] | None = None
+    simulationFilters: list[SimulationFilter] | None = None
+    profileId: str | None = None
+    departmentIds: list[str] | None = None
 
 
 # Basic Response Schemas
@@ -65,12 +72,12 @@ class DataPoint(BaseModel):
     """Individual data point."""
 
     profileId: str
-    date: Optional[str] = None
-    value: Optional[float] = None
-    attemptId: Optional[str] = None
-    simulationId: Optional[str] = None
-    scenarioId: Optional[str] = None
-    count: Optional[int] = None
+    date: str | None = None
+    value: float | None = None
+    attemptId: str | None = None
+    simulationId: str | None = None
+    scenarioId: str | None = None
+    count: int | None = None
 
 
 class MetricResponse(BaseModel):
@@ -79,11 +86,11 @@ class MetricResponse(BaseModel):
     hasData: bool
     method: Method
     currentValue: int
-    trendAnalysis: Optional[str] = None
-    valueField: Optional[str] = None
-    keyField: Optional[str] = None
-    trendData: List[TrendData]
-    dataPoints: List[DataPoint]
+    trendAnalysis: str | None = None
+    valueField: str | None = None
+    keyField: str | None = None
+    trendData: list[TrendData]
+    dataPoints: list[DataPoint]
 
 
 # Primary Analytics Schemas
@@ -92,7 +99,7 @@ class RubricHeatmapCell(BaseModel):
 
     rubricId: str
     correlation: float
-    pValue: Optional[float] = None
+    pValue: float | None = None
     color: str
     strength: str
     dataPoints: int
@@ -103,7 +110,7 @@ class StandardGroup(BaseModel):
 
     id: str
     name: str
-    shortName: Optional[str] = None
+    shortName: str | None = None
     rubricId: str
 
 
@@ -111,33 +118,33 @@ class RubricMatrixPackage(BaseModel):
     """Per-rubric matrix package."""
 
     rubricId: str
-    standardGroups: List[StandardGroup]
-    matrix: List[List[RubricHeatmapCell]]
-    insights: Optional[str] = None
+    standardGroups: list[StandardGroup]
+    matrix: list[list[RubricHeatmapCell]]
+    insights: str | None = None
     hasData: bool
 
 
 class RubricHeatmapResponse(BaseModel):
     """Rubric heatmap response."""
 
-    matrices: List[RubricMatrixPackage]
-    validRubricIds: List[str]
+    matrices: list[RubricMatrixPackage]
+    validRubricIds: list[str]
 
 
 class GrowthDataPoint(BaseModel):
     """Growth data point."""
 
     date: str
-    averageScore: Optional[float] = None
-    passRate: Optional[float] = None
-    completionRate: Optional[float] = None
-    firstAttemptPassRate: Optional[float] = None
-    messagesPerSession: Optional[float] = None
-    personaResponseTimes: Optional[float] = None
-    sessionEfficiency: Optional[float] = None
-    stagnationRate: Optional[float] = None
-    timeSpent: Optional[float] = None
-    totalAttempts: Optional[float] = None
+    averageScore: float | None = None
+    passRate: float | None = None
+    completionRate: float | None = None
+    firstAttemptPassRate: float | None = None
+    messagesPerSession: float | None = None
+    personaResponseTimes: float | None = None
+    sessionEfficiency: float | None = None
+    stagnationRate: float | None = None
+    timeSpent: float | None = None
+    totalAttempts: float | None = None
 
 
 class GrowthMetric(BaseModel):
@@ -155,8 +162,8 @@ class GrowthWindowAverage(BaseModel):
     """Growth window average."""
 
     n: int
-    last: Optional[float] = None
-    prev: Optional[float] = None
+    last: float | None = None
+    prev: float | None = None
 
 
 class GrowthWindowAverages(BaseModel):
@@ -168,8 +175,8 @@ class GrowthWindowAverages(BaseModel):
 class GrowthDataResponse(BaseModel):
     """Growth data response."""
 
-    chartData: List[GrowthDataPoint]
-    availableMetrics: List[GrowthMetric]
+    chartData: list[GrowthDataPoint]
+    availableMetrics: list[GrowthMetric]
     windowAverages: GrowthWindowAverages
 
 
@@ -177,9 +184,9 @@ class PersonaTrendData(BaseModel):
     """Persona trend data point."""
 
     date: str
-    score: Optional[float] = None
+    score: float | None = None
     timestamp: int
-    simulationId: Optional[str] = None
+    simulationId: str | None = None
 
 
 class PersonaPerformanceData(BaseModel):
@@ -189,15 +196,15 @@ class PersonaPerformanceData(BaseModel):
     score: float
     sessions: int
     color: str
-    simulationIds: Optional[List[str]] = None
-    trendData: List[PersonaTrendData]
+    simulationIds: list[str] | None = None
+    trendData: list[PersonaTrendData]
 
 
 class PersonaPerformanceResponse(BaseModel):
     """Persona performance response."""
 
-    chartData: List[PersonaPerformanceData]
-    validSimulationIds: List[str]
+    chartData: list[PersonaPerformanceData]
+    validSimulationIds: list[str]
     personaColors: dict[str, str]
 
 
@@ -232,9 +239,9 @@ class AttemptImprovementFact(BaseModel):
 class AttemptImprovementResponse(BaseModel):
     """Attempt improvement response."""
 
-    chartData: List[AttemptImprovementData]
-    facts: List[AttemptImprovementFact]
-    validSimulationIds: List[str]
+    chartData: list[AttemptImprovementData]
+    facts: list[AttemptImprovementFact]
+    validSimulationIds: list[str]
 
 
 class CohortData(BaseModel):
@@ -257,7 +264,7 @@ class DailyData(BaseModel):
 
     date: str
     avgScore: float
-    cohortId: Optional[str] = None
+    cohortId: str | None = None
 
 
 class CohortFact(BaseModel):
@@ -281,18 +288,18 @@ class CohortDailyFact(BaseModel):
 class CohortPerformanceResponse(BaseModel):
     """Cohort performance response."""
 
-    cohortData: List[CohortData]
-    dailyData: List[DailyData]
-    cohortFacts: List[CohortFact]
-    dailyFacts: List[CohortDailyFact]
-    validSimulationIds: List[str]
+    cohortData: list[CohortData]
+    dailyData: list[DailyData]
+    cohortFacts: list[CohortFact]
+    dailyFacts: list[CohortDailyFact]
+    validSimulationIds: list[str]
 
 
 class SkillRadarData(BaseModel):
     """Skill radar data."""
 
     metric: str
-    description: Optional[str] = None
+    description: str | None = None
     value: float
     fullMark: float
 
@@ -302,7 +309,7 @@ class SkillStandardFact(BaseModel):
 
     groupId: str
     groupName: str
-    groupDescription: Optional[str] = None
+    groupDescription: str | None = None
     simulationId: str
     score: float
     points: float
@@ -313,15 +320,15 @@ class SkillPackage(BaseModel):
     """Skill package."""
 
     rubricId: str
-    radarData: List[SkillRadarData]
-    groupFacts: List[SkillStandardFact]
+    radarData: list[SkillRadarData]
+    groupFacts: list[SkillStandardFact]
 
 
 class SkillPerformanceResponse(BaseModel):
     """Skill performance response."""
 
-    packages: List[SkillPackage]
-    validRubricIds: List[str]
+    packages: list[SkillPackage]
+    validRubricIds: list[str]
 
 
 # Footer Analytics Schemas
@@ -348,9 +355,9 @@ class ScenarioAttributeScenarioFact(BaseModel):
 class ScenarioPerformanceResponse(BaseModel):
     """Scenario performance response."""
 
-    validParameterIds: List[str]
-    attributeAttemptFacts: List[ScenarioAttributeAttemptFact]
-    attributeScenarioFacts: List[ScenarioAttributeScenarioFact]
+    validParameterIds: list[str]
+    attributeAttemptFacts: list[ScenarioAttributeAttemptFact]
+    attributeScenarioFacts: list[ScenarioAttributeScenarioFact]
 
 
 class NumericAttemptFact(BaseModel):
@@ -375,9 +382,9 @@ class NumericScenarioFact(BaseModel):
 class ScenarioStatsResponse(BaseModel):
     """Scenario stats response."""
 
-    validNumericParameterIds: List[str]
-    numericAttemptFacts: List[NumericAttemptFact]
-    numericScenarioFacts: List[NumericScenarioFact]
+    validNumericParameterIds: list[str]
+    numericAttemptFacts: list[NumericAttemptFact]
+    numericScenarioFacts: list[NumericScenarioFact]
 
 
 class SimulationFact(BaseModel):
@@ -413,10 +420,10 @@ class SimulationParameterFactNumeric(BaseModel):
 class SimulationCompositionResponse(BaseModel):
     """Simulation composition response."""
 
-    validSimulationIds: List[str]
-    simulationFacts: List[SimulationFact]
-    simulationParameterFactsCategorical: List[SimulationParameterFactCategorical]
-    simulationParameterFactsNumeric: List[SimulationParameterFactNumeric]
+    validSimulationIds: list[str]
+    simulationFacts: list[SimulationFact]
+    simulationParameterFactsCategorical: list[SimulationParameterFactCategorical]
+    simulationParameterFactsNumeric: list[SimulationParameterFactNumeric]
     hasData: bool
 
 
@@ -435,8 +442,8 @@ class ScenarioFact(BaseModel):
 class SimulationPerformanceResponse(BaseModel):
     """Simulation performance response."""
 
-    validSimulationIds: List[str]
-    scenarioFacts: List[ScenarioFact]
+    validSimulationIds: list[str]
+    scenarioFacts: list[ScenarioFact]
 
 
 # Page-specific Analytics Schemas
@@ -446,25 +453,25 @@ class HomeSimulationItem(BaseModel):
     viewMode: Literal["ta", "instructional"]
     id: str
     simulationTitle: str
-    simulationDescription: Optional[str] = None
+    simulationDescription: str | None = None
     simulationName: str
-    timeLimit: Optional[int] = None
+    timeLimit: int | None = None
     numSessions: int
-    highestScore: Optional[float] = None
-    standard_groups: Dict[str, List[str]]
-    color: Optional[str] = None
-    icon: Optional[str] = None
-    hasPassed: Optional[bool] = None
-    passRate: Optional[float] = None
-    cohortName: Optional[str] = None
-    cohortNames: Optional[str] = None
-    orderIndex: Optional[int] = None
+    highestScore: float | None = None
+    standard_groups: dict[str, list[str]]
+    color: str | None = None
+    icon: str | None = None
+    hasPassed: bool | None = None
+    passRate: float | None = None
+    cohortName: str | None = None
+    cohortNames: str | None = None
+    orderIndex: int | None = None
     status: Literal["not-started", "in-progress", "passed"]
     completionPct: float
-    passedCount: Optional[int] = None
-    inProgressCount: Optional[int] = None
-    notStartedCount: Optional[int] = None
-    passPct: Optional[float] = None
+    passedCount: int | None = None
+    inProgressCount: int | None = None
+    notStartedCount: int | None = None
+    passPct: float | None = None
 
 
 class AttemptHistoryRow(BaseModel):
@@ -475,25 +482,25 @@ class AttemptHistoryRow(BaseModel):
     profileId: str
     profileName: str
     simulationName: str
-    numScenarios: Optional[int] = None
+    numScenarios: int | None = None
     numScenariosCompleted: int
     infiniteMode: bool
-    infiniteModeTimeLimit: Optional[int] = None
-    personaNames: List[str]
-    personaColors: List[str]
-    score: Optional[float] = None
+    infiniteModeTimeLimit: int | None = None
+    personaNames: list[str]
+    personaColors: list[str]
+    score: float | None = None
     simulation_id: str
     department_id: str
-    scenario_ids: List[str]
-    scenario_titles: Optional[List[str]] = None
+    scenario_ids: list[str]
+    scenario_titles: list[str] | None = None
     isArchived: bool
     showView: bool
     showContinue: bool
     practiceSimulation: bool
-    passPct: Optional[float] = None
+    passPct: float | None = None
 
 
-AttemptHistoryResponse = List[AttemptHistoryRow]
+AttemptHistoryResponse = list[AttemptHistoryRow]
 
 
 class HomeOverviewResponse(BaseModel):
@@ -501,7 +508,7 @@ class HomeOverviewResponse(BaseModel):
 
     mode: Literal["ta", "instructional", "empty"]
     hasData: bool
-    items: List[HomeSimulationItem]
+    items: list[HomeSimulationItem]
     history: AttemptHistoryResponse
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
@@ -514,26 +521,26 @@ class PracticeSimulationItem(BaseModel):
     viewMode: Literal["practice"]
     id: str
     simulationTitle: str
-    simulationDescription: Optional[str] = None
+    simulationDescription: str | None = None
     simulationName: str
-    timeLimit: Optional[int] = None
+    timeLimit: int | None = None
     numSessions: int
-    highestScore: Optional[float] = None
-    standard_groups: Dict[str, List[str]]
-    color: Optional[str] = None
-    icon: Optional[str] = None
-    hasPassed: Optional[bool] = None
-    passRate: Optional[float] = None
-    status: Optional[Literal["not-started", "in-progress", "passed"]] = None
-    completionPct: Optional[float] = None
-    passedCount: Optional[int] = None
-    inProgressCount: Optional[int] = None
-    notStartedCount: Optional[int] = None
-    passPct: Optional[float] = None
-    cohortName: Optional[str] = None
-    updatedAt: Optional[str] = None
-    lastActivityTs: Optional[str] = None
-    hasActivity: Optional[bool] = None
+    highestScore: float | None = None
+    standard_groups: dict[str, list[str]]
+    color: str | None = None
+    icon: str | None = None
+    hasPassed: bool | None = None
+    passRate: float | None = None
+    status: Literal["not-started", "in-progress", "passed"] | None = None
+    completionPct: float | None = None
+    passedCount: int | None = None
+    inProgressCount: int | None = None
+    notStartedCount: int | None = None
+    passPct: float | None = None
+    cohortName: str | None = None
+    updatedAt: str | None = None
+    lastActivityTs: str | None = None
+    hasActivity: bool | None = None
 
 
 class PracticeOverviewResponse(BaseModel):
@@ -541,7 +548,7 @@ class PracticeOverviewResponse(BaseModel):
 
     mode: Literal["practice"]
     hasData: bool
-    items: List[PracticeSimulationItem]
+    items: list[PracticeSimulationItem]
     history: AttemptHistoryResponse
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
@@ -580,7 +587,7 @@ class FirstAttemptPassRateHover(BaseModel):
 class HighestScoreHover(BaseModel):
     """Highest score hover data."""
 
-    top: List[float]
+    top: list[float]
 
 
 class MessagesPerSessionHover(BaseModel):
@@ -727,7 +734,7 @@ class ProfileDataEnhanced(BaseModel):
 class ReportsBundleResponse(BaseModel):
     """Reports bundle response with entity mappings."""
 
-    data: List[ProfileDataEnhanced]
+    data: list[ProfileDataEnhanced]
     scenario_mapping: ScenarioMapping
     simulation_mapping: SimulationMapping
 
@@ -739,9 +746,9 @@ class LeaderboardMetric(BaseModel):
     hasData: bool
     method: str
     currentValue: int
-    keyField: Optional[str] = None
-    trendData: List[Any]
-    dataPoints: List[Any]
+    keyField: str | None = None
+    trendData: list[Any]
+    dataPoints: list[Any]
     hover: dict[str, Any]
 
 
@@ -770,7 +777,7 @@ class LeaderboardRow(BaseModel):
 class LeaderboardBundleResponse(BaseModel):
     """Leaderboard bundle response."""
 
-    data: List[LeaderboardRow]
+    data: list[LeaderboardRow]
 
 
 # Utility Schemas
@@ -802,11 +809,11 @@ class ModelRunItem(BaseModel):
     created_at: str
     input_tokens: int
     output_tokens: int
-    model_id: Optional[str]
-    profile_id: Optional[str]
-    agent_id: Optional[str]
-    persona_id: Optional[str]
-    debug_info: List[DebugInfoItem]
+    model_id: str | None
+    profile_id: str | None
+    agent_id: str | None
+    persona_id: str | None
+    debug_info: list[DebugInfoItem]
 
 
 class ModelMappingWithPricing(BaseModel):
@@ -821,7 +828,7 @@ class ModelMappingWithPricing(BaseModel):
 class PricingAnalyticsResponse(BaseModel):
     """Response for pricing analytics."""
 
-    model_runs: List[ModelRunItem]
+    model_runs: list[ModelRunItem]
     model_mapping: dict[str, ModelMappingWithPricing]
     profile_mapping: dict[str, str]
     agent_mapping: dict[str, str]
@@ -876,21 +883,21 @@ class DashboardFooterMetrics(BaseModel):
 class DashboardInsights(BaseModel):
     """Actionable insights (computed server-side)."""
 
-    growth: Optional[str] = None
-    persona: dict[str, Optional[str]]  # persona_name -> insight
-    rubric_heatmap: Optional[str] = None
-    attempt_improvement: Optional[str] = None
-    cohort: dict[str, Optional[str]]  # cohort_id -> insight
-    skill_performance: Optional[str] = None
-    scenario_performance: Optional[str] = None
-    scenario_stats: Optional[str] = None
-    simulation_performance: Optional[str] = None
-    simulation_composition: Optional[str] = None
+    growth: str | None = None
+    persona: dict[str, str | None]  # persona_name -> insight
+    rubric_heatmap: str | None = None
+    attempt_improvement: str | None = None
+    cohort: dict[str, str | None]  # cohort_id -> insight
+    skill_performance: str | None = None
+    scenario_performance: str | None = None
+    scenario_stats: str | None = None
+    simulation_performance: str | None = None
+    simulation_composition: str | None = None
 
 
 class Thresholds(BaseModel):
     """Performance thresholds for analytics metrics."""
-    
+
     danger: int
     warning: int
     success: int
@@ -912,4 +919,3 @@ class DashboardBundleResponse(BaseModel):
     rubric_mapping: RubricMapping
     parameter_mapping: ParameterMapping
     parameter_item_mapping: ParameterItemMapping
-

@@ -6,11 +6,12 @@ import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
+from sqlmodel import Session
+
 from app.utils.scenario import (
     get_parameter_item_info,
     randomly_fill_scenario_attributes,
 )
-from sqlmodel import Session
 
 
 @pytest.fixture
@@ -200,6 +201,7 @@ class TestRandomly_Fill_Scenario_Attributes:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `suggest_randomized_sections`")
 class TestSuggest_Randomized_Sections:
     """Tests for suggest_randomized_sections function."""
@@ -216,6 +218,7 @@ class TestSuggest_Randomized_Sections:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `score_persona`")
 class TestScore_Persona:
@@ -234,6 +237,7 @@ class TestScore_Persona:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `score_doc`")
 class TestScore_Doc:
     """Tests for score_doc function."""
@@ -251,6 +255,7 @@ class TestScore_Doc:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `score_item`")
 class TestScore_Item:
     """Tests for score_item function."""
@@ -266,8 +271,8 @@ class TestScore_Item:
         assert False, "IMPLEMENT: Error test for score_item"
 
 
-
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `format_parameter_item_info`")
 class TestFormat_Parameter_Item_Info:
@@ -282,4 +287,3 @@ class TestFormat_Parameter_Item_Info:
         """Test format_parameter_item_info error handling."""
         # TODO: Implement error test for format_parameter_item_info
         assert False, "IMPLEMENT: Error test for format_parameter_item_info"
-

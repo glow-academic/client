@@ -1,14 +1,14 @@
 """Parameter queries - SQL query builders for parameters and parameter items."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class ParameterQueries:
     """Query builders for parameter operations with hierarchical structure."""
 
     def list_parameters(
-        self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str], profile_id: str
+    ) -> tuple[str, list[Any]]:
         """Build query for parameters list with item counts and permissions."""
         query = """
         WITH parameter_item_counts AS (
@@ -58,9 +58,7 @@ class ParameterQueries:
 
         return (query, [department_ids, profile_id])
 
-    def get_parameter_by_id(
-        self, parameter_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_parameter_by_id(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter by ID."""
         query = """
         SELECT 
@@ -75,9 +73,7 @@ class ParameterQueries:
         """
         return (query, [parameter_id])
 
-    def get_parameter_items(
-        self, parameter_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_parameter_items(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter items."""
         query = """
         SELECT 
@@ -96,8 +92,8 @@ class ParameterQueries:
         return (query, [parameter_id])
 
     def check_parameter_item_usage(
-        self, parameter_item_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, parameter_item_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to check parameter item usage."""
         query = """
         SELECT parameter_item_id, COUNT(*) as usage_count
@@ -109,7 +105,7 @@ class ParameterQueries:
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id, d.title as name, d.description
@@ -120,9 +116,7 @@ class ParameterQueries:
         """
         return (query, [profile_id])
 
-    def get_default_parameter(
-        self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_default_parameter(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query for default parameter."""
         query = """
         WITH user_departments AS (
@@ -143,7 +137,7 @@ class ParameterQueries:
         """
         return (query, [profile_id])
 
-    def create_parameter(self) -> Tuple[str, List[Any]]:
+    def create_parameter(self) -> tuple[str, list[Any]]:
         """Build query to create parameter."""
         query = """
         INSERT INTO parameters (
@@ -166,7 +160,7 @@ class ParameterQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def create_parameter_item(self) -> Tuple[str, List[Any]]:
+    def create_parameter_item(self) -> tuple[str, list[Any]]:
         """Build query to create parameter item."""
         query = """
         INSERT INTO parameter_items (
@@ -187,14 +181,12 @@ class ParameterQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_parameter_name(
-        self, parameter_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_parameter_name(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter name."""
         query = "SELECT name FROM parameters WHERE id = $1"
         return (query, [parameter_id])
 
-    def update_parameter(self) -> Tuple[str, List[Any]]:
+    def update_parameter(self) -> tuple[str, list[Any]]:
         """Build query to update parameter."""
         query = """
         UPDATE parameters SET
@@ -209,16 +201,12 @@ class ParameterQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def delete_parameter_items(
-        self, parameter_id: str
-    ) -> Tuple[str, List[Any]]:
+    def delete_parameter_items(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to delete parameter items."""
         query = "DELETE FROM parameter_items WHERE parameter_id = $1"
         return (query, [parameter_id])
 
-    def get_parameter_for_duplicate(
-        self, parameter_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_parameter_for_duplicate(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter data for duplication."""
         query = """
         SELECT 
@@ -231,7 +219,7 @@ class ParameterQueries:
         """
         return (query, [parameter_id])
 
-    def insert_duplicate_parameter(self) -> Tuple[str, List[Any]]:
+    def insert_duplicate_parameter(self) -> tuple[str, list[Any]]:
         """Build query to insert duplicate parameter."""
         query = """
         INSERT INTO parameters (
@@ -254,9 +242,7 @@ class ParameterQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_items_for_duplicate(
-        self, parameter_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_items_for_duplicate(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter items for duplication."""
         query = """
         SELECT 
@@ -270,9 +256,7 @@ class ParameterQueries:
         """
         return (query, [parameter_id])
 
-    def check_parameter_usage(
-        self, parameter_id: str
-    ) -> Tuple[str, List[Any]]:
+    def check_parameter_usage(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to check parameter usage via items."""
         query = """
         SELECT COUNT(DISTINCT spi.scenario_id) as usage_count
@@ -282,9 +266,7 @@ class ParameterQueries:
         """
         return (query, [parameter_id])
 
-    def delete_parameter(
-        self, parameter_id: str
-    ) -> Tuple[str, List[Any]]:
+    def delete_parameter(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to delete parameter."""
         query = "DELETE FROM parameters WHERE id = $1"
         return (query, [parameter_id])

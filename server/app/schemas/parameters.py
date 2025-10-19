@@ -1,6 +1,5 @@
 """Parameters V2 API schemas with nested items."""
 
-from typing import List
 
 from pydantic import BaseModel
 
@@ -14,7 +13,7 @@ from .base import DepartmentMapping
 class ParametersFilters(BaseModel):
     """Filters for parameters list."""
 
-    departmentIds: List[str]
+    departmentIds: list[str]
     profileId: str
 
 
@@ -41,7 +40,7 @@ class ParameterItem(BaseModel):
 class ParametersListResponse(BaseModel):
     """Response for parameters list endpoint."""
 
-    parameters: List[ParameterItem]
+    parameters: list[ParameterItem]
 
 
 # ============================================================================
@@ -77,10 +76,10 @@ class ParameterDetailResponse(BaseModel):
     active: bool
     default_parameter: bool
     department_id: str
-    valid_department_ids: List[str]
+    valid_department_ids: list[str]
 
     # Nested parameter items
-    parameter_items: List[ParameterItemDetail]
+    parameter_items: list[ParameterItemDetail]
 
     # Top-level mappings
     department_mapping: DepartmentMapping
@@ -115,7 +114,7 @@ class CreateParameterRequest(BaseModel):
     active: bool
     default_parameter: bool
     department_id: str
-    parameter_items: List[ParameterItemCreate]
+    parameter_items: list[ParameterItemCreate]
 
 
 class CreateParameterResponse(BaseModel):
@@ -136,7 +135,7 @@ class UpdateParameterRequest(BaseModel):
     active: bool
     default_parameter: bool
     department_id: str
-    parameter_items: List[ParameterItemCreate]
+    parameter_items: list[ParameterItemCreate]
 
 
 class UpdateParameterResponse(BaseModel):
@@ -194,4 +193,3 @@ class CreateParameterItemResponse(BaseModel):
     success: bool
     parameterItemId: str
     message: str
-

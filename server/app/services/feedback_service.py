@@ -1,11 +1,15 @@
 """Feedback service with business logic and dynamic SQL."""
 
-
 import asyncpg  # type: ignore
+
 from app.queries.feedback_queries import FeedbackQueries
-from app.schemas.feedback import (CreateFeedbackRequest,
-                                  CreateFeedbackResponse, FeedbackItem,
-                                  FeedbackListRequest, FeedbackListResponse)
+from app.schemas.feedback import (
+    CreateFeedbackRequest,
+    CreateFeedbackResponse,
+    FeedbackItem,
+    FeedbackListRequest,
+    FeedbackListResponse,
+)
 from app.services.base import BaseService
 
 
@@ -37,15 +41,15 @@ class FeedbackService(BaseService):
         for row in rows:
             feedback_items.append(
                 FeedbackItem(
-                    feedback_id=row['feedback_id'],
-                    type=row['type'],
-                    message=row['message'],
-                    created_at=row['created_at'].isoformat()
-                    if row['created_at']
+                    feedback_id=row["feedback_id"],
+                    type=row["type"],
+                    message=row["message"],
+                    created_at=row["created_at"].isoformat()
+                    if row["created_at"]
                     else "",
-                    author_name=row['author_name'],
-                    author_alias=row['author_alias'],
-                    author_profile_id=row['author_profile_id'],
+                    author_name=row["author_name"],
+                    author_alias=row["author_alias"],
+                    author_profile_id=row["author_profile_id"],
                 )
             )
 
@@ -86,7 +90,7 @@ class FeedbackService(BaseService):
             raise ValueError("Failed to create feedback")
 
         return CreateFeedbackResponse(
-            feedback_id=result['feedback_id'],
+            feedback_id=result["feedback_id"],
             success=True,
             message="Feedback created successfully",
         )

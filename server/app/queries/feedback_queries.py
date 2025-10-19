@@ -1,12 +1,12 @@
 """Feedback query builders with dynamic SQL."""
 
-from typing import Any, List
+from typing import Any
 
 
 class FeedbackQueries:
     """Query builders for feedback operations."""
 
-    def get_feedback_list(self) -> tuple[str, List[Any]]:
+    def get_feedback_list(self) -> tuple[str, list[Any]]:
         """
         Get feedback list with author information.
 
@@ -33,13 +33,13 @@ class FeedbackQueries:
         ORDER BY af.created_at DESC
         """
 
-        params: List[Any] = []
+        params: list[Any] = []
 
         return query, params
 
     def create_feedback(
         self, feedback_type: str, message: str, profile_id: str
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Create new feedback entry and associate with author profile.
 

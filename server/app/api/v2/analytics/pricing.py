@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.services.analytics_service import get_analytics_service
-from app.schemas.analytics import AnalyticsFilters, PricingAnalyticsResponse
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.analytics import AnalyticsFilters, PricingAnalyticsResponse
+from app.services.analytics_service import get_analytics_service
 
 router = APIRouter()
 
@@ -22,4 +23,3 @@ async def get_pricing_analytics(
         return await service.get_pricing_analytics(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

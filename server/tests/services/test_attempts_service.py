@@ -1,11 +1,14 @@
 """
 Tests for app.services.attempts_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.attempts_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_attempts_service`")
 class TestGet_Attempts_Service:
@@ -32,6 +36,7 @@ class TestGet_Attempts_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `bulk_archive_attempts`")
 class TestBulk_Archive_Attempts:
     """Tests for bulk_archive_attempts function."""
@@ -48,6 +53,7 @@ class TestBulk_Archive_Attempts:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `update_chat_created_at`")
 class TestUpdate_Chat_Created_At:
@@ -66,6 +72,7 @@ class TestUpdate_Chat_Created_At:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `update_chat_completed_at`")
 class TestUpdate_Chat_Completed_At:
     """Tests for update_chat_completed_at function."""
@@ -79,4 +86,3 @@ class TestUpdate_Chat_Completed_At:
         """Test update_chat_completed_at error handling."""
         # TODO: Implement error test for update_chat_completed_at
         assert False, "IMPLEMENT: Error test for update_chat_completed_at"
-

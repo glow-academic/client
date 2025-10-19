@@ -1,14 +1,14 @@
 """Provider queries - SQL query builders for providers and models."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class ProviderQueries:
     """Query builders for provider and model operations."""
 
     def list_providers(
-        self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str], profile_id: str
+    ) -> tuple[str, list[Any]]:
         """Build query for providers list with permissions."""
         query = """
         WITH user_profile AS (
@@ -31,8 +31,8 @@ class ProviderQueries:
         return (query, [department_ids, profile_id])
 
     def get_models_for_providers(
-        self, provider_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, provider_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get models for providers."""
         query = """
         SELECT 
@@ -49,9 +49,7 @@ class ProviderQueries:
         """
         return (query, [provider_ids])
 
-    def check_model_usage_personas(
-        self, model_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def check_model_usage_personas(self, model_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to check model usage in personas."""
         query = """
         SELECT model_id, COUNT(*) as usage_count
@@ -61,9 +59,7 @@ class ProviderQueries:
         """
         return (query, [model_ids])
 
-    def check_model_usage_agents(
-        self, model_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def check_model_usage_agents(self, model_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to check model usage in agents."""
         query = """
         SELECT model_id, COUNT(*) as usage_count
@@ -73,7 +69,7 @@ class ProviderQueries:
         """
         return (query, [model_ids])
 
-    def get_provider_by_id(self, provider_id: str) -> Tuple[str, List[Any]]:
+    def get_provider_by_id(self, provider_id: str) -> tuple[str, list[Any]]:
         """Build query to get provider by ID."""
         query = """
         SELECT 
@@ -90,7 +86,7 @@ class ProviderQueries:
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id, d.title as name, d.description
@@ -100,7 +96,7 @@ class ProviderQueries:
         """
         return (query, [])
 
-    def get_model_by_id(self, model_id: str) -> Tuple[str, List[Any]]:
+    def get_model_by_id(self, model_id: str) -> tuple[str, list[Any]]:
         """Build query to get model by ID."""
         query = """
         SELECT 
@@ -116,9 +112,7 @@ class ProviderQueries:
         """
         return (query, [model_id])
 
-    def get_valid_providers(
-        self, dept_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_valid_providers(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for valid providers."""
         query = """
         SELECT id, name, COALESCE(description, '') as description FROM providers 
@@ -127,9 +121,9 @@ class ProviderQueries:
         """
         return (query, [dept_ids])
 
-    def create_provider(self) -> Tuple[str, List[Any]]:
+    def create_provider(self) -> tuple[str, list[Any]]:
         """Build query to create provider.
-        
+
         Note: base_url moved to provider_endpoints junction table.
         Call insert_provider_endpoint() separately after creating provider.
         """
@@ -150,14 +144,14 @@ class ProviderQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_provider_name(self, provider_id: str) -> Tuple[str, List[Any]]:
+    def get_provider_name(self, provider_id: str) -> tuple[str, list[Any]]:
         """Build query to get provider name."""
         query = "SELECT name FROM providers WHERE id = $1"
         return (query, [provider_id])
 
-    def update_provider(self) -> Tuple[str, List[Any]]:
+    def update_provider(self) -> tuple[str, list[Any]]:
         """Build query to update provider.
-        
+
         Note: base_url moved to provider_endpoints junction table.
         Call upsert_provider_endpoint() separately to update endpoint.
         """
@@ -171,7 +165,7 @@ class ProviderQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def update_provider_api_key(self) -> Tuple[str, List[Any]]:
+    def update_provider_api_key(self) -> tuple[str, list[Any]]:
         """Build query to update provider API key."""
         query = """
         UPDATE providers SET
@@ -181,19 +175,19 @@ class ProviderQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_provider_models(self, provider_id: str) -> Tuple[str, List[Any]]:
+    def get_provider_models(self, provider_id: str) -> tuple[str, list[Any]]:
         """Build query to get models for a provider."""
         query = """
         SELECT id FROM models WHERE provider_id = $1
         """
         return (query, [provider_id])
 
-    def delete_provider(self, provider_id: str) -> Tuple[str, List[Any]]:
+    def delete_provider(self, provider_id: str) -> tuple[str, list[Any]]:
         """Build query to delete provider."""
         query = "DELETE FROM providers WHERE id = $1"
         return (query, [provider_id])
 
-    def create_model(self) -> Tuple[str, List[Any]]:
+    def create_model(self) -> tuple[str, list[Any]]:
         """Build query to create model."""
         query = """
         INSERT INTO models (
@@ -218,12 +212,12 @@ class ProviderQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_model_name(self, model_id: str) -> Tuple[str, List[Any]]:
+    def get_model_name(self, model_id: str) -> tuple[str, list[Any]]:
         """Build query to get model name."""
         query = "SELECT name FROM models WHERE id = $1"
         return (query, [model_id])
 
-    def update_model(self) -> Tuple[str, List[Any]]:
+    def update_model(self) -> tuple[str, list[Any]]:
         """Build query to update model."""
         query = """
         UPDATE models SET
@@ -238,9 +232,7 @@ class ProviderQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def check_model_usage_in_personas(
-        self, model_id: str
-    ) -> Tuple[str, List[Any]]:
+    def check_model_usage_in_personas(self, model_id: str) -> tuple[str, list[Any]]:
         """Build query to check model usage in personas."""
         query = """
         SELECT COUNT(*) as usage_count
@@ -249,9 +241,7 @@ class ProviderQueries:
         """
         return (query, [model_id])
 
-    def check_model_usage_in_agents(
-        self, model_id: str
-    ) -> Tuple[str, List[Any]]:
+    def check_model_usage_in_agents(self, model_id: str) -> tuple[str, list[Any]]:
         """Build query to check model usage in agents."""
         query = """
         SELECT COUNT(*) as usage_count
@@ -260,16 +250,16 @@ class ProviderQueries:
         """
         return (query, [model_id])
 
-    def delete_model(self, model_id: str) -> Tuple[str, List[Any]]:
+    def delete_model(self, model_id: str) -> tuple[str, list[Any]]:
         """Build query to delete model."""
         query = "DELETE FROM models WHERE id = $1"
         return (query, [model_id])
 
     # ===== Provider Endpoints Junction Table Queries =====
 
-    def insert_provider_endpoint(self) -> Tuple[str, List[Any]]:
+    def insert_provider_endpoint(self) -> tuple[str, list[Any]]:
         """Build query to insert provider endpoint.
-        
+
         Params order: provider_id, base_url
         """
         query = """
@@ -279,9 +269,9 @@ class ProviderQueries:
         """
         return (query, [])
 
-    def upsert_provider_endpoint(self) -> Tuple[str, List[Any]]:
+    def upsert_provider_endpoint(self) -> tuple[str, list[Any]]:
         """Build query to upsert provider endpoint.
-        
+
         Params order: provider_id, base_url
         """
         query = """
@@ -295,7 +285,7 @@ class ProviderQueries:
         """
         return (query, [])
 
-    def delete_provider_endpoint(self, provider_id: str) -> Tuple[str, List[Any]]:
+    def delete_provider_endpoint(self, provider_id: str) -> tuple[str, list[Any]]:
         """Build query to delete provider endpoint."""
         query = "DELETE FROM provider_endpoints WHERE provider_id = $1"
         return (query, [provider_id])

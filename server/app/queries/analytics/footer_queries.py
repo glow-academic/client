@@ -1,6 +1,6 @@
 """Footer analytics queries - 4 metrics."""
 
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -15,12 +15,12 @@ class FooterQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build scenario performance query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -121,12 +121,12 @@ class FooterQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build scenario stats query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -253,12 +253,12 @@ class FooterQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build simulation composition query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -447,12 +447,12 @@ class FooterQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build simulation performance query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -499,4 +499,3 @@ class FooterQueries:
         """
 
         return query, params
-

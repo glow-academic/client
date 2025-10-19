@@ -1,7 +1,6 @@
 """Assistant schemas for agent execution context."""
 
-from typing import Any, Dict, List, Optional
-from uuid import UUID
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -15,7 +14,7 @@ class AssistantRunContext(BaseModel):
     # Chat data
     chat_id: str
     title: str
-    trace_id: Optional[str]
+    trace_id: str | None
     profile_id: str
 
     # Profile data
@@ -28,7 +27,7 @@ class AssistantRunContext(BaseModel):
     agent_name: str
     system_prompt: str
     temperature: float
-    reasoning: Optional[str]
+    reasoning: str | None
 
     # Model data
     model_id: str
@@ -38,12 +37,12 @@ class AssistantRunContext(BaseModel):
     # Provider data
     provider_id: str
     provider_name: str
-    base_url: Optional[str]
+    base_url: str | None
     api_key: str
 
     # Conversation data
-    messages: List[Dict[str, Any]]
-    tool_calls: List[Dict[str, Any]]
+    messages: list[dict[str, Any]]
+    tool_calls: list[dict[str, Any]]
 
     @property
     def user_name(self) -> str:
@@ -61,4 +60,3 @@ class AssistantRunContext(BaseModel):
             "guest": "Guest",
         }
         return role_mapping.get(self.user_role, self.user_role)
-

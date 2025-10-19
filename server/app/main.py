@@ -1,6 +1,5 @@
 # server/app/main.py
 import asyncio
-import base64
 import contextlib
 import logging
 import os
@@ -8,16 +7,18 @@ import platform
 import sys
 import time
 import uuid
-from datetime import datetime, timezone
-from typing import Any, AsyncIterator, Dict
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from typing import Any
 from urllib.parse import parse_qs
 
 import socketio  # type: ignore
-from app.db import close_db_pool, init_db_pool
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
+from app.db import close_db_pool, init_db_pool
 
 # Redis is nice in production, but optional in dev
 try:
@@ -46,20 +47,29 @@ allowed_origins = [origin]
 
 # Import Redis functions from extensions
 from app.extensions import (  # New Redis functions for active connections and runs; Guest management functions
-    add_guest_socket, cancel_active_run, cleanup_redis_client,
-    decrement_guest_count, find_chat_by_socket, find_chats_by_socket,
-    find_profile_by_socket, get_active_connection, get_active_run,
-    get_guest_count, get_query_client, get_socket_owner, increment_guest_count,
-    init_query_client, init_redis_client, is_guest_socket,
-    remove_active_connection, remove_active_run, remove_guest_socket,
-    remove_socket_owner, set_active_connection, set_active_run,
-    set_socket_owner)
+    add_guest_socket,
+    cleanup_redis_client,
+    decrement_guest_count,
+    find_chats_by_socket,
+    find_profile_by_socket,
+    get_socket_owner,
+    increment_guest_count,
+    init_query_client,
+    init_redis_client,
+    is_guest_socket,
+    remove_active_connection,
+    remove_guest_socket,
+    remove_socket_owner,
+    set_active_connection,
+    set_active_run,
+    set_socket_owner,
+)
 
 # Store active chat connections - now using Redis
 # active_connections: dict[str, str] = {}  # REMOVED - using Redis instead
 
 # Global in-process store for active Runner results to support immediate cancel
-active_results: Dict[str, Dict[str, Any]] = {}
+active_results: dict[str, dict[str, Any]] = {}
 
 # Profile-based connection management (simplified) - now using Redis
 # socket_owner: Dict[str, str] = {}  # profile_id -> socket_id - REMOVED, using Redis
@@ -86,11 +96,7 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
             async with pool.acquire() as conn:
                 queries = ProfileQueries()
                 query = queries.update_profile_to_inactive()
-                await conn.execute(
-                    query,
-                    datetime.now(timezone.utc),
-                    profile_id
-                )
+                await conn.execute(query, datetime.now(UTC), profile_id)
                 logger.info(f"Updated profile {profile_id} to inactive in database")
     except Exception as e:
         logger.error(f"Error updating profile {profile_id} in database: {e}")
@@ -136,6 +142,7 @@ sio = socketio.AsyncServer(
 )
 
 from app.web.assistants import register_assistant_events  # noqa: E402
+
 # Import and register WebSocket events after sio is created to avoid circular imports
 from app.web.simulations import register_simulation_events  # noqa: E402
 
@@ -147,7 +154,7 @@ register_assistant_events(sio)
 
 
 @sio.event  # type: ignore
-async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
+async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
     """Handle simulation message sending requests"""
     try:
         chat_id = data.get("chat_id")
@@ -185,20 +192,19 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
 
     except Exception as e:
         logger.error(f"Error in send_simulation_message for {sid}: {str(e)}")
-        
+
         # Try to create an error message in the database if we have a valid chat_id
         try:
             chat_id = data.get("chat_id")
             if chat_id:
                 from app.db import get_pool
-                
+
                 pool = get_pool()
                 if pool:
                     async with pool.acquire() as conn:
                         # Create an error message in the database
-                        from app.queries.simulation_queries import \
-                            SimulationQueries
-                        
+                        from app.queries.simulation_queries import SimulationQueries
+
                         queries = SimulationQueries()
                         query = queries.insert_error_message()
                         error_message = await conn.fetchrow(
@@ -206,26 +212,28 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
                             uuid.UUID(chat_id),
                             "response",
                             f"Error: {str(e)}",
-                            True
+                            True,
                         )
-                        
+
                         # Emit the error message to clients
                         if error_message:
                             await sio.emit(
                                 "simulation_new_message",
                                 {
-                                    "message_id": str(error_message['id']),
+                                    "message_id": str(error_message["id"]),
                                     "chat_id": str(chat_id),
                                     "role": "assistant",
                                     "content": f"Error: {str(e)}",
                                     "completed": True,
-                                    "created_at": error_message['created_at'].isoformat(),
+                                    "created_at": error_message[
+                                        "created_at"
+                                    ].isoformat(),
                                 },
                                 room=f"simulation_{chat_id}",
                             )
         except Exception as db_error:
             logger.error(f"Failed to create error message in database: {db_error}")
-        
+
         # Also emit the error event for backward compatibility
         await sio.emit(
             "simulation_error",
@@ -235,7 +243,7 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
 
 
 @sio.event  # type: ignore
-async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
+async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
     """Handle assistant message sending requests"""
     try:
         chat_id = data.get("chat_id")
@@ -301,15 +309,23 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
             if pool:
                 async with pool.acquire() as conn:
                     profile_service = ProfileService(conn)
-                    resolved_guest_id = await profile_service.get_default_guest_profile_id()
+                    resolved_guest_id = (
+                        await profile_service.get_default_guest_profile_id()
+                    )
                     if resolved_guest_id:
                         profile_id = str(resolved_guest_id)
-                        logger.info(f"Resolved 'guest-profile-id' to actual guest profile: {profile_id}")
+                        logger.info(
+                            f"Resolved 'guest-profile-id' to actual guest profile: {profile_id}"
+                        )
                     else:
-                        logger.warning("No default guest profile found; treating as anonymous guest")
+                        logger.warning(
+                            "No default guest profile found; treating as anonymous guest"
+                        )
                         profile_id = None
             else:
-                logger.error("Database pool not available; cannot resolve guest profile")
+                logger.error(
+                    "Database pool not available; cannot resolve guest profile"
+                )
                 profile_id = None
         except Exception as e:
             logger.error(f"Error resolving guest profile: {e}")
@@ -342,11 +358,7 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                 async with pool.acquire() as conn:
                     queries = ProfileQueries()
                     query = queries.update_profile_to_active()
-                    await conn.execute(
-                        query,
-                        datetime.now(timezone.utc),
-                        profile_id
-                    )
+                    await conn.execute(query, datetime.now(UTC), profile_id)
                     logger.info(f"Updated profile {profile_id} to active in database")
         except Exception as e:
             logger.error(f"Error updating profile {profile_id} in database: {e}")
@@ -370,15 +382,14 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                         # Find and update default guest profile
                         queries = ProfileQueries()
                         query = queries.update_default_guest_profile_to_active()
-                        await conn.execute(
-                            query,
-                            datetime.now(timezone.utc)
-                        )
+                        await conn.execute(query, datetime.now(UTC))
                         logger.info(
                             "Marked default guest profile active (guest connection added)"
                         )
             except Exception as e:
-                logger.error(f"Error updating default guest profile activity on connect: {e}")
+                logger.error(
+                    f"Error updating default guest profile activity on connect: {e}"
+                )
         else:
             logger.info("Anonymous guest connection with no guest_id; broadcasts only.")
 
@@ -428,15 +439,15 @@ async def disconnect(sid: str) -> None:
                     queries = ProfileQueries()
                     query = queries.update_default_guest_profile_activity()
                     await conn.execute(
-                        query,
-                        datetime.now(timezone.utc),
-                        remaining_guests > 0
+                        query, datetime.now(UTC), remaining_guests > 0
                     )
                     logger.info(
                         f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
                     )
         except Exception as e:
-            logger.error(f"Error updating default guest profile activity on disconnect: {e}")
+            logger.error(
+                f"Error updating default guest profile activity on disconnect: {e}"
+            )
 
     # Remove from all active connections using Redis
     chat_ids = await find_chats_by_socket(sid)
@@ -571,20 +582,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Initialize Redis client for socket ownership management
         await init_redis_client()
-        
+
         # Initialize query cache client (depends on Redis)
         await init_query_client()
-        
+
         # Initialize asyncpg database pool
         await init_db_pool()
 
         await stack.enter_async_context(server.session_manager.run())
 
         yield
-        
+
         # Clean up database pool
         await close_db_pool()
-        
+
         # Clean up Redis client on shutdown
         await cleanup_redis_client()
 

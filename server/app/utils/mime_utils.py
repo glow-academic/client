@@ -3,7 +3,6 @@ MIME type utilities for server-side document handling
 """
 
 import mimetypes
-from typing import Optional
 
 # Explicit overrides where Python's mimetypes is vague or not ideal for editors/viewers.
 EXT_MIME_MAP = {
@@ -44,11 +43,9 @@ EXT_MIME_MAP = {
     ".ipynb": "application/x-ipynb+json",
     ".txt": "text/plain; charset=utf-8",
     ".csv": "text/csv; charset=utf-8",
-
     # High-impact viewers
     ".pdf": "application/pdf",
     ".svg": "image/svg+xml",
-
     # Common images
     ".png": "image/png",
     ".jpg": "image/jpeg",
@@ -56,7 +53,6 @@ EXT_MIME_MAP = {
     ".gif": "image/gif",
     ".webp": "image/webp",
     ".heic": "image/heic",
-
     # Office docs (helpful for downloads/preview handlers)
     ".doc": "application/msword",
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -68,6 +64,7 @@ EXT_MIME_MAP = {
 }
 
 DEFAULT_FALLBACK = "application/octet-stream"  # safer than text/plain
+
 
 def infer_mime_from_name(filename: str, fallback: str = DEFAULT_FALLBACK) -> str:
     """
@@ -92,7 +89,8 @@ def infer_mime_from_name(filename: str, fallback: str = DEFAULT_FALLBACK) -> str
     # 3) Final fallback
     return fallback
 
-def get_content_type(filename: str, mime_type: Optional[str] = None) -> str:
+
+def get_content_type(filename: str, mime_type: str | None = None) -> str:
     """
     Best-effort content type:
       - Trust stored mime if it isn't generic.

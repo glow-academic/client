@@ -1,11 +1,14 @@
 """
 Tests for app.services.grading_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.grading_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_grading_service`")
 class TestGet_Grading_Service:
@@ -32,6 +36,7 @@ class TestGet_Grading_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `save_grading_results`")
 class TestSave_Grading_Results:
     """Tests for save_grading_results function."""
@@ -45,4 +50,3 @@ class TestSave_Grading_Results:
         """Test save_grading_results error handling."""
         # TODO: Implement error test for save_grading_results
         assert False, "IMPLEMENT: Error test for save_grading_results"
-

@@ -1,10 +1,10 @@
 # app/utils/csv.py
 import csv
 import io
-from typing import Any, Dict, List
+from typing import Any
 
 
-def parse_csv_file(file_path: str) -> Dict[str, Any]:
+def parse_csv_file(file_path: str) -> dict[str, Any]:
     """
     Parse a CSV file containing user data and return structured data.
 
@@ -27,7 +27,7 @@ def parse_csv_file(file_path: str) -> Dict[str, Any]:
         users = []
         errors = []
 
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(file_path, encoding="utf-8") as file:
             # Read the CSV content
             csv_content = file.read()
 
@@ -81,7 +81,7 @@ def parse_csv_file(file_path: str) -> Dict[str, Any]:
         }
 
 
-def validate_csv_format(file_path: str) -> Dict[str, Any]:
+def validate_csv_format(file_path: str) -> dict[str, Any]:
     """
     Validate CSV file format without processing it.
 
@@ -92,7 +92,7 @@ def validate_csv_format(file_path: str) -> Dict[str, Any]:
         Dictionary with validation results
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(file_path, encoding="utf-8") as file:
             csv_content = file.read()
             csv_file = io.StringIO(csv_content)
             csv_reader = csv.DictReader(csv_file)

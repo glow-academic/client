@@ -3,12 +3,16 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.services.analytics_service import get_analytics_service
-from app.schemas.analytics import (AnalyticsFilters, GrowthDataResponse,
-                                   PersonaPerformanceResponse,
-                                   RubricHeatmapResponse)
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.analytics import (
+    AnalyticsFilters,
+    GrowthDataResponse,
+    PersonaPerformanceResponse,
+    RubricHeatmapResponse,
+)
+from app.services.analytics_service import get_analytics_service
 
 router = APIRouter(prefix="/primary", tags=["analytics-primary"])
 
@@ -50,4 +54,3 @@ async def get_rubric_heatmap(
         return await service.get_rubric_heatmap(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

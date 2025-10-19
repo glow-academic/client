@@ -3,22 +3,25 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.departments import (CreateDepartmentRequest,
-                                     CreateDepartmentResponse,
-                                     DeleteDepartmentRequest,
-                                     DeleteDepartmentResponse,
-                                     DepartmentDetailDefaultRequest,
-                                     DepartmentDetailRequest,
-                                     DepartmentDetailResponse,
-                                     DepartmentsFilters,
-                                     DepartmentsListResponse,
-                                     DuplicateDepartmentRequest,
-                                     DuplicateDepartmentResponse,
-                                     UpdateDepartmentRequest,
-                                     UpdateDepartmentResponse)
-from app.services.department_service import get_department_service
 from fastapi import APIRouter, Depends
+
+from app.db import get_db
+from app.schemas.departments import (
+    CreateDepartmentRequest,
+    CreateDepartmentResponse,
+    DeleteDepartmentRequest,
+    DeleteDepartmentResponse,
+    DepartmentDetailDefaultRequest,
+    DepartmentDetailRequest,
+    DepartmentDetailResponse,
+    DepartmentsFilters,
+    DepartmentsListResponse,
+    DuplicateDepartmentRequest,
+    DuplicateDepartmentResponse,
+    UpdateDepartmentRequest,
+    UpdateDepartmentResponse,
+)
+from app.services.department_service import get_department_service
 
 router = APIRouter()
 

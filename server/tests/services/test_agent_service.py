@@ -1,11 +1,14 @@
 """
 Tests for app.services.agent_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.agent_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_agent_service`")
 class TestGet_Agent_Service:
@@ -32,6 +36,7 @@ class TestGet_Agent_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_agents_list`")
 class TestGet_Agents_List:
     """Tests for get_agents_list function."""
@@ -48,6 +53,7 @@ class TestGet_Agents_List:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_agent_detail`")
 class TestGet_Agent_Detail:
@@ -66,6 +72,7 @@ class TestGet_Agent_Detail:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `create_agent`")
 class TestCreate_Agent:
     """Tests for create_agent function."""
@@ -82,6 +89,7 @@ class TestCreate_Agent:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `update_agent`")
 class TestUpdate_Agent:
@@ -100,6 +108,7 @@ class TestUpdate_Agent:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `duplicate_agent`")
 class TestDuplicate_Agent:
     """Tests for duplicate_agent function."""
@@ -116,6 +125,7 @@ class TestDuplicate_Agent:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `delete_agent`")
 class TestDelete_Agent:
@@ -134,6 +144,7 @@ class TestDelete_Agent:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_classification_run_context`")
 class TestGet_Classification_Run_Context:
     """Tests for get_classification_run_context function."""
@@ -150,6 +161,7 @@ class TestGet_Classification_Run_Context:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `batch_update_document_types`")
 class TestBatch_Update_Document_Types:
@@ -168,6 +180,7 @@ class TestBatch_Update_Document_Types:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_scenario_run_context`")
 class TestGet_Scenario_Run_Context:
     """Tests for get_scenario_run_context function."""
@@ -184,6 +197,7 @@ class TestGet_Scenario_Run_Context:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_simulation_run_context`")
 class TestGet_Simulation_Run_Context:
@@ -202,6 +216,7 @@ class TestGet_Simulation_Run_Context:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_grading_run_context`")
 class TestGet_Grading_Run_Context:
     """Tests for get_grading_run_context function."""
@@ -218,6 +233,7 @@ class TestGet_Grading_Run_Context:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_simulation_messages`")
 class TestGet_Simulation_Messages:
@@ -236,6 +252,7 @@ class TestGet_Simulation_Messages:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `create_simulation_hint`")
 class TestCreate_Simulation_Hint:
     """Tests for create_simulation_hint function."""
@@ -252,6 +269,7 @@ class TestCreate_Simulation_Hint:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_hint_run_context`")
 class TestGet_Hint_Run_Context:
@@ -270,6 +288,7 @@ class TestGet_Hint_Run_Context:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_guardrail_run_context`")
 class TestGet_Guardrail_Run_Context:
     """Tests for get_guardrail_run_context function."""
@@ -286,6 +305,7 @@ class TestGet_Guardrail_Run_Context:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_title_run_context`")
 class TestGet_Title_Run_Context:
@@ -304,22 +324,6 @@ class TestGet_Title_Run_Context:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
@@ -338,22 +342,6 @@ class TestFetcher:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
@@ -372,22 +360,6 @@ class TestFetcher:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
@@ -406,22 +378,6 @@ class TestFetcher:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
@@ -440,6 +396,7 @@ class TestFetcher:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
     """Tests for fetcher function."""
@@ -457,6 +414,7 @@ class TestFetcher:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
     """Tests for fetcher function."""
@@ -471,3 +429,74 @@ class TestFetcher:
         # TODO: Implement error test for fetcher
         assert False, "IMPLEMENT: Error test for fetcher"
 
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
+class TestFetcher:
+    """Tests for fetcher function."""
+
+    def test_fetcher_success(self):
+        """Test successful fetcher execution."""
+        # TODO: Implement test for fetcher
+        assert False, "IMPLEMENT: Test for fetcher"
+
+    def test_fetcher_error(self):
+        """Test fetcher error handling."""
+        # TODO: Implement error test for fetcher
+        assert False, "IMPLEMENT: Error test for fetcher"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
+class TestFetcher:
+    """Tests for fetcher function."""
+
+    def test_fetcher_success(self):
+        """Test successful fetcher execution."""
+        # TODO: Implement test for fetcher
+        assert False, "IMPLEMENT: Test for fetcher"
+
+    def test_fetcher_error(self):
+        """Test fetcher error handling."""
+        # TODO: Implement error test for fetcher
+        assert False, "IMPLEMENT: Error test for fetcher"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
+class TestFetcher:
+    """Tests for fetcher function."""
+
+    def test_fetcher_success(self):
+        """Test successful fetcher execution."""
+        # TODO: Implement test for fetcher
+        assert False, "IMPLEMENT: Test for fetcher"
+
+    def test_fetcher_error(self):
+        """Test fetcher error handling."""
+        # TODO: Implement error test for fetcher
+        assert False, "IMPLEMENT: Error test for fetcher"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
+class TestFetcher:
+    """Tests for fetcher function."""
+
+    def test_fetcher_success(self):
+        """Test successful fetcher execution."""
+        # TODO: Implement test for fetcher
+        assert False, "IMPLEMENT: Test for fetcher"
+
+    def test_fetcher_error(self):
+        """Test fetcher error handling."""
+        # TODO: Implement error test for fetcher
+        assert False, "IMPLEMENT: Error test for fetcher"

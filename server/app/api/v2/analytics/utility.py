@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends
+
 from app.db import get_db
 from app.schemas.analytics import RefreshResponse
 from app.services.analytics_service import get_analytics_service
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(tags=["analytics-utility"])
 
@@ -25,7 +26,4 @@ async def refresh_analytics_view(
             status="success",
         )
     except Exception as e:
-        return RefreshResponse(
-            success=False, message=str(e), status="error"
-        )
-
+        return RefreshResponse(success=False, message=str(e), status="error")

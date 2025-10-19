@@ -4,10 +4,13 @@ Ported from client/utils/route-permissions.ts
 """
 
 import re
-from typing import List, Optional
 
-from app.schemas.permissions import (ROUTE_PERMISSIONS, ProfileRole,
-                                     RoutePermission, SectionPermission)
+from app.schemas.permissions import (
+    ROUTE_PERMISSIONS,
+    ProfileRole,
+    RoutePermission,
+    SectionPermission,
+)
 
 
 class PermissionsService:
@@ -83,7 +86,7 @@ class PermissionsService:
         return False
 
     @staticmethod
-    def get_route_permission(pathname: str) -> Optional[RoutePermission]:
+    def get_route_permission(pathname: str) -> RoutePermission | None:
         """
         Get route permission for a specific path.
 
@@ -103,7 +106,7 @@ class PermissionsService:
         return None
 
     @staticmethod
-    def get_section_permission(pathname: str) -> Optional[SectionPermission]:
+    def get_section_permission(pathname: str) -> SectionPermission | None:
         """
         Get section permission for a specific path.
 
@@ -144,7 +147,7 @@ class PermissionsService:
         return redirect_map.get(role, "/home")  # Default fallback to home
 
     @staticmethod
-    def get_available_sections_for_role(role: ProfileRole) -> List[str]:
+    def get_available_sections_for_role(role: ProfileRole) -> list[str]:
         """
         Get all available sections for a role.
 
@@ -163,7 +166,7 @@ class PermissionsService:
         return sorted(list(sections))
 
     @staticmethod
-    def get_available_subsections_for_role(role: ProfileRole) -> List[str]:
+    def get_available_subsections_for_role(role: ProfileRole) -> list[str]:
         """
         Get all available subsections for a role (including individual route sections).
 
@@ -240,4 +243,3 @@ class PermissionsService:
 
 # Singleton instance for easy access
 permissions_service = PermissionsService()
-

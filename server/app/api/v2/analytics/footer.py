@@ -3,14 +3,17 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.services.analytics_service import get_analytics_service
-from app.schemas.analytics import (AnalyticsFilters,
-                                   ScenarioPerformanceResponse,
-                                   ScenarioStatsResponse,
-                                   SimulationCompositionResponse,
-                                   SimulationPerformanceResponse)
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.analytics import (
+    AnalyticsFilters,
+    ScenarioPerformanceResponse,
+    ScenarioStatsResponse,
+    SimulationCompositionResponse,
+    SimulationPerformanceResponse,
+)
+from app.services.analytics_service import get_analytics_service
 
 router = APIRouter(prefix="/footer", tags=["analytics-footer"])
 
@@ -65,4 +68,3 @@ async def get_simulation_performance(
         return await service.get_simulation_performance(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

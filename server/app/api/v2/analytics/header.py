@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.services.analytics_service import get_analytics_service
-from app.schemas.analytics import AnalyticsFilters, MetricResponse
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.analytics import AnalyticsFilters, MetricResponse
+from app.services.analytics_service import get_analytics_service
 
 router = APIRouter(prefix="/header", tags=["analytics-header"])
 
@@ -139,4 +140,3 @@ async def get_total_attempts(
         return await service.get_total_attempts(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

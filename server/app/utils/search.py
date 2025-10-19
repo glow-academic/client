@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from typing import Any, List, Tuple
+from typing import Any
 
 _WS_RE = re.compile(r"\s+")
 
@@ -18,10 +18,10 @@ _WS_RE = re.compile(r"\s+")
 def normalize_text(s: str) -> str:
     """
     Lowercase, strip accents, collapse whitespace.
-    
+
     Args:
         s: Text to normalize
-        
+
     Returns:
         Normalized text string
     """
@@ -30,13 +30,13 @@ def normalize_text(s: str) -> str:
     return _WS_RE.sub(" ", s.strip().lower())
 
 
-def tokenize(s: str) -> List[str]:
+def tokenize(s: str) -> list[str]:
     """
     Split normalized text into tokens.
-    
+
     Args:
         s: Text to tokenize
-        
+
     Returns:
         List of tokens (non-empty strings)
     """
@@ -44,25 +44,25 @@ def tokenize(s: str) -> List[str]:
 
 
 def build_fuzzy_conditions(
-    field_names: List[str], query: str, start_param_idx: int = 1
-) -> Tuple[str, List[Any], int]:
+    field_names: list[str], query: str, start_param_idx: int = 1
+) -> tuple[str, list[Any], int]:
     """
     Build SQL WHERE conditions for fuzzy text matching across multiple fields.
-    
+
     Creates conditions for:
     - Exact matches (LOWER(field) = normalized_query)
     - Prefix matches (LOWER(field) LIKE 'query%')
     - Contains matches (LOWER(field) LIKE '%query%')
     - Token-based matches (each token checked across all fields)
-    
+
     Args:
         field_names: List of SQL field names (e.g., ['s.name', 's.description'])
         query: User search query
         start_param_idx: Starting parameter index for SQL placeholders
-        
+
     Returns:
         Tuple of (where_clause, params, next_param_idx)
-        
+
     Example:
         >>> build_fuzzy_conditions(['s.name', 's.description'], 'test query', 1)
         ('LOWER(s.name) = $1 OR ... ', ['test query', ...], 15)
@@ -75,7 +75,7 @@ def build_fuzzy_conditions(
     token_patterns = [f"%{t}%" for t in tokens]
 
     where_conditions = []
-    params: List[Any] = []
+    params: list[Any] = []
     param_idx = start_param_idx
 
     # Exact match for each field
@@ -107,4 +107,3 @@ def build_fuzzy_conditions(
 
     where_clause = " OR ".join(where_conditions)
     return where_clause, params, param_idx
-

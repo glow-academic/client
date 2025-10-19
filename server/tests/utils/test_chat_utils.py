@@ -1,11 +1,14 @@
 """
 Tests for app.utils.chat
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.utils.chat import *
+
 
 @pytest.fixture
 def mock_session():
@@ -15,7 +18,10 @@ def mock_session():
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `get_simulation_conversation_history`")
+
+@pytest.mark.skip(
+    reason="TODO: implement tests for `get_simulation_conversation_history`"
+)
 class TestGet_Simulation_Conversation_History:
     """Tests for get_simulation_conversation_history function."""
 
@@ -32,7 +38,10 @@ class TestGet_Simulation_Conversation_History:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `get_assistant_conversation_history`")
+
+@pytest.mark.skip(
+    reason="TODO: implement tests for `get_assistant_conversation_history`"
+)
 class TestGet_Assistant_Conversation_History:
     """Tests for get_assistant_conversation_history function."""
 
@@ -49,6 +58,7 @@ class TestGet_Assistant_Conversation_History:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `format_chat_scenario`")
 class TestFormat_Chat_Scenario:
     """Tests for format_chat_scenario function."""
@@ -62,4 +72,3 @@ class TestFormat_Chat_Scenario:
         """Test format_chat_scenario error handling."""
         # TODO: Implement error test for format_chat_scenario
         assert False, "IMPLEMENT: Error test for format_chat_scenario"
-

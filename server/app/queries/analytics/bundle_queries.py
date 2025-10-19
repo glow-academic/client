@@ -1,6 +1,6 @@
 """Bundle analytics queries - 2 metrics."""
 
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -15,12 +15,12 @@ class BundleQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build reports bundle query - aggregated metrics per profile."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -58,8 +58,8 @@ class BundleQueries:
                 SELECT
                     f.profile_id,
                     AVG(
-                        CASE 
-                            WHEN COALESCE(f.sim_scenario_count, 0) > 0 
+                        CASE
+                            WHEN COALESCE(f.sim_scenario_count, 0) > 0
                             THEN (100.0 * (CASE WHEN f.completed THEN 1 ELSE 0 END) / f.sim_scenario_count)
                             ELSE 0
                         END
@@ -114,7 +114,7 @@ class BundleQueries:
                     f.attempt_created_at,
                     f.grade_percent,
                     LAG(f.grade_percent) OVER (
-                        PARTITION BY f.simulation_id, f.profile_id 
+                        PARTITION BY f.simulation_id, f.profile_id
                         ORDER BY f.attempt_created_at
                     ) AS prev_grade
                 FROM filt f
@@ -123,7 +123,7 @@ class BundleQueries:
                 SELECT
                     profile_id,
                     CASE
-                        WHEN prev_grade IS NOT NULL AND grade_percent <= prev_grade 
+                        WHEN prev_grade IS NOT NULL AND grade_percent <= prev_grade
                         THEN 1 ELSE 0
                     END AS is_stagnant
                 FROM user_attempts
@@ -257,7 +257,32 @@ class BundleQueries:
                             'hover', json_build_object('tracked', 0, 'stagnant', 0, 'ratePercent', ROUND(stagnation_rate)::int)
                         )
                     )
-                )) FROM all_metrics), '[]'::json)
+                )) FROM all_metrics), '[]'::json),
+                'scenario_mapping', COALESCE((
+                    SELECT jsonb_object_agg(
+                        s.id::text,
+                        jsonb_build_object(
+                            'name', s.name,
+                            'description', s.problem_statement
+                        )
+                    )
+                    FROM scenarios s
+                    WHERE s.active = true
+                      AND s.department_id IN (SELECT DISTINCT department_id FROM filt)
+                ), '{{}}'::jsonb),
+                'simulation_mapping', COALESCE((
+                    SELECT jsonb_object_agg(
+                        sim.id::text,
+                        jsonb_build_object(
+                            'name', sim.title,
+                            'description', sim.description
+                        )
+                    )
+                    FROM simulations sim
+                    WHERE sim.active = true
+                      AND sim.practice_simulation = true
+                      AND sim.department_id IN (SELECT DISTINCT department_id FROM filt)
+                ), '{{}}'::jsonb)
             ) AS result
         """
 
@@ -267,12 +292,12 @@ class BundleQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build leaderboard bundle query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -284,9 +309,12 @@ class BundleQueries:
             department_ids,
         )
 
-        query = """
+        query = (
+            """
             WITH filt AS (
-                SELECT * FROM analytics a WHERE """ + where_clause + """
+                SELECT * FROM analytics a WHERE """
+            + where_clause
+            + """
             ),
             profile_stats AS (
                 SELECT
@@ -319,7 +347,7 @@ class BundleQueries:
             ),
             -- Improvement rate per day per profile
             attempt_grades AS (
-                SELECT 
+                SELECT
                     simulation_id,
                     attempt_id,
                     profile_id,
@@ -330,14 +358,14 @@ class BundleQueries:
                 GROUP BY simulation_id, attempt_id, profile_id
             ),
             sim_improvement_rates AS (
-                SELECT 
+                SELECT
                     profile_id,
                     simulation_id,
-                    CASE 
+                    CASE
                         WHEN COUNT(*) >= 2 THEN
                             ROUND(
-                                (MAX(best_grade) - MIN(best_grade)) / 
-                                GREATEST(1.0, 
+                                (MAX(best_grade) - MIN(best_grade)) /
+                                GREATEST(1.0,
                                     EXTRACT(EPOCH FROM (MAX(first_time) - MIN(first_time))) / 86400.0
                                 )
                             )::int
@@ -347,7 +375,7 @@ class BundleQueries:
                 GROUP BY profile_id, simulation_id
             ),
             improvement_per_profile AS (
-                SELECT 
+                SELECT
                     profile_id,
                     MAX(improvement_rate) AS max_improvement_rate
                 FROM sim_improvement_rates
@@ -459,6 +487,6 @@ class BundleQueries:
                 ) ORDER BY highest_score DESC) FROM all_stats), '[]'::json)
             ) AS result
         """
+        )
 
         return query, params
-

@@ -35,7 +35,7 @@ class StaffService(BaseService):
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
 
-        # Get query from query builder
+        # Get query from query builder (now includes JSONB mappings)
         query, params = self.queries.list_staff(
             filters.departmentIds, filters.profileId, campus_domain
         )
@@ -45,54 +45,56 @@ class StaffService(BaseService):
         # Build response
         staff = []
         cohort_mapping = {}
+        department_mapping = {}
 
         for row in result:
             # Convert UUID arrays to string arrays
-            cohort_ids = [str(cid) for cid in (row['cohort_ids'] or [])]
+            cohort_ids = [str(cid) for cid in (row["cohort_ids"] or [])]
 
             staff.append(
                 StaffItem(
-                    profile_id=str(row['profile_id']),
-                    first_name=row['first_name'],
-                    last_name=row['last_name'],
-                    alias=row['alias'],
-                    name=row['name'],
-                    role=row['role'],
-                    email=row['email'],
-                    initials=row['initials'],
-                    active=row['active'],
-                    lastActive=row['lastactive'].isoformat() if row['lastactive'] else None,
+                    profile_id=str(row["profile_id"]),
+                    first_name=row["first_name"],
+                    last_name=row["last_name"],
+                    alias=row["alias"],
+                    name=row["name"],
+                    role=row["role"],
+                    email=row["email"],
+                    initials=row["initials"],
+                    active=row["active"],
+                    lastActive=row["lastactive"].isoformat()
+                    if row["lastactive"]
+                    else None,
                     cohort_ids=cohort_ids,
-                    requests_per_day=row['requests_per_day'],
-                    default_profile=row['default_profile'],
-                    requests_in_last_day=row['requests_in_last_day'],
-                    can_edit=row['can_edit'],
-                    can_delete=row['can_delete'],
+                    requests_per_day=row["requests_per_day"],
+                    default_profile=row["default_profile"],
+                    requests_in_last_day=row["requests_in_last_day"],
+                    can_edit=row["can_edit"],
+                    can_delete=row["can_delete"],
                 )
             )
 
-        # Get cohort names for mapping
-        if cohort_ids_to_fetch := list(set([cid for s in staff for cid in s.cohort_ids])):
-            query, params = self.queries.get_cohort_mapping(cohort_ids_to_fetch)
-            cohort_result = await self.conn.fetch(query, *params)
+        # Parse JSONB mappings from query result (single query optimization)
+        if result and len(result) > 0:
+            # Cohort mapping (JSONB from query)
+            cohort_mapping_data = result[0].get("cohort_mapping")
+            if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
+                for cid, cdata in cohort_mapping_data.items():
+                    if isinstance(cdata, dict):
+                        cohort_mapping[cid] = CohortMappingItem(
+                            name=cdata.get("name", ""),
+                            description=cdata.get("description", ""),
+                        )
 
-            for row in cohort_result:
-                cohort_mapping[str(row['id'])] = CohortMappingItem(
-                    name=row['name'],
-                    description=row['description']
-                )
-
-        # Get department mapping from filter departmentIds
-        department_mapping = {}
-        if filters.departmentIds:
-            query, params = self.queries.get_department_mapping(filters.departmentIds)
-            dept_result = await self.conn.fetch(query, *params)
-
-            for row in dept_result:
-                department_mapping[str(row['id'])] = DepartmentMappingItem(
-                    name=row['name'],
-                    description=row['description']
-                )
+            # Department mapping (JSONB from query)
+            dept_mapping_data = result[0].get("department_mapping")
+            if dept_mapping_data and isinstance(dept_mapping_data, dict):
+                for did, ddata in dept_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
 
         return StaffListResponse(
             staff=staff,
@@ -100,54 +102,54 @@ class StaffService(BaseService):
             department_mapping=department_mapping,
         )
 
-    @with_cache(lambda self, request: keys.staff_detail(request.profileId, request.currentProfileId))
-    async def get_staff_detail(self, request: StaffDetailRequest) -> StaffDetailResponse:
+    @with_cache(
+        lambda self, request: keys.staff_detail(
+            request.profileId, request.currentProfileId
+        )
+    )
+    async def get_staff_detail(
+        self, request: StaffDetailRequest
+    ) -> StaffDetailResponse:
         """Get detailed staff information using dynamic SQL."""
         # Get campus email domain from environment
         campus_email = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
 
-        # Get profile basic info
-        query, params = self.queries.get_profile_by_id(request.profileId)
+        # Get complete profile data with JSONB mappings (consolidated query)
+        query, params = self.queries.get_staff_detail_complete(request.profileId)
         profile = await self.conn.fetchrow(query, *params)
 
         if not profile:
             raise ValueError(f"Profile not found: {request.profileId}")
 
         # Construct email
-        email = profile['alias'] + campus_email
+        email = profile["alias"] + campus_email
 
-        # Get profile's department
-        query, params = self.queries.get_profile_department(request.profileId)
-        dept_result = await self.conn.fetchrow(query, *params)
-        department_id = str(dept_result['department_id']) if dept_result else ""
+        # Parse data from consolidated query
+        department_id = profile["department_id"]
+        cohort_ids = profile["cohort_ids"] or []
 
-        # Get profile's cohorts
-        query, params = self.queries.get_profile_cohorts(request.profileId)
-        cohort_result = await self.conn.fetch(query, *params)
-        cohort_ids = [str(row['cohort_id']) for row in cohort_result]
+        # Parse JSONB cohort mapping
+        cohort_mapping = {}
+        cohort_mapping_data = profile.get("cohort_mapping")
+        if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
+            for cid, cdata in cohort_mapping_data.items():
+                if isinstance(cdata, dict):
+                    cohort_mapping[cid] = CohortMappingItem(
+                        name=cdata.get("name", ""),
+                        description=cdata.get("description", ""),
+                    )
 
-        # Get valid departments
+        # Get valid departments (still separate query - returns list of all departments)
         query, params = self.queries.get_valid_departments_for_profile(
             request.currentProfileId
         )
         dept_list = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row['id']) for row in dept_list]
+        valid_department_ids = [str(row["id"]) for row in dept_list]
 
-        # Get cohort mapping
-        cohort_mapping = {}
-        if cohort_ids:
-            query, params = self.queries.get_cohort_mapping(cohort_ids)
-            cohort_results = await self.conn.fetch(query, *params)
-            for row in cohort_results:
-                cohort_mapping[str(row['id'])] = CohortMappingItem(
-                    name=row['name'],
-                    description=row['description']
-                )
-
-        # Get department mapping
+        # Build department mapping from valid departments
         department_mapping = {
-            str(row['id']): DepartmentMappingItem(
-                name=row['name'], description=row['description'] or ''
+            str(row["id"]): DepartmentMappingItem(
+                name=row["name"], description=row["description"] or ""
             )
             for row in dept_list
         }
@@ -156,11 +158,11 @@ class StaffService(BaseService):
         role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
 
         return StaffDetailResponse(
-            name=profile['name'],
+            name=profile["name"],
             email=email,
-            role=profile['role'],
-            requests_per_day=profile['requests_per_day'],
-            active=profile['active'],
+            role=profile["role"],
+            requests_per_day=profile["requests_per_day"],
+            active=profile["active"],
             department_id=department_id,
             valid_department_ids=valid_department_ids,
             cohort_ids=cohort_ids,
@@ -169,12 +171,16 @@ class StaffService(BaseService):
             department_mapping=department_mapping,
         )
 
-    @with_cache(lambda self, request: keys.staff_detail_bulk(request.profileIds, request.currentProfileId))
+    @with_cache(
+        lambda self, request: keys.staff_detail_bulk(
+            request.profileIds, request.currentProfileId
+        )
+    )
     async def get_staff_detail_bulk(
         self, request: StaffDetailBulkRequest
     ) -> StaffDetailBulkResponse:
         """Get bulk staff detail information."""
-        # Get profiles
+        # Get profiles with JSONB department mapping (consolidated query)
         query, params = self.queries.get_profiles_by_ids(request.profileIds)
         profiles = await self.conn.fetch(query, *params)
 
@@ -182,39 +188,46 @@ class StaffService(BaseService):
             raise ValueError("No profiles found")
 
         # Check if roles are consistent
-        roles = list(set([p['role'] for p in profiles]))
+        roles = list(set([p["role"] for p in profiles]))
         role = roles[0] if len(roles) == 1 else None
 
         # Check if requests_per_day are consistent
         req_per_days = list(
-            set([p['requests_per_day'] for p in profiles if p['requests_per_day'] is not None])
+            set(
+                [
+                    p["requests_per_day"]
+                    for p in profiles
+                    if p["requests_per_day"] is not None
+                ]
+            )
         )
         requests_per_day = req_per_days[0] if len(req_per_days) == 1 else None
 
-        # Get all departments for these profiles
-        query, params = self.queries.get_profile_departments_bulk(request.profileIds)
-        dept_results = await self.conn.fetch(query, *params)
-        department_ids = [str(row['department_id']) for row in dept_results]
+        # Get all department_ids from optimized query result
+        all_dept_ids: list[str] = []
+        for p in profiles:
+            dept_ids = p.get("department_ids") or []
+            all_dept_ids.extend(dept_ids)
+        department_ids = list(set(all_dept_ids))
 
-        # Get valid departments
+        # Parse JSONB department mapping from query result
+        department_mapping = {}
+        if profiles and len(profiles) > 0:
+            dept_mapping_data = profiles[0].get("department_mapping")
+            if dept_mapping_data and isinstance(dept_mapping_data, dict):
+                for did, ddata in dept_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
+        # Get valid departments (still separate query - returns list of all departments)
         query, params = self.queries.get_valid_departments_for_profile(
             request.currentProfileId
         )
         dept_list = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row['id']) for row in dept_list]
-
-        # Get department mapping
-        if department_ids:
-            query, params = self.queries.get_departments_mapping(department_ids)
-            dept_mapping_results = await self.conn.fetch(query, *params)
-            department_mapping = {
-                str(row['id']): DepartmentMappingItem(
-                    name=row['name'], description=row['description']
-                )
-                for row in dept_mapping_results
-            }
-        else:
-            department_mapping = {}
+        valid_department_ids = [str(row["id"]) for row in dept_list]
 
         # Role options
         role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
@@ -267,11 +280,13 @@ class StaffService(BaseService):
                 )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_staff_all(),
-            keys.tag_profile_all(),
-            keys.tag_analytics_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_staff_all(),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
 
         return CreateStaffResponse(
             success=True,
@@ -290,10 +305,8 @@ class StaffService(BaseService):
         existing = await self.conn.fetch(query, *params)
 
         if existing:
-            existing_aliases = [row['alias'] for row in existing]
-            raise ValueError(
-                f"Aliases already exist: {', '.join(existing_aliases)}"
-            )
+            existing_aliases = [row["alias"] for row in existing]
+            raise ValueError(f"Aliases already exist: {', '.join(existing_aliases)}")
 
         # Create all profiles
         profile_ids: list[str] = []
@@ -330,11 +343,13 @@ class StaffService(BaseService):
         # Transaction handled by context manager
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_staff_all(),
-            keys.tag_profile_all(),
-            keys.tag_analytics_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_staff_all(),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
 
         return BulkCreateStaffResponse(
             success=True,
@@ -380,13 +395,15 @@ class StaffService(BaseService):
                 )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_staff_by_id(request.profileId),
-            keys.tag_staff_all(),
-            keys.tag_profile_by_id(request.profileId),
-            keys.tag_profile_all(),
-            keys.tag_analytics_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_staff_by_id(request.profileId),
+                keys.tag_staff_all(),
+                keys.tag_profile_by_id(request.profileId),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
 
         return UpdateStaffResponse(
             success=True, message=f"Staff '{existing['name']}' updated successfully"
@@ -436,11 +453,13 @@ class StaffService(BaseService):
                     )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_staff_all(),
-            keys.tag_profile_all(),
-            keys.tag_analytics_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_staff_all(),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
 
         return BulkUpdateStaffResponse(
             success=True,
@@ -457,7 +476,7 @@ class StaffService(BaseService):
         if not result:
             raise ValueError(f"Profile not found: {request.profileId}")
 
-        if result['default_profile']:
+        if result["default_profile"]:
             raise ValueError("Cannot delete default profile")
 
         # Get profile name
@@ -472,13 +491,15 @@ class StaffService(BaseService):
         # Transaction handled by context manager
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_staff_by_id(request.profileId),
-            keys.tag_staff_all(),
-            keys.tag_profile_by_id(request.profileId),
-            keys.tag_profile_all(),
-            keys.tag_analytics_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_staff_by_id(request.profileId),
+                keys.tag_staff_all(),
+                keys.tag_profile_by_id(request.profileId),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
 
         return DeleteStaffResponse(
             success=True, message=f"Staff '{profile['name']}' deleted successfully"
@@ -492,12 +513,10 @@ class StaffService(BaseService):
         # Check for default profiles
         query, params = self.queries.bulk_check_default_profiles(request.profileIds)
         default_profiles = await self.conn.fetch(query, *params)
-        default_ids = [str(row['id']) for row in default_profiles]
+        default_ids = [str(row["id"]) for row in default_profiles]
 
         # Filter out default profiles
-        deletable_ids = [
-            pid for pid in request.profileIds if pid not in default_ids
-        ]
+        deletable_ids = [pid for pid in request.profileIds if pid not in default_ids]
 
         if not deletable_ids:
             raise ValueError("No profiles can be deleted (all are default profiles)")
@@ -507,11 +526,13 @@ class StaffService(BaseService):
         # Transaction handled by context manager
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_staff_all(),
-            keys.tag_profile_all(),
-            keys.tag_analytics_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_staff_all(),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
 
         message = f"{len(deletable_ids)} staff members deleted successfully"
         if default_ids:

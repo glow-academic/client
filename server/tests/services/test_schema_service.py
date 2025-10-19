@@ -1,11 +1,14 @@
 """
 Tests for app.services.schema_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.schema_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_schema_service`")
 class TestGet_Schema_Service:
@@ -32,6 +36,7 @@ class TestGet_Schema_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `list_schema_columns`")
 class TestList_Schema_Columns:
     """Tests for list_schema_columns function."""
@@ -45,4 +50,3 @@ class TestList_Schema_Columns:
         """Test list_schema_columns error handling."""
         # TODO: Implement error test for list_schema_columns
         assert False, "IMPLEMENT: Error test for list_schema_columns"
-

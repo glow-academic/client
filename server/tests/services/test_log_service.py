@@ -1,11 +1,14 @@
 """
 Tests for app.services.log_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.log_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_log_service`")
 class TestGet_Log_Service:
@@ -32,6 +36,7 @@ class TestGet_Log_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_logs_list`")
 class TestGet_Logs_List:
     """Tests for get_logs_list function."""
@@ -48,6 +53,7 @@ class TestGet_Logs_List:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `create_log`")
 class TestCreate_Log:
@@ -66,6 +72,7 @@ class TestCreate_Log:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_recent_logs`")
 class TestGet_Recent_Logs:
     """Tests for get_recent_logs function."""
@@ -83,6 +90,7 @@ class TestGet_Recent_Logs:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
     """Tests for fetcher function."""
@@ -99,6 +107,7 @@ class TestFetcher:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `ensure_json`")
 class TestEnsure_Json:
@@ -117,6 +126,7 @@ class TestEnsure_Json:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
     """Tests for fetcher function."""
@@ -130,4 +140,3 @@ class TestFetcher:
         """Test fetcher error handling."""
         # TODO: Implement error test for fetcher
         assert False, "IMPLEMENT: Error test for fetcher"
-

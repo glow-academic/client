@@ -3,21 +3,31 @@
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.rubric_queries import RubricQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
-                                 DeleteRubricRequest, DeleteRubricResponse,
-                                 DuplicateRubricRequest,
-                                 DuplicateRubricResponse,
-                                 RubricDetailDefaultRequest,
-                                 RubricDetailRequest, RubricDetailResponse,
-                                 RubricItem, RubricsFilters,
-                                 RubricsListResponse, StandardGroupDetail,
-                                 StandardGroupMappingDetail,
-                                 StandardGroupMappingItem, StandardMappingItem,
-                                 UpdateRubricRequest, UpdateRubricResponse)
+from app.schemas.rubrics import (
+    CreateRubricRequest,
+    CreateRubricResponse,
+    DeleteRubricRequest,
+    DeleteRubricResponse,
+    DuplicateRubricRequest,
+    DuplicateRubricResponse,
+    RubricDetailDefaultRequest,
+    RubricDetailRequest,
+    RubricDetailResponse,
+    RubricItem,
+    RubricsFilters,
+    RubricsListResponse,
+    StandardGroupDetail,
+    StandardGroupMappingDetail,
+    StandardGroupMappingItem,
+    StandardMappingItem,
+    UpdateRubricRequest,
+    UpdateRubricResponse,
+)
 from app.services.base import BaseService, with_cache
 
 
@@ -44,18 +54,18 @@ class RubricService(BaseService):
         for row in rubrics_result:
             rubrics.append(
                 RubricItem(
-                    rubric_id=str(row['rubric_id']),
-                    name=row['name'],
-                    description=row['description'],
-                    points=row['points'],
-                    passPoints=row['passpoints'],
-                    can_edit=row['can_edit'],
-                    can_delete=row['can_delete'],
-                    can_duplicate=row['can_duplicate'],
+                    rubric_id=str(row["rubric_id"]),
+                    name=row["name"],
+                    description=row["description"],
+                    points=row["points"],
+                    passPoints=row["passpoints"],
+                    can_edit=row["can_edit"],
+                    can_delete=row["can_delete"],
+                    can_duplicate=row["can_duplicate"],
                     standard_groups={},  # Will be populated below
                 )
             )
-            rubric_ids.append(str(row['rubric_id']))
+            rubric_ids.append(str(row["rubric_id"]))
 
         # Get all standard groups for these rubrics
         standard_groups_mapping = {}
@@ -66,15 +76,15 @@ class RubricService(BaseService):
             groups_result = await self.conn.fetch(query, *params)
 
             for group in groups_result:
-                group_id = str(group['id'])
-                rubric_id = str(group['rubric_id'])
+                group_id = str(group["id"])
+                rubric_id = str(group["rubric_id"])
                 group_ids.append(group_id)
 
                 standard_groups_mapping[group_id] = StandardGroupMappingItem(
-                    name=group['name'],
-                    description=group['description'] or '',
-                    points=group['points'],
-                    passPoints=group['passpoints']
+                    name=group["name"],
+                    description=group["description"] or "",
+                    points=group["points"],
+                    passPoints=group["passpoints"],
                 )
 
                 # Find the rubric and add group_id
@@ -91,13 +101,13 @@ class RubricService(BaseService):
             standards_result = await self.conn.fetch(query, *params)
 
             for standard in standards_result:
-                standard_id = str(standard['id'])
-                group_id = str(standard['standard_group_id'])
+                standard_id = str(standard["id"])
+                group_id = str(standard["standard_group_id"])
 
                 standards_mapping[standard_id] = StandardMappingItem(
-                    name=standard['name'],
-                    description=standard['description'] or '',
-                    points=standard['points']
+                    name=standard["name"],
+                    description=standard["description"] or "",
+                    points=standard["points"],
                 )
 
                 # Add standard_id to the appropriate group in the appropriate rubric
@@ -111,7 +121,9 @@ class RubricService(BaseService):
             standards_mapping=standards_mapping,
         )
 
-    @with_cache(lambda self, request: keys.rubric_by_id(request.rubricId, request.profileId))
+    @with_cache(
+        lambda self, request: keys.rubric_by_id(request.rubricId, request.profileId)
+    )
     async def get_rubric_detail(
         self, request: RubricDetailRequest
     ) -> RubricDetailResponse:
@@ -128,18 +140,18 @@ class RubricService(BaseService):
             request.profileId
         )
         dept_result = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row['id']) for row in dept_result]
+        valid_department_ids = [str(row["id"]) for row in dept_result]
 
         # Get user role for permission checks
         query, params = self.queries.get_profile_role(request.profileId)
         user_result = await self.conn.fetchrow(query, *params)
-        user_role = user_result['role'] if user_result else "student"
+        user_role = user_result["role"] if user_result else "student"
 
         # Compute can_edit permission
         # Default rubrics can only be edited by superadmin
         is_admin = user_role in ("admin", "superadmin")
         can_edit = is_admin and (
-            not rubric['default_rubric'] or user_role == "superadmin"
+            not rubric["default_rubric"] or user_role == "superadmin"
         )
 
         # Get standard groups for this rubric
@@ -151,55 +163,55 @@ class RubricService(BaseService):
         standard_groups_mapping = {}
 
         for group in groups_result:
-            group_id = str(group['id'])
+            group_id = str(group["id"])
             standard_group_ids.append(group_id)
 
             # Get standards for this group
             query, params = self.queries.get_standards_for_group(group_id)
             standards_result = await self.conn.fetch(query, *params)
-            standard_ids = [str(s['id']) for s in standards_result]
+            standard_ids = [str(s["id"]) for s in standards_result]
 
             standard_groups_detail[group_id] = StandardGroupDetail(
-                points=group['points'],
-                passPoints=group['passpoints'],
+                points=group["points"],
+                passPoints=group["passpoints"],
                 standard_ids=standard_ids,
             )
 
             standard_groups_mapping[group_id] = StandardGroupMappingDetail(
-                name=group['name'], description=group['description']
+                name=group["name"], description=group["description"]
             )
 
         # Build standards mapping
         standards_mapping = {}
         for group in groups_result:
-            group_id = str(group['id'])
+            group_id = str(group["id"])
             query, params = self.queries.get_standards_for_group(group_id)
             standards_result = await self.conn.fetch(query, *params)
 
             for standard in standards_result:
-                standards_mapping[str(standard['id'])] = StandardMappingItem(
-                    name=standard['name'],
-                    description=standard['description'] or '',
-                    points=standard['points']
+                standards_mapping[str(standard["id"])] = StandardMappingItem(
+                    name=standard["name"],
+                    description=standard["description"] or "",
+                    points=standard["points"],
                 )
 
         # Get department mapping
         department_mapping = {
-            str(row['id']): DepartmentMappingItem(
-                name=row['name'], description=row['description'] or ''
+            str(row["id"]): DepartmentMappingItem(
+                name=row["name"], description=row["description"] or ""
             )
             for row in dept_result
         }
 
         return RubricDetailResponse(
-            name=rubric['name'],
-            description=rubric['description'],
-            department_id=str(rubric['department_id']),
+            name=rubric["name"],
+            description=rubric["description"],
+            department_id=str(rubric["department_id"]),
             valid_department_ids=valid_department_ids,
-            points=rubric['points'],
-            passPoints=rubric['passpoints'],
-            active=rubric['active'],
-            default_rubric=rubric['default_rubric'],
+            points=rubric["points"],
+            passPoints=rubric["passpoints"],
+            active=rubric["active"],
+            default_rubric=rubric["default_rubric"],
             can_edit=can_edit,
             standard_group_ids=standard_group_ids,
             standard_groups_detail=standard_groups_detail,
@@ -222,7 +234,7 @@ class RubricService(BaseService):
 
         # Reuse the detail logic with the found rubric_id
         detail_request = RubricDetailRequest(
-            rubricId=str(rubric['id']), profileId=request.profileId
+            rubricId=str(rubric["id"]), profileId=request.profileId
         )
 
         return await self.get_rubric_detail(detail_request)
@@ -247,7 +259,7 @@ class RubricService(BaseService):
             if not rubric_result:
                 raise ValueError("Failed to create rubric")
 
-            rubric_id = str(rubric_result['id'])
+            rubric_id = str(rubric_result["id"])
 
             # Create standard groups and their standards
             for group in request.standard_groups:
@@ -266,7 +278,7 @@ class RubricService(BaseService):
                 if not group_result:
                     raise ValueError("Failed to create standard group")
 
-                group_id = str(group_result['id'])
+                group_id = str(group_result["id"])
 
                 # Create standards for this group
                 query, _ = self.queries.create_standard()
@@ -276,14 +288,16 @@ class RubricService(BaseService):
                         group_id,
                         standard.name,
                         standard.description,
-                    standard.points,
-                )
+                        standard.points,
+                    )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_rubric_all(),      # Coarse-grained
-            keys.tag_analytics_all(),   # Related caches
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_rubric_all(),  # Coarse-grained
+                keys.tag_analytics_all(),  # Related caches
+            ]
+        )
 
         return CreateRubricResponse(
             success=True,
@@ -339,7 +353,7 @@ class RubricService(BaseService):
                     if not group_result:
                         raise ValueError("Failed to create standard group")
 
-                    group_id = str(group_result['id'])
+                    group_id = str(group_result["id"])
 
                     # Create standards for new group
                     query, _ = self.queries.create_standard()
@@ -371,11 +385,13 @@ class RubricService(BaseService):
             )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_rubric_by_id(request.rubricId),  # Fine-grained
-            keys.tag_rubric_all(),                     # Coarse-grained
-            keys.tag_analytics_all(),                  # Related caches
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_rubric_by_id(request.rubricId),  # Fine-grained
+                keys.tag_rubric_all(),  # Coarse-grained
+                keys.tag_analytics_all(),  # Related caches
+            ]
+        )
 
         return UpdateRubricResponse(
             success=True,
@@ -425,8 +441,8 @@ class RubricService(BaseService):
             return {"points": 0, "passPoints": 0}
 
         return {
-            "points": int(result['total_points']),
-            "passPoints": int(result['total_pass_points']),
+            "points": int(result["total_points"]),
+            "passPoints": int(result["total_pass_points"]),
         }
 
     async def duplicate_rubric(
@@ -446,17 +462,17 @@ class RubricService(BaseService):
             query, _ = self.queries.insert_duplicate_rubric()
             new_rubric = await self.conn.fetchrow(
                 query,
-                rubric['name'],
-                rubric['description'],
-                rubric['department_id'],
-                rubric['points'],
-                rubric['pass_points'],
+                rubric["name"],
+                rubric["description"],
+                rubric["department_id"],
+                rubric["points"],
+                rubric["pass_points"],
             )
 
             if not new_rubric:
                 raise ValueError("Failed to create duplicate rubric")
 
-            new_rubric_id = str(new_rubric['id'])
+            new_rubric_id = str(new_rubric["id"])
 
             # Get original standard groups
             query, params = self.queries.get_groups_for_duplicate(request.rubricId)
@@ -469,20 +485,22 @@ class RubricService(BaseService):
                 new_group = await self.conn.fetchrow(
                     query,
                     new_rubric_id,
-                    group['name'],
-                    group['short_name'],
-                    group['description'],
-                    group['points'],
-                    group['pass_points'],
+                    group["name"],
+                    group["short_name"],
+                    group["description"],
+                    group["points"],
+                    group["pass_points"],
                 )
 
                 if not new_group:
                     raise ValueError("Failed to duplicate standard group")
 
-                new_group_id = str(new_group['id'])
+                new_group_id = str(new_group["id"])
 
                 # Get and duplicate standards for this group
-                query, params = self.queries.get_standards_for_duplicate(str(group['id']))
+                query, params = self.queries.get_standards_for_duplicate(
+                    str(group["id"])
+                )
                 standards = await self.conn.fetch(query, *params)
 
                 query, _ = self.queries.create_standard()
@@ -490,16 +508,18 @@ class RubricService(BaseService):
                     await self.conn.execute(
                         query,
                         new_group_id,
-                        standard['name'],
-                        standard['description'],
-                        standard['points'],
+                        standard["name"],
+                        standard["description"],
+                        standard["points"],
                     )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_rubric_all(),      # Coarse-grained
-            keys.tag_analytics_all(),   # Related caches
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_rubric_all(),  # Coarse-grained
+                keys.tag_analytics_all(),  # Related caches
+            ]
+        )
 
         return DuplicateRubricResponse(
             success=True,
@@ -517,7 +537,7 @@ class RubricService(BaseService):
         if not usage:
             raise ValueError("Failed to check rubric usage")
 
-        if usage['usage_count'] > 0:
+        if usage["usage_count"] > 0:
             raise ValueError("Cannot delete rubric that is in use by simulations")
 
         # Get rubric name
@@ -532,11 +552,13 @@ class RubricService(BaseService):
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_rubric_by_id(request.rubricId),  # Fine-grained
-            keys.tag_rubric_all(),                     # Coarse-grained
-            keys.tag_analytics_all(),                  # Related caches
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_rubric_by_id(request.rubricId),  # Fine-grained
+                keys.tag_rubric_all(),  # Coarse-grained
+                keys.tag_analytics_all(),  # Related caches
+            ]
+        )
 
         return DeleteRubricResponse(
             success=True, message=f"Rubric '{rubric['name']}' deleted successfully"

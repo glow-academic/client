@@ -1,9 +1,8 @@
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
-import asyncpg  # type: ignore
 from agents.items import TResponseInputItem
 from openai.types.responses import ResponseFunctionToolCallParam
 
@@ -11,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_simulation_conversation_history(
-    messages: List[Dict[str, Any]],
+    messages: list[dict[str, Any]],
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages.
@@ -27,29 +26,29 @@ def get_simulation_conversation_history(
     conversation_history: list[TResponseInputItem] = []
 
     # Filter out error messages and make a list of all items
-    items = [msg for msg in messages if not msg.get('content', '').startswith("Error:")]
+    items = [msg for msg in messages if not msg.get("content", "").startswith("Error:")]
 
     # sort items by created_at
-    items = sorted(items, key=lambda x: x.get('created_at', datetime.min))
+    items = sorted(items, key=lambda x: x.get("created_at", datetime.min))
 
     # Group messages by type to handle consecutive responses
-    current_response_messages: List[Dict[str, Any]] = []
-    
+    current_response_messages: list[dict[str, Any]] = []
+
     for item in items:
-        msg_type = item.get('type', '')
-        msg_content = item.get('content', '')
-        
+        msg_type = item.get("type", "")
+        msg_content = item.get("content", "")
+
         if msg_type == "query" and msg_content != "":
             # If we have pending response messages, add the latest one
             if current_response_messages:
                 latest_response = current_response_messages[-1]
                 assistant_message_item: TResponseInputItem = {
                     "role": "assistant",
-                    "content": latest_response.get('content', ''),
+                    "content": latest_response.get("content", ""),
                 }
                 conversation_history.append(assistant_message_item)
                 current_response_messages = []
-            
+
             # Add the user message
             user_message_item: TResponseInputItem = {
                 "role": "user",
@@ -59,13 +58,13 @@ def get_simulation_conversation_history(
         elif msg_type == "response" and msg_content != "":
             # Collect response messages to find the latest one
             current_response_messages.append(item)
-    
+
     # Handle any remaining response messages at the end
     if current_response_messages:
         latest_response = current_response_messages[-1]
         current_assistant_message_item: TResponseInputItem = {
             "role": "assistant",
-            "content": latest_response.get('content', ''),
+            "content": latest_response.get("content", ""),
         }
         conversation_history.append(current_assistant_message_item)
 
@@ -73,8 +72,8 @@ def get_simulation_conversation_history(
 
 
 def get_assistant_conversation_history(
-    messages: List[Dict[str, Any]],
-    tool_calls: List[Dict[str, Any]],
+    messages: list[dict[str, Any]],
+    tool_calls: list[dict[str, Any]],
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages and tool calls,
@@ -89,23 +88,30 @@ def get_assistant_conversation_history(
         chronologically ordered
     """
     # Create a list of all conversation items with their timestamps
-    conversation_items: List[Dict[str, Any]] = []
+    conversation_items: list[dict[str, Any]] = []
 
     # Add messages to the list
     for message in messages:
-        if message.get('role') == "user" and message.get('content'):
-            user_item: TResponseInputItem = {"role": "user", "content": message['content']}
-            conversation_items.append(
-                {"timestamp": message.get('created_at'), "type": "message", "item": user_item}
-            )
-        elif message.get('role') == "assistant" and message.get('content'):
-            assistant_item: TResponseInputItem = {
-                "role": "assistant",
-                "content": message['content'],
+        if message.get("role") == "user" and message.get("content"):
+            user_item: TResponseInputItem = {
+                "role": "user",
+                "content": message["content"],
             }
             conversation_items.append(
                 {
-                    "timestamp": message.get('created_at'),
+                    "timestamp": message.get("created_at"),
+                    "type": "message",
+                    "item": user_item,
+                }
+            )
+        elif message.get("role") == "assistant" and message.get("content"):
+            assistant_item: TResponseInputItem = {
+                "role": "assistant",
+                "content": message["content"],
+            }
+            conversation_items.append(
+                {
+                    "timestamp": message.get("created_at"),
                     "type": "message",
                     "item": assistant_item,
                 }
@@ -116,18 +122,18 @@ def get_assistant_conversation_history(
         # Add the tool call itself
         logger.info(f"Tool call arguments: {tool_call.get('tool_arguments')}")
         tool_call_item: ResponseFunctionToolCallParam = {
-            "arguments": str(tool_call.get('tool_arguments'))
-            if tool_call.get('tool_arguments')
+            "arguments": str(tool_call.get("tool_arguments"))
+            if tool_call.get("tool_arguments")
             else json.dumps({}),
-            "call_id": "call_" + str(tool_call.get('id')),
-            "name": tool_call.get('tool_name', ''),
+            "call_id": "call_" + str(tool_call.get("id")),
+            "name": tool_call.get("tool_name", ""),
             "type": "function_call",
-            "id": str(tool_call.get('id')),
+            "id": str(tool_call.get("id")),
             "status": "completed",
         }
         conversation_items.append(
             {
-                "timestamp": tool_call.get('created_at'),
+                "timestamp": tool_call.get("created_at"),
                 "type": "tool_call",
                 "item": tool_call_item,
             }
@@ -136,17 +142,17 @@ def get_assistant_conversation_history(
         # Add the tool call output immediately after the tool call
         logger.info(f"Tool call result: {tool_call.get('tool_result')}")
         tool_call_output_item: TResponseInputItem = {
-            "call_id": "call_" + str(tool_call.get('id')),
-            "output": str(tool_call.get('tool_result'))
-            if tool_call.get('tool_result')
+            "call_id": "call_" + str(tool_call.get("id")),
+            "output": str(tool_call.get("tool_result"))
+            if tool_call.get("tool_result")
             else json.dumps({}),
             "type": "function_call_output",
-            "id": str(tool_call.get('id')),
+            "id": str(tool_call.get("id")),
             "status": "completed",
         }
         conversation_items.append(
             {
-                "timestamp": tool_call.get('created_at'),
+                "timestamp": tool_call.get("created_at"),
                 "type": "tool_output",
                 "item": tool_call_output_item,
             }
@@ -170,10 +176,10 @@ def get_assistant_conversation_history(
 def format_chat_scenario(problem_statement: str) -> TResponseInputItem:
     """
     Format a problem statement as a chat scenario message.
-    
+
     Args:
         problem_statement: The scenario problem statement text
-        
+
     Returns:
         Formatted message dict for chat input
     """

@@ -2,8 +2,9 @@
 
 import hashlib
 import json
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = 4  # Bumped: Fixed cohort performance with proper role filtering
@@ -37,7 +38,7 @@ def _stable_json(obj: Any) -> str:
 class Key:
     """
     Canonical cache key with namespace, name, params, and version.
-    
+
     Produces:
     - material(): Human-readable stable string for hashing/logging
     - hash_key(): 64-char hex used in Redis/local cache
@@ -69,7 +70,7 @@ class Key:
     def tags(self) -> Iterable[str]:
         """
         Generate invalidation tags for this key.
-        
+
         Tag hierarchy:
         - Coarse: {ns}:* (invalidate entire namespace)
         - Medium: {ns}:{category}:{name}
@@ -95,7 +96,7 @@ class Key:
 def _extract_primary_id(ns: str, name: str, params: Any) -> Any | None:
     """
     Extract primary entity ID from params for fine-grained tagging.
-    
+
     This allows invalidating specific entities without nuking entire namespaces.
     """
     if not isinstance(params, Mapping):
@@ -244,9 +245,7 @@ def analytics_persona_response_times(
     )
 
 
-def analytics_session_efficiency(
-    filters: Any, *, v: int = GLOBAL_CACHE_VERSION
-) -> Key:
+def analytics_session_efficiency(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for session efficiency metric."""
     return Key(
         ns=NS_ANALYTICS,
@@ -406,9 +405,7 @@ def analytics_practice_overview(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) 
     )
 
 
-def analytics_cohort_performance(
-    filters: Any, *, v: int = GLOBAL_CACHE_VERSION
-) -> Key:
+def analytics_cohort_performance(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for cohort performance data."""
     return Key(
         ns=NS_ANALYTICS,
@@ -438,9 +435,7 @@ def analytics_dashboard_bundle(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -
     )
 
 
-def analytics_leaderboard_bundle(
-    filters: Any, *, v: int = GLOBAL_CACHE_VERSION
-) -> Key:
+def analytics_leaderboard_bundle(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for leaderboard bundle data."""
     return Key(
         ns=NS_ANALYTICS,
@@ -462,9 +457,7 @@ def analytics_improvement_per_day(
     )
 
 
-def analytics_perfect_scores(
-    filters: Any, *, v: int = GLOBAL_CACHE_VERSION
-) -> Key:
+def analytics_perfect_scores(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for perfect scores metric."""
     return Key(
         ns=NS_ANALYTICS,
@@ -474,9 +467,7 @@ def analytics_perfect_scores(
     )
 
 
-def analytics_quickest_pass(
-    filters: Any, *, v: int = GLOBAL_CACHE_VERSION
-) -> Key:
+def analytics_quickest_pass(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for quickest pass metric."""
     return Key(
         ns=NS_ANALYTICS,
@@ -525,9 +516,7 @@ def _serialize_filters(filters: Any) -> dict[str, Any]:
 
 def profile_by_id(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for profile by ID query."""
-    return Key(
-        ns=NS_PROFILE, name="by_id", params={"profile_id": profile_id}, v=v
-    )
+    return Key(ns=NS_PROFILE, name="by_id", params={"profile_id": profile_id}, v=v)
 
 
 def profile_all(*, v: int = GLOBAL_CACHE_VERSION) -> Key:
@@ -555,30 +544,34 @@ def profile_by_email(email: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
 def staff_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for staff list query."""
     return Key(
-        ns=NS_STAFF,
-        name="list",
-        params={"filters": _serialize_filters(filters)},
-        v=v
+        ns=NS_STAFF, name="list", params={"filters": _serialize_filters(filters)}, v=v
     )
 
 
-def staff_detail(profile_id: str, current_profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def staff_detail(
+    profile_id: str, current_profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for staff detail query."""
     return Key(
         ns=NS_STAFF,
         name="detail",
         params={"profile_id": profile_id, "current_profile_id": current_profile_id},
-        v=v
+        v=v,
     )
 
 
-def staff_detail_bulk(profile_ids: list[str], current_profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def staff_detail_bulk(
+    profile_ids: list[str], current_profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for bulk staff detail query."""
     return Key(
         ns=NS_STAFF,
         name="detail_bulk",
-        params={"profile_ids": sorted(profile_ids), "current_profile_id": current_profile_id},
-        v=v
+        params={
+            "profile_ids": sorted(profile_ids),
+            "current_profile_id": current_profile_id,
+        },
+        v=v,
     )
 
 
@@ -593,28 +586,18 @@ def provider_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
         ns=NS_PROVIDER,
         name="list",
         params={"filters": _serialize_filters(filters)},
-        v=v
+        v=v,
     )
 
 
 def provider_by_id(provider_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for provider by ID query."""
-    return Key(
-        ns=NS_PROVIDER,
-        name="by_id",
-        params={"provider_id": provider_id},
-        v=v
-    )
+    return Key(ns=NS_PROVIDER, name="by_id", params={"provider_id": provider_id}, v=v)
 
 
 def model_by_id(model_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for model by ID query."""
-    return Key(
-        ns=NS_PROVIDER,
-        name="model_by_id",
-        params={"model_id": model_id},
-        v=v
-    )
+    return Key(ns=NS_PROVIDER, name="model_by_id", params={"model_id": model_id}, v=v)
 
 
 # ============================================================================
@@ -622,7 +605,9 @@ def model_by_id(model_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
 # ============================================================================
 
 
-def assistant_run_context(chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def assistant_run_context(
+    chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for assistant run context query."""
     return Key(
         ns=NS_ASSISTANT,
@@ -657,7 +642,9 @@ def cohort_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     )
 
 
-def cohort_by_id(cohort_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def cohort_by_id(
+    cohort_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for cohort detail query."""
     return Key(
         ns=NS_COHORT,
@@ -677,12 +664,22 @@ def cohort_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     )
 
 
-def cohort_with_profiles(cohort_id: str, department_ids: list[str], profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def cohort_with_profiles(
+    cohort_id: str,
+    department_ids: list[str],
+    profile_id: str,
+    *,
+    v: int = GLOBAL_CACHE_VERSION,
+) -> Key:
     """Key for cohort with profiles query."""
     return Key(
         ns=NS_COHORT,
         name="with_profiles",
-        params={"cohort_id": cohort_id, "department_ids": sorted(department_ids), "profile_id": profile_id},
+        params={
+            "cohort_id": cohort_id,
+            "department_ids": sorted(department_ids),
+            "profile_id": profile_id,
+        },
         v=v,
     )
 
@@ -740,28 +737,20 @@ def department_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
         ns=NS_DEPARTMENT,
         name="list",
         params={"filters": _serialize_filters(filters)},
-        v=v
+        v=v,
     )
 
 
 def department_by_id(department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for department detail query."""
     return Key(
-        ns=NS_DEPARTMENT,
-        name="by_id",
-        params={"department_id": department_id},
-        v=v
+        ns=NS_DEPARTMENT, name="by_id", params={"department_id": department_id}, v=v
     )
 
 
 def department_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for department creation defaults query."""
-    return Key(
-        ns=NS_DEPARTMENT,
-        name="default",
-        params={"profile_id": profile_id},
-        v=v
-    )
+    return Key(ns=NS_DEPARTMENT, name="default", params={"profile_id": profile_id}, v=v)
 
 
 # ============================================================================
@@ -775,48 +764,37 @@ def document_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
         ns=NS_DOCUMENT,
         name="list",
         params={"filters": _serialize_document_filters(filters)},
-        v=v
+        v=v,
     )
 
 
 def document_by_id(document_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for document detail by ID."""
-    return Key(
-        ns=NS_DOCUMENT,
-        name="by_id",
-        params={"document_id": document_id},
-        v=v
-    )
+    return Key(ns=NS_DOCUMENT, name="by_id", params={"document_id": document_id}, v=v)
 
 
-def document_bulk_detail(document_ids: list[str], profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def document_bulk_detail(
+    document_ids: list[str], profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for bulk document detail."""
     return Key(
         ns=NS_DOCUMENT,
         name="bulk_detail",
         params={"document_ids": sorted(document_ids), "profile_id": profile_id},
-        v=v
+        v=v,
     )
 
 
 def document_file_info(document_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for document file metadata."""
     return Key(
-        ns=NS_DOCUMENT,
-        name="file_info",
-        params={"document_id": document_id},
-        v=v
+        ns=NS_DOCUMENT, name="file_info", params={"document_id": document_id}, v=v
     )
 
 
 def document_csv_file(token: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for CSV file metadata."""
-    return Key(
-        ns=NS_DOCUMENT,
-        name="csv_file",
-        params={"token": token},
-        v=v
-    )
+    return Key(ns=NS_DOCUMENT, name="csv_file", params={"token": token}, v=v)
 
 
 def _serialize_document_filters(filters: Any) -> dict[str, Any]:
@@ -846,16 +824,27 @@ def agent_by_id(agent_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     return Key(ns=NS_AGENT, name="by_id", params={"agent_id": agent_id}, v=v)
 
 
-def agent_classification_context(document_ids: list[str], department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def agent_classification_context(
+    document_ids: list[str], department_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for classification agent run context."""
     doc_ids_str = ",".join(sorted(str(d) for d in document_ids))
-    return Key(ns=NS_AGENT, name="classification_context", 
-               params={"document_ids": doc_ids_str, "department_id": department_id}, v=v)
+    return Key(
+        ns=NS_AGENT,
+        name="classification_context",
+        params={"document_ids": doc_ids_str, "department_id": department_id},
+        v=v,
+    )
 
 
-def agent_scenario_context(department_id: str, persona_id: str | None, 
-                          document_ids: list[str] | None, parameter_item_ids: list[str] | None,
-                          *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def agent_scenario_context(
+    department_id: str,
+    persona_id: str | None,
+    document_ids: list[str] | None,
+    parameter_item_ids: list[str] | None,
+    *,
+    v: int = GLOBAL_CACHE_VERSION,
+) -> Key:
     """Key for scenario agent run context."""
     params = {"department_id": department_id}
     if persona_id:
@@ -863,7 +852,9 @@ def agent_scenario_context(department_id: str, persona_id: str | None,
     if document_ids:
         params["document_ids"] = ",".join(sorted(str(d) for d in document_ids))
     if parameter_item_ids:
-        params["parameter_item_ids"] = ",".join(sorted(str(p) for p in parameter_item_ids))
+        params["parameter_item_ids"] = ",".join(
+            sorted(str(p) for p in parameter_item_ids)
+        )
     return Key(ns=NS_AGENT, name="scenario_context", params=params, v=v)
 
 
@@ -872,33 +863,79 @@ def agent_simulation_context(chat_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> 
     return Key(ns=NS_AGENT, name="simulation_context", params={"chat_id": chat_id}, v=v)
 
 
-def agent_grading_context(simulation_chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def agent_grading_context(
+    simulation_chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for grading agent run context."""
-    return Key(ns=NS_AGENT, name="grading_context",
-               params={"simulation_chat_id": simulation_chat_id, "department_id": department_id}, v=v)
+    return Key(
+        ns=NS_AGENT,
+        name="grading_context",
+        params={
+            "simulation_chat_id": simulation_chat_id,
+            "department_id": department_id,
+        },
+        v=v,
+    )
 
 
-def agent_simulation_messages(simulation_chat_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def agent_simulation_messages(
+    simulation_chat_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for simulation messages query."""
-    return Key(ns=NS_AGENT, name="simulation_messages", params={"simulation_chat_id": simulation_chat_id}, v=v)
+    return Key(
+        ns=NS_AGENT,
+        name="simulation_messages",
+        params={"simulation_chat_id": simulation_chat_id},
+        v=v,
+    )
 
 
-def agent_hint_context(message_id: str, chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def agent_hint_context(
+    message_id: str, chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for hint agent run context."""
-    return Key(ns=NS_AGENT, name="hint_context",
-               params={"message_id": message_id, "chat_id": chat_id, "department_id": department_id}, v=v)
+    return Key(
+        ns=NS_AGENT,
+        name="hint_context",
+        params={
+            "message_id": message_id,
+            "chat_id": chat_id,
+            "department_id": department_id,
+        },
+        v=v,
+    )
 
 
-def agent_guardrail_context(chat_id: str, department_id: str, guardrail_type: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def agent_guardrail_context(
+    chat_id: str,
+    department_id: str,
+    guardrail_type: str,
+    *,
+    v: int = GLOBAL_CACHE_VERSION,
+) -> Key:
     """Key for guardrail agent run context."""
-    return Key(ns=NS_AGENT, name="guardrail_context",
-               params={"chat_id": chat_id, "department_id": department_id, "guardrail_type": guardrail_type}, v=v)
+    return Key(
+        ns=NS_AGENT,
+        name="guardrail_context",
+        params={
+            "chat_id": chat_id,
+            "department_id": department_id,
+            "guardrail_type": guardrail_type,
+        },
+        v=v,
+    )
 
 
-def agent_title_context(chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def agent_title_context(
+    chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for title agent run context."""
-    return Key(ns=NS_AGENT, name="title_context",
-               params={"chat_id": chat_id, "department_id": department_id}, v=v)
+    return Key(
+        ns=NS_AGENT,
+        name="title_context",
+        params={"chat_id": chat_id, "department_id": department_id},
+        v=v,
+    )
 
 
 # ============================================================================
@@ -916,7 +953,9 @@ def parameter_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     )
 
 
-def parameter_by_id(parameter_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def parameter_by_id(
+    parameter_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for parameter detail by ID query."""
     return Key(
         ns=NS_PARAMETER,
@@ -951,7 +990,9 @@ def scenario_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     )
 
 
-def scenario_by_id(scenario_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def scenario_by_id(
+    scenario_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for scenario detail by ID query."""
     return Key(
         ns=NS_SCENARIO,
@@ -1016,7 +1057,9 @@ def persona_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     )
 
 
-def persona_by_id(persona_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def persona_by_id(
+    persona_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for persona detail query."""
     return Key(
         ns=NS_PERSONA,
@@ -1046,7 +1089,9 @@ def persona_overview(persona_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     )
 
 
-def persona_response_times(persona_id: str, window_days: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def persona_response_times(
+    persona_id: str, window_days: int, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for persona response times analysis."""
     return Key(
         ns=NS_PERSONA,
@@ -1093,7 +1138,9 @@ def rubric_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     )
 
 
-def rubric_by_id(rubric_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def rubric_by_id(
+    rubric_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for rubric detail query."""
     return Key(
         ns=NS_RUBRIC,
@@ -1140,7 +1187,9 @@ def simulation_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     )
 
 
-def simulation_by_id(simulation_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def simulation_by_id(
+    simulation_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for simulation detail by ID query."""
     return Key(
         ns=NS_SIMULATION,
@@ -1160,7 +1209,9 @@ def simulation_overview(simulation_id: str, *, v: int = GLOBAL_CACHE_VERSION) ->
     )
 
 
-def simulation_attempts_list(simulation_id: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+def simulation_attempts_list(
+    simulation_id: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
     """Key for simulation attempts list query."""
     return Key(
         ns=NS_SIMULATION,
@@ -1359,12 +1410,7 @@ def log_list(*, v: int = GLOBAL_CACHE_VERSION) -> Key:
 
 def log_recent(level: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for recent logs query."""
-    return Key(
-        ns=NS_LOG,
-        name="recent",
-        params={"level": level, "limit": limit},
-        v=v
-    )
+    return Key(ns=NS_LOG, name="recent", params={"level": level, "limit": limit}, v=v)
 
 
 def tag_log_all() -> str:
@@ -1380,4 +1426,3 @@ def tag_model_run_all() -> str:
 def tag_model_run_by_id(model_run_id: str) -> str:
     """Fine tag to invalidate specific model run caches."""
     return f"{NS_MODEL_RUN}:{model_run_id}"
-

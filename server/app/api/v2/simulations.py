@@ -3,22 +3,25 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.simulations import (CreateSimulationRequest,
-                                     CreateSimulationResponse,
-                                     DeleteSimulationRequest,
-                                     DeleteSimulationResponse,
-                                     DuplicateSimulationRequest,
-                                     DuplicateSimulationResponse,
-                                     SimulationDetailDefaultRequest,
-                                     SimulationDetailRequest,
-                                     SimulationDetailResponse,
-                                     SimulationsFilters,
-                                     SimulationsListResponse,
-                                     UpdateSimulationRequest,
-                                     UpdateSimulationResponse)
-from app.services.simulation_service import get_simulation_service
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.simulations import (
+    CreateSimulationRequest,
+    CreateSimulationResponse,
+    DeleteSimulationRequest,
+    DeleteSimulationResponse,
+    DuplicateSimulationRequest,
+    DuplicateSimulationResponse,
+    SimulationDetailDefaultRequest,
+    SimulationDetailRequest,
+    SimulationDetailResponse,
+    SimulationsFilters,
+    SimulationsListResponse,
+    UpdateSimulationRequest,
+    UpdateSimulationResponse,
+)
+from app.services.simulation_service import get_simulation_service
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
 
@@ -124,4 +127,3 @@ async def delete_simulation(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

@@ -3,17 +3,25 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
-                                  DeletePersonaRequest, DeletePersonaResponse,
-                                  DuplicatePersonaRequest,
-                                  DuplicatePersonaResponse,
-                                  PersonaDetailDefaultRequest,
-                                  PersonaDetailRequest, PersonaDetailResponse,
-                                  PersonasFilters, PersonasListResponse,
-                                  UpdatePersonaRequest, UpdatePersonaResponse)
-from app.services.persona_service import get_persona_service
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.personas import (
+    CreatePersonaRequest,
+    CreatePersonaResponse,
+    DeletePersonaRequest,
+    DeletePersonaResponse,
+    DuplicatePersonaRequest,
+    DuplicatePersonaResponse,
+    PersonaDetailDefaultRequest,
+    PersonaDetailRequest,
+    PersonaDetailResponse,
+    PersonasFilters,
+    PersonasListResponse,
+    UpdatePersonaRequest,
+    UpdatePersonaResponse,
+)
+from app.services.persona_service import get_persona_service
 
 router = APIRouter(prefix="/personas", tags=["personas"])
 
@@ -119,4 +127,3 @@ async def update_persona(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

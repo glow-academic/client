@@ -3,17 +3,25 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
-                                 DeleteRubricRequest, DeleteRubricResponse,
-                                 DuplicateRubricRequest,
-                                 DuplicateRubricResponse,
-                                 RubricDetailDefaultRequest,
-                                 RubricDetailRequest, RubricDetailResponse,
-                                 RubricsFilters, RubricsListResponse,
-                                 UpdateRubricRequest, UpdateRubricResponse)
-from app.services.rubric_service import get_rubric_service
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.rubrics import (
+    CreateRubricRequest,
+    CreateRubricResponse,
+    DeleteRubricRequest,
+    DeleteRubricResponse,
+    DuplicateRubricRequest,
+    DuplicateRubricResponse,
+    RubricDetailDefaultRequest,
+    RubricDetailRequest,
+    RubricDetailResponse,
+    RubricsFilters,
+    RubricsListResponse,
+    UpdateRubricRequest,
+    UpdateRubricResponse,
+)
+from app.services.rubric_service import get_rubric_service
 
 router = APIRouter(prefix="/rubrics", tags=["rubrics"])
 

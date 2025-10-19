@@ -3,12 +3,16 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.services.analytics_service import get_analytics_service
-from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
-                                   HomeOverviewResponse,
-                                   PracticeOverviewResponse)
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.analytics import (
+    AnalyticsFilters,
+    AttemptHistoryResponse,
+    HomeOverviewResponse,
+    PracticeOverviewResponse,
+)
+from app.services.analytics_service import get_analytics_service
 
 router = APIRouter(tags=["analytics-pages"])
 
@@ -50,4 +54,3 @@ async def get_practice_overview(
         return await service.get_practice_overview(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

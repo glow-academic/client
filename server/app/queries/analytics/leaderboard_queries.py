@@ -1,6 +1,6 @@
 """Leaderboard-specific analytics queries - 3 metrics."""
 
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -15,12 +15,12 @@ class LeaderboardQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build improvement per day query - maximum improvement rate across simulations."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -32,9 +32,12 @@ class LeaderboardQueries:
             department_ids,
         )
 
-        query = """
+        query = (
+            """
             WITH filt AS (
-                SELECT * FROM analytics a WHERE """ + where_clause + """
+                SELECT * FROM analytics a WHERE """
+            + where_clause
+            + """
             ),
             attempts_by_sim AS (
                 SELECT 
@@ -116,6 +119,7 @@ class LeaderboardQueries:
                     'maxRate', COALESCE((SELECT MAX(max_improvement_rate) FROM max_rates), 0)
                 ) AS hover
         """
+        )
 
         return query, params
 
@@ -123,12 +127,12 @@ class LeaderboardQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build perfect scores query - count of 100% grade sessions."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -140,9 +144,12 @@ class LeaderboardQueries:
             department_ids,
         )
 
-        query = """
+        query = (
+            """
             WITH filt AS (
-                SELECT * FROM analytics a WHERE """ + where_clause + """
+                SELECT * FROM analytics a WHERE """
+            + where_clause
+            + """
             ),
             perfects AS (
                 SELECT *
@@ -184,6 +191,7 @@ class LeaderboardQueries:
                     'simulationId', simulation_id
                 ) ORDER BY profile_id, chat_created_at) FROM data_points), '[]'::json) AS data_points
         """
+        )
 
         return query, params
 
@@ -191,12 +199,12 @@ class LeaderboardQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build quickest pass query - fastest time-to-pass in minutes."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -208,9 +216,12 @@ class LeaderboardQueries:
             department_ids,
         )
 
-        query = """
+        query = (
+            """
             WITH filt AS (
-                SELECT * FROM analytics a WHERE """ + where_clause + """
+                SELECT * FROM analytics a WHERE """
+            + where_clause
+            + """
             ),
             passes AS (
                 SELECT *
@@ -252,6 +263,6 @@ class LeaderboardQueries:
                     'simulationId', simulation_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
         """
+        )
 
         return query, params
-

@@ -1,6 +1,5 @@
 """Feedback V2 API schemas."""
 
-from typing import List
 
 from pydantic import BaseModel
 
@@ -43,7 +42,7 @@ class FeedbackItem(BaseModel):
 class FeedbackListResponse(BaseModel):
     """Response for feedback list."""
 
-    feedback: List[FeedbackItem]
+    feedback: list[FeedbackItem]
 
 
 class CreateFeedbackResponse(BaseModel):
@@ -52,4 +51,3 @@ class CreateFeedbackResponse(BaseModel):
     feedback_id: int
     success: bool
     message: str
-

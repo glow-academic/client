@@ -1,6 +1,5 @@
 """Agents V2 API schemas."""
 
-from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -28,7 +27,7 @@ class AgentItem(BaseModel):
     agent_id: str
     name: str
     description: str
-    reasoning: Optional[str]
+    reasoning: str | None
     temperature: float
     model_id: str
     updated_at: str
@@ -39,7 +38,7 @@ class AgentItem(BaseModel):
 class AgentsListResponse(BaseModel):
     """Response for agents list."""
 
-    agents: List[AgentItem]
+    agents: list[AgentItem]
     model_mapping: ModelMapping
 
 
@@ -72,16 +71,16 @@ class AgentDetailResponse(BaseModel):
     system_prompt: str
     temperature: float
     model_id: str
-    reasoning: Optional[str]
+    reasoning: str | None
 
     # Metadata
-    valid_model_ids: List[str]
-    reasoning_options: List[str]
+    valid_model_ids: list[str]
+    reasoning_options: list[str]
     temperature_lower: float
     temperature_upper: float
 
     # Debug info
-    debug_info: List[DebugInfoItem]
+    debug_info: list[DebugInfoItem]
 
     # Mappings
     model_mapping: ModelMapping
@@ -100,7 +99,7 @@ class CreateAgentRequest(BaseModel):
     system_prompt: str
     temperature: float
     model_id: str
-    reasoning: Optional[str]
+    reasoning: str | None
 
 
 class CreateAgentResponse(BaseModel):
@@ -120,7 +119,7 @@ class UpdateAgentRequest(BaseModel):
     system_prompt: str
     temperature: float
     model_id: str
-    reasoning: Optional[str]
+    reasoning: str | None
 
 
 class UpdateAgentResponse(BaseModel):
@@ -155,4 +154,3 @@ class DeleteAgentResponse(BaseModel):
 
     success: bool
     message: str
-

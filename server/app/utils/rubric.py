@@ -1,13 +1,12 @@
-import uuid
-from typing import Any, Dict, List
+from typing import Any
 
 from agents.items import TResponseInputItem
 
 
 def get_dynamic_rubric(
-    rubric_obj: Dict[str, Any],
-    standard_groups: List[Dict[str, Any]],
-    standards: List[Dict[str, Any]],
+    rubric_obj: dict[str, Any],
+    standard_groups: list[dict[str, Any]],
+    standards: list[dict[str, Any]],
 ) -> TResponseInputItem:
     """
     Build a dynamic rubric from database records.
@@ -31,9 +30,9 @@ def get_dynamic_rubric(
     ]
 
     # Group standards by standard_group_id
-    standards_by_group: dict[Any, list[Dict[str, Any]]] = {}
+    standards_by_group: dict[Any, list[dict[str, Any]]] = {}
     for standard in standards:
-        group_id = standard['standard_group_id']
+        group_id = standard["standard_group_id"]
         if group_id not in standards_by_group:
             standards_by_group[group_id] = []
         standards_by_group[group_id].append(standard)
@@ -50,8 +49,8 @@ def get_dynamic_rubric(
         )
 
         # Sort standards by points (descending - 5 to 1)
-        group_standards = standards_by_group.get(group['id'], [])
-        group_standards.sort(key=lambda x: x['points'], reverse=True)
+        group_standards = standards_by_group.get(group["id"], [])
+        group_standards.sort(key=lambda x: x["points"], reverse=True)
 
         for standard in group_standards:
             rubric_lines.append(

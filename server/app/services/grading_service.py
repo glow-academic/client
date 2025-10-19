@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.grading_queries import GradingQueries
 from app.services.base import BaseService
@@ -68,14 +69,15 @@ class GradingService(BaseService):
         if not grade_row:
             raise ValueError("Failed to create simulation chat grade")
 
-        grade_id = UUID(grade_row['id'])
+        grade_id = UUID(grade_row["id"])
 
         # 2. Create feedback records for each standard group
         feedback_records = []
         for group in standard_groups:
             # Get safe field name to look up results
             from app.agents.collection.grade import create_safe_field_name
-            safe_name = create_safe_field_name(group['short_name'])
+
+            safe_name = create_safe_field_name(group["short_name"])
 
             group_data = grading_results.get(safe_name, {})
             group_score = group_data.get("score", 0)
@@ -83,29 +85,31 @@ class GradingService(BaseService):
 
             # Find the corresponding standard for this score
             group_standards = [
-                s for s in standards if s['standard_group_id'] == group['id']
+                s for s in standards if s["standard_group_id"] == group["id"]
             ]
             matching_standard = None
             for standard in group_standards:
-                if standard['points'] == group_score:
+                if standard["points"] == group_score:
                     matching_standard = standard
                     break
 
             if matching_standard:
-                feedback_records.append({
-                    'standard_id': matching_standard['id'],
-                    'grade_id': grade_id,
-                    'score': group_score,
-                    'feedback': group_feedback,
-                })
+                feedback_records.append(
+                    {
+                        "standard_id": matching_standard["id"],
+                        "grade_id": grade_id,
+                        "score": group_score,
+                        "feedback": group_feedback,
+                    }
+                )
 
         # Batch insert feedback records
         if feedback_records:
             query, _ = self.queries.create_simulation_chat_feedbacks()
-            standard_ids = [str(r['standard_id']) for r in feedback_records]
-            grade_ids = [str(r['grade_id']) for r in feedback_records]
-            scores = [r['score'] for r in feedback_records]
-            feedbacks = [r['feedback'] for r in feedback_records]
+            standard_ids = [str(r["standard_id"]) for r in feedback_records]
+            grade_ids = [str(r["grade_id"]) for r in feedback_records]
+            scores = [r["score"] for r in feedback_records]
+            feedbacks = [r["feedback"] for r in feedback_records]
 
             await self.conn.execute(query, standard_ids, grade_ids, scores, feedbacks)
 

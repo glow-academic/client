@@ -1,14 +1,14 @@
 """Schema queries - SQL query builders for database metadata operations."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class SchemaQueries:
     """Query builders for schema/metadata operations."""
 
-    def list_schema_columns(self) -> Tuple[str, List[Any]]:
+    def list_schema_columns(self) -> tuple[str, list[Any]]:
         """Build query to list all tables and columns in the public schema.
-        
+
         Returns:
             Tuple of (query string, params list)
         """
@@ -19,4 +19,3 @@ class SchemaQueries:
         ORDER BY table_name, ordinal_position
         """
         return (query, [])
-

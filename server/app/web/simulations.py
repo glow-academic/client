@@ -8,24 +8,19 @@ Supports text and audio message processing with real-time streaming
 import asyncio
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
-import asyncpg  # type: ignore
 import socketio  # type: ignore
-from agents import gen_trace_id
 from agents.exceptions import OutputGuardrailTripwireTriggered
-from app.agents.collection.grade import run_grade_agent
+
 from app.agents.collection.hint import run_hint_agent
-from app.agents.collection.scenario import run_scenario_agent
-from app.agents.collection.simulation import (cancel_simulation_run,
-                                              run_simulation_agent)
+from app.agents.collection.simulation import cancel_simulation_run, run_simulation_agent
 from app.db import get_pool
 
 logger = logging.getLogger(__name__)
 
 # Global store for active simulation runs
-active_simulation_runs: Dict[str, Any] = {}
+active_simulation_runs: dict[str, Any] = {}
 
 
 def get_sio_instance() -> socketio.AsyncServer:
@@ -35,7 +30,7 @@ def get_sio_instance() -> socketio.AsyncServer:
     return get_socketio_instance()
 
 
-async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
+async def handle_start_simulation(sid: str, data: dict[str, Any]) -> None:
     """
     Handle simulation start requests via WebSocket
     Replaces /simulations/start endpoint
@@ -79,6 +74,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             # Resolve profile for guests to avoid ghost attempts
             if profile_id is None:
                 from app.services.profile_service import ProfileService
+
                 profile_service = ProfileService(conn)
                 profile_id = await profile_service.get_default_guest_profile_id()
                 if profile_id:
@@ -93,11 +89,12 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             # Parse infinite_time_limit
             # Note: infinite_time_limit parameter removed - time limits now managed via
             # simulation_time_limits junction table. Use infinite_mode boolean to bypass limits.
-            
+
             # Use service layer to create attempt and chat
             from app.services.simulation_service import SimulationService
+
             service = SimulationService(conn)
-            
+
             result = await service.start_simulation_attempt(
                 simulation_id=simulation_id,
                 profile_id=str(profile_id) if profile_id else None,
@@ -122,8 +119,8 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                 {
                     "success": True,
                     "message": "Simulation started successfully",
-                    "attempt_id": str(result['attempt_id']),
-                    "chat_id": str(result['chat_id']),
+                    "attempt_id": str(result["attempt_id"]),
+                    "chat_id": str(result["chat_id"]),
                 },
                 room=sid,
             )
@@ -137,7 +134,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
         await emit_error(sid, f"Failed to start simulation: {str(e)}")
 
 
-async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
+async def handle_stop_simulation(sid: str, data: dict[str, Any]) -> None:
     """
     Handle simulation stop requests via WebSocket
     Replaces /simulations/stop endpoint
@@ -213,7 +210,7 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
         await emit_error(sid, f"Failed to stop simulation: {str(e)}")
 
 
-async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
+async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
     """
     Handle simulation continue requests via WebSocket
     Replaces /simulations/continue endpoint
@@ -241,6 +238,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
         async with pool.acquire() as conn:
             # Use service layer to continue simulation
             from app.services.simulation_service import SimulationService
+
             service = SimulationService(conn)
 
             sio_instance = get_sio_instance()
@@ -255,12 +253,12 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             if end_all:
                 logger.info(
                     f"End all completed for attempt {attempt_id}: created {result['created_chats_count']} new chats"
-                    )
+                )
 
                 # Emit end all completed event
                 payload = {
                     "success": True,
-                    "message": f"Ended all chats for this attempt",
+                    "message": "Ended all chats for this attempt",
                     "attempt_id": attempt_id,
                 }
                 # Emit to requester
@@ -307,9 +305,6 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
         await emit_error(sid, f"Failed to continue simulation: {str(e)}")
 
 
-
-
-
 async def _generate_hints_background(
     chat_id: uuid.UUID,
     message_id: uuid.UUID,
@@ -324,7 +319,7 @@ async def _generate_hints_background(
     if not pool:
         logger.error("Database connection pool not available for hint generation")
         return
-        
+
     async with pool.acquire() as conn:
         try:
             logger.info(f"Background hint generation started for message {message_id}")
@@ -335,9 +330,14 @@ async def _generate_hints_background(
                 conn=conn,
                 sio_instance=sio_instance,
             )
-            logger.info(f"Background hint generation completed: {len(hint_results)} hints created")
+            logger.info(
+                f"Background hint generation completed: {len(hint_results)} hints created"
+            )
         except Exception as e:
-            logger.error(f"Background hint generation failed for message {message_id}: {e}", exc_info=True)
+            logger.error(
+                f"Background hint generation failed for message {message_id}: {e}",
+                exc_info=True,
+            )
 
 
 async def process_simulation_message_websocket(
@@ -360,6 +360,7 @@ async def process_simulation_message_websocket(
         try:
             # Use service layer for database operations
             from app.services.simulation_service import SimulationService
+
             service = SimulationService(conn)
 
             # 1. Add the user message to the chat (skip if this is a retry)
@@ -372,32 +373,36 @@ async def process_simulation_message_websocket(
                 await sio_instance.emit(
                     "simulation_new_message",
                     {
-                        "message_id": str(user_message['id']),
+                        "message_id": str(user_message["id"]),
                         "chat_id": str(chat_id),
                         "role": "user",
                         "content": message,
                         "completed": True,
-                        "created_at": user_message['created_at'].isoformat(),
+                        "created_at": user_message["created_at"].isoformat(),
                     },
                     room=f"simulation_{chat_id}",
                 )
             elif is_retry:
-                logger.info(f"Skipping user message creation for retry in chat {chat_id}")
+                logger.info(
+                    f"Skipping user message creation for retry in chat {chat_id}"
+                )
 
             # 3. Create placeholder assistant message
-            assistant_message = await service.create_assistant_message_placeholder(str(chat_id))
+            assistant_message = await service.create_assistant_message_placeholder(
+                str(chat_id)
+            )
 
             # 4. Emit placeholder assistant message
             logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
             await sio_instance.emit(
                 "simulation_new_message",
                 {
-                    "message_id": str(assistant_message['id']),
+                    "message_id": str(assistant_message["id"]),
                     "chat_id": str(chat_id),
                     "role": "assistant",
                     "content": "",
                     "completed": False,
-                    "created_at": assistant_message['created_at'].isoformat(),
+                    "created_at": assistant_message["created_at"].isoformat(),
                 },
                 room=f"simulation_{chat_id}",
             )
@@ -419,7 +424,7 @@ async def process_simulation_message_websocket(
                         run_id = await get_active_run(str(chat_id))
                         if run_id and await is_run_cancelled(run_id):
                             cancelled = True
-                            await service.complete_message(str(assistant_message['id']))
+                            await service.complete_message(str(assistant_message["id"]))
                             break
                     except Exception:
                         pass
@@ -428,7 +433,9 @@ async def process_simulation_message_websocket(
                     accumulated_content += token
 
                     # Update the database with accumulated content
-                    await service.update_message_content(str(assistant_message['id']), accumulated_content)
+                    await service.update_message_content(
+                        str(assistant_message["id"]), accumulated_content
+                    )
 
                     logger.info(
                         f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
@@ -436,7 +443,7 @@ async def process_simulation_message_websocket(
                     await sio_instance.emit(
                         "simulation_message_token",
                         {
-                            "message_id": str(assistant_message['id']),
+                            "message_id": str(assistant_message["id"]),
                             "chat_id": str(chat_id),
                             "token": token,
                             "accumulated_content": accumulated_content,
@@ -456,19 +463,16 @@ async def process_simulation_message_websocket(
                 except Exception:
                     reason = ""
 
-                error_text = (
-                    "Error: "
-                    f"{reason or 'Guardrail tripwire triggered'}"
-                )
+                error_text = f"Error: {reason or 'Guardrail tripwire triggered'}"
 
                 # Persist error onto the assistant message and emit completion + error
-                await service.complete_message(str(assistant_message['id']), error_text)
+                await service.complete_message(str(assistant_message["id"]), error_text)
 
                 sio_instance = get_sio_instance()
                 await sio_instance.emit(
                     "simulation_message_complete",
                     {
-                        "message_id": str(assistant_message['id']),
+                        "message_id": str(assistant_message["id"]),
                         "chat_id": str(chat_id),
                         "final_content": error_text,
                     },
@@ -492,14 +496,16 @@ async def process_simulation_message_websocket(
 
                     # Keep content as-is, don't add cancellation notice
                     # Mark message as completed when cancelled
-                    await service.complete_message(str(assistant_message['id']), accumulated_content)
+                    await service.complete_message(
+                        str(assistant_message["id"]), accumulated_content
+                    )
 
                     # Emit cancellation signal
                     logger.info(f"Emitting cancellation to room simulation_{chat_id}")
                     await sio_instance.emit(
                         "simulation_message_cancelled",
                         {
-                            "message_id": str(assistant_message['id']),
+                            "message_id": str(assistant_message["id"]),
                             "chat_id": str(chat_id),
                             "final_content": accumulated_content,
                         },
@@ -510,7 +516,7 @@ async def process_simulation_message_websocket(
                     raise e
 
             # 6. Mark as completed
-            await service.complete_message(str(assistant_message['id']))
+            await service.complete_message(str(assistant_message["id"]))
 
             # 7. Emit completion signal (only if not cancelled)
             if not cancelled:
@@ -518,29 +524,33 @@ async def process_simulation_message_websocket(
                 await sio_instance.emit(
                     "simulation_message_complete",
                     {
-                        "message_id": str(assistant_message['id']),
+                        "message_id": str(assistant_message["id"]),
                         "chat_id": str(chat_id),
                         "final_content": accumulated_content,
                     },
                     room=f"simulation_{chat_id}",
                 )
-                
+
                 # 8. Trigger hint generation for practice simulations only (fire and forget)
                 # Use optimized query to get simulation metadata
                 sim_metadata = await service.get_simulation_for_chat(str(chat_id))
-                
-                if sim_metadata['practice_simulation']:
-                    logger.info(f"Triggering hint generation for practice message {assistant_message['id']}")
+
+                if sim_metadata["practice_simulation"]:
+                    logger.info(
+                        f"Triggering hint generation for practice message {assistant_message['id']}"
+                    )
                     asyncio.create_task(
                         _generate_hints_background(
                             chat_id=chat_id,
-                            message_id=assistant_message['id'],
+                            message_id=assistant_message["id"],
                             department_id=department_id,
-                            sio_instance=sio_instance
+                            sio_instance=sio_instance,
                         )
                     )
                 else:
-                    logger.debug(f"Skipping hint generation for non-practice simulation")
+                    logger.debug(
+                        "Skipping hint generation for non-practice simulation"
+                    )
 
         except Exception as e:
             logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
@@ -551,13 +561,15 @@ async def process_simulation_message_websocket(
             try:
                 error_text = f"Error: {str(e)}"
                 if "assistant_message" in locals() and assistant_message is not None:
-                    await service.complete_message(str(assistant_message['id']), error_text)
+                    await service.complete_message(
+                        str(assistant_message["id"]), error_text
+                    )
 
                     # Emit a completion update using the same message so the client updates content
                     await sio_instance.emit(
                         "simulation_message_complete",
                         {
-                            "message_id": str(assistant_message['id']),
+                            "message_id": str(assistant_message["id"]),
                             "chat_id": str(chat_id),
                             "final_content": error_text,
                         },
@@ -597,7 +609,7 @@ def register_simulation_events(sio: socketio.AsyncServer) -> None:
     # Just register simulation-specific events
 
     @sio.event  # type: ignore
-    async def start_simulation(sid: str, data: Dict[str, Any]) -> None:
+    async def start_simulation(sid: str, data: dict[str, Any]) -> None:
         """Start a new simulation attempt"""
         logger.info(
             f"start_simulation event triggered for sid={sid} with data keys: {list(data.keys())}"
@@ -605,12 +617,12 @@ def register_simulation_events(sio: socketio.AsyncServer) -> None:
         await handle_start_simulation(sid, data)
 
     @sio.event  # type: ignore
-    async def stop_simulation(sid: str, data: Dict[str, Any]) -> None:
+    async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
         """Stop an active simulation"""
         await handle_stop_simulation(sid, data)
 
     @sio.event  # type: ignore
-    async def continue_simulation(sid: str, data: Dict[str, Any]) -> None:
+    async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
         """Continue to next chat in simulation"""
         await handle_continue_simulation(sid, data)
 

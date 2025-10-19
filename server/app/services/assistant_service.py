@@ -1,10 +1,12 @@
 """Assistant service layer - business logic for assistant agent execution."""
 
 import asyncio
-from typing import Any, Dict, List
+from datetime import UTC
+from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.assistant_queries import AssistantQueries
 from app.schemas.assistant import AssistantRunContext
@@ -19,7 +21,11 @@ class AssistantService(BaseService):
         super().__init__(conn)
         self.queries = AssistantQueries()
 
-    @with_cache(lambda self, chat_id, department_id: keys.assistant_run_context(str(chat_id), str(department_id)))
+    @with_cache(
+        lambda self, chat_id, department_id: keys.assistant_run_context(
+            str(chat_id), str(department_id)
+        )
+    )
     async def get_assistant_run_context(
         self, chat_id: UUID, department_id: UUID
     ) -> AssistantRunContext:
@@ -42,7 +48,7 @@ class AssistantService(BaseService):
         """
         chat_id_str = str(chat_id)
         department_id_str = str(department_id)
-        
+
         # 1. Get main context with optimized JOIN query
         query, params = self.queries.get_assistant_run_context(
             chat_id_str, department_id_str
@@ -68,8 +74,8 @@ class AssistantService(BaseService):
         )
 
         # 3. Convert database records to dicts
-        messages: List[Dict[str, Any]] = [dict(row) for row in messages_result]
-        tool_calls: List[Dict[str, Any]] = [dict(row) for row in tool_calls_result]
+        messages: list[dict[str, Any]] = [dict(row) for row in messages_result]
+        tool_calls: list[dict[str, Any]] = [dict(row) for row in tool_calls_result]
 
         # 4. Build and return context
         return AssistantRunContext(
@@ -113,12 +119,14 @@ class AssistantService(BaseService):
         chat_id_str = str(chat_id)
         query, params = self.queries.update_chat_title(chat_id_str, title)
         await self.conn.execute(query, *params)
-        
+
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
-            ])
+            ]
+        )
 
     async def verify_profile_exists(self, profile_id: UUID) -> bool:
         """
@@ -152,7 +160,7 @@ class AssistantService(BaseService):
 
     async def create_chat(
         self, profile_id: UUID, title: str, trace_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create a new assistant chat.
 
@@ -164,27 +172,27 @@ class AssistantService(BaseService):
         Returns:
             Dict containing chat data (id)
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         profile_id_str = str(profile_id)
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         query, params = self.queries.create_chat(
             profile_id_str, title, trace_id, created_at
         )
         result = await self.conn.fetchrow(query, *params)
         chat_id_str = str(result["id"])
-        
+
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
-            ])
-        
+            ]
+        )
+
         return {"id": chat_id_str}
 
-    async def create_user_message(
-        self, chat_id: UUID, content: str
-    ) -> Dict[str, Any]:
+    async def create_user_message(self, chat_id: UUID, content: str) -> dict[str, Any]:
         """
         Create a new user message in the chat.
 
@@ -195,27 +203,29 @@ class AssistantService(BaseService):
         Returns:
             Dict containing message data (id, created_at)
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         chat_id_str = str(chat_id)
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         query, params = self.queries.create_message(
             chat_id_str, "user", content, True, created_at
         )
         result = await self.conn.fetchrow(query, *params)
-        
+
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
-            ])
-        
+            ]
+        )
+
         return {
             "id": result["id"],
             "created_at": result["created_at"],
         }
 
-    async def create_assistant_message(self, chat_id: UUID) -> Dict[str, Any]:
+    async def create_assistant_message(self, chat_id: UUID) -> dict[str, Any]:
         """
         Create a new assistant message placeholder in the chat.
 
@@ -225,21 +235,23 @@ class AssistantService(BaseService):
         Returns:
             Dict containing message data (id, created_at)
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         chat_id_str = str(chat_id)
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         query, params = self.queries.create_message(
             chat_id_str, "assistant", "", False, created_at
         )
         result = await self.conn.fetchrow(query, *params)
-        
+
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
-            ])
-        
+            ]
+        )
+
         return {
             "id": result["id"],
             "created_at": result["created_at"],
@@ -256,7 +268,7 @@ class AssistantService(BaseService):
         message_id_str = str(message_id)
         query, params = self.queries.update_message_content(message_id_str, content)
         await self.conn.execute(query, *params)
-        
+
         # Invalidate caches (coarse-grained since we don't have chat_id)
         await self._invalidate_cache([keys.tag_assistant_all()])
 
@@ -271,7 +283,7 @@ class AssistantService(BaseService):
         message_id_str = str(message_id)
         query, params = self.queries.complete_message(message_id_str, content, True)
         await self.conn.execute(query, *params)
-        
+
         # Invalidate caches (coarse-grained since we don't have chat_id)
         await self._invalidate_cache([keys.tag_assistant_all()])
 
@@ -280,8 +292,8 @@ class AssistantService(BaseService):
         chat_id: UUID,
         tool_name: str,
         tool_type: str,
-        tool_arguments: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        tool_arguments: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Create a new assistant tool call.
 
@@ -295,26 +307,28 @@ class AssistantService(BaseService):
             Dict containing tool call data (id)
         """
         import json
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         chat_id_str = str(chat_id)
         tool_arguments_json = json.dumps(tool_arguments)
-        created_at = datetime.now(timezone.utc)
+        created_at = datetime.now(UTC)
         query, params = self.queries.create_tool_call(
             chat_id_str, tool_name, tool_type, tool_arguments_json, created_at
         )
         result = await self.conn.fetchrow(query, *params)
-        
+
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
-            ])
-        
+            ]
+        )
+
         return {"id": result["id"]}
 
     async def complete_tool_call(
-        self, tool_call_id: UUID, tool_result: Dict[str, Any]
+        self, tool_call_id: UUID, tool_result: dict[str, Any]
     ) -> None:
         """
         Update a tool call with its result and mark as completed.
@@ -331,12 +345,16 @@ class AssistantService(BaseService):
             tool_call_id_str, tool_result_json, True
         )
         await self.conn.execute(query, *params)
-        
+
         # Invalidate caches (coarse-grained since we don't have chat_id)
         await self._invalidate_cache([keys.tag_assistant_all()])
 
-    @with_cache(lambda self, days=7: keys.assistant_usage_stats(days), fresh_ttl=60, stale_ttl=600)
-    async def get_usage_stats(self, days: int = 7) -> Dict[str, Any]:
+    @with_cache(
+        lambda self, days=7: keys.assistant_usage_stats(days),
+        fresh_ttl=60,
+        stale_ttl=600,
+    )
+    async def get_usage_stats(self, days: int = 7) -> dict[str, Any]:
         """
         Get assistant usage statistics over a time period.
 
@@ -352,8 +370,12 @@ class AssistantService(BaseService):
 
         # Fetch data in parallel
         chats_query, chats_params = self.queries.get_chats_in_timeframe(cutoff_date)
-        messages_query, messages_params = self.queries.get_messages_in_timeframe(cutoff_date)
-        tool_calls_query, tool_calls_params = self.queries.get_tool_calls_in_timeframe(cutoff_date)
+        messages_query, messages_params = self.queries.get_messages_in_timeframe(
+            cutoff_date
+        )
+        tool_calls_query, tool_calls_params = self.queries.get_tool_calls_in_timeframe(
+            cutoff_date
+        )
 
         chats_rows, messages_rows, tool_calls_rows = await asyncio.gather(
             self.conn.fetch(chats_query, *chats_params),
@@ -372,14 +394,18 @@ class AssistantService(BaseService):
         total_tool_calls = len(tool_calls)
 
         # Count unique users
-        unique_users = len(set(chat["profile_id"] for chat in chats if chat["profile_id"]))
+        unique_users = len(
+            set(chat["profile_id"] for chat in chats if chat["profile_id"])
+        )
 
         # Count completed vs incomplete
         completed_chats = len(
             [
                 chat
                 for chat in chats
-                if any(msg["completed"] for msg in messages if msg["chat_id"] == chat["id"])
+                if any(
+                    msg["completed"] for msg in messages if msg["chat_id"] == chat["id"]
+                )
             ]
         )
 
@@ -392,8 +418,12 @@ class AssistantService(BaseService):
             day_end = day_start + timedelta(days=1)
 
             day_chats = [c for c in chats if day_start <= c["created_at"] < day_end]
-            day_messages = [m for m in messages if day_start <= m["created_at"] < day_end]
-            day_tool_calls = [tc for tc in tool_calls if day_start <= tc["created_at"] < day_end]
+            day_messages = [
+                m for m in messages if day_start <= m["created_at"] < day_end
+            ]
+            day_tool_calls = [
+                tc for tc in tool_calls if day_start <= tc["created_at"] < day_end
+            ]
 
             daily_stats.append(
                 {
@@ -401,12 +431,14 @@ class AssistantService(BaseService):
                     "chats": len(day_chats),
                     "messages": len(day_messages),
                     "tool_calls": len(day_tool_calls),
-                    "unique_users": len(set(c["profile_id"] for c in day_chats if c["profile_id"])),
+                    "unique_users": len(
+                        set(c["profile_id"] for c in day_chats if c["profile_id"])
+                    ),
                 }
             )
 
         # Top users by chat count
-        user_chat_counts: Dict[Any, int] = {}
+        user_chat_counts: dict[Any, int] = {}
         for chat in chats:
             if chat["profile_id"]:
                 user_chat_counts[chat["profile_id"]] = (
@@ -420,20 +452,22 @@ class AssistantService(BaseService):
         )[:10]:
             profile_query, profile_params = self.queries.get_profile_by_id(profile_id)
             profile_row = await self.conn.fetchrow(profile_query, *profile_params)
-            
+
             if profile_row:
                 user_messages = len(
                     [
                         m
                         for m in messages
-                        if m["chat_id"] in [c["id"] for c in chats if c["profile_id"] == profile_id]
+                        if m["chat_id"]
+                        in [c["id"] for c in chats if c["profile_id"] == profile_id]
                     ]
                 )
                 user_tool_calls = len(
                     [
                         tc
                         for tc in tool_calls
-                        if tc["chat_id"] in [c["id"] for c in chats if c["profile_id"] == profile_id]
+                        if tc["chat_id"]
+                        in [c["id"] for c in chats if c["profile_id"] == profile_id]
                     ]
                 )
 
@@ -454,14 +488,16 @@ class AssistantService(BaseService):
                 )
 
         # Tool usage breakdown
-        tool_usage: Dict[str, int] = {}
+        tool_usage: dict[str, int] = {}
         for tc in tool_calls:
             tool_name = tc["tool_name"]
             tool_usage[tool_name] = tool_usage.get(tool_name, 0) + 1
 
         tool_usage_list = [
             {"tool_name": name, "usage_count": count}
-            for name, count in sorted(tool_usage.items(), key=lambda x: x[1], reverse=True)
+            for name, count in sorted(
+                tool_usage.items(), key=lambda x: x[1], reverse=True
+            )
         ]
 
         summary = {
@@ -474,8 +510,12 @@ class AssistantService(BaseService):
             "completed_chats": completed_chats,
             "completed_tool_calls": completed_tool_calls,
             "avg_chats_per_day": round(total_chats / days, 1) if days > 0 else 0,
-            "avg_messages_per_chat": round(total_messages / total_chats, 1) if total_chats > 0 else 0,
-            "avg_tool_calls_per_chat": round(total_tool_calls / total_chats, 1) if total_chats > 0 else 0,
+            "avg_messages_per_chat": round(total_messages / total_chats, 1)
+            if total_chats > 0
+            else 0,
+            "avg_tool_calls_per_chat": round(total_tool_calls / total_chats, 1)
+            if total_chats > 0
+            else 0,
         }
 
         return {

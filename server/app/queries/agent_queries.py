@@ -1,12 +1,12 @@
 """Agent query builders with dynamic SQL."""
 
-from typing import Any, List
+from typing import Any
 
 
 class AgentQueries:
     """Query builders for agent operations."""
 
-    def get_agents_list(self, profile_id: str) -> tuple[str, List[Any]]:
+    def get_agents_list(self, profile_id: str) -> tuple[str, list[Any]]:
         """
         Get agents list with permissions.
 
@@ -35,11 +35,11 @@ class AgentQueries:
         ORDER BY a.name
         """
 
-        params: List[Any] = [profile_id]
+        params: list[Any] = [profile_id]
 
         return query, params
 
-    def get_agent_detail(self, agent_id: str) -> tuple[str, List[Any]]:
+    def get_agent_detail(self, agent_id: str) -> tuple[str, list[Any]]:
         """
         Get basic agent information.
 
@@ -59,13 +59,11 @@ class AgentQueries:
         WHERE id = $1
         """
 
-        params: List[Any] = [agent_id]
+        params: list[Any] = [agent_id]
 
         return query, params
 
-    def get_debug_info_for_agent(
-        self, agent_id: str
-    ) -> tuple[str, List[Any]]:
+    def get_debug_info_for_agent(self, agent_id: str) -> tuple[str, list[Any]]:
         """
         Get debug info for an agent via model_run_agents junction.
 
@@ -88,11 +86,11 @@ class AgentQueries:
         LIMIT 100
         """
 
-        params: List[Any] = [agent_id]
+        params: list[Any] = [agent_id]
 
         return query, params
 
-    def get_valid_models(self) -> tuple[str, List[Any]]:
+    def get_valid_models(self) -> tuple[str, list[Any]]:
         """
         Get all active models for selection.
 
@@ -109,11 +107,11 @@ class AgentQueries:
         ORDER BY name
         """
 
-        params: List[Any] = []
+        params: list[Any] = []
 
         return query, params
 
-    def get_model_mapping(self, model_ids: list[str]) -> tuple[str, List[Any]]:
+    def get_model_mapping(self, model_ids: list[str]) -> tuple[str, list[Any]]:
         """
         Get model mapping for given model IDs.
 
@@ -129,7 +127,7 @@ class AgentQueries:
         WHERE id = ANY($1)
         """
 
-        params: List[Any] = [model_ids]
+        params: list[Any] = [model_ids]
 
         return query, params
 
@@ -141,7 +139,7 @@ class AgentQueries:
         temperature: float,
         model_id: str,
         reasoning: str | None,
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Create a new agent.
 
@@ -154,7 +152,14 @@ class AgentQueries:
         RETURNING id::text as agent_id
         """
 
-        params: List[Any] = [name, description, system_prompt, temperature, model_id, reasoning]
+        params: list[Any] = [
+            name,
+            description,
+            system_prompt,
+            temperature,
+            model_id,
+            reasoning,
+        ]
 
         return query, params
 
@@ -167,7 +172,7 @@ class AgentQueries:
         temperature: float,
         model_id: str,
         reasoning: str | None,
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Update an existing agent.
 
@@ -187,13 +192,19 @@ class AgentQueries:
         WHERE id = $1
         """
 
-        params: List[Any] = [agent_id, name, description, system_prompt, temperature, model_id, reasoning]
+        params: list[Any] = [
+            agent_id,
+            name,
+            description,
+            system_prompt,
+            temperature,
+            model_id,
+            reasoning,
+        ]
 
         return query, params
 
-    def duplicate_agent(
-        self, agent_id: str
-    ) -> tuple[str, List[Any]]:
+    def duplicate_agent(self, agent_id: str) -> tuple[str, list[Any]]:
         """
         Duplicate an agent (copy with 'Copy' suffix).
 
@@ -216,11 +227,11 @@ class AgentQueries:
         RETURNING id::text as agent_id
         """
 
-        params: List[Any] = [agent_id]
+        params: list[Any] = [agent_id]
 
         return query, params
 
-    def delete_agent(self, agent_id: str) -> tuple[str, List[Any]]:
+    def delete_agent(self, agent_id: str) -> tuple[str, list[Any]]:
         """
         Delete an agent.
 
@@ -231,7 +242,7 @@ class AgentQueries:
         DELETE FROM agents WHERE id = $1
         """
 
-        params: List[Any] = [agent_id]
+        params: list[Any] = [agent_id]
 
         return query, params
 
@@ -240,7 +251,7 @@ class AgentQueries:
     ) -> tuple[str, list[Any]]:
         """
         Get all data needed to run classification agent with optimized JOIN.
-        
+
         Fetches agent (via department_agents), model, provider, and documents
         in a single query to minimize database round trips.
 
@@ -294,14 +305,14 @@ class AgentQueries:
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.base_url, pr.api_key
         """
-        
+
         params: list[Any] = [document_ids, department_id]
         return query, params
 
-    def batch_update_document_types(self) -> tuple[str, List[Any]]:
+    def batch_update_document_types(self) -> tuple[str, list[Any]]:
         """
         Batch update document types using UNNEST for efficiency.
-        
+
         Returns query that accepts two arrays: document_ids and types.
 
         Returns:
@@ -320,15 +331,15 @@ class AgentQueries:
         return query, []
 
     def get_scenario_run_context(
-        self, 
-        department_id: str, 
+        self,
+        department_id: str,
         persona_id: str | None,
         document_ids: list[str] | None,
-        parameter_item_ids: list[str] | None
+        parameter_item_ids: list[str] | None,
     ) -> tuple[str, list[Any]]:
         """
         Get all data needed to run scenario agent with optimized JOIN.
-        
+
         Fetches agent (via department_agents), model, provider, persona,
         documents, parameter items, and default guest profile in a single query.
 
@@ -418,11 +429,11 @@ class AgentQueries:
         CROSS JOIN default_guest dg
         WHERE da.department_id = $1 AND da.role = 'scenario'
         """
-        
+
         # Convert None to empty arrays for proper SQL handling
         doc_ids = document_ids if document_ids else []
         param_ids = parameter_item_ids if parameter_item_ids else []
-        
+
         params: list[Any] = [department_id, persona_id, doc_ids, param_ids]
         return query, params
 
@@ -431,7 +442,7 @@ class AgentQueries:
     ) -> tuple[str, list[Any]]:
         """
         Get all data needed to run hint agent with optimized JOIN.
-        
+
         Fetches message, chat, attempt, scenario, agent (via department_agents),
         model, provider, documents, and profile in a single query.
         Messages are fetched separately using get_simulation_messages().
@@ -541,16 +552,14 @@ class AgentQueries:
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         """
-        
+
         params: list[Any] = [message_id, chat_id, department_id]
         return query, params
 
-    def get_simulation_run_context(
-        self, chat_id: str
-    ) -> tuple[str, list[Any]]:
+    def get_simulation_run_context(self, chat_id: str) -> tuple[str, list[Any]]:
         """
         Get all data needed to run simulation agent with optimized JOIN.
-        
+
         Fetches chat, attempt, scenario, persona (via junction), model, provider,
         simulation settings, profile (via junction), and documents (via junction)
         in a single query to minimize database round trips.
@@ -637,7 +646,7 @@ class AgentQueries:
                  sim.image_input_active, sim.output_guardrail_active,
                  ap.profile_id
         """
-        
+
         params: list[Any] = [chat_id]
         return query, params
 
@@ -646,7 +655,7 @@ class AgentQueries:
     ) -> tuple[str, list[Any]]:
         """
         Get all data needed to run grading agent with optimized JOIN.
-        
+
         Fetches chat, scenario, attempt, simulation, rubric, standard groups,
         standards, agent (via department_agents), model, provider, and profile
         in a single query to minimize database round trips.
@@ -809,13 +818,11 @@ class AgentQueries:
                  pr.id, pr.name, pr.base_url, pr.api_key,
                  ap.profile_id
         """
-        
+
         params: list[Any] = [simulation_chat_id, department_id]
         return query, params
 
-    def get_simulation_messages(
-        self, simulation_chat_id: str
-    ) -> tuple[str, list[Any]]:
+    def get_simulation_messages(self, simulation_chat_id: str) -> tuple[str, list[Any]]:
         """
         Get all messages for a simulation chat.
 
@@ -837,7 +844,7 @@ class AgentQueries:
         WHERE chat_id = $1
         ORDER BY created_at
         """
-        
+
         params: list[Any] = [simulation_chat_id]
         return query, params
 
@@ -863,7 +870,7 @@ class AgentQueries:
         )
         RETURNING simulation_message_id::text, idx
         """
-        
+
         params: list[Any] = [hint_text, message_id]
         return query, params
 
@@ -872,7 +879,7 @@ class AgentQueries:
     ) -> tuple[str, list[Any]]:
         """
         Get all data needed to run guardrail agent with optimized JOIN.
-        
+
         Fetches agent (via department_agents), model, provider, chat, attempt,
         and active profile in a single query to minimize database round trips.
 
@@ -927,7 +934,7 @@ class AgentQueries:
         LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
         WHERE sc.id = $1
         """
-        
+
         params: list[Any] = [chat_id, department_id, guardrail_type]
         return query, params
 
@@ -936,7 +943,7 @@ class AgentQueries:
     ) -> tuple[str, list[Any]]:
         """
         Get all data needed to run title agent with optimized JOIN.
-        
+
         Fetches agent (via department_agents), model, provider, and chat
         in a single query to minimize database round trips.
 
@@ -980,6 +987,6 @@ class AgentQueries:
         INNER JOIN assistant_chats ac ON ac.id = $1
         WHERE da.department_id = $2 AND da.role = 'title'
         """
-        
+
         params: list[Any] = [chat_id, department_id]
         return query, params

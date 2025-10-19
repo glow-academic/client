@@ -6,8 +6,9 @@ import uuid
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.personas import get_persona_info
 from sqlmodel import Session
+
+from app.utils.personas import get_persona_info
 
 
 @pytest.fixture
@@ -53,6 +54,7 @@ class TestGet_Persona_Info:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `format_persona_info`")
 class TestFormat_Persona_Info:
     """Tests for format_persona_info function."""
@@ -66,4 +68,3 @@ class TestFormat_Persona_Info:
         """Test format_persona_info error handling."""
         # TODO: Implement error test for format_persona_info
         assert False, "IMPLEMENT: Error test for format_persona_info"
-

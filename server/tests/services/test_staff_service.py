@@ -1,235 +1,178 @@
-"""
-Tests for app.services.staff_service
-"""
+"""Real database integration tests for StaffService."""
+
+import asyncpg
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from sqlmodel import Session
-from uuid import uuid4
-from app.services.staff_service import *
+from app.schemas.staff import (StaffDetailBulkRequest, StaffDetailRequest,
+                               StaffFilters)
+from app.services.staff_service import StaffService
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+
+pytestmark = pytest.mark.asyncio
 
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 
+# ============================================================================
+# LIST STAFF TESTS
+# ============================================================================
 
-import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `get_staff_service`")
-class TestGet_Staff_Service:
-    """Tests for get_staff_service function."""
+async def test_get_staff_list_returns_data(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test staff list returns CS department staff."""
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
 
-    def test_get_staff_service_success(self):
-        """Test successful get_staff_service execution."""
-        # TODO: Implement test for get_staff_service
-        assert False, "IMPLEMENT: Test for get_staff_service"
+    svc = StaffService(db)
+    resp = await svc.get_staff_list(
+        StaffFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
 
-    def test_get_staff_service_error(self):
-        """Test get_staff_service error handling."""
-        # TODO: Implement error test for get_staff_service
-        assert False, "IMPLEMENT: Error test for get_staff_service"
+    assert len(resp.staff) >= 0
+    assert resp.cohort_mapping is not None
+    assert resp.department_mapping is not None
 
 
-import pytest
+async def test_get_staff_list_superadmin_can_edit(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that superadmin has edit permissions on staff."""
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
 
-@pytest.mark.skip(reason="TODO: implement tests for `get_staff_list`")
-class TestGet_Staff_List:
-    """Tests for get_staff_list function."""
-
-    def test_get_staff_list_success(self):
-        """Test successful get_staff_list execution."""
-        # TODO: Implement test for get_staff_list
-        assert False, "IMPLEMENT: Test for get_staff_list"
-
-    def test_get_staff_list_error(self):
-        """Test get_staff_list error handling."""
-        # TODO: Implement error test for get_staff_list
-        assert False, "IMPLEMENT: Error test for get_staff_list"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_staff_detail`")
-class TestGet_Staff_Detail:
-    """Tests for get_staff_detail function."""
-
-    def test_get_staff_detail_success(self):
-        """Test successful get_staff_detail execution."""
-        # TODO: Implement test for get_staff_detail
-        assert False, "IMPLEMENT: Test for get_staff_detail"
-
-    def test_get_staff_detail_error(self):
-        """Test get_staff_detail error handling."""
-        # TODO: Implement error test for get_staff_detail
-        assert False, "IMPLEMENT: Error test for get_staff_detail"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_staff_detail_bulk`")
-class TestGet_Staff_Detail_Bulk:
-    """Tests for get_staff_detail_bulk function."""
-
-    def test_get_staff_detail_bulk_success(self):
-        """Test successful get_staff_detail_bulk execution."""
-        # TODO: Implement test for get_staff_detail_bulk
-        assert False, "IMPLEMENT: Test for get_staff_detail_bulk"
-
-    def test_get_staff_detail_bulk_error(self):
-        """Test get_staff_detail_bulk error handling."""
-        # TODO: Implement error test for get_staff_detail_bulk
-        assert False, "IMPLEMENT: Error test for get_staff_detail_bulk"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_staff`")
-class TestCreate_Staff:
-    """Tests for create_staff function."""
-
-    def test_create_staff_success(self):
-        """Test successful create_staff execution."""
-        # TODO: Implement test for create_staff
-        assert False, "IMPLEMENT: Test for create_staff"
-
-    def test_create_staff_error(self):
-        """Test create_staff error handling."""
-        # TODO: Implement error test for create_staff
-        assert False, "IMPLEMENT: Error test for create_staff"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `bulk_create_staff`")
-class TestBulk_Create_Staff:
-    """Tests for bulk_create_staff function."""
-
-    def test_bulk_create_staff_success(self):
-        """Test successful bulk_create_staff execution."""
-        # TODO: Implement test for bulk_create_staff
-        assert False, "IMPLEMENT: Test for bulk_create_staff"
-
-    def test_bulk_create_staff_error(self):
-        """Test bulk_create_staff error handling."""
-        # TODO: Implement error test for bulk_create_staff
-        assert False, "IMPLEMENT: Error test for bulk_create_staff"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `update_staff`")
-class TestUpdate_Staff:
-    """Tests for update_staff function."""
-
-    def test_update_staff_success(self):
-        """Test successful update_staff execution."""
-        # TODO: Implement test for update_staff
-        assert False, "IMPLEMENT: Test for update_staff"
-
-    def test_update_staff_error(self):
-        """Test update_staff error handling."""
-        # TODO: Implement error test for update_staff
-        assert False, "IMPLEMENT: Error test for update_staff"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `bulk_update_staff`")
-class TestBulk_Update_Staff:
-    """Tests for bulk_update_staff function."""
-
-    def test_bulk_update_staff_success(self):
-        """Test successful bulk_update_staff execution."""
-        # TODO: Implement test for bulk_update_staff
-        assert False, "IMPLEMENT: Test for bulk_update_staff"
-
-    def test_bulk_update_staff_error(self):
-        """Test bulk_update_staff error handling."""
-        # TODO: Implement error test for bulk_update_staff
-        assert False, "IMPLEMENT: Error test for bulk_update_staff"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `delete_staff`")
-class TestDelete_Staff:
-    """Tests for delete_staff function."""
-
-    def test_delete_staff_success(self):
-        """Test successful delete_staff execution."""
-        # TODO: Implement test for delete_staff
-        assert False, "IMPLEMENT: Test for delete_staff"
-
-    def test_delete_staff_error(self):
-        """Test delete_staff error handling."""
-        # TODO: Implement error test for delete_staff
-        assert False, "IMPLEMENT: Error test for delete_staff"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `bulk_delete_staff`")
-class TestBulk_Delete_Staff:
-    """Tests for bulk_delete_staff function."""
-
-    def test_bulk_delete_staff_success(self):
-        """Test successful bulk_delete_staff execution."""
-        # TODO: Implement test for bulk_delete_staff
-        assert False, "IMPLEMENT: Test for bulk_delete_staff"
-
-    def test_bulk_delete_staff_error(self):
-        """Test bulk_delete_staff error handling."""
-        # TODO: Implement error test for bulk_delete_staff
-        assert False, "IMPLEMENT: Error test for bulk_delete_staff"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
+    svc = StaffService(db)
+    resp = await svc.get_staff_list(
+        StaffFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+
+    # Superadmin should have edit permissions on non-superadmin staff
+    for staff_member in resp.staff:
+        if staff_member.role != "superadmin":
+            assert staff_member.can_edit is True
+
+
+async def test_get_staff_list_empty_department(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test listing staff for a department with no staff."""
+    admin_id = await get_superadmin_alias(db)
+
+    # Create a new department with no staff
+    new_dept_id = await db.fetchval(
+        "INSERT INTO departments(title, description, active) "
+        "VALUES('Test Dept', 'Test', true) RETURNING id"
+    )
+
+    svc = StaffService(db)
+    resp = await svc.get_staff_list(
+        StaffFilters(departmentIds=[str(new_dept_id)], profileId=admin_id)
+    )
+
+    assert len(resp.staff) == 0
+
+
+# ============================================================================
+# GET STAFF DETAIL TESTS
+# ============================================================================
+
+
+async def test_get_staff_detail_success(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting staff detail."""
+    admin_id = await get_superadmin_alias(db)
+
+    svc = StaffService(db)
+    resp = await svc.get_staff_detail(
+        StaffDetailRequest(profileId=admin_id, currentProfileId=admin_id)
+    )
+
+    assert resp.name is not None
+    assert resp.email is not None
+    assert resp.role is not None
+    assert resp.cohort_mapping is not None
+    assert resp.department_mapping is not None
+    assert len(resp.role_options) > 0
+
+
+async def test_get_staff_detail_invalid_id(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting staff detail with invalid profile ID."""
+    admin_id = await get_superadmin_alias(db)
+    fake_profile_id = "00000000-0000-0000-0000-000000000000"
+
+    svc = StaffService(db)
+    with pytest.raises(ValueError, match="Profile.*not found"):
+        await svc.get_staff_detail(
+            StaffDetailRequest(profileId=fake_profile_id, currentProfileId=admin_id)
+        )
+
+
+# ============================================================================
+# GET STAFF DETAIL BULK TESTS
+# ============================================================================
+
+
+async def test_get_staff_detail_bulk_success(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting bulk staff detail."""
+    admin_id = await get_superadmin_alias(db)
+
+    svc = StaffService(db)
+    resp = await svc.get_staff_detail_bulk(
+        StaffDetailBulkRequest(profileIds=[admin_id], currentProfileId=admin_id)
+    )
+
+    assert resp.valid_department_ids is not None
+    assert resp.department_mapping is not None
+    assert len(resp.role_options) > 0
+
+
+async def test_get_staff_detail_bulk_multiple_profiles(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting bulk staff detail for multiple profiles."""
+    admin_id = await get_superadmin_alias(db)
+
+    # Get another staff member from CS department
+    dept_id = await get_cs_dept_id(db)
+    other_staff_id = await db.fetchval(
+        """
+        SELECT p.id FROM profiles p
+        JOIN profile_departments pd ON pd.profile_id = p.id
+        WHERE pd.department_id = $1 AND p.id != $2
+        LIMIT 1
+        """,
+        dept_id,
+        admin_id,
+    )
+
+    if other_staff_id:
+        svc = StaffService(db)
+        resp = await svc.get_staff_detail_bulk(
+            StaffDetailBulkRequest(
+                profileIds=[admin_id, str(other_staff_id)],
+                currentProfileId=admin_id,
+            )
+        )
+
+        assert resp.valid_department_ids is not None
+        assert resp.department_mapping is not None
+        assert len(resp.department_ids) >= 0
+
+
+async def test_get_staff_detail_bulk_no_profiles(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting bulk staff detail with no valid profiles."""
+    admin_id = await get_superadmin_alias(db)
+    fake_profile_id = "00000000-0000-0000-0000-000000000000"
+
+    svc = StaffService(db)
+    with pytest.raises(ValueError, match="No profiles found"):
+        await svc.get_staff_detail_bulk(
+            StaffDetailBulkRequest(
+                profileIds=[fake_profile_id], currentProfileId=admin_id
+            )
+        )

@@ -1,6 +1,6 @@
 """Page-specific analytics queries - 3 metrics."""
 
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -15,12 +15,12 @@ class PageQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build home overview query with proper cohort filtering and scoring logic."""
         where_clause, base_params = self.builder.filters.build_base_filter(
             start_date,
@@ -34,26 +34,26 @@ class PageQueries:
 
         # Determine mode based on profile_id
         view_mode = "ta" if profile_id else "instructional"
-        
+
         # We need to add separate parameters for CTEs that aren't covered by the filt CTE
         # Start params list with base params
         params = list(base_params)
         param_idx = len(params) + 1
-        
+
         # Add parameters for cohort_sim CTE filtering
         cohort_param_placeholder = f"${param_idx}::uuid[]"
         params.append(cohort_ids if cohort_ids else [])
         param_idx += 1
-        
+
         dept_param_placeholder = f"${param_idx}::uuid[]"
         params.append(department_ids if department_ids else [])
         param_idx += 1
-        
+
         # Add separate param for profile_id (used in TA view)
         profile_param_placeholder = f"${param_idx}::uuid"
         params.append(profile_id if profile_id else None)
         param_idx += 1
-        
+
         # Add separate param for roles (used in cohort_membership)
         roles_param_placeholder = f"${param_idx}::profile_role[]"
         params.append(roles if roles else [])
@@ -442,12 +442,12 @@ class PageQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build attempt history query with infinite mode, personas, and scenarios."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -611,23 +611,23 @@ class PageQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build practice overview query - uses LIFETIME data for personal practice."""
         # Practice uses lifetime data, not date-filtered for scores
         # Only profile_id and department_ids matter
-        params: List[Any] = []
+        params: list[Any] = []
         param_idx = 1
-        
+
         # Add profile_id parameter
         profile_param_placeholder = f"${param_idx}::uuid"
         params.append(profile_id if profile_id else None)
         param_idx += 1
-        
+
         # Add department_ids parameter
         dept_param_placeholder = f"${param_idx}::uuid[]"
         params.append(department_ids if department_ids else [])
@@ -867,4 +867,3 @@ class PageQueries:
         """
 
         return query, params
-

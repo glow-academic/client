@@ -1,14 +1,14 @@
 """Department query builders with dynamic SQL."""
 
-from typing import Any, List
+from typing import Any
 
 
 class DepartmentQueries:
     """Query builders for department operations."""
 
     def get_departments_list(
-        self, department_ids: List[str], profile_id: str
-    ) -> tuple[str, List[Any]]:
+        self, department_ids: list[str], profile_id: str
+    ) -> tuple[str, list[Any]]:
         """
         Get departments list with computed fields.
 
@@ -65,7 +65,7 @@ class DepartmentQueries:
 
         return query, [department_ids, profile_id]
 
-    def get_department_basic(self, department_id: str) -> tuple[str, List[Any]]:
+    def get_department_basic(self, department_id: str) -> tuple[str, list[Any]]:
         """
         Get basic department information.
 
@@ -86,7 +86,7 @@ class DepartmentQueries:
 
     def get_department_detail_with_stats(
         self, department_id: str, profile_id: str
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Get department detail with permissions, usage, and stats.
 
@@ -154,9 +154,7 @@ class DepartmentQueries:
 
         return query, [department_id, profile_id]
 
-    def get_department_agent_roles(
-        self, department_id: str
-    ) -> tuple[str, List[Any]]:
+    def get_department_agent_roles(self, department_id: str) -> tuple[str, list[Any]]:
         """
         Get all agent role assignments for a department (8 roles).
 
@@ -175,7 +173,7 @@ class DepartmentQueries:
 
         return query, [department_id]
 
-    def get_valid_agents(self) -> tuple[str, List[Any]]:
+    def get_valid_agents(self) -> tuple[str, list[Any]]:
         """
         Get all active agents for selection.
 
@@ -196,7 +194,7 @@ class DepartmentQueries:
 
     def get_first_department_for_profile(
         self, profile_id: str
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Get the first active department for a profile.
 
@@ -218,7 +216,7 @@ class DepartmentQueries:
 
     def create_department(
         self, title: str, description: str, active: bool
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Create a new department.
 
@@ -235,7 +233,7 @@ class DepartmentQueries:
 
     def create_department_agent(
         self, department_id: str, role: str, agent_id: str
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Create a department agent role assignment.
 
@@ -255,7 +253,7 @@ class DepartmentQueries:
 
     def update_department(
         self, department_id: str, title: str, description: str, active: bool
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Update a department.
 
@@ -274,9 +272,7 @@ class DepartmentQueries:
 
         return query, [department_id, title, description, active]
 
-    def delete_department_agents(
-        self, department_id: str
-    ) -> tuple[str, List[Any]]:
+    def delete_department_agents(self, department_id: str) -> tuple[str, list[Any]]:
         """
         Delete all agent role assignments for a department.
 
@@ -292,7 +288,7 @@ class DepartmentQueries:
 
     def duplicate_department(
         self, department_id: str, new_title: str
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Duplicate a department.
 
@@ -311,7 +307,7 @@ class DepartmentQueries:
 
     def duplicate_department_agents(
         self, old_department_id: str, new_department_id: str
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Duplicate all agent role assignments from old department to new.
 
@@ -327,7 +323,7 @@ class DepartmentQueries:
 
         return query, [old_department_id, new_department_id]
 
-    def delete_department(self, department_id: str) -> tuple[str, List[Any]]:
+    def delete_department(self, department_id: str) -> tuple[str, list[Any]]:
         """
         Delete a department (cascade deletes department_agents).
 
@@ -341,7 +337,7 @@ class DepartmentQueries:
 
         return query, [department_id]
 
-    def check_department_usage(self, department_id: str) -> tuple[str, List[Any]]:
+    def check_department_usage(self, department_id: str) -> tuple[str, list[Any]]:
         """
         Check if department is in use by other entities.
 
@@ -368,7 +364,7 @@ class DepartmentQueries:
 
         return query, [department_id]
 
-    def get_profile_role(self, profile_id: str) -> tuple[str, List[Any]]:
+    def get_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
         """
         Get profile role.
 

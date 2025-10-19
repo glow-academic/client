@@ -1,6 +1,5 @@
 """Personas V2 API schemas."""
 
-from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -10,7 +9,7 @@ from .base import DepartmentMapping, ModelMapping, ScenarioMapping
 class PersonasFilters(BaseModel):
     """Filters for personas list request."""
 
-    departmentIds: List[str]
+    departmentIds: list[str]
     profileId: str
 
 
@@ -19,12 +18,12 @@ class PersonaItem(BaseModel):
 
     persona_id: str
     name: str  # Added name
-    description: Optional[str]
+    description: str | None
     color: str
     icon: str
-    scenario_ids: List[str]  # Array of scenario IDs
+    scenario_ids: list[str]  # Array of scenario IDs
     model_id: str
-    reasoning: Optional[str]
+    reasoning: str | None
     temperature: float
     active: bool
     num_scenarios: int
@@ -36,7 +35,7 @@ class PersonaItem(BaseModel):
 class PersonasListResponse(BaseModel):
     """Response for personas list endpoint."""
 
-    personas: List[PersonaItem]
+    personas: list[PersonaItem]
     scenario_mapping: ScenarioMapping
     model_mapping: ModelMapping
 
@@ -88,14 +87,14 @@ class PersonaDetailResponse(BaseModel):
 
     # Basic persona fields
     name: str
-    description: Optional[str]
+    description: str | None
     department_id: str
     active: bool
     default_persona: bool
     color: str
     icon: str
     model_id: str
-    reasoning: Optional[str]
+    reasoning: str | None
     temperature: float
     system_prompt: str
 
@@ -107,12 +106,12 @@ class PersonaDetailResponse(BaseModel):
     can_delete: bool
 
     # Metadata/Options
-    preset_colors: List[str]
-    suggested_icons: List[str]
-    valid_icons: List[str]
-    valid_model_ids: List[str]
-    reasoning_options: List[str]
-    valid_department_ids: List[str]
+    preset_colors: list[str]
+    suggested_icons: list[str]
+    valid_icons: list[str]
+    valid_model_ids: list[str]
+    reasoning_options: list[str]
+    valid_department_ids: list[str]
     temperature_lower: float
     temperature_upper: float
 
@@ -121,13 +120,14 @@ class PersonaDetailResponse(BaseModel):
     department_mapping: DepartmentMapping
 
     # Debug info
-    debug_info: List[DebugInfoItem]
+    debug_info: list[DebugInfoItem]
 
 
 class PersonaDetailDefaultRequest(BaseModel):
     """Request to get default persona details."""
 
     profileId: str
+
 
 # Response uses same PersonaDetailResponse
 
@@ -136,14 +136,14 @@ class CreatePersonaRequest(BaseModel):
     """Request to create a persona."""
 
     name: str
-    description: Optional[str]
+    description: str | None
     department_id: str
     active: bool
     default_persona: bool
     color: str
     icon: str
     model_id: str
-    reasoning: Optional[str]
+    reasoning: str | None
     temperature: float
     system_prompt: str
 
@@ -161,14 +161,14 @@ class UpdatePersonaRequest(BaseModel):
 
     personaId: str
     name: str
-    description: Optional[str]
+    description: str | None
     department_id: str
     active: bool
     default_persona: bool
     color: str
     icon: str
     model_id: str
-    reasoning: Optional[str]
+    reasoning: str | None
     temperature: float
     system_prompt: str
 
@@ -178,4 +178,3 @@ class UpdatePersonaResponse(BaseModel):
 
     success: bool
     message: str
-

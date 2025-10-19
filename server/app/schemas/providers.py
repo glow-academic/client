@@ -1,6 +1,5 @@
 """Providers V2 API schemas with hierarchical structure."""
 
-from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -14,7 +13,7 @@ from .base import DepartmentMapping, ProviderMapping
 class ProvidersFilters(BaseModel):
     """Filters for providers list."""
 
-    departmentIds: List[str]
+    departmentIds: list[str]
     profileId: str
 
 
@@ -44,13 +43,13 @@ class ProviderWithModels(BaseModel):
     description: str
     can_edit: bool
     can_delete: bool
-    models: List[ModelItem]
+    models: list[ModelItem]
 
 
 class ProvidersListResponse(BaseModel):
     """Response for providers list endpoint."""
 
-    providers: List[ProviderWithModels]
+    providers: list[ProviderWithModels]
 
 
 # ============================================================================
@@ -71,9 +70,9 @@ class ProviderDetailResponse(BaseModel):
     name: str
     description: str
     api_key: str  # Encrypted - for display only
-    base_url: Optional[str]
+    base_url: str | None
     department_id: str
-    valid_department_ids: List[str]
+    valid_department_ids: list[str]
 
     # Top-level mappings
     department_mapping: DepartmentMapping
@@ -104,7 +103,7 @@ class ModelDetailResponse(BaseModel):
     provider_id: str
 
     # Metadata
-    valid_provider_ids: List[str]
+    valid_provider_ids: list[str]
 
     # Top-level mappings
     provider_mapping: ProviderMapping
@@ -121,7 +120,7 @@ class CreateProviderRequest(BaseModel):
     name: str
     description: str
     api_key: str  # Will be encrypted server-side
-    base_url: Optional[str]
+    base_url: str | None
     department_id: str
 
 
@@ -139,8 +138,8 @@ class UpdateProviderRequest(BaseModel):
     providerId: str
     name: str
     description: str
-    api_key: Optional[str] = None  # Optional - only update if provided
-    base_url: Optional[str]
+    api_key: str | None = None  # Optional - only update if provided
+    base_url: str | None
     department_id: str
 
 
@@ -237,4 +236,3 @@ class DecryptProviderKeyResponse(BaseModel):
     """Response with decrypted API key."""
 
     api_key: str
-

@@ -1,14 +1,14 @@
 """Rubric queries - SQL query builders for hierarchical structure."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class RubricQueries:
     """Query builders for rubric operations with hierarchical structure."""
 
     def list_rubrics(
-        self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str], profile_id: str
+    ) -> tuple[str, list[Any]]:
         """Build query for rubrics list with permissions and hierarchical structure."""
         query = """
         WITH rubric_usage AS (
@@ -47,8 +47,8 @@ class RubricQueries:
         return (query, [department_ids, profile_id])
 
     def get_standard_groups_for_rubrics(
-        self, rubric_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, rubric_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get standard groups for rubrics."""
         query = """
         SELECT 
@@ -65,9 +65,7 @@ class RubricQueries:
         """
         return (query, [rubric_ids])
 
-    def get_standards_for_groups(
-        self, group_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_standards_for_groups(self, group_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to get standards for standard groups."""
         query = """
         SELECT 
@@ -82,7 +80,7 @@ class RubricQueries:
         """
         return (query, [group_ids])
 
-    def get_rubric_by_id(self, rubric_id: str) -> Tuple[str, List[Any]]:
+    def get_rubric_by_id(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to get rubric by ID."""
         query = """
         SELECT 
@@ -98,9 +96,7 @@ class RubricQueries:
         """
         return (query, [rubric_id])
 
-    def get_standard_groups_for_rubric(
-        self, rubric_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_standard_groups_for_rubric(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to get standard groups for a rubric."""
         query = """
         SELECT 
@@ -115,9 +111,7 @@ class RubricQueries:
         """
         return (query, [rubric_id])
 
-    def get_standards_for_group(
-        self, group_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_standards_for_group(self, group_id: str) -> tuple[str, list[Any]]:
         """Build query to get standards for a group."""
         query = """
         SELECT 
@@ -133,7 +127,7 @@ class RubricQueries:
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id, d.title as name, d.description
@@ -144,12 +138,12 @@ class RubricQueries:
         """
         return (query, [profile_id])
 
-    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile role."""
         query = "SELECT role FROM profiles WHERE id = $1"
         return (query, [profile_id])
 
-    def get_default_rubric(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_default_rubric(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query for default rubric."""
         query = """
         WITH user_departments AS (
@@ -170,7 +164,7 @@ class RubricQueries:
         """
         return (query, [profile_id])
 
-    def create_rubric(self) -> Tuple[str, List[Any]]:
+    def create_rubric(self) -> tuple[str, list[Any]]:
         """Build query to create rubric."""
         query = """
         INSERT INTO rubrics (
@@ -195,7 +189,7 @@ class RubricQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def create_standard_group(self) -> Tuple[str, List[Any]]:
+    def create_standard_group(self) -> tuple[str, list[Any]]:
         """Build query to create standard group."""
         query = """
         INSERT INTO standard_groups (
@@ -218,7 +212,7 @@ class RubricQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def create_standard(self) -> Tuple[str, List[Any]]:
+    def create_standard(self) -> tuple[str, list[Any]]:
         """Build query to create standard."""
         query = """
         INSERT INTO standards (
@@ -237,12 +231,12 @@ class RubricQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_rubric_name(self, rubric_id: str) -> Tuple[str, List[Any]]:
+    def get_rubric_name(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to get rubric name."""
         query = "SELECT name FROM rubrics WHERE id = $1"
         return (query, [rubric_id])
 
-    def update_rubric(self) -> Tuple[str, List[Any]]:
+    def update_rubric(self) -> tuple[str, list[Any]]:
         """Build query to update rubric."""
         query = """
         UPDATE rubrics SET
@@ -258,14 +252,12 @@ class RubricQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def delete_standard_groups(self, rubric_id: str) -> Tuple[str, List[Any]]:
+    def delete_standard_groups(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to delete standard groups (cascade deletes standards)."""
         query = "DELETE FROM standard_groups WHERE rubric_id = $1"
         return (query, [rubric_id])
 
-    def get_rubric_for_duplicate(
-        self, rubric_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_rubric_for_duplicate(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to get rubric data for duplication."""
         query = """
         SELECT 
@@ -279,7 +271,7 @@ class RubricQueries:
         """
         return (query, [rubric_id])
 
-    def insert_duplicate_rubric(self) -> Tuple[str, List[Any]]:
+    def insert_duplicate_rubric(self) -> tuple[str, list[Any]]:
         """Build query to insert duplicate rubric."""
         query = """
         INSERT INTO rubrics (
@@ -304,9 +296,7 @@ class RubricQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_groups_for_duplicate(
-        self, rubric_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_groups_for_duplicate(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to get standard groups for duplication."""
         query = """
         SELECT 
@@ -322,9 +312,7 @@ class RubricQueries:
         """
         return (query, [rubric_id])
 
-    def get_standards_for_duplicate(
-        self, group_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_standards_for_duplicate(self, group_id: str) -> tuple[str, list[Any]]:
         """Build query to get standards for duplication."""
         query = """
         SELECT 
@@ -337,7 +325,7 @@ class RubricQueries:
         """
         return (query, [group_id])
 
-    def check_rubric_usage(self, rubric_id: str) -> Tuple[str, List[Any]]:
+    def check_rubric_usage(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to check rubric usage."""
         query = """
         SELECT COUNT(*) as usage_count
@@ -346,12 +334,12 @@ class RubricQueries:
         """
         return (query, [rubric_id])
 
-    def delete_rubric(self, rubric_id: str) -> Tuple[str, List[Any]]:
+    def delete_rubric(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to delete rubric."""
         query = "DELETE FROM rubrics WHERE id = $1"
         return (query, [rubric_id])
 
-    def update_standard_group(self) -> Tuple[str, List[Any]]:
+    def update_standard_group(self) -> tuple[str, list[Any]]:
         """Build query to update existing standard group."""
         query = """
         UPDATE standard_groups SET
@@ -365,7 +353,7 @@ class RubricQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def update_standard(self) -> Tuple[str, List[Any]]:
+    def update_standard(self) -> tuple[str, list[Any]]:
         """Build query to update existing standard."""
         query = """
         UPDATE standards SET
@@ -377,17 +365,17 @@ class RubricQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def delete_standard_group_by_id(self, group_id: str) -> Tuple[str, List[Any]]:
+    def delete_standard_group_by_id(self, group_id: str) -> tuple[str, list[Any]]:
         """Build query to delete single standard group (cascade deletes standards)."""
         query = "DELETE FROM standard_groups WHERE id = $1"
         return (query, [group_id])
 
-    def delete_standard_by_id(self, standard_id: str) -> Tuple[str, List[Any]]:
+    def delete_standard_by_id(self, standard_id: str) -> tuple[str, list[Any]]:
         """Build query to delete single standard."""
         query = "DELETE FROM standards WHERE id = $1"
         return (query, [standard_id])
 
-    def calculate_rubric_points(self, rubric_id: str) -> Tuple[str, List[Any]]:
+    def calculate_rubric_points(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to calculate rubric points from standard groups."""
         query = """
         SELECT 
@@ -398,7 +386,7 @@ class RubricQueries:
         """
         return (query, [rubric_id])
 
-    def update_rubric_points(self) -> Tuple[str, List[Any]]:
+    def update_rubric_points(self) -> tuple[str, list[Any]]:
         """Build query to update rubric points."""
         query = """
         UPDATE rubrics SET

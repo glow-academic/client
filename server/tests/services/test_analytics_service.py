@@ -1,11 +1,13 @@
 """
 Tests for app.services.analytics_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from sqlmodel import Session
-from uuid import uuid4
 from app.services.analytics_service import *
+from sqlmodel import Session
+
 
 @pytest.fixture
 def mock_session():
@@ -13,7 +15,107 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+# Tests for optimized Batch D methods
+
+from datetime import datetime, timedelta
+
+import asyncpg
+from app.schemas.analytics import AnalyticsFilters
+from app.services.analytics_service import AnalyticsService
+
+
+async def get_test_dept_id(db: asyncpg.Connection) -> str:
+    """Get a test department ID from the database."""
+    result = await db.fetchrow("SELECT id FROM departments LIMIT 1")
+    return str(result["id"]) if result else None
+
+
+@pytest.mark.asyncio
+async def test_get_pricing_analytics(db: asyncpg.Connection, disable_cache) -> None:
+    """Test pricing analytics with all mappings in single query."""
+    dept_id = await get_test_dept_id(db)
+    if not dept_id:
+        pytest.skip("No test department found")
+
+    # Use a wide date range to ensure we get some data
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365)
+
+    filters = AnalyticsFilters(
+        startDate=start_date.isoformat() + "Z",
+        endDate=end_date.isoformat() + "Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = AnalyticsService(db)
+    result = await svc.get_pricing_analytics(filters)
+
+    # Verify structure exists (data may be empty)
+    assert result is not None
+    assert isinstance(result.model_runs, list)
+    assert isinstance(result.model_mapping, dict)
+    assert isinstance(result.profile_mapping, dict)
+    assert isinstance(result.agent_mapping, dict)
+    assert isinstance(result.persona_mapping, dict)
+
+
+@pytest.mark.asyncio
+async def test_get_growth_data(db: asyncpg.Connection, disable_cache) -> None:
+    """Test growth data with bundled metrics in single query."""
+    dept_id = await get_test_dept_id(db)
+    if not dept_id:
+        pytest.skip("No test department found")
+
+    # Use a wide date range
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=30)
+
+    filters = AnalyticsFilters(
+        startDate=start_date.isoformat() + "Z",
+        endDate=end_date.isoformat() + "Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = AnalyticsService(db)
+    result = await svc.get_growth_data(filters)
+
+    # Verify structure
+    assert result is not None
+    assert isinstance(result.chartData, list)
+    assert isinstance(result.availableMetrics, list)
+    assert result.windowAverages is not None
+    assert len(result.availableMetrics) == 10  # Should have all 10 metrics
+
+
+@pytest.mark.asyncio
+async def test_get_reports_bundle(db: asyncpg.Connection, disable_cache) -> None:
+    """Test reports bundle with embedded mappings in single query."""
+    dept_id = await get_test_dept_id(db)
+    if not dept_id:
+        pytest.skip("No test department found")
+
+    # Use a wide date range
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=90)
+
+    filters = AnalyticsFilters(
+        startDate=start_date.isoformat() + "Z",
+        endDate=end_date.isoformat() + "Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = AnalyticsService(db)
+    result = await svc.get_reports_bundle(filters)
+
+    # Verify structure
+    assert result is not None
+    assert isinstance(result.data, list)
+    assert isinstance(result.scenario_mapping, dict)
+    assert isinstance(result.simulation_mapping, dict)
+
+
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_analytics_service`")
 class TestGet_Analytics_Service:
@@ -32,6 +134,7 @@ class TestGet_Analytics_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_average_score`")
 class TestGet_Average_Score:
     """Tests for get_average_score function."""
@@ -48,6 +151,7 @@ class TestGet_Average_Score:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_completion_percentage`")
 class TestGet_Completion_Percentage:
@@ -66,6 +170,7 @@ class TestGet_Completion_Percentage:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_first_attempt_pass_rate`")
 class TestGet_First_Attempt_Pass_Rate:
     """Tests for get_first_attempt_pass_rate function."""
@@ -82,6 +187,7 @@ class TestGet_First_Attempt_Pass_Rate:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_highest_score`")
 class TestGet_Highest_Score:
@@ -100,6 +206,7 @@ class TestGet_Highest_Score:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_messages_per_session`")
 class TestGet_Messages_Per_Session:
     """Tests for get_messages_per_session function."""
@@ -116,6 +223,7 @@ class TestGet_Messages_Per_Session:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_persona_response_times`")
 class TestGet_Persona_Response_Times:
@@ -134,6 +242,7 @@ class TestGet_Persona_Response_Times:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_session_efficiency`")
 class TestGet_Session_Efficiency:
     """Tests for get_session_efficiency function."""
@@ -150,6 +259,7 @@ class TestGet_Session_Efficiency:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_stagnation_rate`")
 class TestGet_Stagnation_Rate:
@@ -168,6 +278,7 @@ class TestGet_Stagnation_Rate:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_time_spent`")
 class TestGet_Time_Spent:
     """Tests for get_time_spent function."""
@@ -184,6 +295,7 @@ class TestGet_Time_Spent:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_total_attempts`")
 class TestGet_Total_Attempts:
@@ -202,6 +314,7 @@ class TestGet_Total_Attempts:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_rubric_heatmap`")
 class TestGet_Rubric_Heatmap:
     """Tests for get_rubric_heatmap function."""
@@ -218,6 +331,7 @@ class TestGet_Rubric_Heatmap:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_growth_data`")
 class TestGet_Growth_Data:
@@ -236,6 +350,7 @@ class TestGet_Growth_Data:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_persona_performance`")
 class TestGet_Persona_Performance:
     """Tests for get_persona_performance function."""
@@ -252,6 +367,7 @@ class TestGet_Persona_Performance:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_attempt_improvement`")
 class TestGet_Attempt_Improvement:
@@ -270,6 +386,7 @@ class TestGet_Attempt_Improvement:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_cohort_performance`")
 class TestGet_Cohort_Performance:
     """Tests for get_cohort_performance function."""
@@ -286,6 +403,7 @@ class TestGet_Cohort_Performance:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_skill_performance`")
 class TestGet_Skill_Performance:
@@ -304,6 +422,7 @@ class TestGet_Skill_Performance:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_scenario_performance`")
 class TestGet_Scenario_Performance:
     """Tests for get_scenario_performance function."""
@@ -320,6 +439,7 @@ class TestGet_Scenario_Performance:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_scenario_stats`")
 class TestGet_Scenario_Stats:
@@ -338,6 +458,7 @@ class TestGet_Scenario_Stats:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_simulation_composition`")
 class TestGet_Simulation_Composition:
     """Tests for get_simulation_composition function."""
@@ -354,6 +475,7 @@ class TestGet_Simulation_Composition:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_simulation_performance`")
 class TestGet_Simulation_Performance:
@@ -372,6 +494,7 @@ class TestGet_Simulation_Performance:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_home_overview`")
 class TestGet_Home_Overview:
     """Tests for get_home_overview function."""
@@ -388,6 +511,7 @@ class TestGet_Home_Overview:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_attempt_history`")
 class TestGet_Attempt_History:
@@ -406,6 +530,7 @@ class TestGet_Attempt_History:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_practice_overview`")
 class TestGet_Practice_Overview:
     """Tests for get_practice_overview function."""
@@ -422,6 +547,7 @@ class TestGet_Practice_Overview:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_reports_bundle`")
 class TestGet_Reports_Bundle:
@@ -440,6 +566,7 @@ class TestGet_Reports_Bundle:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_leaderboard_bundle`")
 class TestGet_Leaderboard_Bundle:
     """Tests for get_leaderboard_bundle function."""
@@ -456,6 +583,7 @@ class TestGet_Leaderboard_Bundle:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_pricing_analytics`")
 class TestGet_Pricing_Analytics:
@@ -474,6 +602,7 @@ class TestGet_Pricing_Analytics:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_improvement_per_day`")
 class TestGet_Improvement_Per_Day:
     """Tests for get_improvement_per_day function."""
@@ -490,6 +619,7 @@ class TestGet_Improvement_Per_Day:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_perfect_scores`")
 class TestGet_Perfect_Scores:
@@ -508,6 +638,7 @@ class TestGet_Perfect_Scores:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_quickest_pass`")
 class TestGet_Quickest_Pass:
     """Tests for get_quickest_pass function."""
@@ -524,6 +655,7 @@ class TestGet_Quickest_Pass:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_dashboard_bundle`")
 class TestGet_Dashboard_Bundle:
@@ -542,6 +674,7 @@ class TestGet_Dashboard_Bundle:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `refresh_materialized_view`")
 class TestRefresh_Materialized_View:
     """Tests for refresh_materialized_view function."""
@@ -559,22 +692,6 @@ class TestRefresh_Materialized_View:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
@@ -593,39 +710,24 @@ class TestFetcher:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
-class TestQuery_Func:
-    """Tests for query_func function."""
 
-    def test_query_func_success(self):
-        """Test successful query_func execution."""
-        # TODO: Implement test for query_func
-        assert False, "IMPLEMENT: Test for query_func"
+@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
+class TestFetcher:
+    """Tests for fetcher function."""
 
-    def test_query_func_error(self):
-        """Test query_func error handling."""
-        # TODO: Implement error test for query_func
-        assert False, "IMPLEMENT: Error test for query_func"
+    def test_fetcher_success(self):
+        """Test successful fetcher execution."""
+        # TODO: Implement test for fetcher
+        assert False, "IMPLEMENT: Test for fetcher"
 
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
-class TestQuery_Func:
-    """Tests for query_func function."""
-
-    def test_query_func_success(self):
-        """Test successful query_func execution."""
-        # TODO: Implement test for query_func
-        assert False, "IMPLEMENT: Test for query_func"
-
-    def test_query_func_error(self):
-        """Test query_func error handling."""
-        # TODO: Implement error test for query_func
-        assert False, "IMPLEMENT: Error test for query_func"
+    def test_fetcher_error(self):
+        """Test fetcher error handling."""
+        # TODO: Implement error test for fetcher
+        assert False, "IMPLEMENT: Error test for fetcher"
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `query_func`")
 class TestQuery_Func:
@@ -644,22 +746,6 @@ class TestQuery_Func:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
-class TestQuery_Func:
-    """Tests for query_func function."""
-
-    def test_query_func_success(self):
-        """Test successful query_func execution."""
-        # TODO: Implement test for query_func
-        assert False, "IMPLEMENT: Test for query_func"
-
-    def test_query_func_error(self):
-        """Test query_func error handling."""
-        # TODO: Implement error test for query_func
-        assert False, "IMPLEMENT: Error test for query_func"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `query_func`")
 class TestQuery_Func:
@@ -678,22 +764,6 @@ class TestQuery_Func:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
-class TestQuery_Func:
-    """Tests for query_func function."""
-
-    def test_query_func_success(self):
-        """Test successful query_func execution."""
-        # TODO: Implement test for query_func
-        assert False, "IMPLEMENT: Test for query_func"
-
-    def test_query_func_error(self):
-        """Test query_func error handling."""
-        # TODO: Implement error test for query_func
-        assert False, "IMPLEMENT: Error test for query_func"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `query_func`")
 class TestQuery_Func:
@@ -712,22 +782,6 @@ class TestQuery_Func:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
-class TestQuery_Func:
-    """Tests for query_func function."""
-
-    def test_query_func_success(self):
-        """Test successful query_func execution."""
-        # TODO: Implement test for query_func
-        assert False, "IMPLEMENT: Test for query_func"
-
-    def test_query_func_error(self):
-        """Test query_func error handling."""
-        # TODO: Implement error test for query_func
-        assert False, "IMPLEMENT: Error test for query_func"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `query_func`")
 class TestQuery_Func:
@@ -746,6 +800,7 @@ class TestQuery_Func:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `query_func`")
 class TestQuery_Func:
     """Tests for query_func function."""
@@ -763,6 +818,7 @@ class TestQuery_Func:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `query_func`")
 class TestQuery_Func:
     """Tests for query_func function."""
@@ -777,3 +833,92 @@ class TestQuery_Func:
         # TODO: Implement error test for query_func
         assert False, "IMPLEMENT: Error test for query_func"
 
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
+class TestQuery_Func:
+    """Tests for query_func function."""
+
+    def test_query_func_success(self):
+        """Test successful query_func execution."""
+        # TODO: Implement test for query_func
+        assert False, "IMPLEMENT: Test for query_func"
+
+    def test_query_func_error(self):
+        """Test query_func error handling."""
+        # TODO: Implement error test for query_func
+        assert False, "IMPLEMENT: Error test for query_func"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
+class TestQuery_Func:
+    """Tests for query_func function."""
+
+    def test_query_func_success(self):
+        """Test successful query_func execution."""
+        # TODO: Implement test for query_func
+        assert False, "IMPLEMENT: Test for query_func"
+
+    def test_query_func_error(self):
+        """Test query_func error handling."""
+        # TODO: Implement error test for query_func
+        assert False, "IMPLEMENT: Error test for query_func"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
+class TestQuery_Func:
+    """Tests for query_func function."""
+
+    def test_query_func_success(self):
+        """Test successful query_func execution."""
+        # TODO: Implement test for query_func
+        assert False, "IMPLEMENT: Test for query_func"
+
+    def test_query_func_error(self):
+        """Test query_func error handling."""
+        # TODO: Implement error test for query_func
+        assert False, "IMPLEMENT: Error test for query_func"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
+class TestQuery_Func:
+    """Tests for query_func function."""
+
+    def test_query_func_success(self):
+        """Test successful query_func execution."""
+        # TODO: Implement test for query_func
+        assert False, "IMPLEMENT: Test for query_func"
+
+    def test_query_func_error(self):
+        """Test query_func error handling."""
+        # TODO: Implement error test for query_func
+        assert False, "IMPLEMENT: Error test for query_func"
+
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `query_func`")
+class TestQuery_Func:
+    """Tests for query_func function."""
+
+    def test_query_func_success(self):
+        """Test successful query_func execution."""
+        # TODO: Implement test for query_func
+        assert False, "IMPLEMENT: Test for query_func"
+
+    def test_query_func_error(self):
+        """Test query_func error handling."""
+        # TODO: Implement error test for query_func
+        assert False, "IMPLEMENT: Error test for query_func"

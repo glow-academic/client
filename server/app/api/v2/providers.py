@@ -3,23 +3,33 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
-from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
-                                   CreateProviderRequest,
-                                   CreateProviderResponse,
-                                   DecryptProviderKeyRequest,
-                                   DecryptProviderKeyResponse,
-                                   DeleteModelRequest, DeleteModelResponse,
-                                   DeleteProviderRequest,
-                                   DeleteProviderResponse, ModelDetailRequest,
-                                   ModelDetailResponse, ProviderDetailRequest,
-                                   ProviderDetailResponse, ProvidersFilters,
-                                   ProvidersListResponse, UpdateModelRequest,
-                                   UpdateModelResponse, UpdateProviderRequest,
-                                   UpdateProviderResponse)
+from app.schemas.providers import (
+    CreateModelRequest,
+    CreateModelResponse,
+    CreateProviderRequest,
+    CreateProviderResponse,
+    DecryptProviderKeyRequest,
+    DecryptProviderKeyResponse,
+    DeleteModelRequest,
+    DeleteModelResponse,
+    DeleteProviderRequest,
+    DeleteProviderResponse,
+    ModelDetailRequest,
+    ModelDetailResponse,
+    ProviderDetailRequest,
+    ProviderDetailResponse,
+    ProvidersFilters,
+    ProvidersListResponse,
+    UpdateModelRequest,
+    UpdateModelResponse,
+    UpdateProviderRequest,
+    UpdateProviderResponse,
+)
 from app.services.provider_service import get_provider_service
 from app.utils.auth import decrypt_api_key
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 
@@ -110,17 +120,16 @@ async def decrypt_provider_key(
     """Decrypt provider API key for authorized users."""
     try:
         service = get_provider_service(conn)
-        
+
         # Get provider detail to verify access and get encrypted key
         provider_detail_request = ProviderDetailRequest(
-            providerId=request.providerId,
-            profileId=request.profileId
+            providerId=request.providerId, profileId=request.profileId
         )
         provider_detail = await service.get_provider_detail(provider_detail_request)
-        
+
         # Decrypt the API key
         decrypted_key = decrypt_api_key(provider_detail.api_key)
-        
+
         return DecryptProviderKeyResponse(api_key=decrypted_key)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

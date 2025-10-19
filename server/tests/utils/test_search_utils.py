@@ -1,11 +1,14 @@
 """
 Tests for app.utils.search
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.utils.search import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `normalize_text`")
 class TestNormalize_Text:
@@ -32,6 +36,7 @@ class TestNormalize_Text:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `tokenize`")
 class TestTokenize:
     """Tests for tokenize function."""
@@ -49,6 +54,7 @@ class TestTokenize:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `build_fuzzy_conditions`")
 class TestBuild_Fuzzy_Conditions:
     """Tests for build_fuzzy_conditions function."""
@@ -62,4 +68,3 @@ class TestBuild_Fuzzy_Conditions:
         """Test build_fuzzy_conditions error handling."""
         # TODO: Implement error test for build_fuzzy_conditions
         assert False, "IMPLEMENT: Error test for build_fuzzy_conditions"
-

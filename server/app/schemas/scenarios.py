@@ -1,18 +1,24 @@
 """Scenarios V2 API schemas."""
 
-from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from .base import (CohortMapping, DepartmentMapping, DocumentMapping,
-                   ObjectiveMapping, ParameterItemMapping, ParameterMapping,
-                   PersonaMapping, SimulationMapping)
+from .base import (
+    CohortMapping,
+    DepartmentMapping,
+    DocumentMapping,
+    ObjectiveMapping,
+    ParameterItemMapping,
+    ParameterMapping,
+    PersonaMapping,
+    SimulationMapping,
+)
 
 
 class ScenariosFilters(BaseModel):
     """Filters for scenarios list request."""
 
-    departmentIds: List[str]
+    departmentIds: list[str]
     profileId: str
 
 
@@ -25,22 +31,22 @@ class ScenarioItem(BaseModel):
     active: bool
     default_scenario: bool
     generated: bool
-    parent_scenario_id: Optional[str]
-    objective_ids: List[str]  # "scenarioId_idx" composite keys
-    persona_id: Optional[str]
-    parameter_item_ids: List[str]
-    simulation_ids: List[str]
+    parent_scenario_id: str | None
+    objective_ids: list[str]  # "scenarioId_idx" composite keys
+    persona_id: str | None
+    parameter_item_ids: list[str]
+    simulation_ids: list[str]
     num_simulations: int
     can_edit: bool
     can_delete: bool
     can_duplicate: bool
-    cohort_ids: List[str]
+    cohort_ids: list[str]
 
 
 class ScenariosListResponse(BaseModel):
     """Response for scenarios list endpoint."""
 
-    scenarios: List[ScenarioItem]
+    scenarios: list[ScenarioItem]
     objective_mapping: ObjectiveMapping
     parameter_item_mapping: ParameterItemMapping
     cohort_mapping: CohortMapping
@@ -57,8 +63,8 @@ class ScenarioDetailRequest(BaseModel):
 class ParameterDetail(BaseModel):
     """Parameter detail structure."""
 
-    parameter_item_ids: List[str]
-    valid_parameter_item_ids: List[str]
+    parameter_item_ids: list[str]
+    valid_parameter_item_ids: list[str]
 
 
 class ScenarioDetailResponse(BaseModel):
@@ -70,27 +76,27 @@ class ScenarioDetailResponse(BaseModel):
     active: bool
     default_scenario: bool
     generated: bool
-    parent_scenario_id: Optional[str]
+    parent_scenario_id: str | None
 
     # Department
     department_id: str
-    valid_department_ids: List[str]
+    valid_department_ids: list[str]
 
     # IDs
-    persona_id: Optional[str]
-    valid_persona_ids: List[str]
-    document_ids: List[str]
-    valid_document_ids: List[str]
+    persona_id: str | None
+    valid_persona_ids: list[str]
+    document_ids: list[str]
+    valid_document_ids: list[str]
 
     # Objectives (use IDs)
-    objective_ids: List[str]  # "scenarioId_idx" composite keys
-    valid_objectives: List[str]  # Empty (free-form)
+    objective_ids: list[str]  # "scenarioId_idx" composite keys
+    valid_objectives: list[str]  # Empty (free-form)
 
     # Parameters (structured by parameter_id)
-    parameters: Dict[str, ParameterDetail]
+    parameters: dict[str, ParameterDetail]
 
     # Simulations
-    active_simulation_ids: List[str]
+    active_simulation_ids: list[str]
 
     # Permissions
     can_edit: bool
@@ -121,10 +127,10 @@ class CreateScenarioRequest(BaseModel):
     department_id: str
     active: bool
     default_scenario: bool
-    persona_id: Optional[str]
-    document_ids: List[str]
-    objective_ids: List[str]  # Can be composite IDs or raw text
-    parameters: Dict[str, List[str]]  # { parameter_id: [parameter_item_ids] }
+    persona_id: str | None
+    document_ids: list[str]
+    objective_ids: list[str]  # Can be composite IDs or raw text
+    parameters: dict[str, list[str]]  # { parameter_id: [parameter_item_ids] }
 
 
 class CreateScenarioResponse(BaseModel):
@@ -144,10 +150,10 @@ class UpdateScenarioRequest(BaseModel):
     department_id: str
     active: bool
     default_scenario: bool
-    persona_id: Optional[str]
-    document_ids: List[str]
-    objective_ids: List[str]
-    parameters: Dict[str, List[str]]
+    persona_id: str | None
+    document_ids: list[str]
+    objective_ids: list[str]
+    parameters: dict[str, list[str]]
 
 
 class UpdateScenarioResponse(BaseModel):
@@ -193,10 +199,10 @@ class GenerateScenarioAIRequest(BaseModel):
     """Request to generate AI scenario content."""
 
     departmentId: str
-    personaId: Optional[str] = None
-    documentIds: Optional[List[str]] = None
-    parameterItemIds: Optional[List[str]] = None
-    profileId: Optional[str] = None
+    personaId: str | None = None
+    documentIds: list[str] | None = None
+    parameterItemIds: list[str] | None = None
+    profileId: str | None = None
 
 
 class GenerateScenarioAIResponse(BaseModel):
@@ -206,18 +212,18 @@ class GenerateScenarioAIResponse(BaseModel):
     message: str
     title: str
     description: str
-    objectives: List[str]
+    objectives: list[str]
 
 
 class RandomizeScenarioRequest(BaseModel):
     """Request to randomize scenario sections."""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    personaId: Optional[str] = None
-    documentIds: Optional[List[str]] = None
-    parameterItemIds: Optional[List[str]] = None
-    targets: List[str] = []  # ["persona", "documents", "parameters"]
+    name: str | None = None
+    description: str | None = None
+    personaId: str | None = None
+    documentIds: list[str] | None = None
+    parameterItemIds: list[str] | None = None
+    targets: list[str] = []  # ["persona", "documents", "parameters"]
 
 
 class RandomizeScenarioResponse(BaseModel):
@@ -225,7 +231,6 @@ class RandomizeScenarioResponse(BaseModel):
 
     success: bool
     message: str
-    personaId: Optional[str] = None
-    documentIds: List[str] = []
-    parameterItemIds: List[str] = []
-
+    personaId: str | None = None
+    documentIds: list[str] = []
+    parameterItemIds: list[str] = []

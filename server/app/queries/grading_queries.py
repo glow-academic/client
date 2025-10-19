@@ -1,6 +1,6 @@
 """Grading query builders with dynamic SQL."""
 
-from typing import Any, List
+from typing import Any
 
 
 class GradingQueries:
@@ -14,7 +14,7 @@ class GradingQueries:
         score: int,
         description: str,
         time_taken: int,
-    ) -> tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Create a simulation chat grade record.
 
@@ -28,7 +28,7 @@ class GradingQueries:
         RETURNING id::text
         """
 
-        params: List[Any] = [
+        params: list[Any] = [
             passed,
             score,
             description,
@@ -39,7 +39,7 @@ class GradingQueries:
 
         return query, params
 
-    def create_simulation_chat_feedbacks(self) -> tuple[str, List[Any]]:
+    def create_simulation_chat_feedbacks(self) -> tuple[str, list[Any]]:
         """
         Batch create simulation chat feedback records using UNNEST.
 
@@ -60,7 +60,7 @@ class GradingQueries:
         """
         return query, []
 
-    def mark_chat_completed(self, simulation_chat_id: str) -> tuple[str, List[Any]]:
+    def mark_chat_completed(self, simulation_chat_id: str) -> tuple[str, list[Any]]:
         """
         Mark a simulation chat as completed.
 
@@ -73,7 +73,6 @@ class GradingQueries:
         WHERE id = $2
         """
 
-        params: List[Any] = [True, simulation_chat_id]
+        params: list[Any] = [True, simulation_chat_id]
 
         return query, params
-

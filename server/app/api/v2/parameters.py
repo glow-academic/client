@@ -3,23 +3,27 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.parameters import (CreateParameterItemRequest,
-                                    CreateParameterItemResponse,
-                                    CreateParameterRequest,
-                                    CreateParameterResponse,
-                                    DeleteParameterRequest,
-                                    DeleteParameterResponse,
-                                    DuplicateParameterRequest,
-                                    DuplicateParameterResponse,
-                                    ParameterDetailDefaultRequest,
-                                    ParameterDetailRequest,
-                                    ParameterDetailResponse, ParametersFilters,
-                                    ParametersListResponse,
-                                    UpdateParameterRequest,
-                                    UpdateParameterResponse)
-from app.services.parameter_service import get_parameter_service
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.parameters import (
+    CreateParameterItemRequest,
+    CreateParameterItemResponse,
+    CreateParameterRequest,
+    CreateParameterResponse,
+    DeleteParameterRequest,
+    DeleteParameterResponse,
+    DuplicateParameterRequest,
+    DuplicateParameterResponse,
+    ParameterDetailDefaultRequest,
+    ParameterDetailRequest,
+    ParameterDetailResponse,
+    ParametersFilters,
+    ParametersListResponse,
+    UpdateParameterRequest,
+    UpdateParameterResponse,
+)
+from app.services.parameter_service import get_parameter_service
 
 router = APIRouter(prefix="/parameters", tags=["parameters"])
 

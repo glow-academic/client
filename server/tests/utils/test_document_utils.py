@@ -6,8 +6,9 @@ import uuid
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.document import get_document_info
 from sqlmodel import Session
+
+from app.utils.document import get_document_info
 
 
 @pytest.fixture
@@ -61,6 +62,7 @@ class TestGet_Document_Info:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `format_document_info`")
 class TestFormat_Document_Info:
     """Tests for format_document_info function."""
@@ -74,4 +76,3 @@ class TestFormat_Document_Info:
         """Test format_document_info error handling."""
         # TODO: Implement error test for format_document_info
         assert False, "IMPLEMENT: Error test for format_document_info"
-

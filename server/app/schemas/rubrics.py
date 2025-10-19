@@ -1,6 +1,5 @@
 """Rubrics V2 API schemas with hierarchical structure."""
 
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -36,9 +35,9 @@ class StandardGroupMappingDetail(BaseModel):
 
 
 # Custom type aliases for rubric mappings (include points unlike base)
-StandardGroupsMapping = Dict[str, StandardGroupMappingItem]
-StandardsMapping = Dict[str, StandardMappingItem]
-StandardGroupsMappingDetail = Dict[str, StandardGroupMappingDetail]
+StandardGroupsMapping = dict[str, StandardGroupMappingItem]
+StandardsMapping = dict[str, StandardMappingItem]
+StandardGroupsMappingDetail = dict[str, StandardGroupMappingDetail]
 
 
 # ============================================================================
@@ -49,7 +48,7 @@ StandardGroupsMappingDetail = Dict[str, StandardGroupMappingDetail]
 class RubricsFilters(BaseModel):
     """Filters for rubrics list."""
 
-    departmentIds: List[str]
+    departmentIds: list[str]
     profileId: str
 
 
@@ -70,13 +69,13 @@ class RubricItem(BaseModel):
     can_delete: bool
     can_duplicate: bool
     # Hierarchical: standard_group_id -> array of standard_ids
-    standard_groups: Dict[str, List[str]]
+    standard_groups: dict[str, list[str]]
 
 
 class RubricsListResponse(BaseModel):
     """Response for rubrics list endpoint."""
 
-    rubrics: List[RubricItem]
+    rubrics: list[RubricItem]
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
 
@@ -98,7 +97,7 @@ class StandardGroupDetail(BaseModel):
 
     points: int
     passPoints: int
-    standard_ids: List[str]
+    standard_ids: list[str]
 
 
 class RubricDetailResponse(BaseModel):
@@ -108,7 +107,7 @@ class RubricDetailResponse(BaseModel):
     name: str
     description: str
     department_id: str
-    valid_department_ids: List[str]
+    valid_department_ids: list[str]
     points: int
     passPoints: int
     active: bool
@@ -116,8 +115,8 @@ class RubricDetailResponse(BaseModel):
     can_edit: bool  # Permission flag for editing
 
     # Standard groups structure
-    standard_group_ids: List[str]
-    standard_groups_detail: Dict[str, StandardGroupDetail]
+    standard_group_ids: list[str]
+    standard_groups_detail: dict[str, StandardGroupDetail]
 
     # Top-level mappings
     standard_groups_mapping: StandardGroupsMappingDetail
@@ -147,7 +146,7 @@ class StandardCreate(BaseModel):
 class StandardUpdate(BaseModel):
     """Standard update schema for incremental updates."""
 
-    id: Optional[str] = None  # Present for updates, None for creates
+    id: str | None = None  # Present for updates, None for creates
     name: str
     description: str
     points: int
@@ -162,19 +161,19 @@ class StandardGroupCreate(BaseModel):
     description: str
     points: int
     passPoints: int
-    standards: List[StandardCreate]
+    standards: list[StandardCreate]
 
 
 class StandardGroupUpdate(BaseModel):
     """Standard group update schema for incremental updates."""
 
-    id: Optional[str] = None  # Present for updates, None for creates
+    id: str | None = None  # Present for updates, None for creates
     name: str
     short_name: str
     description: str
     points: int
     passPoints: int
-    standards: List[StandardUpdate]
+    standards: list[StandardUpdate]
     deleted: bool = False  # Mark for deletion
 
 
@@ -188,7 +187,7 @@ class CreateRubricRequest(BaseModel):
     default_rubric: bool
     points: int
     passPoints: int
-    standard_groups: List[StandardGroupCreate]
+    standard_groups: list[StandardGroupCreate]
 
 
 class CreateRubricResponse(BaseModel):
@@ -208,7 +207,7 @@ class UpdateRubricRequest(BaseModel):
     department_id: str
     active: bool
     default_rubric: bool
-    standard_groups: List[StandardGroupUpdate]
+    standard_groups: list[StandardGroupUpdate]
     # points and passPoints are auto-calculated by server
 
 
@@ -246,4 +245,3 @@ class DeleteRubricResponse(BaseModel):
 
     success: bool
     message: str
-

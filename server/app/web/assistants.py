@@ -9,12 +9,12 @@ import json
 import logging
 import uuid
 import warnings
-from typing import Any, Dict
+from typing import Any
 
 import socketio  # type: ignore
 from agents import gen_trace_id
-from app.agents.collection.assistant import (cancel_assistant_run,
-                                             run_assistant_agent)
+
+from app.agents.collection.assistant import cancel_assistant_run, run_assistant_agent
 from app.agents.collection.title import run_title_agent
 from app.db import get_pool
 
@@ -32,7 +32,7 @@ def get_sio_instance() -> socketio.AsyncServer:
     return get_socketio_instance()
 
 
-async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
+async def handle_start_assistant(sid: str, data: dict[str, Any]) -> None:
     """
     Handle assistant start requests via WebSocket
     Creates a new assistant chat and processes the initial message
@@ -51,7 +51,9 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
-            await emit_assistant_error(sid, "Missing department_id - please refresh the page")
+            await emit_assistant_error(
+                sid, "Missing department_id - please refresh the page"
+            )
             return
 
         logger.info(f"Processing assistant start: profile_id={profile_id}, sid={sid}")
@@ -65,9 +67,9 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
         async with pool.acquire() as conn:
             # Import service layer
             from app.services.assistant_service import AssistantService
-            
+
             service = AssistantService(conn)
-            
+
             # Verify profile exists
             if not await service.verify_profile_exists(uuid.UUID(profile_id)):
                 await emit_assistant_error(sid, "Profile not found")
@@ -82,7 +84,7 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
                 "New Chat",  # Will be updated by title agent
                 trace_id,
             )
-            chat_id = chat['id']
+            chat_id = chat["id"]
             logger.info(f"Created new assistant chat: {chat_id}")
 
             # Ensure client is joined to the assistant room
@@ -93,7 +95,10 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
             # Update the title with the title agent
             chat_title = await run_title_agent(
-                chat['id'], initial_message, department_id, conn  # type: ignore[arg-type]
+                chat["id"],
+                initial_message,
+                department_id,
+                conn,  # type: ignore[arg-type]
             )
             logger.info(f"Chat title: {chat_title}")
 
@@ -122,7 +127,7 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
         await emit_assistant_error(sid, f"Failed to start assistant: {str(e)}")
 
 
-async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
+async def handle_stop_assistant(sid: str, data: dict[str, Any]) -> None:
     """
     Handle assistant stop requests via WebSocket
     Replaces /assistants/stop endpoint
@@ -143,9 +148,9 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
         async with pool.acquire() as conn:
             # Import service layer
             from app.services.assistant_service import AssistantService
-            
+
             service = AssistantService(conn)
-            
+
             # Verify the chat exists
             if not await service.verify_chat_exists(uuid.UUID(chat_id)):
                 await emit_assistant_error(sid, "Chat not found")
@@ -211,9 +216,9 @@ async def process_assistant_message_websocket(
     async with pool.acquire() as conn:
         # Import service layer
         from app.services.assistant_service import AssistantService
-        
+
         service = AssistantService(conn)
-        
+
         try:
             # Verify the chat exists
             if not await service.verify_chat_exists(chat_id):
@@ -226,12 +231,12 @@ async def process_assistant_message_websocket(
             await sio_instance.emit(
                 "assistant_new_message",
                 {
-                    "message_id": str(user_message['id']),
+                    "message_id": str(user_message["id"]),
                     "chat_id": str(chat_id),
                     "role": "user",
                     "content": message,
                     "completed": True,
-                    "created_at": user_message['created_at'].isoformat(),
+                    "created_at": user_message["created_at"].isoformat(),
                 },
                 room=f"assistant_{chat_id}",
             )
@@ -254,15 +259,14 @@ async def process_assistant_message_websocket(
                     if accumulated_content.strip() and current_message:
                         # Complete current message
                         await service.complete_message(
-                            current_message['id'],
-                            accumulated_content
+                            current_message["id"], accumulated_content
                         )
 
                         # Emit completion for current message
                         await sio_instance.emit(
                             "message_complete",
                             {
-                                "message_id": str(current_message['id']),
+                                "message_id": str(current_message["id"]),
                                 "chat_id": str(chat_id),
                                 "final_content": accumulated_content,
                             },
@@ -307,7 +311,7 @@ async def process_assistant_message_websocket(
                             chat_id,
                             tool_name,
                             tool_type,
-                            tool_call_data.get("arguments", {})
+                            tool_call_data.get("arguments", {}),
                         )
                         logger.info(
                             f"Successfully created tool call record: {tool_call['id']}"
@@ -322,7 +326,7 @@ async def process_assistant_message_websocket(
                         await sio_instance.emit(
                             "tool_call_created",
                             {
-                                "tool_call_id": str(tool_call['id']),
+                                "tool_call_id": str(tool_call["id"]),
                                 "chat_id": str(chat_id),
                                 "tool_name": tool_name,
                                 "tool_type": tool_type,
@@ -331,7 +335,9 @@ async def process_assistant_message_websocket(
                         )
 
                     except json.JSONDecodeError:
-                        logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
+                        logger.error(
+                            f"Failed to parse tool call JSON: {tool_call_json}"
+                        )
 
                 elif token.startswith("<tool_call_result>") and token.endswith(
                     "</tool_call_result>"
@@ -350,8 +356,8 @@ async def process_assistant_message_websocket(
                         if tool_call_id and tool_call_id in active_tool_calls:
                             tool_call_record = active_tool_calls[tool_call_id]
                             await service.complete_tool_call(
-                                tool_call_record['id'],
-                                tool_result_data.get("result", {})
+                                tool_call_record["id"],
+                                tool_result_data.get("result", {}),
                             )
                             logger.info(
                                 f"Successfully updated tool call record {tool_call_record['id']} with result"
@@ -364,7 +370,7 @@ async def process_assistant_message_websocket(
                         await sio_instance.emit(
                             "tool_call_completed",
                             {
-                                "tool_call_id": str(tool_call_record['id'])
+                                "tool_call_id": str(tool_call_record["id"])
                                 if tool_call_record
                                 else None,
                                 "chat_id": str(chat_id),
@@ -384,33 +390,34 @@ async def process_assistant_message_websocket(
 
                     # Create assistant message if we don't have one yet
                     if not current_message:
-                        current_message = await service.create_assistant_message(chat_id)
+                        current_message = await service.create_assistant_message(
+                            chat_id
+                        )
 
                         # Emit new placeholder message
                         await sio_instance.emit(
                             "assistant_new_message",
                             {
-                                "message_id": str(current_message['id']),
+                                "message_id": str(current_message["id"]),
                                 "chat_id": str(chat_id),
                                 "role": "assistant",
                                 "content": "",
                                 "completed": False,
-                                "created_at": current_message['created_at'].isoformat(),
+                                "created_at": current_message["created_at"].isoformat(),
                             },
                             room=f"assistant_{chat_id}",
                         )
 
                     # Update the database with accumulated content
                     await service.update_message_content(
-                        current_message['id'],
-                        accumulated_content
+                        current_message["id"], accumulated_content
                     )
 
                     # Emit token update to connected clients
                     await sio_instance.emit(
                         "assistant_message_token",
                         {
-                            "message_id": str(current_message['id']),
+                            "message_id": str(current_message["id"]),
                             "chat_id": str(chat_id),
                             "token": token,
                             "accumulated_content": accumulated_content,
@@ -421,15 +428,14 @@ async def process_assistant_message_websocket(
             # 4. Mark current message as completed (if we have one)
             if current_message:
                 await service.complete_message(
-                    current_message['id'],
-                    accumulated_content
+                    current_message["id"], accumulated_content
                 )
 
                 # 5. Emit completion signal
                 await sio_instance.emit(
                     "assistant_message_complete",
                     {
-                        "message_id": str(current_message['id']),
+                        "message_id": str(current_message["id"]),
                         "chat_id": str(chat_id),
                         "final_content": accumulated_content,
                     },
@@ -444,15 +450,14 @@ async def process_assistant_message_websocket(
                 # Finalize the message with the content received so far
                 if current_message:
                     await service.complete_message(
-                        current_message['id'],
-                        accumulated_content
+                        current_message["id"], accumulated_content
                     )
 
                     # Emit a cancellation event
                     await sio_instance.emit(
                         "assistant_message_cancelled",
                         {
-                            "message_id": str(current_message['id']),
+                            "message_id": str(current_message["id"]),
                             "chat_id": str(chat_id),
                             "final_content": accumulated_content,
                         },
@@ -486,7 +491,7 @@ def register_assistant_events(sio: socketio.AsyncServer) -> None:
     logger.info("Starting registration of assistant WebSocket event handlers")
 
     @sio.event  # type: ignore
-    async def start_assistant(sid: str, data: Dict[str, Any]) -> None:
+    async def start_assistant(sid: str, data: dict[str, Any]) -> None:
         """Start a new assistant chat"""
         logger.info(
             f"start_assistant event triggered for sid={sid} with data keys: {list(data.keys())}"
@@ -494,7 +499,7 @@ def register_assistant_events(sio: socketio.AsyncServer) -> None:
         await handle_start_assistant(sid, data)
 
     @sio.event  # type: ignore
-    async def stop_assistant(sid: str, data: Dict[str, Any]) -> None:
+    async def stop_assistant(sid: str, data: dict[str, Any]) -> None:
         """Stop an active assistant"""
         await handle_stop_assistant(sid, data)
 

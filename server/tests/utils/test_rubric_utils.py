@@ -6,8 +6,9 @@ import uuid
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.rubric import get_dynamic_rubric
 from sqlmodel import Session
+
+from app.utils.rubric import get_dynamic_rubric
 
 
 @pytest.fixture

@@ -1,18 +1,21 @@
 """Attempts v2 API endpoints."""
 
-from typing import Annotated, Any, Dict
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
 from app.queries.simulation_queries import get_attempt_full_data
-from app.schemas.attempts import (BulkArchiveAttemptsRequest,
-                                  BulkArchiveAttemptsResponse,
-                                  UpdateChatCompletedAtRequest,
-                                  UpdateChatCreatedAtRequest,
-                                  UpdateChatTimestampResponse)
+from app.schemas.attempts import (
+    BulkArchiveAttemptsRequest,
+    BulkArchiveAttemptsResponse,
+    UpdateChatCompletedAtRequest,
+    UpdateChatCreatedAtRequest,
+    UpdateChatTimestampResponse,
+)
 from app.services.attempts_service import get_attempts_service
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 
@@ -21,7 +24,7 @@ router = APIRouter(prefix="/attempts", tags=["attempts"])
 async def get_attempt_full(
     attempt_id: UUID,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get complete attempt data with all related entities and computed values."""
     try:
         return await get_attempt_full_data(conn, str(attempt_id))
@@ -74,4 +77,3 @@ async def update_chat_completed_at(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

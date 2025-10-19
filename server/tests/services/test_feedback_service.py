@@ -1,11 +1,14 @@
 """
 Tests for app.services.feedback_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.feedback_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_feedback_service`")
 class TestGet_Feedback_Service:
@@ -32,6 +36,7 @@ class TestGet_Feedback_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_feedback_list`")
 class TestGet_Feedback_List:
     """Tests for get_feedback_list function."""
@@ -49,6 +54,7 @@ class TestGet_Feedback_List:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `create_feedback`")
 class TestCreate_Feedback:
     """Tests for create_feedback function."""
@@ -62,4 +68,3 @@ class TestCreate_Feedback:
         """Test create_feedback error handling."""
         # TODO: Implement error test for create_feedback
         assert False, "IMPLEMENT: Error test for create_feedback"
-

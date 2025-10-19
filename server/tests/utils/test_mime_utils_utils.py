@@ -1,11 +1,14 @@
 """
 Tests for app.utils.mime_utils
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.utils.mime_utils import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `infer_mime_from_name`")
 class TestInfer_Mime_From_Name:
@@ -32,6 +36,7 @@ class TestInfer_Mime_From_Name:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_content_type`")
 class TestGet_Content_Type:
     """Tests for get_content_type function."""
@@ -45,4 +50,3 @@ class TestGet_Content_Type:
         """Test get_content_type error handling."""
         # TODO: Implement error test for get_content_type
         assert False, "IMPLEMENT: Error test for get_content_type"
-

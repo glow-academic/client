@@ -1,11 +1,14 @@
 """
 Tests for app.utils.text_helpers
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.utils.text_helpers import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `normalize_text`")
 class TestNormalize_Text:
@@ -32,6 +36,7 @@ class TestNormalize_Text:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `tokenize`")
 class TestTokenize:
     """Tests for tokenize function."""
@@ -48,6 +53,7 @@ class TestTokenize:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `weighted_choice`")
 class TestWeighted_Choice:
@@ -66,7 +72,10 @@ class TestWeighted_Choice:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `weighted_sample_without_replacement`")
+
+@pytest.mark.skip(
+    reason="TODO: implement tests for `weighted_sample_without_replacement`"
+)
 class TestWeighted_Sample_Without_Replacement:
     """Tests for weighted_sample_without_replacement function."""
 
@@ -83,7 +92,10 @@ class TestWeighted_Sample_Without_Replacement:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `read_document_content_for_similarity`")
+
+@pytest.mark.skip(
+    reason="TODO: implement tests for `read_document_content_for_similarity`"
+)
 class TestRead_Document_Content_For_Similarity:
     """Tests for read_document_content_for_similarity function."""
 
@@ -96,4 +108,3 @@ class TestRead_Document_Content_For_Similarity:
         """Test read_document_content_for_similarity error handling."""
         # TODO: Implement error test for read_document_content_for_similarity
         assert False, "IMPLEMENT: Error test for read_document_content_for_similarity"
-

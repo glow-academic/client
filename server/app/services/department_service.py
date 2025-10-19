@@ -3,22 +3,27 @@
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.department_queries import DepartmentQueries
 from app.schemas.base import AgentMapping, AgentMappingItem
-from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
-                                     CreateDepartmentResponse,
-                                     DeleteDepartmentRequest,
-                                     DeleteDepartmentResponse,
-                                     DepartmentDetailRequest,
-                                     DepartmentDetailResponse, DepartmentItem,
-                                     DepartmentsFilters,
-                                     DepartmentsListResponse,
-                                     DuplicateDepartmentRequest,
-                                     DuplicateDepartmentResponse,
-                                     UpdateDepartmentRequest,
-                                     UpdateDepartmentResponse)
+from app.schemas.departments import (
+    AgentRoles,
+    CreateDepartmentRequest,
+    CreateDepartmentResponse,
+    DeleteDepartmentRequest,
+    DeleteDepartmentResponse,
+    DepartmentDetailRequest,
+    DepartmentDetailResponse,
+    DepartmentItem,
+    DepartmentsFilters,
+    DepartmentsListResponse,
+    DuplicateDepartmentRequest,
+    DuplicateDepartmentResponse,
+    UpdateDepartmentRequest,
+    UpdateDepartmentResponse,
+)
 from app.services.base import BaseService, with_cache
 
 
@@ -55,15 +60,15 @@ class DepartmentService(BaseService):
         for row in rows:
             departments.append(
                 DepartmentItem(
-                    department_id=row['department_id'],
-                    title=row['title'],
-                    description=row['description'],
-                    active=row['active'],
-                    updated_at=row['updated_at'].isoformat(),
-                    total_price_spent=float(row['total_price_spent']),
-                    staff_count=int(row['staff_count']),
-                    can_edit=row['can_edit'],
-                    can_delete=row['can_delete'],
+                    department_id=row["department_id"],
+                    title=row["title"],
+                    description=row["description"],
+                    active=row["active"],
+                    updated_at=row["updated_at"].isoformat(),
+                    total_price_spent=float(row["total_price_spent"]),
+                    staff_count=int(row["staff_count"]),
+                    can_edit=row["can_edit"],
+                    can_delete=row["can_delete"],
                 )
             )
         return DepartmentsListResponse(departments=departments)
@@ -107,7 +112,7 @@ class DepartmentService(BaseService):
         }
 
         for row in agent_rows:
-            agent_roles_dict[row['role']] = row['agent_id']
+            agent_roles_dict[row["role"]] = row["agent_id"]
 
         # Get valid agents for selection
         query, params = self.queries.get_valid_agents()
@@ -117,27 +122,26 @@ class DepartmentService(BaseService):
         agent_mapping: AgentMapping = {}
 
         for row in agent_rows:
-            valid_agent_ids.append(row['agent_id'])
-            agent_mapping[row['agent_id']] = AgentMappingItem(
-                name=row['name'],
-                description=row['description']
+            valid_agent_ids.append(row["agent_id"])
+            agent_mapping[row["agent_id"]] = AgentMappingItem(
+                name=row["name"], description=row["description"]
             )
 
         return DepartmentDetailResponse(
-            title=dept_row['title'],
-            description=dept_row['description'],
-            active=dept_row['active'],
+            title=dept_row["title"],
+            description=dept_row["description"],
+            active=dept_row["active"],
             agent_roles=AgentRoles(**agent_roles_dict),
             valid_agent_ids=valid_agent_ids,
             agent_mapping=agent_mapping,
             # Permissions
-            can_edit=dept_row['can_edit'],
-            can_duplicate=dept_row['can_duplicate'],
-            can_delete=dept_row['can_delete'],
+            can_edit=dept_row["can_edit"],
+            can_duplicate=dept_row["can_duplicate"],
+            can_delete=dept_row["can_delete"],
             # Usage/Stats
-            in_use=dept_row['in_use'],
-            staff_count=int(dept_row['staff_count']),
-            total_price_spent=float(dept_row['total_price_spent']),
+            in_use=dept_row["in_use"],
+            staff_count=int(dept_row["staff_count"]),
+            total_price_spent=float(dept_row["total_price_spent"]),
         )
 
     @with_cache(lambda self, profile_id: keys.department_default(profile_id))
@@ -160,7 +164,7 @@ class DepartmentService(BaseService):
         if not profile_row:
             raise ValueError(f"Profile {profile_id} not found")
 
-        is_superadmin = profile_row['role'] == "superadmin"
+        is_superadmin = profile_row["role"] == "superadmin"
 
         # Get valid agents for selection
         query, params = self.queries.get_valid_agents()
@@ -170,10 +174,9 @@ class DepartmentService(BaseService):
         agent_mapping: AgentMapping = {}
 
         for row in agent_rows:
-            valid_agent_ids.append(row['agent_id'])
-            agent_mapping[row['agent_id']] = AgentMappingItem(
-                name=row['name'],
-                description=row['description']
+            valid_agent_ids.append(row["agent_id"])
+            agent_mapping[row["agent_id"]] = AgentMappingItem(
+                name=row["name"], description=row["description"]
             )
 
         # Return defaults for creation
@@ -242,7 +245,7 @@ class DepartmentService(BaseService):
             if not dept_row:
                 raise ValueError("Failed to create department")
 
-            department_id = dept_row['department_id']
+            department_id = dept_row["department_id"]
 
             # Create all 8 agent role assignments
             for role in required_roles:
@@ -253,10 +256,12 @@ class DepartmentService(BaseService):
                 await self.conn.execute(query, *params)
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_department_all(),
-            keys.tag_profile_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_department_all(),
+                keys.tag_profile_all(),
+            ]
+        )
 
         return CreateDepartmentResponse(
             success=True,
@@ -313,11 +318,13 @@ class DepartmentService(BaseService):
                 await self.conn.execute(query, *params)
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_department_by_id(request.departmentId),
-            keys.tag_department_all(),
-            keys.tag_profile_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_department_by_id(request.departmentId),
+                keys.tag_department_all(),
+                keys.tag_profile_all(),
+            ]
+        )
 
         return UpdateDepartmentResponse(
             success=True, message="Department updated successfully"
@@ -354,7 +361,7 @@ class DepartmentService(BaseService):
             if not new_dept_row:
                 raise ValueError("Failed to duplicate department")
 
-            new_department_id = new_dept_row['department_id']
+            new_department_id = new_dept_row["department_id"]
 
             # Duplicate agent role assignments
             query, params = self.queries.duplicate_department_agents(
@@ -363,10 +370,12 @@ class DepartmentService(BaseService):
             await self.conn.execute(query, *params)
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_department_all(),
-            keys.tag_profile_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_department_all(),
+                keys.tag_profile_all(),
+            ]
+        )
 
         return DuplicateDepartmentResponse(
             success=True,
@@ -394,12 +403,12 @@ class DepartmentService(BaseService):
             raise ValueError(f"Department {request.departmentId} not found")
 
         total_usage = (
-            usage_row['profile_count']
-            + usage_row['simulation_count']
-            + usage_row['scenario_count']
-            + usage_row['persona_count']
-            + usage_row['document_count']
-            + usage_row['cohort_count']
+            usage_row["profile_count"]
+            + usage_row["simulation_count"]
+            + usage_row["scenario_count"]
+            + usage_row["persona_count"]
+            + usage_row["document_count"]
+            + usage_row["cohort_count"]
         )
 
         if total_usage > 0:
@@ -412,11 +421,13 @@ class DepartmentService(BaseService):
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_department_by_id(request.departmentId),
-            keys.tag_department_all(),
-            keys.tag_profile_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_department_by_id(request.departmentId),
+                keys.tag_department_all(),
+                keys.tag_profile_all(),
+            ]
+        )
 
         return DeleteDepartmentResponse(
             success=True, message="Department deleted successfully"

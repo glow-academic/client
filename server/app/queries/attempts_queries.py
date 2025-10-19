@@ -1,14 +1,14 @@
 """Attempts query builders with dynamic SQL."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class AttemptsQueries:
     """Query builders for attempts operations."""
 
     def bulk_archive_attempts(
-        self, archived: bool, attempt_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, archived: bool, attempt_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """
         Bulk update archived status for simulation attempts.
 
@@ -31,7 +31,7 @@ class AttemptsQueries:
 
     def update_chat_created_at(
         self, chat_id: str, created_at: Any
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Update simulation chat created_at timestamp.
 
@@ -48,7 +48,7 @@ class AttemptsQueries:
 
     def update_chat_completed_at(
         self, chat_id: str, completed_at: Any
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Update simulation chat completed_at timestamp.
 
@@ -62,4 +62,3 @@ class AttemptsQueries:
         query = "UPDATE simulation_chats SET completed_at = $1 WHERE id = $2"
         params = [completed_at, chat_id]
         return query, params
-

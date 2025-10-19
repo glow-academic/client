@@ -4,18 +4,24 @@ Actionable insights computation service for analytics.
 Ported from client/lib/analytics.ts to compute insights on the server.
 """
 
-from typing import Dict, List, Optional
 
-from app.schemas.analytics import (AttemptImprovementData, CohortData,
-                                   GrowthWindowAverages, NumericAttemptFact,
-                                   PersonaTrendData, RubricMatrixPackage,
-                                   ScenarioAttributeAttemptFact, ScenarioFact,
-                                   SimulationFact, SkillRadarData)
+from app.schemas.analytics import (
+    AttemptImprovementData,
+    CohortData,
+    GrowthWindowAverages,
+    NumericAttemptFact,
+    PersonaTrendData,
+    RubricMatrixPackage,
+    ScenarioAttributeAttemptFact,
+    ScenarioFact,
+    SimulationFact,
+    SkillRadarData,
+)
 
 
 def compute_growth_actionable_insight(
     window_averages: GrowthWindowAverages,
-) -> Optional[str]:
+) -> str | None:
     """
     Compute actionable insight for growth data.
 
@@ -43,7 +49,9 @@ def compute_growth_actionable_insight(
             return f"Scores improved {improvement:.1f}% - consider advanced challenges."
 
         if improvement > 2:
-            return f"Steady improvement of {improvement:.1f}% - continue current approach."
+            return (
+                f"Steady improvement of {improvement:.1f}% - continue current approach."
+            )
 
         if improvement < -2:
             return f"Slight decline of {abs(improvement):.1f}% - adjust study strategy."
@@ -52,10 +60,10 @@ def compute_growth_actionable_insight(
 
 
 def compute_persona_multiple_actionable_insights(
-    trend_data: List[PersonaTrendData],
+    trend_data: list[PersonaTrendData],
     persona_name: str,
     current_score: float,
-) -> Dict[str, Optional[str]]:
+) -> dict[str, str | None]:
     """
     Compute multiple actionable insights for a persona.
 
@@ -67,7 +75,7 @@ def compute_persona_multiple_actionable_insights(
     Returns:
         Dictionary with "insight" key containing the most relevant insight
     """
-    insights: Dict[str, Optional[str]] = {}
+    insights: dict[str, str | None] = {}
 
     if len(trend_data) < 2:
         return insights
@@ -108,8 +116,8 @@ def compute_persona_multiple_actionable_insights(
 
 
 def compute_rubric_heatmap_actionable_insight(
-    matrices: List[RubricMatrixPackage],
-) -> Optional[str]:
+    matrices: list[RubricMatrixPackage],
+) -> str | None:
     """
     Compute actionable insight from rubric heatmap data.
 
@@ -137,8 +145,12 @@ def compute_rubric_heatmap_actionable_insight(
         for j, cell in enumerate(row):
             if i != j and cell and cell.dataPoints > 0:
                 correlation = cell.correlation
-                row_group = matrix.standardGroups[i] if i < len(matrix.standardGroups) else None
-                col_group = matrix.standardGroups[j] if j < len(matrix.standardGroups) else None
+                row_group = (
+                    matrix.standardGroups[i] if i < len(matrix.standardGroups) else None
+                )
+                col_group = (
+                    matrix.standardGroups[j] if j < len(matrix.standardGroups) else None
+                )
 
                 if row_group and col_group:
                     pair = f"{row_group.shortName} ↔ {col_group.shortName}"
@@ -160,8 +172,8 @@ def compute_rubric_heatmap_actionable_insight(
 
 
 def compute_attempt_improvement_actionable_insight(
-    chart_data: List[AttemptImprovementData],
-) -> Optional[str]:
+    chart_data: list[AttemptImprovementData],
+) -> str | None:
     """
     Compute actionable insight from attempt improvement data.
 
@@ -194,8 +206,8 @@ def compute_attempt_improvement_actionable_insight(
 
 
 def compute_cohort_multiple_actionable_insights(
-    cohort_data: List[CohortData],
-) -> Dict[str, Dict[str, Optional[str]]]:
+    cohort_data: list[CohortData],
+) -> dict[str, dict[str, str | None]]:
     """
     Compute multiple actionable insights for cohorts.
 
@@ -205,7 +217,7 @@ def compute_cohort_multiple_actionable_insights(
     Returns:
         Dictionary mapping cohort_id to insights dict with "insight" key
     """
-    insights: Dict[str, Dict[str, Optional[str]]] = {}
+    insights: dict[str, dict[str, str | None]] = {}
 
     if len(cohort_data) == 0:
         return insights
@@ -220,8 +232,10 @@ def compute_cohort_multiple_actionable_insights(
 
     # Generate single focused insight for each cohort
     for cohort in cohort_data:
-        cohort_insights: Dict[str, Optional[str]] = {}
-        rank = next((i + 1 for i, c in enumerate(sorted_cohorts) if c.id == cohort.id), 0)
+        cohort_insights: dict[str, str | None] = {}
+        rank = next(
+            (i + 1 for i, c in enumerate(sorted_cohorts) if c.id == cohort.id), 0
+        )
         pass_rate_diff = cohort.passRate - avg_pass_rate
 
         # Return the most impactful single insight
@@ -264,8 +278,8 @@ def compute_cohort_multiple_actionable_insights(
 
 
 def compute_skill_performance_actionable_insight(
-    radar_data: List[SkillRadarData],
-) -> Optional[str]:
+    radar_data: list[SkillRadarData],
+) -> str | None:
     """
     Compute actionable insight from skill performance radar data.
 
@@ -310,8 +324,8 @@ def compute_skill_performance_actionable_insight(
 
 
 def compute_scenario_performance_actionable_insight(
-    attribute_attempt_facts: List[ScenarioAttributeAttemptFact],
-) -> Optional[str]:
+    attribute_attempt_facts: list[ScenarioAttributeAttemptFact],
+) -> str | None:
     """
     Compute actionable insight from scenario performance data.
 
@@ -325,7 +339,7 @@ def compute_scenario_performance_actionable_insight(
         return None
 
     # Find the parameter item with the highest average score
-    by_parameter_item: Dict[str, Dict[str, float]] = {}
+    by_parameter_item: dict[str, dict[str, float]] = {}
 
     for fact in attribute_attempt_facts:
         key = fact.parameterItemId
@@ -337,7 +351,9 @@ def compute_scenario_performance_actionable_insight(
 
     # Calculate average scores
     avg_scores = {
-        key: data["totalScore"] / data["totalAttempts"] if data["totalAttempts"] > 0 else 0
+        key: data["totalScore"] / data["totalAttempts"]
+        if data["totalAttempts"] > 0
+        else 0
         for key, data in by_parameter_item.items()
     }
 
@@ -355,8 +371,8 @@ def compute_scenario_performance_actionable_insight(
 
 
 def compute_scenario_stats_actionable_insight(
-    numeric_attempt_facts: List[NumericAttemptFact],
-) -> Optional[str]:
+    numeric_attempt_facts: list[NumericAttemptFact],
+) -> str | None:
     """
     Compute actionable insight from scenario stats data.
 
@@ -374,7 +390,7 @@ def compute_scenario_stats_actionable_insight(
     correlation_count = 0
 
     # Group by parameter to calculate correlation for each
-    by_parameter: Dict[str, List[NumericAttemptFact]] = {}
+    by_parameter: dict[str, list[NumericAttemptFact]] = {}
     for fact in numeric_attempt_facts:
         if fact.parameterId not in by_parameter:
             by_parameter[fact.parameterId] = []
@@ -392,7 +408,9 @@ def compute_scenario_stats_actionable_insight(
         sum_xx = sum(f.levelValue * f.levelValue for f in facts)
         sum_yy = sum(f.score * f.score for f in facts)
 
-        denominator = ((n * sum_xx - sum_x * sum_x) * (n * sum_yy - sum_y * sum_y)) ** 0.5
+        denominator = (
+            (n * sum_xx - sum_x * sum_x) * (n * sum_yy - sum_y * sum_y)
+        ) ** 0.5
         if denominator > 0:
             correlation = (n * sum_xy - sum_x * sum_y) / denominator
             total_correlation += correlation
@@ -410,8 +428,8 @@ def compute_scenario_stats_actionable_insight(
 
 
 def compute_simulation_performance_actionable_insight(
-    scenario_facts: List[ScenarioFact],
-) -> Optional[str]:
+    scenario_facts: list[ScenarioFact],
+) -> str | None:
     """
     Compute actionable insight from simulation performance data.
 
@@ -443,8 +461,8 @@ def compute_simulation_performance_actionable_insight(
 
 
 def compute_simulation_composition_actionable_insight(
-    simulation_facts: List[SimulationFact],
-) -> Optional[str]:
+    simulation_facts: list[SimulationFact],
+) -> str | None:
     """
     Compute actionable insight from simulation composition data.
 
@@ -459,7 +477,9 @@ def compute_simulation_composition_actionable_insight(
 
     # Calculate performance statistics
     avg_score = sum(sim.avgScore for sim in simulation_facts) / len(simulation_facts)
-    avg_completion = sum(sim.completionRate for sim in simulation_facts) / len(simulation_facts)
+    avg_completion = sum(sim.completionRate for sim in simulation_facts) / len(
+        simulation_facts
+    )
 
     # Find top and bottom performers
     sorted_by_score = sorted(simulation_facts, key=lambda s: s.avgScore, reverse=True)
@@ -487,4 +507,3 @@ def compute_simulation_composition_actionable_insight(
         return f"Average score is {avg_score:.0f}%. Review simulation difficulty and training materials."
 
     return None
-

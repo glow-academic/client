@@ -1,11 +1,14 @@
 """
 Tests for app.services.parameter_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.parameter_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_parameter_service`")
 class TestGet_Parameter_Service:
@@ -32,6 +36,7 @@ class TestGet_Parameter_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_parameters_list`")
 class TestGet_Parameters_List:
     """Tests for get_parameters_list function."""
@@ -48,6 +53,7 @@ class TestGet_Parameters_List:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_parameter_detail`")
 class TestGet_Parameter_Detail:
@@ -66,6 +72,7 @@ class TestGet_Parameter_Detail:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_parameter_detail_default`")
 class TestGet_Parameter_Detail_Default:
     """Tests for get_parameter_detail_default function."""
@@ -82,6 +89,7 @@ class TestGet_Parameter_Detail_Default:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `create_parameter`")
 class TestCreate_Parameter:
@@ -100,6 +108,7 @@ class TestCreate_Parameter:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `update_parameter`")
 class TestUpdate_Parameter:
     """Tests for update_parameter function."""
@@ -116,6 +125,7 @@ class TestUpdate_Parameter:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `duplicate_parameter`")
 class TestDuplicate_Parameter:
@@ -134,6 +144,7 @@ class TestDuplicate_Parameter:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `delete_parameter`")
 class TestDelete_Parameter:
     """Tests for delete_parameter function."""
@@ -150,6 +161,7 @@ class TestDelete_Parameter:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `create_parameter_item`")
 class TestCreate_Parameter_Item:
@@ -168,22 +180,6 @@ class TestCreate_Parameter_Item:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
 
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
@@ -202,6 +198,7 @@ class TestFetcher:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
     """Tests for fetcher function."""
@@ -216,3 +213,20 @@ class TestFetcher:
         # TODO: Implement error test for fetcher
         assert False, "IMPLEMENT: Error test for fetcher"
 
+
+import pytest
+
+
+@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
+class TestFetcher:
+    """Tests for fetcher function."""
+
+    def test_fetcher_success(self):
+        """Test successful fetcher execution."""
+        # TODO: Implement test for fetcher
+        assert False, "IMPLEMENT: Test for fetcher"
+
+    def test_fetcher_error(self):
+        """Test fetcher error handling."""
+        # TODO: Implement error test for fetcher
+        assert False, "IMPLEMENT: Error test for fetcher"

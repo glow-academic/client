@@ -21,4 +21,3 @@ async def get_superadmin_alias(
     if not profile_id:
         raise ValueError(f"Profile with alias {alias} not found in seed data")
     return str(profile_id)
-

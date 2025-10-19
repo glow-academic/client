@@ -1,14 +1,14 @@
 """Document queries - SQL query builders."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class DocumentQueries:
     """Query builders for document operations."""
 
     def list_documents(
-        self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str], profile_id: str
+    ) -> tuple[str, list[Any]]:
         """Build query for documents list with permissions and relationships."""
         # TODO: Create document_parameter_items junction table and query specific items per document
         query = """
@@ -60,16 +60,12 @@ class DocumentQueries:
     # get_tag_mapping removed - simulation_tags table dropped
     # Use get_parameter_item_mapping instead
 
-    def get_scenario_mapping(
-        self, scenario_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_mapping(self, scenario_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for scenario mapping."""
         query = "SELECT id, name FROM scenarios WHERE id = ANY($1)"
         return (query, [scenario_ids])
 
-    def get_document_by_id(
-        self, document_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_document_by_id(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to get document by ID."""
         query = """
         SELECT 
@@ -82,7 +78,7 @@ class DocumentQueries:
         """
         return (query, [document_id])
 
-    def get_document_parameter_items(self, document_id: str) -> Tuple[str, List[Any]]:
+    def get_document_parameter_items(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter items linked to document."""
         query = """
         SELECT 
@@ -97,7 +93,7 @@ class DocumentQueries:
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id
@@ -108,7 +104,7 @@ class DocumentQueries:
         """
         return (query, [profile_id])
 
-    def get_valid_parameter_items(self, dept_ids: List[str]) -> Tuple[str, List[Any]]:
+    def get_valid_parameter_items(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for valid parameter items for departments."""
         query = """
         SELECT DISTINCT
@@ -123,9 +119,7 @@ class DocumentQueries:
         """
         return (query, [dept_ids])
 
-    def get_documents_by_ids(
-        self, document_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_documents_by_ids(self, document_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to get multiple documents."""
         query = """
         SELECT 
@@ -137,9 +131,7 @@ class DocumentQueries:
         """
         return (query, [document_ids])
 
-    def get_document_tags_bulk(
-        self, document_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_document_tags_bulk(self, document_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to get parameter items for multiple documents."""
         query = """
         SELECT DISTINCT
@@ -150,9 +142,7 @@ class DocumentQueries:
         """
         return (query, [document_ids])
 
-    def get_departments_mapping(
-        self, dept_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_departments_mapping(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for departments mapping."""
         query = """
         SELECT id, title as name, description 
@@ -162,7 +152,7 @@ class DocumentQueries:
         """
         return (query, [dept_ids])
 
-    def update_document(self) -> Tuple[str, List[Any]]:
+    def update_document(self) -> tuple[str, list[Any]]:
         """Build query to update document."""
         query = """
         UPDATE documents SET
@@ -175,16 +165,16 @@ class DocumentQueries:
 
     def delete_document_parameter_items(
         self, document_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build query to delete document parameter items."""
         query = """
         DELETE FROM document_parameter_items WHERE document_id = $1
         """
         return (query, [document_id])
 
-    def insert_document_parameter_item(self) -> Tuple[str, List[Any]]:
+    def insert_document_parameter_item(self) -> tuple[str, list[Any]]:
         """Build query to insert document parameter item.
-        
+
         Params order: document_id, parameter_item_id
         """
         query = """
@@ -198,17 +188,17 @@ class DocumentQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_document_name(self, document_id: str) -> Tuple[str, List[Any]]:
+    def get_document_name(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to get document name."""
         query = "SELECT name FROM documents WHERE id = $1"
         return (query, [document_id])
 
-    def delete_document(self, document_id: str) -> Tuple[str, List[Any]]:
+    def delete_document(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to delete document."""
         query = "DELETE FROM documents WHERE id = $1"
         return (query, [document_id])
 
-    def bulk_update_documents(self) -> Tuple[str, List[Any]]:
+    def bulk_update_documents(self) -> tuple[str, list[Any]]:
         """Build query to bulk update documents."""
         query = """
         UPDATE documents SET
@@ -220,24 +210,22 @@ class DocumentQueries:
         return (query, [])  # Will be filled at execution time
 
     def delete_document_parameter_items_bulk(
-        self, document_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, document_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to delete parameter items for multiple documents."""
         query = """
         DELETE FROM document_parameter_items WHERE document_id = ANY($1)
         """
         return (query, [document_ids])
 
-    def bulk_delete_documents(
-        self, document_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def bulk_delete_documents(self, document_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to bulk delete documents."""
         query = "DELETE FROM documents WHERE id = ANY($1)"
         return (query, [document_ids])
 
     def get_parameter_items_for_departments(
-        self, department_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get parameter items for departments."""
         query = """
             SELECT 
@@ -254,7 +242,7 @@ class DocumentQueries:
 
     def get_parameter_items_for_department(
         self, department_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build query to get parameter items for a single department."""
         query = """
             SELECT pi.id
@@ -265,8 +253,8 @@ class DocumentQueries:
         return (query, [department_id])
 
     def get_parameter_item_mapping(
-        self, parameter_item_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, parameter_item_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get parameter item mapping."""
         query = """
             SELECT 
@@ -282,8 +270,8 @@ class DocumentQueries:
         return (query, [parameter_item_ids])
 
     def get_valid_parameter_items_for_departments(
-        self, department_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get valid parameter items for multiple departments."""
         query = """
             SELECT pi.id
@@ -293,9 +281,7 @@ class DocumentQueries:
         """
         return (query, [department_ids])
 
-    def get_document_info_with_path(
-        self, document_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_document_info_with_path(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to get document info including file path."""
         query = """
         SELECT name, file_path FROM documents WHERE id = $1
@@ -303,15 +289,15 @@ class DocumentQueries:
         return (query, [document_id])
 
     def get_documents_info_with_path(
-        self, document_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, document_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get multiple documents info including file paths."""
         query = """
         SELECT id, name, file_path FROM documents WHERE id = ANY($1)
         """
         return (query, [document_ids])
 
-    def insert_document(self) -> Tuple[str, List[Any]]:
+    def insert_document(self) -> tuple[str, list[Any]]:
         """Build query to insert a new document."""
         query = """
         INSERT INTO documents (id, name, file_path, mime_type, department_id)
@@ -319,9 +305,7 @@ class DocumentQueries:
         """
         return (query, [])  # Parameters filled at execution time
 
-    def get_document_file_info(
-        self, document_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_document_file_info(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to get document file info for download."""
         query = """
         SELECT name, file_path, mime_type FROM documents WHERE id = $1

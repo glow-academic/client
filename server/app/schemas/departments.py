@@ -1,6 +1,5 @@
 """Departments V2 API schemas with agent role assignments."""
 
-from typing import List
 
 from pydantic import BaseModel
 
@@ -14,7 +13,7 @@ from .base import AgentMapping
 class DepartmentsFilters(BaseModel):
     """Filters for departments list."""
 
-    departmentIds: List[str]
+    departmentIds: list[str]
     profileId: str
 
 
@@ -40,7 +39,7 @@ class DepartmentItem(BaseModel):
 class DepartmentsListResponse(BaseModel):
     """Response for departments list."""
 
-    departments: List[DepartmentItem]
+    departments: list[DepartmentItem]
 
 
 # ============================================================================
@@ -80,7 +79,7 @@ class DepartmentDetailResponse(BaseModel):
     agent_roles: AgentRoles
 
     # Valid agents for selection
-    valid_agent_ids: List[str]
+    valid_agent_ids: list[str]
 
     # Top-level mappings
     agent_mapping: AgentMapping
@@ -166,4 +165,3 @@ class DeleteDepartmentResponse(BaseModel):
 
     success: bool
     message: str
-

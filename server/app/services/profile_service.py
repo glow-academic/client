@@ -108,7 +108,10 @@ class ProfileService(BaseService):
         """
         query, params = self.queries.get_default_guest_profile()
         result = await self.conn.fetchrow(query, *params)
-        return UUID(result['id']) if result else None
+        if not result:
+            return None
+        # asyncpg returns UUID objects directly, convert to string then to UUID
+        return UUID(str(result['id']))
 
     async def get_simulatable_profiles(
         self, profile_id: str, department_ids: List[str]
@@ -128,28 +131,8 @@ class ProfileService(BaseService):
         Returns:
             List of ProfileItem that can be emulated
         """
-        # Get requester's role
-        role_query, role_params = self.queries.get_profile_role(profile_id)
-        role_result = await self.conn.fetchrow(role_query, *role_params)
-
-        if not role_result:
-            return []
-
-        requester_role = role_result['role']
-
-        # Get simulatable profiles based on role
-        if requester_role == "superadmin":
-            query, params = self.queries.get_simulatable_profiles_superadmin(profile_id)
-        elif requester_role == "admin":
-            query, params = self.queries.get_simulatable_profiles_admin(profile_id)
-        elif requester_role == "instructional":
-            query, params = self.queries.get_simulatable_profiles_instructional(
-                profile_id
-            )
-        else:
-            # ta and guest cannot emulate anyone
-            return []
-
+        # Get simulatable profiles in ONE optimized query (includes role check)
+        query, params = self.queries.get_simulatable_profiles_combined(profile_id)
         result = await self.conn.fetch(query, *params)
 
         return [self._row_to_profile_item(row) for row in result]
@@ -204,108 +187,133 @@ class ProfileService(BaseService):
             else:
                 raise ValueError("No default guest profile found in database")
         
-        # Get profile
+        # Get profile to determine role for simulatable profiles query
         profile = await self.get_profile(effective_profile_id)
-
         if not profile:
             raise ValueError(f"Profile not found: {effective_profile_id}")
 
-        # Get departments for this profile
-        query, params = self.queries.get_profile_departments(effective_profile_id)
-        dept_rows = await self.conn.fetch(query, *params)
+        # Get all context data in ONE optimized query
+        query, params = self.queries.get_profile_context_complete(
+            effective_profile_id, profile.role
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        departments = [
-            DepartmentItem(
-                id=str(row['id']),
-                title=row['title'],
-                description=row['description'],
-                active=row['active'],
-                createdAt="",  # Not available in this query
-                updatedAt=""   # Not available in this query
-            )
-            for row in dept_rows
-        ]
+        if not result:
+            raise ValueError(f"Profile context not found: {effective_profile_id}")
 
-        # Get cohorts for this profile across all departments
-        cohorts_data = CohortsData(items=[], memberCounts={})
-        simulations_data = SimulationsData(items=[])
+        # Parse profile from result
+        profile = ProfileItem(
+            id=str(result['id']),
+            firstName=result['first_name'],
+            lastName=result['last_name'],
+            alias=result['alias'],
+            role=result['role'],
+            active=result['active'],
+            viewedIntro=result['viewed_intro'],
+            viewedChat=result['viewed_chat'],
+            defaultProfile=result['default_profile'],
+            reqPerDay=result['req_per_day'],
+            lastLogin=result['last_login'].isoformat() if result['last_login'] else "",
+            lastActive=result['last_active'].isoformat() if result['last_active'] else "",
+            createdAt=result['created_at'].isoformat() if result['created_at'] else "",
+            updatedAt=result['updated_at'].isoformat() if result['updated_at'] else "",
+            primaryDepartmentId=str(result['primary_department_id']) if result.get('primary_department_id') else None,
+        )
 
-        if departments:
-            dept_ids = [d.id for d in departments]
-            
-            # Get cohorts via cohort_profiles junction
-            query, params = self.queries.get_profile_cohorts(effective_profile_id)
-            cohort_rows = await self.conn.fetch(query, *params)
+        # Parse departments from JSONB
+        departments = []
+        if result['departments'] and isinstance(result['departments'], list):
+            for dept in result['departments']:
+                if isinstance(dept, dict):
+                    departments.append(DepartmentItem(
+                        id=dept['id'],
+                        title=dept['title'],
+                        description=dept['description'],
+                        active=dept['active'],
+                        createdAt="",
+                        updatedAt=""
+                    ))
 
-            cohorts = [
-                CohortItem(
-                    id=str(row['id']),
-                    title=row['title'],
-                    description=row['description'],
-                    active=row['active'],
-                    departmentId=str(row['department_id']),
-                    createdAt="",  # Not available in this query
-                    updatedAt=""   # Not available in this query
-                )
-                for row in cohort_rows
-            ]
-            cohorts_data = CohortsData(items=cohorts, memberCounts={})
+        # Parse cohorts from JSONB
+        cohorts = []
+        if result['cohorts'] and isinstance(result['cohorts'], list):
+            for cohort in result['cohorts']:
+                if isinstance(cohort, dict):
+                    cohorts.append(CohortItem(
+                        id=cohort['id'],
+                        title=cohort['title'],
+                        description=cohort['description'],
+                        active=cohort['active'],
+                        departmentId=cohort['department_id'],
+                        createdAt="",
+                        updatedAt=""
+                    ))
 
-            # Get simulations from cohort memberships
-            if cohorts:
-                cohort_ids = [c.id for c in cohorts]
-                query, params = self.queries.get_cohort_simulations(cohort_ids)
-                sim_rows = await self.conn.fetch(query, *params)
+        # Parse simulations from JSONB
+        simulations = []
+        if result['simulations'] and isinstance(result['simulations'], list):
+            for sim in result['simulations']:
+                if isinstance(sim, dict):
+                    simulations.append(SimulationContextItem(
+                        id=sim['id'],
+                        name=sim['title'],
+                        description=sim['description'],
+                        departmentId=sim['department_id'],
+                        timeLimit=sim['time_limit'],
+                        active=sim['active'],
+                        defaultSimulation=sim['default_simulation'],
+                        practiceSimulation=sim['practice_simulation']
+                    ))
 
-                simulations = [
-                    SimulationContextItem(
-                        id=str(row['id']),
-                        name=row['title'],
-                        description=row['description'],
-                        departmentId=str(row['department_id']),
-                        timeLimit=row['time_limit'],
-                        active=row['active'],
-                        defaultSimulation=row['default_simulation'],
-                        practiceSimulation=row['practice_simulation']
-                    )
-                    for row in sim_rows
-                ]
-                simulations_data = SimulationsData(items=simulations)
+        # Parse simulatable profiles from JSONB
+        simulatable_profiles = []
+        if result['simulatable_profiles'] and isinstance(result['simulatable_profiles'], list):
+            for sp in result['simulatable_profiles']:
+                if isinstance(sp, dict):
+                    simulatable_profiles.append(ProfileItem(
+                        id=sp['id'],
+                        firstName=sp['first_name'],
+                        lastName=sp['last_name'],
+                        alias=sp['alias'],
+                        role=sp['role'],
+                        active=sp['active'],
+                        viewedIntro=sp['viewed_intro'],
+                        viewedChat=sp['viewed_chat'],
+                        defaultProfile=sp['default_profile'],
+                        reqPerDay=sp['req_per_day'],
+                        lastLogin=sp['last_login'].isoformat() if sp['last_login'] else "",
+                        lastActive=sp['last_active'].isoformat() if sp['last_active'] else "",
+                        createdAt=sp['created_at'].isoformat() if sp['created_at'] else "",
+                        updatedAt=sp['updated_at'].isoformat() if sp['updated_at'] else "",
+                        primaryDepartmentId=sp['primary_department_id'] if sp.get('primary_department_id') else None,
+                    ))
+
+        # Parse earliest attempt date
+        earliest_attempt_date = None
+        if result['earliest_attempt_date']:
+            earliest_attempt_date = result['earliest_attempt_date'].isoformat()
 
         # Parse breadcrumbs from pathname
         breadcrumbs = self._parse_breadcrumbs(request.pathname)
 
         # Extract IDs from collections
         dept_ids_list = [d.id for d in departments]
-        cohort_ids_list = [c.id for c in cohorts_data.items]
-        simulation_ids_list = [s.id for s in simulations_data.items]
-        
-        # Get simulatable profiles
-        simulatable_profiles = await self.get_simulatable_profiles(
-            effective_profile_id, dept_ids_list
-        )
+        cohort_ids_list = [c.id for c in cohorts]
+        simulation_ids_list = [s.id for s in simulations]
         
         # Use permissions service for available sections and redirect path
-        # profile.role is validated in the database, so we can safely cast it
         role = cast(ProfileRole, profile.role)
         available_sections = PermissionsService.get_available_subsections_for_role(role)  # type: ignore
         redirect_path = PermissionsService.get_redirect_path_for_role(role)  # type: ignore
 
-        # Get earliest attempt date for the effective profile
-        earliest_attempt_date = None
-        query, params = self.queries.get_earliest_attempt_date(effective_profile_id)
-        earliest_row = await self.conn.fetchrow(query, *params)
-        if earliest_row and earliest_row['earliest']:
-            earliest_attempt_date = earliest_row['earliest'].isoformat()
-
         return ProfileContextResponse(
             actualProfile=profile,
-            effectiveProfile=profile,  # Same for now, emulation logic would differ
+            effectiveProfile=profile,
             departments=departments,
             departmentIds=dept_ids_list,
-            cohorts=cohorts_data,
+            cohorts=CohortsData(items=cohorts, memberCounts={}),
             cohortIds=cohort_ids_list,
-            simulations=simulations_data,
+            simulations=SimulationsData(items=simulations),
             simulationIds=simulation_ids_list,
             breadcrumbs=breadcrumbs,
             simulatableProfiles=simulatable_profiles,
@@ -502,154 +510,69 @@ class ProfileService(BaseService):
             return {"error": f"Invalid profile_id format: {profile_id}"}
 
         try:
-            # Get profile
-            query, params = self.queries.get_student_simulation_report_profile(
-                str(profile_uuid)
+            # Get complete report in ONE optimized query
+            query, params = self.queries.get_student_simulation_report_complete(
+                str(profile_uuid), recent
             )
-            profile = await self.conn.fetchrow(query, *params)
+            result = await self.conn.fetchrow(query, *params)
             
-            if not profile:
+            if not result:
                 return {"error": f"Profile not found: {profile_id}"}
 
             profile_data = {
-                "id": str(profile["id"]),
-                "first_name": profile["first_name"],
-                "last_name": profile["last_name"],
-                "alias": profile["alias"],
-                "role": profile["role"],
-                "created_at": profile["created_at"].isoformat() if profile["created_at"] else None,
+                "id": str(result["id"]),
+                "first_name": result["first_name"],
+                "last_name": result["last_name"],
+                "alias": result["alias"],
+                "role": result["role"],
+                "created_at": result["created_at"].isoformat() if result["created_at"] else None,
             }
 
-            # Get all attempts with their chats, grades
-            query, params = self.queries.get_student_simulation_report_attempts(
-                str(profile_uuid)
-            )
-            attempts_raw = await self.conn.fetch(query, *params)
-
-            # Group attempts by attempt_id and chat_id
-            attempts_dict: Dict[str, Dict[str, Any]] = {}
-            
-            for row in attempts_raw:
-                attempt_id = str(row["attempt_id"])
-                chat_id = str(row["chat_id"]) if row["chat_id"] else None
-                
-                if attempt_id not in attempts_dict:
-                    attempts_dict[attempt_id] = {
-                        "simulation_id": str(row["simulation_id"]),
-                        "title": row["simulation_title"],
-                        "chats": {}
-                    }
-                
-                if chat_id and chat_id not in attempts_dict[attempt_id]["chats"]:
-                    attempts_dict[attempt_id]["chats"][chat_id] = {
-                        "id": chat_id,
-                        "title": row["chat_title"],
-                        "completed": row["chat_completed"],
-                        "completed_at": row["chat_completed_at"].isoformat() if row["chat_completed_at"] else None,
-                        "scenario": {
-                            "id": str(row["scenario_id"]) if row["scenario_id"] else None,
-                            "name": row["scenario_name"],
-                            "description": row["scenario_description"],
-                        } if row["scenario_id"] else {},
-                        "grade": {
-                            "score": row["score"],
-                            "passed": row["passed"],
-                            "time_taken": row["time_taken"],
-                            "created_at": row["grade_created_at"].isoformat() if row["grade_created_at"] else None,
-                        } if row["grade_id"] else {},
-                        "messages": [],
-                        "feedback": [],
-                        "grade_id": row["grade_id"]
-                    }
-
-            # Get messages for all chats
-            chat_ids = []
-            for attempt in attempts_dict.values():
-                chat_ids.extend(attempt["chats"].keys())
-            
-            if chat_ids:
-                # Convert string UUIDs for query
-                chat_uuids = [str(uuid.UUID(cid)) for cid in chat_ids]
-                query, params = self.queries.get_student_simulation_report_messages(
-                    chat_uuids
-                )
-                messages = await self.conn.fetch(query, *params)
-                
-                # Group messages by chat_id
-                messages_by_chat: Dict[str, List[Dict[str, Any]]] = {}
-                for msg in messages:
-                    chat_id_str = str(msg["chat_id"])
-                    if chat_id_str not in messages_by_chat:
-                        messages_by_chat[chat_id_str] = []
-                    messages_by_chat[chat_id_str].append({
-                        "created_at": msg["created_at"].isoformat() if msg["created_at"] else None,
-                        "type": msg["type"],
-                        "content": msg["content"],
-                        "completed": msg["completed"],
-                    })
-                
-                # Add messages to chats (limit to recent)
-                for attempt in attempts_dict.values():
-                    for chat_id, chat_data in attempt["chats"].items():
-                        if chat_id in messages_by_chat:
-                            all_messages = messages_by_chat[chat_id]
-                            if len(all_messages) > recent:
-                                chat_data["messages"] = all_messages[-recent:]
-                            else:
-                                chat_data["messages"] = all_messages
-
-            # Get feedback for all grades
-            grade_ids = []
-            for attempt in attempts_dict.values():
-                for chat_data in attempt["chats"].values():
-                    if chat_data.get("grade_id"):
-                        grade_ids.append(chat_data["grade_id"])
-            
-            if grade_ids:
-                query, params = self.queries.get_student_simulation_report_feedback(
-                    grade_ids
-                )
-                feedback = await self.conn.fetch(query, *params)
-                
-                # Group feedback by grade_id
-                feedback_by_grade: Dict[str, List[Dict[str, Any]]] = {}
-                for fb in feedback:
-                    grade_id = fb["simulation_chat_grade_id"]
-                    if grade_id not in feedback_by_grade:
-                        feedback_by_grade[grade_id] = []
-                    feedback_by_grade[grade_id].append({
-                        "standard": fb["standard_name"],
-                        "points": fb["points"],
-                        "feedback": fb["feedback"],
-                    })
-                
-                # Add feedback to chats
-                for attempt in attempts_dict.values():
-                    for chat_data in attempt["chats"].values():
-                        if chat_data.get("grade_id") and chat_data["grade_id"] in feedback_by_grade:
-                            chat_data["feedback"] = feedback_by_grade[chat_data["grade_id"]]
-                        # Remove grade_id from output
-                        if "grade_id" in chat_data:
-                            del chat_data["grade_id"]
-
-            # Convert to list format
+            # Parse attempts from JSONB with type-safe handling
             attempts_data = []
-            for attempt_data in attempts_dict.values():
-                for chat_data in attempt_data["chats"].values():
-                    attempts_data.append({
-                        "simulation_id": attempt_data["simulation_id"],
-                        "title": attempt_data["title"],
-                        "scenario": chat_data["scenario"],
-                        "chat": {
-                            "id": chat_data["id"],
-                            "title": chat_data["title"],
-                            "completed": chat_data["completed"],
-                            "completed_at": chat_data["completed_at"],
-                            "messages": chat_data["messages"],
-                            "grade": chat_data["grade"],
-                            "feedback": chat_data["feedback"],
-                        }
-                    })
+            if result['attempts'] and isinstance(result['attempts'], list):
+                for attempt in result['attempts']:
+                    if isinstance(attempt, dict):
+                        # Parse chat data
+                        chat_data = attempt.get('chat', {})
+                        if isinstance(chat_data, dict):
+                            # Parse messages
+                            messages = []
+                            if chat_data.get('messages') and isinstance(chat_data['messages'], list):
+                                for msg in chat_data['messages']:
+                                    if isinstance(msg, dict):
+                                        messages.append({
+                                            "created_at": msg.get("created_at"),
+                                            "type": msg.get("type"),
+                                            "content": msg.get("content"),
+                                            "completed": msg.get("completed"),
+                                        })
+                            
+                            # Parse feedback
+                            feedback = []
+                            if chat_data.get('feedback') and isinstance(chat_data['feedback'], list):
+                                for fb in chat_data['feedback']:
+                                    if isinstance(fb, dict):
+                                        feedback.append({
+                                            "standard": fb.get("standard"),
+                                            "points": fb.get("points"),
+                                            "feedback": fb.get("feedback"),
+                                        })
+                            
+                            # Build attempt entry
+                            attempts_data.append({
+                                "simulation_id": attempt.get("simulation_id"),
+                                "title": attempt.get("title"),
+                                "scenario": attempt.get("scenario", {}),
+                                "chat": {
+                                    "id": chat_data.get("id"),
+                                    "title": chat_data.get("title"),
+                                    "completed": chat_data.get("completed"),
+                                    "messages": messages,
+                                    "grade": chat_data.get("grade", {}),
+                                    "feedback": feedback,
+                                }
+                            })
 
             return {"profile": profile_data, "attempts": attempts_data}
 
@@ -814,16 +737,18 @@ class ProfileService(BaseService):
                 "created_at": result["created_at"].isoformat() if result["created_at"] else None,
             }
 
-            # Transform latest grades (jsonb array to list of dicts)
+            # Transform latest grades (jsonb array to list of dicts) with type-safe parsing
             latest_grades = []
-            for grade in result["latest_grades"]:
-                latest_grades.append({
-                    "simulation_title": grade["simulation_title"],
-                    "score": float(grade["score"]) if grade["score"] else None,
-                    "passed": grade["passed"],
-                    "time_taken": grade["time_taken"],
-                    "created_at": grade["created_at"] if grade.get("created_at") else None,
-                })
+            if result["latest_grades"] and isinstance(result["latest_grades"], list):
+                for grade in result["latest_grades"]:
+                    if isinstance(grade, dict):
+                        latest_grades.append({
+                            "simulation_title": grade.get("simulation_title"),
+                            "score": float(grade["score"]) if grade.get("score") else None,
+                            "passed": grade.get("passed"),
+                            "time_taken": grade.get("time_taken"),
+                            "created_at": grade.get("created_at"),
+                        })
 
             return {
                 "profile": profile_data,

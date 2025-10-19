@@ -1,15 +1,15 @@
 """Staff queries - SQL query builders."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class StaffQueries:
     """Query builders for staff operations."""
 
     def list_staff(
-        self, department_ids: List[str], current_profile_id: str, campus_domain: str
-    ) -> Tuple[str, List[Any]]:
-        """Build query for staff list with permissions."""
+        self, department_ids: list[str], current_profile_id: str, campus_domain: str
+    ) -> tuple[str, list[Any]]:
+        """Build query for staff list with permissions and JSONB mappings."""
         query = """
         WITH profile_cohorts AS (
             SELECT 
@@ -31,6 +31,32 @@ class StaffQueries:
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
+        ),
+        all_cohort_ids AS (
+            SELECT DISTINCT unnest(cohort_ids) as cohort_id
+            FROM profile_cohorts
+        ),
+        cohort_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                c.id::text,
+                jsonb_build_object(
+                    'name', c.title,
+                    'description', COALESCE(c.description, '')
+                )
+            ), '{}'::jsonb) as cohort_mapping
+            FROM cohorts c
+            WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object(
+                    'name', d.title,
+                    'description', COALESCE(d.description, '')
+                )
+            ), '{}'::jsonb) as department_mapping
+            FROM departments d
+            WHERE d.id = ANY($1)
         )
         SELECT DISTINCT ON (p.id)
             p.id as profile_id,
@@ -55,34 +81,38 @@ class StaffQueries:
             CASE 
                 WHEN up.role = 'superadmin' AND p.default_profile = false THEN true
                 ELSE false
-            END as can_delete
+            END as can_delete,
+            cmd.cohort_mapping,
+            dmd.department_mapping
         FROM profiles p
         JOIN profile_departments pd ON pd.profile_id = p.id
         LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
         LEFT JOIN recent_runs rr ON rr.profile_id = p.id
         LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         CROSS JOIN user_profile up
+        CROSS JOIN cohort_mapping_data cmd
+        CROSS JOIN department_mapping_data dmd
         WHERE pd.department_id = ANY($1)
         ORDER BY p.id, p.last_name, p.first_name
         """
 
         return (query, [department_ids, current_profile_id, campus_domain])
 
-    def get_cohort_mapping(
-        self, cohort_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_cohort_mapping(self, cohort_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for cohort mapping."""
         query = "SELECT id, title as name, COALESCE(description, '') as description FROM cohorts WHERE id = ANY($1)"
         return (query, [cohort_ids])
 
     def get_department_mapping(
-        self, department_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query for department mapping."""
-        query = "SELECT id, title as name, description FROM departments WHERE id = ANY($1)"
+        query = (
+            "SELECT id, title as name, description FROM departments WHERE id = ANY($1)"
+        )
         return (query, [department_ids])
 
-    def get_profile_by_id(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_profile_by_id(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile by ID."""
         query = """
         SELECT 
@@ -97,9 +127,62 @@ class StaffQueries:
         """
         return (query, [profile_id])
 
-    def get_profile_department(
-        self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_staff_detail_complete(self, profile_id: str) -> tuple[str, list[Any]]:
+        """Build complete query for staff detail with all related data and JSONB mappings."""
+        query = """
+        WITH profile_data AS (
+            SELECT 
+                p.first_name || ' ' || p.last_name as name,
+                p.alias,
+                p.role,
+                prl.requests_per_day as requests_per_day,
+                p.active
+            FROM profiles p
+            LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+            WHERE p.id = $1
+        ),
+        profile_department AS (
+            SELECT department_id 
+            FROM profile_departments 
+            WHERE profile_id = $1
+            LIMIT 1
+        ),
+        profile_cohorts AS (
+            SELECT ARRAY_AGG(cohort_id::text ORDER BY cohort_id) as cohort_ids
+            FROM cohort_profiles 
+            WHERE profile_id = $1 AND active = true
+        ),
+        cohort_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                c.id::text,
+                jsonb_build_object(
+                    'name', c.title,
+                    'description', COALESCE(c.description, '')
+                )
+            ), '{}'::jsonb) as cohort_mapping
+            FROM cohorts c
+            WHERE c.id IN (
+                SELECT cohort_id FROM cohort_profiles 
+                WHERE profile_id = $1 AND active = true
+            )
+        )
+        SELECT 
+            pd.name,
+            pd.alias,
+            pd.role,
+            pd.requests_per_day,
+            pd.active,
+            COALESCE(pde.department_id::text, '') as department_id,
+            COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
+            cmd.cohort_mapping
+        FROM profile_data pd
+        CROSS JOIN cohort_mapping_data cmd
+        LEFT JOIN profile_department pde ON true
+        LEFT JOIN profile_cohorts pc ON true
+        """
+        return (query, [profile_id])
+
+    def get_profile_department(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile's department."""
         query = """
         SELECT department_id FROM profile_departments 
@@ -108,7 +191,7 @@ class StaffQueries:
         """
         return (query, [profile_id])
 
-    def get_profile_cohorts(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_profile_cohorts(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile's cohorts."""
         query = """
         SELECT cohort_id FROM cohort_profiles 
@@ -118,7 +201,7 @@ class StaffQueries:
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id, d.title as name, d.description
@@ -128,24 +211,50 @@ class StaffQueries:
         """
         return (query, [])
 
-    def get_profiles_by_ids(
-        self, profile_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
-        """Build query to get multiple profiles."""
+    def get_profiles_by_ids(self, profile_ids: list[str]) -> tuple[str, list[Any]]:
+        """Build query to get multiple profiles with department data and JSONB mapping."""
         query = """
+        WITH profile_departments_agg AS (
+            SELECT 
+                profile_id,
+                ARRAY_AGG(DISTINCT department_id::text) as department_ids
+            FROM profile_departments
+            WHERE profile_id = ANY($1)
+            GROUP BY profile_id
+        ),
+        all_department_ids AS (
+            SELECT DISTINCT department_id
+            FROM profile_departments
+            WHERE profile_id = ANY($1)
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object(
+                    'name', d.title,
+                    'description', COALESCE(d.description, '')
+                )
+            ), '{}'::jsonb) as department_mapping
+            FROM departments d
+            WHERE d.id IN (SELECT department_id FROM all_department_ids)
+        )
         SELECT 
             p.id,
             p.role,
-            prl.requests_per_day as requests_per_day
+            prl.requests_per_day as requests_per_day,
+            COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
+            dmd.department_mapping
         FROM profiles p
         LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+        LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
+        CROSS JOIN department_mapping_data dmd
         WHERE p.id = ANY($1)
         """
         return (query, [profile_ids])
 
     def get_profile_departments_bulk(
-        self, profile_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, profile_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to get departments for multiple profiles."""
         query = """
         SELECT DISTINCT department_id
@@ -154,9 +263,7 @@ class StaffQueries:
         """
         return (query, [profile_ids])
 
-    def get_departments_mapping(
-        self, dept_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_departments_mapping(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for departments mapping."""
         query = """
         SELECT id, title as name, description 
@@ -166,7 +273,7 @@ class StaffQueries:
         """
         return (query, [dept_ids])
 
-    def get_profile_name(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_profile_name(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile name."""
         query = """
         SELECT first_name || ' ' || last_name as name 
@@ -174,7 +281,7 @@ class StaffQueries:
         """
         return (query, [profile_id])
 
-    def update_profile(self) -> Tuple[str, List[Any]]:
+    def update_profile(self) -> tuple[str, list[Any]]:
         """Build query to update profile."""
         query = """
         UPDATE profiles SET
@@ -185,7 +292,7 @@ class StaffQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def update_profile_department(self) -> Tuple[str, List[Any]]:
+    def update_profile_department(self) -> tuple[str, list[Any]]:
         """Build query to update profile department."""
         query = """
         UPDATE profile_departments SET
@@ -194,7 +301,7 @@ class StaffQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def bulk_update_profiles(self) -> Tuple[str, List[Any]]:
+    def bulk_update_profiles(self) -> tuple[str, list[Any]]:
         """Build query to bulk update profiles."""
         query = """
         UPDATE profiles SET
@@ -204,7 +311,7 @@ class StaffQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def bulk_update_profile_departments(self) -> Tuple[str, List[Any]]:
+    def bulk_update_profile_departments(self) -> tuple[str, list[Any]]:
         """Build query to bulk update profile departments."""
         query = """
         UPDATE profile_departments SET
@@ -213,21 +320,21 @@ class StaffQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def check_default_profile(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def check_default_profile(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to check if profile is default."""
         query = """
         SELECT default_profile FROM profiles WHERE id = $1
         """
         return (query, [profile_id])
 
-    def delete_profile(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def delete_profile(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to delete profile."""
         query = "DELETE FROM profiles WHERE id = $1"
         return (query, [profile_id])
 
     def bulk_check_default_profiles(
-        self, profile_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+        self, profile_ids: list[str]
+    ) -> tuple[str, list[Any]]:
         """Build query to check which profiles are default."""
         query = """
         SELECT id FROM profiles 
@@ -235,24 +342,22 @@ class StaffQueries:
         """
         return (query, [profile_ids])
 
-    def bulk_delete_profiles(
-        self, profile_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def bulk_delete_profiles(self, profile_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query to bulk delete profiles."""
         query = "DELETE FROM profiles WHERE id = ANY($1)"
         return (query, [profile_ids])
 
-    def check_alias_exists(self, alias: str) -> Tuple[str, List[Any]]:
+    def check_alias_exists(self, alias: str) -> tuple[str, list[Any]]:
         """Build query to check if alias exists."""
         query = "SELECT id, alias FROM profiles WHERE alias = $1"
         return (query, [alias])
 
-    def check_aliases_exist(self, aliases: List[str]) -> Tuple[str, List[Any]]:
+    def check_aliases_exist(self, aliases: list[str]) -> tuple[str, list[Any]]:
         """Build query to check if aliases exist."""
         query = "SELECT id, alias FROM profiles WHERE alias = ANY($1)"
         return (query, [aliases])
 
-    def create_profile(self) -> Tuple[str, List[Any]]:
+    def create_profile(self) -> tuple[str, list[Any]]:
         """Build query to create a profile."""
         query = """
         INSERT INTO profiles (
@@ -265,7 +370,7 @@ class StaffQueries:
         """
         return (query, [])
 
-    def insert_profile_department(self) -> Tuple[str, List[Any]]:
+    def insert_profile_department(self) -> tuple[str, list[Any]]:
         """Build query to insert profile-department relationship."""
         query = """
         INSERT INTO profile_departments (profile_id, department_id)
@@ -274,7 +379,7 @@ class StaffQueries:
         """
         return (query, [])
 
-    def upsert_profile_request_limit(self) -> Tuple[str, List[Any]]:
+    def upsert_profile_request_limit(self) -> tuple[str, list[Any]]:
         """Build query to upsert profile request limit."""
         query = """
         INSERT INTO profile_request_limits (profile_id, requests_per_day, active)

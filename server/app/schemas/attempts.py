@@ -1,6 +1,5 @@
 """Attempts schemas for v2 API."""
 
-from typing import List
 
 from pydantic import BaseModel
 
@@ -8,7 +7,7 @@ from pydantic import BaseModel
 class BulkArchiveAttemptsRequest(BaseModel):
     """Request to bulk archive or unarchive simulation attempts."""
 
-    attemptIds: List[str]
+    attemptIds: list[str]
     archived: bool
 
 
@@ -39,4 +38,3 @@ class UpdateChatTimestampResponse(BaseModel):
 
     success: bool
     message: str
-

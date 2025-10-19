@@ -6,14 +6,13 @@ This version intelligently appends missing tests without overwriting existing on
 
 import ast
 from pathlib import Path
-from typing import List
 
 
 # (analyze_route_file and analyze_service_file functions remain the same)
-def analyze_route_file(file_path: str) -> List[str]:
+def analyze_route_file(file_path: str) -> list[str]:
     """Extract route function names from a Python file."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
 
         tree = ast.parse(content)
@@ -43,10 +42,10 @@ def analyze_route_file(file_path: str) -> List[str]:
         return []
 
 
-def analyze_service_file(file_path: str) -> List[str]:
+def analyze_service_file(file_path: str) -> list[str]:
     """Extract function names from a service file."""
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
         tree = ast.parse(content)
         functions = []
@@ -60,12 +59,12 @@ def analyze_service_file(file_path: str) -> List[str]:
         return []
 
 
-def analyze_test_file(file_path: str) -> List[str]:
+def analyze_test_file(file_path: str) -> list[str]:
     """Extract test class names from an existing test file."""
     if not Path(file_path).exists():
         return []
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             content = f.read()
         tree = ast.parse(content)
         classes = [
@@ -126,7 +125,7 @@ class Test{func_name.title()}:
 # --- Full File Generation (for new files) ---
 
 
-def generate_route_test(module_name: str, functions: List[str]) -> str:
+def generate_route_test(module_name: str, functions: list[str]) -> str:
     """Generate test content for a brand new route module."""
     test_content = f'''"""
 Tests for app.routes.{module_name}
@@ -154,7 +153,7 @@ def mock_session():
     return test_content + "\n"
 
 
-def generate_service_test(module_path: str, functions: List[str]) -> str:
+def generate_service_test(module_path: str, functions: list[str]) -> str:
     """Generate test content for a brand new service module."""
     import_path = module_path.replace("/", ".")
     test_content = f'''"""
@@ -392,9 +391,7 @@ def main():
 
     # --- Summary ---
     print("\n📊 Summary:")
-    print(
-        f"  Processed: {stats['services']} services, {stats['utils']} utils"
-    )
+    print(f"  Processed: {stats['services']} services, {stats['utils']} utils")
     print(
         f"  ✨ Created: {stats['created']} | 🔄 Updated: {stats['updated']} | 🔥 Deleted: {stats['deleted']}"
     )

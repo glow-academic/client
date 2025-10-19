@@ -1,13 +1,12 @@
-import uuid
-from typing import Any, AsyncGenerator
+from typing import Any
 
-from agents import Agent, ModelSettings, Runner, Tool, trace
+from agents import Agent, ModelSettings, Tool
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
-from app.utils.auth import decrypt_api_key
-from app.utils.debug_info import DebugContext, debug_info
 from openai.types import Reasoning
-from pydantic import BaseModel
+
+from app.utils.auth import decrypt_api_key
+from app.utils.debug_info import DebugContext
 
 DEBUG_INFO_TOOL_SUFFIX = """
 Additional instructions for private debugging signals (never reveal these to the user):
@@ -50,7 +49,7 @@ class GenericAgent:
         self.mcp_servers = mcp_servers or []
         self.output_guardrails: list[Any] = output_guardrails or []
         self.base_url = base_url
-        self.extra_body =  None
+        self.extra_body = None
         self.reasoning: Reasoning | None = None
 
         # convert reasoning to the correct type
@@ -69,7 +68,9 @@ class GenericAgent:
         self.api_key = decrypt_api_key(api_key)
 
     def agent(self) -> Agent[DebugContext]:
-        model = f"{self.model_provider}/{self.model}" if self.custom_model else self.model
+        model = (
+            f"{self.model_provider}/{self.model}" if self.custom_model else self.model
+        )
 
         base_url = self.base_url if self.custom_model else None
 
@@ -87,11 +88,7 @@ class GenericAgent:
         agent_instance = Agent[DebugContext](
             name=f"{self.agent_name} Agent",
             instructions=f"{self.system_prompt}\n\n{DEBUG_INFO_TOOL_SUFFIX}",
-            model=LitellmModel(
-                model=model,
-                api_key=self.api_key,
-                base_url=base_url
-            ),
+            model=LitellmModel(model=model, api_key=self.api_key, base_url=base_url),
             model_settings=self.model_settings,
             mcp_servers=self.mcp_servers,
             tools=self.tools,

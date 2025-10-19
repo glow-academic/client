@@ -1,2 +1,1 @@
 """Analytics SQL queries."""
-

@@ -3,13 +3,16 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.services.analytics_service import get_analytics_service
-from app.schemas.analytics import (AnalyticsFilters,
-                                   AttemptImprovementResponse,
-                                   CohortPerformanceResponse,
-                                   SkillPerformanceResponse)
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.analytics import (
+    AnalyticsFilters,
+    AttemptImprovementResponse,
+    CohortPerformanceResponse,
+    SkillPerformanceResponse,
+)
+from app.services.analytics_service import get_analytics_service
 
 router = APIRouter(prefix="/secondary", tags=["analytics-secondary"])
 
@@ -51,4 +54,3 @@ async def get_skill_performance(
         return await service.get_skill_performance(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

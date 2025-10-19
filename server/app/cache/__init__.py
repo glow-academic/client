@@ -4,4 +4,3 @@ from app.cache.keys import Key
 from app.cache.query_client import QueryClient
 
 __all__ = ["QueryClient", "Key"]
-

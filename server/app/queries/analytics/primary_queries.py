@@ -1,6 +1,6 @@
 """Primary analytics queries - 3 complex metrics."""
 
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -15,12 +15,12 @@ class PrimaryQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build growth data query - aggregates multiple metrics over time."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -116,12 +116,12 @@ class PrimaryQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build persona performance query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -133,9 +133,12 @@ class PrimaryQueries:
             department_ids,
         )
 
-        query = """
+        query = (
+            """
             WITH filt AS (
-                SELECT * FROM analytics a WHERE """ + where_clause + """
+                SELECT * FROM analytics a WHERE """
+            + where_clause
+            + """
             ),
             -- Get distinct persona IDs from filtered data
             persona_ids AS (
@@ -220,6 +223,7 @@ class PrimaryQueries:
                 'personaColors', COALESCE((SELECT colors FROM persona_colors), '{}'::json)
             ) AS result
         """
+        )
 
         return query, params
 
@@ -227,12 +231,12 @@ class PrimaryQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build rubric heatmap query - correlation matrix of standard groups."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -244,9 +248,12 @@ class PrimaryQueries:
             department_ids,
         )
 
-        query = """
+        query = (
+            """
             WITH filt AS (
-                SELECT * FROM analytics a WHERE """ + where_clause + """
+                SELECT * FROM analytics a WHERE """
+            + where_clause
+            + """
             ),
             -- Get distinct chat IDs from filtered data
             filtered_chats AS (
@@ -436,6 +443,6 @@ class PrimaryQueries:
                 'validRubricIds', COALESCE((SELECT payload FROM valid_rubric_ids), '[]'::json)
             ) AS result
         """
+        )
 
         return query, params
-

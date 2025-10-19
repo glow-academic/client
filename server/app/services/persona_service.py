@@ -1,23 +1,32 @@
 """Persona service layer - business logic for persona operations."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
-from app.db import transaction
 from app.queries.persona_queries import PersonaQueries
-from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
-                              ScenarioMappingItem)
-from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
-                                  DebugInfoItem, DeletePersonaRequest,
-                                  DeletePersonaResponse,
-                                  DuplicatePersonaRequest,
-                                  DuplicatePersonaResponse,
-                                  PersonaDetailDefaultRequest,
-                                  PersonaDetailRequest, PersonaDetailResponse,
-                                  PersonaItem, PersonasFilters,
-                                  PersonasListResponse, UpdatePersonaRequest,
-                                  UpdatePersonaResponse)
+from app.schemas.base import (
+    DepartmentMappingItem,
+    ModelMappingItem,
+)
+from app.schemas.personas import (
+    CreatePersonaRequest,
+    CreatePersonaResponse,
+    DebugInfoItem,
+    DeletePersonaRequest,
+    DeletePersonaResponse,
+    DuplicatePersonaRequest,
+    DuplicatePersonaResponse,
+    PersonaDetailDefaultRequest,
+    PersonaDetailRequest,
+    PersonaDetailResponse,
+    PersonaItem,
+    PersonasFilters,
+    PersonasListResponse,
+    UpdatePersonaRequest,
+    UpdatePersonaResponse,
+)
 from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
@@ -47,31 +56,30 @@ class PersonaService(BaseService):
 
         for row in result:
             # Convert UUID arrays to string arrays
-            scenario_ids = [str(sid) for sid in (row['scenario_ids'] or [])]
+            scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
 
             personas.append(
                 PersonaItem(
-                    persona_id=str(row['persona_id']),
-                    name=row['persona_name'],  # Added name
-                    description=row['description'],
-                    color=row['color'],
-                    icon=row['icon'],
+                    persona_id=str(row["persona_id"]),
+                    name=row["persona_name"],  # Added name
+                    description=row["description"],
+                    color=row["color"],
+                    icon=row["icon"],
                     scenario_ids=scenario_ids,
-                    model_id=str(row['model_id']),
-                    reasoning=row['reasoning'],
-                    temperature=float(row['temperature']),
-                    active=row['active'],
-                    num_scenarios=row['num_scenarios'],
-                    can_edit=row['can_edit'],
-                    can_duplicate=row['can_duplicate'],
-                    can_delete=row['can_delete'],
+                    model_id=str(row["model_id"]),
+                    reasoning=row["reasoning"],
+                    temperature=float(row["temperature"]),
+                    active=row["active"],
+                    num_scenarios=row["num_scenarios"],
+                    can_edit=row["can_edit"],
+                    can_duplicate=row["can_duplicate"],
+                    can_delete=row["can_delete"],
                 )
             )
 
-            if row['model_id'] and row['model_name']:
-                model_mapping[str(row['model_id'])] = ModelMappingItem(
-                    name=row['model_name'],
-                    description=row['model_description'] or ''
+            if row["model_id"] and row["model_name"]:
+                model_mapping[str(row["model_id"])] = ModelMappingItem(
+                    name=row["model_name"], description=row["model_description"] or ""
                 )
 
         # Get scenario mapping with enhanced data
@@ -80,6 +88,7 @@ class PersonaService(BaseService):
         ):
             # Create scenario service locally (avoid anti-pattern)
             from app.services.scenario_service import ScenarioService
+
             scenario_service = ScenarioService(self.conn)
             scenario_mapping = await scenario_service.build_enhanced_scenario_mapping(
                 scenario_ids_to_fetch
@@ -107,33 +116,37 @@ class PersonaService(BaseService):
         duplicate_query = self.queries.insert_duplicate_persona()
         new_persona = await self.conn.fetchrow(
             duplicate_query,
-            result['name'],
-            result['description'],
-            result['system_prompt'],
-            result['temperature'],
-            result['reasoning'],
-            result['model_id'],
-            result['department_id'],
-            result['color'],
-            result['icon'],
+            result["name"],
+            result["description"],
+            result["system_prompt"],
+            result["temperature"],
+            result["reasoning"],
+            result["model_id"],
+            result["department_id"],
+            result["color"],
+            result["icon"],
         )
 
         if not new_persona:
             raise ValueError("Failed to create duplicate persona")
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_persona_all(),
                 keys.tag_analytics_all(),
-            ])
+            ]
+        )
 
         return DuplicatePersonaResponse(
             success=True,
-            personaId=str(new_persona['id']),
+            personaId=str(new_persona["id"]),
             message=f"Persona '{result['name']}' duplicated successfully",
         )
 
-    async def delete_persona(self, request: DeletePersonaRequest) -> DeletePersonaResponse:
+    async def delete_persona(
+        self, request: DeletePersonaRequest
+    ) -> DeletePersonaResponse:
         """Delete a persona using dynamic SQL."""
 
         # Check if persona is in use
@@ -158,17 +171,21 @@ class PersonaService(BaseService):
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_persona_by_id(request.personaId),
                 keys.tag_persona_all(),
                 keys.tag_analytics_all(),
-            ])
+            ]
+        )
 
         return DeletePersonaResponse(
             success=True, message=f"Persona '{persona['name']}' deleted successfully"
         )
 
-    @with_cache(lambda self, request: keys.persona_by_id(request.personaId, request.profileId))
+    @with_cache(
+        lambda self, request: keys.persona_by_id(request.personaId, request.profileId)
+    )
     async def get_persona_detail(
         self, request: PersonaDetailRequest
     ) -> PersonaDetailResponse:
@@ -191,16 +208,18 @@ class PersonaService(BaseService):
             request.profileId
         )
         valid_department_ids = [
-            str(row['id']) for row in await self.conn.fetch(query, *params)
+            str(row["id"]) for row in await self.conn.fetch(query, *params)
         ]
 
         # Get models with mapping
         query, params = self.queries.get_valid_models()
         models_result = await self.conn.fetch(query, *params)
 
-        valid_model_ids = [str(row['id']) for row in models_result]
+        valid_model_ids = [str(row["id"]) for row in models_result]
         model_mapping = {
-            str(row['id']): ModelMappingItem(name=row['name'], description=row['description'])
+            str(row["id"]): ModelMappingItem(
+                name=row["name"], description=row["description"]
+            )
             for row in models_result
         }
 
@@ -209,8 +228,8 @@ class PersonaService(BaseService):
         departments_result = await self.conn.fetch(query, *params)
 
         department_mapping = {
-            str(row['id']): DepartmentMappingItem(
-                name=row['name'], description=row['description'] or ''
+            str(row["id"]): DepartmentMappingItem(
+                name=row["name"], description=row["description"] or ""
             )
             for row in departments_result
         }
@@ -218,30 +237,30 @@ class PersonaService(BaseService):
         # Get persona usage in scenarios
         usage_query, usage_params = self.queries.check_persona_usage(request.personaId)
         usage_result = await self.conn.fetchrow(usage_query, *usage_params)
-        scenario_count = int(usage_result['usage_count']) if usage_result else 0
+        scenario_count = int(usage_result["usage_count"]) if usage_result else 0
         in_use = scenario_count > 0
 
         # Get profile role for permissions
         role_query, role_params = self.queries.get_profile_role(request.profileId)
         role_result = await self.conn.fetchrow(role_query, *role_params)
-        user_role = role_result['role'] if role_result else "student"
+        user_role = role_result["role"] if role_result else "student"
 
         # Calculate permissions
         is_superadmin = user_role == "superadmin"
         is_admin = user_role in ("admin", "superadmin")
-        is_default = persona['default_persona']
+        is_default = persona["default_persona"]
 
         # Edit permission: superadmin can edit everything, non-default can be edited by admins
         can_edit = is_superadmin or (is_admin and not is_default)
-        
+
         # Duplicate permission: everyone can duplicate
         can_duplicate = True
-        
+
         # Delete permission: can delete if not in use
         can_delete = not in_use
 
         # Get debug info (placeholder - adjust based on actual debug table)
-        debug_info: List[DebugInfoItem] = []
+        debug_info: list[DebugInfoItem] = []
         # Optional: implement debug log fetching if table exists
 
         # Define constants/presets
@@ -314,17 +333,17 @@ class PersonaService(BaseService):
 
         return PersonaDetailResponse(
             # Basic fields
-            name=persona['name'],
-            description=persona['description'],
-            department_id=str(persona['department_id']),
-            active=persona['active'],
-            default_persona=persona['default_persona'],
-            color=persona['color'],
-            icon=persona['icon'],
-            model_id=str(persona['model_id']),
-            reasoning=persona['reasoning'],
-            temperature=float(persona['temperature']),
-            system_prompt=persona['system_prompt'],
+            name=persona["name"],
+            description=persona["description"],
+            department_id=str(persona["department_id"]),
+            active=persona["active"],
+            default_persona=persona["default_persona"],
+            color=persona["color"],
+            icon=persona["icon"],
+            model_id=str(persona["model_id"]),
+            reasoning=persona["reasoning"],
+            temperature=float(persona["temperature"]),
+            system_prompt=persona["system_prompt"],
             # Usage and permissions
             in_use=in_use,
             scenario_count=scenario_count,
@@ -367,12 +386,14 @@ class PersonaService(BaseService):
 
         # Reuse the detail logic with the found persona_id
         detail_request = PersonaDetailRequest(
-            personaId=str(persona['id']), profileId=request.profileId
+            personaId=str(persona["id"]), profileId=request.profileId
         )
 
         return await self._fetch_persona_detail(detail_request)
 
-    async def create_persona(self, request: CreatePersonaRequest) -> CreatePersonaResponse:
+    async def create_persona(
+        self, request: CreatePersonaRequest
+    ) -> CreatePersonaResponse:
         """Create a new persona using dynamic SQL."""
 
         query = self.queries.create_persona()
@@ -395,18 +416,22 @@ class PersonaService(BaseService):
             raise ValueError("Failed to create persona")
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_persona_all(),
                 keys.tag_analytics_all(),  # Personas affect persona performance metrics
-            ])
+            ]
+        )
 
         return CreatePersonaResponse(
             success=True,
-            personaId=str(result['id']),
+            personaId=str(result["id"]),
             message=f"Persona '{request.name}' created successfully",
         )
 
-    async def update_persona(self, request: UpdatePersonaRequest) -> UpdatePersonaResponse:
+    async def update_persona(
+        self, request: UpdatePersonaRequest
+    ) -> UpdatePersonaResponse:
         """Update an existing persona using dynamic SQL."""
 
         # Check if persona exists
@@ -435,11 +460,13 @@ class PersonaService(BaseService):
         )
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_persona_by_id(request.personaId),
                 keys.tag_persona_all(),
                 keys.tag_analytics_all(),  # Persona changes affect analytics
-            ])
+            ]
+        )
 
         return UpdatePersonaResponse(
             success=True, message=f"Persona '{request.name}' updated successfully"
@@ -448,15 +475,15 @@ class PersonaService(BaseService):
     @with_cache(lambda self, query, limit: keys.persona_search(query, limit))
     async def search_personas(
         self, query: str, limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Fuzzy search personas by name.
         Returns scored and sorted results.
-        
+
         Args:
             query: Search query string
             limit: Maximum number of results to return
-            
+
         Returns:
             List of persona dictionaries with scores
         """
@@ -480,27 +507,27 @@ class PersonaService(BaseService):
         results = []
         for persona in personas:
             score = self._score_persona(q_norm, toks, persona["name"])
-            results.append({
-                "id": str(persona["id"]),
-                "name": persona["name"],
-                "description": persona["description"],
-                "score": score,
-            })
+            results.append(
+                {
+                    "id": str(persona["id"]),
+                    "name": persona["name"],
+                    "description": persona["description"],
+                    "score": score,
+                }
+            )
 
         results.sort(key=lambda r: (-r["score"], r["name"] or ""))
         return results[:limit]
 
-    def _score_persona(
-        self, q_norm: str, toks: List[str], name: str | None
-    ) -> int:
+    def _score_persona(self, q_norm: str, toks: list[str], name: str | None) -> int:
         """
         Score persona relevance based on name matching.
-        
+
         Args:
             q_norm: Normalized query string
             toks: Query tokens
             name: Persona name
-            
+
         Returns:
             Relevance score (higher is better)
         """
@@ -534,26 +561,30 @@ class PersonaService(BaseService):
 
     # ===== Analytics Methods for MCP Tools =====
 
-    @with_cache(lambda self, persona_id, window_days=30: keys.persona_response_times(persona_id, window_days))
+    @with_cache(
+        lambda self, persona_id, window_days=30: keys.persona_response_times(
+            persona_id, window_days
+        )
+    )
     async def get_persona_response_times(
         self, persona_id: str, window_days: int = 30
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get persona response time analysis.
-        
+
         Analyze response times for a specific persona across its scenarios.
-        
+
         Args:
             persona_id: UUID string of the persona
             window_days: Analysis window in days (default: 30)
-            
+
         Returns:
             Dict with structure: {"persona": {...}, "stats": {...}, "recent_responses": [...]}
             or {"error": "..."}
         """
         from datetime import datetime, timedelta
-        
+
         try:
-            persona_uuid = __import__('uuid').UUID(persona_id)
+            persona_uuid = __import__("uuid").UUID(persona_id)
         except ValueError:
             return {"error": f"Invalid persona_id format: {persona_id}"}
 
@@ -561,13 +592,13 @@ class PersonaService(BaseService):
             # Get persona details with scenarios
             query, params = self.queries.get_persona_with_scenarios(str(persona_uuid))
             persona = await self.conn.fetchrow(query, *params)
-            
+
             if not persona:
                 return {"error": f"Persona not found: {persona_id}"}
 
             # Parse scenarios from JSON
             scenarios = persona["scenarios"] if persona["scenarios"] else []
-            
+
             if not scenarios:
                 return {
                     "persona": {
@@ -589,32 +620,38 @@ class PersonaService(BaseService):
             )
             response_data = await self.conn.fetch(query, *params)
 
-            response_times: List[float] = []
-            recent_responses: List[Dict[str, Any]] = []
+            response_times: list[float] = []
+            recent_responses: list[dict[str, Any]] = []
 
             for row in response_data:
                 response_time_seconds = float(row["response_time_seconds"])
                 response_times.append(response_time_seconds)
-                
-                recent_responses.append({
-                    "chat_id": str(row["chat_id"]),
-                    "scenario_name": row["scenario_name"],
-                    "query_time": row["query_time"].isoformat(),
-                    "response_time": row["response_time"].isoformat(),
-                    "response_time_seconds": response_time_seconds,
-                    "query_length": row["query_length"],
-                    "response_length": row["response_length"],
-                })
+
+                recent_responses.append(
+                    {
+                        "chat_id": str(row["chat_id"]),
+                        "scenario_name": row["scenario_name"],
+                        "query_time": row["query_time"].isoformat(),
+                        "response_time": row["response_time"].isoformat(),
+                        "response_time_seconds": response_time_seconds,
+                        "query_length": row["query_length"],
+                        "response_length": row["response_length"],
+                    }
+                )
 
             # Calculate statistics
             if response_times:
                 sorted_times = sorted(response_times)
                 stats = {
                     "total_responses": len(response_times),
-                    "avg_response_time": round(sum(response_times) / len(response_times), 2),
+                    "avg_response_time": round(
+                        sum(response_times) / len(response_times), 2
+                    ),
                     "min_response_time": round(min(response_times), 2),
                     "max_response_time": round(max(response_times), 2),
-                    "median_response_time": round(sorted_times[len(sorted_times) // 2], 2),
+                    "median_response_time": round(
+                        sorted_times[len(sorted_times) // 2], 2
+                    ),
                     "responses_under_5s": len([t for t in response_times if t < 5]),
                     "responses_under_10s": len([t for t in response_times if t < 10]),
                     "responses_over_30s": len([t for t in response_times if t > 30]),
@@ -645,19 +682,19 @@ class PersonaService(BaseService):
     # ===== Overview Methods for MCP Tools =====
 
     @with_cache(lambda self, persona_id: keys.persona_overview(persona_id))
-    async def get_persona_overview(self, persona_id: str) -> Dict[str, Any]:
+    async def get_persona_overview(self, persona_id: str) -> dict[str, Any]:
         """Get persona overview with all related data in ONE optimized query.
-        
+
         Returns persona details and associated scenarios.
-        
+
         Args:
             persona_id: UUID string of the persona
-            
+
         Returns:
             Dict with persona overview data or {"error": "..."}
         """
         import uuid
-        
+
         try:
             persona_uuid = uuid.UUID(persona_id)
         except ValueError:
@@ -666,30 +703,40 @@ class PersonaService(BaseService):
         try:
             query, params = self.queries.get_persona_overview_complete(persona_uuid)
             result = await self.conn.fetchrow(query, *params)
-            
+
             if not result:
                 return {"error": f"Persona not found: {persona_id}"}
 
             # Transform scenarios (jsonb array to list of dicts)
             scenario_list = []
             for scenario in result["scenarios"]:
-                scenario_list.append({
-                    "id": str(scenario["id"]),
-                    "name": scenario["name"],
-                    "problem_statement": scenario["problem_statement"],
-                    "default_scenario": scenario["default_scenario"],
-                    "created_at": scenario["created_at"] if scenario.get("created_at") else None,
-                })
+                scenario_list.append(
+                    {
+                        "id": str(scenario["id"]),
+                        "name": scenario["name"],
+                        "problem_statement": scenario["problem_statement"],
+                        "default_scenario": scenario["default_scenario"],
+                        "created_at": scenario["created_at"]
+                        if scenario.get("created_at")
+                        else None,
+                    }
+                )
 
             return {
                 "id": str(result["id"]),
                 "name": result["name"],
                 "description": result["description"],
                 "system_prompt": result["system_prompt"],
-                "temperature": float(result["temperature"]) if result["temperature"] else None,
+                "temperature": float(result["temperature"])
+                if result["temperature"]
+                else None,
                 "default_persona": result["default_persona"],
-                "created_at": result["created_at"].isoformat() if result["created_at"] else None,
-                "updated_at": result["updated_at"].isoformat() if result["updated_at"] else None,
+                "created_at": result["created_at"].isoformat()
+                if result["created_at"]
+                else None,
+                "updated_at": result["updated_at"].isoformat()
+                if result["updated_at"]
+                else None,
                 "scenarios": scenario_list,
                 "scenario_count": len(scenario_list),
             }

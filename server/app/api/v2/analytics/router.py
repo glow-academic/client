@@ -1,8 +1,18 @@
 """Main analytics router combining all analytics endpoints."""
 
-from app.api.v2.analytics import (bundles, footer, header, leaderboard, pages,
-                                  pricing, primary, secondary, utility)
 from fastapi import APIRouter
+
+from app.api.v2.analytics import (
+    bundles,
+    footer,
+    header,
+    leaderboard,
+    pages,
+    pricing,
+    primary,
+    secondary,
+    utility,
+)
 
 # Create main analytics router
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -17,4 +27,3 @@ router.include_router(pages.router)
 router.include_router(leaderboard.router)
 router.include_router(pricing.router)
 router.include_router(utility.router)
-

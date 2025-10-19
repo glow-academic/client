@@ -3,25 +3,29 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.scenarios import (CreateScenarioRequest,
-                                   CreateScenarioResponse,
-                                   DeleteScenarioRequest,
-                                   DeleteScenarioResponse,
-                                   DuplicateScenarioRequest,
-                                   DuplicateScenarioResponse,
-                                   GenerateScenarioAIRequest,
-                                   GenerateScenarioAIResponse,
-                                   RandomizeScenarioRequest,
-                                   RandomizeScenarioResponse,
-                                   ScenarioDetailDefaultRequest,
-                                   ScenarioDetailRequest,
-                                   ScenarioDetailResponse, ScenariosFilters,
-                                   ScenariosListResponse,
-                                   UpdateScenarioRequest,
-                                   UpdateScenarioResponse)
-from app.services.scenario_service import get_scenario_service
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.scenarios import (
+    CreateScenarioRequest,
+    CreateScenarioResponse,
+    DeleteScenarioRequest,
+    DeleteScenarioResponse,
+    DuplicateScenarioRequest,
+    DuplicateScenarioResponse,
+    GenerateScenarioAIRequest,
+    GenerateScenarioAIResponse,
+    RandomizeScenarioRequest,
+    RandomizeScenarioResponse,
+    ScenarioDetailDefaultRequest,
+    ScenarioDetailRequest,
+    ScenarioDetailResponse,
+    ScenariosFilters,
+    ScenariosListResponse,
+    UpdateScenarioRequest,
+    UpdateScenarioResponse,
+)
+from app.services.scenario_service import get_scenario_service
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
@@ -133,6 +137,7 @@ async def delete_scenario(
 # AI GENERATION AND RANDOMIZATION
 # ============================================================================
 
+
 @router.post("/generate-ai", response_model=GenerateScenarioAIResponse)
 async def generate_scenario_ai(
     request: GenerateScenarioAIRequest,
@@ -161,4 +166,3 @@ async def randomize_scenario(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

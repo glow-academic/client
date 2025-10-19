@@ -1,12 +1,12 @@
 """Log queries - SQL query builders."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class LogQueries:
     """Query builders for log operations."""
 
-    def insert_log(self) -> Tuple[str, List[Any]]:
+    def insert_log(self) -> tuple[str, list[Any]]:
         """Build query to insert a log entry."""
         query = """
         INSERT INTO app_logs (
@@ -35,7 +35,7 @@ class LogQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_logs_list(self) -> Tuple[str, List[Any]]:
+    def get_logs_list(self) -> tuple[str, list[Any]]:
         """Build query to get logs list with actor information."""
         query = """
         SELECT 
@@ -61,7 +61,7 @@ class LogQueries:
         """
         return (query, [])
 
-    def get_recent_logs(self, level: str, limit: int) -> Tuple[str, List[Any]]:
+    def get_recent_logs(self, level: str, limit: int) -> tuple[str, list[Any]]:
         """Build query to get recent logs filtered by level."""
         query = """
         SELECT 
@@ -77,7 +77,7 @@ class LogQueries:
         """
         return (query, [level, limit])
 
-    def delete_logs_bulk(self, log_ids: List[int]) -> Tuple[str, List[Any]]:
+    def delete_logs_bulk(self, log_ids: list[int]) -> tuple[str, list[Any]]:
         """Build query to bulk delete logs by IDs."""
         query = """
         DELETE FROM app_logs
@@ -86,7 +86,7 @@ class LogQueries:
         """
         return (query, [log_ids])
 
-    def check_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def check_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to check if profile is superadmin."""
         query = """
         SELECT role FROM profiles WHERE id = $1

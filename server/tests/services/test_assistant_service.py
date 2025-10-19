@@ -1,11 +1,14 @@
 """
 Tests for app.services.assistant_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.assistant_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_assistant_service`")
 class TestGet_Assistant_Service:
@@ -32,6 +36,7 @@ class TestGet_Assistant_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_assistant_run_context`")
 class TestGet_Assistant_Run_Context:
     """Tests for get_assistant_run_context function."""
@@ -48,6 +53,7 @@ class TestGet_Assistant_Run_Context:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `update_chat_title`")
 class TestUpdate_Chat_Title:
@@ -66,6 +72,7 @@ class TestUpdate_Chat_Title:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `verify_profile_exists`")
 class TestVerify_Profile_Exists:
     """Tests for verify_profile_exists function."""
@@ -82,6 +89,7 @@ class TestVerify_Profile_Exists:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `verify_chat_exists`")
 class TestVerify_Chat_Exists:
@@ -100,6 +108,7 @@ class TestVerify_Chat_Exists:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `create_chat`")
 class TestCreate_Chat:
     """Tests for create_chat function."""
@@ -116,6 +125,7 @@ class TestCreate_Chat:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `create_user_message`")
 class TestCreate_User_Message:
@@ -134,6 +144,7 @@ class TestCreate_User_Message:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `create_assistant_message`")
 class TestCreate_Assistant_Message:
     """Tests for create_assistant_message function."""
@@ -150,6 +161,7 @@ class TestCreate_Assistant_Message:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `update_message_content`")
 class TestUpdate_Message_Content:
@@ -168,6 +180,7 @@ class TestUpdate_Message_Content:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `complete_message`")
 class TestComplete_Message:
     """Tests for complete_message function."""
@@ -184,6 +197,7 @@ class TestComplete_Message:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `create_tool_call`")
 class TestCreate_Tool_Call:
@@ -202,6 +216,7 @@ class TestCreate_Tool_Call:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `complete_tool_call`")
 class TestComplete_Tool_Call:
     """Tests for complete_tool_call function."""
@@ -218,6 +233,7 @@ class TestComplete_Tool_Call:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_usage_stats`")
 class TestGet_Usage_Stats:
@@ -236,6 +252,7 @@ class TestGet_Usage_Stats:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
     """Tests for fetcher function."""
@@ -253,6 +270,7 @@ class TestFetcher:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
 class TestFetcher:
     """Tests for fetcher function."""
@@ -266,4 +284,3 @@ class TestFetcher:
         """Test fetcher error handling."""
         # TODO: Implement error test for fetcher
         assert False, "IMPLEMENT: Error test for fetcher"
-

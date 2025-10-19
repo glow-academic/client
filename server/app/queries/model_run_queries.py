@@ -1,12 +1,12 @@
 """Model run query builders for tracking model usage and tokens."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class ModelRunQueries:
     """Query builders for model run operations."""
 
-    def create_model_run(self, department_id: str) -> Tuple[str, List[Any]]:
+    def create_model_run(self, department_id: str) -> tuple[str, list[Any]]:
         """
         Build query to create model run with initial token counts.
 
@@ -25,7 +25,7 @@ class ModelRunQueries:
 
     def create_model_run_model(
         self, model_run_id: str, model_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build query to link model to model run.
 
@@ -44,7 +44,7 @@ class ModelRunQueries:
 
     def create_model_run_agent(
         self, model_run_id: str, agent_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build query to link agent to model run.
 
@@ -63,7 +63,7 @@ class ModelRunQueries:
 
     def create_model_run_persona(
         self, model_run_id: str, persona_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build query to link persona to model run.
 
@@ -82,7 +82,7 @@ class ModelRunQueries:
 
     def create_model_run_profile(
         self, model_run_id: str, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build query to link profile to model run.
 
@@ -101,7 +101,7 @@ class ModelRunQueries:
 
     def update_model_run_tokens(
         self, model_run_id: str, input_tokens: int, output_tokens: int
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build query to update token counts for completed model run.
 
@@ -120,7 +120,7 @@ class ModelRunQueries:
         """
         return query, [input_tokens, output_tokens, model_run_id]
 
-    def get_profile_rate_limit(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_profile_rate_limit(self, profile_id: str) -> tuple[str, list[Any]]:
         """
         Build query to fetch rate limit (req_per_day) for a profile.
 
@@ -140,7 +140,7 @@ class ModelRunQueries:
 
     def count_model_runs_today(
         self, profile_id: str, start_of_day: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build query to count model runs for a profile since start of day.
 
@@ -163,7 +163,9 @@ class ModelRunQueries:
         """
         return query, [profile_id, start_of_day]
 
-    def create_debug_info(self, model_run_id: str, content: str) -> Tuple[str, List[Any]]:
+    def create_debug_info(
+        self, model_run_id: str, content: str
+    ) -> tuple[str, list[Any]]:
         """
         Build query to insert debug info for a model run.
 
@@ -179,4 +181,3 @@ class ModelRunQueries:
         VALUES ($1, $2)
         """
         return query, [model_run_id, content]
-

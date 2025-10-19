@@ -1,6 +1,6 @@
 """Secondary analytics queries - 3 metrics."""
 
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -15,26 +15,36 @@ class SecondaryQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build attempt improvement query matching stored procedure logic."""
         from datetime import datetime
 
         # Build params list matching stored procedure approach
-        params: List[Any] = []
-        
-        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        params: list[Any] = []
+
+        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
         cohort_ids = cohort_ids or []
         roles = roles or []
         sim_filters = sim_filters or ["general"]
         department_ids = department_ids or []
-        
-        params.extend([start_dt, end_dt, cohort_ids, roles, sim_filters, profile_id, department_ids])
+
+        params.extend(
+            [
+                start_dt,
+                end_dt,
+                cohort_ids,
+                roles,
+                sim_filters,
+                profile_id,
+                department_ids,
+            ]
+        )
 
         query = """
             WITH base_general AS (
@@ -223,28 +233,38 @@ class SecondaryQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build cohort performance query using stored procedure filtering logic."""
         from datetime import datetime
 
         # Build params list matching stored procedure approach
-        params: List[Any] = []
+        params: list[Any] = []
         param_counter = 1
-        
-        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+
+        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
         cohort_ids = cohort_ids or []
         roles = roles or []
         sim_filters = sim_filters or ["general"]
         department_ids = department_ids or []
-        
-        params.extend([start_dt, end_dt, cohort_ids, roles, sim_filters, profile_id, department_ids])
-        
+
+        params.extend(
+            [
+                start_dt,
+                end_dt,
+                cohort_ids,
+                roles,
+                sim_filters,
+                profile_id,
+                department_ids,
+            ]
+        )
+
         want_general = "general" in sim_filters
         want_practice = "practice" in sim_filters
         want_archived = "archived" in sim_filters
@@ -478,26 +498,36 @@ class SecondaryQueries:
         self,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """Build skill performance query matching stored procedure logic."""
         from datetime import datetime
 
         # Build params list matching stored procedure approach
-        params: List[Any] = []
-        
-        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        params: list[Any] = []
+
+        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
         cohort_ids = cohort_ids or []
         roles = roles or []
         sim_filters = sim_filters or ["general"]
         department_ids = department_ids or []
-        
-        params.extend([start_dt, end_dt, cohort_ids, roles, sim_filters, profile_id, department_ids])
+
+        params.extend(
+            [
+                start_dt,
+                end_dt,
+                cohort_ids,
+                roles,
+                sim_filters,
+                profile_id,
+                department_ids,
+            ]
+        )
 
         query = """
             WITH filt AS MATERIALIZED (
@@ -637,4 +667,3 @@ class SecondaryQueries:
         """
 
         return query, params
-

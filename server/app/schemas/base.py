@@ -3,7 +3,6 @@ Base schemas and types for v2 API
 Centralized mapping types used across all resources
 """
 
-from typing import Dict
 
 from pydantic import BaseModel
 
@@ -16,6 +15,7 @@ class MappingItem(BaseModel):
     - For models: description = model description or empty string
     - For all others: description = natural description
     """
+
     name: str
     description: str
 
@@ -24,63 +24,75 @@ class MappingItem(BaseModel):
 # All inherit from MappingItem by default but can be extended in the future
 class DepartmentMappingItem(MappingItem):
     """Department mapping item - extends MappingItem"""
+
     pass
 
 
 class PersonaMappingItem(MappingItem):
     """Persona mapping item with custom color and icon fields"""
+
     color: str
     icon: str
 
 
 class RubricMappingItem(MappingItem):
     """Rubric mapping item - extends MappingItem"""
+
     pass
 
 
 class SimulationMappingItem(MappingItem):
     """Simulation mapping item - extends MappingItem"""
+
     pass
 
 
 class ParameterMappingItem(MappingItem):
     """Parameter mapping item - extends MappingItem"""
+
     pass
 
 
 class ParameterItemMappingItem(MappingItem):
     """Parameter item mapping item - extends MappingItem with parameter context"""
+
     parameter_id: str
     parameter_name: str
 
 
 class CohortMappingItem(MappingItem):
     """Cohort mapping item - extends MappingItem"""
+
     pass
 
 
 class DocumentMappingItem(MappingItem):
     """Document mapping item - extends MappingItem"""
+
     pass
 
 
 class StaffMappingItem(MappingItem):
     """Staff/Profile mapping item - extends MappingItem"""
+
     pass
 
 
 class AgentMappingItem(MappingItem):
     """Agent mapping item - extends MappingItem"""
+
     pass
 
 
 class ProviderMappingItem(MappingItem):
     """Provider mapping item - extends MappingItem"""
+
     pass
 
 
 class ScenarioMappingItem(BaseModel):
     """Scenario mapping item with extended fields for nested data"""
+
     name: str
     description: str
     persona_id: str | None
@@ -93,44 +105,49 @@ class ScenarioMappingItem(BaseModel):
 
 class ModelMappingItem(MappingItem):
     """Model mapping item - extends MappingItem"""
+
     pass
 
 
 class ObjectiveMappingItem(MappingItem):
     """Objective mapping item - extends MappingItem"""
+
     pass
 
 
 class ProfileMappingItem(MappingItem):
     """Profile mapping item - extends MappingItem"""
+
     pass
 
 
 class StandardGroupMappingItem(MappingItem):
     """Standard group mapping item - extends MappingItem"""
+
     pass
 
 
 class StandardMappingItem(MappingItem):
     """Standard mapping item - extends MappingItem"""
+
     pass
 
 
 # Type aliases for Dict mappings (id -> item)
-DepartmentMapping = Dict[str, DepartmentMappingItem]
-PersonaMapping = Dict[str, PersonaMappingItem]
-RubricMapping = Dict[str, RubricMappingItem]
-SimulationMapping = Dict[str, SimulationMappingItem]
-ParameterMapping = Dict[str, ParameterMappingItem]
-ParameterItemMapping = Dict[str, ParameterItemMappingItem]
-CohortMapping = Dict[str, CohortMappingItem]
-DocumentMapping = Dict[str, DocumentMappingItem]
-StaffMapping = Dict[str, StaffMappingItem]
-AgentMapping = Dict[str, AgentMappingItem]
-ProviderMapping = Dict[str, ProviderMappingItem]
-ScenarioMapping = Dict[str, ScenarioMappingItem]
-ModelMapping = Dict[str, ModelMappingItem]
-ObjectiveMapping = Dict[str, ObjectiveMappingItem]
-ProfileMapping = Dict[str, ProfileMappingItem]
-StandardGroupsMapping = Dict[str, StandardGroupMappingItem]
-StandardsMapping = Dict[str, StandardMappingItem]
+DepartmentMapping = dict[str, DepartmentMappingItem]
+PersonaMapping = dict[str, PersonaMappingItem]
+RubricMapping = dict[str, RubricMappingItem]
+SimulationMapping = dict[str, SimulationMappingItem]
+ParameterMapping = dict[str, ParameterMappingItem]
+ParameterItemMapping = dict[str, ParameterItemMappingItem]
+CohortMapping = dict[str, CohortMappingItem]
+DocumentMapping = dict[str, DocumentMappingItem]
+StaffMapping = dict[str, StaffMappingItem]
+AgentMapping = dict[str, AgentMappingItem]
+ProviderMapping = dict[str, ProviderMappingItem]
+ScenarioMapping = dict[str, ScenarioMappingItem]
+ModelMapping = dict[str, ModelMappingItem]
+ObjectiveMapping = dict[str, ObjectiveMappingItem]
+ProfileMapping = dict[str, ProfileMappingItem]
+StandardGroupsMapping = dict[str, StandardGroupMappingItem]
+StandardsMapping = dict[str, StandardMappingItem]

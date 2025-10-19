@@ -1,17 +1,26 @@
 """Log service with business logic and dynamic SQL."""
 
 import json
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, cast
+from datetime import UTC, datetime
+from typing import Any, cast
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.log_queries import LogQueries
-from app.schemas.logs import (ActorData, BulkDeleteLogsRequest,
-                              BulkDeleteLogsResponse, ContextData,
-                              CreateLogRequest, CreateLogResponse, ErrorData,
-                              LogItem, LogsListRequest, LogsListResponse,
-                              SubjectData)
+from app.schemas.logs import (
+    ActorData,
+    BulkDeleteLogsRequest,
+    BulkDeleteLogsResponse,
+    ContextData,
+    CreateLogRequest,
+    CreateLogResponse,
+    ErrorData,
+    LogItem,
+    LogsListRequest,
+    LogsListResponse,
+    SubjectData,
+)
 from app.services.base import BaseService, with_cache
 
 
@@ -24,7 +33,12 @@ class LogService(BaseService):
         self.queries = LogQueries()
 
     def _parse_jsonb_to_model(
-        self, data: Any, model_class: type[ActorData] | type[SubjectData] | type[ContextData] | type[ErrorData]
+        self,
+        data: Any,
+        model_class: type[ActorData]
+        | type[SubjectData]
+        | type[ContextData]
+        | type[ErrorData],
     ) -> ActorData | SubjectData | ContextData | ErrorData:
         """
         Parse JSONB data to Pydantic model.
@@ -42,9 +56,7 @@ class LogService(BaseService):
         return model_class()
 
     @with_cache(lambda self, request: keys.log_list())
-    async def get_logs_list(
-        self, request: LogsListRequest
-    ) -> LogsListResponse:
+    async def get_logs_list(self, request: LogsListRequest) -> LogsListResponse:
         """
         Get list of logs with actor information and all JSONB fields.
 
@@ -57,34 +69,42 @@ class LogService(BaseService):
         query, params = self.queries.get_logs_list()
         rows = await self.conn.fetch(query, *params)
         return self._build_logs_list_response(rows)
-    
-    def _build_logs_list_response(self, rows: List[Any]) -> LogsListResponse:
+
+    def _build_logs_list_response(self, rows: list[Any]) -> LogsListResponse:
         """Build LogsListResponse from database rows."""
-        log_items: List[LogItem] = []
+        log_items: list[LogItem] = []
         for row in rows:
             log_items.append(
                 LogItem(
-                    log_id=row['log_id'],
-                    event=row['event'],
-                    level=row['level'],
-                    message=row['message'],
-                    correlation_id=row['correlation_id'],
-                    actor=cast(ActorData, self._parse_jsonb_to_model(row['actor'], ActorData)),
-                    subject=cast(SubjectData, self._parse_jsonb_to_model(row['subject'], SubjectData)),
-                    context=cast(ContextData, self._parse_jsonb_to_model(row['context'], ContextData)),
-                    error=cast(ErrorData, self._parse_jsonb_to_model(row['error'], ErrorData)),
-                    created_at=row['created_at'].isoformat()
-                    if row['created_at']
+                    log_id=row["log_id"],
+                    event=row["event"],
+                    level=row["level"],
+                    message=row["message"],
+                    correlation_id=row["correlation_id"],
+                    actor=cast(
+                        ActorData, self._parse_jsonb_to_model(row["actor"], ActorData)
+                    ),
+                    subject=cast(
+                        SubjectData,
+                        self._parse_jsonb_to_model(row["subject"], SubjectData),
+                    ),
+                    context=cast(
+                        ContextData,
+                        self._parse_jsonb_to_model(row["context"], ContextData),
+                    ),
+                    error=cast(
+                        ErrorData, self._parse_jsonb_to_model(row["error"], ErrorData)
+                    ),
+                    created_at=row["created_at"].isoformat()
+                    if row["created_at"]
                     else "",
-                    actor_name=row['actor_name'],
+                    actor_name=row["actor_name"],
                 )
             )
 
         return LogsListResponse(logs=log_items)
 
-    async def create_log(
-        self, request: CreateLogRequest
-    ) -> CreateLogResponse:
+    async def create_log(self, request: CreateLogRequest) -> CreateLogResponse:
         """
         Create a new log entry.
 
@@ -94,14 +114,15 @@ class LogService(BaseService):
         Returns:
             CreateLogResponse
         """
+
         # Helper to ensure JSON-serializable values with defaults
-        def ensure_json(value: Any, default: Dict[str, Any]) -> Dict[str, Any]:
+        def ensure_json(value: Any, default: dict[str, Any]) -> dict[str, Any]:
             if value is None or not isinstance(value, dict):
                 return default
             try:
                 # Verify it's JSON-serializable
                 json.dumps(value)
-                return cast(Dict[str, Any], value)
+                return cast(dict[str, Any], value)
             except (TypeError, ValueError):
                 return default
 
@@ -112,9 +133,15 @@ class LogService(BaseService):
 
         # Prepare JSONB fields with database-matching defaults
         actor_json = ensure_json(request.actor, {"userId": None, "profileId": None})
-        subject_json = ensure_json(request.subject, {"entityId": None, "entityType": None})
-        context_json = ensure_json(request.context, {"route": None, "function": None, "component": None})
-        error_json = ensure_json(request.error, {"code": None, "name": None, "stack": None, "message": None})
+        subject_json = ensure_json(
+            request.subject, {"entityId": None, "entityType": None}
+        )
+        context_json = ensure_json(
+            request.context, {"route": None, "function": None, "component": None}
+        )
+        error_json = ensure_json(
+            request.error, {"code": None, "name": None, "stack": None, "message": None}
+        )
 
         # Insert log entry
         insert_query, _ = self.queries.insert_log()
@@ -129,10 +156,10 @@ class LogService(BaseService):
             json.dumps(subject_json),
             json.dumps(context_json),
             json.dumps(error_json),
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
         )
 
-        log_id = result['id'] if result else None
+        log_id = result["id"] if result else None
 
         # Invalidate log caches
         await self._invalidate_cache([keys.tag_log_all()])
@@ -142,7 +169,7 @@ class LogService(BaseService):
     @with_cache(lambda self, level="error", limit=100: keys.log_recent(level, limit))
     async def get_recent_logs(
         self, level: str = "error", limit: int = 100
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get recent application logs filtered by level.
 
@@ -156,8 +183,8 @@ class LogService(BaseService):
         query, params = self.queries.get_recent_logs(level, limit)
         rows = await self.conn.fetch(query, *params)
         return self._build_recent_logs_response(rows)
-    
-    def _build_recent_logs_response(self, rows: List[Any]) -> List[Dict[str, Any]]:
+
+    def _build_recent_logs_response(self, rows: list[Any]) -> list[dict[str, Any]]:
         """Build recent logs response from database rows."""
         return [
             {
@@ -195,14 +222,12 @@ class LogService(BaseService):
         if not result:
             raise ValueError(f"Profile not found: {request.profileId}")
 
-        if result['role'] != 'superadmin':
+        if result["role"] != "superadmin":
             raise PermissionError("Only superadmin users can delete logs")
 
         if not request.ids:
             return BulkDeleteLogsResponse(
-                success=True,
-                deleted_count=0,
-                message="No logs to delete"
+                success=True, deleted_count=0, message="No logs to delete"
             )
 
         # Delete logs
@@ -216,7 +241,7 @@ class LogService(BaseService):
         return BulkDeleteLogsResponse(
             success=True,
             deleted_count=deleted_count,
-            message=f"Successfully deleted {deleted_count} log(s)"
+            message=f"Successfully deleted {deleted_count} log(s)",
         )
 
 

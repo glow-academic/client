@@ -7,6 +7,7 @@ import unicodedata
 from typing import Any
 
 import pypdf  # type: ignore
+
 from app.extensions import UPLOAD_FOLDER
 
 
@@ -25,7 +26,7 @@ def tokenize(text: str | None) -> list[str]:
 
 def weighted_choice(weighted_items: list[tuple[Any, float]]) -> Any | None:
     """Return one item chosen with probability proportional to its weight.
-    
+
     Returns None when all weights are non-positive or list is empty.
     """
     if not weighted_items:
@@ -48,7 +49,7 @@ def weighted_sample_without_replacement(
     items: list[Any], scores: list[float], k: int
 ) -> list[Any]:
     """Sample up to k unique items proportionally to scores without replacement.
-    
+
     Falls back to fewer items if necessary.
     """
     selected: list[Any] = []
@@ -91,11 +92,11 @@ def read_document_content_for_similarity(file_path: str) -> str:
             return ""
     else:
         try:
-            with open(full_path, "r", encoding="utf-8") as fh:  # noqa: PTH123
+            with open(full_path, encoding="utf-8") as fh:  # noqa: PTH123
                 content = fh.read()
         except UnicodeDecodeError:
             try:
-                with open(full_path, "r", encoding="latin-1") as fh:  # noqa: PTH123
+                with open(full_path, encoding="latin-1") as fh:  # noqa: PTH123
                     content = fh.read()
             except Exception:
                 return ""
@@ -103,4 +104,3 @@ def read_document_content_for_similarity(file_path: str) -> str:
             return ""
 
     return content.strip()
-

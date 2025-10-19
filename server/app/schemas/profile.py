@@ -1,6 +1,5 @@
 """Auth V2 API schemas for profile and emulation operations."""
 
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -27,12 +26,12 @@ class ProfileItem(BaseModel):
     viewedIntro: bool
     viewedChat: bool
     defaultProfile: bool
-    reqPerDay: Optional[int]
+    reqPerDay: int | None
     lastLogin: str  # ISO datetime
-    lastActive: Optional[str]  # ISO datetime
+    lastActive: str | None  # ISO datetime
     createdAt: str  # ISO datetime
     updatedAt: str  # ISO datetime
-    primaryDepartmentId: Optional[str]  # UUID of primary department
+    primaryDepartmentId: str | None  # UUID of primary department
 
 
 class ProfileDetailResponse(BaseModel):
@@ -45,13 +44,13 @@ class UpdateProfileRequest(BaseModel):
     """Request to update profile fields."""
 
     profileId: str
-    firstName: Optional[str] = None
-    lastName: Optional[str] = None
-    role: Optional[str] = None
-    active: Optional[bool] = None
-    viewedIntro: Optional[bool] = None
-    viewedChat: Optional[bool] = None
-    reqPerDay: Optional[int] = None
+    firstName: str | None = None
+    lastName: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    viewedIntro: bool | None = None
+    viewedChat: bool | None = None
+    reqPerDay: int | None = None
 
 
 class UpdateProfileResponse(BaseModel):
@@ -100,14 +99,14 @@ class AuthorizeEmulationRequest(BaseModel):
 
     requesterProfileId: str
     targetProfileId: str
-    departmentIds: List[str]
+    departmentIds: list[str]
 
 
 class AuthorizeEmulationResponse(BaseModel):
     """Response indicating if emulation is allowed."""
 
     allowed: bool
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 # ============================================================================
@@ -127,7 +126,7 @@ class BreadcrumbItem(BaseModel):
 
     segment: str
     title: str
-    context: Optional[str] = None
+    context: str | None = None
 
 
 class CohortItem(BaseModel):
@@ -135,7 +134,7 @@ class CohortItem(BaseModel):
 
     id: str
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     departmentId: str
     active: bool
     createdAt: str
@@ -147,7 +146,7 @@ class DepartmentItem(BaseModel):
 
     id: str
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     active: bool
     createdAt: str
     updatedAt: str
@@ -156,8 +155,8 @@ class DepartmentItem(BaseModel):
 class CohortsData(BaseModel):
     """Cohorts data with member counts."""
 
-    items: List[CohortItem]
-    memberCounts: Dict[str, int]
+    items: list[CohortItem]
+    memberCounts: dict[str, int]
 
 
 class SimulationContextItem(BaseModel):
@@ -167,7 +166,7 @@ class SimulationContextItem(BaseModel):
     name: str
     description: str
     departmentId: str
-    timeLimit: Optional[int]
+    timeLimit: int | None
     active: bool
     practiceSimulation: bool
     defaultSimulation: bool
@@ -176,7 +175,7 @@ class SimulationContextItem(BaseModel):
 class SimulationsData(BaseModel):
     """Simulations data."""
 
-    items: List[SimulationContextItem]
+    items: list[SimulationContextItem]
 
 
 class ProfileContextResponse(BaseModel):
@@ -184,15 +183,14 @@ class ProfileContextResponse(BaseModel):
 
     actualProfile: ProfileItem
     effectiveProfile: ProfileItem
-    departments: List[DepartmentItem]
-    departmentIds: List[str]
+    departments: list[DepartmentItem]
+    departmentIds: list[str]
     cohorts: CohortsData
-    cohortIds: List[str]
+    cohortIds: list[str]
     simulations: SimulationsData
-    simulationIds: List[str]
-    breadcrumbs: List[BreadcrumbItem]
-    simulatableProfiles: List[ProfileItem]
-    earliestAttemptDate: Optional[str]  # ISO datetime of earliest simulation attempt
-    availableSections: List[str]  # Sections available to the effective profile's role
+    simulationIds: list[str]
+    breadcrumbs: list[BreadcrumbItem]
+    simulatableProfiles: list[ProfileItem]
+    earliestAttemptDate: str | None  # ISO datetime of earliest simulation attempt
+    availableSections: list[str]  # Sections available to the effective profile's role
     redirectPath: str  # Default redirect path for the effective profile's role
-

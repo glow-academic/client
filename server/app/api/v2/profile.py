@@ -3,27 +3,45 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
-from app.schemas.profile import (AuthorizeEmulationRequest,
-                                 AuthorizeEmulationResponse,
-                                 MarkChatCompleteRequest,
-                                 MarkIntroCompleteRequest,
-                                 MarkTourStepResponse, ProfileByAliasRequest,
-                                 ProfileContextRequest, ProfileContextResponse,
-                                 ProfileDetailRequest, ProfileDetailResponse,
-                                 UpdateProfileRequest, UpdateProfileResponse)
-from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
-                               BulkDeleteStaffRequest, BulkDeleteStaffResponse,
-                               BulkUpdateStaffRequest, BulkUpdateStaffResponse,
-                               CreateStaffRequest, CreateStaffResponse,
-                               DeleteStaffRequest, DeleteStaffResponse,
-                               StaffDetailBulkRequest, StaffDetailBulkResponse,
-                               StaffDetailRequest, StaffDetailResponse,
-                               StaffFilters, StaffListResponse,
-                               UpdateStaffRequest, UpdateStaffResponse)
+from app.schemas.profile import (
+    AuthorizeEmulationRequest,
+    AuthorizeEmulationResponse,
+    MarkChatCompleteRequest,
+    MarkIntroCompleteRequest,
+    MarkTourStepResponse,
+    ProfileByAliasRequest,
+    ProfileContextRequest,
+    ProfileContextResponse,
+    ProfileDetailRequest,
+    ProfileDetailResponse,
+    UpdateProfileRequest,
+    UpdateProfileResponse,
+)
+from app.schemas.staff import (
+    BulkCreateStaffRequest,
+    BulkCreateStaffResponse,
+    BulkDeleteStaffRequest,
+    BulkDeleteStaffResponse,
+    BulkUpdateStaffRequest,
+    BulkUpdateStaffResponse,
+    CreateStaffRequest,
+    CreateStaffResponse,
+    DeleteStaffRequest,
+    DeleteStaffResponse,
+    StaffDetailBulkRequest,
+    StaffDetailBulkResponse,
+    StaffDetailRequest,
+    StaffDetailResponse,
+    StaffFilters,
+    StaffListResponse,
+    UpdateStaffRequest,
+    UpdateStaffResponse,
+)
 from app.services.profile_service import ProfileService
 from app.services.staff_service import get_staff_service
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -348,5 +366,3 @@ async def get_profile_by_alias(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-

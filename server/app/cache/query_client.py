@@ -7,7 +7,8 @@ import json
 import logging
 import pickle
 import time
-from typing import Any, Awaitable, Callable, Iterable, Optional
+from collections.abc import Awaitable, Callable, Iterable
+from typing import Any
 
 from cachetools import TTLCache  # type: ignore
 
@@ -32,12 +33,12 @@ def hash_key(key: Key) -> str:
 class QueryClient:
     """
     Three-tier query cache client with stale-while-revalidate.
-    
+
     Cache hierarchy:
     1. Local LRU (sub-millisecond, process-scoped)
     2. Redis (milliseconds, shared across instances)
     3. Fresh DB fetch (10-100ms)
-    
+
     Features:
     - Fresh TTL: serve cached data within this window
     - Stale TTL: serve cached data + background refresh
@@ -54,7 +55,7 @@ class QueryClient:
     ):
         """
         Initialize query client.
-        
+
         Args:
             redis_client: Redis async client instance
             local_maxsize: Maximum entries in local LRU cache
@@ -66,7 +67,7 @@ class QueryClient:
         self.local: TTLCache[str, Any] = TTLCache(maxsize=local_maxsize, ttl=86400)
         self.channel = channel
         self._stop = asyncio.Event()
-        self._listener_task: Optional[asyncio.Task[Any]] = None
+        self._listener_task: asyncio.Task[Any] | None = None
         self._refresh_tasks: set[asyncio.Task[Any]] = set()
         # Semaphore to limit concurrent refresh operations
         self._refresh_semaphore = asyncio.Semaphore(max_concurrent_refreshes)
@@ -83,19 +84,21 @@ class QueryClient:
                 pubsub = self.redis.pubsub()
                 await pubsub.subscribe(self.channel)
                 logger.info(f"Query cache listening on Redis channel: {self.channel}")
-                
+
                 async for msg in pubsub.listen():
                     if self._stop.is_set():
                         break
                     if msg.get("type") != "message":
                         continue
-                    
+
                     try:
                         payload = json.loads(msg["data"])
                         hash_keys = payload.get("hash_keys", [])
                         for hkey in hash_keys:
                             self.local.pop(hkey, None)
-                        logger.debug(f"Invalidated {len(hash_keys)} local cache entries")
+                        logger.debug(
+                            f"Invalidated {len(hash_keys)} local cache entries"
+                        )
                     except Exception as e:
                         logger.error(f"Error processing invalidation message: {e}")
             except asyncio.CancelledError:
@@ -111,20 +114,20 @@ class QueryClient:
     async def stop(self) -> None:
         """Stop the Pub/Sub listener and cleanup."""
         self._stop.set()
-        
+
         # Cancel listener task
         if self._listener_task:
             self._listener_task.cancel()
             with contextlib.suppress(Exception):
                 await self._listener_task
-        
+
         # Cancel all pending refresh tasks
         for task in self._refresh_tasks:
             task.cancel()
-        
+
         if self._refresh_tasks:
             await asyncio.gather(*self._refresh_tasks, return_exceptions=True)
-        
+
         self._refresh_tasks.clear()
         logger.info("Query cache stopped")
 
@@ -139,21 +142,21 @@ class QueryClient:
     ) -> Any:
         """
         Execute query with three-tier caching.
-        
+
         Flow:
         1. Check local cache - if fresh, return
         2. If stale locally, return stale + refresh in background
         3. Check Redis - if fresh, return (update local)
         4. If stale in Redis, return stale + refresh in background
         5. If not cached, fetch fresh and store
-        
+
         Args:
             key: Cache key object
             fetcher: Async function to fetch fresh data
             tags: List of tags for invalidation
             fresh_ttl: Seconds to consider data fresh
             stale_ttl: Seconds to serve stale data (with background refresh)
-            
+
         Returns:
             Cached or fresh data
         """
@@ -175,7 +178,9 @@ class QueryClient:
                 return data
             if age <= sttl:
                 # Stale but acceptable - return and refresh in background
-                self._schedule_refresh(hkey, key, fetcher, tag_list, fresh_ttl, stale_ttl)
+                self._schedule_refresh(
+                    hkey, key, fetcher, tag_list, fresh_ttl, stale_ttl
+                )
                 return data
             # Expired locally, fall through to Redis
 
@@ -186,16 +191,18 @@ class QueryClient:
             if raw:
                 data, ts, fttl, sttl = pickle.loads(raw)
                 age = now - ts
-                
+
                 # Update local cache
                 self.local[hkey] = (data, ts, fttl, sttl)
-                
+
                 if age <= fttl:
                     # Fresh data
                     return data
                 if age <= sttl:
                     # Stale but acceptable - return and refresh in background
-                    self._schedule_refresh(hkey, key, fetcher, tag_list, fresh_ttl, stale_ttl)
+                    self._schedule_refresh(
+                        hkey, key, fetcher, tag_list, fresh_ttl, stale_ttl
+                    )
                     return data
                 # Expired in Redis too, fall through to fresh fetch
         except Exception as e:
@@ -237,11 +244,15 @@ class QueryClient:
             async with self._refresh_semaphore:
                 data = await fetcher()
                 await self._write(hkey, data, tags, fresh_ttl, stale_ttl)
-                logger.debug(f"Background refresh completed for key: {key.material()[:50]}")
+                logger.debug(
+                    f"Background refresh completed for key: {key.material()[:50]}"
+                )
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            logger.error(f"Background refresh failed for key {key.material()[:50]}: {e}")
+            logger.error(
+                f"Background refresh failed for key {key.material()[:50]}: {e}"
+            )
 
     async def _write(
         self, hkey: str, data: Any, tags: list[str], fresh_ttl: int, stale_ttl: int
@@ -275,10 +286,10 @@ class QueryClient:
     ) -> None:
         """
         Invalidate cache entries by tags or keys.
-        
+
         This removes entries from Redis and broadcasts invalidation
         via Pub/Sub so other instances drop their local cache.
-        
+
         Args:
             tags: Tags to invalidate (e.g., ["profile:123", "profile:*"])
             keys: Specific Key objects to invalidate
@@ -326,4 +337,3 @@ class QueryClient:
             logger.info(f"Invalidated {len(hash_keys)} cache entries")
         except Exception as e:
             logger.error(f"Error invalidating cache: {e}")
-

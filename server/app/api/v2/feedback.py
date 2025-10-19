@@ -3,12 +3,16 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.feedback import (CreateFeedbackRequest,
-                                  CreateFeedbackResponse, FeedbackListRequest,
-                                  FeedbackListResponse)
-from app.services.feedback_service import get_feedback_service
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.feedback import (
+    CreateFeedbackRequest,
+    CreateFeedbackResponse,
+    FeedbackListRequest,
+    FeedbackListResponse,
+)
+from app.services.feedback_service import get_feedback_service
 
 router = APIRouter()
 

@@ -1,26 +1,30 @@
 """Parameter service layer - business logic for parameter operations with nested items."""
 
-
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.parameters import (CreateParameterItemRequest,
-                                    CreateParameterItemResponse,
-                                    CreateParameterRequest,
-                                    CreateParameterResponse,
-                                    DeleteParameterRequest,
-                                    DeleteParameterResponse,
-                                    DuplicateParameterRequest,
-                                    DuplicateParameterResponse,
-                                    ParameterDetailDefaultRequest,
-                                    ParameterDetailRequest,
-                                    ParameterDetailResponse, ParameterItem,
-                                    ParameterItemDetail, ParametersFilters,
-                                    ParametersListResponse,
-                                    UpdateParameterRequest,
-                                    UpdateParameterResponse)
+from app.schemas.parameters import (
+    CreateParameterItemRequest,
+    CreateParameterItemResponse,
+    CreateParameterRequest,
+    CreateParameterResponse,
+    DeleteParameterRequest,
+    DeleteParameterResponse,
+    DuplicateParameterRequest,
+    DuplicateParameterResponse,
+    ParameterDetailDefaultRequest,
+    ParameterDetailRequest,
+    ParameterDetailResponse,
+    ParameterItem,
+    ParameterItemDetail,
+    ParametersFilters,
+    ParametersListResponse,
+    UpdateParameterRequest,
+    UpdateParameterResponse,
+)
 from app.services.base import BaseService, with_cache
 
 
@@ -50,22 +54,26 @@ class ParameterService(BaseService):
         for row in result:
             parameters.append(
                 ParameterItem(
-                    parameter_id=str(row['parameter_id']),
-                    name=row['name'],
-                    description=row['description'],
-                    numerical=row['numerical'],
-                    active=row['active'],
-                    default_parameter=row['default_parameter'],
-                    num_items=row['num_items'],
-                    can_edit=row['can_edit'],
-                    can_delete=row['can_delete'],
-                    can_duplicate=row['can_duplicate'],
+                    parameter_id=str(row["parameter_id"]),
+                    name=row["name"],
+                    description=row["description"],
+                    numerical=row["numerical"],
+                    active=row["active"],
+                    default_parameter=row["default_parameter"],
+                    num_items=row["num_items"],
+                    can_edit=row["can_edit"],
+                    can_delete=row["can_delete"],
+                    can_duplicate=row["can_duplicate"],
                 )
             )
 
         return ParametersListResponse(parameters=parameters)
 
-    @with_cache(lambda self, request: keys.parameter_by_id(request.parameterId, request.profileId))
+    @with_cache(
+        lambda self, request: keys.parameter_by_id(
+            request.parameterId, request.profileId
+        )
+    )
     async def get_parameter_detail(
         self, request: ParameterDetailRequest
     ) -> ParameterDetailResponse:
@@ -82,7 +90,7 @@ class ParameterService(BaseService):
         items_result = await self.conn.fetch(query, *params)
 
         # Check usage for each item
-        item_ids = [str(item['id']) for item in items_result]
+        item_ids = [str(item["id"]) for item in items_result]
         item_usage: dict[str, int] = {}
 
         if item_ids:
@@ -90,19 +98,19 @@ class ParameterService(BaseService):
             usage_result = await self.conn.fetch(query, *params)
 
             for row in usage_result:
-                item_usage[str(row['parameter_item_id'])] = row['usage_count']
+                item_usage[str(row["parameter_item_id"])] = row["usage_count"]
 
         # Build parameter items list
         parameter_items = []
         for item in items_result:
-            item_id = str(item['id'])
+            item_id = str(item["id"])
             parameter_items.append(
                 ParameterItemDetail(
                     parameter_item_id=item_id,
-                    name=item['name'],
-                    description=item['description'],
-                    value=item['value'],
-                    default_item=item['default_item'],
+                    name=item["name"],
+                    description=item["description"],
+                    value=item["value"],
+                    default_item=item["default_item"],
                     can_delete=item_usage.get(item_id, 0) == 0,
                 )
             )
@@ -112,23 +120,23 @@ class ParameterService(BaseService):
             request.profileId
         )
         dept_result = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row['id']) for row in dept_result]
+        valid_department_ids = [str(row["id"]) for row in dept_result]
 
         # Get department mapping
         department_mapping = {
-            str(row['id']): DepartmentMappingItem(
-                name=row['name'], description=row['description'] or ''
+            str(row["id"]): DepartmentMappingItem(
+                name=row["name"], description=row["description"] or ""
             )
             for row in dept_result
         }
 
         return ParameterDetailResponse(
-            name=parameter['name'],
-            description=parameter['description'],
-            numerical=parameter['numerical'],
-            active=parameter['active'],
-            default_parameter=parameter['default_parameter'],
-            department_id=str(parameter['department_id']),
+            name=parameter["name"],
+            description=parameter["description"],
+            numerical=parameter["numerical"],
+            active=parameter["active"],
+            default_parameter=parameter["default_parameter"],
+            department_id=str(parameter["department_id"]),
             valid_department_ids=valid_department_ids,
             parameter_items=parameter_items,
             department_mapping=department_mapping,
@@ -148,7 +156,7 @@ class ParameterService(BaseService):
 
         # Reuse the detail logic with the found parameter_id
         detail_request = ParameterDetailRequest(
-            parameterId=str(parameter['id']), profileId=request.profileId
+            parameterId=str(parameter["id"]), profileId=request.profileId
         )
 
         return await self.get_parameter_detail(detail_request)
@@ -174,7 +182,7 @@ class ParameterService(BaseService):
             if not parameter_result:
                 raise ValueError("Failed to create parameter")
 
-            parameter_id = str(parameter_result['id'])
+            parameter_id = str(parameter_result["id"])
 
             # Create parameter items
             item_query, _ = self.queries.create_parameter_item()
@@ -189,10 +197,12 @@ class ParameterService(BaseService):
                 )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_parameter_all(),
-            keys.tag_agent_all(),  # Parameters used in scenario generation
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_parameter_all(),
+                keys.tag_agent_all(),  # Parameters used in scenario generation
+            ]
+        )
 
         return CreateParameterResponse(
             success=True,
@@ -243,11 +253,13 @@ class ParameterService(BaseService):
                 )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_parameter_by_id(request.parameterId),
-            keys.tag_parameter_all(),
-            keys.tag_agent_all(),  # Parameters used in scenario context
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_parameter_by_id(request.parameterId),
+                keys.tag_parameter_all(),
+                keys.tag_agent_all(),  # Parameters used in scenario context
+            ]
+        )
 
         return UpdateParameterResponse(
             success=True, message=f"Parameter '{request.name}' updated successfully"
@@ -259,9 +271,7 @@ class ParameterService(BaseService):
         """Duplicate a parameter with all items."""
 
         # Get original parameter data
-        query, params = self.queries.get_parameter_for_duplicate(
-            request.parameterId
-        )
+        query, params = self.queries.get_parameter_for_duplicate(request.parameterId)
         parameter = await self.conn.fetchrow(query, *params)
 
         if not parameter:
@@ -272,16 +282,16 @@ class ParameterService(BaseService):
             dup_query, _ = self.queries.insert_duplicate_parameter()
             new_parameter = await self.conn.fetchrow(
                 dup_query,
-                parameter['name'],
-                parameter['description'],
-                parameter['numerical'],
-                parameter['department_id'],
+                parameter["name"],
+                parameter["description"],
+                parameter["numerical"],
+                parameter["department_id"],
             )
 
             if not new_parameter:
                 raise ValueError("Failed to create duplicate parameter")
 
-            new_parameter_id = str(new_parameter['id'])
+            new_parameter_id = str(new_parameter["id"])
 
             # Get original items
             query, params = self.queries.get_items_for_duplicate(request.parameterId)
@@ -293,16 +303,18 @@ class ParameterService(BaseService):
                 await self.conn.execute(
                     item_query,
                     new_parameter_id,
-                    item['name'],
-                    item['description'],
-                    item['value'],
-                    item['default_item'],
+                    item["name"],
+                    item["description"],
+                    item["value"],
+                    item["default_item"],
                 )
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_parameter_all(),
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_parameter_all(),
+            ]
+        )
 
         return DuplicateParameterResponse(
             success=True,
@@ -322,7 +334,7 @@ class ParameterService(BaseService):
         if not usage:
             raise ValueError("Failed to check parameter usage")
 
-        if usage['usage_count'] > 0:
+        if usage["usage_count"] > 0:
             raise ValueError(
                 "Cannot delete parameter: Some items are in use by scenarios"
             )
@@ -339,13 +351,16 @@ class ParameterService(BaseService):
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_parameter_by_id(request.parameterId),
                 keys.tag_parameter_all(),
-            ])
+            ]
+        )
 
         return DeleteParameterResponse(
-            success=True, message=f"Parameter '{parameter['name']}' deleted successfully"
+            success=True,
+            message=f"Parameter '{parameter['name']}' deleted successfully",
         )
 
     async def create_parameter_item(
@@ -375,15 +390,17 @@ class ParameterService(BaseService):
             raise ValueError("Failed to create parameter item")
 
         # Invalidate caches
-        await self._invalidate_cache([
-            keys.tag_parameter_by_id(request.parameterId),
-            keys.tag_parameter_all(),
-            keys.tag_agent_all(),  # Parameter items used in scenario context
-        ])
+        await self._invalidate_cache(
+            [
+                keys.tag_parameter_by_id(request.parameterId),
+                keys.tag_parameter_all(),
+                keys.tag_agent_all(),  # Parameter items used in scenario context
+            ]
+        )
 
         return CreateParameterItemResponse(
             success=True,
-            parameterItemId=str(result['id']),
+            parameterItemId=str(result["id"]),
             message=f"Parameter item '{request.name}' created successfully",
         )
 

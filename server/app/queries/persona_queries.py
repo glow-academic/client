@@ -1,14 +1,14 @@
 """Persona queries - SQL query builders."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class PersonaQueries:
     """Query builders for persona operations."""
 
     def list_personas(
-        self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str], profile_id: str
+    ) -> tuple[str, list[Any]]:
         """Build query for personas list with permissions."""
         query = """
         WITH persona_scenarios AS (
@@ -78,14 +78,12 @@ class PersonaQueries:
 
         return (query, [department_ids, profile_id])
 
-    def get_scenario_mapping(
-        self, scenario_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_scenario_mapping(self, scenario_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for scenario mapping."""
         query = "SELECT id, name, problem_statement FROM scenarios WHERE id = ANY($1)"
         return (query, [scenario_ids])
 
-    def get_persona_by_id(self, persona_id: str) -> Tuple[str, List[Any]]:
+    def get_persona_by_id(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to get persona by ID."""
         query = """
         SELECT 
@@ -105,14 +103,14 @@ class PersonaQueries:
         """
         return (query, [persona_id])
 
-    def get_valid_models(self) -> Tuple[str, List[Any]]:
+    def get_valid_models(self) -> tuple[str, list[Any]]:
         """Build query for valid models."""
         query = "SELECT id, name, COALESCE(description, '') as description FROM models WHERE active = true ORDER BY name"
         return (query, [])
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id, d.title as name, d.description
@@ -123,7 +121,7 @@ class PersonaQueries:
         """
         return (query, [profile_id])
 
-    def get_default_persona(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_default_persona(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query for default persona."""
         query = """
         WITH user_departments AS (
@@ -156,9 +154,7 @@ class PersonaQueries:
         """
         return (query, [profile_id])
 
-    def get_persona_for_duplicate(
-        self, persona_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_persona_for_duplicate(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to get persona data for duplication."""
         query = """
         SELECT 
@@ -211,7 +207,7 @@ class PersonaQueries:
         RETURNING id
         """
 
-    def check_persona_usage(self, persona_id: str) -> Tuple[str, List[Any]]:
+    def check_persona_usage(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to check persona usage."""
         query = """
         SELECT COUNT(*) as usage_count
@@ -220,12 +216,12 @@ class PersonaQueries:
         """
         return (query, [persona_id])
 
-    def get_persona_name(self, persona_id: str) -> Tuple[str, List[Any]]:
+    def get_persona_name(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to get persona name."""
         query = "SELECT name FROM personas WHERE id = $1"
         return (query, [persona_id])
 
-    def delete_persona(self, persona_id: str) -> Tuple[str, List[Any]]:
+    def delete_persona(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to delete persona."""
         query = "DELETE FROM personas WHERE id = $1"
         return (query, [persona_id])
@@ -287,9 +283,7 @@ class PersonaQueries:
         WHERE id = $1
         """
 
-    def get_departments_mapping(
-        self, dept_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
+    def get_departments_mapping(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for departments mapping."""
         query = """
         SELECT id, title as name, description 
@@ -299,18 +293,18 @@ class PersonaQueries:
         """
         return (query, [dept_ids])
 
-    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile role."""
         query = "SELECT role FROM profiles WHERE id = $1"
         return (query, [profile_id])
 
     def search_personas_fuzzy(
         self, where_clause: str, limit: int
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build fuzzy search query for personas by name.
         Uses dynamic WHERE clause built by search utilities.
-        
+
         Params: Built dynamically by search utilities, plus limit at end
         """
         query = f"""
@@ -326,9 +320,7 @@ class PersonaQueries:
 
     # ===== Analytics Queries for MCP Tools =====
 
-    def get_persona_with_scenarios(
-        self, persona_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_persona_with_scenarios(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to get persona details and its scenarios."""
         query = """
         SELECT 
@@ -350,8 +342,8 @@ class PersonaQueries:
         return (query, [persona_id])
 
     def get_persona_response_time_data(
-        self, scenario_ids: List[str], cutoff_date: Any
-    ) -> Tuple[str, List[Any]]:
+        self, scenario_ids: list[str], cutoff_date: Any
+    ) -> tuple[str, list[Any]]:
         """Build query to get response time analysis data for persona scenarios."""
         query = """
         WITH message_pairs AS (
@@ -396,14 +388,14 @@ class PersonaQueries:
         """
         return (query, [scenario_ids, cutoff_date])
 
-    def get_persona_overview_complete(self, persona_id: Any) -> Tuple[str, List[Any]]:
+    def get_persona_overview_complete(self, persona_id: Any) -> tuple[str, list[Any]]:
         """Build optimized query to get persona overview with all related data in ONE query.
-        
+
         Fetches persona + scenarios using LEFT JOIN and JSON aggregation to avoid N+1 queries.
-        
+
         Args:
             persona_id: UUID of the persona
-            
+
         Returns:
             Tuple of (query string, params list)
         """

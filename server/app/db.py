@@ -1,8 +1,8 @@
 """Database connection management with asyncpg."""
 
 import os
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
 
 import asyncpg  # type: ignore
 from dotenv import load_dotenv
@@ -10,31 +10,31 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Global connection pool
-_pool: Optional[asyncpg.Pool] = None
+_pool: asyncpg.Pool | None = None
 
 
 async def init_db_pool() -> None:
     """Initialize asyncpg connection pool."""
     global _pool
-    
+
     db_user = os.getenv("DB_USER")
     db_password = os.getenv("DB_PASSWORD")
     db_name = os.getenv("DB_NAME")
     db_port = os.getenv("DB_PORT")
     db_host = os.getenv("DB_HOST")
-    
+
     # Construct the database URL
     db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-    
+
     if not db_url:
         raise ValueError("Database url is not set")
-    
+
     # Detect if we're connecting through PgBouncer
     # PgBouncer in transaction mode requires disabling prepared statements
     using_pgbouncer = db_host == "pgbouncer"
-    
+
     print(f"🔌 Initializing asyncpg connection pool to {db_host}:{db_port}/{db_name}")
-    
+
     pool_config = {
         "min_size": 10,
         "max_size": 100,  # High capacity for concurrent analytics + background refresh
@@ -42,22 +42,26 @@ async def init_db_pool() -> None:
         "max_queries": 50000,  # Limit queries per connection before recycling
         "max_inactive_connection_lifetime": 300,  # 5 minutes
     }
-    
+
     # Note: When using PgBouncer in production:
     # - Set PgBouncer pool_mode=transaction (recommended for FastAPI)
     # - Configure PgBouncer: default_pool_size=25, max_client_conn=200
     # - This gives you: 100 app connections -> PgBouncer -> 25 DB connections
     # - Reduces DB connection overhead while maintaining app concurrency
-    
+
     # Disable prepared statements for PgBouncer transaction mode
     if using_pgbouncer:
         pool_config["statement_cache_size"] = 0
-        print("   ⚙️  PgBouncer detected: Disabling prepared statements for transaction mode compatibility")
+        print(
+            "   ⚙️  PgBouncer detected: Disabling prepared statements for transaction mode compatibility"
+        )
     else:
-        print("   ⚙️  Direct connection: Using prepared statements for better performance")
-    
+        print(
+            "   ⚙️  Direct connection: Using prepared statements for better performance"
+        )
+
     _pool = await asyncpg.create_pool(db_url, **pool_config)
-    
+
     print("✅ Database pool initialized")
 
 
@@ -74,15 +78,17 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
     """Dependency for FastAPI endpoints to get database connection."""
     if not _pool:
         raise RuntimeError("Database pool not initialized")
-    
+
     async with _pool.acquire() as connection:
         yield connection
 
 
 @asynccontextmanager
-async def transaction(conn: asyncpg.Connection) -> AsyncGenerator[asyncpg.Connection, None]:
+async def transaction(
+    conn: asyncpg.Connection,
+) -> AsyncGenerator[asyncpg.Connection, None]:
     """Simple transaction context manager.
-    
+
     Usage:
         async with transaction(conn):
             await conn.execute(query1, *params1)
@@ -99,6 +105,6 @@ async def transaction(conn: asyncpg.Connection) -> AsyncGenerator[asyncpg.Connec
         raise
 
 
-def get_pool() -> Optional[asyncpg.Pool]:
+def get_pool() -> asyncpg.Pool | None:
     """Get the global connection pool (for WebSocket handlers)."""
     return _pool

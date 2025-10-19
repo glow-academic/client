@@ -3,13 +3,16 @@
 from datetime import datetime
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.attempts_queries import AttemptsQueries
-from app.schemas.attempts import (BulkArchiveAttemptsRequest,
-                                  BulkArchiveAttemptsResponse,
-                                  UpdateChatCompletedAtRequest,
-                                  UpdateChatCreatedAtRequest,
-                                  UpdateChatTimestampResponse)
+from app.schemas.attempts import (
+    BulkArchiveAttemptsRequest,
+    BulkArchiveAttemptsResponse,
+    UpdateChatCompletedAtRequest,
+    UpdateChatCreatedAtRequest,
+    UpdateChatTimestampResponse,
+)
 from app.services.base import BaseService
 
 
@@ -49,7 +52,7 @@ class AttemptsService(BaseService):
     ) -> UpdateChatTimestampResponse:
         """Update simulation chat createdAt timestamp."""
         # Parse ISO string to datetime
-        created_at = datetime.fromisoformat(request.createdAt.replace('Z', '+00:00'))
+        created_at = datetime.fromisoformat(request.createdAt.replace("Z", "+00:00"))
 
         # Update the createdAt timestamp
         query, params = self.queries.update_chat_created_at(request.chatId, created_at)
@@ -71,10 +74,14 @@ class AttemptsService(BaseService):
     ) -> UpdateChatTimestampResponse:
         """Update simulation chat completedAt timestamp."""
         # Parse ISO string to datetime
-        completed_at = datetime.fromisoformat(request.completedAt.replace('Z', '+00:00'))
+        completed_at = datetime.fromisoformat(
+            request.completedAt.replace("Z", "+00:00")
+        )
 
         # Update the completedAt timestamp
-        query, params = self.queries.update_chat_completed_at(request.chatId, completed_at)
+        query, params = self.queries.update_chat_completed_at(
+            request.chatId, completed_at
+        )
         result = await self.conn.execute(query, *params)
 
         if result == "UPDATE 0":

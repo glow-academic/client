@@ -1,11 +1,14 @@
 """
 Tests for app.services.permissions_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.permissions_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `normalize_path_for_matching`")
 class TestNormalize_Path_For_Matching:
@@ -32,6 +36,7 @@ class TestNormalize_Path_For_Matching:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `route_matches`")
 class TestRoute_Matches:
     """Tests for route_matches function."""
@@ -48,6 +53,7 @@ class TestRoute_Matches:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `has_route_access`")
 class TestHas_Route_Access:
@@ -66,6 +72,7 @@ class TestHas_Route_Access:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_route_permission`")
 class TestGet_Route_Permission:
     """Tests for get_route_permission function."""
@@ -82,6 +89,7 @@ class TestGet_Route_Permission:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_section_permission`")
 class TestGet_Section_Permission:
@@ -100,6 +108,7 @@ class TestGet_Section_Permission:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `get_redirect_path_for_role`")
 class TestGet_Redirect_Path_For_Role:
     """Tests for get_redirect_path_for_role function."""
@@ -116,6 +125,7 @@ class TestGet_Redirect_Path_For_Role:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_available_sections_for_role`")
 class TestGet_Available_Sections_For_Role:
@@ -134,7 +144,10 @@ class TestGet_Available_Sections_For_Role:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `get_available_subsections_for_role`")
+
+@pytest.mark.skip(
+    reason="TODO: implement tests for `get_available_subsections_for_role`"
+)
 class TestGet_Available_Subsections_For_Role:
     """Tests for get_available_subsections_for_role function."""
 
@@ -150,6 +163,7 @@ class TestGet_Available_Subsections_For_Role:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `is_section_available_for_role`")
 class TestIs_Section_Available_For_Role:
@@ -168,7 +182,10 @@ class TestIs_Section_Available_For_Role:
 
 import pytest
 
-@pytest.mark.skip(reason="TODO: implement tests for `get_first_available_section_for_role`")
+
+@pytest.mark.skip(
+    reason="TODO: implement tests for `get_first_available_section_for_role`"
+)
 class TestGet_First_Available_Section_For_Role:
     """Tests for get_first_available_section_for_role function."""
 
@@ -181,4 +198,3 @@ class TestGet_First_Available_Section_For_Role:
         """Test get_first_available_section_for_role error handling."""
         # TODO: Implement error test for get_first_available_section_for_role
         assert False, "IMPLEMENT: Error test for get_first_available_section_for_role"
-

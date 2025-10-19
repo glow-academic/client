@@ -1,14 +1,14 @@
 """Cohort queries - SQL query builders."""
 
-from typing import Any, List, Tuple
+from typing import Any
 
 
 class CohortQueries:
     """Query builders for cohort operations."""
 
     def list_cohorts(
-        self, department_ids: List[str], profile_id: str, campus_domain: str
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str], profile_id: str, campus_domain: str
+    ) -> tuple[str, list[Any]]:
         """Build query for cohorts list with permissions, relationships, and mappings in one query."""
         query = """
         WITH cohort_profiles_agg AS (
@@ -134,10 +134,9 @@ class CohortQueries:
 
         return (query, [department_ids, profile_id, campus_domain])
 
-
     def get_cohort_detail_complete(
         self, cohort_id: str, profile_id: str, campus_domain: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build optimized query to get all cohort detail data in one query."""
         query = """
         WITH cohort_data AS (
@@ -240,10 +239,9 @@ class CohortQueries:
         """
         return (query, [cohort_id, profile_id, campus_domain])
 
-
     def get_cohort_detail_default_complete(
         self, profile_id: str, campus_domain: str
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """Build optimized query to get default cohort detail with all data in one query."""
         query = """
         WITH user_departments AS (
@@ -351,7 +349,7 @@ class CohortQueries:
         """
         return (query, [profile_id, campus_domain])
 
-    def create_cohort(self) -> Tuple[str, List[Any]]:
+    def create_cohort(self) -> tuple[str, list[Any]]:
         """Build query to create cohort."""
         query = """
         INSERT INTO cohorts (
@@ -372,7 +370,7 @@ class CohortQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def insert_cohort_profile(self) -> Tuple[str, List[Any]]:
+    def insert_cohort_profile(self) -> tuple[str, list[Any]]:
         """Build query to insert cohort profile."""
         query = """
         INSERT INTO cohort_profiles (cohort_id, profile_id, active)
@@ -380,7 +378,7 @@ class CohortQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def insert_cohort_simulation(self) -> Tuple[str, List[Any]]:
+    def insert_cohort_simulation(self) -> tuple[str, list[Any]]:
         """Build query to insert cohort simulation."""
         query = """
         INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
@@ -388,14 +386,18 @@ class CohortQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def get_cohort_title(self, cohort_id: str) -> Tuple[str, List[Any]]:
+    def get_cohort_title(self, cohort_id: str) -> tuple[str, list[Any]]:
         """Build query to get cohort title."""
         query = "SELECT id, title, description, active FROM cohorts WHERE id = $1"
         return (query, [cohort_id])
 
     def get_cohort_with_profiles_complete(
-        self, cohort_id: str, department_ids: List[str], current_profile_id: str, campus_domain: str
-    ) -> Tuple[str, List[Any]]:
+        self,
+        cohort_id: str,
+        department_ids: list[str],
+        current_profile_id: str,
+        campus_domain: str,
+    ) -> tuple[str, list[Any]]:
         """Build optimized query to get cohort with available profiles in one query."""
         query = """
         WITH cohort_data AS (
@@ -519,7 +521,7 @@ class CohortQueries:
         """
         return (query, [cohort_id, department_ids, current_profile_id, campus_domain])
 
-    def update_cohort(self) -> Tuple[str, List[Any]]:
+    def update_cohort(self) -> tuple[str, list[Any]]:
         """Build query to update cohort."""
         query = """
         UPDATE cohorts SET
@@ -533,19 +535,17 @@ class CohortQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def delete_cohort_profiles(self, cohort_id: str) -> Tuple[str, List[Any]]:
+    def delete_cohort_profiles(self, cohort_id: str) -> tuple[str, list[Any]]:
         """Build query to delete cohort profiles."""
         query = "DELETE FROM cohort_profiles WHERE cohort_id = $1"
         return (query, [cohort_id])
 
-    def delete_cohort_simulations(
-        self, cohort_id: str
-    ) -> Tuple[str, List[Any]]:
+    def delete_cohort_simulations(self, cohort_id: str) -> tuple[str, list[Any]]:
         """Build query to delete cohort simulations."""
         query = "DELETE FROM cohort_simulations WHERE cohort_id = $1"
         return (query, [cohort_id])
 
-    def remove_cohort_profiles(self) -> Tuple[str, List[Any]]:
+    def remove_cohort_profiles(self) -> tuple[str, list[Any]]:
         """Build query to remove profiles from cohort (set active = false)."""
         query = """
         UPDATE cohort_profiles 
@@ -554,9 +554,7 @@ class CohortQueries:
         """
         return (query, [])
 
-    def get_cohort_for_duplicate(
-        self, cohort_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_cohort_for_duplicate(self, cohort_id: str) -> tuple[str, list[Any]]:
         """Build query to get cohort data for duplication."""
         query = """
         SELECT 
@@ -568,7 +566,7 @@ class CohortQueries:
         """
         return (query, [cohort_id])
 
-    def insert_duplicate_cohort(self) -> Tuple[str, List[Any]]:
+    def insert_duplicate_cohort(self) -> tuple[str, list[Any]]:
         """Build query to insert duplicate cohort."""
         query = """
         INSERT INTO cohorts (
@@ -589,7 +587,7 @@ class CohortQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def copy_cohort_profiles(self) -> Tuple[str, List[Any]]:
+    def copy_cohort_profiles(self) -> tuple[str, list[Any]]:
         """Build query to copy cohort profiles."""
         query = """
         INSERT INTO cohort_profiles (cohort_id, profile_id, active)
@@ -599,7 +597,7 @@ class CohortQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def copy_cohort_simulations(self) -> Tuple[str, List[Any]]:
+    def copy_cohort_simulations(self) -> tuple[str, list[Any]]:
         """Build query to copy cohort simulations."""
         query = """
         INSERT INTO cohort_simulations (cohort_id, simulation_id, active)
@@ -609,7 +607,7 @@ class CohortQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def check_cohort_usage(self, cohort_id: str) -> Tuple[str, List[Any]]:
+    def check_cohort_usage(self, cohort_id: str) -> tuple[str, list[Any]]:
         """Build query to check cohort usage via attempt_profiles."""
         query = """
         SELECT COUNT(DISTINCT ap.attempt_id) as usage_count
@@ -619,14 +617,12 @@ class CohortQueries:
         """
         return (query, [cohort_id])
 
-    def delete_cohort(self, cohort_id: str) -> Tuple[str, List[Any]]:
+    def delete_cohort(self, cohort_id: str) -> tuple[str, list[Any]]:
         """Build query to delete cohort."""
         query = "DELETE FROM cohorts WHERE id = $1"
         return (query, [cohort_id])
 
-    def leave_cohort(
-        self, cohort_id: str, profile_id: str
-    ) -> Tuple[str, List[Any]]:
+    def leave_cohort(self, cohort_id: str, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to remove profile from cohort."""
         query = """
         DELETE FROM cohort_profiles 
@@ -636,9 +632,7 @@ class CohortQueries:
 
     # ===== Analytics Queries for MCP Tools =====
 
-    def get_cohort_with_members(
-        self, cohort_id: str
-    ) -> Tuple[str, List[Any]]:
+    def get_cohort_with_members(self, cohort_id: str) -> tuple[str, list[Any]]:
         """Build optimized query to get cohort with members, simulations, and all results in one query."""
         query = """
         WITH cohort_members AS (
@@ -773,15 +767,14 @@ class CohortQueries:
         """
         return (query, [cohort_id])
 
-
     def search_cohorts_fuzzy(
         self, where_clause: str, limit: int
-    ) -> Tuple[str, List[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Build fuzzy search query for cohorts by title and description.
         Uses dynamic WHERE clause built by search utilities.
         Includes profile counts in the same query.
-        
+
         Params: Built dynamically by search utilities, plus limit at end
         """
         query = f"""
@@ -802,16 +795,15 @@ class CohortQueries:
         """
         return (query, [limit])
 
-
-    def get_cohort_overview_complete(self, cohort_id: Any) -> Tuple[str, List[Any]]:
+    def get_cohort_overview_complete(self, cohort_id: Any) -> tuple[str, list[Any]]:
         """Build optimized query to get cohort overview with all related data in ONE query.
-        
-        Fetches cohort + profiles (roster) + simulations using LEFT JOINs and JSON aggregation 
+
+        Fetches cohort + profiles (roster) + simulations using LEFT JOINs and JSON aggregation
         to avoid N+1 queries.
-        
+
         Args:
             cohort_id: UUID of the cohort
-            
+
         Returns:
             Tuple of (query string, params list)
         """

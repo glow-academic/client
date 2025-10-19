@@ -1,17 +1,22 @@
 """Real database integration tests for CohortService."""
 
-import os
 
 import asyncpg
 import pytest
-from app.schemas.cohorts import (AddProfilesToCohortRequest,
-                                 CohortDetailRequest, CohortsFilters,
-                                 CreateCohortRequest, DeleteCohortRequest,
-                                 DuplicateCohortRequest, LeaveCohortRequest,
-                                 RemoveProfilesFromCohortRequest,
-                                 UpdateCohortRequest)
-from app.services.cohort_service import CohortService
 from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+
+from app.schemas.cohorts import (
+    AddProfilesToCohortRequest,
+    CohortDetailRequest,
+    CohortsFilters,
+    CreateCohortRequest,
+    DeleteCohortRequest,
+    DuplicateCohortRequest,
+    LeaveCohortRequest,
+    RemoveProfilesFromCohortRequest,
+    UpdateCohortRequest,
+)
+from app.services.cohort_service import CohortService
 
 pytestmark = pytest.mark.asyncio
 
@@ -211,9 +216,10 @@ async def test_create_cohort_invalid_department(
         )
 
     # Should raise foreign key violation
-    assert "foreign key" in str(exc_info.value).lower() or "violates" in str(
-        exc_info.value
-    ).lower()
+    assert (
+        "foreign key" in str(exc_info.value).lower()
+        or "violates" in str(exc_info.value).lower()
+    )
 
 
 # ============================================================================
@@ -365,7 +371,9 @@ async def test_delete_cohort_success(
     assert del_resp.success is True
 
     # Verify it's deleted (or marked inactive)
-    cohort = await db.fetchrow("SELECT active FROM cohorts WHERE id = $1", create_resp.cohortId)
+    cohort = await db.fetchrow(
+        "SELECT active FROM cohorts WHERE id = $1", create_resp.cohortId
+    )
     if cohort:
         # If soft delete, should be inactive
         assert cohort["active"] is False
@@ -608,9 +616,7 @@ async def test_search_cohorts(db: asyncpg.Connection, disable_cache: None) -> No
 # ============================================================================
 
 
-async def test_get_cohort_overview(
-    db: asyncpg.Connection, disable_cache: None
-) -> None:
+async def test_get_cohort_overview(db: asyncpg.Connection, disable_cache: None) -> None:
     """Test getting cohort overview."""
     cohort_id = "c5180001-1111-2222-3333-444444444444"  # New GTAs cohort
 

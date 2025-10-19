@@ -1,11 +1,14 @@
 """
 Tests for app.services.model_run_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.model_run_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_model_run_service`")
 class TestGet_Model_Run_Service:
@@ -32,6 +36,7 @@ class TestGet_Model_Run_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `create_model_run`")
 class TestCreate_Model_Run:
     """Tests for create_model_run function."""
@@ -48,6 +53,7 @@ class TestCreate_Model_Run:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `update_model_run_tokens`")
 class TestUpdate_Model_Run_Tokens:
@@ -66,6 +72,7 @@ class TestUpdate_Model_Run_Tokens:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `check_rate_limit`")
 class TestCheck_Rate_Limit:
     """Tests for check_rate_limit function."""
@@ -83,6 +90,7 @@ class TestCheck_Rate_Limit:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `insert_debug_info`")
 class TestInsert_Debug_Info:
     """Tests for insert_debug_info function."""
@@ -96,4 +104,3 @@ class TestInsert_Debug_Info:
         """Test insert_debug_info error handling."""
         # TODO: Implement error test for insert_debug_info
         assert False, "IMPLEMENT: Error test for insert_debug_info"
-

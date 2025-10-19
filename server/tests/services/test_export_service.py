@@ -1,11 +1,14 @@
 """
 Tests for app.services.export_service
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.services.export_service import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_export_service`")
 class TestGet_Export_Service:
@@ -32,6 +36,7 @@ class TestGet_Export_Service:
 
 import pytest
 
+
 @pytest.mark.skip(reason="TODO: implement tests for `export_to_csv`")
 class TestExport_To_Csv:
     """Tests for export_to_csv function."""
@@ -45,4 +50,3 @@ class TestExport_To_Csv:
         """Test export_to_csv error handling."""
         # TODO: Implement error test for export_to_csv
         assert False, "IMPLEMENT: Error test for export_to_csv"
-

@@ -6,24 +6,28 @@ import urllib.parse
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.documents import (BulkDeleteDocumentsRequest,
-                                   BulkUpdateDocumentsRequest,
-                                   DeleteDocumentRequest,
-                                   DeleteDocumentResponse,
-                                   DocumentDetailBulkRequest,
-                                   DocumentDetailBulkResponse,
-                                   DocumentDetailRequest,
-                                   DocumentDetailResponse, DocumentsFilters,
-                                   DocumentsListResponse,
-                                   FinalizeUploadRequest,
-                                   FinalizeUploadResponse,
-                                   GenerateCertificateRequest,
-                                   UpdateDocumentRequest,
-                                   UpdateDocumentResponse)
-from app.services.document_service import DocumentService, get_document_service
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, Response
+
+from app.db import get_db
+from app.schemas.documents import (
+    BulkDeleteDocumentsRequest,
+    BulkUpdateDocumentsRequest,
+    DeleteDocumentRequest,
+    DeleteDocumentResponse,
+    DocumentDetailBulkRequest,
+    DocumentDetailBulkResponse,
+    DocumentDetailRequest,
+    DocumentDetailResponse,
+    DocumentsFilters,
+    DocumentsListResponse,
+    FinalizeUploadRequest,
+    FinalizeUploadResponse,
+    GenerateCertificateRequest,
+    UpdateDocumentRequest,
+    UpdateDocumentResponse,
+)
+from app.services.document_service import DocumentService, get_document_service
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -134,6 +138,7 @@ async def bulk_delete_documents(
 # ============================================================================
 # TUS UPLOAD ENDPOINTS
 # ============================================================================
+
 
 @router.options("/upload")
 async def tus_options(request: Request) -> Response:
@@ -320,6 +325,7 @@ async def finalize_upload(
 # DOWNLOAD ENDPOINTS
 # ============================================================================
 
+
 @router.get("/download/{document_id}")
 async def download_document(
     document_id: str,
@@ -335,8 +341,10 @@ async def download_document(
     file_path, filename, content_type = result
 
     # Properly encode filename for HTTP headers
-    encoded_filename = urllib.parse.quote(filename, safe='')
-    content_disposition = f"inline; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}"
+    encoded_filename = urllib.parse.quote(filename, safe="")
+    content_disposition = (
+        f"inline; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}"
+    )
 
     return FileResponse(
         path=file_path,
@@ -344,7 +352,7 @@ async def download_document(
         headers={
             "Content-Disposition": content_disposition,
             "Cache-Control": "private, max-age=0, must-revalidate",
-        }
+        },
     )
 
 
@@ -371,6 +379,7 @@ async def download_csv(
 # CERTIFICATE GENERATION
 # ============================================================================
 
+
 @router.post("/certificate")
 async def generate_certificate(
     request: GenerateCertificateRequest,
@@ -388,7 +397,5 @@ async def generate_certificate(
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate certificate: {str(e)}"
+            status_code=500, detail=f"Failed to generate certificate: {str(e)}"
         )
-

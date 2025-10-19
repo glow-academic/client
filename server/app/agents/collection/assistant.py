@@ -2,23 +2,27 @@ import json
 import logging
 import os
 import uuid
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import asyncpg  # type: ignore
 from agents import Runner, trace
-from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
-                          TResponseInputItem)
+from agents.items import (
+    ReasoningItem,
+    ToolCallItem,
+    ToolCallOutputItem,
+    TResponseInputItem,
+)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
+from dotenv import load_dotenv
+from fastapi import Depends
+from openai.types.responses import ResponseFunctionToolCall, ResponseTextDeltaEvent
+
 from app.agents.generic import GenericAgent
 from app.db import get_db
 from app.services.assistant_service import AssistantService
 from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
-from dotenv import load_dotenv
-from fastapi import Depends
-from openai.types.responses import (ResponseFunctionToolCall,
-                                    ResponseTextDeltaEvent)
 
 load_dotenv()
 
@@ -79,7 +83,10 @@ async def cancel_assistant_run(chat_id: uuid.UUID) -> bool:
 
 
 async def _handle_assistant_chat(
-    chat_id: uuid.UUID, mcp_servers: list[MCPServer], department_id: uuid.UUID, conn: asyncpg.Connection
+    chat_id: uuid.UUID,
+    mcp_servers: list[MCPServer],
+    department_id: uuid.UUID,
+    conn: asyncpg.Connection,
 ) -> AsyncGenerator[str, None]:
     """Handle assistant chat processing."""
 
@@ -87,8 +94,7 @@ async def _handle_assistant_chat(
     # This also validates that the chat exists and has an assistant agent configured
     assistant_service = AssistantService(conn)
     context = await assistant_service.get_assistant_run_context(
-        chat_id=chat_id,
-        department_id=department_id
+        chat_id=chat_id, department_id=department_id
     )
 
     input_items: list[TResponseInputItem] = []
@@ -139,7 +145,11 @@ async def _handle_assistant_chat(
     )
 
     with trace(context.title, trace_id=context.trace_id):
-        result = Runner.run_streamed(agent_instance.agent(), input=input_items, context=DebugContext(conn=conn, model_run_id=model_run_id))
+        result = Runner.run_streamed(
+            agent_instance.agent(),
+            input=input_items,
+            context=DebugContext(conn=conn, model_run_id=model_run_id),
+        )
 
     # Store the result in active runs for potential cancellation using unified tracking
     from app.main import store_active_run

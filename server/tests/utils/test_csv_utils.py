@@ -2,7 +2,6 @@
 Tests for app.utils.csv
 """
 
-import pytest
 from app.utils.csv import parse_csv_file, validate_csv_format
 
 

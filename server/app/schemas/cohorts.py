@@ -1,11 +1,9 @@
 """Cohorts V2 API schemas."""
 
-from typing import List, Optional
 
 from pydantic import BaseModel
 
-from .base import (CohortMapping, DepartmentMapping, ProfileMapping,
-                   SimulationMapping)
+from .base import CohortMapping, DepartmentMapping, ProfileMapping, SimulationMapping
 from .staff import StaffItem
 
 # ============================================================================
@@ -16,7 +14,7 @@ from .staff import StaffItem
 class CohortsFilters(BaseModel):
     """Filters for cohorts list."""
 
-    departmentIds: List[str]
+    departmentIds: list[str]
     profileId: str
 
 
@@ -30,22 +28,22 @@ class CohortItem(BaseModel):
 
     cohort_id: str
     name: str  # Maps to cohorts.title
-    description: Optional[str]
+    description: str | None
     active: bool
     default_cohort: bool
     can_edit: bool
     can_delete: bool
     can_duplicate: bool
     can_leave: bool
-    profile_ids: List[str]
-    simulation_ids: List[str]
+    profile_ids: list[str]
+    simulation_ids: list[str]
     num_members: int
 
 
 class CohortsListResponse(BaseModel):
     """Response for cohorts list endpoint."""
 
-    cohorts: List[CohortItem]
+    cohorts: list[CohortItem]
     profile_mapping: ProfileMapping
     simulation_mapping: SimulationMapping
 
@@ -67,17 +65,17 @@ class CohortDetailResponse(BaseModel):
 
     # Basic fields
     title: str  # cohorts.title
-    description: Optional[str]
+    description: str | None
     department_id: str
-    valid_department_ids: List[str]
+    valid_department_ids: list[str]
     active: bool
     default_cohort: bool
 
     # Relationships
-    simulation_ids: List[str]
-    valid_simulation_ids: List[str]
-    profile_ids: List[str]
-    valid_profile_ids: List[str]
+    simulation_ids: list[str]
+    valid_simulation_ids: list[str]
+    profile_ids: list[str]
+    valid_profile_ids: list[str]
 
     # Top-level mappings
     simulation_mapping: SimulationMapping
@@ -100,12 +98,12 @@ class CreateCohortRequest(BaseModel):
     """Request to create cohort."""
 
     title: str
-    description: Optional[str]
+    description: str | None
     department_id: str
     active: bool
     default_cohort: bool
-    simulation_ids: List[str]
-    profile_ids: List[str]
+    simulation_ids: list[str]
+    profile_ids: list[str]
 
 
 class CreateCohortResponse(BaseModel):
@@ -121,12 +119,12 @@ class UpdateCohortRequest(BaseModel):
 
     cohortId: str
     title: str
-    description: Optional[str]
+    description: str | None
     department_id: str
     active: bool
     default_cohort: bool
-    simulation_ids: List[str]
-    profile_ids: List[str]
+    simulation_ids: list[str]
+    profile_ids: list[str]
 
 
 class UpdateCohortResponse(BaseModel):
@@ -190,9 +188,9 @@ class AddProfilesToCohortRequest(BaseModel):
     """Request to add profiles to cohort (supports both existing and new)."""
 
     cohortId: str
-    departmentIds: List[str]  # Needed for creating new profiles with dept relationships
-    existingProfileIds: Optional[List[str]] = None
-    newProfiles: Optional[List[NewProfileForCohort]] = None
+    departmentIds: list[str]  # Needed for creating new profiles with dept relationships
+    existingProfileIds: list[str] | None = None
+    newProfiles: list[NewProfileForCohort] | None = None
 
 
 class AddProfilesToCohortResponse(BaseModel):
@@ -206,7 +204,7 @@ class RemoveProfilesFromCohortRequest(BaseModel):
     """Request to remove profiles from cohort."""
 
     cohortId: str
-    profileIds: List[str]
+    profileIds: list[str]
 
 
 class RemoveProfilesFromCohortResponse(BaseModel):
@@ -225,7 +223,7 @@ class CohortDetailWithProfilesRequest(BaseModel):
     """Request for cohort detail with available profiles."""
 
     cohortId: str
-    departmentIds: List[str]
+    departmentIds: list[str]
     currentProfileId: str
 
 
@@ -235,16 +233,15 @@ class CohortDetailWithProfilesResponse(BaseModel):
     # Cohort info
     cohort_id: str
     title: str
-    description: Optional[str]
+    description: str | None
     active: bool
 
     # Profile IDs already in cohort
-    current_profile_ids: List[str]
+    current_profile_ids: list[str]
 
     # Available profiles (filtered: instructional/ta, not in cohort, not default)
-    available_profiles: List[StaffItem]
+    available_profiles: list[StaffItem]
 
     # Mappings
     department_mapping: DepartmentMapping
     cohort_mapping: CohortMapping
-

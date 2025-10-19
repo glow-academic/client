@@ -1,6 +1,6 @@
 """Model run schemas for tracking model usage and tokens."""
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -12,7 +12,7 @@ class CreateModelRunRequest(BaseModel):
     model_id: str
     entity_id: str
     entity_type: Literal["agent", "persona"]
-    profile_id: Optional[str] = None
+    profile_id: str | None = None
 
 
 class CreateModelRunResponse(BaseModel):
@@ -33,4 +33,3 @@ class UpdateModelRunTokensResponse(BaseModel):
     """Response after updating token counts."""
 
     success: bool
-

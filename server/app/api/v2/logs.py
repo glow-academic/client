@@ -3,12 +3,18 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.logs import (BulkDeleteLogsRequest, BulkDeleteLogsResponse,
-                              CreateLogRequest, CreateLogResponse,
-                              LogsListRequest, LogsListResponse)
-from app.services.log_service import get_log_service
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.logs import (
+    BulkDeleteLogsRequest,
+    BulkDeleteLogsResponse,
+    CreateLogRequest,
+    CreateLogResponse,
+    LogsListRequest,
+    LogsListResponse,
+)
+from app.services.log_service import get_log_service
 
 router = APIRouter()
 
@@ -48,7 +54,4 @@ async def bulk_delete_logs(
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete logs: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to delete logs: {str(e)}")

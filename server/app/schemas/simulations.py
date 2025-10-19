@@ -1,11 +1,15 @@
 """Simulations V2 API schemas."""
 
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from .base import (DepartmentMapping, ParameterItemMapping, ParameterMapping,
-                   RubricMapping, ScenarioMapping)
+from .base import (
+    DepartmentMapping,
+    ParameterItemMapping,
+    ParameterMapping,
+    RubricMapping,
+    ScenarioMapping,
+)
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -15,7 +19,7 @@ from .base import (DepartmentMapping, ParameterItemMapping, ParameterMapping,
 class SimulationsFilters(BaseModel):
     """Filters for simulations list."""
 
-    departmentIds: List[str]
+    departmentIds: list[str]
     profileId: str
 
 
@@ -30,7 +34,7 @@ class SimulationItem(BaseModel):
     simulation_id: str
     name: str  # Maps to simulations.title
     description: str
-    time_limit: Optional[int]
+    time_limit: int | None
     active: bool
     default_simulation: bool
     practice_simulation: bool
@@ -38,14 +42,14 @@ class SimulationItem(BaseModel):
     can_delete: bool
     can_duplicate: bool
     num_scenarios: int
-    scenario_ids: List[str]
+    scenario_ids: list[str]
     rubric_id: str
 
 
 class SimulationsListResponse(BaseModel):
     """Response for simulations list endpoint."""
 
-    simulations: List[SimulationItem]
+    simulations: list[SimulationItem]
     scenario_mapping: ScenarioMapping
     rubric_mapping: RubricMapping
 
@@ -64,7 +68,7 @@ class ScenarioInSimulation(BaseModel):
     active: bool
     default_scenario: bool
     position: int  # From simulation_scenarios junction table
-    parameter_item_ids: List[str]  # For displaying badges
+    parameter_item_ids: list[str]  # For displaying badges
 
 
 class ParameterItem(BaseModel):
@@ -73,7 +77,7 @@ class ParameterItem(BaseModel):
     id: str
     parameter_id: str
     name: str
-    description: Optional[str]
+    description: str | None
 
 
 class ParameterItemDetail(BaseModel):
@@ -81,7 +85,7 @@ class ParameterItemDetail(BaseModel):
 
     id: str
     name: str
-    description: Optional[str]
+    description: str | None
     parameter_id: str
 
 
@@ -99,12 +103,12 @@ class SimulationDetailResponse(BaseModel):
     name: str  # Maps to simulations.title
     description: str
     department_id: str
-    valid_department_ids: List[str]
-    time_limit: Optional[int]
+    valid_department_ids: list[str]
+    time_limit: int | None
     rubric_id: str
-    valid_rubric_ids: List[str]
-    scenario_ids: List[str]
-    valid_scenario_ids: List[str]
+    valid_rubric_ids: list[str]
+    scenario_ids: list[str]
+    valid_scenario_ids: list[str]
 
     # Boolean parameters
     active: bool
@@ -125,11 +129,11 @@ class SimulationDetailResponse(BaseModel):
     cohort_count: int
 
     # Full scenario objects (ordered by position)
-    scenarios: List[ScenarioInSimulation]
+    scenarios: list[ScenarioInSimulation]
 
     # Parameter data for scenario picker
-    parameters: List[ParameterItem]
-    parameter_items: List[ParameterItemDetail]
+    parameters: list[ParameterItem]
+    parameter_items: list[ParameterItemDetail]
     parameter_mapping: ParameterMapping
 
     # Top-level mappings
@@ -163,9 +167,9 @@ class CreateSimulationRequest(BaseModel):
     input_guardrail_active: bool
     output_guardrail_active: bool
     image_input_active: bool
-    time_limit: Optional[int]
+    time_limit: int | None
     rubric_id: str
-    scenario_ids: List[str]
+    scenario_ids: list[str]
 
 
 class CreateSimulationResponse(BaseModel):
@@ -190,9 +194,9 @@ class UpdateSimulationRequest(BaseModel):
     input_guardrail_active: bool
     output_guardrail_active: bool
     image_input_active: bool
-    time_limit: Optional[int]
+    time_limit: int | None
     rubric_id: str
-    scenario_ids: List[str]
+    scenario_ids: list[str]
 
 
 class UpdateSimulationResponse(BaseModel):
@@ -227,4 +231,3 @@ class DeleteSimulationResponse(BaseModel):
 
     success: bool
     message: str
-

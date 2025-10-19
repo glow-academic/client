@@ -1,20 +1,20 @@
 # utils/scenario.py
 
-from typing import Any, Dict, List
+from typing import Any
 
 from agents.items import TResponseInputItem
 
 
 def format_parameter_item_info(
-    parameter_items: List[Dict[str, Any]]
+    parameter_items: list[dict[str, Any]],
 ) -> TResponseInputItem:
     """
     Format parameter item information as TResponseInputItem.
-    
+
     Args:
         parameter_items: List of dicts with keys: item_name, item_description,
                         param_name, param_description
-    
+
     Returns:
         Dict with role and content formatted for agent input
     """

@@ -1,19 +1,17 @@
 import base64
 import os
-import uuid
-from typing import Any, Dict, List
+from typing import Any
 
-import asyncpg  # type: ignore
 import pypdf  # type: ignore
 from agents.items import TResponseInputItem
-from app.extensions import UPLOAD_FOLDER
-from openai.types.responses.response_input_image_param import \
-    ResponseInputImageParam
+from openai.types.responses.response_input_image_param import ResponseInputImageParam
 from openai.types.responses.response_input_item_param import Message
-from openai.types.responses.response_input_message_content_list_param import \
-    ResponseInputMessageContentListParam
-from openai.types.responses.response_input_text_param import \
-    ResponseInputTextParam
+from openai.types.responses.response_input_message_content_list_param import (
+    ResponseInputMessageContentListParam,
+)
+from openai.types.responses.response_input_text_param import ResponseInputTextParam
+
+from app.extensions import UPLOAD_FOLDER
 
 
 def _read_pdf_text_pages(full_path: str) -> list[str]:
@@ -32,11 +30,11 @@ def _read_pdf_text_pages(full_path: str) -> list[str]:
 def _read_text_file(full_path: str) -> str:
     """Read a text file with UTF-8 fallback to latin-1."""
     try:
-        with open(full_path, "r", encoding="utf-8") as file:  # noqa: PTH123
+        with open(full_path, encoding="utf-8") as file:  # noqa: PTH123
             return file.read().strip()
     except UnicodeDecodeError:
         try:
-            with open(full_path, "r", encoding="latin-1") as file:  # noqa: PTH123
+            with open(full_path, encoding="latin-1") as file:  # noqa: PTH123
                 return file.read().strip()
         except Exception as e:  # pragma: no cover - surfaced to caller
             raise ValueError(f"Error reading text file {full_path}: {str(e)}")
@@ -69,18 +67,19 @@ def _pdf_pages_to_image_data_urls(full_path: str) -> list[str]:
 
     return image_urls
 
+
 def format_document_info(
-    documents: List[Dict[str, Any]], show_images: bool = False
+    documents: list[dict[str, Any]], show_images: bool = False
 ) -> TResponseInputItem:
     """Build a structured list of per-document, per-page text and optional images.
 
     Order per document: docN-image-pageM, then docN-text-pageM. If images are
     unavailable or disabled, only include docN-text-pageM.
-    
+
     Args:
         documents: List of dicts with keys: id, name, file_path, mime_type
         show_images: Whether to include images in the output
-        
+
     Returns:
         TResponseInputItem formatted for agent input
     """
@@ -88,7 +87,7 @@ def format_document_info(
         # Return a minimal message if no documents provided
         msg: Message = {
             "role": "user",
-            "content": [{"type": "input_text", "text": "No documents provided"}]
+            "content": [{"type": "input_text", "text": "No documents provided"}],
         }
         return msg
 
@@ -99,16 +98,15 @@ def format_document_info(
             # Skip missing docs quietly to keep order for others
             continue
 
-        full_path = os.path.join(UPLOAD_FOLDER, document['file_path'])
+        full_path = os.path.join(UPLOAD_FOLDER, document["file_path"])
         # Note: document.tags removed in BCNF migration (now via simulation_tags)
         tags_display = ""  # document.tags removed
-        mime_lower = (document.get('mime_type') or "").lower()
+        mime_lower = (document.get("mime_type") or "").lower()
 
-        is_pdf = document['file_path'].lower().endswith(".pdf") or "pdf" in mime_lower
-        is_image = (
-            mime_lower.startswith("image/")
-            or document['file_path'].lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))
-        )
+        is_pdf = document["file_path"].lower().endswith(".pdf") or "pdf" in mime_lower
+        is_image = mime_lower.startswith("image/") or document[
+            "file_path"
+        ].lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))
 
         if is_pdf:
             # Per-page text via pypdf
@@ -116,7 +114,11 @@ def format_document_info(
             # Optional images via PyMuPDF if enabled
             image_urls = _pdf_pages_to_image_data_urls(full_path) if show_images else []
 
-            total_pages = max(len(text_pages), len(image_urls)) if show_images else len(text_pages)
+            total_pages = (
+                max(len(text_pages), len(image_urls))
+                if show_images
+                else len(text_pages)
+            )
             for page_num in range(total_pages):
                 # Image first if available
                 if show_images and page_num < len(image_urls):
@@ -149,16 +151,20 @@ def format_document_info(
                         img_bytes = img_file.read()
                     b64 = base64.b64encode(img_bytes).decode("ascii")
                     # Prefer MIME from record; fallback based on extension
-                    mime_type = document.get('mime_type')
-                    mime = mime_type if (mime_type and mime_type.startswith("image/")) else None
+                    mime_type = document.get("mime_type")
+                    mime = (
+                        mime_type
+                        if (mime_type and mime_type.startswith("image/"))
+                        else None
+                    )
                     if not mime:
-                        if document['file_path'].lower().endswith(".png"):
+                        if document["file_path"].lower().endswith(".png"):
                             mime = "image/png"
-                        elif document['file_path'].lower().endswith((".jpg", ".jpeg")):
+                        elif document["file_path"].lower().endswith((".jpg", ".jpeg")):
                             mime = "image/jpeg"
-                        elif document['file_path'].lower().endswith(".webp"):
+                        elif document["file_path"].lower().endswith(".webp"):
                             mime = "image/webp"
-                        elif document['file_path'].lower().endswith(".gif"):
+                        elif document["file_path"].lower().endswith(".gif"):
                             mime = "image/gif"
                         else:
                             mime = "image/png"

@@ -2,36 +2,50 @@
 
 import os
 import uuid
-from typing import Any, Dict, List
+from typing import Any
 
 import asyncpg  # type: ignore
+from dotenv import load_dotenv
+
 from app.cache import keys
 from app.db import transaction
-from app.extensions import get_query_client
 from app.queries.cohort_queries import CohortQueries
 from app.queries.staff_queries import StaffQueries
-from app.schemas.base import (CohortMapping, CohortMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              ProfileMappingItem, SimulationMappingItem)
-from app.schemas.cohorts import (AddProfilesToCohortRequest,
-                                 AddProfilesToCohortResponse,
-                                 CohortDetailDefaultRequest,
-                                 CohortDetailRequest, CohortDetailResponse,
-                                 CohortDetailWithProfilesRequest,
-                                 CohortDetailWithProfilesResponse, CohortItem,
-                                 CohortsFilters, CohortsListResponse,
-                                 CreateCohortRequest, CreateCohortResponse,
-                                 DeleteCohortRequest, DeleteCohortResponse,
-                                 DuplicateCohortRequest,
-                                 DuplicateCohortResponse, LeaveCohortRequest,
-                                 LeaveCohortResponse,
-                                 RemoveProfilesFromCohortRequest,
-                                 RemoveProfilesFromCohortResponse,
-                                 UpdateCohortRequest, UpdateCohortResponse)
+from app.schemas.base import (
+    CohortMapping,
+    CohortMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ProfileMappingItem,
+    SimulationMappingItem,
+)
+from app.schemas.cohorts import (
+    AddProfilesToCohortRequest,
+    AddProfilesToCohortResponse,
+    CohortDetailDefaultRequest,
+    CohortDetailRequest,
+    CohortDetailResponse,
+    CohortDetailWithProfilesRequest,
+    CohortDetailWithProfilesResponse,
+    CohortItem,
+    CohortsFilters,
+    CohortsListResponse,
+    CreateCohortRequest,
+    CreateCohortResponse,
+    DeleteCohortRequest,
+    DeleteCohortResponse,
+    DuplicateCohortRequest,
+    DuplicateCohortResponse,
+    LeaveCohortRequest,
+    LeaveCohortResponse,
+    RemoveProfilesFromCohortRequest,
+    RemoveProfilesFromCohortResponse,
+    UpdateCohortRequest,
+    UpdateCohortResponse,
+)
 from app.schemas.staff import StaffItem
 from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -50,7 +64,9 @@ class CohortService(BaseService):
         """Get cohorts list with permissions and relationships."""
         return await self._execute_get_cohorts_list(filters)
 
-    async def _execute_get_cohorts_list(self, filters: CohortsFilters) -> CohortsListResponse:
+    async def _execute_get_cohorts_list(
+        self, filters: CohortsFilters
+    ) -> CohortsListResponse:
         """Execute the actual cohorts list query."""
         # Get campus domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
@@ -64,49 +80,55 @@ class CohortService(BaseService):
 
         # Build response
         cohorts = []
-        profile_mapping: Dict[str, ProfileMappingItem] = {}
-        simulation_mapping: Dict[str, SimulationMappingItem] = {}
+        profile_mapping: dict[str, ProfileMappingItem] = {}
+        simulation_mapping: dict[str, SimulationMappingItem] = {}
 
         for row in result:
             # Convert UUID arrays to string arrays
-            profile_ids = [str(pid) for pid in (row['profile_ids'] or [])]
-            simulation_ids = [str(sid) for sid in (row['simulation_ids'] or [])]
+            profile_ids = [str(pid) for pid in (row["profile_ids"] or [])]
+            simulation_ids = [str(sid) for sid in (row["simulation_ids"] or [])]
 
             cohorts.append(
                 CohortItem(
-                    cohort_id=str(row['cohort_id']),
-                    name=row['name'],
-                    description=row['description'],
-                    active=row['active'],
-                    default_cohort=row['default_cohort'],
-                    can_edit=row['can_edit'],
-                    can_delete=row['can_delete'],
-                    can_duplicate=row['can_duplicate'],
-                    can_leave=row['can_leave'],
+                    cohort_id=str(row["cohort_id"]),
+                    name=row["name"],
+                    description=row["description"],
+                    active=row["active"],
+                    default_cohort=row["default_cohort"],
+                    can_edit=row["can_edit"],
+                    can_delete=row["can_delete"],
+                    can_duplicate=row["can_duplicate"],
+                    can_leave=row["can_leave"],
                     profile_ids=profile_ids,
                     simulation_ids=simulation_ids,
-                    num_members=row['num_members'],
+                    num_members=row["num_members"],
                 )
             )
 
             # Parse profile mapping from first row (same for all cohorts)
-            if not profile_mapping and row['profile_mapping']:
+            if not profile_mapping and row["profile_mapping"]:
                 # asyncpg returns JSONB as dict already, but handle both cases
-                pm = row['profile_mapping'] if isinstance(row['profile_mapping'], dict) else {}
+                pm = (
+                    row["profile_mapping"]
+                    if isinstance(row["profile_mapping"], dict)
+                    else {}
+                )
                 for pid, pdata in pm.items():
                     profile_mapping[pid] = ProfileMappingItem(
-                        name=pdata['name'],
-                        description=pdata['description']
+                        name=pdata["name"], description=pdata["description"]
                     )
 
             # Parse simulation mapping from first row (same for all cohorts)
-            if not simulation_mapping and row['simulation_mapping']:
+            if not simulation_mapping and row["simulation_mapping"]:
                 # asyncpg returns JSONB as dict already, but handle both cases
-                sm = row['simulation_mapping'] if isinstance(row['simulation_mapping'], dict) else {}
+                sm = (
+                    row["simulation_mapping"]
+                    if isinstance(row["simulation_mapping"], dict)
+                    else {}
+                )
                 for sid, sdata in sm.items():
                     simulation_mapping[sid] = SimulationMappingItem(
-                        name=sdata['name'],
-                        description=sdata['description']
+                        name=sdata["name"], description=sdata["description"]
                     )
 
         return CohortsListResponse(
@@ -115,7 +137,9 @@ class CohortService(BaseService):
             simulation_mapping=simulation_mapping,
         )
 
-    @with_cache(lambda self, request: keys.cohort_by_id(request.cohortId, request.profileId))
+    @with_cache(
+        lambda self, request: keys.cohort_by_id(request.cohortId, request.profileId)
+    )
     async def get_cohort_detail(
         self, request: CohortDetailRequest
     ) -> CohortDetailResponse:
@@ -140,42 +164,43 @@ class CohortService(BaseService):
 
         # Parse simulation mapping from JSONB
         simulation_mapping = {}
-        if cohort['simulation_mapping'] and isinstance(cohort['simulation_mapping'], dict):
-            for sid, sdata in cohort['simulation_mapping'].items():
+        if cohort["simulation_mapping"] and isinstance(
+            cohort["simulation_mapping"], dict
+        ):
+            for sid, sdata in cohort["simulation_mapping"].items():
                 simulation_mapping[sid] = SimulationMappingItem(
-                    name=sdata['name'],
-                    description=sdata['description']
+                    name=sdata["name"], description=sdata["description"]
                 )
 
         # Parse profile mapping from JSONB
         profile_mapping = {}
-        if cohort['profile_mapping'] and isinstance(cohort['profile_mapping'], dict):
-            for pid, pdata in cohort['profile_mapping'].items():
+        if cohort["profile_mapping"] and isinstance(cohort["profile_mapping"], dict):
+            for pid, pdata in cohort["profile_mapping"].items():
                 profile_mapping[pid] = ProfileMappingItem(
-                    name=pdata['name'],
-                    description=pdata['description']
+                    name=pdata["name"], description=pdata["description"]
                 )
 
         # Parse department mapping from JSONB
         department_mapping = {}
-        if cohort['department_mapping'] and isinstance(cohort['department_mapping'], dict):
-            for did, ddata in cohort['department_mapping'].items():
+        if cohort["department_mapping"] and isinstance(
+            cohort["department_mapping"], dict
+        ):
+            for did, ddata in cohort["department_mapping"].items():
                 department_mapping[did] = DepartmentMappingItem(
-                    name=ddata['name'],
-                    description=ddata['description']
+                    name=ddata["name"], description=ddata["description"]
                 )
 
         return CohortDetailResponse(
-            title=cohort['title'],
-            description=cohort['description'],
-            department_id=cohort['department_id'],
-            valid_department_ids=cohort['valid_department_ids'],
-            active=cohort['active'],
-            default_cohort=cohort['default_cohort'],
-            simulation_ids=cohort['simulation_ids'],
-            valid_simulation_ids=cohort['valid_simulation_ids'],
-            profile_ids=cohort['profile_ids'],
-            valid_profile_ids=cohort['valid_profile_ids'],
+            title=cohort["title"],
+            description=cohort["description"],
+            department_id=cohort["department_id"],
+            valid_department_ids=cohort["valid_department_ids"],
+            active=cohort["active"],
+            default_cohort=cohort["default_cohort"],
+            simulation_ids=cohort["simulation_ids"],
+            valid_simulation_ids=cohort["valid_simulation_ids"],
+            profile_ids=cohort["profile_ids"],
+            valid_profile_ids=cohort["valid_profile_ids"],
             simulation_mapping=simulation_mapping,
             profile_mapping=profile_mapping,
             department_mapping=department_mapping,
@@ -206,48 +231,53 @@ class CohortService(BaseService):
 
         # Parse simulation mapping from JSONB
         simulation_mapping = {}
-        if cohort['simulation_mapping'] and isinstance(cohort['simulation_mapping'], dict):
-            for sid, sdata in cohort['simulation_mapping'].items():
+        if cohort["simulation_mapping"] and isinstance(
+            cohort["simulation_mapping"], dict
+        ):
+            for sid, sdata in cohort["simulation_mapping"].items():
                 simulation_mapping[sid] = SimulationMappingItem(
-                    name=sdata['name'],
-                    description=sdata['description']
+                    name=sdata["name"], description=sdata["description"]
                 )
 
         # Parse profile mapping from JSONB
         profile_mapping = {}
-        if cohort['profile_mapping'] and isinstance(cohort['profile_mapping'], dict):
-            for pid, pdata in cohort['profile_mapping'].items():
+        if cohort["profile_mapping"] and isinstance(cohort["profile_mapping"], dict):
+            for pid, pdata in cohort["profile_mapping"].items():
                 profile_mapping[pid] = ProfileMappingItem(
-                    name=pdata['name'],
-                    description=pdata['description']
+                    name=pdata["name"], description=pdata["description"]
                 )
 
         # Parse department mapping from JSONB
         department_mapping = {}
-        if cohort['department_mapping'] and isinstance(cohort['department_mapping'], dict):
-            for did, ddata in cohort['department_mapping'].items():
+        if cohort["department_mapping"] and isinstance(
+            cohort["department_mapping"], dict
+        ):
+            for did, ddata in cohort["department_mapping"].items():
                 department_mapping[did] = DepartmentMappingItem(
-                    name=ddata['name'],
-                    description=ddata['description']
+                    name=ddata["name"], description=ddata["description"]
                 )
 
         return CohortDetailResponse(
-            title=cohort['title'],
-            description=cohort['description'],
-            department_id=cohort['department_id'],
-            valid_department_ids=cohort['valid_department_ids'],
-            active=cohort['active'],
-            default_cohort=cohort['default_cohort'],
-            simulation_ids=cohort['simulation_ids'],
-            valid_simulation_ids=cohort['valid_simulation_ids'],
-            profile_ids=cohort['profile_ids'],
-            valid_profile_ids=cohort['valid_profile_ids'],
+            title=cohort["title"],
+            description=cohort["description"],
+            department_id=cohort["department_id"],
+            valid_department_ids=cohort["valid_department_ids"],
+            active=cohort["active"],
+            default_cohort=cohort["default_cohort"],
+            simulation_ids=cohort["simulation_ids"],
+            valid_simulation_ids=cohort["valid_simulation_ids"],
+            profile_ids=cohort["profile_ids"],
+            valid_profile_ids=cohort["valid_profile_ids"],
             simulation_mapping=simulation_mapping,
             profile_mapping=profile_mapping,
             department_mapping=department_mapping,
         )
 
-    @with_cache(lambda self, request: keys.cohort_with_profiles(request.cohortId, request.departmentIds, request.currentProfileId))
+    @with_cache(
+        lambda self, request: keys.cohort_with_profiles(
+            request.cohortId, request.departmentIds, request.currentProfileId
+        )
+    )
     async def get_cohort_detail_with_profiles(
         self, request: CohortDetailWithProfilesRequest
     ) -> CohortDetailWithProfilesResponse:
@@ -263,7 +293,10 @@ class CohortService(BaseService):
 
         # Get all data in one query
         query, params = self.queries.get_cohort_with_profiles_complete(
-            request.cohortId, request.departmentIds, request.currentProfileId, campus_domain
+            request.cohortId,
+            request.departmentIds,
+            request.currentProfileId,
+            campus_domain,
         )
         result = await self.conn.fetchrow(query, *params)
 
@@ -272,53 +305,55 @@ class CohortService(BaseService):
 
         # Parse available profiles from JSONB
         available_profiles = []
-        if result['available_profiles'] and isinstance(result['available_profiles'], list):
-            for profile_data in result['available_profiles']:
+        if result["available_profiles"] and isinstance(
+            result["available_profiles"], list
+        ):
+            for profile_data in result["available_profiles"]:
                 if isinstance(profile_data, dict):
                     available_profiles.append(
                         StaffItem(
-                            profile_id=profile_data['profile_id'],
-                            first_name=profile_data['first_name'],
-                            last_name=profile_data['last_name'],
-                            alias=profile_data['alias'],
-                            name=profile_data['name'],
-                            role=profile_data['role'],
-                            email=profile_data['email'],
-                            initials=profile_data['initials'],
-                            active=profile_data['active'],
-                            lastActive=profile_data['lastActive'],
-                            cohort_ids=profile_data['cohort_ids'] or [],
-                            requests_per_day=profile_data['requests_per_day'],
-                            default_profile=profile_data['default_profile'],
-                            requests_in_last_day=profile_data['requests_in_last_day'],
-                            can_edit=profile_data['can_edit'],
-                            can_delete=profile_data['can_delete'],
+                            profile_id=profile_data["profile_id"],
+                            first_name=profile_data["first_name"],
+                            last_name=profile_data["last_name"],
+                            alias=profile_data["alias"],
+                            name=profile_data["name"],
+                            role=profile_data["role"],
+                            email=profile_data["email"],
+                            initials=profile_data["initials"],
+                            active=profile_data["active"],
+                            lastActive=profile_data["lastActive"],
+                            cohort_ids=profile_data["cohort_ids"] or [],
+                            requests_per_day=profile_data["requests_per_day"],
+                            default_profile=profile_data["default_profile"],
+                            requests_in_last_day=profile_data["requests_in_last_day"],
+                            can_edit=profile_data["can_edit"],
+                            can_delete=profile_data["can_delete"],
                         )
                     )
 
         # Parse department mapping from JSONB
         department_mapping: DepartmentMapping = {}
-        if result['department_mapping'] and isinstance(result['department_mapping'], dict):
-            for did, ddata in result['department_mapping'].items():
+        if result["department_mapping"] and isinstance(
+            result["department_mapping"], dict
+        ):
+            for did, ddata in result["department_mapping"].items():
                 department_mapping[did] = DepartmentMappingItem(
-                    name=ddata['name'],
-                    description=ddata['description']
+                    name=ddata["name"], description=ddata["description"]
                 )
 
         # Build cohort mapping (just this cohort)
         cohort_mapping: CohortMapping = {
-            result['cohort_id']: CohortMappingItem(
-                name=result['title'],
-                description=result['description'] or ""
+            result["cohort_id"]: CohortMappingItem(
+                name=result["title"], description=result["description"] or ""
             )
         }
 
         return CohortDetailWithProfilesResponse(
-            cohort_id=result['cohort_id'],
-            title=result['title'],
-            description=result['description'],
-            active=result['active'],
-            current_profile_ids=result['current_profile_ids'],
+            cohort_id=result["cohort_id"],
+            title=result["title"],
+            description=result["description"],
+            active=result["active"],
+            current_profile_ids=result["current_profile_ids"],
             available_profiles=available_profiles,
             department_mapping=department_mapping,
             cohort_mapping=cohort_mapping,
@@ -342,7 +377,7 @@ class CohortService(BaseService):
             if not result:
                 raise ValueError("Failed to create cohort")
 
-            cohort_id = str(result['id'])
+            cohort_id = str(result["id"])
 
             # Insert profile relationships
             query, _ = self.queries.insert_cohort_profile()
@@ -355,11 +390,13 @@ class CohortService(BaseService):
                 await self.conn.execute(query, cohort_id, simulation_id)
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),  # Affects profile cohort lists
                 keys.tag_analytics_all(),  # May affect analytics
-            ])
+            ]
+        )
 
         return CreateCohortResponse(
             success=True,
@@ -407,12 +444,14 @@ class CohortService(BaseService):
                 await self.conn.execute(query, request.cohortId, simulation_id)
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
-            ])
+            ]
+        )
 
         return UpdateCohortResponse(
             success=True, message=f"Cohort '{request.title}' updated successfully"
@@ -435,9 +474,9 @@ class CohortService(BaseService):
             query, _ = self.queries.insert_duplicate_cohort()
             new_cohort = await self.conn.fetchrow(
                 query,
-                result['title'],
-                result['description'],
-                result['department_id'],
+                result["title"],
+                result["description"],
+                result["department_id"],
             )
 
             if not new_cohort:
@@ -445,21 +484,27 @@ class CohortService(BaseService):
 
             # Copy relationships
             copy_profiles_query, _ = self.queries.copy_cohort_profiles()
-            await self.conn.execute(copy_profiles_query, new_cohort['id'], request.cohortId)
+            await self.conn.execute(
+                copy_profiles_query, new_cohort["id"], request.cohortId
+            )
 
             copy_simulations_query, _ = self.queries.copy_cohort_simulations()
-            await self.conn.execute(copy_simulations_query, new_cohort['id'], request.cohortId)
+            await self.conn.execute(
+                copy_simulations_query, new_cohort["id"], request.cohortId
+            )
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
-            ])
+            ]
+        )
 
         return DuplicateCohortResponse(
             success=True,
-            cohortId=str(new_cohort['id']),
+            cohortId=str(new_cohort["id"]),
             message=f"Cohort '{result['title']}' duplicated successfully",
         )
 
@@ -473,10 +518,8 @@ class CohortService(BaseService):
         if not usage:
             raise ValueError("Failed to check cohort usage")
 
-        if usage['usage_count'] > 0:
-            raise ValueError(
-                "Cannot delete cohort that has profiles with attempts"
-            )
+        if usage["usage_count"] > 0:
+            raise ValueError("Cannot delete cohort that has profiles with attempts")
 
         # Get cohort title
         query, params = self.queries.get_cohort_title(request.cohortId)
@@ -491,12 +534,14 @@ class CohortService(BaseService):
         # Transaction handled
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
-            ])
+            ]
+        )
 
         return DeleteCohortResponse(
             success=True, message=f"Cohort '{cohort['title']}' deleted successfully"
@@ -518,12 +563,14 @@ class CohortService(BaseService):
         # Transaction handled
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
-            ])
+            ]
+        )
 
         return LeaveCohortResponse(
             success=True, message=f"Left cohort '{cohort['title']}' successfully"
@@ -590,16 +637,20 @@ class CohortService(BaseService):
         # Transaction handled
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
-            ])
+            ]
+        )
 
         total_count = len(profile_ids_to_add)
         new_count = len(request.newProfiles) if request.newProfiles else 0
-        existing_count = len(request.existingProfileIds) if request.existingProfileIds else 0
+        existing_count = (
+            len(request.existingProfileIds) if request.existingProfileIds else 0
+        )
 
         message = f"Added {total_count} profile(s) to cohort '{cohort['title']}'"
         if new_count > 0:
@@ -626,12 +677,14 @@ class CohortService(BaseService):
         # Transaction handled
 
         # Invalidate caches
-        await self._invalidate_cache([
+        await self._invalidate_cache(
+            [
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
-            ])
+            ]
+        )
 
         return RemoveProfilesFromCohortResponse(
             success=True,
@@ -639,17 +692,15 @@ class CohortService(BaseService):
         )
 
     @with_cache(lambda self, query, limit: keys.cohort_search(query, limit))
-    async def search_cohorts(
-        self, query: str, limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    async def search_cohorts(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
         """
         Fuzzy search cohorts by title and description.
         Returns scored and sorted results with profile counts.
-        
+
         Args:
             query: Search query string
             limit: Maximum number of results to return
-            
+
         Returns:
             List of cohort dictionaries with scores
         """
@@ -657,7 +708,7 @@ class CohortService(BaseService):
 
     async def _execute_search_cohorts(
         self, query: str, limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Execute the actual cohort search query."""
         q_norm = normalize_text(query)
         if not q_norm:
@@ -684,30 +735,32 @@ class CohortService(BaseService):
         results = []
         for c in cohorts:
             score = self._score_cohort(q_norm, toks, c["title"], c["description"])
-            results.append({
-                "id": str(c["id"]),
-                "title": c["title"],
-                "active": c["active"],
-                "description": c["description"],
-                "profile_count": c["profile_count"],
-                "score": score,
-            })
+            results.append(
+                {
+                    "id": str(c["id"]),
+                    "title": c["title"],
+                    "active": c["active"],
+                    "description": c["description"],
+                    "profile_count": c["profile_count"],
+                    "score": score,
+                }
+            )
 
         results.sort(key=lambda r: (-r["score"], r["title"] or ""))
         return results[:limit]
 
     def _score_cohort(
-        self, q_norm: str, toks: List[str], title: str | None, desc: str | None
+        self, q_norm: str, toks: list[str], title: str | None, desc: str | None
     ) -> int:
         """
         Rank cohort relevance. Title is much stronger than description.
-        
+
         Args:
             q_norm: Normalized query string
             toks: Query tokens
             title: Cohort title
             desc: Cohort description
-            
+
         Returns:
             Relevance score (higher is better)
         """
@@ -755,23 +808,23 @@ class CohortService(BaseService):
     # ===== Overview Methods for MCP Tools =====
 
     @with_cache(lambda self, cohort_id: keys.cohort_overview(cohort_id))
-    async def get_cohort_overview(self, cohort_id: str) -> Dict[str, Any]:
+    async def get_cohort_overview(self, cohort_id: str) -> dict[str, Any]:
         """Get cohort overview with all related data in ONE optimized query.
-        
+
         Returns cohort details, roster (profiles), and active simulations.
-        
+
         Args:
             cohort_id: UUID string of the cohort
-            
+
         Returns:
             Dict with cohort overview data or {"error": "..."}
         """
         return await self._execute_get_cohort_overview(cohort_id)
 
-    async def _execute_get_cohort_overview(self, cohort_id: str) -> Dict[str, Any]:
+    async def _execute_get_cohort_overview(self, cohort_id: str) -> dict[str, Any]:
         """Execute the actual cohort overview query."""
         import uuid
-        
+
         try:
             cohort_uuid = uuid.UUID(cohort_id)
         except ValueError:
@@ -780,7 +833,7 @@ class CohortService(BaseService):
         try:
             query, params = self.queries.get_cohort_overview_complete(cohort_uuid)
             result = await self.conn.fetchrow(query, *params)
-            
+
             if not result:
                 return {"error": f"Cohort not found: {cohort_id}"}
 
@@ -789,29 +842,35 @@ class CohortService(BaseService):
                 "title": result["title"],
                 "description": result["description"],
                 "active": result["active"],
-                "created_at": result["created_at"].isoformat() if result["created_at"] else None,
+                "created_at": result["created_at"].isoformat()
+                if result["created_at"]
+                else None,
             }
 
             # Transform roster (jsonb array to list of dicts)
             roster = []
             for profile in result["roster"]:
-                roster.append({
-                    "id": str(profile["id"]),
-                    "first_name": profile["first_name"],
-                    "last_name": profile["last_name"],
-                    "alias": profile["alias"],
-                    "role": profile["role"],
-                })
+                roster.append(
+                    {
+                        "id": str(profile["id"]),
+                        "first_name": profile["first_name"],
+                        "last_name": profile["last_name"],
+                        "alias": profile["alias"],
+                        "role": profile["role"],
+                    }
+                )
 
             # Transform simulations (jsonb array to list of dicts)
             simulations_data = []
             for sim in result["simulations"]:
-                simulations_data.append({
-                    "id": str(sim["id"]),
-                    "title": sim["title"],
-                    "active": sim["active"],
-                    "time_limit": sim["time_limit"],
-                })
+                simulations_data.append(
+                    {
+                        "id": str(sim["id"]),
+                        "title": sim["title"],
+                        "active": sim["active"],
+                        "time_limit": sim["time_limit"],
+                    }
+                )
 
             return {
                 "cohort": cohort_data,
@@ -827,21 +886,21 @@ class CohortService(BaseService):
             return {"error": f"Database error: {str(e)}"}
 
     @with_cache(lambda self, cohort_id: keys.cohort_pass_matrix(cohort_id))
-    async def get_cohort_pass_matrix(self, cohort_id: str) -> Dict[str, Any]:
+    async def get_cohort_pass_matrix(self, cohort_id: str) -> dict[str, Any]:
         """Get cohort pass/fail matrix across simulations.
-        
+
         Show pass/fail rates for all students in a cohort.
-        
+
         Args:
             cohort_id: UUID string of the cohort
-            
+
         Returns:
             Dict with structure: {"cohort": {...}, "matrix": [...], "summary": {...}, "simulations": [...]}
             or {"error": "..."}
         """
         return await self._execute_get_cohort_pass_matrix(cohort_id)
 
-    async def _execute_get_cohort_pass_matrix(self, cohort_id: str) -> Dict[str, Any]:
+    async def _execute_get_cohort_pass_matrix(self, cohort_id: str) -> dict[str, Any]:
         """Execute the actual cohort pass matrix query."""
         try:
             cohort_uuid = uuid.UUID(cohort_id)
@@ -852,14 +911,18 @@ class CohortService(BaseService):
             # Get cohort with members, simulations, and all results in one query
             query, params = self.queries.get_cohort_with_members(str(cohort_uuid))
             cohort_data = await self.conn.fetchrow(query, *params)
-            
+
             if not cohort_data:
                 return {"error": f"Cohort not found: {cohort_id}"}
 
             # Parse JSON fields
             members = cohort_data["members"] if cohort_data["members"] else []
-            simulations = cohort_data["simulations"] if cohort_data["simulations"] else []
-            student_results = cohort_data["student_results"] if cohort_data["student_results"] else {}
+            simulations = (
+                cohort_data["simulations"] if cohort_data["simulations"] else []
+            )
+            student_results = (
+                cohort_data["student_results"] if cohort_data["student_results"] else {}
+            )
 
             # Build pass/fail matrix from pre-fetched results
             matrix = []
@@ -869,7 +932,7 @@ class CohortService(BaseService):
                 if not student_name:
                     student_name = student["alias"] or "Unknown"
 
-                student_row: Dict[str, Any] = {
+                student_row: dict[str, Any] = {
                     "student_id": student_id,
                     "student_name": student_name,
                     "alias": student["alias"],
@@ -890,7 +953,7 @@ class CohortService(BaseService):
                             "passed": result_data["passed"],
                             "time_taken": result_data["time_taken"],
                             "attempt_count": result_data["attempt_count"],
-                            "last_attempt": result_data["last_attempt"]
+                            "last_attempt": result_data["last_attempt"],
                         }
                     else:
                         student_row["simulations"][sim_id] = None
@@ -898,7 +961,7 @@ class CohortService(BaseService):
                 matrix.append(student_row)
 
             # Calculate summary statistics
-            summary: Dict[str, Any] = {
+            summary: dict[str, Any] = {
                 "total_students": len(members),
                 "total_simulations": len(simulations),
                 "simulation_stats": {},

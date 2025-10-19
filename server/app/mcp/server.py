@@ -1,5 +1,7 @@
 # server.py — Clean MCP server with inlined tool logic
-from typing import Any, Dict, List
+from typing import Any
+
+from mcp.server.fastmcp import FastMCP
 
 from app.db import get_pool
 from app.services.assistant_service import AssistantService
@@ -11,7 +13,6 @@ from app.services.profile_service import ProfileService
 from app.services.scenario_service import ScenarioService
 from app.services.schema_service import SchemaService
 from app.services.simulation_service import SimulationService
-from mcp.server.fastmcp import FastMCP
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Configure MCP server for stateless HTTP transport
@@ -35,7 +36,7 @@ async def _list_schema() -> str:
     pool = get_pool()
     if not pool:
         return "Error: Database pool not initialized"
-    
+
     async with pool.acquire() as conn:
         service = SchemaService(conn)
         return await service.list_schema_columns()
@@ -69,7 +70,7 @@ async def _query_data(sql: str) -> str:
     pool = get_pool()
     if not pool:
         return "Error: Database pool not initialized"
-    
+
     async with pool.acquire() as conn:
         lowered = sql.lstrip().lower()
         if not lowered.startswith(("select", "explain")):
@@ -79,7 +80,7 @@ async def _query_data(sql: str) -> str:
             # Fetch up to 200 rows
             rows = await conn.fetch(sql)
             limited_rows = rows[:200]
-            
+
             # If there are rows, join them. Otherwise, return the "0 rows" message.
             if limited_rows:
                 return "\n".join(str(dict(r)) for r in limited_rows)
@@ -97,7 +98,7 @@ async def _query_data(sql: str) -> str:
 
 
 @server.tool()
-async def _profile_overview(profile_id: str) -> Dict[str, Any]:
+async def _profile_overview(profile_id: str) -> dict[str, Any]:
     """
     Profile overview
     ----------------
@@ -119,14 +120,14 @@ async def _profile_overview(profile_id: str) -> Dict[str, Any]:
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         service = ProfileService(conn)
         return await service.get_profile_overview(profile_id)
 
 
 @server.tool()
-async def _cohort_overview(cohort_id: str) -> Dict[str, Any]:
+async def _cohort_overview(cohort_id: str) -> dict[str, Any]:
     """
     🔎 Cohort overview
     ------------------
@@ -147,14 +148,14 @@ async def _cohort_overview(cohort_id: str) -> Dict[str, Any]:
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         service = CohortService(conn)
         return await service.get_cohort_overview(cohort_id)
 
 
 @server.tool()
-async def _simulation_overview(sim_id: str) -> Dict[str, Any]:
+async def _simulation_overview(sim_id: str) -> dict[str, Any]:
     """
     🔎 Simulation overview
     ----------------------
@@ -175,14 +176,14 @@ async def _simulation_overview(sim_id: str) -> Dict[str, Any]:
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         service = SimulationService(conn)
         return await service.get_simulation_overview(sim_id)
 
 
 @server.tool()
-async def _scenario_overview(scenario_id: str) -> Dict[str, Any]:
+async def _scenario_overview(scenario_id: str) -> dict[str, Any]:
     """
     🎭 Scenario overview with metadata & usage
     -----------------------------------------
@@ -203,14 +204,14 @@ async def _scenario_overview(scenario_id: str) -> Dict[str, Any]:
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         service = ScenarioService(conn)
         return await service.get_scenario_overview(scenario_id)
 
 
 @server.tool()
-async def _persona_overview(persona_id: str) -> Dict[str, Any]:
+async def _persona_overview(persona_id: str) -> dict[str, Any]:
     """
     Persona overview
     --------------
@@ -231,7 +232,7 @@ async def _persona_overview(persona_id: str) -> Dict[str, Any]:
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         service = PersonaService(conn)
         return await service.get_persona_overview(persona_id)
@@ -243,7 +244,7 @@ async def _persona_overview(persona_id: str) -> Dict[str, Any]:
 
 
 @server.tool()
-async def _find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+async def _find_profiles(query: str, limit: int = 10) -> list[dict[str, Any]]:
     """
     🔎 Find profiles by name
     ------------------------
@@ -276,7 +277,7 @@ async def _find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     pool = get_pool()
     if not pool:
         return [{"error": "Database pool not initialized"}]
-    
+
     async with pool.acquire() as conn:
         try:
             service = ProfileService(conn)
@@ -286,7 +287,7 @@ async def _find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 
 
 @server.tool()
-async def _find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+async def _find_simulations(query: str, limit: int = 10) -> list[dict[str, Any]]:
     """
     🔎 Find simulations by title
     ----------------------------
@@ -318,7 +319,7 @@ async def _find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]
     pool = get_pool()
     if not pool:
         return [{"error": "Database pool not initialized"}]
-    
+
     async with pool.acquire() as conn:
         try:
             service = SimulationService(conn)
@@ -328,7 +329,7 @@ async def _find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]
 
 
 @server.tool()
-async def _find_personas(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+async def _find_personas(query: str, limit: int = 10) -> list[dict[str, Any]]:
     """
     🔎 Find personas by name
     ------------------------
@@ -351,7 +352,7 @@ async def _find_personas(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     pool = get_pool()
     if not pool:
         return [{"error": "Database pool not initialized"}]
-    
+
     async with pool.acquire() as conn:
         try:
             service = PersonaService(conn)
@@ -361,7 +362,7 @@ async def _find_personas(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 
 
 @server.tool()
-async def _find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+async def _find_cohorts(query: str, limit: int = 10) -> list[dict[str, Any]]:
     """
     🔎 Find cohorts by title/description
     ------------------------------------
@@ -393,7 +394,7 @@ async def _find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     pool = get_pool()
     if not pool:
         return [{"error": "Database pool not initialized"}]
-    
+
     async with pool.acquire() as conn:
         try:
             service = CohortService(conn)
@@ -403,7 +404,7 @@ async def _find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 
 
 @server.tool()
-async def _find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+async def _find_scenarios(query: str, limit: int = 10) -> list[dict[str, Any]]:
     """
     🔎 Find scenarios by name/problem_statement
     --------------------------------------------
@@ -435,7 +436,7 @@ async def _find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     pool = get_pool()
     if not pool:
         return [{"error": "Database pool not initialized"}]
-    
+
     async with pool.acquire() as conn:
         try:
             service = ScenarioService(conn)
@@ -450,7 +451,7 @@ async def _find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 
 
 @server.tool()
-async def _student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, Any]:
+async def _student_sim_report(profile_id: str, recent: int = 50) -> dict[str, Any]:
     """
     Deep dive: every attempt, chat, grade, feedback
     Comprehensive student simulation report.
@@ -471,14 +472,14 @@ async def _student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, An
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         service = ProfileService(conn)
         return await service.get_student_simulation_report(profile_id, recent)
 
 
 @server.tool()
-async def _cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
+async def _cohort_pass_matrix(cohort_id: str) -> dict[str, Any]:
     """
     Cohort pass/fail matrix across simulations
     Show pass/fail rates for all students in a cohort.
@@ -498,14 +499,14 @@ async def _cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         service = CohortService(conn)
         return await service.get_cohort_pass_matrix(cohort_id)
 
 
 @server.tool()
-async def _simulation_attempts(sim_id: str, limit: int = 200) -> List[Dict[str, Any]]:
+async def _simulation_attempts(sim_id: str, limit: int = 200) -> list[dict[str, Any]]:
     """
     Flat list of attempts (who, when, score)
     List all attempts for a specific simulation.
@@ -526,14 +527,16 @@ async def _simulation_attempts(sim_id: str, limit: int = 200) -> List[Dict[str, 
     pool = get_pool()
     if not pool:
         return [{"error": "Database pool not initialized"}]
-    
+
     async with pool.acquire() as conn:
         service = SimulationService(conn)
         return await service.get_simulation_attempts(sim_id, limit)
 
 
 @server.tool()
-async def _persona_response_times(persona_id: str, window_days: int = 30) -> Dict[str, Any]:
+async def _persona_response_times(
+    persona_id: str, window_days: int = 30
+) -> dict[str, Any]:
     """
     Persona response time analysis
     Analyze response times for a specific persona.
@@ -554,7 +557,7 @@ async def _persona_response_times(persona_id: str, window_days: int = 30) -> Dic
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         service = PersonaService(conn)
         return await service.get_persona_response_times(persona_id, window_days)
@@ -566,7 +569,9 @@ async def _persona_response_times(persona_id: str, window_days: int = 30) -> Dic
 
 
 @server.tool()
-async def _recent_app_logs(level: str = "error", limit: int = 100) -> List[Dict[str, Any]]:
+async def _recent_app_logs(
+    level: str = "error", limit: int = 100
+) -> list[dict[str, Any]]:
     """
     🔎 Fetch recent ERROR/WARN app logs
     -----------------------------------
@@ -588,7 +593,7 @@ async def _recent_app_logs(level: str = "error", limit: int = 100) -> List[Dict[
     pool = get_pool()
     if not pool:
         return [{"error": "Database pool not initialized"}]
-    
+
     async with pool.acquire() as conn:
         try:
             service = LogService(conn)
@@ -619,14 +624,14 @@ async def _export_csv(sql: str) -> str:
     pool = get_pool()
     if not pool:
         return "Error: Database pool not initialized"
-    
+
     async with pool.acquire() as conn:
         service = ExportService(conn)
         return await service.export_to_csv(sql, max_rows=1000)
 
 
 @server.tool()
-async def _assistant_usage(days: int = 7) -> Dict[str, Any]:
+async def _assistant_usage(days: int = 7) -> dict[str, Any]:
     """
     📊 Assistant usage statistics
     -----------------------------
@@ -647,7 +652,7 @@ async def _assistant_usage(days: int = 7) -> Dict[str, Any]:
     pool = get_pool()
     if not pool:
         return {"error": "Database pool not initialized"}
-    
+
     async with pool.acquire() as conn:
         try:
             service = AssistantService(conn)

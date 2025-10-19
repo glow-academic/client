@@ -1,11 +1,14 @@
 """
 Tests for app.utils.debug_info
 """
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from sqlmodel import Session
-from uuid import uuid4
+
 from app.utils.debug_info import *
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +17,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `debug_info`")
 class TestDebug_Info:
@@ -28,4 +32,3 @@ class TestDebug_Info:
         """Test debug_info error handling."""
         # TODO: Implement error test for debug_info
         assert False, "IMPLEMENT: Error test for debug_info"
-

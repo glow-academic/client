@@ -1,12 +1,10 @@
 """Analytics service layer - business logic for analytics operations."""
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.db import transaction
-from app.extensions import get_query_client
 from app.queries.analytics.base import AnalyticsQueryBuilder
 from app.queries.analytics.bundle_queries import BundleQueries
 from app.queries.analytics.footer_queries import FooterQueries
@@ -64,10 +62,12 @@ class AnalyticsService(BaseService):
         self.leaderboard_queries = LeaderboardQueries()
         self.pricing_queries = PricingQueries()
 
-    def _compute_trend_analysis(self, trend_data: List[Any], metric_name: str) -> Optional[str]:
+    def _compute_trend_analysis(
+        self, trend_data: list[Any], metric_name: str
+    ) -> str | None:
         """
         Compute trend analysis text from trend data.
-        
+
         Replicates client-side computeTrendAnalysis logic:
         - Compares recent 3 data points vs first 3 data points
         - Calculates percent change
@@ -75,22 +75,22 @@ class AnalyticsService(BaseService):
         """
         if not trend_data or len(trend_data) < 2:
             return None
-        
+
         recent_data = trend_data[-3:]
         earlier_data = trend_data[:3]
-        
+
         if not recent_data or not earlier_data:
             return None
-        
-        recent_avg = sum(d.get('value', 0) for d in recent_data) / len(recent_data)
-        earlier_avg = sum(d.get('value', 0) for d in earlier_data) / len(earlier_data)
-        
+
+        recent_avg = sum(d.get("value", 0) for d in recent_data) / len(recent_data)
+        earlier_avg = sum(d.get("value", 0) for d in earlier_data) / len(earlier_data)
+
         change = recent_avg - earlier_avg
         change_percent = round((change / earlier_avg) * 100) if earlier_avg > 0 else 0
-        
+
         if abs(change_percent) < 1:
             return None
-        
+
         # Determine period based on data length
         if len(trend_data) <= 7:
             period = "3 days"
@@ -98,14 +98,16 @@ class AnalyticsService(BaseService):
             period = "1 week"
         else:
             period = "1 month"
-        
+
         direction = "increased" if change_percent > 0 else "decreased"
-        
-        return f"{metric_name} {direction} {abs(change_percent)}% over the past {period}"
+
+        return (
+            f"{metric_name} {direction} {abs(change_percent)}% over the past {period}"
+        )
 
     def _parse_json_strings_recursive(self, obj: Any) -> Any:
         """Recursively parse JSON strings in nested structures.
-        
+
         This handles cases where PostgreSQL json_agg returns JSON strings
         instead of parsed objects, particularly for trendData and dataPoints fields.
         """
@@ -125,11 +127,11 @@ class AnalyticsService(BaseService):
             return obj
 
     async def _execute_metric_query(
-        self, query: str, params: List[Any], metric_name: str = "Metric"
+        self, query: str, params: list[Any], metric_name: str = "Metric"
     ) -> MetricResponse:
         """Execute a metric query and parse the result."""
         result = await self.conn.fetchrow(query, *params)
-        
+
         if not result:
             return MetricResponse(
                 hasData=False,
@@ -140,9 +142,9 @@ class AnalyticsService(BaseService):
             )
 
         # Parse JSON strings from database into Python lists
-        trend_data = result['trend_data']
-        data_points = result['data_points']
-        
+        trend_data = result["trend_data"]
+        data_points = result["data_points"]
+
         # If they're JSON strings, parse them; otherwise use as-is
         if isinstance(trend_data, str):
             trend_data = json.loads(trend_data) if trend_data else []
@@ -150,16 +152,20 @@ class AnalyticsService(BaseService):
             data_points = json.loads(data_points) if data_points else []
 
         # Compute trend analysis from trend data
-        trend_analysis = self._compute_trend_analysis(trend_data, metric_name) if trend_data else None
-        
+        trend_analysis = (
+            self._compute_trend_analysis(trend_data, metric_name)
+            if trend_data
+            else None
+        )
+
         # Parse the result into MetricResponse
         return MetricResponse(
-            hasData=result['has_data'],
-            method=result['method'],
-            currentValue=result['current_value'],
+            hasData=result["has_data"],
+            method=result["method"],
+            currentValue=result["current_value"],
             trendAnalysis=trend_analysis,
-            valueField=result['value_field'],
-            keyField=result['key_field'],
+            valueField=result["value_field"],
+            keyField=result["key_field"],
             trendData=trend_data or [],
             dataPoints=data_points or [],
         )
@@ -173,7 +179,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -189,7 +197,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -205,11 +215,15 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return await self._execute_metric_query(query, params, "First attempt pass rate")
+        return await self._execute_metric_query(
+            query, params, "First attempt pass rate"
+        )
 
     @with_cache(lambda self, filters: keys.analytics_highest_score(filters))
     async def get_highest_score(self, filters: AnalyticsFilters) -> MetricResponse:
@@ -219,7 +233,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -235,7 +251,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -251,23 +269,25 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
         return await self._execute_metric_query(query, params, "Response time")
 
     @with_cache(lambda self, filters: keys.analytics_session_efficiency(filters))
-    async def get_session_efficiency(
-        self, filters: AnalyticsFilters
-    ) -> MetricResponse:
+    async def get_session_efficiency(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get session efficiency metric."""
         query, params = self.header_queries.session_efficiency(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -281,7 +301,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -295,7 +317,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -309,7 +333,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -317,14 +343,18 @@ class AnalyticsService(BaseService):
 
     # Primary Analytics (3 complex metrics)
     @with_cache(lambda self, filters: keys.analytics_rubric_heatmap(filters))
-    async def get_rubric_heatmap(self, filters: AnalyticsFilters) -> RubricHeatmapResponse:
+    async def get_rubric_heatmap(
+        self, filters: AnalyticsFilters
+    ) -> RubricHeatmapResponse:
         """Get rubric heatmap data."""
         query, params = self.primary_queries.rubric_heatmap(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -338,120 +368,206 @@ class AnalyticsService(BaseService):
         from collections import defaultdict
         from datetime import datetime, timedelta
 
-        # Call all header metric functions
-        metric_calls = [
-            ('averageScore', self.header_queries.average_score),
-            ('passRate', self.header_queries.first_attempt_pass_rate),
-            ('completionRate', self.header_queries.completion_percentage),
-            ('messagesPerSession', self.header_queries.messages_per_session),
-            ('personaResponseTimes', self.header_queries.persona_response_times),
-            ('sessionEfficiency', self.header_queries.session_efficiency),
-            ('stagnationRate', self.header_queries.stagnation_rate),
-            ('timeSpent', self.header_queries.time_spent),
-            ('totalAttempts', self.header_queries.total_attempts),
-        ]
-        
-        # Collect all metric results
-        metric_results = {}
-        for metric_name, metric_func in metric_calls:
-            query, params = metric_func(
-                start_date=filters.startDate,
-                end_date=filters.endDate,
-                cohort_ids=filters.cohortIds,
-                roles=filters.roles,
-                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-                profile_id=filters.profileId,
-                department_ids=filters.departmentIds,
-            )
-            row = await self.conn.fetchrow(query, *params)
-            if row:
-                trend_data = row['trend_data']
-                # Parse the JSON if it's a string
-                if isinstance(trend_data, str):
-                    import json
-                    trend_data = json.loads(trend_data)
-                metric_results[metric_name] = trend_data if trend_data else []
-            else:
-                metric_results[metric_name] = []
-        
+        # Get all 9 metrics in a single query
+        query, params = self.header_queries.growth_data_bundle(
+            start_date=filters.startDate,
+            end_date=filters.endDate,
+            cohort_ids=filters.cohortIds,
+            roles=filters.roles,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
+            profile_id=filters.profileId,
+            department_ids=filters.departmentIds,
+        )
+
+        result = await self.conn.fetchval(query, *params)
+        parsed_result = self._parse_json_strings_recursive(result or {})
+
+        # Extract metric results from bundled query
+        metric_results = {
+            "averageScore": parsed_result.get("averageScore", []),
+            "passRate": parsed_result.get("passRate", []),
+            "completionRate": parsed_result.get("completionRate", []),
+            "messagesPerSession": parsed_result.get("messagesPerSession", []),
+            "personaResponseTimes": parsed_result.get("personaResponseTimes", []),
+            "sessionEfficiency": parsed_result.get("sessionEfficiency", []),
+            "stagnationRate": parsed_result.get("stagnationRate", []),
+            "timeSpent": parsed_result.get("timeSpent", []),
+            "totalAttempts": parsed_result.get("totalAttempts", []),
+        }
+
         # Combine all metrics by date
         date_map: dict[str, dict[str, Any]] = defaultdict(dict)
         for metric_name, trend_data in metric_results.items():
-            for point in trend_data:
-                date = point['date']
-                date_map[date][metric_name] = point['value']
-                if metric_name == 'passRate':
-                    # firstAttemptPassRate is synonym for passRate
-                    date_map[date]['firstAttemptPassRate'] = point['value']
-        
+            if isinstance(trend_data, list):
+                for point in trend_data:
+                    if isinstance(point, dict):
+                        date = point.get("date")
+                        value = point.get("value")
+                        if date:
+                            date_map[date][metric_name] = value
+                            if metric_name == "passRate":
+                                # firstAttemptPassRate is synonym for passRate
+                                date_map[date]["firstAttemptPassRate"] = value
+
         # Build chartData array
         chart_data = []
         for date in sorted(date_map.keys()):
             values = date_map[date]
             # Only include days where at least one metric has non-null data
             if any(v is not None for v in values.values()):
-                chart_data.append({
-                    'date': date,
-                    **{k: v for k, v in values.items()}
-                })
-        
+                chart_data.append({"date": date, **{k: v for k, v in values.items()}})
+
         # Build availableMetrics
         available_metrics = [
-            {'id': 'averageScore', 'name': 'Average Score', 'color': '#3b82f6', 'unit': '%', 'description': 'Average performance score', 'formatterId': 'percent'},
-            {'id': 'passRate', 'name': 'Pass Rate', 'color': '#10b981', 'unit': '%', 'description': 'Passes on first attempt', 'formatterId': 'percent'},
-            {'id': 'completionRate', 'name': 'Completion Rate', 'color': '#22c55e', 'unit': '%', 'description': 'Sessions completed', 'formatterId': 'percent'},
-            {'id': 'firstAttemptPassRate', 'name': 'First Attempt Pass', 'color': '#0ea5e9', 'unit': '%', 'description': 'First try pass rate', 'formatterId': 'percent'},
-            {'id': 'messagesPerSession', 'name': 'Messages/Session', 'color': '#f59e0b', 'unit': 'msgs', 'description': 'Average message count', 'formatterId': 'int'},
-            {'id': 'personaResponseTimes', 'name': 'Response Time', 'color': '#a855f7', 'unit': 'sec', 'description': 'Avg reply latency', 'formatterId': 'sec'},
-            {'id': 'sessionEfficiency', 'name': 'Efficiency', 'color': '#8b5cf6', 'unit': '%', 'description': 'Score per time proxy', 'formatterId': 'percent'},
-            {'id': 'stagnationRate', 'name': 'Stagnation', 'color': '#ef4444', 'unit': '%', 'description': 'Stalled sessions share', 'formatterId': 'percent'},
-            {'id': 'timeSpent', 'name': 'Time Spent', 'color': '#64748b', 'unit': 'min', 'description': 'Total time spent (minutes)', 'formatterId': 'minutes'},
-            {'id': 'totalAttempts', 'name': 'Total Attempts', 'color': '#14b8a6', 'unit': 'attempts', 'description': 'Attempt count', 'formatterId': 'int'},
+            {
+                "id": "averageScore",
+                "name": "Average Score",
+                "color": "#3b82f6",
+                "unit": "%",
+                "description": "Average performance score",
+                "formatterId": "percent",
+            },
+            {
+                "id": "passRate",
+                "name": "Pass Rate",
+                "color": "#10b981",
+                "unit": "%",
+                "description": "Passes on first attempt",
+                "formatterId": "percent",
+            },
+            {
+                "id": "completionRate",
+                "name": "Completion Rate",
+                "color": "#22c55e",
+                "unit": "%",
+                "description": "Sessions completed",
+                "formatterId": "percent",
+            },
+            {
+                "id": "firstAttemptPassRate",
+                "name": "First Attempt Pass",
+                "color": "#0ea5e9",
+                "unit": "%",
+                "description": "First try pass rate",
+                "formatterId": "percent",
+            },
+            {
+                "id": "messagesPerSession",
+                "name": "Messages/Session",
+                "color": "#f59e0b",
+                "unit": "msgs",
+                "description": "Average message count",
+                "formatterId": "int",
+            },
+            {
+                "id": "personaResponseTimes",
+                "name": "Response Time",
+                "color": "#a855f7",
+                "unit": "sec",
+                "description": "Avg reply latency",
+                "formatterId": "sec",
+            },
+            {
+                "id": "sessionEfficiency",
+                "name": "Efficiency",
+                "color": "#8b5cf6",
+                "unit": "%",
+                "description": "Score per time proxy",
+                "formatterId": "percent",
+            },
+            {
+                "id": "stagnationRate",
+                "name": "Stagnation",
+                "color": "#ef4444",
+                "unit": "%",
+                "description": "Stalled sessions share",
+                "formatterId": "percent",
+            },
+            {
+                "id": "timeSpent",
+                "name": "Time Spent",
+                "color": "#64748b",
+                "unit": "min",
+                "description": "Total time spent (minutes)",
+                "formatterId": "minutes",
+            },
+            {
+                "id": "totalAttempts",
+                "name": "Total Attempts",
+                "color": "#14b8a6",
+                "unit": "attempts",
+                "description": "Attempt count",
+                "formatterId": "int",
+            },
         ]
-        
+
         # Calculate window averages for averageScore
         window_n = 7
-        avg_scores = [(datetime.fromisoformat(d['date'].replace('Z', '+00:00')), d.get('averageScore')) 
-                      for d in chart_data if d.get('averageScore') is not None]
-        
+        avg_scores = [
+            (
+                datetime.fromisoformat(d["date"].replace("Z", "+00:00")),
+                d.get("averageScore"),
+            )
+            for d in chart_data
+            if d.get("averageScore") is not None
+        ]
+
         last_avg = None
         prev_avg = None
         if avg_scores:
             avg_scores.sort(key=lambda x: x[0])
             max_date = avg_scores[-1][0]
-            
+
             # Last N days average
-            last_n = [score for date, score in avg_scores if date > max_date - timedelta(days=window_n) and score is not None]
+            last_n = [
+                score
+                for date, score in avg_scores
+                if date > max_date - timedelta(days=window_n) and score is not None
+            ]
             last_avg = sum(last_n) / len(last_n) if last_n else None
-            
+
             # Previous N days average
-            prev_n = [score for date, score in avg_scores 
-                      if max_date - timedelta(days=2*window_n) < date <= max_date - timedelta(days=window_n) and score is not None]
+            prev_n = [
+                score
+                for date, score in avg_scores
+                if max_date - timedelta(days=2 * window_n)
+                < date
+                <= max_date - timedelta(days=window_n)
+                and score is not None
+            ]
             prev_avg = sum(prev_n) / len(prev_n) if prev_n else None
-        
+
         window_averages = {
-            'averageScore': {
-                'n': window_n,
-                'last': round(last_avg) if last_avg is not None else None,
-                'prev': prev_avg if prev_avg is not None else None,
+            "averageScore": {
+                "n": window_n,
+                "last": round(last_avg) if last_avg is not None else None,
+                "prev": prev_avg if prev_avg is not None else None,
             }
         }
-        
-        return GrowthDataResponse.model_validate({
-            'chartData': chart_data,
-            'availableMetrics': available_metrics,
-            'windowAverages': window_averages,
-        })
+
+        return GrowthDataResponse.model_validate(
+            {
+                "chartData": chart_data,
+                "availableMetrics": available_metrics,
+                "windowAverages": window_averages,
+            }
+        )
 
     @with_cache(lambda self, filters: keys.analytics_persona_performance(filters))
-    async def get_persona_performance(self, filters: AnalyticsFilters) -> PersonaPerformanceResponse:
+    async def get_persona_performance(
+        self, filters: AnalyticsFilters
+    ) -> PersonaPerformanceResponse:
         """Get persona performance data."""
         query, params = self.primary_queries.persona_performance(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -461,14 +577,18 @@ class AnalyticsService(BaseService):
 
     # Secondary Analytics (3 complex metrics)
     @with_cache(lambda self, filters: keys.analytics_attempt_improvement(filters))
-    async def get_attempt_improvement(self, filters: AnalyticsFilters) -> AttemptImprovementResponse:
+    async def get_attempt_improvement(
+        self, filters: AnalyticsFilters
+    ) -> AttemptImprovementResponse:
         """Get attempt improvement data."""
         query, params = self.secondary_queries.attempt_improvement(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -477,14 +597,18 @@ class AnalyticsService(BaseService):
         return AttemptImprovementResponse.model_validate(parsed_result)
 
     @with_cache(lambda self, filters: keys.analytics_cohort_performance(filters))
-    async def get_cohort_performance(self, filters: AnalyticsFilters) -> CohortPerformanceResponse:
+    async def get_cohort_performance(
+        self, filters: AnalyticsFilters
+    ) -> CohortPerformanceResponse:
         """Get cohort performance data."""
         query, params = self.secondary_queries.cohort_performance(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -493,14 +617,18 @@ class AnalyticsService(BaseService):
         return CohortPerformanceResponse.model_validate(parsed_result)
 
     @with_cache(lambda self, filters: keys.analytics_skill_performance(filters))
-    async def get_skill_performance(self, filters: AnalyticsFilters) -> SkillPerformanceResponse:
+    async def get_skill_performance(
+        self, filters: AnalyticsFilters
+    ) -> SkillPerformanceResponse:
         """Get skill performance data."""
         query, params = self.secondary_queries.skill_performance(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -510,14 +638,18 @@ class AnalyticsService(BaseService):
 
     # Footer Analytics (4 new metrics)
     @with_cache(lambda self, filters: keys.analytics_scenario_performance(filters))
-    async def get_scenario_performance(self, filters: AnalyticsFilters) -> ScenarioPerformanceResponse:
+    async def get_scenario_performance(
+        self, filters: AnalyticsFilters
+    ) -> ScenarioPerformanceResponse:
         """Get scenario performance data."""
         query, params = self.footer_queries.scenario_performance(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -526,14 +658,18 @@ class AnalyticsService(BaseService):
         return ScenarioPerformanceResponse.model_validate(parsed_result)
 
     @with_cache(lambda self, filters: keys.analytics_scenario_stats(filters))
-    async def get_scenario_stats(self, filters: AnalyticsFilters) -> ScenarioStatsResponse:
+    async def get_scenario_stats(
+        self, filters: AnalyticsFilters
+    ) -> ScenarioStatsResponse:
         """Get scenario stats data."""
         query, params = self.footer_queries.scenario_stats(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -542,14 +678,18 @@ class AnalyticsService(BaseService):
         return ScenarioStatsResponse.model_validate(parsed_result)
 
     @with_cache(lambda self, filters: keys.analytics_simulation_composition(filters))
-    async def get_simulation_composition(self, filters: AnalyticsFilters) -> SimulationCompositionResponse:
+    async def get_simulation_composition(
+        self, filters: AnalyticsFilters
+    ) -> SimulationCompositionResponse:
         """Get simulation composition data."""
         query, params = self.footer_queries.simulation_composition(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -558,14 +698,18 @@ class AnalyticsService(BaseService):
         return SimulationCompositionResponse.model_validate(parsed_result)
 
     @with_cache(lambda self, filters: keys.analytics_simulation_performance(filters))
-    async def get_simulation_performance(self, filters: AnalyticsFilters) -> SimulationPerformanceResponse:
+    async def get_simulation_performance(
+        self, filters: AnalyticsFilters
+    ) -> SimulationPerformanceResponse:
         """Get simulation performance data."""
         query, params = self.footer_queries.simulation_performance(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -575,7 +719,9 @@ class AnalyticsService(BaseService):
 
     # Page-specific Analytics
     @with_cache(lambda self, filters: keys.analytics_home_overview(filters))
-    async def get_home_overview(self, filters: AnalyticsFilters) -> HomeOverviewResponse:
+    async def get_home_overview(
+        self, filters: AnalyticsFilters
+    ) -> HomeOverviewResponse:
         """Get home overview data with history and simulation mapping."""
         # Determine effective profile ID based on role
         # Admins, superadmins, and instructional staff see all data (no profile filter)
@@ -585,18 +731,20 @@ class AnalyticsService(BaseService):
             query, params = self.query_builder.get_profile_role(filters.profileId)
             role_row = await self.conn.fetchrow(query, *params)
             if role_row:
-                role = role_row['role']
+                role = role_row["role"]
                 # Only use profileId for non-admin roles (ta, guest, etc.)
-                if role not in ('admin', 'superadmin', 'instructional'):
+                if role not in ("admin", "superadmin", "instructional"):
                     effective_profile_id = filters.profileId
-        
+
         # Get overview items
         query, params = self.page_queries.home_overview(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=effective_profile_id,
             department_ids=filters.departmentIds,
         )
@@ -605,7 +753,7 @@ class AnalyticsService(BaseService):
         if isinstance(result, str):
             result = json.loads(result)
         overview_data = result or {}
-        
+
         # Fetch history data (use effective_profile_id)
         history_filters = AnalyticsFilters(
             startDate=filters.startDate,
@@ -617,10 +765,10 @@ class AnalyticsService(BaseService):
             departmentIds=filters.departmentIds,
         )
         history = await self.get_attempt_history(history_filters)
-        
+
         # Build simulation mapping (use effective_profile_id)
         simulation_mapping = await self._build_simulation_mapping(history_filters)
-        
+
         return HomeOverviewResponse(
             mode=overview_data.get("mode", "empty"),
             hasData=overview_data.get("hasData", False),
@@ -632,14 +780,18 @@ class AnalyticsService(BaseService):
         )
 
     @with_cache(lambda self, filters: keys.analytics_attempt_history(filters))
-    async def get_attempt_history(self, filters: AnalyticsFilters) -> AttemptHistoryResponse:
+    async def get_attempt_history(
+        self, filters: AnalyticsFilters
+    ) -> AttemptHistoryResponse:
         """Get attempt history data."""
         query, params = self.page_queries.attempt_history(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -652,7 +804,9 @@ class AnalyticsService(BaseService):
         return [AttemptHistoryRow.model_validate(row) for row in result]
 
     @with_cache(lambda self, filters: keys.analytics_practice_overview(filters))
-    async def get_practice_overview(self, filters: AnalyticsFilters) -> PracticeOverviewResponse:
+    async def get_practice_overview(
+        self, filters: AnalyticsFilters
+    ) -> PracticeOverviewResponse:
         """Get practice overview data with history and all entity mappings."""
         # Get overview items
         query, params = self.page_queries.practice_overview(
@@ -660,7 +814,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -669,17 +825,17 @@ class AnalyticsService(BaseService):
         if isinstance(result, str):
             result = json.loads(result)
         overview_data = result or {}
-        
+
         # Fetch history data
         history = await self.get_attempt_history(filters)
-        
+
         # Build all entity mappings
         simulation_mapping = await self._build_simulation_mapping(filters)
         persona_mapping = await self._build_persona_mapping(filters)
         scenario_mapping = await self._build_scenario_mapping(filters)
         parameter_mapping = await self._build_parameter_mapping(filters)
         parameter_item_mapping = await self._build_parameter_item_mapping(filters)
-        
+
         return PracticeOverviewResponse(
             mode=overview_data.get("mode", "practice"),
             hasData=overview_data.get("hasData", False),
@@ -696,7 +852,9 @@ class AnalyticsService(BaseService):
 
     # Bundle Analytics
     @with_cache(lambda self, filters: keys.analytics_reports_bundle(filters))
-    async def get_reports_bundle(self, filters: AnalyticsFilters) -> ReportsBundleResponse:
+    async def get_reports_bundle(
+        self, filters: AnalyticsFilters
+    ) -> ReportsBundleResponse:
         """Get reports bundle data with entity mappings."""
         # Get profile metrics data
         query, params = self.bundle_queries.reports_bundle(
@@ -704,7 +862,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -712,11 +872,32 @@ class AnalyticsService(BaseService):
         # Parse any JSON strings in nested structures
         parsed_result = self._parse_json_strings_recursive(result or {})
         bundle_data = parsed_result.get("data", []) if parsed_result else []
-        
-        # Build entity mappings (reuse methods from dashboard bundle)
-        scenario_mapping = await self._build_scenario_mapping(filters)
-        simulation_mapping = await self._build_simulation_mapping(filters)
-        
+
+        # Parse embedded mappings from query result
+        scenario_mapping = {}
+        if isinstance(parsed_result.get("scenario_mapping"), dict):
+            for scenario_id, scenario_data in parsed_result["scenario_mapping"].items():
+                if isinstance(scenario_data, dict):
+                    scenario_mapping[scenario_id] = ScenarioMappingItem(
+                        name=scenario_data.get("name", ""),
+                        description=scenario_data.get("description", ""),
+                        persona_id=None,
+                        persona_mapping={},
+                        document_mapping={},
+                        parameter_item_mapping={},
+                        parameter_item_ids=[],
+                        document_ids=[],
+                    )
+
+        simulation_mapping = {}
+        if isinstance(parsed_result.get("simulation_mapping"), dict):
+            for sim_id, sim_data in parsed_result["simulation_mapping"].items():
+                if isinstance(sim_data, dict):
+                    simulation_mapping[sim_id] = SimulationMappingItem(
+                        name=sim_data.get("name", ""),
+                        description=sim_data.get("description", ""),
+                    )
+
         return ReportsBundleResponse(
             data=bundle_data,
             scenario_mapping=scenario_mapping,
@@ -724,14 +905,18 @@ class AnalyticsService(BaseService):
         )
 
     @with_cache(lambda self, filters: keys.analytics_leaderboard_bundle(filters))
-    async def get_leaderboard_bundle(self, filters: AnalyticsFilters) -> LeaderboardBundleResponse:
+    async def get_leaderboard_bundle(
+        self, filters: AnalyticsFilters
+    ) -> LeaderboardBundleResponse:
         """Get leaderboard bundle data."""
         query, params = self.bundle_queries.leaderboard_bundle(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -754,125 +939,90 @@ class AnalyticsService(BaseService):
             query, params = self.query_builder.get_profile_role(filters.profileId)
             role_row = await self.conn.fetchrow(query, *params)
             if role_row:
-                role = role_row['role']
+                role = role_row["role"]
                 # Only use profileId for non-admin roles (ta, guest, etc.)
-                if role not in ('admin', 'superadmin', 'instructional'):
+                if role not in ("admin", "superadmin", "instructional"):
                     effective_profile_id = filters.profileId
 
-        # Get model runs with all relationships
-        query, params = self.pricing_queries.get_model_runs(
+        # Get complete pricing analytics with all mappings in single query
+        query, params = self.pricing_queries.get_pricing_analytics_complete(
             department_ids=filters.departmentIds or [],
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=effective_profile_id,
         )
 
-        runs_result = await self.conn.fetch(query, *params)
+        result = await self.conn.fetchval(query, *params)
+
+        # Parse JSONB result
+        parsed_result = self._parse_json_strings_recursive(result or {})
 
         # Build model runs list
         model_runs = []
-        model_run_ids = []
+        for run_data in parsed_result.get("model_runs", []):
+            debug_info = []
+            if isinstance(run_data.get("debug_info"), list):
+                for debug in run_data["debug_info"]:
+                    if isinstance(debug, dict):
+                        debug_info.append(
+                            DebugInfoItem(
+                                id=debug["id"],
+                                created_at=debug["created_at"],
+                                content=debug["content"],
+                            )
+                        )
 
-        for row in runs_result:
             model_runs.append(
                 ModelRunItem(
-                    model_run_id=str(row['model_run_id']),
-                    created_at=row['created_at'].isoformat(),
-                    input_tokens=row['input_tokens'],
-                    output_tokens=row['output_tokens'],
-                    model_id=str(row['model_id']) if row['model_id'] else None,
-                    profile_id=str(row['profile_id']) if row['profile_id'] else None,
-                    agent_id=str(row['agent_id']) if row['agent_id'] else None,
-                    persona_id=str(row['persona_id']) if row['persona_id'] else None,
-                    debug_info=[],  # Will be populated below
+                    model_run_id=run_data["model_run_id"],
+                    created_at=run_data["created_at"],
+                    input_tokens=run_data["input_tokens"],
+                    output_tokens=run_data["output_tokens"],
+                    model_id=run_data.get("model_id"),
+                    profile_id=run_data.get("profile_id"),
+                    agent_id=run_data.get("agent_id"),
+                    persona_id=run_data.get("persona_id"),
+                    debug_info=debug_info,
                 )
             )
-            model_run_ids.append(str(row['model_run_id']))
 
-        # Get debug info for all runs
-        if model_run_ids:
-            query, params = self.pricing_queries.get_debug_info_for_runs(
-                model_run_ids
-            )
-            debug_result = await self.conn.fetch(query, *params)
-
-            # Group debug info by model_run_id
-            debug_by_run: Dict[str, List[DebugInfoItem]] = {}
-            for debug in debug_result:
-                run_id = str(debug['model_run_id'])
-                if run_id not in debug_by_run:
-                    debug_by_run[run_id] = []
-                debug_by_run[run_id].append(
-                    DebugInfoItem(
-                        id=str(debug['id']),
-                        created_at=debug['created_at'].isoformat(),
-                        content=debug['content'],
+        # Build model mapping
+        model_mapping: dict[str, ModelMappingWithPricing] = {}
+        if isinstance(parsed_result.get("model_mapping"), dict):
+            for model_id, model_data in parsed_result["model_mapping"].items():
+                if isinstance(model_data, dict):
+                    model_mapping[model_id] = ModelMappingWithPricing(
+                        name=model_data["name"],
+                        description=model_data["description"],
+                        input_ppm=model_data["input_ppm"],
+                        output_ppm=model_data["output_ppm"],
                     )
-                )
 
-            # Add debug info to runs
-            for run in model_runs:
-                run.debug_info = debug_by_run.get(run.model_run_id, [])
+        # Build profile mapping
+        profile_mapping: dict[str, str] = {}
+        if isinstance(parsed_result.get("profile_mapping"), dict):
+            for profile_id, name in parsed_result["profile_mapping"].items():
+                if isinstance(name, str):
+                    profile_mapping[profile_id] = name
 
-        # Build mappings
-        model_mapping: Dict[str, ModelMappingWithPricing] = {}
-        profile_mapping: Dict[str, str] = {}
-        agent_mapping: Dict[str, str] = {}
-        persona_mapping: Dict[str, str] = {}
+        # Build agent mapping
+        agent_mapping: dict[str, str] = {}
+        if isinstance(parsed_result.get("agent_mapping"), dict):
+            for agent_id, name in parsed_result["agent_mapping"].items():
+                if isinstance(name, str):
+                    agent_mapping[agent_id] = name
 
-        # Get model mapping with pricing
-        if model_ids_to_fetch := list(
-            set([r.model_id for r in model_runs if r.model_id])
-        ):
-            query, params = self.pricing_queries.get_model_mapping(
-                model_ids_to_fetch
-            )
-            model_result = await self.conn.fetch(query, *params)
-
-            for row in model_result:
-                model_mapping[str(row['id'])] = ModelMappingWithPricing(
-                    name=row['name'],
-                    description=row['description'],
-                    input_ppm=row['input_ppm'],
-                    output_ppm=row['output_ppm'],
-                )
-
-        # Get profile mapping
-        if profile_ids_to_fetch := list(
-            set([r.profile_id for r in model_runs if r.profile_id])
-        ):
-            query, params = self.pricing_queries.get_profile_mapping(
-                profile_ids_to_fetch
-            )
-            profile_result = await self.conn.fetch(query, *params)
-
-            for row in profile_result:
-                profile_mapping[str(row['id'])] = row['name']
-
-        # Get agent mapping
-        if agent_ids_to_fetch := list(
-            set([r.agent_id for r in model_runs if r.agent_id])
-        ):
-            query, params = self.pricing_queries.get_agent_mapping(agent_ids_to_fetch)
-            agent_result = await self.conn.fetch(query, *params)
-
-            for row in agent_result:
-                agent_mapping[str(row['id'])] = row['name']
-
-        # Get persona mapping
-        if persona_ids_to_fetch := list(
-            set([r.persona_id for r in model_runs if r.persona_id])
-        ):
-            query, params = self.pricing_queries.get_persona_mapping(
-                persona_ids_to_fetch
-            )
-            persona_result = await self.conn.fetch(query, *params)
-
-            for row in persona_result:
-                persona_mapping[str(row['id'])] = row['name']
+        # Build persona mapping
+        persona_mapping: dict[str, str] = {}
+        if isinstance(parsed_result.get("persona_mapping"), dict):
+            for persona_id, name in parsed_result["persona_mapping"].items():
+                if isinstance(name, str):
+                    persona_mapping[persona_id] = name
 
         return PricingAnalyticsResponse(
             model_runs=model_runs,
@@ -884,14 +1034,18 @@ class AnalyticsService(BaseService):
 
     # Leaderboard-Specific Metrics (3 additional metrics)
     @with_cache(lambda self, filters: keys.analytics_improvement_per_day(filters))
-    async def get_improvement_per_day(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_improvement_per_day(
+        self, filters: AnalyticsFilters
+    ) -> MetricResponse:
         """Get improvement per day metric."""
         query, params = self.leaderboard_queries.improvement_per_day(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -905,7 +1059,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -919,7 +1075,9 @@ class AnalyticsService(BaseService):
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            sim_filters=[f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
@@ -932,7 +1090,7 @@ class AnalyticsService(BaseService):
     ) -> DashboardBundleResponse:
         """
         Get complete dashboard bundle with all metrics, history, insights, and mappings.
-        
+
         This consolidates 21+ individual API calls into a single response.
         """
         # Fetch all header metrics (10 metrics)
@@ -1043,7 +1201,7 @@ class AnalyticsService(BaseService):
             warning=75,
             success=85,
         )
-        
+
         return DashboardBundleResponse(
             header=header,
             primary=primary,
@@ -1058,15 +1216,19 @@ class AnalyticsService(BaseService):
             parameter_item_mapping=parameter_item_mapping,
         )
 
-    async def _build_scenario_mapping(self, filters: AnalyticsFilters) -> ScenarioMapping:
+    async def _build_scenario_mapping(
+        self, filters: AnalyticsFilters
+    ) -> ScenarioMapping:
         """Build scenario mapping from database."""
-        query, params = self.query_builder.get_scenarios_for_mapping(filters.departmentIds)
+        query, params = self.query_builder.get_scenarios_for_mapping(
+            filters.departmentIds
+        )
         results = await self.conn.fetch(query, *params)
-        
+
         return {
-            str(row['id']): ScenarioMappingItem(
-                name=row['name'],
-                description=row['problem_statement'] or "",
+            str(row["id"]): ScenarioMappingItem(
+                name=row["name"],
+                description=row["problem_statement"] or "",
                 persona_id=None,
                 persona_mapping={},
                 document_mapping={},
@@ -1082,39 +1244,47 @@ class AnalyticsService(BaseService):
     ) -> SimulationMapping:
         """Build simulation mapping from database - only practice simulations."""
         # Get only practice simulations for the practice page
-        query, params = self.query_builder.get_simulations_for_mapping(filters.departmentIds)
+        query, params = self.query_builder.get_simulations_for_mapping(
+            filters.departmentIds
+        )
         results = await self.conn.fetch(query, *params)
-        
+
         return {
-            str(row['id']): SimulationMappingItem(
-                name=row['title'],
-                description=row['description'] or "",
+            str(row["id"]): SimulationMappingItem(
+                name=row["title"],
+                description=row["description"] or "",
             )
             for row in results
         }
 
     async def _build_rubric_mapping(self, filters: AnalyticsFilters) -> RubricMapping:
         """Build rubric mapping from database."""
-        query, params = self.query_builder.get_rubrics_for_mapping(filters.departmentIds)
+        query, params = self.query_builder.get_rubrics_for_mapping(
+            filters.departmentIds
+        )
         results = await self.conn.fetch(query, *params)
-        
+
         return {
-            str(row['id']): RubricMappingItem(
-                name=row['name'],
-                description=row['description'] or "",
+            str(row["id"]): RubricMappingItem(
+                name=row["name"],
+                description=row["description"] or "",
             )
             for row in results
         }
 
-    async def _build_parameter_mapping(self, filters: AnalyticsFilters) -> ParameterMapping:
+    async def _build_parameter_mapping(
+        self, filters: AnalyticsFilters
+    ) -> ParameterMapping:
         """Build parameter mapping from database - only non-default parameters for customization."""
-        query, params = self.query_builder.get_parameters_for_mapping(filters.departmentIds)
+        query, params = self.query_builder.get_parameters_for_mapping(
+            filters.departmentIds
+        )
         results = await self.conn.fetch(query, *params)
-        
+
         return {
-            str(row['id']): ParameterMappingItem(
-                name=row['name'],
-                description=row['description'] or "",
+            str(row["id"]): ParameterMappingItem(
+                name=row["name"],
+                description=row["description"] or "",
             )
             for row in results
         }
@@ -1123,13 +1293,15 @@ class AnalyticsService(BaseService):
         self, filters: AnalyticsFilters
     ) -> ParameterItemMapping:
         """Build parameter item mapping from database - only default items for non-default parameters."""
-        query, params = self.query_builder.get_parameter_items_for_mapping(filters.departmentIds)
+        query, params = self.query_builder.get_parameter_items_for_mapping(
+            filters.departmentIds
+        )
         results = await self.conn.fetch(query, *params)
-        
+
         return {
-            str(row['id']): ParameterItemMappingItem(
-                name=row['name'],
-                description=row['description'] or "",
+            str(row["id"]): ParameterItemMappingItem(
+                name=row["name"],
+                description=row["description"] or "",
                 parameter_id=str(row["parameter_id"]),
                 parameter_name=row["parameter_name"],
             )
@@ -1138,15 +1310,17 @@ class AnalyticsService(BaseService):
 
     async def _build_persona_mapping(self, filters: AnalyticsFilters) -> PersonaMapping:
         """Build persona mapping from database."""
-        query, params = self.query_builder.get_personas_for_mapping(filters.departmentIds)
+        query, params = self.query_builder.get_personas_for_mapping(
+            filters.departmentIds
+        )
         results = await self.conn.fetch(query, *params)
-        
+
         return {
-            str(row['id']): PersonaMappingItem(
-                name=row['name'],
-                description=row['description'] or "",
-                color=row['color'],
-                icon=row['icon'],
+            str(row["id"]): PersonaMappingItem(
+                name=row["name"],
+                description=row["description"] or "",
+                color=row["color"],
+                icon=row["icon"],
             )
             for row in results
         }
@@ -1155,7 +1329,7 @@ class AnalyticsService(BaseService):
         """Refresh the analytics materialized view and invalidate all analytics caches."""
         query = self.query_builder.refresh_materialized_view()
         await self.conn.execute(query)
-        
+
         # Invalidate all analytics caches since the materialized view data has changed
         await self._invalidate_cache([keys.tag_analytics_all()])
 
@@ -1163,4 +1337,3 @@ class AnalyticsService(BaseService):
 def get_analytics_service(conn: asyncpg.Connection) -> AnalyticsService:
     """Get analytics service instance."""
     return AnalyticsService(conn)
-

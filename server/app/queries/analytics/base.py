@@ -1,7 +1,7 @@
 """Base analytics query builder with common filtering logic."""
 
 from datetime import datetime
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 
 class AnalyticsFilters:
@@ -11,35 +11,35 @@ class AnalyticsFilters:
     def build_base_filter(
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, List[Any]]:
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
+    ) -> tuple[str, list[Any]]:
         """
         Build base WHERE clause for analytics queries.
-        
+
         Returns:
             Tuple of (where_clause, params_list)
         """
         conditions = []
-        params: List[Any] = []
+        params: list[Any] = []
         param_counter = 1
 
         # Date filters - convert ISO strings to datetime objects
         conditions.append(f"a.attempt_created_at >= ${param_counter}")
-        params.append(datetime.fromisoformat(start_date.replace('Z', '+00:00')))
+        params.append(datetime.fromisoformat(start_date.replace("Z", "+00:00")))
         param_counter += 1
-        
+
         conditions.append(f"a.attempt_created_at < ${param_counter}")
-        params.append(datetime.fromisoformat(end_date.replace('Z', '+00:00')))
+        params.append(datetime.fromisoformat(end_date.replace("Z", "+00:00")))
         param_counter += 1
 
         # Simulation type filters
         sim_filters = sim_filters or ["general"]
         sim_conditions = []
-        
+
         if "general" in sim_filters:
             sim_conditions.append("a.is_general = TRUE")
         if "practice" in sim_filters:
@@ -69,7 +69,9 @@ class AnalyticsFilters:
 
         # Cohort filter
         if cohort_ids:
-            conditions.append(f"(a.cohort_ids && ${param_counter} OR a.profile_cohort_ids && ${param_counter})")
+            conditions.append(
+                f"(a.cohort_ids && ${param_counter} OR a.profile_cohort_ids && ${param_counter})"
+            )
             params.append(cohort_ids)
             param_counter += 1
 
@@ -95,7 +97,7 @@ class MetricQueryBuilder:
     ) -> str:
         """
         Build trend data query.
-        
+
         Args:
             metric_expression: SQL expression for the metric (e.g., "grade_percent")
             aggregate_func: Aggregation function (e.g., "AVG", "SUM")
@@ -159,7 +161,7 @@ class AttemptNormalization:
     def build_normalized_score_cte(where_clause: str) -> str:
         """
         Build CTE for normalized attempt scores.
-        
+
         This matches the logic from the stored procedures where scores are
         normalized by the expected scenario count.
         """
@@ -214,18 +216,18 @@ class AnalyticsQueryBuilder:
         method: str,
         start_date: str,
         end_date: str,
-        cohort_ids: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
-        sim_filters: Optional[List[str]] = None,
-        profile_id: Optional[str] = None,
-        department_ids: Optional[List[str]] = None,
+        cohort_ids: list[str] | None = None,
+        roles: list[str] | None = None,
+        sim_filters: list[str] | None = None,
+        profile_id: str | None = None,
+        department_ids: list[str] | None = None,
         use_normalization: bool = False,
-        value_field: Optional[str] = None,
-        key_field: Optional[str] = None,
-    ) -> Tuple[str, List[Any]]:
+        value_field: str | None = None,
+        key_field: str | None = None,
+    ) -> tuple[str, list[Any]]:
         """
         Build a complete metric query with trend data and data points.
-        
+
         Args:
             metric_expression: SQL expression for the metric
             aggregate_func: Aggregation function (AVG, SUM, etc.)
@@ -282,8 +284,8 @@ class AnalyticsQueryBuilder:
                     COALESCE((SELECT has_data FROM cur), FALSE) AS has_data,
                     '{method}' AS method,
                     COALESCE((SELECT current_value FROM cur), 0) AS current_value,
-                    {f"'{value_field}'" if value_field else 'NULL'} AS value_field,
-                    {f"'{key_field}'" if key_field else 'NULL'} AS key_field,
+                    {f"'{value_field}'" if value_field else "NULL"} AS value_field,
+                    {f"'{key_field}'" if key_field else "NULL"} AS key_field,
                     COALESCE((SELECT json_agg(json_build_object(
                         'date', date,
                         'value', ROUND(COALESCE(value, 0))::int,
@@ -324,8 +326,8 @@ class AnalyticsQueryBuilder:
                     COALESCE((SELECT has_data FROM cur), FALSE) AS has_data,
                     '{method}' AS method,
                     COALESCE((SELECT current_value FROM cur), 0) AS current_value,
-                    {f"'{value_field}'" if value_field else 'NULL'} AS value_field,
-                    {f"'{key_field}'" if key_field else 'NULL'} AS key_field,
+                    {f"'{value_field}'" if value_field else "NULL"} AS value_field,
+                    {f"'{key_field}'" if key_field else "NULL"} AS key_field,
                     COALESCE((SELECT json_agg(json_build_object(
                         'date', date,
                         'value', ROUND(COALESCE(value, 0))::int,
@@ -342,7 +344,7 @@ class AnalyticsQueryBuilder:
 
         return query, params
 
-    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+    def get_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile role."""
         query = "SELECT role FROM profiles WHERE id = $1"
         return (query, [profile_id])
@@ -354,8 +356,8 @@ class AnalyticsQueryBuilder:
     # ===== Entity mapping queries for analytics =====
 
     def get_scenarios_for_mapping(
-        self, department_ids: Optional[List[str]]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str] | None
+    ) -> tuple[str, list[Any]]:
         """Build query to get scenarios for mapping."""
         query = """
         SELECT DISTINCT s.id, s.name, s.problem_statement
@@ -366,8 +368,8 @@ class AnalyticsQueryBuilder:
         return (query, [department_ids])
 
     def get_simulations_for_mapping(
-        self, department_ids: Optional[List[str]]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str] | None
+    ) -> tuple[str, list[Any]]:
         """Build query to get practice simulations for mapping."""
         query = """
         SELECT DISTINCT s.id, s.title, s.description
@@ -379,8 +381,8 @@ class AnalyticsQueryBuilder:
         return (query, [department_ids])
 
     def get_rubrics_for_mapping(
-        self, department_ids: Optional[List[str]]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str] | None
+    ) -> tuple[str, list[Any]]:
         """Build query to get rubrics for mapping."""
         query = """
         SELECT DISTINCT r.id, r.name, r.description
@@ -391,8 +393,8 @@ class AnalyticsQueryBuilder:
         return (query, [department_ids])
 
     def get_parameters_for_mapping(
-        self, department_ids: Optional[List[str]]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str] | None
+    ) -> tuple[str, list[Any]]:
         """Build query to get non-default parameters for mapping."""
         query = """
         SELECT DISTINCT p.id, p.name, p.description
@@ -404,8 +406,8 @@ class AnalyticsQueryBuilder:
         return (query, [department_ids])
 
     def get_parameter_items_for_mapping(
-        self, department_ids: Optional[List[str]]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str] | None
+    ) -> tuple[str, list[Any]]:
         """Build query to get default parameter items for non-default parameters."""
         query = """
         SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
@@ -419,8 +421,8 @@ class AnalyticsQueryBuilder:
         return (query, [department_ids])
 
     def get_personas_for_mapping(
-        self, department_ids: Optional[List[str]]
-    ) -> Tuple[str, List[Any]]:
+        self, department_ids: list[str] | None
+    ) -> tuple[str, list[Any]]:
         """Build query to get personas for mapping."""
         query = """
         SELECT DISTINCT p.id, p.name, p.description, p.color, p.icon

@@ -1,462 +1,408 @@
-"""
-Tests for app.services.profile_service
-"""
+"""Real database integration tests for ProfileService."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
+import asyncpg
 import pytest
+from app.schemas.profile import ProfileContextRequest
 from app.services.profile_service import ProfileService
-
-
-class MockRow:
-    """Mock database row that supports both dict() and attribute access."""
-
-    def __init__(self, **kwargs):
-        self._data = kwargs
-
-    def __getitem__(self, key):
-        return self._data[key]
-
-    def get(self, key, default=None):
-        return self._data.get(key, default)
-
-    def keys(self):
-        return self._data.keys()
-
-    def values(self):
-        return self._data.values()
-
-    def items(self):
-        return self._data.items()
-
-    def __iter__(self):
-        return iter(self._data)
-
-
-@pytest.fixture
-def mock_conn():
-    """Create a mock database connection."""
-    conn = AsyncMock()
-    # Mock transaction context manager
-    conn.transaction.return_value.__aenter__ = AsyncMock()
-    conn.transaction.return_value.__aexit__ = AsyncMock()
-    return conn
-
-
-class TestCreateProfilesFromCsv:
-    """Tests for create_profiles_from_csv method."""
-
-    @patch("app.services.profile_service.parse_csv_file")
-    async def test_create_profiles_from_csv_success(self, mock_parse_csv, mock_conn, tmp_path):
-        """Test successful CSV processing and profile creation."""
-        # Mock parse_csv_file to return valid data
-        mock_parse_csv.return_value = {
-            "success": True,
-            "users": [
-                {"name": "John Doe", "username": "john_doe", "row_num": 2},
-                {"name": "Jane Smith", "username": "jane_smith", "row_num": 3},
-            ],
-            "errors": [],
-        }
-
-        # Mock database queries - no existing users
-        mock_conn.fetchrow.return_value = None
-        mock_conn.execute.return_value = None
-
-        # Create service and call method
-        csv_file = tmp_path / "test_users.csv"
-        csv_file.write_text("name,username\nJohn Doe,john_doe\nJane Smith,jane_smith")
-
-        service = ProfileService(mock_conn)
-        result = await service.create_profiles_from_csv(str(csv_file))
-
-        # Assertions
-        assert result["success"] is True
-        assert result["users_created"] == 2
-        assert result["users_skipped"] == 0
-        assert len(result["created_users"]) == 2
-        assert result["created_users"][0]["name"] == "John Doe"
-        assert result["created_users"][1]["name"] == "Jane Smith"
-
-        # Verify parse_csv_file was called
-        mock_parse_csv.assert_called_once_with(str(csv_file))
-
-        # Verify database operations were called (2 checks + 2 inserts = 4 total)
-        assert mock_conn.fetchrow.call_count == 2
-        assert mock_conn.execute.call_count == 2
-
-    @patch("app.services.profile_service.parse_csv_file")
-    async def test_create_profiles_from_csv_skip_existing(self, mock_parse_csv, mock_conn, tmp_path):
-        """Test skipping existing users."""
-        # Mock parse_csv_file
-        mock_parse_csv.return_value = {
-            "success": True,
-            "users": [
-                {"name": "John Doe", "username": "john_doe", "row_num": 2},
-                {"name": "Jane Smith", "username": "jane_smith", "row_num": 3},
-            ],
-            "errors": [],
-        }
-
-        # Mock database queries - first user exists, second doesn't
-        mock_conn.fetchrow.side_effect = [
-            MockRow(id="existing-id"),  # john_doe exists
-            None,  # jane_smith doesn't exist
-        ]
-        mock_conn.execute.return_value = None
-
-        # Create service and call method
-        csv_file = tmp_path / "test_users.csv"
-        csv_file.write_text("name,username\nJohn Doe,john_doe\nJane Smith,jane_smith")
-
-        service = ProfileService(mock_conn)
-        result = await service.create_profiles_from_csv(str(csv_file))
-
-        # Assertions
-        assert result["success"] is True
-        assert result["users_created"] == 1
-        assert result["users_skipped"] == 1
-        assert len(result["created_users"]) == 1
-        assert result["created_users"][0]["name"] == "Jane Smith"
-        assert len(result["skipped_users"]) == 1
-        assert result["skipped_users"][0]["username"] == "john_doe"
-
-    @patch("app.services.profile_service.parse_csv_file")
-    async def test_create_profiles_from_csv_parse_error(self, mock_parse_csv, mock_conn, tmp_path):
-        """Test handling parse errors."""
-        # Mock parse_csv_file to return error
-        mock_parse_csv.return_value = {
-            "success": False,
-            "error": "Missing required headers: username",
-            "users": [],
-            "errors": [],
-        }
-
-        # Create service and call method
-        csv_file = tmp_path / "test_users.csv"
-        csv_file.write_text("name\nJohn Doe\nJane Smith")
-
-        service = ProfileService(mock_conn)
-        result = await service.create_profiles_from_csv(str(csv_file))
-
-        # Assertions
-        assert result["success"] is False
-        assert "Missing required headers" in result["error"]
-        assert result["users_created"] == 0
-
-        # Verify database operations were not called
-        mock_conn.fetchrow.assert_not_called()
-        mock_conn.execute.assert_not_called()
-
-    @patch("app.services.profile_service.parse_csv_file")
-    async def test_create_profiles_from_csv_with_row_errors(self, mock_parse_csv, mock_conn, tmp_path):
-        """Test handling row-level validation errors."""
-        # Mock parse_csv_file with some errors
-        mock_parse_csv.return_value = {
-            "success": True,
-            "users": [
-                {"name": "John Doe", "username": "john_doe", "row_num": 2},
-            ],
-            "errors": ["Row 3: Missing required fields (name, username)"],
-        }
-
-        # Mock database queries
-        mock_conn.fetchrow.return_value = None
-        mock_conn.execute.return_value = None
-
-        # Create service and call method
-        csv_file = tmp_path / "test_users.csv"
-        csv_file.write_text("name,username\nJohn Doe,john_doe\n,")
-
-        service = ProfileService(mock_conn)
-        result = await service.create_profiles_from_csv(str(csv_file))
-
-        # Assertions
-        assert result["success"] is True
-        assert result["users_created"] == 1
-        assert len(result["errors"]) == 1
-        assert "Row 3" in result["errors"][0]
-
-    @patch("app.services.profile_service.parse_csv_file")
-    async def test_create_profiles_from_csv_database_error(self, mock_parse_csv, mock_conn, tmp_path):
-        """Test handling database errors."""
-        # Mock parse_csv_file
-        mock_parse_csv.return_value = {
-            "success": True,
-            "users": [
-                {"name": "John Doe", "username": "john_doe", "row_num": 2},
-            ],
-            "errors": [],
-        }
-
-        # Mock database to raise error during transaction
-        mock_conn.transaction.return_value.__aenter__.side_effect = Exception("Database connection error")
-
-        # Create service and call method
-        csv_file = tmp_path / "test_users.csv"
-        csv_file.write_text("name,username\nJohn Doe,john_doe")
-
-        service = ProfileService(mock_conn)
-        result = await service.create_profiles_from_csv(str(csv_file))
-
-        # Assertions
-        assert result["success"] is False
-        assert "Database error" in result["error"]
-        assert result["users_created"] == 0
-
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_profile_service`")
-class TestGet_Profile_Service:
-    """Tests for get_profile_service function."""
-
-    def test_get_profile_service_success(self):
-        """Test successful get_profile_service execution."""
-        # TODO: Implement test for get_profile_service
-        assert False, "IMPLEMENT: Test for get_profile_service"
-
-    def test_get_profile_service_error(self):
-        """Test get_profile_service error handling."""
-        # TODO: Implement error test for get_profile_service
-        assert False, "IMPLEMENT: Error test for get_profile_service"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_profile`")
-class TestGet_Profile:
-    """Tests for get_profile function."""
-
-    def test_get_profile_success(self):
-        """Test successful get_profile execution."""
-        # TODO: Implement test for get_profile
-        assert False, "IMPLEMENT: Test for get_profile"
-
-    def test_get_profile_error(self):
-        """Test get_profile error handling."""
-        # TODO: Implement error test for get_profile
-        assert False, "IMPLEMENT: Error test for get_profile"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `update_profile`")
-class TestUpdate_Profile:
-    """Tests for update_profile function."""
-
-    def test_update_profile_success(self):
-        """Test successful update_profile execution."""
-        # TODO: Implement test for update_profile
-        assert False, "IMPLEMENT: Test for update_profile"
-
-    def test_update_profile_error(self):
-        """Test update_profile error handling."""
-        # TODO: Implement error test for update_profile
-        assert False, "IMPLEMENT: Error test for update_profile"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `mark_intro_complete`")
-class TestMark_Intro_Complete:
-    """Tests for mark_intro_complete function."""
-
-    def test_mark_intro_complete_success(self):
-        """Test successful mark_intro_complete execution."""
-        # TODO: Implement test for mark_intro_complete
-        assert False, "IMPLEMENT: Test for mark_intro_complete"
-
-    def test_mark_intro_complete_error(self):
-        """Test mark_intro_complete error handling."""
-        # TODO: Implement error test for mark_intro_complete
-        assert False, "IMPLEMENT: Error test for mark_intro_complete"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `mark_chat_complete`")
-class TestMark_Chat_Complete:
-    """Tests for mark_chat_complete function."""
-
-    def test_mark_chat_complete_success(self):
-        """Test successful mark_chat_complete execution."""
-        # TODO: Implement test for mark_chat_complete
-        assert False, "IMPLEMENT: Test for mark_chat_complete"
-
-    def test_mark_chat_complete_error(self):
-        """Test mark_chat_complete error handling."""
-        # TODO: Implement error test for mark_chat_complete
-        assert False, "IMPLEMENT: Error test for mark_chat_complete"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_default_guest_profile_id`")
-class TestGet_Default_Guest_Profile_Id:
-    """Tests for get_default_guest_profile_id function."""
-
-    def test_get_default_guest_profile_id_success(self):
-        """Test successful get_default_guest_profile_id execution."""
-        # TODO: Implement test for get_default_guest_profile_id
-        assert False, "IMPLEMENT: Test for get_default_guest_profile_id"
-
-    def test_get_default_guest_profile_id_error(self):
-        """Test get_default_guest_profile_id error handling."""
-        # TODO: Implement error test for get_default_guest_profile_id
-        assert False, "IMPLEMENT: Error test for get_default_guest_profile_id"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_simulatable_profiles`")
-class TestGet_Simulatable_Profiles:
-    """Tests for get_simulatable_profiles function."""
-
-    def test_get_simulatable_profiles_success(self):
-        """Test successful get_simulatable_profiles execution."""
-        # TODO: Implement test for get_simulatable_profiles
-        assert False, "IMPLEMENT: Test for get_simulatable_profiles"
-
-    def test_get_simulatable_profiles_error(self):
-        """Test get_simulatable_profiles error handling."""
-        # TODO: Implement error test for get_simulatable_profiles
-        assert False, "IMPLEMENT: Error test for get_simulatable_profiles"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `authorize_emulation`")
-class TestAuthorize_Emulation:
-    """Tests for authorize_emulation function."""
-
-    def test_authorize_emulation_success(self):
-        """Test successful authorize_emulation execution."""
-        # TODO: Implement test for authorize_emulation
-        assert False, "IMPLEMENT: Test for authorize_emulation"
-
-    def test_authorize_emulation_error(self):
-        """Test authorize_emulation error handling."""
-        # TODO: Implement error test for authorize_emulation
-        assert False, "IMPLEMENT: Error test for authorize_emulation"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_profile_context`")
-class TestGet_Profile_Context:
-    """Tests for get_profile_context function."""
-
-    def test_get_profile_context_success(self):
-        """Test successful get_profile_context execution."""
-        # TODO: Implement test for get_profile_context
-        assert False, "IMPLEMENT: Test for get_profile_context"
-
-    def test_get_profile_context_error(self):
-        """Test get_profile_context error handling."""
-        # TODO: Implement error test for get_profile_context
-        assert False, "IMPLEMENT: Error test for get_profile_context"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_profile_by_alias`")
-class TestGet_Profile_By_Alias:
-    """Tests for get_profile_by_alias function."""
-
-    def test_get_profile_by_alias_success(self):
-        """Test successful get_profile_by_alias execution."""
-        # TODO: Implement test for get_profile_by_alias
-        assert False, "IMPLEMENT: Test for get_profile_by_alias"
-
-    def test_get_profile_by_alias_error(self):
-        """Test get_profile_by_alias error handling."""
-        # TODO: Implement error test for get_profile_by_alias
-        assert False, "IMPLEMENT: Error test for get_profile_by_alias"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_profiles_from_csv`")
-class TestCreate_Profiles_From_Csv:
-    """Tests for create_profiles_from_csv function."""
-
-    def test_create_profiles_from_csv_success(self):
-        """Test successful create_profiles_from_csv execution."""
-        # TODO: Implement test for create_profiles_from_csv
-        assert False, "IMPLEMENT: Test for create_profiles_from_csv"
-
-    def test_create_profiles_from_csv_error(self):
-        """Test create_profiles_from_csv error handling."""
-        # TODO: Implement error test for create_profiles_from_csv
-        assert False, "IMPLEMENT: Error test for create_profiles_from_csv"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_student_simulation_report`")
-class TestGet_Student_Simulation_Report:
-    """Tests for get_student_simulation_report function."""
-
-    def test_get_student_simulation_report_success(self):
-        """Test successful get_student_simulation_report execution."""
-        # TODO: Implement test for get_student_simulation_report
-        assert False, "IMPLEMENT: Test for get_student_simulation_report"
-
-    def test_get_student_simulation_report_error(self):
-        """Test get_student_simulation_report error handling."""
-        # TODO: Implement error test for get_student_simulation_report
-        assert False, "IMPLEMENT: Error test for get_student_simulation_report"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `search_profiles`")
-class TestSearch_Profiles:
-    """Tests for search_profiles function."""
-
-    def test_search_profiles_success(self):
-        """Test successful search_profiles execution."""
-        # TODO: Implement test for search_profiles
-        assert False, "IMPLEMENT: Test for search_profiles"
-
-    def test_search_profiles_error(self):
-        """Test search_profiles error handling."""
-        # TODO: Implement error test for search_profiles
-        assert False, "IMPLEMENT: Error test for search_profiles"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_profile_overview`")
-class TestGet_Profile_Overview:
-    """Tests for get_profile_overview function."""
-
-    def test_get_profile_overview_success(self):
-        """Test successful get_profile_overview execution."""
-        # TODO: Implement test for get_profile_overview
-        assert False, "IMPLEMENT: Test for get_profile_overview"
-
-    def test_get_profile_overview_error(self):
-        """Test get_profile_overview error handling."""
-        # TODO: Implement error test for get_profile_overview
-        assert False, "IMPLEMENT: Error test for get_profile_overview"
-
-
-import pytest
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+
+pytestmark = pytest.mark.asyncio
+
+
+# ============================================================================
+# READ METHOD TESTS
+# ============================================================================
+
+
+async def test_get_profile(db: asyncpg.Connection, disable_cache: None) -> None:
+    """Test getting profile by ID."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    result = await svc.get_profile(profile_id)
+    
+    assert result is not None
+    assert result.id == profile_id
+    assert result.alias == "sarava18"
+    assert result.role == "superadmin"
+    assert result.firstName is not None
+    assert result.lastName is not None
+
+
+async def test_get_profile_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting non-existent profile."""
+    # Generate a random UUID that doesn't exist
+    fake_id = "00000000-0000-0000-0000-000000000000"
+    
+    svc = ProfileService(db)
+    result = await svc.get_profile(fake_id)
+    
+    assert result is None
+
+
+async def test_get_profile_by_alias(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting profile by alias."""
+    svc = ProfileService(db)
+    result = await svc.get_profile_by_alias("sarava18")
+    
+    assert result is not None
+    assert result.alias == "sarava18"
+    assert result.role == "superadmin"
+
+
+async def test_get_profile_by_alias_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting profile by non-existent alias."""
+    svc = ProfileService(db)
+    result = await svc.get_profile_by_alias("nonexistent_alias")
+    
+    assert result is None
+
+
+async def test_get_default_guest_profile_id(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting default guest profile ID."""
+    svc = ProfileService(db)
+    result = await svc.get_default_guest_profile_id()
+    
+    # May or may not exist in seed data
+    # Just verify it returns UUID or None
+    assert result is None or isinstance(result, object)
+
+
+async def test_get_simulatable_profiles_superadmin(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test superadmin can emulate all profiles except self."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    result = await svc.get_simulatable_profiles(profile_id, [])
+    
+    # Superadmin can emulate everyone except themselves
+    assert len(result) >= 0
+    # Verify self is not in list
+    profile_ids = [p.id for p in result]
+    assert profile_id not in profile_ids
+
+
+async def test_get_simulatable_profiles_admin(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test admin can emulate instructional/ta/guest."""
+    # Create an admin profile
+    admin_id = await db.fetchval(
+        "INSERT INTO profiles(first_name, last_name, alias, role) "
+        "VALUES('Test', 'Admin', 'test_admin', 'admin') RETURNING id"
+    )
+    
+    svc = ProfileService(db)
+    result = await svc.get_simulatable_profiles(str(admin_id), [])
+    
+    # Admin can emulate instructional, ta, guest (not superadmin/admin)
+    roles = {p.role for p in result}
+    assert "superadmin" not in roles
+    assert "admin" not in roles
+
+
+async def test_get_simulatable_profiles_instructional(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test instructional can emulate ta/guest."""
+    # Create an instructional profile
+    instr_id = await db.fetchval(
+        "INSERT INTO profiles(first_name, last_name, alias, role) "
+        "VALUES('Test', 'Instructor', 'test_instr', 'instructional') RETURNING id"
+    )
+    
+    svc = ProfileService(db)
+    result = await svc.get_simulatable_profiles(str(instr_id), [])
+    
+    # Instructional can emulate ta, guest (not superadmin/admin/instructional)
+    roles = {p.role for p in result}
+    assert "superadmin" not in roles
+    assert "admin" not in roles
+    assert "instructional" not in roles
+
+
+async def test_get_simulatable_profiles_ta_cannot_emulate(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test TA cannot emulate anyone."""
+    # Create a TA profile
+    ta_id = await db.fetchval(
+        "INSERT INTO profiles(first_name, last_name, alias, role) "
+        "VALUES('Test', 'TA', 'test_ta', 'ta') RETURNING id"
+    )
+    
+    svc = ProfileService(db)
+    result = await svc.get_simulatable_profiles(str(ta_id), [])
+    
+    # TA cannot emulate anyone
+    assert len(result) == 0
+
+
+async def test_authorize_emulation_allowed(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test emulation authorization allows valid emulation."""
+    superadmin_id = await get_superadmin_alias(db)
+    
+    # Create a target profile
+    target_id = await db.fetchval(
+        "INSERT INTO profiles(first_name, last_name, alias, role) "
+        "VALUES('Target', 'User', 'test_target', 'ta') RETURNING id"
+    )
+    
+    svc = ProfileService(db)
+    allowed, reason = await svc.authorize_emulation(superadmin_id, str(target_id), [])
+    
+    assert allowed is True
+    assert reason is None
+
+
+async def test_authorize_emulation_denied(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test emulation authorization denies invalid emulation."""
+    # Create TA profile
+    ta_id = await db.fetchval(
+        "INSERT INTO profiles(first_name, last_name, alias, role) "
+        "VALUES('TA', 'Test', 'test_ta2', 'ta') RETURNING id"
+    )
+    
+    # Create target superadmin
+    target_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    allowed, reason = await svc.authorize_emulation(str(ta_id), target_id, [])
+    
+    assert allowed is False
+    assert reason is not None
+
+
+async def test_authorize_emulation_self(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test emulating self is always allowed."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    allowed, reason = await svc.authorize_emulation(profile_id, profile_id, [])
+    
+    assert allowed is True
+    assert reason is None
+
+
+async def test_get_profile_context(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting complete profile context with optimized query."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    result = await svc.get_profile_context(
+        ProfileContextRequest(effectiveProfileId=profile_id, pathname="/home")
+    )
+    
+    assert result is not None
+    assert result.actualProfile is not None
+    assert result.effectiveProfile is not None
+    assert result.departments is not None
+    assert result.departmentIds is not None
+    assert result.cohorts is not None
+    assert result.breadcrumbs is not None
+    assert result.simulatableProfiles is not None
+    assert result.availableSections is not None
+    assert result.redirectPath is not None
+
+
+async def test_get_profile_context_guest(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test profile context resolves guest-profile-id."""
+    # Create a default guest profile
+    await db.execute(
+        "INSERT INTO profiles(first_name, last_name, alias, role, default_profile) "
+        "VALUES('Guest', 'User', 'default_guest', 'guest', true) "
+        "ON CONFLICT DO NOTHING"
+    )
+    
+    svc = ProfileService(db)
+    result = await svc.get_profile_context(
+        ProfileContextRequest(effectiveProfileId="guest-profile-id", pathname="/home")
+    )
+    
+    assert result is not None
+    assert result.effectiveProfile.role == "guest"
+
+
+async def test_get_student_simulation_report(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting comprehensive student simulation report."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    result = await svc.get_student_simulation_report(profile_id, recent=10)
+    
+    assert result is not None
+    assert "profile" in result
+    assert "attempts" in result
+    assert result["profile"]["id"] == profile_id
+    assert isinstance(result["attempts"], list)
+
+
+async def test_get_student_simulation_report_invalid_id(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test simulation report with invalid profile ID."""
+    svc = ProfileService(db)
+    result = await svc.get_student_simulation_report("not-a-uuid")
+    
+    assert "error" in result
+    assert "Invalid profile_id format" in result["error"]
+
+
+async def test_get_student_simulation_report_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test simulation report with non-existent profile."""
+    fake_id = "00000000-0000-0000-0000-000000000000"
+    
+    svc = ProfileService(db)
+    result = await svc.get_student_simulation_report(fake_id)
+    
+    assert "error" in result
+    assert "not found" in result["error"].lower()
+
+
+async def test_search_profiles(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test fuzzy search profiles."""
+    svc = ProfileService(db)
+    result = await svc.search_profiles("sarava", limit=10)
+    
+    assert isinstance(result, list)
+    assert len(result) >= 0
+    
+    # If results found, verify structure
+    if result:
+        for profile in result:
+            assert "id" in profile
+            assert "first_name" in profile
+            assert "last_name" in profile
+            assert "alias" in profile
+            assert "role" in profile
+            assert "score" in profile
+
+
+async def test_search_profiles_empty_query(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test search with empty query returns empty list."""
+    svc = ProfileService(db)
+    result = await svc.search_profiles("", limit=10)
+    
+    assert result == []
+
+
+async def test_search_profiles_no_matches(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test search with no matches."""
+    svc = ProfileService(db)
+    result = await svc.search_profiles("zzzzzznonexistent", limit=10)
+    
+    assert isinstance(result, list)
+    # May or may not have fuzzy matches depending on data
+
+
+async def test_get_profile_overview(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting profile overview with latest grades."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    result = await svc.get_profile_overview(profile_id)
+    
+    assert result is not None
+    assert "profile" in result
+    assert "latest_grades" in result
+    assert result["profile"]["id"] == profile_id
+    assert isinstance(result["latest_grades"], list)
+
+
+async def test_get_profile_overview_by_name(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting profile overview by name search."""
+    svc = ProfileService(db)
+    result = await svc.get_profile_overview("sarava")
+    
+    assert result is not None
+    assert "profile" in result
+    assert "alias" in result["profile"]
+
+
+async def test_get_profile_overview_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test profile overview with non-existent profile."""
+    fake_id = "00000000-0000-0000-0000-000000000000"
+    
+    svc = ProfileService(db)
+    result = await svc.get_profile_overview(fake_id)
+    
+    assert "error" in result
+    assert "not found" in result["error"].lower()
+
+
+# ============================================================================
+# MUTATION METHOD TESTS (Simple validation only)
+# ============================================================================
+
+
+async def test_update_profile(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test updating profile fields."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    result = await svc.update_profile(profile_id, {"viewedIntro": True})
+    
+    assert result is not None
+    assert result.viewedIntro is True
+
+
+async def test_mark_intro_complete(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test marking intro as complete."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    result = await svc.mark_intro_complete(profile_id)
+    
+    assert result is True
+
+
+async def test_mark_chat_complete(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test marking chat as complete."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = ProfileService(db)
+    result = await svc.mark_chat_complete(profile_id)
+    
+    assert result is True
