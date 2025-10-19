@@ -5,7 +5,7 @@
 
 import { getApiBase } from "@/lib/api-base";
 import { cache } from "react";
-import { ProfileDetailResponseSchema } from "../schemas/profile";
+import { StaffDetailResponseSchema } from "../schemas/staff";
 
 export const fetchStaffDetail = cache(
   async (profileId: string, currentProfileId: string) => {
@@ -21,7 +21,7 @@ export const fetchStaffDetail = cache(
     }
 
     const data = await res.json();
-    return ProfileDetailResponseSchema.parse(data);
+    return StaffDetailResponseSchema.parse(data);
   }
 );
 

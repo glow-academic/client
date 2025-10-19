@@ -55,17 +55,17 @@ class CohortService(BaseService):
         # Get campus domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
 
-        # Get query from query builder
+        # Get query from query builder (now includes mappings)
         query, params = self.queries.list_cohorts(
-            filters.departmentIds, filters.profileId
+            filters.departmentIds, filters.profileId, campus_domain
         )
 
         result = await self.conn.fetch(query, *params)
 
         # Build response
         cohorts = []
-        profile_mapping = {}
-        simulation_mapping = {}
+        profile_mapping: Dict[str, ProfileMappingItem] = {}
+        simulation_mapping: Dict[str, SimulationMappingItem] = {}
 
         for row in result:
             # Convert UUID arrays to string arrays
@@ -89,33 +89,21 @@ class CohortService(BaseService):
                 )
             )
 
-        # Get profile names for mapping
-        if profile_ids_to_fetch := list(
-            set([pid for c in cohorts for pid in c.profile_ids])
-        ):
-            query, params = self.queries.get_profile_mapping(profile_ids_to_fetch, campus_domain)
-            profile_result = await self.conn.fetch(query, *params)
+            # Parse profile mapping from first row (same for all cohorts)
+            if not profile_mapping and row['profile_mapping']:
+                for pid, pdata in row['profile_mapping'].items():
+                    profile_mapping[pid] = ProfileMappingItem(
+                        name=pdata['name'],
+                        description=pdata['description']
+                    )
 
-            for row in profile_result:
-                profile_mapping[str(row['id'])] = ProfileMappingItem(
-                    name=row['name'],
-                    description=row['description']
-                )
-
-        # Get simulation names for mapping
-        if simulation_ids_to_fetch := list(
-            set([sid for c in cohorts for sid in c.simulation_ids])
-        ):
-            query, params = self.queries.get_simulation_mapping(
-                simulation_ids_to_fetch
-            )
-            simulation_result = await self.conn.fetch(query, *params)
-
-            for row in simulation_result:
-                simulation_mapping[str(row['id'])] = SimulationMappingItem(
-                    name=row['name'],
-                    description=row['description']
-                )
+            # Parse simulation mapping from first row (same for all cohorts)
+            if not simulation_mapping and row['simulation_mapping']:
+                for sid, sdata in row['simulation_mapping'].items():
+                    simulation_mapping[sid] = SimulationMappingItem(
+                        name=sdata['name'],
+                        description=sdata['description']
+                    )
 
         return CohortsListResponse(
             cohorts=cohorts,
@@ -137,83 +125,53 @@ class CohortService(BaseService):
         # Get campus domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
 
-        # Get cohort basic info
-        query, params = self.queries.get_cohort_by_id(request.cohortId)
+        # Get all cohort detail data in one query
+        query, params = self.queries.get_cohort_detail_complete(
+            request.cohortId, request.profileId, campus_domain
+        )
         cohort = await self.conn.fetchrow(query, *params)
 
         if not cohort:
             raise ValueError(f"Cohort not found: {request.cohortId}")
 
-        # Get profile IDs for this cohort
-        query, params = self.queries.get_cohort_profiles(request.cohortId)
-        profile_result = await self.conn.fetch(query, *params)
-        profile_ids = [str(row['profile_id']) for row in profile_result]
+        # Parse simulation mapping from JSONB
+        simulation_mapping = {}
+        if cohort['simulation_mapping']:
+            for sid, sdata in cohort['simulation_mapping'].items():
+                simulation_mapping[sid] = SimulationMappingItem(
+                    name=sdata['name'],
+                    description=sdata['description']
+                )
 
-        # Get simulation IDs for this cohort
-        query, params = self.queries.get_cohort_simulations(request.cohortId)
-        simulation_result = await self.conn.fetch(query, *params)
-        simulation_ids = [str(row['simulation_id']) for row in simulation_result]
+        # Parse profile mapping from JSONB
+        profile_mapping = {}
+        if cohort['profile_mapping']:
+            for pid, pdata in cohort['profile_mapping'].items():
+                profile_mapping[pid] = ProfileMappingItem(
+                    name=pdata['name'],
+                    description=pdata['description']
+                )
 
-        # Get user's accessible department IDs
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        dept_result = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row['id']) for row in dept_result]
-
-        # Get valid simulations
-        query, params = self.queries.get_valid_simulations(valid_department_ids)
-        valid_simulation_ids = [
-            str(row['id']) for row in await self.conn.fetch(query, *params)
-        ]
-
-        # Get valid profiles
-        query, params = self.queries.get_valid_profiles(valid_department_ids)
-        valid_profile_ids = [
-            str(row['id']) for row in await self.conn.fetch(query, *params)
-        ]
-
-        # Get simulation mapping
-        if simulation_ids:
-            query, params = self.queries.get_simulation_mapping(simulation_ids)
-            sim_mapping_result = await self.conn.fetch(query, *params)
-            simulation_mapping = {
-                str(row['id']): SimulationMappingItem(name=row['name'], description=row['description'])
-                for row in sim_mapping_result
-            }
-        else:
-            simulation_mapping = {}
-
-        # Get profile mapping
-        if profile_ids:
-            query, params = self.queries.get_profile_mapping(profile_ids, campus_domain)
-            prof_mapping_result = await self.conn.fetch(query, *params)
-            profile_mapping = {
-                str(row['id']): ProfileMappingItem(name=row['name'], description=row['description'])
-                for row in prof_mapping_result
-            }
-        else:
-            profile_mapping = {}
-
-        # Get department mapping
-        department_mapping = {
-            str(row['id']): DepartmentMappingItem(
-                name=row['name'], description=row['description'] or ''
-            )
-            for row in dept_result
-        }
+        # Parse department mapping from JSONB
+        department_mapping = {}
+        if cohort['department_mapping']:
+            for did, ddata in cohort['department_mapping'].items():
+                department_mapping[did] = DepartmentMappingItem(
+                    name=ddata['name'],
+                    description=ddata['description']
+                )
 
         return CohortDetailResponse(
             title=cohort['title'],
             description=cohort['description'],
-            department_id=str(cohort.department_id),
-            valid_department_ids=valid_department_ids,
+            department_id=cohort['department_id'],
+            valid_department_ids=cohort['valid_department_ids'],
             active=cohort['active'],
-            default_cohort=cohort.default_cohort,
-            simulation_ids=simulation_ids,
-            valid_simulation_ids=valid_simulation_ids,
-            profile_ids=profile_ids,
-            valid_profile_ids=valid_profile_ids,
+            default_cohort=cohort['default_cohort'],
+            simulation_ids=cohort['simulation_ids'],
+            valid_simulation_ids=cohort['valid_simulation_ids'],
+            profile_ids=cohort['profile_ids'],
+            valid_profile_ids=cohort['valid_profile_ids'],
             simulation_mapping=simulation_mapping,
             profile_mapping=profile_mapping,
             department_mapping=department_mapping,
@@ -872,7 +830,7 @@ class CohortService(BaseService):
             return {"error": f"Invalid cohort_id format: {cohort_id}"}
 
         try:
-            # Get cohort with members and simulations
+            # Get cohort with members, simulations, and all results in one query
             query, params = self.queries.get_cohort_with_members(str(cohort_uuid))
             cohort_data = await self.conn.fetchrow(query, *params)
             
@@ -882,46 +840,43 @@ class CohortService(BaseService):
             # Parse JSON fields
             members = cohort_data["members"] if cohort_data["members"] else []
             simulations = cohort_data["simulations"] if cohort_data["simulations"] else []
+            student_results = cohort_data["student_results"] if cohort_data["student_results"] else {}
 
-            # Build pass/fail matrix
+            # Build pass/fail matrix from pre-fetched results
             matrix = []
             for student in members:
+                student_id = str(student["id"])
                 student_name = f"{student['first_name'] or ''} {student['last_name'] or ''}".strip()
                 if not student_name:
                     student_name = student["alias"] or "Unknown"
 
-                student_results: Dict[str, Any] = {
-                    "student_id": str(student["id"]),
+                student_row: Dict[str, Any] = {
+                    "student_id": student_id,
                     "student_name": student_name,
                     "alias": student["alias"],
                     "simulations": {},
                 }
 
-                # Get results for each simulation
-                for sim in simulations:
-                    # Get best grade for this student and simulation
-                    query, params = self.queries.get_student_simulation_best_result(
-                        str(student["id"]),
-                        str(sim["id"])
-                    )
-                    best_result_row = await self.conn.fetchrow(query, *params)
+                # Get pre-fetched results for this student
+                student_sim_results = student_results.get(student_id, {})
 
-                    if best_result_row and best_result_row["best_score"] is not None:
-                        best_result = {
-                            "score": best_result_row["best_score"],
-                            "passed": best_result_row["passed"],
-                            "time_taken": best_result_row["time_taken"],
-                            "attempt_count": best_result_row["attempt_count"],
-                            "last_attempt": best_result_row["last_attempt"].isoformat()
-                            if best_result_row["last_attempt"]
-                            else None,
+                # Build results for each simulation
+                for sim in simulations:
+                    sim_id = str(sim["id"])
+                    result_data = student_sim_results.get(sim_id)
+
+                    if result_data:
+                        student_row["simulations"][sim_id] = {
+                            "score": result_data["score"],
+                            "passed": result_data["passed"],
+                            "time_taken": result_data["time_taken"],
+                            "attempt_count": result_data["attempt_count"],
+                            "last_attempt": result_data["last_attempt"]
                         }
                     else:
-                        best_result = None
+                        student_row["simulations"][sim_id] = None
 
-                    student_results["simulations"][str(sim["id"])] = best_result
-
-                matrix.append(student_results)
+                matrix.append(student_row)
 
             # Calculate summary statistics
             summary: Dict[str, Any] = {
@@ -937,12 +892,9 @@ class CohortService(BaseService):
                 total_score = 0
 
                 for student_result in matrix:
-                    if (
-                        sim_id in student_result["simulations"]
-                        and student_result["simulations"][sim_id]
-                    ):
+                    result = student_result["simulations"].get(sim_id)
+                    if result:
                         attempted_count += 1
-                        result = student_result["simulations"][sim_id]
                         if result["passed"]:
                             passed_count += 1
                         total_score += result["score"]

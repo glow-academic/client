@@ -7,9 +7,9 @@ class CohortQueries:
     """Query builders for cohort operations."""
 
     def list_cohorts(
-        self, department_ids: List[str], profile_id: str
+        self, department_ids: List[str], profile_id: str, campus_domain: str
     ) -> Tuple[str, List[Any]]:
-        """Build query for cohorts list with permissions and relationships."""
+        """Build query for cohorts list with permissions, relationships, and mappings in one query."""
         query = """
         WITH cohort_profiles_agg AS (
             SELECT 
@@ -43,6 +43,14 @@ class CohortQueries:
             SELECT cohort_id
             FROM cohort_profiles
             WHERE profile_id = $2 AND active = true
+        ),
+        all_profile_ids AS (
+            SELECT DISTINCT unnest(profile_ids) as profile_id
+            FROM cohort_profiles_agg
+        ),
+        all_simulation_ids AS (
+            SELECT DISTINCT unnest(simulation_ids) as simulation_id
+            FROM cohort_simulations_agg
         )
         SELECT 
             c.id as cohort_id,
@@ -77,7 +85,31 @@ class CohortQueries:
                     )
                 THEN true
                 ELSE false
-            END as can_leave
+            END as can_leave,
+            -- Profile mapping as JSONB
+            (
+                SELECT COALESCE(jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'name', p.first_name || ' ' || p.last_name,
+                        'description', p.alias || '@' || $3
+                    )
+                ), '{}'::jsonb)
+                FROM profiles p
+                WHERE p.id IN (SELECT profile_id FROM all_profile_ids)
+            ) as profile_mapping,
+            -- Simulation mapping as JSONB
+            (
+                SELECT COALESCE(jsonb_object_agg(
+                    s.id::text,
+                    jsonb_build_object(
+                        'name', s.title,
+                        'description', COALESCE(s.description, '')
+                    )
+                ), '{}'::jsonb)
+                FROM simulations s
+                WHERE s.id IN (SELECT simulation_id FROM all_simulation_ids)
+            ) as simulation_mapping
         FROM cohorts c
         LEFT JOIN cohort_profiles_agg cp ON cp.cohort_id = c.id
         LEFT JOIN cohort_simulations_agg cs ON cs.cohort_id = c.id
@@ -100,7 +132,7 @@ class CohortQueries:
         ORDER BY c.title
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [department_ids, profile_id, campus_domain])
 
     def get_profile_mapping(
         self, profile_ids: List[str], campus_domain: str
@@ -133,6 +165,111 @@ class CohortQueries:
         WHERE id = $1
         """
         return (query, [cohort_id])
+
+    def get_cohort_detail_complete(
+        self, cohort_id: str, profile_id: str, campus_domain: str
+    ) -> Tuple[str, List[Any]]:
+        """Build optimized query to get all cohort detail data in one query."""
+        query = """
+        WITH cohort_data AS (
+            SELECT 
+                c.id,
+                c.title,
+                c.description,
+                c.department_id,
+                c.active,
+                c.default_cohort
+            FROM cohorts c
+            WHERE c.id = $1
+        ),
+        cohort_profile_ids AS (
+            SELECT cp.profile_id
+            FROM cohort_profiles cp
+            WHERE cp.cohort_id = $1 AND cp.active = true
+        ),
+        cohort_simulation_ids AS (
+            SELECT cs.simulation_id
+            FROM cohort_simulations cs
+            WHERE cs.cohort_id = $1 AND cs.active = true
+        ),
+        valid_departments AS (
+            SELECT DISTINCT d.id, d.title as name, d.description
+            FROM departments d
+            JOIN profile_departments pd ON pd.department_id = d.id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        valid_dept_ids AS (
+            SELECT id FROM valid_departments
+        ),
+        valid_simulations AS (
+            SELECT s.id
+            FROM simulations s
+            WHERE s.department_id IN (SELECT id FROM valid_dept_ids)
+                AND s.active = true
+        ),
+        valid_profiles AS (
+            SELECT DISTINCT p.id
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id
+            WHERE pd.department_id IN (SELECT id FROM valid_dept_ids)
+                AND p.active = true
+        )
+        SELECT 
+            cd.title,
+            cd.description,
+            cd.department_id::text,
+            cd.active,
+            cd.default_cohort,
+            -- Profile IDs in cohort
+            (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
+             FROM cohort_profile_ids) as profile_ids,
+            -- Simulation IDs in cohort
+            (SELECT COALESCE(array_agg(simulation_id::text), ARRAY[]::text[])
+             FROM cohort_simulation_ids) as simulation_ids,
+            -- Valid department IDs
+            (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
+             FROM valid_dept_ids) as valid_department_ids,
+            -- Valid simulation IDs
+            (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
+             FROM valid_simulations) as valid_simulation_ids,
+            -- Valid profile IDs
+            (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
+             FROM valid_profiles) as valid_profile_ids,
+            -- Simulation mapping
+            (SELECT COALESCE(jsonb_object_agg(
+                s.id::text,
+                jsonb_build_object(
+                    'name', s.title,
+                    'description', COALESCE(s.description, '')
+                )
+             ), '{}'::jsonb)
+             FROM simulations s
+             WHERE s.id IN (SELECT simulation_id FROM cohort_simulation_ids)
+            ) as simulation_mapping,
+            -- Profile mapping
+            (SELECT COALESCE(jsonb_object_agg(
+                p.id::text,
+                jsonb_build_object(
+                    'name', p.first_name || ' ' || p.last_name,
+                    'description', p.alias || '@' || $3
+                )
+             ), '{}'::jsonb)
+             FROM profiles p
+             WHERE p.id IN (SELECT profile_id FROM cohort_profile_ids)
+            ) as profile_mapping,
+            -- Department mapping
+            (SELECT COALESCE(jsonb_object_agg(
+                vd.id::text,
+                jsonb_build_object(
+                    'name', vd.name,
+                    'description', COALESCE(vd.description, '')
+                )
+             ), '{}'::jsonb)
+             FROM valid_departments vd
+            ) as department_mapping
+        FROM cohort_data cd
+        """
+        return (query, [cohort_id, profile_id, campus_domain])
 
     def get_cohort_profiles(self, cohort_id: str) -> Tuple[str, List[Any]]:
         """Build query to get cohort's profiles."""
@@ -370,7 +507,7 @@ class CohortQueries:
     def get_cohort_with_members(
         self, cohort_id: str
     ) -> Tuple[str, List[Any]]:
-        """Build query to get cohort with members and simulations."""
+        """Build optimized query to get cohort with members, simulations, and all results in one query."""
         query = """
         WITH cohort_members AS (
             SELECT 
@@ -392,6 +529,51 @@ class CohortQueries:
             JOIN cohort_simulations cs ON s.id = cs.simulation_id
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             WHERE cs.cohort_id = $1 AND cs.active = true
+        ),
+        student_simulation_results AS (
+            SELECT 
+                cm.id as student_id,
+                cs.id as simulation_id,
+                best_results.best_score,
+                best_results.passed,
+                best_results.time_taken,
+                best_results.attempt_count,
+                best_results.last_attempt
+            FROM cohort_members cm
+            CROSS JOIN cohort_sims cs
+            LEFT JOIN LATERAL (
+                WITH student_attempts AS (
+                    SELECT sa.id AS attempt_id, sa.created_at
+                    FROM simulation_attempts sa
+                    JOIN attempt_profiles ap ON sa.id = ap.attempt_id
+                    WHERE ap.profile_id = cm.id
+                      AND ap.active = true
+                      AND sa.simulation_id = cs.id
+                ),
+                chat_grades AS (
+                    SELECT 
+                        sa.attempt_id,
+                        sa.created_at,
+                        scg.score,
+                        scg.passed,
+                        scg.time_taken,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY sa.attempt_id 
+                            ORDER BY sc.created_at DESC
+                        ) as rn
+                    FROM student_attempts sa
+                    JOIN simulation_chats sc ON sc.attempt_id = sa.attempt_id
+                    JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+                )
+                SELECT 
+                    MAX(score) as best_score,
+                    BOOL_OR(passed) as passed,
+                    (ARRAY_AGG(time_taken ORDER BY score DESC))[1] as time_taken,
+                    COUNT(DISTINCT attempt_id) as attempt_count,
+                    MAX(created_at) as last_attempt
+                FROM chat_grades
+                WHERE rn = 1
+            ) best_results ON true
         )
         SELECT 
             c.id,
@@ -416,7 +598,41 @@ class CohortQueries:
                     'time_limit', cs.time_limit
                 )) FILTER (WHERE cs.id IS NOT NULL),
                 '[]'::json
-            ) as simulations
+            ) as simulations,
+            -- Student results as JSONB with nested structure
+            COALESCE(
+                (SELECT jsonb_object_agg(
+                    ssr.student_id::text,
+                    jsonb_object_agg(
+                        ssr.simulation_id::text,
+                        CASE 
+                            WHEN ssr.best_score IS NOT NULL THEN
+                                jsonb_build_object(
+                                    'score', ssr.best_score,
+                                    'passed', ssr.passed,
+                                    'time_taken', ssr.time_taken,
+                                    'attempt_count', ssr.attempt_count,
+                                    'last_attempt', ssr.last_attempt
+                                )
+                            ELSE NULL
+                        END
+                    )
+                 )
+                 FROM (
+                     SELECT 
+                         student_id,
+                         simulation_id,
+                         best_score,
+                         passed,
+                         time_taken,
+                         attempt_count,
+                         last_attempt
+                     FROM student_simulation_results
+                 ) ssr
+                 GROUP BY ssr.student_id
+                ),
+                '{}'::jsonb
+            ) as student_results
         FROM cohorts c
         LEFT JOIN cohort_members cm ON true
         LEFT JOIN cohort_sims cs ON true
