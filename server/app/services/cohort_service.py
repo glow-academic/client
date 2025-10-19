@@ -188,19 +188,60 @@ class CohortService(BaseService):
         self, request: CohortDetailDefaultRequest
     ) -> CohortDetailResponse:
         """Execute the actual default cohort detail query."""
-        # Get default cohort for profile
-        query, params = self.queries.get_default_cohort(request.profileId)
+        # Get campus domain from environment
+        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
+
+        # Get default cohort detail data in one query
+        query, params = self.queries.get_cohort_detail_default_complete(
+            request.profileId, campus_domain
+        )
         cohort = await self.conn.fetchrow(query, *params)
 
         if not cohort:
             raise ValueError("No cohorts found for user's departments")
 
-        # Reuse the detail logic with the found cohort_id
-        detail_request = CohortDetailRequest(
-            cohortId=str(cohort['id']), profileId=request.profileId
-        )
+        # Parse simulation mapping from JSONB
+        simulation_mapping = {}
+        if cohort['simulation_mapping']:
+            for sid, sdata in cohort['simulation_mapping'].items():
+                simulation_mapping[sid] = SimulationMappingItem(
+                    name=sdata['name'],
+                    description=sdata['description']
+                )
 
-        return await self.get_cohort_detail(detail_request)
+        # Parse profile mapping from JSONB
+        profile_mapping = {}
+        if cohort['profile_mapping']:
+            for pid, pdata in cohort['profile_mapping'].items():
+                profile_mapping[pid] = ProfileMappingItem(
+                    name=pdata['name'],
+                    description=pdata['description']
+                )
+
+        # Parse department mapping from JSONB
+        department_mapping = {}
+        if cohort['department_mapping']:
+            for did, ddata in cohort['department_mapping'].items():
+                department_mapping[did] = DepartmentMappingItem(
+                    name=ddata['name'],
+                    description=ddata['description']
+                )
+
+        return CohortDetailResponse(
+            title=cohort['title'],
+            description=cohort['description'],
+            department_id=cohort['department_id'],
+            valid_department_ids=cohort['valid_department_ids'],
+            active=cohort['active'],
+            default_cohort=cohort['default_cohort'],
+            simulation_ids=cohort['simulation_ids'],
+            valid_simulation_ids=cohort['valid_simulation_ids'],
+            profile_ids=cohort['profile_ids'],
+            valid_profile_ids=cohort['valid_profile_ids'],
+            simulation_mapping=simulation_mapping,
+            profile_mapping=profile_mapping,
+            department_mapping=department_mapping,
+        )
 
     @with_cache(lambda self, request: keys.cohort_with_profiles(request.cohortId, request.departmentIds, request.currentProfileId))
     async def get_cohort_detail_with_profiles(
@@ -216,81 +257,63 @@ class CohortService(BaseService):
         # Get campus email domain
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
 
-        # 1. Get cohort basic info
-        query, params = self.queries.get_cohort_title(request.cohortId)
-        cohort = await self.conn.fetchrow(query, *params)
+        # Get all data in one query
+        query, params = self.queries.get_cohort_with_profiles_complete(
+            request.cohortId, request.departmentIds, request.currentProfileId, campus_domain
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        if not cohort:
+        if not result:
             raise ValueError(f"Cohort not found: {request.cohortId}")
 
-        # 2. Get profile IDs currently in this cohort
-        query, params = self.queries.get_cohort_profiles(request.cohortId)
-        profile_result = await self.conn.fetch(query, *params)
-        current_profile_ids = [str(row['profile_id']) for row in profile_result]
-
-        # 3. Get all staff for the departments using staff query
-        query, params = self.staff_queries.list_staff(
-            request.departmentIds, request.currentProfileId, campus_domain
-        )
-        result = await self.conn.fetch(query, *params)
-
-        # 4. Filter to available profiles (instructional/ta, not in cohort, not default)
+        # Parse available profiles from JSONB
         available_profiles = []
-        for row in result:
-            profile_id = str(row['profile_id'])
-            
-            # Skip if already in cohort, is default, or not correct role
-            if (
-                profile_id not in current_profile_ids
-                and not row['default_profile']
-                and row['role'] in ["instructional", "ta"]
-            ):
-                cohort_ids = [str(cid) for cid in (row['cohort_ids'] or [])]
+        if result['available_profiles']:
+            for profile_data in result['available_profiles']:
                 available_profiles.append(
                     StaffItem(
-                        profile_id=profile_id,
-                        first_name=row['first_name'],
-                        last_name=row['last_name'],
-                        alias=row['alias'],
-                        name=row['name'],
-                        role=row['role'],
-                        email=row['email'],
-                        initials=row['initials'],
-                        active=row['active'],
-                        lastActive=row['lastactive'].isoformat() if row['lastactive'] else None,
-                        cohort_ids=cohort_ids,
-                        requests_per_day=row['requests_per_day'],
-                        default_profile=row['default_profile'],
-                        requests_in_last_day=row['requests_in_last_day'],
-                        can_edit=row['can_edit'],
-                        can_delete=row['can_delete'],
+                        profile_id=profile_data['profile_id'],
+                        first_name=profile_data['first_name'],
+                        last_name=profile_data['last_name'],
+                        alias=profile_data['alias'],
+                        name=profile_data['name'],
+                        role=profile_data['role'],
+                        email=profile_data['email'],
+                        initials=profile_data['initials'],
+                        active=profile_data['active'],
+                        lastActive=profile_data['lastActive'],
+                        cohort_ids=profile_data['cohort_ids'] or [],
+                        requests_per_day=profile_data['requests_per_day'],
+                        default_profile=profile_data['default_profile'],
+                        requests_in_last_day=profile_data['requests_in_last_day'],
+                        can_edit=profile_data['can_edit'],
+                        can_delete=profile_data['can_delete'],
                     )
                 )
 
-        # 5. Get department mapping
+        # Parse department mapping from JSONB
         department_mapping: DepartmentMapping = {}
-        if request.departmentIds:
-            query, params = self.staff_queries.get_department_mapping(request.departmentIds)
-            dept_result = await self.conn.fetch(query, *params)
-            for row in dept_result:
-                department_mapping[str(row['id'])] = DepartmentMappingItem(
-                    name=row['name'], description=row['description']
+        if result['department_mapping']:
+            for did, ddata in result['department_mapping'].items():
+                department_mapping[did] = DepartmentMappingItem(
+                    name=ddata['name'],
+                    description=ddata['description']
                 )
 
-        # 6. Get cohort mapping (just this cohort)
+        # Build cohort mapping (just this cohort)
         cohort_mapping: CohortMapping = {
-            str(cohort['id']): CohortMappingItem(
-                name=cohort['title'],
-                description=cohort['description'] or ""
+            result['cohort_id']: CohortMappingItem(
+                name=result['title'],
+                description=result['description'] or ""
             )
         }
 
         return CohortDetailWithProfilesResponse(
-            cohort_id=str(cohort['id']),
-            title=cohort['title'],
-            description=cohort['description'],
-            active=cohort['active'],
-            current_profile_ids=current_profile_ids,
+            cohort_id=result['cohort_id'],
+            title=result['title'],
+            description=result['description'],
+            active=result['active'],
+            current_profile_ids=result['current_profile_ids'],
             available_profiles=available_profiles,
             department_mapping=department_mapping,
             cohort_mapping=cohort_mapping,
@@ -642,7 +665,7 @@ class CohortService(BaseService):
             ["c.title", "c.description"], query
         )
 
-        # Build and execute query
+        # Build and execute query (now includes profile counts)
         query_template, _ = self.queries.search_cohorts_fuzzy(where_clause, limit * 5)
         sql = query_template.replace("{param_count}", str(param_idx))
         params.append(limit * 5)  # Candidate pool
@@ -652,16 +675,7 @@ class CohortService(BaseService):
         if not cohorts:
             return []
 
-        # Get profile counts from junction table
-        cohort_ids = [str(c["id"]) for c in cohorts]
-        count_query, count_params = self.queries.get_cohort_profile_counts(cohort_ids)
-        count_results = await self.conn.fetch(count_query, *count_params)
-        cohort_profile_counts = {
-            str(row["cohort_id"]): row["profile_count"]
-            for row in count_results
-        }
-
-        # Score and build results
+        # Score and build results (profile_count now included in query)
         results = []
         for c in cohorts:
             score = self._score_cohort(q_norm, toks, c["title"], c["description"])
@@ -670,7 +684,7 @@ class CohortService(BaseService):
                 "title": c["title"],
                 "active": c["active"],
                 "description": c["description"],
-                "profile_count": cohort_profile_counts.get(str(c["id"]), 0),
+                "profile_count": c["profile_count"],
                 "score": score,
             })
 

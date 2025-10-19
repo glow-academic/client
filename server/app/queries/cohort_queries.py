@@ -134,37 +134,6 @@ class CohortQueries:
 
         return (query, [department_ids, profile_id, campus_domain])
 
-    def get_profile_mapping(
-        self, profile_ids: List[str], campus_domain: str
-    ) -> Tuple[str, List[Any]]:
-        """Build query for profile mapping with full email."""
-        query = """
-        SELECT id, first_name || ' ' || last_name as name, alias || '@' || $2 as description 
-        FROM profiles 
-        WHERE id = ANY($1)
-        """
-        return (query, [profile_ids, campus_domain])
-
-    def get_simulation_mapping(
-        self, simulation_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
-        """Build query for simulation mapping."""
-        query = "SELECT id, title as name, COALESCE(description, '') as description FROM simulations WHERE id = ANY($1)"
-        return (query, [simulation_ids])
-
-    def get_cohort_by_id(self, cohort_id: str) -> Tuple[str, List[Any]]:
-        """Build query to get cohort by ID."""
-        query = """
-        SELECT 
-            title,
-            description,
-            department_id,
-            active,
-            default_cohort
-        FROM cohorts
-        WHERE id = $1
-        """
-        return (query, [cohort_id])
 
     def get_cohort_detail_complete(
         self, cohort_id: str, profile_id: str, campus_domain: str
@@ -271,79 +240,116 @@ class CohortQueries:
         """
         return (query, [cohort_id, profile_id, campus_domain])
 
-    def get_cohort_profiles(self, cohort_id: str) -> Tuple[str, List[Any]]:
-        """Build query to get cohort's profiles."""
-        query = """
-        SELECT profile_id FROM cohort_profiles 
-        WHERE cohort_id = $1 AND active = true
-        """
-        return (query, [cohort_id])
 
-    def get_cohort_simulations(
-        self, cohort_id: str
+    def get_cohort_detail_default_complete(
+        self, profile_id: str, campus_domain: str
     ) -> Tuple[str, List[Any]]:
-        """Build query to get cohort's simulations."""
-        query = """
-        SELECT simulation_id FROM cohort_simulations 
-        WHERE cohort_id = $1 AND active = true
-        """
-        return (query, [cohort_id])
-
-    def get_valid_simulations(
-        self, dept_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
-        """Build query for valid simulations."""
-        query = """
-        SELECT id FROM simulations 
-        WHERE department_id = ANY($1) AND active = true
-        ORDER BY title
-        """
-        return (query, [dept_ids])
-
-    def get_valid_profiles(self, dept_ids: List[str]) -> Tuple[str, List[Any]]:
-        """Build query for valid profiles."""
-        query = """
-        SELECT DISTINCT p.id
-        FROM profiles p
-        JOIN profile_departments pd ON pd.profile_id = p.id
-        WHERE pd.department_id = ANY($1) AND p.active = true
-        ORDER BY p.last_name, p.first_name
-        """
-        return (query, [dept_ids])
-
-    def get_valid_departments_for_profile(
-        self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
-        """Build query for valid departments."""
-        query = """
-        SELECT DISTINCT d.id, d.title as name, d.description
-        FROM departments d
-        JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = $1 AND d.active = true
-        ORDER BY d.title
-        """
-        return (query, [profile_id])
-
-    def get_default_cohort(self, profile_id: str) -> Tuple[str, List[Any]]:
-        """Build query for default cohort."""
+        """Build optimized query to get default cohort detail with all data in one query."""
         query = """
         WITH user_departments AS (
             SELECT DISTINCT pd.department_id
             FROM profile_departments pd
             WHERE pd.profile_id = $1
         ),
-        user_cohorts AS (
-            SELECT c.*
+        default_cohort AS (
+            SELECT c.id
             FROM cohorts c
             JOIN user_departments ud ON ud.department_id = c.department_id
             WHERE c.active = true
             ORDER BY c.default_cohort ASC, c.created_at DESC
             LIMIT 1
+        ),
+        cohort_data AS (
+            SELECT 
+                c.id,
+                c.title,
+                c.description,
+                c.department_id,
+                c.active,
+                c.default_cohort
+            FROM cohorts c
+            WHERE c.id = (SELECT id FROM default_cohort)
+        ),
+        cohort_profile_ids AS (
+            SELECT cp.profile_id
+            FROM cohort_profiles cp
+            WHERE cp.cohort_id = (SELECT id FROM default_cohort) AND cp.active = true
+        ),
+        cohort_simulation_ids AS (
+            SELECT cs.simulation_id
+            FROM cohort_simulations cs
+            WHERE cs.cohort_id = (SELECT id FROM default_cohort) AND cs.active = true
+        ),
+        valid_departments AS (
+            SELECT DISTINCT d.id, d.title as name, d.description
+            FROM departments d
+            JOIN profile_departments pd ON pd.department_id = d.id
+            WHERE pd.profile_id = $1 AND d.active = true
+        ),
+        valid_dept_ids AS (
+            SELECT id FROM valid_departments
+        ),
+        valid_simulations AS (
+            SELECT s.id
+            FROM simulations s
+            WHERE s.department_id IN (SELECT id FROM valid_dept_ids)
+                AND s.active = true
+        ),
+        valid_profiles AS (
+            SELECT DISTINCT p.id
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id
+            WHERE pd.department_id IN (SELECT id FROM valid_dept_ids)
+                AND p.active = true
         )
-        SELECT id
-        FROM user_cohorts
+        SELECT 
+            cd.title,
+            cd.description,
+            cd.department_id::text,
+            cd.active,
+            cd.default_cohort,
+            (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
+             FROM cohort_profile_ids) as profile_ids,
+            (SELECT COALESCE(array_agg(simulation_id::text), ARRAY[]::text[])
+             FROM cohort_simulation_ids) as simulation_ids,
+            (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
+             FROM valid_dept_ids) as valid_department_ids,
+            (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
+             FROM valid_simulations) as valid_simulation_ids,
+            (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
+             FROM valid_profiles) as valid_profile_ids,
+            (SELECT COALESCE(jsonb_object_agg(
+                s.id::text,
+                jsonb_build_object(
+                    'name', s.title,
+                    'description', COALESCE(s.description, '')
+                )
+             ), '{}'::jsonb)
+             FROM simulations s
+             WHERE s.id IN (SELECT simulation_id FROM cohort_simulation_ids)
+            ) as simulation_mapping,
+            (SELECT COALESCE(jsonb_object_agg(
+                p.id::text,
+                jsonb_build_object(
+                    'name', p.first_name || ' ' || p.last_name,
+                    'description', p.alias || '@' || $2
+                )
+             ), '{}'::jsonb)
+             FROM profiles p
+             WHERE p.id IN (SELECT profile_id FROM cohort_profile_ids)
+            ) as profile_mapping,
+            (SELECT COALESCE(jsonb_object_agg(
+                vd.id::text,
+                jsonb_build_object(
+                    'name', vd.name,
+                    'description', COALESCE(vd.description, '')
+                )
+             ), '{}'::jsonb)
+             FROM valid_departments vd
+            ) as department_mapping
+        FROM cohort_data cd
         """
-        return (query, [profile_id])
+        return (query, [profile_id, campus_domain])
 
     def create_cohort(self) -> Tuple[str, List[Any]]:
         """Build query to create cohort."""
@@ -384,8 +390,134 @@ class CohortQueries:
 
     def get_cohort_title(self, cohort_id: str) -> Tuple[str, List[Any]]:
         """Build query to get cohort title."""
-        query = "SELECT title FROM cohorts WHERE id = $1"
+        query = "SELECT id, title, description, active FROM cohorts WHERE id = $1"
         return (query, [cohort_id])
+
+    def get_cohort_with_profiles_complete(
+        self, cohort_id: str, department_ids: List[str], current_profile_id: str, campus_domain: str
+    ) -> Tuple[str, List[Any]]:
+        """Build optimized query to get cohort with available profiles in one query."""
+        query = """
+        WITH cohort_data AS (
+            SELECT id, title, description, active
+            FROM cohorts
+            WHERE id = $1
+        ),
+        current_cohort_profiles AS (
+            SELECT cp.profile_id
+            FROM cohort_profiles cp
+            WHERE cp.cohort_id = $1 AND cp.active = true
+        ),
+        profile_cohorts AS (
+            SELECT 
+                cp.profile_id,
+                ARRAY_AGG(cp.cohort_id ORDER BY c.title) as cohort_ids
+            FROM cohort_profiles cp
+            JOIN cohorts c ON c.id = cp.cohort_id
+            WHERE cp.active = true
+            GROUP BY cp.profile_id
+        ),
+        recent_runs AS (
+            SELECT 
+                mrp.profile_id,
+                COUNT(*) as run_count
+            FROM model_runs mr
+            JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+            WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
+            GROUP BY mrp.profile_id
+        ),
+        user_profile AS (
+            SELECT role FROM profiles WHERE id = $3
+        ),
+        all_staff AS (
+            SELECT DISTINCT ON (p.id)
+                p.id as profile_id,
+                p.first_name,
+                p.last_name,
+                p.alias,
+                p.first_name || ' ' || p.last_name as name,
+                p.role,
+                p.alias || '@' || $4 as email,
+                SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1) as initials,
+                p.active,
+                p.last_active as lastActive,
+                prl.requests_per_day as requests_per_day,
+                p.default_profile,
+                COALESCE(rr.run_count::int, 0) as requests_in_last_day,
+                COALESCE(pc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
+                CASE 
+                    WHEN up.role = 'superadmin' THEN true
+                    WHEN up.role = 'admin' AND p.role != 'superadmin' THEN true
+                    ELSE false
+                END as can_edit,
+                CASE 
+                    WHEN up.role = 'superadmin' AND p.default_profile = false THEN true
+                    ELSE false
+                END as can_delete
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id
+            LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
+            LEFT JOIN recent_runs rr ON rr.profile_id = p.id
+            LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+            CROSS JOIN user_profile up
+            WHERE pd.department_id = ANY($2)
+            ORDER BY p.id, p.last_name, p.first_name
+        ),
+        available_profiles AS (
+            SELECT *
+            FROM all_staff
+            WHERE profile_id NOT IN (SELECT profile_id FROM current_cohort_profiles)
+                AND default_profile = false
+                AND role IN ('instructional', 'ta')
+        )
+        SELECT
+            cd.id::text as cohort_id,
+            cd.title,
+            cd.description,
+            cd.active,
+            -- Current profile IDs
+            (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
+             FROM current_cohort_profiles) as current_profile_ids,
+            -- Available profiles as JSONB array
+            (SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'profile_id', ap.profile_id::text,
+                    'first_name', ap.first_name,
+                    'last_name', ap.last_name,
+                    'alias', ap.alias,
+                    'name', ap.name,
+                    'role', ap.role,
+                    'email', ap.email,
+                    'initials', ap.initials,
+                    'active', ap.active,
+                    'lastActive', ap.lastActive,
+                    'cohort_ids', (
+                        SELECT array_agg(cid::text)
+                        FROM unnest(ap.cohort_ids) as cid
+                    ),
+                    'requests_per_day', ap.requests_per_day,
+                    'default_profile', ap.default_profile,
+                    'requests_in_last_day', ap.requests_in_last_day,
+                    'can_edit', ap.can_edit,
+                    'can_delete', ap.can_delete
+                ) ORDER BY ap.last_name, ap.first_name
+             ), '[]'::jsonb)
+             FROM available_profiles ap
+            ) as available_profiles,
+            -- Department mapping
+            (SELECT COALESCE(jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object(
+                    'name', d.title,
+                    'description', d.description
+                )
+             ), '{}'::jsonb)
+             FROM departments d
+             WHERE d.id = ANY($2)
+            ) as department_mapping
+        FROM cohort_data cd
+        """
+        return (query, [cohort_id, department_ids, current_profile_id, campus_domain])
 
     def update_cohort(self) -> Tuple[str, List[Any]]:
         """Build query to update cohort."""
@@ -641,44 +773,6 @@ class CohortQueries:
         """
         return (query, [cohort_id])
 
-    def get_student_simulation_best_result(
-        self, profile_id: str, simulation_id: str
-    ) -> Tuple[str, List[Any]]:
-        """Build query to get best result for a student on a simulation."""
-        query = """
-        WITH student_attempts AS (
-            SELECT sa.id AS attempt_id, sa.created_at
-            FROM simulation_attempts sa
-            JOIN attempt_profiles ap ON sa.id = ap.attempt_id
-            WHERE ap.profile_id = $1
-              AND ap.active = true
-              AND sa.simulation_id = $2
-        ),
-        chat_grades AS (
-            SELECT 
-                sa.attempt_id,
-                sa.created_at,
-                scg.score,
-                scg.passed,
-                scg.time_taken,
-                ROW_NUMBER() OVER (
-                    PARTITION BY sa.attempt_id 
-                    ORDER BY sc.created_at DESC
-                ) as rn
-            FROM student_attempts sa
-            JOIN simulation_chats sc ON sc.attempt_id = sa.attempt_id
-            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
-        )
-        SELECT 
-            MAX(score) as best_score,
-            BOOL_OR(passed) as passed,
-            (ARRAY_AGG(time_taken ORDER BY score DESC))[1] as time_taken,
-            COUNT(DISTINCT attempt_id) as attempt_count,
-            MAX(created_at) as last_attempt
-        FROM chat_grades
-        WHERE rn = 1
-        """
-        return (query, [profile_id, simulation_id])
 
     def search_cohorts_fuzzy(
         self, where_clause: str, limit: int
@@ -686,6 +780,7 @@ class CohortQueries:
         """
         Build fuzzy search query for cohorts by title and description.
         Uses dynamic WHERE clause built by search utilities.
+        Includes profile counts in the same query.
         
         Params: Built dynamically by search utilities, plus limit at end
         """
@@ -694,25 +789,19 @@ class CohortQueries:
                 c.id,
                 c.title,
                 c.active,
-                c.description
+                c.description,
+                COALESCE(
+                    (SELECT COUNT(*)
+                     FROM cohort_profiles cp
+                     WHERE cp.cohort_id = c.id AND cp.active = true),
+                    0
+                ) as profile_count
             FROM cohorts c
             WHERE {where_clause}
             LIMIT ${{param_count}}
         """
         return (query, [limit])
 
-    def get_cohort_profile_counts(
-        self, cohort_ids: List[str]
-    ) -> Tuple[str, List[Any]]:
-        """Build query to get profile counts for multiple cohorts."""
-        query = """
-            SELECT cohort_id, COUNT(*) as profile_count
-            FROM cohort_profiles
-            WHERE cohort_id = ANY($1::uuid[])
-                AND active = true
-            GROUP BY cohort_id
-        """
-        return (query, [cohort_ids])
 
     def get_cohort_overview_complete(self, cohort_id: Any) -> Tuple[str, List[Any]]:
         """Build optimized query to get cohort overview with all related data in ONE query.
