@@ -15,7 +15,8 @@ from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 DeleteAgentRequest, DeleteAgentResponse,
                                 DuplicateAgentRequest, DuplicateAgentResponse,
                                 UpdateAgentRequest, UpdateAgentResponse)
-from app.schemas.base import ModelMapping, ModelMappingItem
+from app.schemas.base import (ModelMapping, ModelMappingItem,
+                              ReasoningMappingItem)
 from app.services.base import BaseService, with_cache
 
 
@@ -150,6 +151,31 @@ class AgentService(BaseService):
         if valid_model_ids_data and isinstance(valid_model_ids_data, list):
             valid_model_ids = [str(mid) for mid in valid_model_ids_data if mid]
 
+        # Build reasoning_mapping following the reasoning_effort enum
+        # Matches database enum: ('none', 'minimal', 'low', 'medium', 'high')
+        reasoning_mapping = {
+            "none": ReasoningMappingItem(
+                name="None",
+                description="No extended reasoning"
+            ),
+            "minimal": ReasoningMappingItem(
+                name="Minimal",
+                description="Basic reasoning for straightforward tasks"
+            ),
+            "low": ReasoningMappingItem(
+                name="Low",
+                description="Light reasoning for simple problem-solving"
+            ),
+            "medium": ReasoningMappingItem(
+                name="Medium",
+                description="Balanced reasoning for moderate complexity"
+            ),
+            "high": ReasoningMappingItem(
+                name="High",
+                description="Deep reasoning for complex, multi-step problems"
+            ),
+        }
+
         return AgentDetailResponse(
             name=result["name"],
             description=result["description"],
@@ -163,6 +189,7 @@ class AgentService(BaseService):
             temperature_upper=1.0,
             debug_info=debug_info,
             model_mapping=model_mapping,
+            reasoning_mapping=reasoning_mapping,
         )
 
     async def create_agent(self, request: CreateAgentRequest) -> CreateAgentResponse:

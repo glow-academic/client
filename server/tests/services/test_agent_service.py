@@ -120,6 +120,7 @@ async def test_get_agent_detail(
     assert result.reasoning_options is not None
     assert result.debug_info is not None  # May be empty list
     assert result.model_mapping is not None
+    assert result.reasoning_mapping is not None
     
     # Verify model mapping contains valid models
     assert len(result.valid_model_ids) >= 0
@@ -198,6 +199,17 @@ async def test_get_agent_detail_model_mapping_complete(
     # Verify all models have entries in model_mapping
     # (model_mapping should include ALL models, not just active ones)
     assert len(result.model_mapping) >= active_models_count
+    
+    # Verify reasoning_mapping contains all expected levels
+    assert len(result.reasoning_mapping) == 5
+    expected_reasoning_levels = ["none", "minimal", "low", "medium", "high"]
+    for level in expected_reasoning_levels:
+        assert level in result.reasoning_mapping
+        reasoning_item = result.reasoning_mapping[level]
+        assert reasoning_item.name is not None
+        assert len(reasoning_item.name) > 0
+        assert reasoning_item.description is not None
+        assert len(reasoning_item.description) > 0
 
 
 async def test_agents_list_single_query_optimization(
@@ -241,6 +253,7 @@ async def test_agent_detail_single_query_optimization(
     assert isinstance(result.debug_info, list)
     assert isinstance(result.valid_model_ids, list)
     assert isinstance(result.model_mapping, dict)
+    assert isinstance(result.reasoning_mapping, dict)
     
     # Verify debug info structure if present
     for debug_item in result.debug_info:

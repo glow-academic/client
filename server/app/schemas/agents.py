@@ -3,7 +3,7 @@
 
 from pydantic import BaseModel
 
-from .base import ModelMapping
+from .base import ModelMapping, ReasoningMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -84,6 +84,7 @@ class AgentDetailResponse(BaseModel):
 
     # Mappings
     model_mapping: ModelMapping
+    reasoning_mapping: ReasoningMapping
 
 
 # ============================================================================

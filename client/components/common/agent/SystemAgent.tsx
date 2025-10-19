@@ -10,16 +10,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { ModelPicker } from "@/components/common/forms/ModelPicker";
+import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,23 +80,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const { mutate: updateAgent } = useUpdateAgentV2();
 
   const isLoading = isLoadingAgentDetail;
-
-  // Extract model options from v2 response
-  const modelOptions = useMemo(() => {
-    if (!agentDetail?.model_mapping) return [];
-    return Object.entries(agentDetail.model_mapping).map(([id, info]) => ({
-      id,
-      name: info.name,
-      description: info.description,
-    }));
-  }, [agentDetail?.model_mapping]);
-
-  // Extract reasoning options from v2 response
-  const reasoningOptions = useMemo(() => {
-    if (!agentDetail?.reasoning_options)
-      return ["none", "minimal", "low", "medium", "high"];
-    return agentDetail.reasoning_options;
-  }, [agentDetail?.reasoning_options]);
 
   // Temperature bounds from v2 response
   const temperatureLower = agentDetail?.temperature_lower ?? 0.0;
@@ -333,26 +311,19 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 <Label htmlFor="modelId">Text Model *</Label>
                 {formData?.modelId !== undefined && !isLoading ? (
                   <>
-                    <Select
-                      value={formData?.modelId}
-                      onValueChange={(value) =>
-                        handleInputChange("modelId", value)
+                    <ModelPicker
+                      mapping={agentDetail?.model_mapping || {}}
+                      validIds={agentDetail?.valid_model_ids || []}
+                      selectedIds={formData?.modelId ? [formData.modelId] : []}
+                      onSelect={(ids) =>
+                        handleInputChange("modelId", ids[0] || "")
                       }
-                      required
-                    >
-                      <SelectTrigger
-                        className={errors.modelId ? "border-destructive" : ""}
-                      >
-                        <SelectValue placeholder="Select a model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {modelOptions.map((model) => (
-                          <SelectItem key={model.id} value={model.id}>
-                            {model.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select a model"
+                      multiSelect={false}
+                      buttonClassName={
+                        errors.modelId ? "border-destructive" : ""
+                      }
+                    />
                     {errors.modelId && (
                       <p className="text-sm text-destructive">
                         {errors.modelId}
@@ -368,26 +339,26 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               <div className="space-y-2">
                 <Label htmlFor="reasoning">Reasoning Effort</Label>
                 {formData?.reasoning !== undefined && !isLoading ? (
-                  <Select
-                    value={formData?.reasoning || "none"}
-                    onValueChange={(value) =>
+                  <ReasoningPicker
+                    mapping={agentDetail?.reasoning_mapping || {}}
+                    validIds={["none", "minimal", "low", "medium", "high"]}
+                    selectedIds={
+                      formData?.reasoning ? [formData.reasoning] : ["none"]
+                    }
+                    onSelect={(ids) =>
                       handleInputChange(
                         "reasoning",
-                        value as "none" | "minimal" | "low" | "medium" | "high"
+                        (ids[0] || "none") as
+                          | "none"
+                          | "minimal"
+                          | "low"
+                          | "medium"
+                          | "high"
                       )
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select reasoning effort" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {reasoningOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option.charAt(0).toUpperCase() + option.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select reasoning effort"
+                    multiSelect={false}
+                  />
                 ) : (
                   <Skeleton className="h-10 w-full" />
                 )}

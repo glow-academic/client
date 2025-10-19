@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { ModelMappingSchema } from "./base";
+import { ModelMappingSchema, ReasoningMappingSchema } from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -81,6 +81,7 @@ export const AgentDetailResponseSchema = z.object({
 
   // Mappings
   model_mapping: ModelMappingSchema,
+  reasoning_mapping: ReasoningMappingSchema,
 });
 
 export type AgentDetailResponse = z.infer<typeof AgentDetailResponseSchema>;
