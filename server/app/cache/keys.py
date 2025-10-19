@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 7  # Bumped: Updated scenario/simulation can_edit and can_delete permission logic
+GLOBAL_CACHE_VERSION = 8  # Bumped: Added instructional role to scenario/simulation edit/delete permissions
 
 # Namespaces
 NS_ANALYTICS = "analytics"

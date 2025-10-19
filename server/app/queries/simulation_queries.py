@@ -122,14 +122,14 @@ class SimulationQueries:
         SELECT 
             sd.*,
             CASE 
-                WHEN up.role IN ('admin', 'superadmin') 
+                WHEN up.role IN ('admin', 'instructional', 'superadmin') 
                      AND (sd.default_simulation = false OR up.role = 'superadmin')
                      AND sd.active_cohort_count = 0
                 THEN true
                 ELSE false
             END as can_edit,
             CASE 
-                WHEN up.role IN ('admin', 'superadmin') 
+                WHEN up.role IN ('admin', 'instructional', 'superadmin') 
                      AND (sd.default_simulation = false OR up.role = 'superadmin')
                      AND sd.total_cohort_links = 0
                 THEN true

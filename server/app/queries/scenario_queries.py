@@ -77,14 +77,14 @@ class ScenarioQueries:
                 COALESCE(ss.num_simulations, 0) as num_simulations,
                 COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
                 CASE 
-                    WHEN up.role IN ('admin', 'superadmin') 
+                    WHEN up.role IN ('admin', 'instructional', 'superadmin') 
                          AND (s.default_scenario = false OR up.role = 'superadmin')
                          AND COALESCE(ss.num_simulations, 0) = 0 
                     THEN true
                     ELSE false
                 END as can_edit,
                 CASE 
-                    WHEN up.role IN ('admin', 'superadmin') 
+                    WHEN up.role IN ('admin', 'instructional', 'superadmin') 
                          AND (s.default_scenario = false OR up.role = 'superadmin')
                          AND COALESCE(sal.total_links, 0) = 0 
                     THEN true
