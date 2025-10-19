@@ -432,9 +432,14 @@ class SimulationService(BaseService):
                     time_limit_query, simulation_id, request.time_limit
                 )
 
-            # Insert scenario relationships
+            # Insert scenario relationships with active-first ordering
             insert_query = self.queries.insert_simulation_scenario()
-            for idx, scenario_item in enumerate(request.scenario_ids):
+            
+            # Sort scenarios: active first, then inactive
+            active_scenarios: list[tuple[str, bool]] = []
+            inactive_scenarios: list[tuple[str, bool]] = []
+            
+            for scenario_item in request.scenario_ids:
                 # Handle both string IDs and ScenarioInRequest objects
                 scenario_id: str
                 active: bool
@@ -445,7 +450,17 @@ class SimulationService(BaseService):
                     # mypy: scenario_item is ScenarioInRequest here
                     scenario_id = scenario_item.scenario_id  # type: ignore
                     active = scenario_item.active  # type: ignore
-
+                
+                if active:
+                    active_scenarios.append((scenario_id, active))
+                else:
+                    inactive_scenarios.append((scenario_id, active))
+            
+            # Combine: active first, then inactive
+            sorted_scenarios = active_scenarios + inactive_scenarios
+            
+            # Insert with proper position indices (1-indexed)
+            for idx, (scenario_id, active) in enumerate(sorted_scenarios, start=1):
                 await self.conn.execute(
                     insert_query,
                     simulation_id,
@@ -517,9 +532,14 @@ class SimulationService(BaseService):
             )
             await self.conn.execute(query, *params)
 
-            # Insert new scenario relationships
+            # Insert new scenario relationships with active-first ordering
             insert_query = self.queries.insert_simulation_scenario()
-            for idx, scenario_item in enumerate(request.scenario_ids):
+            
+            # Sort scenarios: active first, then inactive
+            active_scenarios: list[tuple[str, bool]] = []
+            inactive_scenarios: list[tuple[str, bool]] = []
+            
+            for scenario_item in request.scenario_ids:
                 # Handle both string IDs and ScenarioInRequest objects
                 scenario_id: str
                 active: bool
@@ -530,7 +550,17 @@ class SimulationService(BaseService):
                     # mypy: scenario_item is ScenarioInRequest here
                     scenario_id = scenario_item.scenario_id  # type: ignore
                     active = scenario_item.active  # type: ignore
-
+                
+                if active:
+                    active_scenarios.append((scenario_id, active))
+                else:
+                    inactive_scenarios.append((scenario_id, active))
+            
+            # Combine: active first, then inactive
+            sorted_scenarios = active_scenarios + inactive_scenarios
+            
+            # Insert with proper position indices (1-indexed)
+            for idx, (scenario_id, active) in enumerate(sorted_scenarios, start=1):
                 await self.conn.execute(
                     insert_query,
                     request.simulationId,

@@ -406,6 +406,98 @@ async def test_scenarios_list_json_parsing(
 
 
 @pytest.mark.asyncio
+async def test_scenario_ordering_active_first(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that scenarios are ordered with active first, then inactive when updating simulation."""
+    # Setup - Get existing simulation
+    sim_result = await db.fetchrow("""
+        SELECT s.id, s.title, s.description, s.department_id, s.rubric_id,
+               s.active, s.default_simulation, s.practice_simulation,
+               s.hints_enabled, s.input_guardrail_active, s.output_guardrail_active,
+               s.image_input_active
+        FROM simulations s
+        WHERE s.active = true
+        LIMIT 1
+    """)
+    
+    if not sim_result:
+        pytest.skip("No simulations found in test database")
+    
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+    
+    # Get current scenarios (at least 2)
+    scenario_results = await db.fetch(
+        "SELECT scenario_id FROM simulation_scenarios WHERE simulation_id = $1 ORDER BY position LIMIT 3",
+        simulation_id
+    )
+    
+    if len(scenario_results) < 2:
+        pytest.skip("Need at least 2 scenarios for this test")
+    
+    # Get time limit
+    time_limit_result = await db.fetchrow(
+        "SELECT time_limit_seconds FROM simulation_time_limits WHERE simulation_id = $1 AND active = true",
+        simulation_id
+    )
+    time_limit = time_limit_result["time_limit_seconds"] if time_limit_result else None
+    
+    # Create request with mixed active/inactive scenarios
+    # First scenario inactive, rest active - should reorder to active first
+    from app.schemas.simulations import (ScenarioInRequest,
+                                         UpdateSimulationRequest)
+    
+    scenario_ids = [
+        ScenarioInRequest(scenario_id=str(scenario_results[0]["scenario_id"]), active=False),  # Inactive
+        ScenarioInRequest(scenario_id=str(scenario_results[1]["scenario_id"]), active=True),   # Active
+    ]
+    
+    if len(scenario_results) >= 3:
+        scenario_ids.append(
+            ScenarioInRequest(scenario_id=str(scenario_results[2]["scenario_id"]), active=True)  # Active
+        )
+    
+    # Execute - Update simulation
+    svc = SimulationService(db)
+    request = UpdateSimulationRequest(
+        simulationId=simulation_id,
+        title=sim_result["title"],
+        description=sim_result["description"],
+        department_id=sim_result["department_id"],
+        active=sim_result["active"],
+        default_simulation=sim_result["default_simulation"],
+        practice_simulation=sim_result["practice_simulation"],
+        hints_enabled=sim_result["hints_enabled"],
+        input_guardrail_active=sim_result["input_guardrail_active"],
+        output_guardrail_active=sim_result["output_guardrail_active"],
+        image_input_active=sim_result["image_input_active"],
+        time_limit=time_limit,
+        rubric_id=sim_result["rubric_id"],
+        scenario_ids=scenario_ids
+    )
+    
+    result = await svc.update_simulation(request)
+    assert result.success is True
+    
+    # Verify ordering in database: active scenarios should come first
+    db_scenarios = await db.fetch(
+        "SELECT scenario_id, active, position FROM simulation_scenarios WHERE simulation_id = $1 ORDER BY position",
+        simulation_id
+    )
+    
+    # First scenarios should be active (active=true)
+    # Last scenario should be inactive (active=false)
+    active_positions = [i for i, s in enumerate(db_scenarios) if s["active"]]
+    inactive_positions = [i for i, s in enumerate(db_scenarios) if not s["active"]]
+    
+    # All active scenarios should come before any inactive scenarios
+    if active_positions and inactive_positions:
+        assert max(active_positions) < min(inactive_positions), \
+            "Active scenarios should come before inactive scenarios in position order"
+
+
+@pytest.mark.asyncio
 @pytest.mark.skip(reason="Requires active state support in create - to be implemented")
 async def test_create_simulation_with_scenario_active_states(
     db: asyncpg.Connection, disable_cache: None

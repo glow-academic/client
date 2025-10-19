@@ -747,7 +747,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 return (
                   <Card
                     key={scenarioId}
-                    className={`p-4 cursor-move hover:shadow-md transition-all ${
+                    className={`p-4 cursor-move hover:shadow-md transition-all flex flex-col h-full ${
                       draggedScenario === scenarioId ? "opacity-50" : ""
                     } ${!isScenarioActive ? "opacity-50 bg-muted" : ""}`}
                     draggable={!isReadonly}
@@ -757,30 +757,33 @@ export default function Simulation({ simulationId }: SimulationProps) {
                     onDragOver={handleDragOver}
                     onDrop={(e) => !isReadonly && handleDrop(e, scenarioId)}
                   >
-                    <div className="space-y-3">
-                      {/* Header: Title and Active Switch */}
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-medium text-sm flex-1">
-                          {scenarioData.name || "Unnamed Scenario"}
-                        </h4>
-                        {isExistingScenario && !isReadonly && (
-                          <Switch
-                            checked={scenarioActiveStates[scenarioId] ?? true}
-                            onCheckedChange={(checked) =>
-                              setScenarioActiveStates((prev) => ({
-                                ...prev,
-                                [scenarioId]: checked,
-                              }))
-                            }
-                          />
-                        )}
-                      </div>
+                    {/* Header: Title and Active Switch */}
+                    <div className="flex items-start justify-between gap-2 pb-3">
+                      <h4 className="font-medium text-sm flex-1">
+                        {scenarioData.name || "Unnamed Scenario"}
+                      </h4>
+                      {isExistingScenario && !isReadonly && (
+                        <Switch
+                          checked={scenarioActiveStates[scenarioId] ?? true}
+                          onCheckedChange={(checked) =>
+                            setScenarioActiveStates((prev) => ({
+                              ...prev,
+                              [scenarioId]: checked,
+                            }))
+                          }
+                        />
+                      )}
+                    </div>
 
-                      {/* Description */}
+                    {/* Description - Grows to fill space */}
+                    <div className="flex-grow">
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         {scenarioData.description || "No description provided"}
                       </p>
+                    </div>
 
+                    {/* Bottom section - Statistics and Actions */}
+                    <div className="mt-3 space-y-2">
                       {/* Statistics Row - Only for existing scenarios */}
                       {isExistingScenario && scenarioStats && (
                         <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">
