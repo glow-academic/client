@@ -37,6 +37,8 @@ import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { DocumentPreviewCard } from "@/components/common/documents/DocumentPreviewCard";
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +65,12 @@ import {
 import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { DocumentsDataTable } from "./DocumentsDataTable";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";
+
+// Helper function to truncate text
+const truncateText = (text: string, maxLength: number = 30): string => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
 
 export default function Documents() {
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
@@ -188,6 +196,12 @@ export default function Documents() {
     }));
   }, [documents]);
 
+  // Handle document preview (for table view)
+  const handlePreview = useCallback((document: DocumentItem) => {
+    setPreviewDocument(document);
+    setShowPreviewDialog(true);
+  }, []);
+
   // Define columns inline using useMemo
   const columns = useMemo<ColumnDef<DocumentItem>[]>(
     () => [
@@ -219,40 +233,130 @@ export default function Documents() {
       },
       {
         accessorKey: "name",
-        header: "Name",
-        cell: ({ row }) => row.getValue("name"),
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Name" />
+        ),
+        cell: ({ row }) => {
+          const name = row.getValue("name") as string;
+          return (
+            <div className="flex items-center gap-3 max-w-[300px]">
+              {/* Document preview */}
+              <div
+                className="w-12 h-12 bg-muted rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => handlePreview(row.original)}
+              >
+                <div className="w-full h-full">
+                  <DocumentViewer
+                    document={{
+                      document_id: row.original.document_id,
+                      name: row.original.name,
+                      type: row.original.type,
+                      updatedAt: row.original.updatedAt,
+                      extension: row.original.extension,
+                      scenario_ids: row.original.scenario_ids,
+                      can_edit: row.original.can_edit,
+                      can_delete: row.original.can_delete,
+                      active: row.original.active,
+                      department_id: row.original.department_id,
+                      file_path: row.original.file_path,
+                      mime_type: row.original.mime_type,
+                      parameter_item_ids: row.original.parameter_item_ids,
+                    }}
+                    bare={true}
+                    isFormDocument={false}
+                    compact={true}
+                  />
+                </div>
+              </div>
+              {/* Document name */}
+              <div className="flex-1 min-w-0">
+                <span title={name} className="text-sm font-medium">
+                  {truncateText(name, 25)}
+                </span>
+              </div>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "type",
-        header: "Type",
-        cell: ({ row }) => row.getValue("type"),
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Type" />
+        ),
+        cell: ({ row }) => {
+          const type = row.getValue("type") as string;
+          const typeInfo = typeOptions.find((option) => option.value === type);
+          return (
+            <Badge variant="outline" className="text-xs">
+              {typeInfo?.label || type}
+            </Badge>
+          );
+        },
         filterFn: (row, _id, value) => {
           return value.length === 0 || value.includes(row.getValue("type"));
         },
       },
       {
         accessorKey: "parameter_item_ids",
-        header: "Parameters",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Parameters" />
+        ),
         cell: ({ row }) => {
           const itemIds = row.getValue("parameter_item_ids") as string[];
-          if (!itemIds.length)
+          if (!itemIds.length) {
             return <span className="text-xs text-muted-foreground">None</span>;
-          return itemIds
-            .map((id) => {
-              const item = parameterItemMapping[id];
-              return item ? item["name"] : id;
-            })
-            .join(", ");
+          }
+          return (
+            <div className="max-w-[240px] flex flex-wrap gap-1">
+              {itemIds.slice(0, 4).map((id) => {
+                const item = parameterItemMapping[id];
+                const name = item ? item["name"] : id;
+                return (
+                  <Badge key={id} variant="default" className="text-[10px]">
+                    {name}
+                  </Badge>
+                );
+              })}
+              {itemIds.length > 4 && (
+                <Badge variant="outline" className="text-[10px]">
+                  +{itemIds.length - 4}
+                </Badge>
+              )}
+            </div>
+          );
         },
       },
       {
         accessorKey: "scenario_ids",
-        header: "Scenarios",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Scenarios" />
+        ),
         cell: ({ row }) => {
           const scenarioIds = row.getValue("scenario_ids") as string[];
-          return scenarioIds
-            .map((id) => scenarioMapping[id]?.name || id)
-            .join(", ");
+          if (scenarioIds.length === 0) {
+            return (
+              <div className="max-w-[200px]">
+                <span className="text-muted-foreground text-xs">None</span>
+              </div>
+            );
+          }
+          return (
+            <div className="max-w-[200px] flex flex-wrap gap-1">
+              {scenarioIds.slice(0, 3).map((id) => {
+                const name = scenarioMapping[id]?.name || id;
+                return (
+                  <Badge key={id} variant="outline" className="text-xs">
+                    {truncateText(name, 15)}
+                  </Badge>
+                );
+              })}
+              {scenarioIds.length > 3 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{scenarioIds.length - 3} more
+                </Badge>
+              )}
+            </div>
+          );
         },
         filterFn: (row, _id, value) => {
           const scenarioIds = row.getValue("scenario_ids") as string[];
@@ -264,8 +368,17 @@ export default function Documents() {
       },
       {
         accessorKey: "extension",
-        header: "Extension",
-        cell: ({ row }) => row.getValue("extension"),
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Extension" />
+        ),
+        cell: ({ row }) => {
+          const extension = row.getValue("extension") as string;
+          return (
+            <Badge variant="secondary" className="text-xs">
+              {extension.toUpperCase()}
+            </Badge>
+          );
+        },
         filterFn: (row, _id, value) => {
           return (
             value.length === 0 || value.includes(row.getValue("extension"))
@@ -274,15 +387,27 @@ export default function Documents() {
       },
       {
         accessorKey: "updatedAt",
-        header: "Updated",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Updated" />
+        ),
         cell: ({ row }) => {
           const date = new Date(row.getValue("updatedAt"));
-          return date.toLocaleDateString();
+          const active = row.original.active;
+          return (
+            <div className="text-xs text-muted-foreground">
+              {date.toLocaleDateString()}
+              {!active && (
+                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  Inactive
+                </div>
+              )}
+            </div>
+          );
         },
         sortingFn: "datetime",
       },
     ],
-    [scenarioMapping, parameterItemMapping]
+    [scenarioMapping, parameterItemMapping, typeOptions, handlePreview]
   );
 
   // Permission checking using server-provided flags
@@ -315,12 +440,6 @@ export default function Documents() {
   const handleEdit = (document: DocumentItem) => {
     setEditingDocument({ ...document });
     setShowEditDialog(true);
-  };
-
-  // Handle document preview (for table view)
-  const handlePreview = (document: DocumentItem) => {
-    setPreviewDocument(document);
-    setShowPreviewDialog(true);
   };
 
   // Handle single document delete

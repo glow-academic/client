@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 11  # Bumped: Practice+default simulations cannot be deleted; simplified permission logic
+GLOBAL_CACHE_VERSION = 13  # Bumped: Added default_persona field to PersonaItem schema
 
 # Namespaces
 NS_ANALYTICS = "analytics"

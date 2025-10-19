@@ -11,7 +11,22 @@ class PersonaQueries:
     ) -> tuple[str, list[Any]]:
         """Build query for personas list with permissions and embedded scenario mapping."""
         query = """
-        WITH         persona_scenarios AS (
+        WITH persona_active_scenario_links AS (
+            SELECT 
+                sp.persona_id,
+                COUNT(*) as active_scenario_count
+            FROM scenario_personas sp
+            WHERE sp.active = true
+            GROUP BY sp.persona_id
+        ),
+        persona_all_scenario_links AS (
+            SELECT 
+                sp.persona_id,
+                COUNT(*) as total_scenario_links
+            FROM scenario_personas sp
+            GROUP BY sp.persona_id
+        ),
+        persona_scenarios AS (
             SELECT 
                 sp.persona_id,
                 ARRAY_AGG(sp.scenario_id ORDER BY s.name) as scenario_ids,
@@ -38,9 +53,13 @@ class PersonaQueries:
                 COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ps.num_scenarios, 0) as num_scenarios,
                 m.name as model_name,
-                COALESCE(m.description, '') as model_description
+                COALESCE(m.description, '') as model_description,
+                COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
+                COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links
             FROM personas p
             LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
+            LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
+            LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
             LEFT JOIN models m ON m.id = p.model_id
             WHERE p.department_id = ANY($1)
         ),
@@ -88,15 +107,17 @@ class PersonaQueries:
             pd.model_name,
             pd.model_description,
             CASE 
-                WHEN up.role = 'superadmin' THEN true
-                WHEN pd.default_persona = true THEN false
-                WHEN up.role IN ('admin', 'instructional') THEN true
+                WHEN pd.active_scenario_count > 0 THEN false
+                WHEN pd.default_persona = true AND up.role != 'superadmin' THEN false
+                WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             true as can_duplicate,
             CASE 
-                WHEN pd.num_scenarios > 0 THEN false
-                ELSE true
+                WHEN pd.total_scenario_links > 0 THEN false
+                WHEN pd.default_persona = true AND up.role != 'superadmin' THEN false
+                WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+                ELSE false
             END as can_delete,
             sm.mapping as scenario_mapping
         FROM persona_data pd

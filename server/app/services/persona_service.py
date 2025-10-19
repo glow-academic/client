@@ -85,6 +85,7 @@ class PersonaService(BaseService):
                     reasoning=row["reasoning"],
                     temperature=float(row["temperature"]),
                     active=row["active"],
+                    default_persona=row["default_persona"],
                     num_scenarios=row["num_scenarios"],
                     can_edit=row["can_edit"],
                     can_duplicate=row["can_duplicate"],

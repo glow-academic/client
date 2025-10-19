@@ -288,3 +288,153 @@ async def test_get_persona_detail_not_found(
     svc = PersonaService(db)
     with pytest.raises(ValueError, match="Persona not found"):
         await svc.get_persona_detail(request)
+
+
+@pytest.mark.asyncio
+async def test_persona_can_edit_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_edit permission logic for personas based on active scenario links."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get superadmin and admin profiles
+    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'instructional') LIMIT 1")
+    
+    if not superadmin_result or not admin_result:
+        pytest.skip("Need both superadmin and admin/instructional profiles")
+    
+    superadmin_id = str(superadmin_result["id"])
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.personas import PersonasFilters
+    
+    svc = PersonaService(db)
+    resp_superadmin = await svc.get_personas_list(
+        PersonasFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    resp_admin = await svc.get_personas_list(
+        PersonasFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Personas with active scenario links: cannot edit
+    # 2. Default personas: only superadmin can edit
+    # 3. Other personas: instructional, admin, superadmin can edit
+    
+    for persona_sa in resp_superadmin.personas:
+        # Get active scenario link counts from database
+        active_scenario_count = await db.fetchval("""
+            SELECT COUNT(*) FROM scenario_personas 
+            WHERE persona_id = $1 AND active = true
+        """, persona_sa.persona_id)
+        
+        persona_admin = next(
+            (p for p in resp_admin.personas if p.persona_id == persona_sa.persona_id),
+            None
+        )
+        
+        if not persona_admin:
+            continue
+        
+        # Rule 1: Personas with active scenario links - nobody can edit
+        if active_scenario_count > 0:
+            assert persona_sa.can_edit == False, \
+                f"Persona {persona_sa.persona_name} with {active_scenario_count} active scenario links should not be editable (superadmin)"
+            assert persona_admin.can_edit == False, \
+                f"Persona {persona_admin.persona_name} with {active_scenario_count} active scenario links should not be editable (admin)"
+        
+        # Rule 2: Default personas - only superadmin can edit
+        elif persona_sa.default_persona:
+            assert persona_sa.can_edit == True, \
+                f"Superadmin should be able to edit default persona {persona_sa.persona_name}"
+            assert persona_admin.can_edit == False, \
+                f"Admin should NOT be able to edit default persona {persona_admin.persona_name}"
+        
+        # Rule 3: Non-default personas without active scenario links - all can edit
+        elif not persona_sa.default_persona and active_scenario_count == 0:
+            assert persona_sa.can_edit == True, \
+                f"Superadmin should be able to edit non-default persona {persona_sa.persona_name}"
+            assert persona_admin.can_edit == True, \
+                f"Admin should be able to edit non-default persona {persona_admin.persona_name}"
+
+
+@pytest.mark.asyncio
+async def test_persona_can_delete_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_delete permission logic for personas based on all scenario links."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get superadmin and admin profiles
+    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'instructional') LIMIT 1")
+    
+    if not superadmin_result or not admin_result:
+        pytest.skip("Need both superadmin and admin/instructional profiles")
+    
+    superadmin_id = str(superadmin_result["id"])
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.personas import PersonasFilters
+    
+    svc = PersonaService(db)
+    resp_superadmin = await svc.get_personas_list(
+        PersonasFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    resp_admin = await svc.get_personas_list(
+        PersonasFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Personas with ANY scenario links (active or inactive): cannot delete
+    # 2. Default personas (not linked): only superadmin can delete
+    # 3. Other personas: instructional, admin, superadmin can delete (if no links)
+    
+    for persona_sa in resp_superadmin.personas:
+        # Get total scenario link count from database
+        total_scenario_links = await db.fetchval("""
+            SELECT COUNT(*) FROM scenario_personas 
+            WHERE persona_id = $1
+        """, persona_sa.persona_id)
+        
+        persona_admin = next(
+            (p for p in resp_admin.personas if p.persona_id == persona_sa.persona_id),
+            None
+        )
+        
+        if not persona_admin:
+            continue
+        
+        # Rule 1: Personas with any scenario links - nobody can delete
+        if total_scenario_links > 0:
+            assert persona_sa.can_delete == False, \
+                f"Persona {persona_sa.persona_name} with {total_scenario_links} scenario links should not be deletable (superadmin)"
+            assert persona_admin.can_delete == False, \
+                f"Persona {persona_admin.persona_name} with {total_scenario_links} scenario links should not be deletable (admin)"
+        
+        # Rule 2: Unlinked default personas - only superadmin can delete
+        elif persona_sa.default_persona and total_scenario_links == 0:
+            assert persona_sa.can_delete == True, \
+                f"Superadmin should be able to delete unlinked default persona {persona_sa.persona_name}"
+            assert persona_admin.can_delete == False, \
+                f"Admin should NOT be able to delete default persona {persona_admin.persona_name}"
+        
+        # Rule 3: Unlinked, non-default personas - all can delete
+        elif not persona_sa.default_persona and total_scenario_links == 0:
+            assert persona_sa.can_delete == True, \
+                f"Superadmin should be able to delete unlinked non-default persona {persona_sa.persona_name}"
+            assert persona_admin.can_delete == True, \
+                f"Admin should be able to delete unlinked non-default persona {persona_admin.persona_name}"

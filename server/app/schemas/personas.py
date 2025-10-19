@@ -27,6 +27,7 @@ class PersonaItem(BaseModel):
     reasoning: str | None
     temperature: float
     active: bool
+    default_persona: bool
     num_scenarios: int
     can_edit: bool
     can_duplicate: bool
