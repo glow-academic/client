@@ -42,9 +42,36 @@ async def test_list_cohorts_returns_seed_data(
     assert "New GTAs" in cohort_names
     assert "Returning GTAs" in cohort_names
 
-    # Check that mappings are populated
+    # CRITICAL: Check that mappings are actually populated with data, not just empty dicts
     assert resp.profile_mapping is not None
     assert resp.simulation_mapping is not None
+    
+    # Collect all profile IDs and simulation IDs from cohorts
+    all_profile_ids = set()
+    all_simulation_ids = set()
+    for cohort in resp.cohorts:
+        all_profile_ids.update(cohort.profile_ids)
+        all_simulation_ids.update(cohort.simulation_ids)
+    
+    # If any cohort has profiles, the profile_mapping should have entries
+    if len(all_profile_ids) > 0:
+        assert len(resp.profile_mapping) > 0, "profile_mapping should be populated when cohorts have profiles"
+        # Verify at least one profile is mapped correctly
+        sample_profile_id = next(iter(all_profile_ids))
+        assert sample_profile_id in resp.profile_mapping, f"Profile {sample_profile_id} should be in profile_mapping"
+        profile_item = resp.profile_mapping[sample_profile_id]
+        assert hasattr(profile_item, 'name') and len(profile_item.name) > 0, "Profile mapping should have valid name"
+        assert hasattr(profile_item, 'description'), "Profile mapping should have description field"
+    
+    # If any cohort has simulations, the simulation_mapping should have entries
+    if len(all_simulation_ids) > 0:
+        assert len(resp.simulation_mapping) > 0, "simulation_mapping should be populated when cohorts have simulations"
+        # Verify at least one simulation is mapped correctly
+        sample_sim_id = next(iter(all_simulation_ids))
+        assert sample_sim_id in resp.simulation_mapping, f"Simulation {sample_sim_id} should be in simulation_mapping"
+        sim_item = resp.simulation_mapping[sample_sim_id]
+        assert hasattr(sim_item, 'name') and len(sim_item.name) > 0, "Simulation mapping should have valid name"
+        assert hasattr(sim_item, 'description'), "Simulation mapping should have description field"
 
 
 async def test_list_cohorts_superadmin_can_edit(
@@ -109,6 +136,40 @@ async def test_get_cohort_detail_success(
     assert resp.default_cohort is False
     assert len(resp.simulation_ids) >= 0
     assert len(resp.profile_ids) >= 0
+    
+    # CRITICAL: Verify mappings are actually populated, not just empty dicts
+    # If there are profile_ids, profile_mapping should have entries
+    if len(resp.profile_ids) > 0:
+        assert len(resp.profile_mapping) > 0, "profile_mapping should be populated when profile_ids exist"
+        # Verify mapping structure - check first profile
+        first_profile_id = resp.profile_ids[0]
+        assert first_profile_id in resp.profile_mapping, f"Profile {first_profile_id} should be in profile_mapping"
+        profile_item = resp.profile_mapping[first_profile_id]
+        assert hasattr(profile_item, 'name'), "Profile mapping item should have 'name' field"
+        assert hasattr(profile_item, 'description'), "Profile mapping item should have 'description' field"
+        assert len(profile_item.name) > 0, "Profile name should not be empty"
+    
+    # If there are simulation_ids, simulation_mapping should have entries
+    if len(resp.simulation_ids) > 0:
+        assert len(resp.simulation_mapping) > 0, "simulation_mapping should be populated when simulation_ids exist"
+        # Verify mapping structure
+        first_sim_id = resp.simulation_ids[0]
+        assert first_sim_id in resp.simulation_mapping, f"Simulation {first_sim_id} should be in simulation_mapping"
+        sim_item = resp.simulation_mapping[first_sim_id]
+        assert hasattr(sim_item, 'name'), "Simulation mapping item should have 'name' field"
+        assert hasattr(sim_item, 'description'), "Simulation mapping item should have 'description' field"
+        assert len(sim_item.name) > 0, "Simulation name should not be empty"
+    
+    # Department mapping should always have entries if valid_department_ids exist
+    if len(resp.valid_department_ids) > 0:
+        assert len(resp.department_mapping) > 0, "department_mapping should be populated when valid_department_ids exist"
+        # Verify mapping structure
+        first_dept_id = resp.valid_department_ids[0]
+        assert first_dept_id in resp.department_mapping, f"Department {first_dept_id} should be in department_mapping"
+        dept_item = resp.department_mapping[first_dept_id]
+        assert hasattr(dept_item, 'name'), "Department mapping item should have 'name' field"
+        assert hasattr(dept_item, 'description'), "Department mapping item should have 'description' field"
+        assert len(dept_item.name) > 0, "Department name should not be empty"
 
 
 async def test_get_cohort_detail_invalid_id(

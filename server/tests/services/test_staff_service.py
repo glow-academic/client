@@ -32,6 +32,25 @@ async def test_get_staff_list_returns_data(
     assert len(resp.staff) >= 0
     assert resp.cohort_mapping is not None
     assert resp.department_mapping is not None
+    
+    # CRITICAL: Verify mappings are actually populated with data, not just empty dicts
+    # Collect all cohort IDs from staff (StaffItem doesn't have department_ids field)
+    all_cohort_ids = set()
+    for staff_member in resp.staff:
+        all_cohort_ids.update(staff_member.cohort_ids)
+    
+    # If any staff has cohorts, cohort_mapping should be populated
+    if len(all_cohort_ids) > 0:
+        assert len(resp.cohort_mapping) > 0, "cohort_mapping should be populated when staff have cohorts"
+        # Verify at least one cohort is mapped correctly
+        sample_cohort_id = next(iter(all_cohort_ids))
+        assert sample_cohort_id in resp.cohort_mapping, f"Cohort {sample_cohort_id} should be in cohort_mapping"
+        cohort_item = resp.cohort_mapping[sample_cohort_id]
+        assert hasattr(cohort_item, 'name') and len(cohort_item.name) > 0, "Cohort mapping should have valid name"
+        assert hasattr(cohort_item, 'description'), "Cohort mapping should have description field"
+    
+    # Department mapping should be populated for CS department staff
+    assert len(resp.department_mapping) > 0, "department_mapping should be populated for staff in department"
 
 
 async def test_get_staff_list_superadmin_can_edit(
@@ -94,6 +113,25 @@ async def test_get_staff_detail_success(
     assert resp.cohort_mapping is not None
     assert resp.department_mapping is not None
     assert len(resp.role_options) > 0
+    
+    # CRITICAL: Verify mappings are actually populated, not just empty dicts
+    # If profile has cohorts, cohort_mapping should have entries
+    if len(resp.cohort_ids) > 0:
+        assert len(resp.cohort_mapping) > 0, "cohort_mapping should be populated when profile has cohorts"
+        first_cohort_id = resp.cohort_ids[0]
+        assert first_cohort_id in resp.cohort_mapping, f"Cohort {first_cohort_id} should be in cohort_mapping"
+        cohort_item = resp.cohort_mapping[first_cohort_id]
+        assert hasattr(cohort_item, 'name') and len(cohort_item.name) > 0, "Cohort mapping should have valid name"
+        assert hasattr(cohort_item, 'description'), "Cohort mapping should have description field"
+    
+    # Department mapping should be populated when there are valid departments
+    if len(resp.valid_department_ids) > 0:
+        assert len(resp.department_mapping) > 0, "department_mapping should be populated when profile has valid departments"
+        first_dept_id = resp.valid_department_ids[0]
+        assert first_dept_id in resp.department_mapping, f"Department {first_dept_id} should be in department_mapping"
+        dept_item = resp.department_mapping[first_dept_id]
+        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
+        assert hasattr(dept_item, 'description'), "Department mapping should have description field"
 
 
 async def test_get_staff_detail_invalid_id(
@@ -129,6 +167,16 @@ async def test_get_staff_detail_bulk_success(
     assert resp.valid_department_ids is not None
     assert resp.department_mapping is not None
     assert len(resp.role_options) > 0
+    
+    # CRITICAL: Verify department_mapping is actually populated with data
+    # If there are department_ids, department_mapping should have entries
+    if len(resp.department_ids) > 0:
+        assert len(resp.department_mapping) > 0, "department_mapping should be populated when profiles have departments"
+        first_dept_id = resp.department_ids[0]
+        assert first_dept_id in resp.department_mapping, f"Department {first_dept_id} should be in department_mapping"
+        dept_item = resp.department_mapping[first_dept_id]
+        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
+        assert hasattr(dept_item, 'description'), "Department mapping should have description field"
 
 
 async def test_get_staff_detail_bulk_multiple_profiles(
@@ -162,6 +210,16 @@ async def test_get_staff_detail_bulk_multiple_profiles(
         assert resp.valid_department_ids is not None
         assert resp.department_mapping is not None
         assert len(resp.department_ids) >= 0
+        
+        # CRITICAL: Verify department_mapping is actually populated with data
+        # With multiple profiles from CS department, department_mapping should be populated
+        if len(resp.department_ids) > 0:
+            assert len(resp.department_mapping) > 0, "department_mapping should be populated when profiles have departments"
+            first_dept_id = resp.department_ids[0]
+            assert first_dept_id in resp.department_mapping, f"Department {first_dept_id} should be in department_mapping"
+            dept_item = resp.department_mapping[first_dept_id]
+            assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
+            assert hasattr(dept_item, 'description'), "Department mapping should have description field"
 
 
 async def test_get_staff_detail_bulk_no_profiles(

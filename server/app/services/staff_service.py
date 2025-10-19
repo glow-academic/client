@@ -1,5 +1,6 @@
 """Staff service layer - business logic for staff operations."""
 
+import json
 import os
 import uuid
 from typing import Any
@@ -76,8 +77,10 @@ class StaffService(BaseService):
 
         # Parse JSONB mappings from query result (single query optimization)
         if result and len(result) > 0:
-            # Cohort mapping (JSONB from query)
+            # Cohort mapping (JSONB from query - may be string or dict)
             cohort_mapping_data = result[0].get("cohort_mapping")
+            if isinstance(cohort_mapping_data, str):
+                cohort_mapping_data = json.loads(cohort_mapping_data)
             if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
                 for cid, cdata in cohort_mapping_data.items():
                     if isinstance(cdata, dict):
@@ -86,8 +89,10 @@ class StaffService(BaseService):
                             description=cdata.get("description", ""),
                         )
 
-            # Department mapping (JSONB from query)
+            # Department mapping (JSONB from query - may be string or dict)
             dept_mapping_data = result[0].get("department_mapping")
+            if isinstance(dept_mapping_data, str):
+                dept_mapping_data = json.loads(dept_mapping_data)
             if dept_mapping_data and isinstance(dept_mapping_data, dict):
                 for did, ddata in dept_mapping_data.items():
                     if isinstance(ddata, dict):
@@ -128,9 +133,11 @@ class StaffService(BaseService):
         department_id = profile["department_id"]
         cohort_ids = profile["cohort_ids"] or []
 
-        # Parse JSONB cohort mapping
+        # Parse JSONB cohort mapping (may be string or dict)
         cohort_mapping = {}
         cohort_mapping_data = profile.get("cohort_mapping")
+        if isinstance(cohort_mapping_data, str):
+            cohort_mapping_data = json.loads(cohort_mapping_data)
         if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
             for cid, cdata in cohort_mapping_data.items():
                 if isinstance(cdata, dict):
@@ -210,10 +217,12 @@ class StaffService(BaseService):
             all_dept_ids.extend(dept_ids)
         department_ids = list(set(all_dept_ids))
 
-        # Parse JSONB department mapping from query result
+        # Parse JSONB department mapping from query result (may be string or dict)
         department_mapping = {}
         if profiles and len(profiles) > 0:
             dept_mapping_data = profiles[0].get("department_mapping")
+            if isinstance(dept_mapping_data, str):
+                dept_mapping_data = json.loads(dept_mapping_data)
             if dept_mapping_data and isinstance(dept_mapping_data, dict):
                 for did, ddata in dept_mapping_data.items():
                     if isinstance(ddata, dict):

@@ -93,29 +93,29 @@ class CohortService(BaseService):
 
             # Parse profile mapping from first row (same for all cohorts)
             if not profile_mapping and row["profile_mapping"]:
-                # asyncpg returns JSONB as dict already, but handle both cases
-                pm = (
-                    row["profile_mapping"]
-                    if isinstance(row["profile_mapping"], dict)
-                    else {}
-                )
-                for pid, pdata in pm.items():
-                    profile_mapping[pid] = ProfileMappingItem(
-                        name=pdata["name"], description=pdata["description"]
-                    )
+                # asyncpg returns JSONB as string or dict
+                pm = row["profile_mapping"]
+                if isinstance(pm, str):
+                    pm = json.loads(pm)
+                if isinstance(pm, dict):
+                    for pid, pdata in pm.items():
+                        if isinstance(pdata, dict):
+                            profile_mapping[pid] = ProfileMappingItem(
+                                name=pdata["name"], description=pdata["description"]
+                            )
 
             # Parse simulation mapping from first row (same for all cohorts)
             if not simulation_mapping and row["simulation_mapping"]:
-                # asyncpg returns JSONB as dict already, but handle both cases
-                sm = (
-                    row["simulation_mapping"]
-                    if isinstance(row["simulation_mapping"], dict)
-                    else {}
-                )
-                for sid, sdata in sm.items():
-                    simulation_mapping[sid] = SimulationMappingItem(
-                        name=sdata["name"], description=sdata["description"]
-                    )
+                # asyncpg returns JSONB as string or dict
+                sm = row["simulation_mapping"]
+                if isinstance(sm, str):
+                    sm = json.loads(sm)
+                if isinstance(sm, dict):
+                    for sid, sdata in sm.items():
+                        if isinstance(sdata, dict):
+                            simulation_mapping[sid] = SimulationMappingItem(
+                                name=sdata["name"], description=sdata["description"]
+                            )
 
         return CohortsListResponse(
             cohorts=cohorts,
