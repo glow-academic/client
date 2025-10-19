@@ -4,7 +4,7 @@ Tests for parameter_service - list methods.
 
 import asyncpg
 import pytest
-from app.schemas.parameters import ParametersFilters
+from app.schemas.parameters import ParameterDetailRequest, ParametersFilters
 from app.services.parameter_service import ParameterService
 
 # --- Helper Functions ---
@@ -88,3 +88,72 @@ async def test_get_parameters_list_empty_departments(
     assert result is not None
     assert isinstance(result.parameters, list)
     assert len(result.parameters) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_parameter_detail_optimized(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting parameter detail with all mappings in single query."""
+    # Setup - Get test parameter and profile IDs
+    parameter_result = await db.fetchrow("SELECT id FROM parameters LIMIT 1")
+    if not parameter_result:
+        pytest.skip("No parameters found in test database")
+    
+    parameter_id = str(parameter_result['id'])
+    profile_id = await get_test_profile_id(db)
+
+    # Create request
+    request = ParameterDetailRequest(
+        parameterId=parameter_id,
+        profileId=profile_id
+    )
+
+    # Execute - Call the service method
+    svc = ParameterService(db)
+    result = await svc.get_parameter_detail(request)
+
+    # Assert - Check basic structure
+    assert result is not None
+    assert result.name is not None
+    assert result.description is not None
+    
+    # Check mappings exist
+    assert result.department_mapping is not None
+    assert isinstance(result.department_mapping, dict)
+    
+    # Check valid IDs lists
+    assert result.valid_department_ids is not None
+    assert isinstance(result.valid_department_ids, list)
+    
+    # Check parameter items
+    assert result.parameter_items is not None
+    assert isinstance(result.parameter_items, list)
+    
+    # If items exist, check their structure and can_delete field
+    if result.parameter_items:
+        item = result.parameter_items[0]
+        assert hasattr(item, 'parameter_item_id')
+        assert hasattr(item, 'name')
+        assert hasattr(item, 'can_delete')
+        assert isinstance(item.can_delete, bool)
+
+
+@pytest.mark.asyncio
+async def test_get_parameter_detail_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting parameter detail with invalid ID raises error."""
+    # Setup
+    profile_id = await get_test_profile_id(db)
+    
+    # Create request with non-existent parameter ID
+    request = ParameterDetailRequest(
+        parameterId="00000000-0000-0000-0000-000000000000",
+        profileId=profile_id
+    )
+
+    # Execute & Assert - Should raise ValueError
+    svc = ParameterService(db)
+    with pytest.raises(ValueError, match="Parameter not found"):
+        await svc.get_parameter_detail(request)

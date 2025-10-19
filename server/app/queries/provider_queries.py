@@ -356,3 +356,113 @@ class ProviderQueries:
         """Build query to delete provider endpoint."""
         query = "DELETE FROM provider_endpoints WHERE provider_id = $1"
         return (query, [provider_id])
+
+    def get_provider_detail_complete(
+        self, provider_id: str, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get provider detail with all mappings in ONE query.
+
+        Consolidates 3 queries into 1 using CTEs and JSONB aggregation.
+
+        Args:
+            provider_id: UUID of the provider
+            profile_id: UUID of the profile for permissions
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH provider_data AS (
+            SELECT 
+                p.name,
+                p.description,
+                p.api_key,
+                pe.base_url,
+                p.department_id
+            FROM providers p
+            LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
+            WHERE p.id = $1
+        ),
+        valid_depts AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        )
+        SELECT 
+            p.*,
+            vd.dept_mapping as department_mapping,
+            vd.dept_ids as valid_department_ids
+        FROM provider_data p
+        CROSS JOIN valid_depts vd
+        """
+        return (query, [provider_id, profile_id])
+
+    def get_model_detail_complete(
+        self, model_id: str, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get model detail with all mappings in ONE query.
+
+        Consolidates 4 queries into 1 using CTEs and JSONB aggregation.
+
+        Args:
+            model_id: UUID of the model
+            profile_id: UUID of the profile for permissions
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH model_data AS (
+            SELECT 
+                name,
+                description,
+                active,
+                custom_model,
+                input_ppm,
+                output_ppm,
+                provider_id
+            FROM models
+            WHERE id = $1
+        ),
+        valid_depts AS (
+            SELECT array_agg(d.id) as dept_ids
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        valid_providers AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        p.id::text,
+                        jsonb_build_object(
+                            'name', p.name,
+                            'description', COALESCE(p.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as provider_mapping,
+                array_agg(p.id::text ORDER BY p.name) as provider_ids
+            FROM providers p
+            JOIN valid_depts vd ON p.department_id = ANY(vd.dept_ids)
+        )
+        SELECT 
+            m.*,
+            vp.provider_mapping,
+            vp.provider_ids as valid_provider_ids
+        FROM model_data m
+        CROSS JOIN valid_providers vp
+        """
+        return (query, [model_id, profile_id])

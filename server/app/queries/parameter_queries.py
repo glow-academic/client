@@ -270,3 +270,88 @@ class ParameterQueries:
         """Build query to delete parameter."""
         query = "DELETE FROM parameters WHERE id = $1"
         return (query, [parameter_id])
+
+    def get_parameter_detail_complete(
+        self, parameter_id: str, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get parameter detail with all mappings in ONE query.
+
+        Consolidates 6 queries into 1 using CTEs and JSONB aggregation.
+        Includes parameter items with usage counts.
+
+        Args:
+            parameter_id: UUID of the parameter
+            profile_id: UUID of the profile for permissions
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH parameter_data AS (
+            SELECT 
+                name,
+                description,
+                numerical,
+                active,
+                default_parameter,
+                department_id
+            FROM parameters
+            WHERE id = $1
+        ),
+        parameter_items_with_usage AS (
+            SELECT 
+                pi.id,
+                pi.name,
+                pi.description,
+                pi.value,
+                pi.default_item,
+                COALESCE(COUNT(spi.scenario_id), 0) as usage_count
+            FROM parameter_items pi
+            LEFT JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id AND spi.active = true
+            WHERE pi.parameter_id = $1
+            GROUP BY pi.id, pi.name, pi.description, pi.value, pi.default_item
+        ),
+        items_json AS (
+            SELECT COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'parameter_item_id', id::text,
+                        'name', name,
+                        'description', description,
+                        'value', value,
+                        'default_item', default_item,
+                        'usage_count', usage_count
+                    )
+                    ORDER BY name
+                ),
+                '[]'::jsonb
+            ) as items
+            FROM parameter_items_with_usage
+        ),
+        valid_depts AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        )
+        SELECT 
+            p.*,
+            ij.items as parameter_items_json,
+            vd.dept_mapping as department_mapping,
+            vd.dept_ids as valid_department_ids
+        FROM parameter_data p
+        CROSS JOIN items_json ij
+        CROSS JOIN valid_depts vd
+        """
+        return (query, [parameter_id, profile_id])

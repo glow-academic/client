@@ -1,30 +1,25 @@
 """Parameter service layer - business logic for parameter operations with nested items."""
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.parameters import (
-    CreateParameterItemRequest,
-    CreateParameterItemResponse,
-    CreateParameterRequest,
-    CreateParameterResponse,
-    DeleteParameterRequest,
-    DeleteParameterResponse,
-    DuplicateParameterRequest,
-    DuplicateParameterResponse,
-    ParameterDetailDefaultRequest,
-    ParameterDetailRequest,
-    ParameterDetailResponse,
-    ParameterItem,
-    ParameterItemDetail,
-    ParametersFilters,
-    ParametersListResponse,
-    UpdateParameterRequest,
-    UpdateParameterResponse,
-)
+from app.schemas.parameters import (CreateParameterItemRequest,
+                                    CreateParameterItemResponse,
+                                    CreateParameterRequest,
+                                    CreateParameterResponse,
+                                    DeleteParameterRequest,
+                                    DeleteParameterResponse,
+                                    DuplicateParameterRequest,
+                                    DuplicateParameterResponse,
+                                    ParameterDetailDefaultRequest,
+                                    ParameterDetailRequest,
+                                    ParameterDetailResponse, ParameterItem,
+                                    ParameterItemDetail, ParametersFilters,
+                                    ParametersListResponse,
+                                    UpdateParameterRequest,
+                                    UpdateParameterResponse)
 from app.services.base import BaseService, with_cache
 
 
@@ -78,57 +73,48 @@ class ParameterService(BaseService):
         self, request: ParameterDetailRequest
     ) -> ParameterDetailResponse:
         """Get detailed parameter information with nested items."""
-        # Get parameter basic info
-        query, params = self.queries.get_parameter_by_id(request.parameterId)
+        # Get all parameter data with items and mappings in a single query
+        query, params = self.queries.get_parameter_detail_complete(
+            request.parameterId, request.profileId
+        )
         parameter = await self.conn.fetchrow(query, *params)
 
         if not parameter:
             raise ValueError(f"Parameter not found: {request.parameterId}")
 
-        # Get parameter items
-        query, params = self.queries.get_parameter_items(request.parameterId)
-        items_result = await self.conn.fetch(query, *params)
+        # Parse valid_department_ids from array
+        valid_department_ids = parameter["valid_department_ids"] or []
 
-        # Check usage for each item
-        item_ids = [str(item["id"]) for item in items_result]
-        item_usage: dict[str, int] = {}
+        # Parse department_mapping from JSONB with type safety
+        department_mapping = {}
+        if parameter.get("department_mapping") and isinstance(
+            parameter["department_mapping"], dict
+        ):
+            for dept_id, ddata in parameter["department_mapping"].items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", "")
+                    )
 
-        if item_ids:
-            query, params = self.queries.check_parameter_item_usage(item_ids)
-            usage_result = await self.conn.fetch(query, *params)
-
-            for row in usage_result:
-                item_usage[str(row["parameter_item_id"])] = row["usage_count"]
-
-        # Build parameter items list
+        # Parse parameter items from JSONB with type safety
         parameter_items = []
-        for item in items_result:
-            item_id = str(item["id"])
-            parameter_items.append(
-                ParameterItemDetail(
-                    parameter_item_id=item_id,
-                    name=item["name"],
-                    description=item["description"],
-                    value=item["value"],
-                    default_item=item["default_item"],
-                    can_delete=item_usage.get(item_id, 0) == 0,
-                )
-            )
-
-        # Get user's accessible department IDs
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        dept_result = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row["id"]) for row in dept_result]
-
-        # Get department mapping
-        department_mapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in dept_result
-        }
+        if parameter.get("parameter_items_json") and isinstance(
+            parameter["parameter_items_json"], list
+        ):
+            for item_data in parameter["parameter_items_json"]:
+                if isinstance(item_data, dict):
+                    usage_count = item_data.get("usage_count", 0)
+                    parameter_items.append(
+                        ParameterItemDetail(
+                            parameter_item_id=item_data.get("parameter_item_id", ""),
+                            name=item_data.get("name", ""),
+                            description=item_data.get("description", ""),
+                            value=item_data.get("value", ""),
+                            default_item=item_data.get("default_item", False),
+                            can_delete=usage_count == 0,
+                        )
+                    )
 
         return ParameterDetailResponse(
             name=parameter["name"],

@@ -92,27 +92,29 @@ class ProviderService(BaseService):
         self, request: ProviderDetailRequest
     ) -> ProviderDetailResponse:
         """Get detailed provider information."""
-        # Get provider basic info
-        query, params = self.queries.get_provider_by_id(request.providerId)
+        # Get all provider data with mappings in a single query
+        query, params = self.queries.get_provider_detail_complete(
+            request.providerId, request.profileId
+        )
         provider = await self.conn.fetchrow(query, *params)
 
         if not provider:
             raise ValueError(f"Provider not found: {request.providerId}")
 
-        # Get valid departments
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        dept_result = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row["id"]) for row in dept_result]
+        # Parse valid_department_ids from array
+        valid_department_ids = provider["valid_department_ids"] or []
 
-        # Get department mapping
-        department_mapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in dept_result
-        }
+        # Parse department_mapping from JSONB with type safety
+        department_mapping = {}
+        if provider.get("department_mapping") and isinstance(
+            provider["department_mapping"], dict
+        ):
+            for dept_id, ddata in provider["department_mapping"].items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", "")
+                    )
 
         return ProviderDetailResponse(
             name=provider["name"],
@@ -129,30 +131,29 @@ class ProviderService(BaseService):
         self, request: ModelDetailRequest
     ) -> ModelDetailResponse:
         """Get detailed model information."""
-        # Get model basic info
-        query, params = self.queries.get_model_by_id(request.modelId)
+        # Get all model data with mappings in a single query
+        query, params = self.queries.get_model_detail_complete(
+            request.modelId, request.profileId
+        )
         model = await self.conn.fetchrow(query, *params)
 
         if not model:
             raise ValueError(f"Model not found: {request.modelId}")
 
-        # Get valid departments for valid providers
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        dept_result = await self.conn.fetch(query, *params)
-        valid_dept_ids = [str(row["id"]) for row in dept_result]
+        # Parse valid_provider_ids from array
+        valid_provider_ids = model["valid_provider_ids"] or []
 
-        # Get valid providers
-        query, params = self.queries.get_valid_providers(valid_dept_ids)
-        providers_result = await self.conn.fetch(query, *params)
-        valid_provider_ids = [str(row["id"]) for row in providers_result]
-        provider_mapping = {
-            str(row["id"]): ProviderMappingItem(
-                name=row["name"], description=row["description"]
-            )
-            for row in providers_result
-        }
+        # Parse provider_mapping from JSONB with type safety
+        provider_mapping = {}
+        if model.get("provider_mapping") and isinstance(
+            model["provider_mapping"], dict
+        ):
+            for provider_id, pdata in model["provider_mapping"].items():
+                if isinstance(pdata, dict):
+                    provider_mapping[provider_id] = ProviderMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", "")
+                    )
 
         return ModelDetailResponse(
             name=model["name"],
