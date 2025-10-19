@@ -244,11 +244,11 @@ class SimulationQueries:
     def insert_simulation_scenario(self) -> str:
         """Build query to insert simulation scenario.
 
-        Params order: simulation_id, scenario_id
+        Params order: simulation_id, scenario_id, active
         """
         return """
         INSERT INTO simulation_scenarios (simulation_id, scenario_id, active)
-        VALUES ($1, $2, true)
+        VALUES ($1, $2, $3)
         """
 
     def get_simulation_name(self, simulation_id: str) -> tuple[str, list[Any]]:

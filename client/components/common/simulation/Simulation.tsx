@@ -286,7 +286,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
           image_input_active: formData?.imageInputActive || false,
           time_limit: formData?.timeLimit || null,
           rubric_id: formData?.rubricId || "",
-          scenario_ids: currentScenarioIds,
+          scenario_ids: currentScenarioIds.map((scenarioId) => ({
+            scenario_id: scenarioId,
+            active: scenarioActiveStates[scenarioId] ?? true,
+          })),
         };
 
         await updateSimulationMutation.mutateAsync(updatePayload);
@@ -306,7 +309,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
           image_input_active: formData?.imageInputActive || false,
           time_limit: formData?.timeLimit || null,
           rubric_id: formData?.rubricId || "",
-          scenario_ids: currentScenarioIds,
+          scenario_ids: currentScenarioIds.map((scenarioId) => ({
+            scenario_id: scenarioId,
+            active: scenarioActiveStates[scenarioId] ?? true,
+          })),
         };
 
         await createSimulationMutation.mutateAsync(createPayload);
@@ -372,8 +378,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.inputGuardrailActive !== original.inputGuardrailActive ||
       current.imageInputActive !== original.imageInputActive ||
       current.hintsEnabled !== original.hintsEnabled ||
-      JSON.stringify(currentScenarioIds) !== JSON.stringify(originalScenarioIds) ||
-      JSON.stringify(scenarioActiveStates) !== JSON.stringify(originalActiveStates)
+      JSON.stringify(currentScenarioIds) !==
+        JSON.stringify(originalScenarioIds) ||
+      JSON.stringify(scenarioActiveStates) !==
+        JSON.stringify(originalActiveStates)
     );
   }, [
     formData,
@@ -732,7 +740,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
                 // Determine if Remove button should show
                 const shouldShowRemove = isExistingScenario
-                  ? scenarioStats?.can_remove ?? false
+                  ? (scenarioStats?.can_remove ?? false)
                   : true; // New scenarios always show remove
 
                 // Get active state for styling

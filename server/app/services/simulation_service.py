@@ -19,7 +19,7 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      DuplicateSimulationRequest,
                                      DuplicateSimulationResponse,
                                      ParameterItem, ParameterItemDetail,
-                                     ScenarioInSimulation,
+                                     ScenarioInRequest, ScenarioInSimulation,
                                      SimulationDetailDefaultRequest,
                                      SimulationDetailRequest,
                                      SimulationDetailResponse, SimulationItem,
@@ -169,10 +169,13 @@ class SimulationService(BaseService):
         can_duplicate = is_admin
         can_delete = is_admin and not in_use
 
-        # Parse scenarios list from JSONB with type safety
+        # Parse scenarios list from JSONB with type safety (may be string or list)
         scenarios_list: list[ScenarioInSimulation] = []
-        if result.get("scenarios_list") and isinstance(result["scenarios_list"], list):
-            for s_data in result["scenarios_list"]:
+        scenarios_list_data = result.get("scenarios_list")
+        if isinstance(scenarios_list_data, str):
+            scenarios_list_data = json.loads(scenarios_list_data)
+        if scenarios_list_data and isinstance(scenarios_list_data, list):
+            for s_data in scenarios_list_data:
                 if isinstance(s_data, dict):
                     scenarios_list.append(
                         ScenarioInSimulation(
@@ -431,11 +434,23 @@ class SimulationService(BaseService):
 
             # Insert scenario relationships
             insert_query = self.queries.insert_simulation_scenario()
-            for scenario_id in request.scenario_ids:
+            for idx, scenario_item in enumerate(request.scenario_ids):
+                # Handle both string IDs and ScenarioInRequest objects
+                scenario_id: str
+                active: bool
+                if isinstance(scenario_item, str):
+                    scenario_id = scenario_item
+                    active = True
+                else:
+                    # mypy: scenario_item is ScenarioInRequest here
+                    scenario_id = scenario_item.scenario_id  # type: ignore
+                    active = scenario_item.active  # type: ignore
+
                 await self.conn.execute(
                     insert_query,
                     simulation_id,
                     scenario_id,
+                    active,
                 )
 
             # Invalidate affected caches
@@ -504,11 +519,23 @@ class SimulationService(BaseService):
 
             # Insert new scenario relationships
             insert_query = self.queries.insert_simulation_scenario()
-            for scenario_id in request.scenario_ids:
+            for idx, scenario_item in enumerate(request.scenario_ids):
+                # Handle both string IDs and ScenarioInRequest objects
+                scenario_id: str
+                active: bool
+                if isinstance(scenario_item, str):
+                    scenario_id = scenario_item
+                    active = True
+                else:
+                    # mypy: scenario_item is ScenarioInRequest here
+                    scenario_id = scenario_item.scenario_id  # type: ignore
+                    active = scenario_item.active  # type: ignore
+
                 await self.conn.execute(
                     insert_query,
                     request.simulationId,
                     scenario_id,
+                    active,
                 )
 
             # Invalidate affected caches

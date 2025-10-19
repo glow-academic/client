@@ -3,13 +3,8 @@
 
 from pydantic import BaseModel
 
-from .base import (
-    DepartmentMapping,
-    ParameterItemMapping,
-    ParameterMapping,
-    RubricMapping,
-    ScenarioMapping,
-)
+from .base import (DepartmentMapping, ParameterItemMapping, ParameterMapping,
+                   RubricMapping, ScenarioMapping)
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -160,6 +155,13 @@ class SimulationDetailDefaultRequest(BaseModel):
 # ============================================================================
 
 
+class ScenarioInRequest(BaseModel):
+    """Scenario with active state for create/update requests."""
+
+    scenario_id: str
+    active: bool = True
+
+
 class CreateSimulationRequest(BaseModel):
     """Request to create simulation."""
 
@@ -175,7 +177,7 @@ class CreateSimulationRequest(BaseModel):
     image_input_active: bool
     time_limit: int | None
     rubric_id: str
-    scenario_ids: list[str]
+    scenario_ids: list[str] | list[ScenarioInRequest]  # Support both formats for backward compatibility
 
 
 class CreateSimulationResponse(BaseModel):
@@ -202,7 +204,7 @@ class UpdateSimulationRequest(BaseModel):
     image_input_active: bool
     time_limit: int | None
     rubric_id: str
-    scenario_ids: list[str]
+    scenario_ids: list[str] | list[ScenarioInRequest]  # Support both formats for backward compatibility
 
 
 class UpdateSimulationResponse(BaseModel):

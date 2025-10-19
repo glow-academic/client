@@ -184,6 +184,14 @@ export type SimulationDetailDefaultRequest = z.infer<
 // MUTATION SCHEMAS
 // ============================================================================
 
+// Scenario in request with active state
+export const ScenarioInRequestSchema = z.object({
+  scenario_id: z.string(),
+  active: z.boolean(),
+});
+
+export type ScenarioInRequest = z.infer<typeof ScenarioInRequestSchema>;
+
 // Create request
 export const CreateSimulationRequestSchema = z.object({
   title: z.string(),
@@ -198,7 +206,10 @@ export const CreateSimulationRequestSchema = z.object({
   image_input_active: z.boolean(),
   time_limit: z.number().nullable(),
   rubric_id: z.string(),
-  scenario_ids: z.array(z.string()),
+  scenario_ids: z.union([
+    z.array(z.string()),
+    z.array(ScenarioInRequestSchema),
+  ]),
 });
 
 export type CreateSimulationRequest = z.infer<
@@ -230,7 +241,10 @@ export const UpdateSimulationRequestSchema = z.object({
   image_input_active: z.boolean(),
   time_limit: z.number().nullable(),
   rubric_id: z.string(),
-  scenario_ids: z.array(z.string()),
+  scenario_ids: z.union([
+    z.array(z.string()),
+    z.array(ScenarioInRequestSchema),
+  ]),
 });
 
 export type UpdateSimulationRequest = z.infer<

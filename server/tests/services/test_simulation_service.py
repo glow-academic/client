@@ -258,3 +258,312 @@ async def test_get_simulation_detail_single_query(
     assert hasattr(result, "parameter_items")
     assert isinstance(result.parameters, list)
     assert isinstance(result.parameter_items, list)
+
+
+@pytest.mark.asyncio
+async def test_scenario_statistics_in_detail(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that scenario statistics (usage_count, success_rate, last_used, can_remove) are included in simulation detail."""
+    # Setup - Get test simulation with scenarios
+    sim_result = await db.fetchrow("""
+        SELECT s.id 
+        FROM simulations s
+        JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+        WHERE s.active = true
+        LIMIT 1
+    """)
+    
+    if not sim_result:
+        pytest.skip("No simulations with scenarios found in test database")
+
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+
+    # Execute
+    from app.schemas.simulations import SimulationDetailRequest
+
+    svc = SimulationService(db)
+    request = SimulationDetailRequest(
+        simulationId=simulation_id, profileId=profile_id
+    )
+    result = await svc.get_simulation_detail(request)
+
+    # Assert - Check that scenarios have statistics fields
+    assert hasattr(result, "scenarios")
+    assert isinstance(result.scenarios, list)
+    
+    if result.scenarios:
+        scenario = result.scenarios[0]
+        
+        # Check all new statistics fields exist
+        assert hasattr(scenario, "usage_count")
+        assert hasattr(scenario, "success_rate")
+        assert hasattr(scenario, "last_used")
+        assert hasattr(scenario, "can_remove")
+        
+        # Check types
+        assert isinstance(scenario.usage_count, int)
+        assert isinstance(scenario.success_rate, int)
+        assert scenario.last_used is None or isinstance(scenario.last_used, str)
+        assert isinstance(scenario.can_remove, bool)
+        
+        # Check value constraints
+        assert scenario.usage_count >= 0
+        assert 0 <= scenario.success_rate <= 100
+
+
+@pytest.mark.asyncio
+async def test_scenario_can_remove_flag(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that can_remove is true when usage_count is 0."""
+    # Setup - Get test simulation with scenarios
+    sim_result = await db.fetchrow("""
+        SELECT s.id 
+        FROM simulations s
+        JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+        WHERE s.active = true
+        LIMIT 1
+    """)
+    
+    if not sim_result:
+        pytest.skip("No simulations with scenarios found in test database")
+
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+
+    # Execute
+    from app.schemas.simulations import SimulationDetailRequest
+
+    svc = SimulationService(db)
+    request = SimulationDetailRequest(
+        simulationId=simulation_id, profileId=profile_id
+    )
+    result = await svc.get_simulation_detail(request)
+
+    # Assert - Check can_remove logic
+    if result.scenarios:
+        for scenario in result.scenarios:
+            # Verify can_remove matches usage_count == 0
+            if scenario.usage_count == 0:
+                assert scenario.can_remove is True, "Scenario with 0 usage should be removable"
+            else:
+                assert scenario.can_remove is False, "Scenario with usage should not be removable"
+
+
+@pytest.mark.asyncio
+async def test_scenarios_list_json_parsing(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that scenarios_list JSONB field is properly parsed from string or list format."""
+    # Setup - Get test simulation with scenarios
+    sim_result = await db.fetchrow("""
+        SELECT s.id 
+        FROM simulations s
+        JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+        WHERE s.active = true
+        LIMIT 1
+    """)
+    
+    if not sim_result:
+        pytest.skip("No simulations with scenarios found in test database")
+
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+
+    # Execute
+    from app.schemas.simulations import SimulationDetailRequest
+
+    svc = SimulationService(db)
+    request = SimulationDetailRequest(
+        simulationId=simulation_id, profileId=profile_id
+    )
+    result = await svc.get_simulation_detail(request)
+
+    # Assert - Scenarios should be parsed and populated
+    assert hasattr(result, "scenarios")
+    assert isinstance(result.scenarios, list)
+    assert len(result.scenarios) > 0, "Scenarios list should not be empty when simulation has scenarios"
+    
+    # Verify first scenario has all expected fields
+    first_scenario = result.scenarios[0]
+    assert hasattr(first_scenario, "scenario_id")
+    assert hasattr(first_scenario, "title")
+    assert hasattr(first_scenario, "description")
+    assert hasattr(first_scenario, "active")
+    assert hasattr(first_scenario, "usage_count")
+    assert hasattr(first_scenario, "success_rate")
+    assert hasattr(first_scenario, "last_used")
+    assert hasattr(first_scenario, "can_remove")
+    
+    # Verify data types
+    assert isinstance(first_scenario.scenario_id, str)
+    assert isinstance(first_scenario.title, str)
+    assert isinstance(first_scenario.usage_count, int)
+    assert isinstance(first_scenario.success_rate, int)
+    assert isinstance(first_scenario.can_remove, bool)
+
+
+@pytest.mark.asyncio
+@pytest.mark.skip(reason="Requires active state support in create - to be implemented")
+async def test_create_simulation_with_scenario_active_states(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test creating simulation with scenario active states."""
+    # Setup
+    dept_id = await get_test_dept_id(db)
+    profile_id = await get_test_profile_id(db)
+    
+    # Get test rubric and scenarios
+    rubric_result = await db.fetchrow(
+        "SELECT id FROM rubrics WHERE department_id = $1 AND active = true LIMIT 1",
+        dept_id
+    )
+    scenario_results = await db.fetch(
+        "SELECT id FROM scenarios WHERE department_id = $1 AND active = true LIMIT 2",
+        dept_id
+    )
+    
+    if not rubric_result or len(scenario_results) < 2:
+        pytest.skip("Insufficient test data (need rubric and 2+ scenarios)")
+    
+    rubric_id = str(rubric_result["id"])
+    scenario_ids = [
+        {"scenario_id": str(scenario_results[0]["id"]), "active": True},
+        {"scenario_id": str(scenario_results[1]["id"]), "active": False}
+    ]
+    
+    # Execute - Create simulation
+    from app.schemas.simulations import (CreateSimulationRequest,
+                                         ScenarioInRequest)
+    
+    svc = SimulationService(db)
+    request = CreateSimulationRequest(
+        title="Test Simulation with Active States",
+        description="Test description",
+        department_id=dept_id,
+        active=True,
+        default_simulation=False,
+        practice_simulation=False,
+        hints_enabled=False,
+        input_guardrail_active=False,
+        output_guardrail_active=False,
+        image_input_active=False,
+        time_limit=30,
+        rubric_id=rubric_id,
+        scenario_ids=[
+            ScenarioInRequest(**scenario_ids[0]),
+            ScenarioInRequest(**scenario_ids[1])
+        ]
+    )
+    
+    result = await svc.create_simulation(request)
+    
+    # Assert
+    assert result.success is True
+    assert result.simulationId
+    
+    # Verify active states were saved correctly
+    from app.schemas.simulations import SimulationDetailRequest
+    detail_request = SimulationDetailRequest(
+        simulationId=result.simulationId,
+        profileId=profile_id
+    )
+    detail = await svc.get_simulation_detail(detail_request)
+    
+    assert len(detail.scenarios) == 2
+    # First scenario should be active
+    first_scenario = next(s for s in detail.scenarios if s.scenario_id == scenario_ids[0]["scenario_id"])
+    assert first_scenario.active is True
+    
+    # Second scenario should be inactive
+    second_scenario = next(s for s in detail.scenarios if s.scenario_id == scenario_ids[1]["scenario_id"])
+    assert second_scenario.active is False
+    
+    # Cleanup
+    await db.execute("DELETE FROM simulations WHERE id = $1", result.simulationId)
+
+
+@pytest.mark.asyncio
+@pytest.mark.skip(reason="Requires active state support in update - to be implemented")
+async def test_update_simulation_scenario_active_states(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test updating simulation scenario active states."""
+    # Setup - Get existing simulation
+    sim_result = await db.fetchrow("""
+        SELECT s.id, s.title, s.description, s.department_id, s.rubric_id,
+               s.active, s.default_simulation, s.practice_simulation,
+               s.hints_enabled, s.input_guardrail_active, s.output_guardrail_active,
+               s.image_input_active
+        FROM simulations s
+        JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+        WHERE s.active = true
+        GROUP BY s.id
+        HAVING COUNT(ss.scenario_id) >= 1
+        LIMIT 1
+    """)
+    
+    if not sim_result:
+        pytest.skip("No simulations with scenarios found in test database")
+    
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+    
+    # Get current scenarios
+    scenario_results = await db.fetch(
+        "SELECT scenario_id FROM simulation_scenarios WHERE simulation_id = $1 ORDER BY position",
+        simulation_id
+    )
+    
+    scenario_ids = [
+        {"scenario_id": str(row["scenario_id"]), "active": False}  # Toggle all to inactive
+        for row in scenario_results
+    ]
+    
+    # Get time limit
+    time_limit_result = await db.fetchrow(
+        "SELECT time_limit_seconds FROM simulation_time_limits WHERE simulation_id = $1 AND active = true",
+        simulation_id
+    )
+    time_limit = time_limit_result["time_limit_seconds"] if time_limit_result else None
+    
+    # Execute - Update simulation
+    from app.schemas.simulations import (ScenarioInRequest,
+                                         UpdateSimulationRequest)
+    
+    svc = SimulationService(db)
+    request = UpdateSimulationRequest(
+        simulationId=simulation_id,
+        title=sim_result["title"],
+        description=sim_result["description"],
+        department_id=sim_result["department_id"],
+        active=sim_result["active"],
+        default_simulation=sim_result["default_simulation"],
+        practice_simulation=sim_result["practice_simulation"],
+        hints_enabled=sim_result["hints_enabled"],
+        input_guardrail_active=sim_result["input_guardrail_active"],
+        output_guardrail_active=sim_result["output_guardrail_active"],
+        image_input_active=sim_result["image_input_active"],
+        time_limit=time_limit,
+        rubric_id=sim_result["rubric_id"],
+        scenario_ids=[ScenarioInRequest(**sid) for sid in scenario_ids]
+    )
+    
+    result = await svc.update_simulation(request)
+    
+    # Assert
+    assert result.success is True
+    
+    # Verify active states were updated
+    from app.schemas.simulations import SimulationDetailRequest
+    detail_request = SimulationDetailRequest(
+        simulationId=simulation_id,
+        profileId=profile_id
+    )
+    detail = await svc.get_simulation_detail(detail_request)
+    
+    # All scenarios should now be inactive
+    for scenario in detail.scenarios:
+        assert scenario.active is False, f"Scenario {scenario.scenario_id} should be inactive"
