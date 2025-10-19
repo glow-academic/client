@@ -1,5 +1,6 @@
 """Profile service layer - business logic for profile and emulation operations."""
 
+import json
 import re
 import uuid
 from typing import Any, Dict, List, Optional, Tuple, cast
@@ -220,10 +221,13 @@ class ProfileService(BaseService):
             primaryDepartmentId=str(result['primary_department_id']) if result.get('primary_department_id') else None,
         )
 
-        # Parse departments from JSONB
+        # Parse departments from JSONB (may be string or list)
         departments = []
-        if result['departments'] and isinstance(result['departments'], list):
-            for dept in result['departments']:
+        departments_data = result['departments']
+        if isinstance(departments_data, str):
+            departments_data = json.loads(departments_data)
+        if departments_data and isinstance(departments_data, list):
+            for dept in departments_data:
                 if isinstance(dept, dict):
                     departments.append(DepartmentItem(
                         id=dept['id'],
@@ -234,10 +238,13 @@ class ProfileService(BaseService):
                         updatedAt=""
                     ))
 
-        # Parse cohorts from JSONB
+        # Parse cohorts from JSONB (may be string or list)
         cohorts = []
-        if result['cohorts'] and isinstance(result['cohorts'], list):
-            for cohort in result['cohorts']:
+        cohorts_data = result['cohorts']
+        if isinstance(cohorts_data, str):
+            cohorts_data = json.loads(cohorts_data)
+        if cohorts_data and isinstance(cohorts_data, list):
+            for cohort in cohorts_data:
                 if isinstance(cohort, dict):
                     cohorts.append(CohortItem(
                         id=cohort['id'],
@@ -249,10 +256,13 @@ class ProfileService(BaseService):
                         updatedAt=""
                     ))
 
-        # Parse simulations from JSONB
+        # Parse simulations from JSONB (may be string or list)
         simulations = []
-        if result['simulations'] and isinstance(result['simulations'], list):
-            for sim in result['simulations']:
+        simulations_data = result['simulations']
+        if isinstance(simulations_data, str):
+            simulations_data = json.loads(simulations_data)
+        if simulations_data and isinstance(simulations_data, list):
+            for sim in simulations_data:
                 if isinstance(sim, dict):
                     simulations.append(SimulationContextItem(
                         id=sim['id'],
@@ -265,11 +275,22 @@ class ProfileService(BaseService):
                         practiceSimulation=sim['practice_simulation']
                     ))
 
-        # Parse simulatable profiles from JSONB
+        # Parse simulatable profiles from JSONB (may be string or list)
         simulatable_profiles = []
-        if result['simulatable_profiles'] and isinstance(result['simulatable_profiles'], list):
-            for sp in result['simulatable_profiles']:
+        simulatable_profiles_data = result['simulatable_profiles']
+        if isinstance(simulatable_profiles_data, str):
+            simulatable_profiles_data = json.loads(simulatable_profiles_data)
+        if simulatable_profiles_data and isinstance(simulatable_profiles_data, list):
+            for sp in simulatable_profiles_data:
                 if isinstance(sp, dict):
+                    # Helper to convert datetime to ISO string if needed
+                    def to_iso_string(val: Any) -> str:
+                        if val is None:
+                            return ""
+                        if isinstance(val, str):
+                            return val  # Already a string (from JSONB)
+                        return val.isoformat()  # datetime object
+                    
                     simulatable_profiles.append(ProfileItem(
                         id=sp['id'],
                         firstName=sp['first_name'],
@@ -281,10 +302,10 @@ class ProfileService(BaseService):
                         viewedChat=sp['viewed_chat'],
                         defaultProfile=sp['default_profile'],
                         reqPerDay=sp['req_per_day'],
-                        lastLogin=sp['last_login'].isoformat() if sp['last_login'] else "",
-                        lastActive=sp['last_active'].isoformat() if sp['last_active'] else "",
-                        createdAt=sp['created_at'].isoformat() if sp['created_at'] else "",
-                        updatedAt=sp['updated_at'].isoformat() if sp['updated_at'] else "",
+                        lastLogin=to_iso_string(sp.get('last_login')),
+                        lastActive=to_iso_string(sp.get('last_active')),
+                        createdAt=to_iso_string(sp.get('created_at')),
+                        updatedAt=to_iso_string(sp.get('updated_at')),
                         primaryDepartmentId=sp['primary_department_id'] if sp.get('primary_department_id') else None,
                     ))
 
@@ -528,10 +549,13 @@ class ProfileService(BaseService):
                 "created_at": result["created_at"].isoformat() if result["created_at"] else None,
             }
 
-            # Parse attempts from JSONB with type-safe handling
+            # Parse attempts from JSONB (may be string or list)
             attempts_data = []
-            if result['attempts'] and isinstance(result['attempts'], list):
-                for attempt in result['attempts']:
+            attempts_json = result['attempts']
+            if isinstance(attempts_json, str):
+                attempts_json = json.loads(attempts_json)
+            if attempts_json and isinstance(attempts_json, list):
+                for attempt in attempts_json:
                     if isinstance(attempt, dict):
                         # Parse chat data
                         chat_data = attempt.get('chat', {})
@@ -737,10 +761,13 @@ class ProfileService(BaseService):
                 "created_at": result["created_at"].isoformat() if result["created_at"] else None,
             }
 
-            # Transform latest grades (jsonb array to list of dicts) with type-safe parsing
+            # Transform latest grades (jsonb array to list of dicts) - may be string or list
             latest_grades = []
-            if result["latest_grades"] and isinstance(result["latest_grades"], list):
-                for grade in result["latest_grades"]:
+            latest_grades_data = result["latest_grades"]
+            if isinstance(latest_grades_data, str):
+                latest_grades_data = json.loads(latest_grades_data)
+            if latest_grades_data and isinstance(latest_grades_data, list):
+                for grade in latest_grades_data:
                     if isinstance(grade, dict):
                         latest_grades.append({
                             "simulation_title": grade.get("simulation_title"),

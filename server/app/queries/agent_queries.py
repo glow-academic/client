@@ -39,6 +39,41 @@ class AgentQueries:
 
         return query, params
 
+    def get_agents_list_complete(self, profile_id: str) -> tuple[str, list[Any]]:
+        """
+        Get agents list with permissions and model information in ONE query.
+
+        Optimized version that includes model details to avoid N+1 queries.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH user_profile AS (
+            SELECT role FROM profiles WHERE id = $1
+        )
+        SELECT 
+            a.id::text as agent_id,
+            a.name,
+            a.description,
+            a.reasoning,
+            a.temperature,
+            a.model_id::text,
+            a.updated_at,
+            CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_edit,
+            CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_delete,
+            m.name as model_name,
+            COALESCE(m.description, '') as model_description
+        FROM agents a
+        CROSS JOIN user_profile up
+        LEFT JOIN models m ON m.id = a.model_id
+        ORDER BY a.name
+        """
+
+        params: list[Any] = [profile_id]
+
+        return query, params
+
     def get_agent_detail(self, agent_id: str) -> tuple[str, list[Any]]:
         """
         Get basic agent information.
@@ -57,33 +92,6 @@ class AgentQueries:
             reasoning
         FROM agents
         WHERE id = $1
-        """
-
-        params: list[Any] = [agent_id]
-
-        return query, params
-
-    def get_debug_info_for_agent(self, agent_id: str) -> tuple[str, list[Any]]:
-        """
-        Get debug info for an agent via model_run_agents junction.
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = """
-        SELECT 
-            di.created_at,
-            mrm.model_id::text,
-            di.content
-        FROM model_run_agents mra
-        JOIN model_runs mr ON mr.id = mra.model_run_id
-        JOIN debug_info di ON di.model_run_id = mr.id
-        JOIN model_run_models mrm ON mrm.model_run_id = mr.id
-        WHERE mra.agent_id = $1
-        AND mra.active = true
-        AND mrm.active = true
-        ORDER BY di.created_at DESC
-        LIMIT 100
         """
 
         params: list[Any] = [agent_id]
@@ -128,6 +136,92 @@ class AgentQueries:
         """
 
         params: list[Any] = [model_ids]
+
+        return query, params
+
+    def get_agent_detail_complete(self, agent_id: str) -> tuple[str, list[Any]]:
+        """
+        Get agent detail with debug info and all models in ONE optimized query.
+        
+        Combines agent info, debug info, and model listings using CTEs and
+        JSONB aggregation to eliminate N+1 queries.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH agent_info AS (
+            SELECT 
+                id::text as agent_id,
+                name,
+                description,
+                system_prompt,
+                temperature,
+                model_id::text,
+                reasoning
+            FROM agents
+            WHERE id = $1
+        ),
+        debug_data AS (
+            SELECT 
+                di.created_at,
+                mrm.model_id::text,
+                di.content
+            FROM model_run_agents mra
+            JOIN model_runs mr ON mr.id = mra.model_run_id
+            JOIN debug_info di ON di.model_run_id = mr.id
+            JOIN model_run_models mrm ON mrm.model_run_id = mr.id
+            WHERE mra.agent_id = $1
+            AND mra.active = true
+            AND mrm.active = true
+            ORDER BY di.created_at DESC
+            LIMIT 100
+        ),
+        all_models AS (
+            SELECT 
+                id::text as model_id,
+                name,
+                COALESCE(description, '') as description,
+                active
+            FROM models
+        )
+        SELECT 
+            ai.agent_id,
+            ai.name,
+            ai.description,
+            ai.system_prompt,
+            ai.temperature,
+            ai.model_id,
+            ai.reasoning,
+            COALESCE(
+                (SELECT jsonb_agg(
+                    jsonb_build_object(
+                        'created_at', dd.created_at,
+                        'model_id', dd.model_id,
+                        'content', dd.content
+                    ) ORDER BY dd.created_at DESC
+                )
+                FROM debug_data dd),
+                '[]'::jsonb
+            ) as debug_info,
+            COALESCE(
+                (SELECT jsonb_object_agg(
+                    am.model_id,
+                    jsonb_build_object('name', am.name, 'description', am.description)
+                )
+                FROM all_models am),
+                '{}'::jsonb
+            ) as model_mapping,
+            COALESCE(
+                (SELECT jsonb_agg(am.model_id ORDER BY am.name)
+                FROM all_models am
+                WHERE am.active = true),
+                '[]'::jsonb
+            ) as valid_model_ids
+        FROM agent_info ai
+        """
+
+        params: list[Any] = [agent_id]
 
         return query, params
 

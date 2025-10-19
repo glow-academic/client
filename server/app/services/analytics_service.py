@@ -38,9 +38,8 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    SkillPerformanceResponse, Thresholds)
 from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
                               ParameterMapping, ParameterMappingItem,
-                              PersonaMapping, PersonaMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              ScenarioMapping, ScenarioMappingItem,
+                              PersonaMappingItem, RubricMapping,
+                              RubricMappingItem, ScenarioMappingItem,
                               SimulationMapping, SimulationMappingItem)
 from app.services import analytics_insights
 from app.services.base import BaseService, with_cache
@@ -49,7 +48,7 @@ from app.services.base import BaseService, with_cache
 class AnalyticsService(BaseService):
     """Service layer for analytics operations."""
 
-    def __init__(self, conn: asyncpg.Connection):
+    def __init__(self, conn: asyncpg.Connection) -> None:
         """Initialize service with database session."""
         super().__init__(conn)
         self.query_builder = AnalyticsQueryBuilder()
@@ -417,7 +416,7 @@ class AnalyticsService(BaseService):
             values = date_map[date]
             # Only include days where at least one metric has non-null data
             if any(v is not None for v in values.values()):
-                chart_data.append({"date": date, **{k: v for k, v in values.items()}})
+                chart_data.append({"date": date, **dict(values.items())})
 
         # Build availableMetrics
         available_metrics = [
@@ -750,32 +749,32 @@ class AnalyticsService(BaseService):
         )
         result = await self.conn.fetchval(query, *params)
         # Parse JSON string to dict if needed
-        if isinstance(result, str):
-            result = json.loads(result)
-        overview_data = result or {}
+        parsed_result = self._parse_json_strings_recursive(result or {})
 
-        # Fetch history data (use effective_profile_id)
-        history_filters = AnalyticsFilters(
-            startDate=filters.startDate,
-            endDate=filters.endDate,
-            cohortIds=filters.cohortIds,
-            roles=filters.roles,
-            simulationFilters=filters.simulationFilters,
-            profileId=effective_profile_id,
-            departmentIds=filters.departmentIds,
-        )
-        history = await self.get_attempt_history(history_filters)
+        # Parse embedded history
+        history = []
+        if isinstance(parsed_result.get("history"), list):
+            for row in parsed_result["history"]:
+                if isinstance(row, dict):
+                    history.append(AttemptHistoryRow.model_validate(row))
 
-        # Build simulation mapping (use effective_profile_id)
-        simulation_mapping = await self._build_simulation_mapping(history_filters)
+        # Parse embedded simulation mapping
+        simulation_mapping = {}
+        if isinstance(parsed_result.get("simulation_mapping"), dict):
+            for sim_id, sim_data in parsed_result["simulation_mapping"].items():
+                if isinstance(sim_data, dict):
+                    simulation_mapping[sim_id] = SimulationMappingItem(
+                        name=sim_data.get("name", ""),
+                        description=sim_data.get("description", ""),
+                    )
 
         return HomeOverviewResponse(
-            mode=overview_data.get("mode", "empty"),
-            hasData=overview_data.get("hasData", False),
-            items=overview_data.get("items", []),
+            mode=parsed_result.get("mode", "empty"),
+            hasData=parsed_result.get("hasData", False),
+            items=parsed_result.get("items", []),
             history=history,
-            standard_groups_mapping=overview_data.get("standard_groups_mapping", {}),
-            standards_mapping=overview_data.get("standards_mapping", {}),
+            standard_groups_mapping=parsed_result.get("standard_groups_mapping", {}),
+            standards_mapping=parsed_result.get("standards_mapping", {}),
             simulation_mapping=simulation_mapping,
         )
 
@@ -822,27 +821,82 @@ class AnalyticsService(BaseService):
         )
         result = await self.conn.fetchval(query, *params)
         # Parse JSON string to dict if needed
-        if isinstance(result, str):
-            result = json.loads(result)
-        overview_data = result or {}
+        parsed_result = self._parse_json_strings_recursive(result or {})
 
-        # Fetch history data
-        history = await self.get_attempt_history(filters)
+        # Parse embedded history
+        history = []
+        if isinstance(parsed_result.get("history"), list):
+            for row in parsed_result["history"]:
+                if isinstance(row, dict):
+                    history.append(AttemptHistoryRow.model_validate(row))
 
-        # Build all entity mappings
-        simulation_mapping = await self._build_simulation_mapping(filters)
-        persona_mapping = await self._build_persona_mapping(filters)
-        scenario_mapping = await self._build_scenario_mapping(filters)
-        parameter_mapping = await self._build_parameter_mapping(filters)
-        parameter_item_mapping = await self._build_parameter_item_mapping(filters)
+        # Parse embedded simulation mapping
+        simulation_mapping = {}
+        if isinstance(parsed_result.get("simulation_mapping"), dict):
+            for sim_id, sim_data in parsed_result["simulation_mapping"].items():
+                if isinstance(sim_data, dict):
+                    simulation_mapping[sim_id] = SimulationMappingItem(
+                        name=sim_data.get("name", ""),
+                        description=sim_data.get("description", ""),
+                    )
+
+        # Parse embedded persona mapping
+        persona_mapping = {}
+        if isinstance(parsed_result.get("persona_mapping"), dict):
+            for persona_id, persona_data in parsed_result["persona_mapping"].items():
+                if isinstance(persona_data, dict):
+                    persona_mapping[persona_id] = PersonaMappingItem(
+                        name=persona_data.get("name", ""),
+                        description=persona_data.get("description", ""),
+                        color=persona_data.get("color"),
+                        icon=persona_data.get("icon"),
+                    )
+
+        # Parse embedded scenario mapping
+        scenario_mapping = {}
+        if isinstance(parsed_result.get("scenario_mapping"), dict):
+            for scenario_id, scenario_data in parsed_result["scenario_mapping"].items():
+                if isinstance(scenario_data, dict):
+                    scenario_mapping[scenario_id] = ScenarioMappingItem(
+                        name=scenario_data.get("name", ""),
+                        description=scenario_data.get("description", ""),
+                        persona_id=None,
+                        persona_mapping={},
+                        document_mapping={},
+                        parameter_item_mapping={},
+                        parameter_item_ids=[],
+                        document_ids=[],
+                    )
+
+        # Parse embedded parameter mapping
+        parameter_mapping = {}
+        if isinstance(parsed_result.get("parameter_mapping"), dict):
+            for param_id, param_data in parsed_result["parameter_mapping"].items():
+                if isinstance(param_data, dict):
+                    parameter_mapping[param_id] = ParameterMappingItem(
+                        name=param_data.get("name", ""),
+                        description=param_data.get("description", ""),
+                    )
+
+        # Parse embedded parameter_item mapping
+        parameter_item_mapping = {}
+        if isinstance(parsed_result.get("parameter_item_mapping"), dict):
+            for item_id, item_data in parsed_result["parameter_item_mapping"].items():
+                if isinstance(item_data, dict):
+                    parameter_item_mapping[item_id] = ParameterItemMappingItem(
+                        name=item_data.get("name", ""),
+                        description=item_data.get("description", ""),
+                        parameter_id=item_data.get("parameter_id", ""),
+                        parameter_name=item_data.get("parameter_name", ""),
+                    )
 
         return PracticeOverviewResponse(
-            mode=overview_data.get("mode", "practice"),
-            hasData=overview_data.get("hasData", False),
-            items=overview_data.get("items", []),
+            mode=parsed_result.get("mode", "practice"),
+            hasData=parsed_result.get("hasData", False),
+            items=parsed_result.get("items", []),
             history=history,
-            standard_groups_mapping=overview_data.get("standard_groups_mapping", {}),
-            standards_mapping=overview_data.get("standards_mapping", {}),
+            standard_groups_mapping=parsed_result.get("standard_groups_mapping", {}),
+            standards_mapping=parsed_result.get("standards_mapping", {}),
             simulation_mapping=simulation_mapping,
             persona_mapping=persona_mapping,
             scenario_mapping=scenario_mapping,
@@ -1216,29 +1270,6 @@ class AnalyticsService(BaseService):
             parameter_item_mapping=parameter_item_mapping,
         )
 
-    async def _build_scenario_mapping(
-        self, filters: AnalyticsFilters
-    ) -> ScenarioMapping:
-        """Build scenario mapping from database."""
-        query, params = self.query_builder.get_scenarios_for_mapping(
-            filters.departmentIds
-        )
-        results = await self.conn.fetch(query, *params)
-
-        return {
-            str(row["id"]): ScenarioMappingItem(
-                name=row["name"],
-                description=row["problem_statement"] or "",
-                persona_id=None,
-                persona_mapping={},
-                document_mapping={},
-                parameter_item_mapping={},
-                parameter_item_ids=[],
-                document_ids=[],
-            )
-            for row in results
-        }
-
     async def _build_simulation_mapping(
         self, filters: AnalyticsFilters
     ) -> SimulationMapping:
@@ -1304,23 +1335,6 @@ class AnalyticsService(BaseService):
                 description=row["description"] or "",
                 parameter_id=str(row["parameter_id"]),
                 parameter_name=row["parameter_name"],
-            )
-            for row in results
-        }
-
-    async def _build_persona_mapping(self, filters: AnalyticsFilters) -> PersonaMapping:
-        """Build persona mapping from database."""
-        query, params = self.query_builder.get_personas_for_mapping(
-            filters.departmentIds
-        )
-        results = await self.conn.fetch(query, *params)
-
-        return {
-            str(row["id"]): PersonaMappingItem(
-                name=row["name"],
-                description=row["description"] or "",
-                color=row["color"],
-                icon=row["icon"],
             )
             for row in results
         }

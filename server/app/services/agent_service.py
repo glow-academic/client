@@ -5,26 +5,16 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.agent_queries import AgentQueries
 from app.queries.profile_queries import ProfileQueries
-from app.schemas.agents import (
-    AgentDetailRequest,
-    AgentDetailResponse,
-    AgentItem,
-    AgentsListRequest,
-    AgentsListResponse,
-    CreateAgentRequest,
-    CreateAgentResponse,
-    DebugInfoItem,
-    DeleteAgentRequest,
-    DeleteAgentResponse,
-    DuplicateAgentRequest,
-    DuplicateAgentResponse,
-    UpdateAgentRequest,
-    UpdateAgentResponse,
-)
+from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
+                                AgentItem, AgentsListRequest,
+                                AgentsListResponse, CreateAgentRequest,
+                                CreateAgentResponse, DebugInfoItem,
+                                DeleteAgentRequest, DeleteAgentResponse,
+                                DuplicateAgentRequest, DuplicateAgentResponse,
+                                UpdateAgentRequest, UpdateAgentResponse)
 from app.schemas.base import ModelMapping, ModelMappingItem
 from app.services.base import BaseService, with_cache
 
@@ -63,27 +53,23 @@ class AgentService(BaseService):
         self, request: AgentsListRequest
     ) -> AgentsListResponse:
         """Direct execution without cache."""
-        query, params = self.queries.get_agents_list(request.profileId)
-
+        # Get agents with model information in ONE optimized query
+        query, params = self.queries.get_agents_list_complete(request.profileId)
         rows = await self.conn.fetch(query, *params)
 
-        # Collect unique model IDs
-        model_ids = list(set([row["model_id"] for row in rows]))
-
-        # Get model mapping
+        # Build model mapping from the single result set
         model_mapping: ModelMapping = {}
-        if model_ids:
-            query, params = self.queries.get_model_mapping(model_ids)
-            model_rows = await self.conn.fetch(query, *params)
-            model_mapping = {
-                row["model_id"]: ModelMappingItem(
-                    name=row["name"], description=row["description"] or ""
-                )
-                for row in model_rows
-            }
-
         agents: list[AgentItem] = []
+        
         for row in rows:
+            # Add to model mapping if we have model info
+            model_id = row["model_id"]
+            if model_id and model_id not in model_mapping:
+                model_mapping[model_id] = ModelMappingItem(
+                    name=row["model_name"] or "",
+                    description=row["model_description"] or ""
+                )
+            
             agents.append(
                 AgentItem(
                     agent_id=row["agent_id"],
@@ -91,7 +77,7 @@ class AgentService(BaseService):
                     description=row["description"],
                     reasoning=row["reasoning"],
                     temperature=float(row["temperature"]),
-                    model_id=row["model_id"],
+                    model_id=model_id,
                     updated_at=row["updated_at"].isoformat(),
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
@@ -119,67 +105,58 @@ class AgentService(BaseService):
         self, request: AgentDetailRequest
     ) -> AgentDetailResponse:
         """Direct execution without cache."""
-        # Get basic agent info
-        query, params = self.queries.get_agent_detail(request.agentId)
-        agent_row = await self.conn.fetchrow(query, *params)
+        # Get agent detail with debug info and all models in ONE optimized query
+        query, params = self.queries.get_agent_detail_complete(request.agentId)
+        result = await self.conn.fetchrow(query, *params)
 
-        if not agent_row:
+        if not result:
             raise ValueError(f"Agent {request.agentId} not found")
 
-        # Get debug info for agent
-        query, params = self.queries.get_debug_info_for_agent(request.agentId)
-        debug_rows = await self.conn.fetch(query, *params)
-
+        # Parse debug_info from JSONB (may be string or list)
         debug_info: list[DebugInfoItem] = []
-        debug_model_ids = set()
-        for row in debug_rows:
-            debug_info.append(
-                DebugInfoItem(
-                    created_at=row["created_at"].isoformat(),
-                    model_id=row["model_id"],
-                    content=row["content"],
-                )
-            )
-            debug_model_ids.add(row["model_id"])
+        debug_info_data = result['debug_info']
+        if isinstance(debug_info_data, str):
+            debug_info_data = json.loads(debug_info_data)
+        if debug_info_data and isinstance(debug_info_data, list):
+            for item in debug_info_data:
+                if isinstance(item, dict):
+                    created_at_value = item.get("created_at")
+                    debug_info.append(
+                        DebugInfoItem(
+                            created_at=created_at_value.isoformat() if created_at_value else "",
+                            model_id=item.get("model_id", ""),
+                            content=item.get("content", ""),
+                        )
+                    )
 
-        # Get valid models for selection
-        query, params = self.queries.get_valid_models()
-        model_rows = await self.conn.fetch(query, *params)
-
-        valid_model_ids: list[str] = []
+        # Parse model_mapping from JSONB (may be string or dict)
         model_mapping: ModelMapping = {}
-        for row in model_rows:
-            valid_model_ids.append(row["model_id"])
-            model_mapping[row["model_id"]] = ModelMappingItem(
-                name=row["name"], description=row["description"]
-            )
+        model_mapping_data = result['model_mapping']
+        if isinstance(model_mapping_data, str):
+            model_mapping_data = json.loads(model_mapping_data)
+        if model_mapping_data and isinstance(model_mapping_data, dict):
+            for model_id, model_data in model_mapping_data.items():
+                if isinstance(model_data, dict):
+                    model_mapping[model_id] = ModelMappingItem(
+                        name=model_data.get("name", ""),
+                        description=model_data.get("description", "")
+                    )
 
-        # Add agent's current model to mapping if not already there
-        if agent_row["model_id"] not in model_mapping:
-            query, params = self.queries.get_model_mapping([agent_row["model_id"]])
-            model_rows = await self.conn.fetch(query, *params)
-            for row in model_rows:
-                model_mapping[row["model_id"]] = ModelMappingItem(
-                    name=row["name"], description=row["description"]
-                )
-
-        # Add debug info model IDs to mapping
-        debug_model_ids_list = list(debug_model_ids - set(model_mapping.keys()))
-        if debug_model_ids_list:
-            query, params = self.queries.get_model_mapping(debug_model_ids_list)
-            model_rows = await self.conn.fetch(query, *params)
-            for row in model_rows:
-                model_mapping[row["model_id"]] = ModelMappingItem(
-                    name=row["name"], description=row["description"]
-                )
+        # Parse valid_model_ids from JSONB (may be string or list)
+        valid_model_ids: list[str] = []
+        valid_model_ids_data = result['valid_model_ids']
+        if isinstance(valid_model_ids_data, str):
+            valid_model_ids_data = json.loads(valid_model_ids_data)
+        if valid_model_ids_data and isinstance(valid_model_ids_data, list):
+            valid_model_ids = [str(mid) for mid in valid_model_ids_data if mid]
 
         return AgentDetailResponse(
-            name=agent_row["name"],
-            description=agent_row["description"],
-            system_prompt=agent_row["system_prompt"],
-            temperature=float(agent_row["temperature"]),
-            model_id=agent_row["model_id"],
-            reasoning=agent_row["reasoning"],
+            name=result["name"],
+            description=result["description"],
+            system_prompt=result["system_prompt"],
+            temperature=float(result["temperature"]),
+            model_id=result["model_id"],
+            reasoning=result["reasoning"],
             valid_model_ids=valid_model_ids,
             reasoning_options=["none", "minimal", "low", "medium", "high"],
             temperature_lower=0.0,

@@ -114,6 +114,68 @@ async def test_get_reports_bundle(db: asyncpg.Connection, disable_cache) -> None
     assert isinstance(result.simulation_mapping, dict)
 
 
+@pytest.mark.asyncio
+async def test_get_home_overview(db: asyncpg.Connection, disable_cache) -> None:
+    """Test home overview with embedded history and simulation mapping."""
+    dept_id = await get_test_dept_id(db)
+    if not dept_id:
+        pytest.skip("No test department found")
+
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=90)
+
+    filters = AnalyticsFilters(
+        startDate=start_date.isoformat() + "Z",
+        endDate=end_date.isoformat() + "Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = AnalyticsService(db)
+    result = await svc.get_home_overview(filters)
+
+    assert result is not None
+    assert result.mode in ["ta", "instructional", "empty"]
+    assert isinstance(result.history, list)
+    assert isinstance(result.simulation_mapping, dict)
+    assert isinstance(result.standard_groups_mapping, dict)
+    assert isinstance(result.standards_mapping, dict)
+
+
+@pytest.mark.asyncio
+async def test_get_practice_overview(db: asyncpg.Connection, disable_cache) -> None:
+    """Test practice overview with all 6 embedded mappings."""
+    dept_id = await get_test_dept_id(db)
+    if not dept_id:
+        pytest.skip("No test department found")
+
+    # Get a test profile to use
+    profile = await db.fetchrow("SELECT id FROM profiles LIMIT 1")
+    if not profile:
+        pytest.skip("No test profile found")
+
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=90)
+
+    filters = AnalyticsFilters(
+        startDate=start_date.isoformat() + "Z",
+        endDate=end_date.isoformat() + "Z",
+        profileId=str(profile["id"]),
+        departmentIds=[dept_id],
+    )
+
+    svc = AnalyticsService(db)
+    result = await svc.get_practice_overview(filters)
+
+    assert result is not None
+    assert result.mode == "practice"
+    assert isinstance(result.history, list)
+    assert isinstance(result.simulation_mapping, dict)
+    assert isinstance(result.persona_mapping, dict)
+    assert isinstance(result.scenario_mapping, dict)
+    assert isinstance(result.parameter_mapping, dict)
+    assert isinstance(result.parameter_item_mapping, dict)
+
+
 import pytest
 
 

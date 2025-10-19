@@ -188,12 +188,12 @@ class PageQueries:
             ta_sim_space AS (
                 SELECT DISTINCT m.simulation_id
                 FROM cohort_membership m
-                WHERE {profile_param_placeholder} IS NOT NULL 
+                WHERE {profile_param_placeholder} IS NOT NULL
                   AND m.profile_id = {profile_param_placeholder}
                 UNION
                 SELECT DISTINCT uss.simulation_id
                 FROM user_sim_status uss
-                WHERE {profile_param_placeholder} IS NOT NULL 
+                WHERE {profile_param_placeholder} IS NOT NULL
                   AND uss.profile_id = {profile_param_placeholder}
             ),
             ta_primary_cohort AS (
@@ -205,7 +205,7 @@ class PageQueries:
                     ROW_NUMBER() OVER (PARTITION BY cs.simulation_id ORDER BY c.id) AS rn
                 FROM cohorts c
                 JOIN cohort_simulations cs ON cs.cohort_id = c.id
-                JOIN cohort_profiles cp ON cp.cohort_id = c.id 
+                JOIN cohort_profiles cp ON cp.cohort_id = c.id
                     AND cp.profile_id = {profile_param_placeholder}
                 WHERE (cardinality({cohort_param_placeholder}) = 0 OR c.id = ANY({cohort_param_placeholder}))
                   AND (cardinality({dept_param_placeholder}) = 0 OR c.department_id = ANY({dept_param_placeholder}))
@@ -276,7 +276,7 @@ class PageQueries:
                             FROM (
                                 SELECT ARRAY_AGG(DISTINCT c.cohort_title ORDER BY c.cohort_title) AS titles
                                 FROM cohort_membership c
-                                WHERE c.simulation_id = s.simulation_id 
+                                WHERE c.simulation_id = s.simulation_id
                                   AND c.profile_id = {profile_param_placeholder}
                             ) x
                         ),
@@ -423,16 +423,169 @@ class PageQueries:
                     SELECT sg.id FROM standard_groups sg
                     WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
                 )
+            ),
+            -- Embedded: Attempt history data
+            attempt_rollup AS (
+                SELECT
+                    a.attempt_id,
+                    a.simulation_id,
+                    MIN(a.attempt_created_at) AS attempt_date,
+                    MIN(a.chat_created_at) AS first_chat_at,
+                    MAX(a.chat_created_at) AS last_activity_at,
+                    COUNT(*) FILTER (WHERE a.completed AND a.grade_percent IS NOT NULL) AS completed_with_grade,
+                    MAX(a.sim_scenario_count) AS sim_scenario_count,
+                    SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
+                    array_agg(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct,
+                    array_agg(DISTINCT a.leaf_scenario_id) FILTER (WHERE a.leaf_scenario_id IS NOT NULL) AS leaf_scenarios_seen,
+                    MIN(a.department_id::text)::uuid AS department_id
+                FROM filt a
+                GROUP BY a.attempt_id, a.simulation_id
+            ),
+            attempt_joined AS (
+                SELECT
+                    ar.*,
+                    ap.profile_id,
+                    sa.archived AS is_archived,
+                    sa.infinite_mode,
+                    s.title AS simulation_name,
+                    ARRAY(SELECT ss.scenario_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id ORDER BY ss.position) AS scenario_ids_assigned,
+                    s.practice_simulation,
+                    r.id AS rubric_id,
+                    r.points AS rubric_points,
+                    r.pass_points AS rubric_pass_points,
+                    CASE
+                        WHEN r.points IS NULL OR r.points = 0 THEN NULL
+                        ELSE ROUND((r.pass_points::numeric / r.points::numeric) * 100.0)::int
+                    END AS pass_pct,
+                    (p.first_name || ' ' || p.last_name) AS profile_name
+                FROM attempt_rollup ar
+                JOIN simulation_attempts sa ON sa.id = ar.attempt_id
+                LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
+                JOIN simulations s ON s.id = ar.simulation_id
+                LEFT JOIN rubrics r ON r.id = s.rubric_id
+                JOIN profiles p ON p.id = ap.profile_id
+            ),
+            final_rows AS (
+                SELECT
+                    aj.attempt_id,
+                    aj.simulation_id,
+                    aj.profile_id,
+                    aj.profile_name,
+                    aj.simulation_name,
+                    aj.scenario_ids_assigned,
+                    aj.is_archived,
+                    aj.practice_simulation,
+                    aj.pass_pct,
+                    aj.infinite_mode,
+                    aj.attempt_date,
+                    aj.department_id,
+                    CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
+                    COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
+                    CASE
+                        WHEN aj.infinite_mode THEN
+                            CASE GREATEST(array_length(aj.leaf_scenarios_seen, 1), 0)
+                                WHEN 0 THEN NULL
+                                ELSE ROUND(aj.sum_grade_percent_zero_fill / GREATEST(array_length(aj.leaf_scenarios_seen, 1), 1))::int
+                            END
+                        ELSE
+                            CASE COALESCE(aj.sim_scenario_count, 0)
+                                WHEN 0 THEN NULL
+                                ELSE CASE
+                                        WHEN aj.completed_with_grade = 0 THEN NULL
+                                        ELSE ROUND(aj.sum_grade_percent_zero_fill / NULLIF(aj.sim_scenario_count, 0))::int
+                                    END
+                            END
+                    END AS score_percent,
+                    (NOT aj.is_archived) AS show_view,
+                    (NOT aj.is_archived) AND (
+                        aj.infinite_mode
+                        OR (aj.sim_scenario_count IS NOT NULL
+                            AND COALESCE(aj.completed_with_grade, 0) < aj.sim_scenario_count)
+                    ) AS show_continue,
+                    aj.persona_ids_distinct
+                FROM attempt_joined aj
+            ),
+            persona_labels AS (
+                SELECT
+                    fr.attempt_id,
+                    COALESCE(ARRAY_AGG(per.name ORDER BY per.name), ARRAY[]::text[]) AS persona_names,
+                    COALESCE(ARRAY_AGG(per.color ORDER BY per.name), ARRAY[]::text[]) AS persona_colors
+                FROM final_rows fr
+                LEFT JOIN LATERAL (
+                    SELECT DISTINCT per.name, per.color
+                    FROM unnest(fr.persona_ids_distinct) AS pid
+                    JOIN personas per ON per.id = pid
+                ) per ON TRUE
+                GROUP BY fr.attempt_id
+            ),
+            scenario_names AS (
+                SELECT
+                    fr.attempt_id,
+                    COALESCE(sn.names, ARRAY[]::text[]) AS names
+                FROM final_rows fr
+                LEFT JOIN LATERAL (
+                    SELECT ARRAY_AGG(s.name ORDER BY s.name) AS names
+                    FROM unnest(fr.scenario_ids_assigned) sid
+                    JOIN scenarios s ON s.id = sid
+                ) sn ON TRUE
+            ),
+            attempt_history_data AS (
+                SELECT COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'attemptId', fr.attempt_id::text,
+                            'date', fr.attempt_date,
+                            'profileId', fr.profile_id::text,
+                            'profileName', fr.profile_name,
+                            'simulationName', fr.simulation_name,
+                            'numScenarios', fr.num_scenarios,
+                            'numScenariosCompleted', fr.num_scenarios_completed,
+                            'infiniteMode', fr.infinite_mode,
+                            'personaNames', COALESCE(pl.persona_names, ARRAY[]::text[]),
+                            'personaColors', COALESCE(pl.persona_colors, ARRAY[]::text[]),
+                            'score', fr.score_percent,
+                            'simulation_id', fr.simulation_id::text,
+                            'scenario_ids', COALESCE(fr.scenario_ids_assigned, ARRAY[]::uuid[])::text[],
+                            'scenario_titles', COALESCE(sn.names, ARRAY[]::text[]),
+                            'isArchived', fr.is_archived,
+                            'showView', fr.show_view,
+                            'showContinue', fr.show_continue,
+                            'practiceSimulation', COALESCE(fr.practice_simulation, false),
+                            'passPct', fr.pass_pct,
+                            'department_id', fr.department_id::text
+                        )
+                        ORDER BY fr.attempt_date DESC, fr.attempt_id
+                    ),
+                    '[]'::json
+                ) AS history
+                FROM final_rows fr
+                LEFT JOIN persona_labels pl ON pl.attempt_id = fr.attempt_id
+                LEFT JOIN scenario_names sn ON sn.attempt_id = fr.attempt_id
+            ),
+            simulation_mapping_data AS (
+                SELECT COALESCE(
+                    jsonb_object_agg(
+                        sim.id::text,
+                        jsonb_build_object('name', sim.title, 'description', sim.description)
+                    ),
+                    '{{}}'::jsonb
+                ) as mapping
+                FROM simulations sim
+                WHERE sim.active = true
+                  AND sim.practice_simulation = true
+                  AND sim.department_id IN (SELECT DISTINCT department_id FROM filt)
             )
             SELECT json_build_object(
                 'mode', '{view_mode}',
                 'hasData', CASE WHEN '{view_mode}' = 'ta' THEN EXISTS(SELECT 1 FROM ta_rows) ELSE EXISTS(SELECT 1 FROM inst_rows) END,
-                'items', CASE 
+                'items', CASE
                     WHEN '{view_mode}' = 'ta' THEN COALESCE((SELECT json_agg(item ORDER BY (item->>'simulationTitle')) FROM ta_rows), '[]'::json)
                     ELSE COALESCE((SELECT json_agg(item ORDER BY has_passed_bool ASC, sort_cohort_name NULLS LAST, sort_title) FROM inst_rows), '[]'::json)
                 END,
                 'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping), '{{}}'::jsonb),
-                'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping), '{{}}'::jsonb)
+                'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping), '{{}}'::jsonb),
+                'history', (SELECT history FROM attempt_history_data),
+                'simulation_mapping', (SELECT mapping FROM simulation_mapping_data)
             ) AS result
         """
 
@@ -783,7 +936,7 @@ class PageQueries:
                             SELECT MAX(ap.avg_score_completed) >= spp.pass_pct
                             FROM attempt_progress ap
                             JOIN sim_pass_pct spp ON spp.simulation_id = ap.simulation_id
-                            WHERE ap.profile_id = {profile_param_placeholder} 
+                            WHERE ap.profile_id = {profile_param_placeholder}
                               AND ap.simulation_id = sm.simulation_id
                             GROUP BY spp.pass_pct
                         ), false),
@@ -797,7 +950,7 @@ class PageQueries:
                                             SELECT MAX(ap.avg_score_completed) >= spp.pass_pct
                                             FROM attempt_progress ap
                                             JOIN sim_pass_pct spp ON spp.simulation_id = ap.simulation_id
-                                            WHERE ap.profile_id = {profile_param_placeholder} 
+                                            WHERE ap.profile_id = {profile_param_placeholder}
                                               AND ap.simulation_id = sm.simulation_id
                                             GROUP BY spp.pass_pct
                                           ), false) THEN 'passed'
@@ -817,9 +970,9 @@ class PageQueries:
                         'cohortName', NULL,
                         'updatedAt', sm.updated_at,
                         'lastActivityTs', (
-                            SELECT MAX(ap.last_time) 
+                            SELECT MAX(ap.last_time)
                             FROM attempt_progress ap
-                            WHERE ap.profile_id = {profile_param_placeholder} 
+                            WHERE ap.profile_id = {profile_param_placeholder}
                               AND ap.simulation_id = sm.simulation_id
                         ),
                         'hasActivity', (COALESCE(aps.chats, 0) > 0),
@@ -845,15 +998,223 @@ class PageQueries:
                     ) AS sort_last_activity
                 FROM sim_meta sm
                 LEFT JOIN sim_persona_meta spm ON spm.simulation_id = sm.simulation_id
-                LEFT JOIN activity_by_profile_sim aps 
+                LEFT JOIN activity_by_profile_sim aps
                        ON aps.profile_id = {profile_param_placeholder}
                       AND aps.simulation_id = sm.simulation_id
+            ),
+            -- Embedded: Attempt history data for practice
+            practice_attempt_rollup AS (
+                SELECT
+                    a.attempt_id,
+                    a.simulation_id,
+                    MIN(a.attempt_created_at) AS attempt_date,
+                    COUNT(*) FILTER (WHERE a.completed AND a.grade_percent IS NOT NULL) AS completed_with_grade,
+                    MAX(a.sim_scenario_count) AS sim_scenario_count,
+                    SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
+                    array_agg(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct,
+                    array_agg(DISTINCT a.leaf_scenario_id) FILTER (WHERE a.leaf_scenario_id IS NOT NULL) AS leaf_scenarios_seen,
+                    MIN(a.department_id::text)::uuid AS department_id
+                FROM filt_all a
+                GROUP BY a.attempt_id, a.simulation_id
+            ),
+            practice_attempt_joined AS (
+                SELECT
+                    ar.*,
+                    ap.profile_id,
+                    sa.archived AS is_archived,
+                    sa.infinite_mode,
+                    s.title AS simulation_name,
+                    ARRAY(SELECT ss.scenario_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id ORDER BY ss.position) AS scenario_ids_assigned,
+                    s.practice_simulation,
+                    CASE
+                        WHEN r.points IS NULL OR r.points = 0 THEN NULL
+                        ELSE ROUND((r.pass_points::numeric / r.points::numeric) * 100.0)::int
+                    END AS pass_pct,
+                    (p.first_name || ' ' || p.last_name) AS profile_name
+                FROM practice_attempt_rollup ar
+                JOIN simulation_attempts sa ON sa.id = ar.attempt_id
+                LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
+                JOIN simulations s ON s.id = ar.simulation_id
+                LEFT JOIN rubrics r ON r.id = s.rubric_id
+                JOIN profiles p ON p.id = ap.profile_id
+            ),
+            practice_final_rows AS (
+                SELECT
+                    aj.attempt_id,
+                    aj.simulation_id,
+                    aj.profile_id,
+                    aj.profile_name,
+                    aj.simulation_name,
+                    aj.scenario_ids_assigned,
+                    aj.is_archived,
+                    aj.practice_simulation,
+                    aj.pass_pct,
+                    aj.infinite_mode,
+                    aj.attempt_date,
+                    aj.department_id,
+                    CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
+                    COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
+                    CASE
+                        WHEN aj.infinite_mode THEN
+                            CASE GREATEST(array_length(aj.leaf_scenarios_seen, 1), 0)
+                                WHEN 0 THEN NULL
+                                ELSE ROUND(aj.sum_grade_percent_zero_fill / GREATEST(array_length(aj.leaf_scenarios_seen, 1), 1))::int
+                            END
+                        ELSE
+                            CASE COALESCE(aj.sim_scenario_count, 0)
+                                WHEN 0 THEN NULL
+                                ELSE CASE
+                                        WHEN aj.completed_with_grade = 0 THEN NULL
+                                        ELSE ROUND(aj.sum_grade_percent_zero_fill / NULLIF(aj.sim_scenario_count, 0))::int
+                                    END
+                            END
+                    END AS score_percent,
+                    (NOT aj.is_archived) AS show_view,
+                    (NOT aj.is_archived) AND (
+                        aj.infinite_mode
+                        OR (aj.sim_scenario_count IS NOT NULL
+                            AND COALESCE(aj.completed_with_grade, 0) < aj.sim_scenario_count)
+                    ) AS show_continue,
+                    aj.persona_ids_distinct
+                FROM practice_attempt_joined aj
+            ),
+            practice_persona_labels AS (
+                SELECT
+                    fr.attempt_id,
+                    COALESCE(ARRAY_AGG(per.name ORDER BY per.name), ARRAY[]::text[]) AS persona_names,
+                    COALESCE(ARRAY_AGG(per.color ORDER BY per.name), ARRAY[]::text[]) AS persona_colors
+                FROM practice_final_rows fr
+                LEFT JOIN LATERAL (
+                    SELECT DISTINCT per.name, per.color
+                    FROM unnest(fr.persona_ids_distinct) AS pid
+                    JOIN personas per ON per.id = pid
+                ) per ON TRUE
+                GROUP BY fr.attempt_id
+            ),
+            practice_scenario_names AS (
+                SELECT
+                    fr.attempt_id,
+                    COALESCE(sn.names, ARRAY[]::text[]) AS names
+                FROM practice_final_rows fr
+                LEFT JOIN LATERAL (
+                    SELECT ARRAY_AGG(s.name ORDER BY s.name) AS names
+                    FROM unnest(fr.scenario_ids_assigned) sid
+                    JOIN scenarios s ON s.id = sid
+                ) sn ON TRUE
+            ),
+            attempt_history_data AS (
+                SELECT COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'attemptId', fr.attempt_id::text,
+                            'date', fr.attempt_date,
+                            'profileId', fr.profile_id::text,
+                            'profileName', fr.profile_name,
+                            'simulationName', fr.simulation_name,
+                            'numScenarios', fr.num_scenarios,
+                            'numScenariosCompleted', fr.num_scenarios_completed,
+                            'infiniteMode', fr.infinite_mode,
+                            'personaNames', COALESCE(pl.persona_names, ARRAY[]::text[]),
+                            'personaColors', COALESCE(pl.persona_colors, ARRAY[]::text[]),
+                            'score', fr.score_percent,
+                            'simulation_id', fr.simulation_id::text,
+                            'scenario_ids', COALESCE(fr.scenario_ids_assigned, ARRAY[]::uuid[])::text[],
+                            'scenario_titles', COALESCE(sn.names, ARRAY[]::text[]),
+                            'isArchived', fr.is_archived,
+                            'showView', fr.show_view,
+                            'showContinue', fr.show_continue,
+                            'practiceSimulation', COALESCE(fr.practice_simulation, false),
+                            'passPct', fr.pass_pct,
+                            'department_id', fr.department_id::text
+                        )
+                        ORDER BY fr.attempt_date DESC, fr.attempt_id
+                    ),
+                    '[]'::json
+                ) AS history
+                FROM practice_final_rows fr
+                LEFT JOIN practice_persona_labels pl ON pl.attempt_id = fr.attempt_id
+                LEFT JOIN practice_scenario_names sn ON sn.attempt_id = fr.attempt_id
+            ),
+            simulation_mapping_data AS (
+                SELECT COALESCE(
+                    jsonb_object_agg(
+                        sim.id::text,
+                        jsonb_build_object('name', sim.title, 'description', sim.description)
+                    ),
+                    '{{}}'::jsonb
+                ) as mapping
+                FROM simulations sim
+                WHERE sim.active = true
+                  AND sim.practice_simulation = true
+                  AND (cardinality({dept_param_placeholder}) = 0 OR sim.department_id = ANY({dept_param_placeholder}))
+            ),
+            persona_mapping_data AS (
+                SELECT COALESCE(
+                    jsonb_object_agg(
+                        p.id::text,
+                        jsonb_build_object(
+                            'name', p.name,
+                            'description', p.description,
+                            'color', p.color,
+                            'icon', p.icon
+                        )
+                    ),
+                    '{{}}'::jsonb
+                ) as mapping
+                FROM personas p
+                WHERE p.active = true
+                  AND (cardinality({dept_param_placeholder}) = 0 OR p.department_id = ANY({dept_param_placeholder}))
+            ),
+            scenario_mapping_data AS (
+                SELECT COALESCE(
+                    jsonb_object_agg(
+                        s.id::text,
+                        jsonb_build_object('name', s.name, 'description', s.problem_statement)
+                    ),
+                    '{{}}'::jsonb
+                ) as mapping
+                FROM scenarios s
+                WHERE s.active = true
+                  AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
+            ),
+            parameter_mapping_data AS (
+                SELECT COALESCE(
+                    jsonb_object_agg(
+                        par.id::text,
+                        jsonb_build_object('name', par.name, 'description', par.description)
+                    ),
+                    '{{}}'::jsonb
+                ) as mapping
+                FROM parameters par
+                WHERE par.active = true
+                  AND par.default_parameter = false
+                  AND (cardinality({dept_param_placeholder}) = 0 OR par.department_id = ANY({dept_param_placeholder}))
+            ),
+            parameter_item_mapping_data AS (
+                SELECT COALESCE(
+                    jsonb_object_agg(
+                        pi.id::text,
+                        jsonb_build_object(
+                            'name', pi.name,
+                            'description', pi.description,
+                            'parameter_id', pi.parameter_id::text,
+                            'parameter_name', par.name
+                        )
+                    ),
+                    '{{}}'::jsonb
+                ) as mapping
+                FROM parameter_items pi
+                JOIN parameters par ON pi.parameter_id = par.id
+                WHERE par.active = true
+                  AND par.default_parameter = false
+                  AND pi.default_item = true
+                  AND (cardinality({dept_param_placeholder}) = 0 OR par.department_id = ANY({dept_param_placeholder}))
             )
             SELECT json_build_object(
                 'mode', 'practice',
                 'hasData', EXISTS(SELECT 1 FROM rows),
                 'items', COALESCE((
-                    SELECT json_agg(item 
+                    SELECT json_agg(item
                         ORDER BY
                             (item->>'simulationTitle') ILIKE 'general%' DESC,
                             sort_last_activity DESC NULLS LAST,
@@ -862,7 +1223,13 @@ class PageQueries:
                     FROM rows
                 ), '[]'::json),
                 'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping), '{{}}'::jsonb),
-                'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping), '{{}}'::jsonb)
+                'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping), '{{}}'::jsonb),
+                'history', (SELECT history FROM attempt_history_data),
+                'simulation_mapping', (SELECT mapping FROM simulation_mapping_data),
+                'persona_mapping', (SELECT mapping FROM persona_mapping_data),
+                'scenario_mapping', (SELECT mapping FROM scenario_mapping_data),
+                'parameter_mapping', (SELECT mapping FROM parameter_mapping_data),
+                'parameter_item_mapping', (SELECT mapping FROM parameter_item_mapping_data)
             ) AS result
         """
 

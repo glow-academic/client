@@ -4,42 +4,30 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.scenario_queries import ScenarioQueries
-from app.schemas.base import (
-    CohortMappingItem,
-    DepartmentMappingItem,
-    DocumentMappingItem,
-    ObjectiveMappingItem,
-    ParameterItemMappingItem,
-    ParameterMappingItem,
-    PersonaMappingItem,
-    ScenarioMappingItem,
-    SimulationMappingItem,
-)
-from app.schemas.scenarios import (
-    CreateScenarioRequest,
-    CreateScenarioResponse,
-    DeleteScenarioRequest,
-    DeleteScenarioResponse,
-    DuplicateScenarioRequest,
-    DuplicateScenarioResponse,
-    GenerateScenarioAIRequest,
-    GenerateScenarioAIResponse,
-    ParameterDetail,
-    RandomizeScenarioRequest,
-    RandomizeScenarioResponse,
-    ScenarioDetailDefaultRequest,
-    ScenarioDetailRequest,
-    ScenarioDetailResponse,
-    ScenarioItem,
-    ScenariosFilters,
-    ScenariosListResponse,
-    UpdateScenarioRequest,
-    UpdateScenarioResponse,
-)
+from app.schemas.base import (CohortMappingItem, DepartmentMappingItem,
+                              DocumentMappingItem, ObjectiveMappingItem,
+                              ParameterItemMappingItem, ParameterMappingItem,
+                              PersonaMappingItem, ScenarioMappingItem,
+                              SimulationMappingItem)
+from app.schemas.scenarios import (CreateScenarioRequest,
+                                   CreateScenarioResponse,
+                                   DeleteScenarioRequest,
+                                   DeleteScenarioResponse,
+                                   DuplicateScenarioRequest,
+                                   DuplicateScenarioResponse,
+                                   GenerateScenarioAIRequest,
+                                   GenerateScenarioAIResponse, ParameterDetail,
+                                   RandomizeScenarioRequest,
+                                   RandomizeScenarioResponse,
+                                   ScenarioDetailDefaultRequest,
+                                   ScenarioDetailRequest,
+                                   ScenarioDetailResponse, ScenarioItem,
+                                   ScenariosFilters, ScenariosListResponse,
+                                   UpdateScenarioRequest,
+                                   UpdateScenarioResponse)
 from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
@@ -191,6 +179,61 @@ class ScenarioService(BaseService):
         cohort_mapping = {}
         persona_mapping = {}
 
+        # Parse mappings from first row (same across all rows)
+        if result:
+            first_row = result[0]
+
+            # Parse objective mapping from JSONB with type safety
+            if first_row.get("objective_mapping") and isinstance(
+                first_row["objective_mapping"], dict
+            ):
+                for oid, odata in first_row["objective_mapping"].items():
+                    if isinstance(odata, dict):
+                        objective_mapping[oid] = ObjectiveMappingItem(
+                            name=odata.get("name", ""),
+                            description=odata.get("description", ""),
+                        )
+
+            # Parse parameter_item mapping from JSONB with type safety
+            if first_row.get("parameter_item_mapping") and isinstance(
+                first_row["parameter_item_mapping"], dict
+            ):
+                for pid, pdata in first_row["parameter_item_mapping"].items():
+                    if isinstance(pdata, dict):
+                        parameter_item_mapping[pid] = ParameterItemMappingItem(
+                            name=pdata.get("name", ""),
+                            description=pdata.get("description", ""),
+                            parameter_id=str(pdata["parameter_id"])
+                            if pdata.get("parameter_id")
+                            else "",
+                            parameter_name=pdata.get("parameter_name", ""),
+                        )
+
+            # Parse cohort mapping from JSONB with type safety
+            if first_row.get("cohort_mapping") and isinstance(
+                first_row["cohort_mapping"], dict
+            ):
+                for cid, cdata in first_row["cohort_mapping"].items():
+                    if isinstance(cdata, dict):
+                        cohort_mapping[cid] = CohortMappingItem(
+                            name=cdata.get("name", ""),
+                            description=cdata.get("description", ""),
+                        )
+
+            # Parse persona mapping from JSONB with type safety
+            if first_row.get("persona_mapping") and isinstance(
+                first_row["persona_mapping"], dict
+            ):
+                for persona_id, pdata in first_row["persona_mapping"].items():
+                    if isinstance(pdata, dict):
+                        persona_mapping[persona_id] = PersonaMappingItem(
+                            name=pdata.get("name", ""),
+                            description=pdata.get("description", ""),
+                            color=pdata.get("color", ""),
+                            icon=pdata.get("icon", ""),
+                        )
+
+        # Build scenario items
         for row in result:
             objective_ids = row["objective_ids"] or []
             parameter_item_ids = [str(pid) for pid in (row["parameter_item_ids"] or [])]
@@ -217,72 +260,6 @@ class ScenarioService(BaseService):
                     cohort_ids=cohort_ids,
                 )
             )
-
-        # Get objective names for mapping
-        if objective_ids_to_fetch := list(
-            set([oid for s in scenarios for oid in s.objective_ids])
-        ):
-            # Parse composite keys
-            obj_parts = [oid.split("_") for oid in objective_ids_to_fetch]
-            scenario_idx_pairs = [
-                (parts[0], int(parts[1])) for parts in obj_parts if len(parts) == 2
-            ]
-
-            if scenario_idx_pairs:
-                scenario_ids = [pair[0] for pair in scenario_idx_pairs]
-                idxs = [pair[1] for pair in scenario_idx_pairs]
-
-                query, params = self.queries.get_objective_mapping(scenario_ids, idxs)
-                obj_result = await self.conn.fetch(query, *params)
-
-                for row in obj_result:
-                    objective_mapping[row["objective_id"]] = ObjectiveMappingItem(
-                        name=row["objective"], description=row["objective"]
-                    )
-
-        # Get parameter_item names for mapping
-        if parameter_item_ids_to_fetch := list(
-            set([pid for s in scenarios for pid in s.parameter_item_ids])
-        ):
-            query, params = self.queries.get_parameter_item_mapping(
-                parameter_item_ids_to_fetch
-            )
-            param_item_result = await self.conn.fetch(query, *params)
-
-            for row in param_item_result:
-                parameter_item_mapping[str(row["id"])] = ParameterItemMappingItem(
-                    name=row["name"],
-                    description=row["description"] or "",
-                    parameter_id=str(row["parameter_id"]),
-                    parameter_name=row["parameter_name"],
-                )
-
-        # Get cohort names for mapping
-        if cohort_ids_to_fetch := list(
-            set([cid for s in scenarios for cid in s.cohort_ids])
-        ):
-            query, params = self.queries.get_cohort_mapping(cohort_ids_to_fetch)
-            cohort_result = await self.conn.fetch(query, *params)
-
-            for row in cohort_result:
-                cohort_mapping[str(row["id"])] = CohortMappingItem(
-                    name=row["name"], description=row["description"]
-                )
-
-        # Get persona names for mapping
-        if persona_ids_to_fetch := list(
-            set([s.persona_id for s in scenarios if s.persona_id])
-        ):
-            query, params = self.queries.get_persona_mapping(persona_ids_to_fetch)
-            persona_result = await self.conn.fetch(query, *params)
-
-            for row in persona_result:
-                persona_mapping[str(row["id"])] = PersonaMappingItem(
-                    name=row["name"],
-                    description=row["description"],
-                    color=row["color"],
-                    icon=row["icon"],
-                )
 
         return ScenariosListResponse(
             scenarios=scenarios,
@@ -1329,15 +1306,10 @@ class ScenarioService(BaseService):
         import logging
         import random
 
-        from rapidfuzz import fuzz  # type: ignore
-
         from app.utils.text_helpers import (
-            normalize_text,
-            read_document_content_for_similarity,
-            tokenize,
-            weighted_choice,
-            weighted_sample_without_replacement,
-        )
+            normalize_text, read_document_content_for_similarity, tokenize,
+            weighted_choice, weighted_sample_without_replacement)
+        from rapidfuzz import fuzz  # type: ignore
 
         logger = logging.getLogger(__name__)
         targets_set = {t.lower() for t in (targets or [])}
@@ -1593,29 +1565,18 @@ class ScenarioService(BaseService):
         if not scenarios:
             return []
 
-        # Get persona associations
-        scenario_ids = [str(sc["id"]) for sc in scenarios]
-        persona_query, persona_params = self.queries.get_scenario_personas_batch(
-            scenario_ids
-        )
-        persona_links = await self.conn.fetch(persona_query, *persona_params)
-        scenario_persona_map = {
-            str(link["scenario_id"]): str(link["persona_id"]) for link in persona_links
-        }
-
-        # Score and build results
+        # Score and build results (persona_id now included in main query)
         results = []
         for sc in scenarios:
             score = self._score_scenario(
                 q_norm, toks, sc["name"], sc["problem_statement"]
             )
-            persona_id = scenario_persona_map.get(str(sc["id"]))
             results.append(
                 {
                     "id": str(sc["id"]),
                     "name": sc["name"],
                     "problem_statement": sc["problem_statement"],
-                    "persona_id": persona_id,
+                    "persona_id": str(sc["persona_id"]) if sc["persona_id"] else None,
                     "default_scenario": sc["default_scenario"],
                     "score": score,
                 }

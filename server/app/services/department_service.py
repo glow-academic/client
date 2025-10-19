@@ -3,27 +3,22 @@
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.department_queries import DepartmentQueries
 from app.schemas.base import AgentMapping, AgentMappingItem
-from app.schemas.departments import (
-    AgentRoles,
-    CreateDepartmentRequest,
-    CreateDepartmentResponse,
-    DeleteDepartmentRequest,
-    DeleteDepartmentResponse,
-    DepartmentDetailRequest,
-    DepartmentDetailResponse,
-    DepartmentItem,
-    DepartmentsFilters,
-    DepartmentsListResponse,
-    DuplicateDepartmentRequest,
-    DuplicateDepartmentResponse,
-    UpdateDepartmentRequest,
-    UpdateDepartmentResponse,
-)
+from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
+                                     CreateDepartmentResponse,
+                                     DeleteDepartmentRequest,
+                                     DeleteDepartmentResponse,
+                                     DepartmentDetailRequest,
+                                     DepartmentDetailResponse, DepartmentItem,
+                                     DepartmentsFilters,
+                                     DepartmentsListResponse,
+                                     DuplicateDepartmentRequest,
+                                     DuplicateDepartmentResponse,
+                                     UpdateDepartmentRequest,
+                                     UpdateDepartmentResponse)
 from app.services.base import BaseService, with_cache
 
 
@@ -86,8 +81,8 @@ class DepartmentService(BaseService):
         Returns:
             DepartmentDetailResponse
         """
-        # Get department info with permissions and stats
-        query, params = self.queries.get_department_detail_with_stats(
+        # Get complete department data with JSONB mappings (consolidated query)
+        query, params = self.queries.get_department_detail_complete(
             request.departmentId, request.profileId
         )
         dept_row = await self.conn.fetchrow(query, *params)
@@ -95,11 +90,7 @@ class DepartmentService(BaseService):
         if not dept_row:
             raise ValueError(f"Department {request.departmentId} not found")
 
-        # Get agent role assignments (8 roles)
-        query, params = self.queries.get_department_agent_roles(request.departmentId)
-        agent_rows = await self.conn.fetch(query, *params)
-
-        # Build agent_roles object
+        # Parse JSONB agent_roles
         agent_roles_dict: dict[str, str] = {
             "title": "",
             "scenario": "",
@@ -111,21 +102,25 @@ class DepartmentService(BaseService):
             "hint": "",
         }
 
-        for row in agent_rows:
-            agent_roles_dict[row["role"]] = row["agent_id"]
+        agent_roles_data = dept_row.get("agent_roles_json")
+        if agent_roles_data and isinstance(agent_roles_data, dict):
+            for role, agent_id in agent_roles_data.items():
+                if role in agent_roles_dict:
+                    agent_roles_dict[role] = agent_id
 
-        # Get valid agents for selection
-        query, params = self.queries.get_valid_agents()
-        agent_rows = await self.conn.fetch(query, *params)
-
+        # Parse JSONB agent_mapping
         valid_agent_ids: list[str] = []
         agent_mapping: AgentMapping = {}
 
-        for row in agent_rows:
-            valid_agent_ids.append(row["agent_id"])
-            agent_mapping[row["agent_id"]] = AgentMappingItem(
-                name=row["name"], description=row["description"]
-            )
+        agent_mapping_data = dept_row.get("agent_mapping")
+        if agent_mapping_data and isinstance(agent_mapping_data, dict):
+            for agent_id, agent_info in agent_mapping_data.items():
+                if isinstance(agent_info, dict):
+                    valid_agent_ids.append(agent_id)
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=agent_info.get("name", ""),
+                        description=agent_info.get("description", ""),
+                    )
 
         return DepartmentDetailResponse(
             title=dept_row["title"],

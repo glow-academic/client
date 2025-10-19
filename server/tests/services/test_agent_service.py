@@ -1,502 +1,251 @@
-"""
-Tests for app.services.agent_service
-"""
+"""Real database integration tests for AgentService."""
 
-from unittest.mock import MagicMock
-
+import asyncpg
 import pytest
-from sqlmodel import Session
-
-from app.services.agent_service import *
-
-
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_agent_service`")
-class TestGet_Agent_Service:
-    """Tests for get_agent_service function."""
-
-    def test_get_agent_service_success(self):
-        """Test successful get_agent_service execution."""
-        # TODO: Implement test for get_agent_service
-        assert False, "IMPLEMENT: Test for get_agent_service"
-
-    def test_get_agent_service_error(self):
-        """Test get_agent_service error handling."""
-        # TODO: Implement error test for get_agent_service
-        assert False, "IMPLEMENT: Error test for get_agent_service"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_agents_list`")
-class TestGet_Agents_List:
-    """Tests for get_agents_list function."""
-
-    def test_get_agents_list_success(self):
-        """Test successful get_agents_list execution."""
-        # TODO: Implement test for get_agents_list
-        assert False, "IMPLEMENT: Test for get_agents_list"
-
-    def test_get_agents_list_error(self):
-        """Test get_agents_list error handling."""
-        # TODO: Implement error test for get_agents_list
-        assert False, "IMPLEMENT: Error test for get_agents_list"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_agent_detail`")
-class TestGet_Agent_Detail:
-    """Tests for get_agent_detail function."""
-
-    def test_get_agent_detail_success(self):
-        """Test successful get_agent_detail execution."""
-        # TODO: Implement test for get_agent_detail
-        assert False, "IMPLEMENT: Test for get_agent_detail"
-
-    def test_get_agent_detail_error(self):
-        """Test get_agent_detail error handling."""
-        # TODO: Implement error test for get_agent_detail
-        assert False, "IMPLEMENT: Error test for get_agent_detail"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_agent`")
-class TestCreate_Agent:
-    """Tests for create_agent function."""
-
-    def test_create_agent_success(self):
-        """Test successful create_agent execution."""
-        # TODO: Implement test for create_agent
-        assert False, "IMPLEMENT: Test for create_agent"
-
-    def test_create_agent_error(self):
-        """Test create_agent error handling."""
-        # TODO: Implement error test for create_agent
-        assert False, "IMPLEMENT: Error test for create_agent"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `update_agent`")
-class TestUpdate_Agent:
-    """Tests for update_agent function."""
-
-    def test_update_agent_success(self):
-        """Test successful update_agent execution."""
-        # TODO: Implement test for update_agent
-        assert False, "IMPLEMENT: Test for update_agent"
-
-    def test_update_agent_error(self):
-        """Test update_agent error handling."""
-        # TODO: Implement error test for update_agent
-        assert False, "IMPLEMENT: Error test for update_agent"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `duplicate_agent`")
-class TestDuplicate_Agent:
-    """Tests for duplicate_agent function."""
-
-    def test_duplicate_agent_success(self):
-        """Test successful duplicate_agent execution."""
-        # TODO: Implement test for duplicate_agent
-        assert False, "IMPLEMENT: Test for duplicate_agent"
-
-    def test_duplicate_agent_error(self):
-        """Test duplicate_agent error handling."""
-        # TODO: Implement error test for duplicate_agent
-        assert False, "IMPLEMENT: Error test for duplicate_agent"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `delete_agent`")
-class TestDelete_Agent:
-    """Tests for delete_agent function."""
-
-    def test_delete_agent_success(self):
-        """Test successful delete_agent execution."""
-        # TODO: Implement test for delete_agent
-        assert False, "IMPLEMENT: Test for delete_agent"
-
-    def test_delete_agent_error(self):
-        """Test delete_agent error handling."""
-        # TODO: Implement error test for delete_agent
-        assert False, "IMPLEMENT: Error test for delete_agent"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_classification_run_context`")
-class TestGet_Classification_Run_Context:
-    """Tests for get_classification_run_context function."""
-
-    def test_get_classification_run_context_success(self):
-        """Test successful get_classification_run_context execution."""
-        # TODO: Implement test for get_classification_run_context
-        assert False, "IMPLEMENT: Test for get_classification_run_context"
-
-    def test_get_classification_run_context_error(self):
-        """Test get_classification_run_context error handling."""
-        # TODO: Implement error test for get_classification_run_context
-        assert False, "IMPLEMENT: Error test for get_classification_run_context"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `batch_update_document_types`")
-class TestBatch_Update_Document_Types:
-    """Tests for batch_update_document_types function."""
-
-    def test_batch_update_document_types_success(self):
-        """Test successful batch_update_document_types execution."""
-        # TODO: Implement test for batch_update_document_types
-        assert False, "IMPLEMENT: Test for batch_update_document_types"
-
-    def test_batch_update_document_types_error(self):
-        """Test batch_update_document_types error handling."""
-        # TODO: Implement error test for batch_update_document_types
-        assert False, "IMPLEMENT: Error test for batch_update_document_types"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_scenario_run_context`")
-class TestGet_Scenario_Run_Context:
-    """Tests for get_scenario_run_context function."""
-
-    def test_get_scenario_run_context_success(self):
-        """Test successful get_scenario_run_context execution."""
-        # TODO: Implement test for get_scenario_run_context
-        assert False, "IMPLEMENT: Test for get_scenario_run_context"
-
-    def test_get_scenario_run_context_error(self):
-        """Test get_scenario_run_context error handling."""
-        # TODO: Implement error test for get_scenario_run_context
-        assert False, "IMPLEMENT: Error test for get_scenario_run_context"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_simulation_run_context`")
-class TestGet_Simulation_Run_Context:
-    """Tests for get_simulation_run_context function."""
-
-    def test_get_simulation_run_context_success(self):
-        """Test successful get_simulation_run_context execution."""
-        # TODO: Implement test for get_simulation_run_context
-        assert False, "IMPLEMENT: Test for get_simulation_run_context"
-
-    def test_get_simulation_run_context_error(self):
-        """Test get_simulation_run_context error handling."""
-        # TODO: Implement error test for get_simulation_run_context
-        assert False, "IMPLEMENT: Error test for get_simulation_run_context"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_grading_run_context`")
-class TestGet_Grading_Run_Context:
-    """Tests for get_grading_run_context function."""
-
-    def test_get_grading_run_context_success(self):
-        """Test successful get_grading_run_context execution."""
-        # TODO: Implement test for get_grading_run_context
-        assert False, "IMPLEMENT: Test for get_grading_run_context"
-
-    def test_get_grading_run_context_error(self):
-        """Test get_grading_run_context error handling."""
-        # TODO: Implement error test for get_grading_run_context
-        assert False, "IMPLEMENT: Error test for get_grading_run_context"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_simulation_messages`")
-class TestGet_Simulation_Messages:
-    """Tests for get_simulation_messages function."""
-
-    def test_get_simulation_messages_success(self):
-        """Test successful get_simulation_messages execution."""
-        # TODO: Implement test for get_simulation_messages
-        assert False, "IMPLEMENT: Test for get_simulation_messages"
-
-    def test_get_simulation_messages_error(self):
-        """Test get_simulation_messages error handling."""
-        # TODO: Implement error test for get_simulation_messages
-        assert False, "IMPLEMENT: Error test for get_simulation_messages"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `create_simulation_hint`")
-class TestCreate_Simulation_Hint:
-    """Tests for create_simulation_hint function."""
-
-    def test_create_simulation_hint_success(self):
-        """Test successful create_simulation_hint execution."""
-        # TODO: Implement test for create_simulation_hint
-        assert False, "IMPLEMENT: Test for create_simulation_hint"
-
-    def test_create_simulation_hint_error(self):
-        """Test create_simulation_hint error handling."""
-        # TODO: Implement error test for create_simulation_hint
-        assert False, "IMPLEMENT: Error test for create_simulation_hint"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_hint_run_context`")
-class TestGet_Hint_Run_Context:
-    """Tests for get_hint_run_context function."""
-
-    def test_get_hint_run_context_success(self):
-        """Test successful get_hint_run_context execution."""
-        # TODO: Implement test for get_hint_run_context
-        assert False, "IMPLEMENT: Test for get_hint_run_context"
-
-    def test_get_hint_run_context_error(self):
-        """Test get_hint_run_context error handling."""
-        # TODO: Implement error test for get_hint_run_context
-        assert False, "IMPLEMENT: Error test for get_hint_run_context"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_guardrail_run_context`")
-class TestGet_Guardrail_Run_Context:
-    """Tests for get_guardrail_run_context function."""
-
-    def test_get_guardrail_run_context_success(self):
-        """Test successful get_guardrail_run_context execution."""
-        # TODO: Implement test for get_guardrail_run_context
-        assert False, "IMPLEMENT: Test for get_guardrail_run_context"
-
-    def test_get_guardrail_run_context_error(self):
-        """Test get_guardrail_run_context error handling."""
-        # TODO: Implement error test for get_guardrail_run_context
-        assert False, "IMPLEMENT: Error test for get_guardrail_run_context"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_title_run_context`")
-class TestGet_Title_Run_Context:
-    """Tests for get_title_run_context function."""
-
-    def test_get_title_run_context_success(self):
-        """Test successful get_title_run_context execution."""
-        # TODO: Implement test for get_title_run_context
-        assert False, "IMPLEMENT: Test for get_title_run_context"
-
-    def test_get_title_run_context_error(self):
-        """Test get_title_run_context error handling."""
-        # TODO: Implement error test for get_title_run_context
-        assert False, "IMPLEMENT: Error test for get_title_run_context"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
-
-
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `fetcher`")
-class TestFetcher:
-    """Tests for fetcher function."""
-
-    def test_fetcher_success(self):
-        """Test successful fetcher execution."""
-        # TODO: Implement test for fetcher
-        assert False, "IMPLEMENT: Test for fetcher"
-
-    def test_fetcher_error(self):
-        """Test fetcher error handling."""
-        # TODO: Implement error test for fetcher
-        assert False, "IMPLEMENT: Error test for fetcher"
+from app.schemas.agents import AgentDetailRequest, AgentsListRequest
+from app.services.agent_service import AgentService
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+
+pytestmark = pytest.mark.asyncio
+
+
+# ============================================================================
+# READ METHOD TESTS
+# ============================================================================
+
+
+async def test_get_agents_list(db: asyncpg.Connection, disable_cache: None) -> None:
+    """Test getting agents list with model mapping."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+    
+    assert result is not None
+    assert result.agents is not None
+    assert result.model_mapping is not None
+    assert len(result.agents) >= 0
+    
+    # If there are agents, verify model mapping is populated
+    if result.agents:
+        for agent in result.agents:
+            assert agent.agent_id is not None
+            assert agent.name is not None
+            assert agent.model_id is not None
+            # Verify model mapping exists for agent's model
+            if agent.model_id:
+                assert agent.model_id in result.model_mapping
+
+
+async def test_get_agents_list_empty_for_new_department(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test agents list works even with no agents (system-wide, so should have seed data)."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+    
+    # Agents are system-wide, should have seed data
+    assert result is not None
+    assert result.agents is not None
+    assert result.model_mapping is not None
+
+
+async def test_get_agents_list_permissions_superadmin(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test superadmin has edit/delete permissions."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+    
+    assert result is not None
+    # Superadmin should have edit and delete permissions
+    for agent in result.agents:
+        assert agent.can_edit is True
+        assert agent.can_delete is True
+
+
+async def test_get_agents_list_permissions_non_superadmin(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test non-superadmin does not have edit/delete permissions."""
+    # Create a non-superadmin profile
+    ta_id = await db.fetchval(
+        "INSERT INTO profiles(first_name, last_name, alias, role) "
+        "VALUES('Test', 'TA', 'test_ta_agent', 'ta') RETURNING id"
+    )
+    
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=str(ta_id)))
+    
+    assert result is not None
+    # TA should not have edit or delete permissions
+    for agent in result.agents:
+        assert agent.can_edit is False
+        assert agent.can_delete is False
+
+
+async def test_get_agent_detail(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting agent detail with debug info and models."""
+    # First get an agent from the list
+    profile_id = await get_superadmin_alias(db)
+    svc = AgentService(db)
+    list_result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+    
+    if not list_result.agents:
+        pytest.skip("No agents in seed data")
+    
+    agent_id = list_result.agents[0].agent_id
+    
+    # Get agent detail
+    result = await svc.get_agent_detail(
+        AgentDetailRequest(agentId=agent_id, profileId=profile_id)
+    )
+    
+    assert result is not None
+    assert result.name is not None
+    assert result.description is not None
+    assert result.system_prompt is not None
+    assert result.temperature is not None
+    assert result.model_id is not None
+    assert result.reasoning is not None
+    assert result.valid_model_ids is not None
+    assert result.reasoning_options is not None
+    assert result.debug_info is not None  # May be empty list
+    assert result.model_mapping is not None
+    
+    # Verify model mapping contains valid models
+    assert len(result.valid_model_ids) >= 0
+    assert len(result.model_mapping) >= 0
+    
+    # Verify agent's current model is in the mapping
+    if result.model_id:
+        assert result.model_id in result.model_mapping
+
+
+async def test_get_agent_detail_no_debug_info(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test agent detail works without debug info."""
+    profile_id = await get_superadmin_alias(db)
+    
+    # Create a new agent without any debug info
+    agent_id = await db.fetchval(
+        "INSERT INTO agents(name, description, system_prompt, temperature, model_id, reasoning) "
+        "SELECT 'Test Agent', 'Test Description', 'Test Prompt', 0.7, id, 'none' "
+        "FROM models WHERE active = true LIMIT 1 RETURNING id"
+    )
+    
+    svc = AgentService(db)
+    result = await svc.get_agent_detail(
+        AgentDetailRequest(agentId=str(agent_id), profileId=profile_id)
+    )
+    
+    assert result is not None
+    assert result.name == "Test Agent"
+    assert result.debug_info == []  # No debug info
+
+
+async def test_get_agent_detail_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test agent detail raises error for non-existent agent."""
+    fake_id = "00000000-0000-0000-0000-000000000000"
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = AgentService(db)
+    
+    with pytest.raises(ValueError, match="not found"):
+        await svc.get_agent_detail(
+            AgentDetailRequest(agentId=fake_id, profileId=profile_id)
+        )
+
+
+async def test_get_agent_detail_model_mapping_complete(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test agent detail includes all active models in mapping."""
+    # Get any agent
+    profile_id = await get_superadmin_alias(db)
+    svc = AgentService(db)
+    list_result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+    
+    if not list_result.agents:
+        pytest.skip("No agents in seed data")
+    
+    agent_id = list_result.agents[0].agent_id
+    
+    # Get agent detail
+    result = await svc.get_agent_detail(
+        AgentDetailRequest(agentId=agent_id, profileId=profile_id)
+    )
+    
+    # Get count of active models from database
+    active_models_count = await db.fetchval(
+        "SELECT COUNT(*) FROM models WHERE active = true"
+    )
+    
+    # Verify valid_model_ids matches active models count
+    assert len(result.valid_model_ids) == active_models_count
+    
+    # Verify all models have entries in model_mapping
+    # (model_mapping should include ALL models, not just active ones)
+    assert len(result.model_mapping) >= active_models_count
+
+
+async def test_agents_list_single_query_optimization(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that agents list optimization works correctly with model info."""
+    profile_id = await get_superadmin_alias(db)
+    
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+    
+    assert result is not None
+    
+    # Verify each agent has a model_id and it's in the mapping
+    for agent in result.agents:
+        if agent.model_id:  # Some agents might not have a model
+            model_info = result.model_mapping.get(agent.model_id)
+            assert model_info is not None
+            assert model_info.name is not None
+            # Description might be empty string, but should exist
+            assert model_info.description is not None
+
+
+async def test_agent_detail_single_query_optimization(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that agent detail optimization returns all data in correct format."""
+    profile_id = await get_superadmin_alias(db)
+    svc = AgentService(db)
+    list_result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+    
+    if not list_result.agents:
+        pytest.skip("No agents in seed data")
+    
+    agent_id = list_result.agents[0].agent_id
+    result = await svc.get_agent_detail(
+        AgentDetailRequest(agentId=agent_id, profileId=profile_id)
+    )
+    
+    # Verify JSONB arrays are properly parsed
+    assert isinstance(result.debug_info, list)
+    assert isinstance(result.valid_model_ids, list)
+    assert isinstance(result.model_mapping, dict)
+    
+    # Verify debug info structure if present
+    for debug_item in result.debug_info:
+        assert debug_item.created_at is not None
+        assert debug_item.model_id is not None
+        assert debug_item.content is not None
+    
+    # Verify all valid_model_ids have entries in model_mapping
+    for model_id in result.valid_model_ids:
+        assert model_id in result.model_mapping

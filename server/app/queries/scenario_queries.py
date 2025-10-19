@@ -9,7 +9,7 @@ class ScenarioQueries:
     def list_scenarios(
         self, department_ids: list[str], profile_id: str
     ) -> tuple[str, list[Any]]:
-        """Build query for scenarios list with all relationships."""
+        """Build query for scenarios list with all relationships and embedded mappings."""
         query = """
         WITH scenario_objectives AS (
             SELECT 
@@ -53,60 +53,120 @@ class ScenarioQueries:
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
+        ),
+        scenario_data AS (
+            SELECT 
+                s.id as scenario_id,
+                s.name as title,
+                s.problem_statement,
+                s.active,
+                s.default_scenario,
+                s.generated,
+                st.parent_id::text as parent_scenario_id,
+                COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
+                sp.persona_id,
+                COALESCE(spar.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
+                COALESCE(ss.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
+                COALESCE(ss.num_simulations, 0) as num_simulations,
+                COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
+                CASE 
+                    WHEN up.role IN ('admin', 'superadmin') THEN true
+                    ELSE false
+                END as can_edit,
+                CASE 
+                    WHEN up.role IN ('admin', 'superadmin') AND COALESCE(ss.num_simulations, 0) = 0 THEN true
+                    ELSE false
+                END as can_delete,
+                true as can_duplicate
+            FROM scenarios s
+            LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
+            LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
+            LEFT JOIN scenario_parameters spar ON spar.scenario_id = s.id
+            LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id
+            LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
+            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id
+            CROSS JOIN user_profile up
+            WHERE s.department_id = ANY($1)
+        ),
+        objective_mapping_data AS (
+            SELECT '{}'::jsonb as mapping
+        ),
+        all_parameter_item_ids AS (
+            SELECT DISTINCT unnest(parameter_item_ids) as parameter_item_id
+            FROM scenario_data
+        ),
+        parameter_item_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    pi.id::text,
+                    jsonb_build_object(
+                        'name', pi.name,
+                        'description', COALESCE(pi.description, ''),
+                        'parameter_id', pi.parameter_id::text,
+                        'parameter_name', p.name
+                    )
+                ) FILTER (WHERE pi.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE pi.id IN (SELECT parameter_item_id FROM all_parameter_item_ids)
+        ),
+        all_cohort_ids AS (
+            SELECT DISTINCT unnest(cohort_ids) as cohort_id
+            FROM scenario_data
+            WHERE cohort_ids IS NOT NULL
+        ),
+        cohort_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    c.id::text,
+                    jsonb_build_object(
+                        'name', c.title,
+                        'description', COALESCE(c.description, '')
+                    )
+                ) FILTER (WHERE c.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM cohorts c
+            WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
+        ),
+        all_persona_ids AS (
+            SELECT DISTINCT persona_id
+            FROM scenario_data
+            WHERE persona_id IS NOT NULL
+        ),
+        persona_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'name', p.name,
+                        'description', COALESCE(p.description, ''),
+                        'color', p.color,
+                        'icon', p.icon
+                    )
+                ) FILTER (WHERE p.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM personas p
+            WHERE p.id IN (SELECT persona_id FROM all_persona_ids)
         )
         SELECT 
-            s.id as scenario_id,
-            s.name as title,
-            s.problem_statement,
-            s.active,
-            s.default_scenario,
-            s.generated,
-            st.parent_id::text as parent_scenario_id,
-            COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
-            sp.persona_id,
-            COALESCE(spar.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
-            COALESCE(ss.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
-            COALESCE(ss.num_simulations, 0) as num_simulations,
-            COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
-            CASE 
-                WHEN up.role IN ('admin', 'superadmin') THEN true
-                ELSE false
-            END as can_edit,
-            CASE 
-                WHEN up.role IN ('admin', 'superadmin') AND COALESCE(ss.num_simulations, 0) = 0 THEN true
-                ELSE false
-            END as can_delete,
-            true as can_duplicate
-        FROM scenarios s
-        LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
-        LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
-        LEFT JOIN scenario_parameters spar ON spar.scenario_id = s.id
-        LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id
-        LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
-        LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id
-        CROSS JOIN user_profile up
-        WHERE s.department_id = ANY($1)
-        ORDER BY s.name
+            sd.*,
+            om.mapping as objective_mapping,
+            pim.mapping as parameter_item_mapping,
+            cm.mapping as cohort_mapping,
+            pm.mapping as persona_mapping
+        FROM scenario_data sd
+        CROSS JOIN objective_mapping_data om
+        CROSS JOIN parameter_item_mapping_data pim
+        CROSS JOIN cohort_mapping_data cm
+        CROSS JOIN persona_mapping_data pm
+        ORDER BY sd.title
         """
 
         return (query, [department_ids, profile_id])
-
-    def get_objective_mapping(
-        self, scenario_ids: list[str], idxs: list[int]
-    ) -> tuple[str, list[Any]]:
-        """Build query for objective mapping."""
-        query = """
-        SELECT 
-            scenario_id,
-            idx,
-            objective,
-            (scenario_id::text || '_' || idx::text) as objective_id
-        FROM scenario_objectives
-        WHERE (scenario_id, idx) IN (
-            SELECT unnest($1::uuid[]), unnest($2::integer[])
-        )
-        """
-        return (query, [scenario_ids, idxs])
 
     def get_parameter_item_mapping(
         self, parameter_item_ids: list[str]
@@ -125,11 +185,6 @@ class ScenarioQueries:
         WHERE pi.id = ANY($1)
         """
         return (query, [parameter_item_ids])
-
-    def get_cohort_mapping(self, cohort_ids: list[str]) -> tuple[str, list[Any]]:
-        """Build query for cohort mapping."""
-        query = "SELECT id, title as name, COALESCE(description, '') as description FROM cohorts WHERE id = ANY($1)"
-        return (query, [cohort_ids])
 
     def get_persona_mapping(self, persona_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for persona mapping."""
@@ -653,6 +708,7 @@ class ScenarioQueries:
         """
         Build fuzzy search query for scenarios by name and problem_statement.
         Uses dynamic WHERE clause built by search utilities.
+        Includes persona_id in main query to avoid N+1.
 
         Params: Built dynamically by search utilities, plus limit at end
         """
@@ -661,24 +717,14 @@ class ScenarioQueries:
                 s.id,
                 s.name,
                 s.problem_statement,
-                s.default_scenario
+                s.default_scenario,
+                sp.persona_id
             FROM scenarios s
+            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             WHERE {where_clause}
             LIMIT ${{param_count}}
         """
         return (query, [limit])
-
-    def get_scenario_personas_batch(
-        self, scenario_ids: list[str]
-    ) -> tuple[str, list[Any]]:
-        """Build query to get persona associations for multiple scenarios."""
-        query = """
-            SELECT scenario_id, persona_id
-            FROM scenario_personas
-            WHERE scenario_id = ANY($1::uuid[])
-                AND active = true
-        """
-        return (query, [scenario_ids])
 
     def get_scenario_overview_complete(self, scenario_id: Any) -> tuple[str, list[Any]]:
         """Build optimized query to get scenario overview with all related data in ONE query.
