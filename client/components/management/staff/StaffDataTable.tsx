@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -241,15 +242,30 @@ export function StaffDataTable({
           <DataTableColumnHeader column={column} title="Cohorts" />
         ),
         cell: ({ row }) => {
-          const cohortIds = row.getValue("cohort_ids") as string[];
+          const staff = row.original;
+          const cohortIds = staff.cohort_ids;
+
           if (!cohortIds.length) {
             return <span className="text-xs text-muted-foreground">None</span>;
           }
+
           return (
-            <div className="text-sm">
-              {cohortIds.map((id) => cohortMapping[id]?.name || id).join(", ")}
+            <div className="flex gap-1 overflow-x-auto max-w-[150px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {cohortIds.map((id) => (
+                <Badge
+                  key={id}
+                  className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-100 whitespace-nowrap flex-shrink-0"
+                >
+                  {cohortMapping[id]?.name || id}
+                </Badge>
+              ))}
             </div>
           );
+        },
+        filterFn: (row, _, value) => {
+          const cohortIds = row.getValue("cohort_ids") as string[];
+          if (!value || value.length === 0) return true;
+          return cohortIds.some((id) => value.includes(id));
         },
       },
       {
@@ -273,6 +289,30 @@ export function StaffDataTable({
         },
         enableSorting: true,
         sortingFn: "datetime",
+      },
+      {
+        id: "requests",
+        accessorFn: (row) => row.requests_in_last_day ?? 0,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Requests / Day" />
+        ),
+        cell: ({ row }) => {
+          const staff = row.original;
+          const used = staff.requests_in_last_day ?? 0;
+          const limit = staff.requests_per_day;
+          const limitText =
+            limit === null || limit === undefined ? "∞" : String(limit);
+          return (
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-medium">
+                {used}/{limitText}
+              </span>
+              <span className="text-xs text-muted-foreground">used</span>
+            </div>
+          );
+        },
+        enableSorting: true,
+        enableColumnFilter: false,
       },
     ],
     [cohortMapping]
