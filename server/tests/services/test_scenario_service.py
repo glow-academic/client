@@ -71,6 +71,148 @@ async def test_scenarios_list_only_returns_root_scenarios(
         assert is_root, f"Scenario {scenario.scenario_id} should be marked as root in scenario_tree"
 
 
+async def test_scenario_can_edit_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_edit permission logic for scenarios."""
+    dept_id = await get_cs_dept_id(db)
+    superadmin_id = await get_superadmin_alias(db)
+    
+    # Get an admin profile (not superadmin)
+    admin_id_result = await db.fetchval("""
+        SELECT p.id FROM profiles p
+        JOIN profile_departments pd ON pd.profile_id = p.id
+        WHERE p.role = 'admin' AND pd.department_id = $1
+        LIMIT 1
+    """, dept_id)
+    
+    if not admin_id_result:
+        pytest.skip("No admin profile found for testing")
+    
+    admin_id = str(admin_id_result)
+    
+    # Execute as superadmin
+    svc = ScenarioService(db)
+    resp_superadmin = await svc.get_scenarios_list(
+        ScenariosFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    
+    # Execute as admin
+    resp_admin = await svc.get_scenarios_list(
+        ScenariosFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules (in order of precedence):
+    # 1. Scenarios used in active simulations (num_simulations > 0): cannot edit (highest priority)
+    # 2. Scenarios with default_scenario=true: only superadmin can edit (if not used)
+    # 3. Other scenarios: admin and superadmin can edit
+    
+    for scenario_sa in resp_superadmin.scenarios:
+        # Find same scenario in admin response
+        scenario_admin = next(
+            (s for s in resp_admin.scenarios if s.scenario_id == scenario_sa.scenario_id),
+            None
+        )
+        
+        if not scenario_admin:
+            continue
+        
+        # Rule 1 (Highest priority): Scenarios used in active simulations - nobody can edit
+        if scenario_sa.num_simulations > 0:
+            assert scenario_sa.can_edit == False, \
+                f"Scenario {scenario_sa.title} used in {scenario_sa.num_simulations} simulations should not be editable (superadmin)"
+            assert scenario_admin.can_edit == False, \
+                f"Scenario {scenario_sa.title} used in {scenario_admin.num_simulations} simulations should not be editable (admin)"
+        
+        # Rule 2: Unused default scenarios - only superadmin can edit
+        elif scenario_sa.default_scenario and scenario_sa.num_simulations == 0:
+            assert scenario_sa.can_edit == True, \
+                f"Superadmin should be able to edit unused default scenario {scenario_sa.title}"
+            assert scenario_admin.can_edit == False, \
+                f"Admin should NOT be able to edit default scenario {scenario_sa.title}"
+        
+        # Rule 3: Unused, non-default scenarios - both can edit
+        elif not scenario_sa.default_scenario and scenario_sa.num_simulations == 0:
+            assert scenario_sa.can_edit == True, \
+                f"Superadmin should be able to edit unused non-default scenario {scenario_sa.title}"
+            assert scenario_admin.can_edit == True, \
+                f"Admin should be able to edit unused non-default scenario {scenario_sa.title}"
+
+
+async def test_scenario_can_delete_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_delete permission logic for scenarios."""
+    dept_id = await get_cs_dept_id(db)
+    superadmin_id = await get_superadmin_alias(db)
+    
+    # Get an admin profile (not superadmin)
+    admin_id_result = await db.fetchval("""
+        SELECT p.id FROM profiles p
+        JOIN profile_departments pd ON pd.profile_id = p.id
+        WHERE p.role = 'admin' AND pd.department_id = $1
+        LIMIT 1
+    """, dept_id)
+    
+    if not admin_id_result:
+        pytest.skip("No admin profile found for testing")
+    
+    admin_id = str(admin_id_result)
+    
+    # Execute as superadmin
+    svc = ScenarioService(db)
+    resp_superadmin = await svc.get_scenarios_list(
+        ScenariosFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    
+    # Execute as admin
+    resp_admin = await svc.get_scenarios_list(
+        ScenariosFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Scenarios with ANY links in simulation_scenarios (active or inactive): cannot delete
+    # 2. Scenarios with default_scenario=true: only superadmin can delete (if no links)
+    # 3. Other scenarios: admin and superadmin can delete (if no links)
+    
+    for scenario_sa in resp_superadmin.scenarios:
+        # Get total links count from database
+        total_links = await db.fetchval("""
+            SELECT COUNT(*) FROM simulation_scenarios 
+            WHERE scenario_id = $1
+        """, scenario_sa.scenario_id)
+        
+        # Find same scenario in admin response
+        scenario_admin = next(
+            (s for s in resp_admin.scenarios if s.scenario_id == scenario_sa.scenario_id),
+            None
+        )
+        
+        if not scenario_admin:
+            continue
+        
+        # Rule 1: Scenarios with any simulation links - nobody can delete
+        if total_links > 0:
+            assert scenario_sa.can_delete == False, \
+                f"Scenario {scenario_sa.title} with {total_links} simulation links should not be deletable (superadmin)"
+            assert scenario_admin.can_delete == False, \
+                f"Scenario {scenario_sa.title} with {total_links} simulation links should not be deletable (admin)"
+        
+        # Rule 2: Unlinked default scenarios - only superadmin can delete
+        elif scenario_sa.default_scenario and total_links == 0:
+            assert scenario_sa.can_delete == True, \
+                f"Superadmin should be able to delete unlinked default scenario {scenario_sa.title}"
+            assert scenario_admin.can_delete == False, \
+                f"Admin should NOT be able to delete default scenario {scenario_sa.title}"
+        
+        # Rule 3: Unlinked, non-default scenarios - both can delete
+        elif not scenario_sa.default_scenario and total_links == 0:
+            assert scenario_sa.can_delete == True, \
+                f"Superadmin should be able to delete unlinked non-default scenario {scenario_sa.title}"
+            assert scenario_admin.can_delete == True, \
+                f"Admin should be able to delete unlinked non-default scenario {scenario_sa.title}"
+
+
 # ============================================================================
 # GET SCENARIO DETAIL TESTS
 # ============================================================================

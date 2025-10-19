@@ -35,6 +35,13 @@ class ScenarioQueries:
             WHERE ss.active = true
             GROUP BY ss.scenario_id
         ),
+        scenario_all_simulation_links AS (
+            SELECT 
+                ss.scenario_id,
+                COUNT(*) as total_links
+            FROM simulation_scenarios ss
+            GROUP BY ss.scenario_id
+        ),
         scenario_cohorts AS (
             SELECT DISTINCT
                 ss.scenario_id,
@@ -70,11 +77,17 @@ class ScenarioQueries:
                 COALESCE(ss.num_simulations, 0) as num_simulations,
                 COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
                 CASE 
-                    WHEN up.role IN ('admin', 'superadmin') THEN true
+                    WHEN up.role IN ('admin', 'superadmin') 
+                         AND (s.default_scenario = false OR up.role = 'superadmin')
+                         AND COALESCE(ss.num_simulations, 0) = 0 
+                    THEN true
                     ELSE false
                 END as can_edit,
                 CASE 
-                    WHEN up.role IN ('admin', 'superadmin') AND COALESCE(ss.num_simulations, 0) = 0 THEN true
+                    WHEN up.role IN ('admin', 'superadmin') 
+                         AND (s.default_scenario = false OR up.role = 'superadmin')
+                         AND COALESCE(sal.total_links, 0) = 0 
+                    THEN true
                     ELSE false
                 END as can_delete,
                 true as can_duplicate
@@ -85,6 +98,7 @@ class ScenarioQueries:
             LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
             LEFT JOIN scenario_parameters spar ON spar.scenario_id = s.id
             LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id
+            LEFT JOIN scenario_all_simulation_links sal ON sal.scenario_id = s.id
             LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id
             CROSS JOIN user_profile up
