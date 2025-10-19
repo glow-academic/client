@@ -758,10 +758,17 @@ export default function Simulation({ simulationId }: SimulationProps) {
                     onDrop={(e) => !isReadonly && handleDrop(e, scenarioId)}
                   >
                     {/* Header: Title and Active Switch */}
-                    <div className="flex items-start justify-between gap-2 pb-3">
-                      <h4 className="font-medium text-sm flex-1">
-                        {scenarioData.name || "Unnamed Scenario"}
-                      </h4>
+                    <div className="flex items-start justify-between gap-2 ">
+                      <div>
+                        <h4 className="font-medium text-sm flex-1 line-clamp-1">
+                          {scenarioData.name || "Unnamed Scenario"}
+                        </h4>
+                        {/* Description - Right under title */}
+                        <p className="text-xs text-muted-foreground line-clamp-4 mt-2">
+                          {scenarioData.description ||
+                            "No description provided"}
+                        </p>
+                      </div>
                       {isExistingScenario && !isReadonly && (
                         <Switch
                           checked={scenarioActiveStates[scenarioId] ?? true}
@@ -775,15 +782,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
                       )}
                     </div>
 
-                    {/* Description - Grows to fill space */}
-                    <div className="flex-grow">
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {scenarioData.description || "No description provided"}
-                      </p>
-                    </div>
-
                     {/* Bottom section - Statistics and Actions */}
-                    <div className="mt-3 space-y-2">
+                    <div className="space-y-2">
                       {/* Statistics Row - Only for existing scenarios */}
                       {isExistingScenario && scenarioStats && (
                         <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">

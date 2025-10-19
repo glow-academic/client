@@ -972,21 +972,22 @@ class SimulationQueries:
             FROM simulation_scenarios_base sb
             LEFT JOIN scenario_statistics stats ON stats.scenario_id = sb.scenario_id
         ),
-        valid_scenarios AS (
-            SELECT ARRAY_AGG(s.id::text) as ids
-            FROM scenarios s, user_department_ids udi
+        valid_scenarios_list AS (
+            -- Get scenarios that are marked as roots in scenario_tree (parent_id = child_id)
+            -- and are active and in user's departments
+            SELECT DISTINCT
+                s.id,
+                s.name,
+                s.problem_statement
+            FROM scenarios s
+            CROSS JOIN user_department_ids udi
+            JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
             WHERE s.department_id = ANY(udi.ids) 
               AND s.active = true
-              AND (
-                NOT EXISTS (
-                  SELECT 1 FROM scenario_tree st 
-                  WHERE st.child_id = s.id AND st.parent_id != st.child_id
-                )
-                OR EXISTS (
-                  SELECT 1 FROM scenario_tree st 
-                  WHERE st.child_id = s.id AND st.parent_id = st.child_id
-                )
-              )
+        ),
+        valid_scenarios AS (
+            SELECT ARRAY_AGG(id::text) as ids
+            FROM valid_scenarios_list
         ),
         valid_rubrics_data AS (
             SELECT 
@@ -1081,7 +1082,7 @@ class SimulationQueries:
                 p.icon as persona_icon
             FROM scenario_personas sp
             JOIN personas p ON p.id = sp.persona_id
-            WHERE sp.scenario_id IN (SELECT scenario_id FROM simulation_scenarios_base)
+            WHERE sp.scenario_id IN (SELECT id FROM valid_scenarios_list)
               AND sp.active = true
         ),
         scenario_documents_data AS (
@@ -1089,9 +1090,18 @@ class SimulationQueries:
                 sd.scenario_id,
                 ARRAY_AGG(sd.document_id) as document_ids
             FROM scenario_documents sd
-            WHERE sd.scenario_id IN (SELECT scenario_id FROM simulation_scenarios_base)
+            WHERE sd.scenario_id IN (SELECT id FROM valid_scenarios_list)
               AND sd.active = true
             GROUP BY sd.scenario_id
+        ),
+        scenario_parameter_items_data AS (
+            SELECT 
+                spi.scenario_id,
+                ARRAY_AGG(DISTINCT spi.parameter_item_id) as parameter_item_ids
+            FROM scenario_parameter_items spi
+            WHERE spi.scenario_id IN (SELECT id FROM valid_scenarios_list)
+              AND spi.active = true
+            GROUP BY spi.scenario_id
         ),
         all_document_ids AS (
             SELECT DISTINCT unnest(document_ids) as document_id
@@ -1108,10 +1118,10 @@ class SimulationQueries:
         scenario_mapping_complete AS (
             SELECT COALESCE(
                 jsonb_object_agg(
-                    sb.scenario_id::text,
+                    vsl.id::text,
                     jsonb_build_object(
-                        'name', sb.name,
-                        'description', COALESCE(sb.problem_statement, ''),
+                        'name', vsl.name,
+                        'description', COALESCE(vsl.problem_statement, ''),
                         'persona_id', spd.persona_id::text,
                         'persona_mapping', CASE 
                             WHEN spd.persona_id IS NOT NULL THEN
@@ -1149,12 +1159,13 @@ class SimulationQueries:
                                 )
                             )
                             FROM parameter_items_data pid
-                            WHERE pid.id = ANY(sb.parameter_item_ids)),
+                            WHERE pid.id = ANY(spid.parameter_item_ids)),
                             '{}'::jsonb
                         ),
-                        'parameter_item_ids', (
-                            SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
-                            FROM unnest(sb.parameter_item_ids) as pid
+                        'parameter_item_ids', COALESCE(
+                            (SELECT jsonb_agg(pid::text)
+                             FROM unnest(spid.parameter_item_ids) as pid),
+                            '[]'::jsonb
                         ),
                         'document_ids', COALESCE(
                             (SELECT jsonb_agg(did::text)
@@ -1165,9 +1176,10 @@ class SimulationQueries:
                 ),
                 '{}'::jsonb
             ) as scenario_mapping
-            FROM simulation_scenarios_base sb
-            LEFT JOIN scenario_persona_data spd ON spd.scenario_id = sb.scenario_id
-            LEFT JOIN scenario_documents_data sdd ON sdd.scenario_id = sb.scenario_id
+            FROM valid_scenarios_list vsl
+            LEFT JOIN scenario_persona_data spd ON spd.scenario_id = vsl.id
+            LEFT JOIN scenario_documents_data sdd ON sdd.scenario_id = vsl.id
+            LEFT JOIN scenario_parameter_items_data spid ON spid.scenario_id = vsl.id
         ),
         department_mapping_data AS (
             SELECT COALESCE(

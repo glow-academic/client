@@ -406,6 +406,99 @@ async def test_scenarios_list_json_parsing(
 
 
 @pytest.mark.asyncio
+async def test_scenario_mapping_includes_all_valid_scenarios(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that scenario_mapping includes all valid scenarios, not just those in the simulation."""
+    # Setup - Get test simulation
+    sim_result = await db.fetchrow("""
+        SELECT s.id 
+        FROM simulations s
+        WHERE s.active = true
+        LIMIT 1
+    """)
+    
+    if not sim_result:
+        pytest.skip("No simulations found in test database")
+
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+
+    # Execute
+    from app.schemas.simulations import SimulationDetailRequest
+
+    svc = SimulationService(db)
+    request = SimulationDetailRequest(
+        simulationId=simulation_id, profileId=profile_id
+    )
+    result = await svc.get_simulation_detail(request)
+
+    # Assert - scenario_mapping should have entries for all valid_scenario_ids
+    assert hasattr(result, "scenario_mapping")
+    assert hasattr(result, "valid_scenario_ids")
+    
+    # Every valid scenario ID should have a mapping entry
+    for scenario_id in result.valid_scenario_ids:
+        assert scenario_id in result.scenario_mapping, \
+            f"Valid scenario {scenario_id} should have mapping entry"
+        
+        scenario_item = result.scenario_mapping[scenario_id]
+        assert hasattr(scenario_item, "name")
+        assert hasattr(scenario_item, "description")
+        assert len(scenario_item.name) > 0, "Scenario should have a name"
+        # Description can be empty for some scenarios, but field should exist
+        assert scenario_item.description is not None
+
+
+@pytest.mark.asyncio
+async def test_scenario_mapping_resolves_to_root(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that scenario_mapping only includes root scenarios from scenario_tree."""
+    # Setup
+    sim_result = await db.fetchrow("SELECT id FROM simulations WHERE active = true LIMIT 1")
+    
+    if not sim_result:
+        pytest.skip("No simulations found in test database")
+
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+
+    # Execute
+    from app.schemas.simulations import SimulationDetailRequest
+
+    svc = SimulationService(db)
+    request = SimulationDetailRequest(
+        simulationId=simulation_id, profileId=profile_id
+    )
+    result = await svc.get_simulation_detail(request)
+
+    # Assert - All scenarios in mapping should be root scenarios
+    # Check a few scenarios to verify they are roots (parent_id = child_id or no parent)
+    for scenario_id in list(result.scenario_mapping.keys())[:10]:  # Check first 10
+        # Query to check if this is a root scenario
+        is_child = await db.fetchval("""
+            SELECT EXISTS (
+                SELECT 1 FROM scenario_tree 
+                WHERE child_id = $1 AND parent_id != child_id
+            )
+        """, scenario_id)
+        
+        # If it's a child of another scenario, it should not be in the mapping
+        # (unless it's also marked as a root with parent_id = child_id)
+        if is_child:
+            is_also_root = await db.fetchval("""
+                SELECT EXISTS (
+                    SELECT 1 FROM scenario_tree 
+                    WHERE child_id = $1 AND parent_id = child_id
+                )
+            """, scenario_id)
+            
+            assert is_also_root, \
+                f"Scenario {scenario_id} is a child but not marked as root in scenario_tree"
+
+
+@pytest.mark.asyncio
 async def test_scenario_ordering_active_first(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
