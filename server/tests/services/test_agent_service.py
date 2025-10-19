@@ -1,10 +1,12 @@
 """Real database integration tests for AgentService."""
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.agents import AgentDetailRequest, AgentsListRequest
-from app.services.agent_service import AgentService
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+from app.schemas.agents import AgentDetailRequest  # type: ignore
+from app.schemas.agents import AgentsListRequest  # type: ignore
+from app.services.agent_service import AgentService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

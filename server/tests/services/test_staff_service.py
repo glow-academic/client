@@ -1,11 +1,13 @@
 """Real database integration tests for StaffService."""
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.staff import (StaffDetailBulkRequest, StaffDetailRequest,
-                               StaffFilters)
-from app.services.staff_service import StaffService
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+from app.schemas.staff import StaffDetailBulkRequest  # type: ignore
+from app.schemas.staff import StaffDetailRequest  # type: ignore
+from app.schemas.staff import StaffFilters  # type: ignore
+from app.services.staff_service import StaffService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

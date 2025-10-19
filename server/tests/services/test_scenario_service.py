@@ -1,10 +1,12 @@
 """Real database integration tests for ScenarioService."""
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.scenarios import ScenarioDetailRequest, ScenariosFilters
-from app.services.scenario_service import ScenarioService
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+from app.schemas.scenarios import ScenarioDetailRequest  # type: ignore
+from app.schemas.scenarios import ScenariosFilters  # type: ignore
+from app.services.scenario_service import ScenarioService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

@@ -3,10 +3,11 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.services.assistant_service import AssistantService
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+from app.services.assistant_service import AssistantService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,11 +2,12 @@
 Tests for document_service - list methods.
 """
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.documents import (DocumentDetailBulkRequest,
-                                   DocumentDetailRequest, DocumentsFilters)
-from app.services.document_service import DocumentService
+from app.schemas.documents import DocumentDetailBulkRequest  # type: ignore
+from app.schemas.documents import DocumentDetailRequest  # type: ignore
+from app.schemas.documents import DocumentsFilters  # type: ignore
+from app.services.document_service import DocumentService  # type: ignore
 
 # --- Helper Functions ---
 

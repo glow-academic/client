@@ -2,15 +2,16 @@
 Tests for app.utils.chat
 """
 
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.chat import *
+from app.utils.chat import *  # type: ignore
 from sqlmodel import Session
 
 
 @pytest.fixture
-def mock_session():
+def mock_session() -> MagicMock:
     """Create a mock database session."""
     return MagicMock(spec=Session)
 
@@ -18,7 +19,7 @@ def mock_session():
 class TestGet_Simulation_Conversation_History:
     """Tests for get_simulation_conversation_history function."""
 
-    def test_get_simulation_conversation_history_success(self):
+    def test_get_simulation_conversation_history_success(self) -> None:
         """Test successful get_simulation_conversation_history execution."""
         from datetime import datetime
 
@@ -45,7 +46,7 @@ class TestGet_Simulation_Conversation_History:
         assert result[1]["role"] == "assistant"
         assert result[1]["content"] == "Hi there!"
 
-    def test_get_simulation_conversation_history_filters_errors(self):
+    def test_get_simulation_conversation_history_filters_errors(self) -> None:
         """Test that error messages are filtered out."""
         from datetime import datetime
 
@@ -70,7 +71,7 @@ class TestGet_Simulation_Conversation_History:
         assert len(result) == 1
         assert result[0]["content"] == "Hello"
 
-    def test_get_simulation_conversation_history_consecutive_responses(self):
+    def test_get_simulation_conversation_history_consecutive_responses(self) -> None:
         """Test handling of consecutive response messages."""
         from datetime import datetime
 
@@ -100,7 +101,7 @@ class TestGet_Simulation_Conversation_History:
         assert len(result) == 2
         assert result[1]["content"] == "Second response"
 
-    def test_get_simulation_conversation_history_empty(self):
+    def test_get_simulation_conversation_history_empty(self) -> None:
         """Test with empty messages list."""
         from app.utils.chat import get_simulation_conversation_history
 
@@ -112,7 +113,7 @@ class TestGet_Simulation_Conversation_History:
 class TestGet_Assistant_Conversation_History:
     """Tests for get_assistant_conversation_history function."""
 
-    def test_get_assistant_conversation_history_success(self):
+    def test_get_assistant_conversation_history_success(self) -> None:
         """Test successful get_assistant_conversation_history execution."""
         from datetime import datetime
 
@@ -130,7 +131,7 @@ class TestGet_Assistant_Conversation_History:
                 "created_at": datetime(2024, 1, 1, 10, 0, 1)
             }
         ]
-        tool_calls = []
+        tool_calls: list[dict[str, Any]] = []
         
         result = get_assistant_conversation_history(messages, tool_calls)
         
@@ -140,7 +141,7 @@ class TestGet_Assistant_Conversation_History:
         assert result[1]["role"] == "assistant"
         assert result[1]["content"] == "Hi there!"
 
-    def test_get_assistant_conversation_history_with_tool_calls(self):
+    def test_get_assistant_conversation_history_with_tool_calls(self) -> None:
         """Test get_assistant_conversation_history with tool calls."""
         from datetime import datetime
 
@@ -172,7 +173,7 @@ class TestGet_Assistant_Conversation_History:
         tool_items = [item for item in result if "type" in item and "function_call" in item["type"]]
         assert len(tool_items) >= 1
 
-    def test_get_assistant_conversation_history_empty(self):
+    def test_get_assistant_conversation_history_empty(self) -> None:
         """Test with empty messages and tool calls."""
         from app.utils.chat import get_assistant_conversation_history
 
@@ -180,7 +181,7 @@ class TestGet_Assistant_Conversation_History:
         
         assert result == []
 
-    def test_get_assistant_conversation_history_chronological_order(self):
+    def test_get_assistant_conversation_history_chronological_order(self) -> None:
         """Test that items are sorted chronologically."""
         from datetime import datetime
 
@@ -198,7 +199,7 @@ class TestGet_Assistant_Conversation_History:
                 "created_at": datetime(2024, 1, 1, 10, 0, 0)
             }
         ]
-        tool_calls = []
+        tool_calls: list[dict[str, Any]] = []
         
         result = get_assistant_conversation_history(messages, tool_calls)
         
@@ -211,7 +212,7 @@ class TestGet_Assistant_Conversation_History:
 class TestFormat_Chat_Scenario:
     """Tests for format_chat_scenario function."""
 
-    def test_format_chat_scenario_success(self):
+    def test_format_chat_scenario_success(self) -> None:
         """Test successful format_chat_scenario execution."""
         from app.utils.chat import format_chat_scenario
 
@@ -223,7 +224,7 @@ class TestFormat_Chat_Scenario:
         assert "The following is the scenario for the chat:" in result["content"]
         assert problem_statement in result["content"]
 
-    def test_format_chat_scenario_empty(self):
+    def test_format_chat_scenario_empty(self) -> None:
         """Test format_chat_scenario with empty string."""
         from app.utils.chat import format_chat_scenario
 

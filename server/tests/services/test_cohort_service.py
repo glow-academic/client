@@ -1,22 +1,20 @@
 """Real database integration tests for CohortService."""
 
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
-
-from app.schemas.cohorts import (
-    AddProfilesToCohortRequest,
-    CohortDetailRequest,
-    CohortsFilters,
-    CreateCohortRequest,
-    DeleteCohortRequest,
-    DuplicateCohortRequest,
-    LeaveCohortRequest,
-    RemoveProfilesFromCohortRequest,
-    UpdateCohortRequest,
-)
-from app.services.cohort_service import CohortService
+from app.schemas.cohorts import CohortDetailRequest  # type: ignore
+from app.schemas.cohorts import CohortsFilters  # type: ignore
+from app.schemas.cohorts import CreateCohortRequest  # type: ignore
+from app.schemas.cohorts import DeleteCohortRequest  # type: ignore
+from app.schemas.cohorts import DuplicateCohortRequest  # type: ignore
+from app.schemas.cohorts import LeaveCohortRequest  # type: ignore
+from app.schemas.cohorts import RemoveProfilesFromCohortRequest  # type: ignore
+from app.schemas.cohorts import UpdateCohortRequest  # type: ignore
+from app.schemas.cohorts import AddProfilesToCohortRequest
+from app.services.cohort_service import CohortService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

@@ -1,10 +1,11 @@
 """Real database integration tests for ProfileService."""
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.profile import ProfileContextRequest
-from app.services.profile_service import ProfileService
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+from app.schemas.profile import ProfileContextRequest  # type: ignore
+from app.services.profile_service import ProfileService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

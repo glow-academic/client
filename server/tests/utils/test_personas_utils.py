@@ -8,9 +8,9 @@ import pytest
 class TestFormat_Persona_Info:
     """Tests for format_persona_info function."""
 
-    def test_format_persona_info_success(self):
+    def test_format_persona_info_success(self) -> None:
         """Test successful format_persona_info execution."""
-        from app.utils.personas import format_persona_info
+        from app.utils.personas import format_persona_info  # type: ignore
 
         persona_data = {
             "name": "Test Student",
@@ -24,9 +24,9 @@ class TestFormat_Persona_Info:
         assert "A test student persona" in result["content"]
         assert "This is the profile of the student:" in result["content"]
 
-    def test_format_persona_info_no_description(self):
+    def test_format_persona_info_no_description(self) -> None:
         """Test format_persona_info with missing description."""
-        from app.utils.personas import format_persona_info
+        from app.utils.personas import format_persona_info  # type: ignore
 
         persona_data = {
             "name": "Test Student"

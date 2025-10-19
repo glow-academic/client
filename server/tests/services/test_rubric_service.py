@@ -2,10 +2,11 @@
 Tests for rubric_service - list methods.
 """
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.rubrics import RubricDetailRequest, RubricsFilters
-from app.services.rubric_service import RubricService
+from app.schemas.rubrics import RubricDetailRequest  # type: ignore
+from app.schemas.rubrics import RubricsFilters  # type: ignore
+from app.services.rubric_service import RubricService  # type: ignore
 
 # --- Helper Functions ---
 

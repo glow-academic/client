@@ -2,15 +2,17 @@
 Tests for app.utils.document
 """
 
+from pathlib import Path
+
 import pytest
 
 
 class TestFormat_Document_Info:
     """Tests for format_document_info function."""
 
-    def test_format_document_info_empty_list(self):
+    def test_format_document_info_empty_list(self) -> None:
         """Test format_document_info with empty document list."""
-        from app.utils.document import format_document_info
+        from app.utils.document import format_document_info  # type: ignore
 
         result = format_document_info([])
         
@@ -20,9 +22,9 @@ class TestFormat_Document_Info:
         assert result["content"][0]["type"] == "input_text"
         assert "No documents provided" in result["content"][0]["text"]
 
-    def test_format_document_info_text_file(self, tmp_path, monkeypatch):
+    def test_format_document_info_text_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Test format_document_info with text file."""
-        from app.utils.document import format_document_info
+        from app.utils.document import format_document_info  # type: ignore
 
         # Create a temporary text file
         test_file = tmp_path / "test.txt"
@@ -53,13 +55,13 @@ class TestFormat_Document_Info:
         assert "Test Content" in text_content[0]["text"]
 
     @pytest.mark.skip(reason="PDF/image handling requires complex mocking and file setup")
-    def test_format_document_info_pdf(self):
+    def test_format_document_info_pdf(self) -> None:
         """Test format_document_info with PDF file."""
         # This would require creating a valid PDF file and mocking pypdf
         pass
 
     @pytest.mark.skip(reason="Image handling requires complex file setup")
-    def test_format_document_info_image(self):
+    def test_format_document_info_image(self) -> None:
         """Test format_document_info with image file."""
         # This would require creating a valid image file
         pass

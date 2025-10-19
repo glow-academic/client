@@ -2,10 +2,11 @@
 Tests for persona_service - list and search methods.
 """
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.personas import PersonaDetailRequest, PersonasFilters
-from app.services.persona_service import PersonaService
+from app.schemas.personas import PersonaDetailRequest  # type: ignore
+from app.schemas.personas import PersonasFilters  # type: ignore
+from app.services.persona_service import PersonaService  # type: ignore
 
 # --- Helper Functions ---
 

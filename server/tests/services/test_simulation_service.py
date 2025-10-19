@@ -2,10 +2,10 @@
 Tests for simulation_service - list and search methods.
 """
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.simulations import SimulationsFilters
-from app.services.simulation_service import SimulationService
+from app.schemas.simulations import SimulationsFilters  # type: ignore
+from app.services.simulation_service import SimulationService  # type: ignore
 
 # --- Helper Functions ---
 

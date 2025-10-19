@@ -1,10 +1,12 @@
 """Real database integration tests for DepartmentService."""
 
-import asyncpg
+import asyncpg  # type: ignore
 import pytest
-from app.schemas.departments import DepartmentDetailRequest, DepartmentsFilters
-from app.services.department_service import DepartmentService
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+from app.schemas.departments import DepartmentDetailRequest  # type: ignore
+from app.schemas.departments import DepartmentsFilters  # type: ignore
+from app.services.department_service import DepartmentService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
