@@ -91,7 +91,9 @@ class CohortService(BaseService):
 
             # Parse profile mapping from first row (same for all cohorts)
             if not profile_mapping and row['profile_mapping']:
-                for pid, pdata in row['profile_mapping'].items():
+                # asyncpg returns JSONB as dict already, but handle both cases
+                pm = row['profile_mapping'] if isinstance(row['profile_mapping'], dict) else {}
+                for pid, pdata in pm.items():
                     profile_mapping[pid] = ProfileMappingItem(
                         name=pdata['name'],
                         description=pdata['description']
@@ -99,7 +101,9 @@ class CohortService(BaseService):
 
             # Parse simulation mapping from first row (same for all cohorts)
             if not simulation_mapping and row['simulation_mapping']:
-                for sid, sdata in row['simulation_mapping'].items():
+                # asyncpg returns JSONB as dict already, but handle both cases
+                sm = row['simulation_mapping'] if isinstance(row['simulation_mapping'], dict) else {}
+                for sid, sdata in sm.items():
                     simulation_mapping[sid] = SimulationMappingItem(
                         name=sdata['name'],
                         description=sdata['description']
@@ -136,7 +140,7 @@ class CohortService(BaseService):
 
         # Parse simulation mapping from JSONB
         simulation_mapping = {}
-        if cohort['simulation_mapping']:
+        if cohort['simulation_mapping'] and isinstance(cohort['simulation_mapping'], dict):
             for sid, sdata in cohort['simulation_mapping'].items():
                 simulation_mapping[sid] = SimulationMappingItem(
                     name=sdata['name'],
@@ -145,7 +149,7 @@ class CohortService(BaseService):
 
         # Parse profile mapping from JSONB
         profile_mapping = {}
-        if cohort['profile_mapping']:
+        if cohort['profile_mapping'] and isinstance(cohort['profile_mapping'], dict):
             for pid, pdata in cohort['profile_mapping'].items():
                 profile_mapping[pid] = ProfileMappingItem(
                     name=pdata['name'],
@@ -154,7 +158,7 @@ class CohortService(BaseService):
 
         # Parse department mapping from JSONB
         department_mapping = {}
-        if cohort['department_mapping']:
+        if cohort['department_mapping'] and isinstance(cohort['department_mapping'], dict):
             for did, ddata in cohort['department_mapping'].items():
                 department_mapping[did] = DepartmentMappingItem(
                     name=ddata['name'],
@@ -202,7 +206,7 @@ class CohortService(BaseService):
 
         # Parse simulation mapping from JSONB
         simulation_mapping = {}
-        if cohort['simulation_mapping']:
+        if cohort['simulation_mapping'] and isinstance(cohort['simulation_mapping'], dict):
             for sid, sdata in cohort['simulation_mapping'].items():
                 simulation_mapping[sid] = SimulationMappingItem(
                     name=sdata['name'],
@@ -211,7 +215,7 @@ class CohortService(BaseService):
 
         # Parse profile mapping from JSONB
         profile_mapping = {}
-        if cohort['profile_mapping']:
+        if cohort['profile_mapping'] and isinstance(cohort['profile_mapping'], dict):
             for pid, pdata in cohort['profile_mapping'].items():
                 profile_mapping[pid] = ProfileMappingItem(
                     name=pdata['name'],
@@ -220,7 +224,7 @@ class CohortService(BaseService):
 
         # Parse department mapping from JSONB
         department_mapping = {}
-        if cohort['department_mapping']:
+        if cohort['department_mapping'] and isinstance(cohort['department_mapping'], dict):
             for did, ddata in cohort['department_mapping'].items():
                 department_mapping[did] = DepartmentMappingItem(
                     name=ddata['name'],
@@ -268,32 +272,33 @@ class CohortService(BaseService):
 
         # Parse available profiles from JSONB
         available_profiles = []
-        if result['available_profiles']:
+        if result['available_profiles'] and isinstance(result['available_profiles'], list):
             for profile_data in result['available_profiles']:
-                available_profiles.append(
-                    StaffItem(
-                        profile_id=profile_data['profile_id'],
-                        first_name=profile_data['first_name'],
-                        last_name=profile_data['last_name'],
-                        alias=profile_data['alias'],
-                        name=profile_data['name'],
-                        role=profile_data['role'],
-                        email=profile_data['email'],
-                        initials=profile_data['initials'],
-                        active=profile_data['active'],
-                        lastActive=profile_data['lastActive'],
-                        cohort_ids=profile_data['cohort_ids'] or [],
-                        requests_per_day=profile_data['requests_per_day'],
-                        default_profile=profile_data['default_profile'],
-                        requests_in_last_day=profile_data['requests_in_last_day'],
-                        can_edit=profile_data['can_edit'],
-                        can_delete=profile_data['can_delete'],
+                if isinstance(profile_data, dict):
+                    available_profiles.append(
+                        StaffItem(
+                            profile_id=profile_data['profile_id'],
+                            first_name=profile_data['first_name'],
+                            last_name=profile_data['last_name'],
+                            alias=profile_data['alias'],
+                            name=profile_data['name'],
+                            role=profile_data['role'],
+                            email=profile_data['email'],
+                            initials=profile_data['initials'],
+                            active=profile_data['active'],
+                            lastActive=profile_data['lastActive'],
+                            cohort_ids=profile_data['cohort_ids'] or [],
+                            requests_per_day=profile_data['requests_per_day'],
+                            default_profile=profile_data['default_profile'],
+                            requests_in_last_day=profile_data['requests_in_last_day'],
+                            can_edit=profile_data['can_edit'],
+                            can_delete=profile_data['can_delete'],
+                        )
                     )
-                )
 
         # Parse department mapping from JSONB
         department_mapping: DepartmentMapping = {}
-        if result['department_mapping']:
+        if result['department_mapping'] and isinstance(result['department_mapping'], dict):
             for did, ddata in result['department_mapping'].items():
                 department_mapping[did] = DepartmentMappingItem(
                     name=ddata['name'],
@@ -482,7 +487,7 @@ class CohortService(BaseService):
 
         # Delete cohort
         query, params = self.queries.delete_cohort(request.cohortId)
-        await self.conn.execute(query, params)
+        await self.conn.execute(query, *params)
         # Transaction handled
 
         # Invalidate caches
@@ -509,7 +514,7 @@ class CohortService(BaseService):
 
         # Remove profile from cohort
         query, params = self.queries.leave_cohort(request.cohortId, request.profileId)
-        await self.conn.execute(query, params)
+        await self.conn.execute(query, *params)
         # Transaction handled
 
         # Invalidate caches

@@ -87,7 +87,6 @@ async def test_list_cohorts_empty_department(
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Service has SQL query bug: SELECT DISTINCT with ORDER BY")
 async def test_get_cohort_detail_success(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
@@ -338,7 +337,6 @@ async def test_duplicate_cohort_success(
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Service has query parameter mismatch (list vs unpacked args)")
 async def test_delete_cohort_success(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
@@ -390,7 +388,6 @@ async def test_delete_cohort_invalid_id(
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Service has query parameter mismatch (expects 2 args, 1 passed)")
 async def test_leave_cohort_success(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
@@ -545,7 +542,6 @@ async def test_list_cohorts_uses_campus_domain(
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Calls get_cohort_detail internally which has SQL bug: SELECT DISTINCT with ORDER BY")
 async def test_get_cohort_detail_default(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
@@ -565,7 +561,6 @@ async def test_get_cohort_detail_default(
     assert resp.title is not None
 
 
-@pytest.mark.skip(reason="Service has bug: KeyError 'id' at line 324")
 async def test_get_cohort_detail_with_profiles(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
@@ -587,7 +582,7 @@ async def test_get_cohort_detail_with_profiles(
 
     # Should return cohort with profiles
     assert resp.title == "New GTAs"
-    assert len(resp.members) >= 0
+    assert len(resp.available_profiles) >= 0
 
 
 # ============================================================================
