@@ -33,6 +33,44 @@ async def test_get_scenarios_list_returns_data(
     assert resp.persona_mapping is not None
 
 
+async def test_scenarios_list_only_returns_root_scenarios(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that scenarios list only returns scenarios marked as roots in scenario_tree."""
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
+
+    # Get count of root scenarios in database for this department
+    root_count = await db.fetchval("""
+        SELECT COUNT(DISTINCT st.parent_id)
+        FROM scenario_tree st
+        JOIN scenarios s ON s.id = st.parent_id
+        WHERE st.parent_id = st.child_id
+          AND s.department_id = $1
+    """, dept_id)
+
+    # Execute service call
+    svc = ScenarioService(db)
+    resp = await svc.get_scenarios_list(
+        ScenariosFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+
+    # Assert - should return only root scenarios
+    assert len(resp.scenarios) == root_count, \
+        f"Expected {root_count} root scenarios, got {len(resp.scenarios)}"
+    
+    # Verify each returned scenario is a root
+    for scenario in resp.scenarios:
+        is_root = await db.fetchval("""
+            SELECT EXISTS (
+                SELECT 1 FROM scenario_tree 
+                WHERE parent_id = $1 AND child_id = $1
+            )
+        """, scenario.scenario_id)
+        
+        assert is_root, f"Scenario {scenario.scenario_id} should be marked as root in scenario_tree"
+
+
 # ============================================================================
 # GET SCENARIO DETAIL TESTS
 # ============================================================================

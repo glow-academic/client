@@ -79,6 +79,8 @@ class ScenarioQueries:
                 END as can_delete,
                 true as can_duplicate
             FROM scenarios s
+            -- Only include root scenarios (parent_id = child_id in scenario_tree)
+            JOIN scenario_tree root_check ON root_check.parent_id = s.id AND root_check.child_id = s.id
             LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
             LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
             LEFT JOIN scenario_parameters spar ON spar.scenario_id = s.id
