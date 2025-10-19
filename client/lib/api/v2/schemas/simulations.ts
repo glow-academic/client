@@ -37,9 +37,9 @@ export const SimulationItemSchema = z.object({
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   can_duplicate: z.boolean(),
-  num_scenarios: z.number(),
   scenario_ids: z.array(z.string()),
   rubric_id: z.string(),
+  num_cohorts: z.number(), // Number of cohorts using this simulation
 });
 
 export const SimulationsListResponseSchema = z.object({

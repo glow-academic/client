@@ -499,6 +499,35 @@ async def test_scenario_mapping_resolves_to_root(
 
 
 @pytest.mark.asyncio
+async def test_simulations_list_shows_cohort_count(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that simulations list shows num_cohorts field."""
+    # Setup
+    dept_id = await get_test_dept_id(db)
+    profile_id = await get_test_profile_id(db)
+    
+    # Execute
+    svc = SimulationService(db)
+    filters = SimulationsFilters(departmentIds=[dept_id], profileId=profile_id)
+    result = await svc.get_simulations_list(filters)
+    
+    # Assert - Check num_cohorts field exists and matches database
+    for simulation in result.simulations:
+        # Count cohorts for this simulation in database
+        cohort_count = await db.fetchval("""
+            SELECT COUNT(DISTINCT cohort_id)
+            FROM cohort_simulations
+            WHERE simulation_id = $1
+        """, simulation.simulation_id)
+        
+        assert hasattr(simulation, "num_cohorts"), \
+            f"Simulation {simulation.name} should have num_cohorts field"
+        assert simulation.num_cohorts == cohort_count, \
+            f"Simulation {simulation.name} num_cohorts should be {cohort_count}, got {simulation.num_cohorts}"
+
+
+@pytest.mark.asyncio
 async def test_simulation_can_edit_permissions(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:

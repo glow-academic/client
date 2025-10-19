@@ -117,9 +117,9 @@ class SimulationService(BaseService):
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],
-                    num_scenarios=row["num_scenarios"],
                     scenario_ids=scenario_ids,
                     rubric_id=str(row["rubric_id"]),
+                    num_cohorts=row["num_cohorts"],
                 )
             )
 

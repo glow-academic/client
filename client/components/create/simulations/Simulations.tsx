@@ -285,7 +285,8 @@ export function Simulations() {
         </p>
         <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
-          {simulation.num_scenarios} scenarios
+          {simulation.num_cohorts}{" "}
+          {simulation.num_cohorts === 1 ? "cohort" : "cohorts"}
         </div>
       </CardContent>
     </Card>

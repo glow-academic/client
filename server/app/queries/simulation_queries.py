@@ -40,7 +40,8 @@ class SimulationQueries:
         simulation_all_cohort_links AS (
             SELECT 
                 cs.simulation_id,
-                COUNT(*) as total_cohort_links
+                COUNT(*) as total_cohort_links,
+                COUNT(DISTINCT cs.cohort_id) as num_cohorts
             FROM cohort_simulations cs
             GROUP BY cs.simulation_id
         ),
@@ -58,7 +59,8 @@ class SimulationQueries:
                 COALESCE(ss.num_scenarios, 0) as num_scenarios,
                 COALESCE(sa.attempt_count, 0) as attempt_count,
                 COALESCE(sacl.active_cohort_count, 0) as active_cohort_count,
-                COALESCE(salcl.total_cohort_links, 0) as total_cohort_links
+                COALESCE(salcl.total_cohort_links, 0) as total_cohort_links,
+                COALESCE(salcl.num_cohorts, 0) as num_cohorts
             FROM simulations s
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id

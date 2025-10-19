@@ -36,9 +36,9 @@ class SimulationItem(BaseModel):
     can_edit: bool
     can_delete: bool
     can_duplicate: bool
-    num_scenarios: int
     scenario_ids: list[str]
     rubric_id: str
+    num_cohorts: int  # Number of cohorts using this simulation
 
 
 class SimulationsListResponse(BaseModel):

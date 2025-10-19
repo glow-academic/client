@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 9  # Bumped: Personas only count root scenarios; added instructional role to persona permissions
+GLOBAL_CACHE_VERSION = 10  # Bumped: Simulations list now shows num_cohorts instead of num_scenarios
 
 # Namespaces
 NS_ANALYTICS = "analytics"
