@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   Brain,
@@ -65,7 +66,6 @@ import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export interface UnifiedSidebarProps
   extends React.ComponentProps<typeof Sidebar> {
@@ -417,14 +417,6 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("parameters")) {
-        managementItems.push({
-          title: "Parameters",
-          url: "#",
-          section: "parameters",
-        });
-      }
-
       if (availableSections.includes("rubrics")) {
         managementItems.push({
           title: "Rubrics",
@@ -433,7 +425,13 @@ export function UnifiedSidebar({
         });
       }
 
-
+      if (availableSections.includes("parameters")) {
+        managementItems.push({
+          title: "Parameters",
+          url: "#",
+          section: "parameters",
+        });
+      }
     }
 
     // System  - Available from admin level and up
@@ -452,19 +450,19 @@ export function UnifiedSidebar({
         items: systemItems,
       });
 
-      if (availableSections.includes("providers")) {
-        systemItems.push({
-          title: "Providers",
-          url: "#",
-          section: "providers",
-        });
-      }
-
       if (availableSections.includes("agents")) {
         systemItems.push({
           title: "Agents",
           url: "#",
           section: "agents",
+        });
+      }
+
+      if (availableSections.includes("providers")) {
+        systemItems.push({
+          title: "Providers",
+          url: "#",
+          section: "providers",
         });
       }
 

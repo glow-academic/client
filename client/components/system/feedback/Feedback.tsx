@@ -8,6 +8,7 @@
 
 import { useProfile } from "@/contexts/profile-context";
 import { useFeedbackList } from "@/lib/api/v2/hooks/feedback";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ export default function Feedback() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
-
+  const log = useLogger();
   // V2 API hook
   const profileId = effectiveProfile?.id || "";
   const { data: feedbackData, isLoading } = useFeedbackList(
@@ -34,10 +35,10 @@ export default function Feedback() {
   // Filter options (inline)
   const typeOptions = useMemo(
     () => [
-      { value: "feature", label: "Feature" },
-      { value: "bug", label: "Bug" },
-      { value: "question", label: "Question" },
-      { value: "other", label: "Other" },
+      { value: "bug", label: "🐛 Bug" },
+      { value: "feature", label: "✨ Feature" },
+      { value: "question", label: "❓ Question" },
+      { value: "other", label: "📝 Other" },
     ],
     []
   );
