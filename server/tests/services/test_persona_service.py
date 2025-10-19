@@ -100,6 +100,35 @@ async def test_get_personas_list_empty_departments(
 
 
 @pytest.mark.asyncio
+async def test_personas_only_count_root_scenarios(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that personas list only counts root scenarios in num_scenarios."""
+    # Setup
+    dept_id = await get_test_dept_id(db)
+    profile_id = await get_test_profile_id(db)
+    
+    # Execute
+    svc = PersonaService(db)
+    filters = PersonasFilters(departmentIds=[dept_id], profileId=profile_id)
+    result = await svc.get_personas_list(filters)
+    
+    # Assert - For each persona, verify num_scenarios matches root scenario count
+    for persona in result.personas:
+        # Count root scenarios for this persona in database
+        root_scenario_count = await db.fetchval("""
+            SELECT COUNT(DISTINCT s.id)
+            FROM scenario_personas sp
+            JOIN scenarios s ON s.id = sp.scenario_id
+            JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
+            WHERE sp.persona_id = $1 AND sp.active = true
+        """, persona.persona_id)
+        
+        assert persona.num_scenarios == root_scenario_count, \
+            f"Persona {persona.name} num_scenarios should be {root_scenario_count} (roots only), got {persona.num_scenarios}"
+
+
+@pytest.mark.asyncio
 async def test_search_personas(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:

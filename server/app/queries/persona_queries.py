@@ -11,13 +11,15 @@ class PersonaQueries:
     ) -> tuple[str, list[Any]]:
         """Build query for personas list with permissions and embedded scenario mapping."""
         query = """
-        WITH persona_scenarios AS (
+        WITH         persona_scenarios AS (
             SELECT 
                 sp.persona_id,
                 ARRAY_AGG(sp.scenario_id ORDER BY s.name) as scenario_ids,
                 COUNT(sp.scenario_id) as num_scenarios
             FROM scenario_personas sp
             JOIN scenarios s ON s.id = sp.scenario_id
+            -- Only count root scenarios (parent_id = child_id in scenario_tree)
+            JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
             WHERE sp.active = true
             GROUP BY sp.persona_id
         ),
@@ -88,7 +90,7 @@ class PersonaQueries:
             CASE 
                 WHEN up.role = 'superadmin' THEN true
                 WHEN pd.default_persona = true THEN false
-                WHEN up.role = 'admin' THEN true
+                WHEN up.role IN ('admin', 'instructional') THEN true
                 ELSE false
             END as can_edit,
             true as can_duplicate,
