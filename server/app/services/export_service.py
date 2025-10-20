@@ -5,10 +5,9 @@ import io
 import uuid
 
 import asyncpg  # type: ignore
-
 from app.extensions import CSV_FOLDER
 from app.queries.export_queries import ExportQueries
-from app.services.base import BaseService
+from app.services.base_service import BaseService
 
 
 class ExportService(BaseService):

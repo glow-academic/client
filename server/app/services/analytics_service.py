@@ -3,7 +3,7 @@
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.queries.analytics_queries import AnalyticsQueries
-from app.services.base import BaseService
+from app.services.base_service import BaseService
 
 
 class AnalyticsService(BaseService):

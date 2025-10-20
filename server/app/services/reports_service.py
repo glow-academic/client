@@ -9,7 +9,7 @@ from app.schemas.analytics import AnalyticsFilters
 from app.schemas.base import (ScenarioMapping, ScenarioMappingItem,
                               SimulationMapping, SimulationMappingItem)
 from app.schemas.reports import ReportsBundleResponse
-from app.services.base import BaseService, with_cache
+from app.services.base_service import BaseService, with_cache
 
 
 class ReportsService(BaseService):

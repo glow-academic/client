@@ -5,28 +5,19 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.agent_queries import AgentQueries
 from app.queries.profile_queries import ProfileQueries
-from app.schemas.agents import (
-    AgentDetailRequest,
-    AgentDetailResponse,
-    AgentItem,
-    AgentsListRequest,
-    AgentsListResponse,
-    CreateAgentRequest,
-    CreateAgentResponse,
-    DebugInfoItem,
-    DeleteAgentRequest,
-    DeleteAgentResponse,
-    DuplicateAgentRequest,
-    DuplicateAgentResponse,
-    UpdateAgentRequest,
-    UpdateAgentResponse,
-)
-from app.schemas.base import ModelMapping, ModelMappingItem, ReasoningMappingItem
-from app.services.base import BaseService, with_cache
+from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
+                                AgentItem, AgentsListRequest,
+                                AgentsListResponse, CreateAgentRequest,
+                                CreateAgentResponse, DebugInfoItem,
+                                DeleteAgentRequest, DeleteAgentResponse,
+                                DuplicateAgentRequest, DuplicateAgentResponse,
+                                UpdateAgentRequest, UpdateAgentResponse)
+from app.schemas.base import (ModelMapping, ModelMappingItem,
+                              ReasoningMappingItem)
+from app.services.base_service import BaseService, with_cache
 
 
 class AgentService(BaseService):

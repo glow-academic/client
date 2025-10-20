@@ -32,7 +32,7 @@ from app.schemas.dashboard import (AttemptImprovementData,
                                    SimulationPerformanceResponse,
                                    SkillPerformanceResponse, SkillRadarData,
                                    Thresholds)
-from app.services.base import BaseService, with_cache
+from app.services.base_service import BaseService, with_cache
 
 
 class DashboardService(BaseService):

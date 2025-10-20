@@ -4,28 +4,23 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.department_queries import DepartmentQueries
 from app.schemas.base import AgentMapping, AgentMappingItem
-from app.schemas.departments import (
-    AgentRoles,
-    CreateDepartmentRequest,
-    CreateDepartmentResponse,
-    DeleteDepartmentRequest,
-    DeleteDepartmentResponse,
-    DepartmentDetailRequest,
-    DepartmentDetailResponse,
-    DepartmentItem,
-    DepartmentsFilters,
-    DepartmentsListResponse,
-    DuplicateDepartmentRequest,
-    DuplicateDepartmentResponse,
-    UpdateDepartmentRequest,
-    UpdateDepartmentResponse,
-)
-from app.services.base import BaseService, with_cache
+from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
+                                     CreateDepartmentResponse,
+                                     DeleteDepartmentRequest,
+                                     DeleteDepartmentResponse,
+                                     DepartmentDetailRequest,
+                                     DepartmentDetailResponse, DepartmentItem,
+                                     DepartmentsFilters,
+                                     DepartmentsListResponse,
+                                     DuplicateDepartmentRequest,
+                                     DuplicateDepartmentResponse,
+                                     UpdateDepartmentRequest,
+                                     UpdateDepartmentResponse)
+from app.services.base_service import BaseService, with_cache
 
 
 class DepartmentService(BaseService):

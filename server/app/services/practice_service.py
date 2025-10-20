@@ -12,7 +12,7 @@ from app.schemas.base import (ParameterItemMappingItem, ParameterMappingItem,
                               SimulationMappingItem)
 from app.schemas.home import AttemptHistoryRow
 from app.schemas.practice import PracticeOverviewResponse
-from app.services.base import BaseService, with_cache
+from app.services.base_service import BaseService, with_cache
 
 
 class PracticeService(BaseService):

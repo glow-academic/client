@@ -3,24 +3,15 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends
-
 from app.db import get_db
-from app.schemas.agents import (
-    AgentDetailRequest,
-    AgentDetailResponse,
-    AgentsListRequest,
-    AgentsListResponse,
-    CreateAgentRequest,
-    CreateAgentResponse,
-    DeleteAgentRequest,
-    DeleteAgentResponse,
-    DuplicateAgentRequest,
-    DuplicateAgentResponse,
-    UpdateAgentRequest,
-    UpdateAgentResponse,
-)
+from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
+                                AgentsListRequest, AgentsListResponse,
+                                CreateAgentRequest, CreateAgentResponse,
+                                DeleteAgentRequest, DeleteAgentResponse,
+                                DuplicateAgentRequest, DuplicateAgentResponse,
+                                UpdateAgentRequest, UpdateAgentResponse)
 from app.services.agent_service import get_agent_service
+from fastapi import APIRouter, Depends
 
 router = APIRouter()
 

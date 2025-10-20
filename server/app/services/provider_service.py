@@ -3,33 +3,22 @@
 import json
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
-from app.schemas.providers import (
-    CreateModelRequest,
-    CreateModelResponse,
-    CreateProviderRequest,
-    CreateProviderResponse,
-    DeleteModelRequest,
-    DeleteModelResponse,
-    DeleteProviderRequest,
-    DeleteProviderResponse,
-    ModelDetailRequest,
-    ModelDetailResponse,
-    ModelItem,
-    ProviderDetailRequest,
-    ProviderDetailResponse,
-    ProvidersFilters,
-    ProvidersListResponse,
-    ProviderWithModels,
-    UpdateModelRequest,
-    UpdateModelResponse,
-    UpdateProviderRequest,
-    UpdateProviderResponse,
-)
-from app.services.base import BaseService, with_cache
+from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
+                                   CreateProviderRequest,
+                                   CreateProviderResponse, DeleteModelRequest,
+                                   DeleteModelResponse, DeleteProviderRequest,
+                                   DeleteProviderResponse, ModelDetailRequest,
+                                   ModelDetailResponse, ModelItem,
+                                   ProviderDetailRequest,
+                                   ProviderDetailResponse, ProvidersFilters,
+                                   ProvidersListResponse, ProviderWithModels,
+                                   UpdateModelRequest, UpdateModelResponse,
+                                   UpdateProviderRequest,
+                                   UpdateProviderResponse)
+from app.services.base_service import BaseService, with_cache
 from app.utils.auth import encrypt_api_key
 
 

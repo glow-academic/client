@@ -6,11 +6,10 @@ from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.assistant_queries import AssistantQueries
 from app.schemas.assistant import AssistantRunContext
-from app.services.base import BaseService, with_cache
+from app.services.base_service import BaseService, with_cache
 
 
 class AssistantService(BaseService):
@@ -384,7 +383,7 @@ class AssistantService(BaseService):
             if isinstance(val, datetime) and val.tzinfo is None:
 
                 return val.replace(tzinfo=UTC)
-            return val
+            return val  # type: ignore
 
         # Parse chats from JSONB (may be string or list)
         chats = []
@@ -467,12 +466,12 @@ class AssistantService(BaseService):
             day_start = cutoff_date + timedelta(days=i)
             day_end = day_start + timedelta(days=1)
 
-            day_chats = [c for c in chats if day_start <= c.get("created_at") < day_end]
+            day_chats = [c for c in chats if day_start <= c.get("created_at") < day_end]  # type: ignore
             day_messages = [
-                m for m in messages if day_start <= m.get("created_at") < day_end
+                m for m in messages if day_start <= m.get("created_at") < day_end  # type: ignore
             ]
             day_tool_calls = [
-                tc for tc in tool_calls if day_start <= tc.get("created_at") < day_end
+                tc for tc in tool_calls if day_start <= tc.get("created_at") < day_end  # type: ignore
             ]
 
             daily_stats.append(

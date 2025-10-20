@@ -8,7 +8,7 @@ from app.cache import keys
 from app.queries.leaderboard_queries import LeaderboardQueries
 from app.schemas.analytics import AnalyticsFilters
 from app.schemas.leaderboard import LeaderboardBundleResponse
-from app.services.base import BaseService, with_cache
+from app.services.base_service import BaseService, with_cache
 
 
 class LeaderboardService(BaseService):

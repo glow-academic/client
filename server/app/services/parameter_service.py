@@ -3,31 +3,26 @@
 import json
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.parameters import (
-    CreateParameterItemRequest,
-    CreateParameterItemResponse,
-    CreateParameterRequest,
-    CreateParameterResponse,
-    DeleteParameterRequest,
-    DeleteParameterResponse,
-    DuplicateParameterRequest,
-    DuplicateParameterResponse,
-    ParameterDetailDefaultRequest,
-    ParameterDetailRequest,
-    ParameterDetailResponse,
-    ParameterItem,
-    ParameterItemDetail,
-    ParametersFilters,
-    ParametersListResponse,
-    UpdateParameterRequest,
-    UpdateParameterResponse,
-)
-from app.services.base import BaseService, with_cache
+from app.schemas.parameters import (CreateParameterItemRequest,
+                                    CreateParameterItemResponse,
+                                    CreateParameterRequest,
+                                    CreateParameterResponse,
+                                    DeleteParameterRequest,
+                                    DeleteParameterResponse,
+                                    DuplicateParameterRequest,
+                                    DuplicateParameterResponse,
+                                    ParameterDetailDefaultRequest,
+                                    ParameterDetailRequest,
+                                    ParameterDetailResponse, ParameterItem,
+                                    ParameterItemDetail, ParametersFilters,
+                                    ParametersListResponse,
+                                    UpdateParameterRequest,
+                                    UpdateParameterResponse)
+from app.services.base_service import BaseService, with_cache
 
 
 class ParameterService(BaseService):

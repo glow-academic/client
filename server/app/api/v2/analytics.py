@@ -3,11 +3,10 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-
 from app.db import get_db
 from app.schemas.analytics import RefreshResponse
 from app.services.analytics_service import get_analytics_service
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 

@@ -5,11 +5,12 @@ from typing import Any
 
 import asyncpg  # type: ignore
 from app.cache import keys
+from app.queries.base_queries import AnalyticsQueryBuilder
 from app.queries.pricing_queries import PricingQueries
 from app.schemas.analytics import AnalyticsFilters
 from app.schemas.pricing import (DebugInfoItem, ModelMappingWithPricing,
                                  ModelRunItem, PricingAnalyticsResponse)
-from app.services.base import AnalyticsQueryBuilder, BaseService, with_cache
+from app.services.base_service import BaseService, with_cache
 
 
 class PricingService(BaseService):

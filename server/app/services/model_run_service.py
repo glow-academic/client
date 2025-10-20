@@ -5,10 +5,9 @@ from typing import Literal
 from uuid import UUID
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.model_run_queries import ModelRunQueries
-from app.services.base import BaseService
+from app.services.base_service import BaseService
 
 
 class ModelRunService(BaseService):

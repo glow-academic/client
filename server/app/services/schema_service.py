@@ -1,9 +1,8 @@
 """Schema service layer - business logic for database metadata operations."""
 
 import asyncpg  # type: ignore
-
 from app.queries.schema_queries import SchemaQueries
-from app.services.base import BaseService
+from app.services.base_service import BaseService
 
 
 class SchemaService(BaseService):

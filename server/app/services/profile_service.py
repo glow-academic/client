@@ -14,7 +14,7 @@ from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
                                  DepartmentItem, ProfileContextRequest,
                                  ProfileContextResponse, ProfileItem,
                                  SimulationContextItem, SimulationsData)
-from app.services.base import BaseService, with_cache
+from app.services.base_service import BaseService, with_cache
 from app.services.permissions_service import PermissionsService
 from app.utils.csv import parse_csv_file
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize

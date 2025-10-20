@@ -5,40 +5,29 @@ from datetime import UTC
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.simulation_queries import SimulationQueries
-from app.schemas.base import (
-    DepartmentMappingItem,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    ScenarioMappingItem,
-)
-from app.schemas.simulations import (
-    CreateSimulationRequest,
-    CreateSimulationResponse,
-    DeleteSimulationRequest,
-    DeleteSimulationResponse,
-    DuplicateSimulationRequest,
-    DuplicateSimulationResponse,
-    ParameterItem,
-    ParameterItemDetail,
-    ScenarioInSimulation,
-    SimulationDetailDefaultRequest,
-    SimulationDetailRequest,
-    SimulationDetailResponse,
-    SimulationItem,
-    SimulationsFilters,
-    SimulationsListResponse,
-    UpdateSimulationRequest,
-    UpdateSimulationResponse,
-)
-from app.services.base import BaseService, with_cache
+from app.schemas.base import (DepartmentMappingItem, ParameterItemMapping,
+                              ParameterItemMappingItem, ParameterMapping,
+                              ParameterMappingItem, RubricMapping,
+                              RubricMappingItem, ScenarioMappingItem)
+from app.schemas.simulations import (CreateSimulationRequest,
+                                     CreateSimulationResponse,
+                                     DeleteSimulationRequest,
+                                     DeleteSimulationResponse,
+                                     DuplicateSimulationRequest,
+                                     DuplicateSimulationResponse,
+                                     ParameterItem, ParameterItemDetail,
+                                     ScenarioInSimulation,
+                                     SimulationDetailDefaultRequest,
+                                     SimulationDetailRequest,
+                                     SimulationDetailResponse, SimulationItem,
+                                     SimulationsFilters,
+                                     SimulationsListResponse,
+                                     UpdateSimulationRequest,
+                                     UpdateSimulationResponse)
+from app.services.base_service import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
 
@@ -254,7 +243,8 @@ class SimulationService(BaseService):
                     ):
                         for did, ddata in sdata["document_mapping"].items():
                             if isinstance(ddata, dict):
-                                from app.schemas.base import DocumentMappingItem
+                                from app.schemas.base import \
+                                    DocumentMappingItem
 
                                 document_mapping[did] = DocumentMappingItem(
                                     name=ddata.get("name", ""),
@@ -729,7 +719,6 @@ class SimulationService(BaseService):
         from datetime import datetime
 
         from agents import gen_trace_id
-
         from app.agents.collection.scenario import run_scenario_agent
 
         # Get the simulation
@@ -1119,7 +1108,6 @@ class SimulationService(BaseService):
         from datetime import datetime
 
         from agents import gen_trace_id
-
         from app.agents.collection.scenario import run_scenario_agent
 
         query, params = self.queries.get_scenario_by_id(scenario_id)

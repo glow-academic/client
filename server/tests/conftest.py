@@ -96,10 +96,10 @@ async def db(db_initialized: str) -> AsyncGenerator[asyncpg.Connection, None]:
 def disable_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     """Make @with_cache decorator a no-op in tests."""
     try:
-        from app.services.base import with_cache
+        from app.services.base_service import with_cache
 
         monkeypatch.setattr(
-            "app.services.base.with_cache", lambda _: lambda fn: fn, raising=False
+            "app.services.base_service.with_cache", lambda _: lambda fn: fn, raising=False
         )
     except ImportError:
         # If base service doesn't exist yet, skip
