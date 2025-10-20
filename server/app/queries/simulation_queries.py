@@ -2345,8 +2345,9 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
     time_remaining = None
     expired = False
     if attempt["infiniteMode"]:
-        if attempt["infiniteModeTimeLimit"]:
-            total_time_seconds = attempt["infiniteModeTimeLimit"] * 60
+        # Infinite mode: use simulation timeLimit if available, otherwise count up only
+        if simulation["timeLimit"]:
+            total_time_seconds = simulation["timeLimit"] * 60
             time_remaining = max(total_time_seconds - total_elapsed_seconds, 0)
             expired = time_remaining <= 0
         # else: no limit, count up only

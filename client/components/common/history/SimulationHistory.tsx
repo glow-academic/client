@@ -30,7 +30,7 @@ export interface HistoryDataItem {
   numScenarios: number | null; // nullable for infinite mode
   numScenariosCompleted: number;
   infiniteMode: boolean;
-  infiniteModeTimeLimit: number | null; // nullable for infinite mode time limit
+  timeLimit: number | null; // simulation time limit in seconds (from server)
   personaNames: string[];
   personaColors: string[];
   score: number | null; // nullable
@@ -102,7 +102,7 @@ export default function SimulationHistory({
         }
         return acc;
       },
-      [] as { value: string; label: string }[],
+      [] as { value: string; label: string }[]
     );
 
     return uniqueProfiles;
@@ -126,7 +126,7 @@ export default function SimulationHistory({
         }
         return acc;
       },
-      [] as { value: string; label: string }[],
+      [] as { value: string; label: string }[]
     );
 
     return uniqueSimulations;
@@ -177,7 +177,7 @@ export default function SimulationHistory({
           // Search in persona names
           if (
             item.personaNames.some((name) =>
-              name.toLowerCase().includes(searchValue),
+              name.toLowerCase().includes(searchValue)
             )
           ) {
             return true;
@@ -293,7 +293,7 @@ export default function SimulationHistory({
               filterFn: (
                 row: Row<HistoryDataItem>,
                 _id: string,
-                value: string[],
+                value: string[]
               ) => {
                 return value.includes(row.original.profileId);
               },
@@ -372,7 +372,7 @@ export default function SimulationHistory({
           if (!value || value.length === 0) return true;
           const scenarioIds = row.original.scenario_ids || [];
           return value.some((scenarioId: string) =>
-            scenarioIds.includes(scenarioId),
+            scenarioIds.includes(scenarioId)
           );
         },
       },
@@ -434,7 +434,7 @@ export default function SimulationHistory({
           if (!value || !Array.isArray(value) || value.length === 0)
             return true;
           return value.some((filterPersona: string) =>
-            personaNames?.includes(filterPersona),
+            personaNames?.includes(filterPersona)
           );
         },
       },
@@ -494,7 +494,7 @@ export default function SimulationHistory({
               interactionIds={item.scenario_ids}
               isPractice={item.practiceSimulation || false}
               infiniteMode={item.infiniteMode}
-              infiniteModeTimeLimit={item.infiniteModeTimeLimit ?? null}
+              timeLimit={item.timeLimit ?? null}
               attemptCreatedAt={(() => {
                 try {
                   const date = new Date(item.date);
@@ -524,7 +524,7 @@ export default function SimulationHistory({
 
     // Filter data to only include entries for the current effective profile
     const profileData = data.filter(
-      (item) => item.profileId === effectiveProfile.id,
+      (item) => item.profileId === effectiveProfile.id
     );
 
     if (profileData.length === 0) return [];

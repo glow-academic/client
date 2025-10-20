@@ -469,8 +469,23 @@ export default function Practice() {
       <div className="container mx-auto p-4 md:p-6 space-y-12">
         <PracticeZone
           simulations={simulationItems}
-          standardGroupsMapping={standardGroupsMapping as Record<string, { name: string; description: string; points: number; passPoints: number }>}
-          standardsMapping={standardsMapping as Record<string, { name: string; description: string; points: number }>}
+          standardGroupsMapping={
+            standardGroupsMapping as Record<
+              string,
+              {
+                name: string;
+                description: string;
+                points: number;
+                passPoints: number;
+              }
+            >
+          }
+          standardsMapping={
+            standardsMapping as Record<
+              string,
+              { name: string; description: string; points: number }
+            >
+          }
           profile={effectiveProfile}
           onStartSimulation={handleStartSimulation}
           loadingSimulation={loadingSimulation}
@@ -490,7 +505,7 @@ export default function Practice() {
                       numScenarios: item.numScenarios,
                       numScenariosCompleted: item.numScenariosCompleted,
                       infiniteMode: item.infiniteMode,
-                      infiniteModeTimeLimit: item.infiniteModeTimeLimit,
+                      timeLimit: item.timeLimit ?? null, // timeLimit comes from server in seconds
                       personaNames: item.personaNames,
                       personaColors: item.personaColors,
                       score: item.score,

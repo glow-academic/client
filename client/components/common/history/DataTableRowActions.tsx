@@ -21,7 +21,7 @@ export interface DataTableRowActionsProps {
   interactionIds: string[];
   isPractice?: boolean;
   infiniteMode?: boolean;
-  infiniteModeTimeLimit?: number | null;
+  timeLimit?: number | null; // simulation time limit in seconds (from server)
   attemptCreatedAt?: string;
   archived?: boolean;
   showArchive?: boolean;
@@ -38,7 +38,7 @@ export function DataTableRowActions({
   interactionIds: _interactionIds,
   isPractice = false,
   infiniteMode = false,
-  infiniteModeTimeLimit = null,
+  timeLimit = null,
   attemptCreatedAt,
   archived: _archived = false,
   showArchive: _showArchive = false,
@@ -54,12 +54,13 @@ export function DataTableRowActions({
   // Infinite-mode window check (owner-only)
   const isInfiniteWindowOpen = React.useMemo(() => {
     if (!infiniteMode) return false;
-    if (!infiniteModeTimeLimit || !attemptCreatedAt) return true; // no limit => open
+    if (!timeLimit || !attemptCreatedAt) return true; // no limit => open
     const started = new Date(attemptCreatedAt).getTime();
     if (Number.isNaN(started)) return false;
     const elapsedMin = (Date.now() - started) / 60000;
-    return elapsedMin <= infiniteModeTimeLimit;
-  }, [infiniteMode, infiniteModeTimeLimit, attemptCreatedAt]);
+    const timeLimitMinutes = timeLimit / 60; // Convert from seconds to minutes
+    return elapsedMin <= timeLimitMinutes;
+  }, [infiniteMode, timeLimit, attemptCreatedAt]);
 
   // Final decision:
   // - Continue only if server says it CAN continue,

@@ -147,24 +147,36 @@ class HomeQueries:
                     s.id AS simulation_id,
                     s.title,
                     s.description,
-                    s.time_limit,
+                    stl.time_limit_seconds as time_limit,
                     s.rubric_id,
                     COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
                     COALESCE(r.points, 0) AS rubric_points,
                     COALESCE(r.pass_points, 0) AS rubric_pass_points
                 FROM simulations s
                 LEFT JOIN rubrics r ON r.id = s.rubric_id
+                LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
                 WHERE s.id IN (SELECT simulation_id FROM cohort_sim)
             ),
             -- Simulation persona metadata
             sim_persona_meta AS (
-                SELECT DISTINCT
-                    sp.simulation_id,
-                    per.color,
-                    per.icon
-                FROM simulation_personas sp
-                JOIN personas per ON per.id = sp.persona_id
-                WHERE sp.simulation_id IN (SELECT simulation_id FROM sim_meta)
+                SELECT
+                    sm.simulation_id,
+                    (ARRAY_AGG(p.color ORDER BY cnt DESC, COALESCE(p.color, '') DESC))[1] AS color,
+                    (ARRAY_AGG(p.icon ORDER BY cnt DESC, COALESCE(p.icon, '') DESC))[1] AS icon
+                FROM (
+                    SELECT
+                        s.id AS simulation_id,
+                        sp.persona_id,
+                        COUNT(*) AS cnt
+                    FROM simulations s
+                    LEFT JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
+                    LEFT JOIN scenarios sc ON sc.id = ss_link.scenario_id
+                    LEFT JOIN scenario_personas sp ON sp.scenario_id = sc.id AND sp.active = TRUE
+                    WHERE s.id IN (SELECT simulation_id FROM sim_meta)
+                    GROUP BY s.id, sp.persona_id
+                ) sm
+                LEFT JOIN personas p ON p.id = sm.persona_id
+                GROUP BY sm.simulation_id
             ),
             -- TA VIEW: Primary cohort per simulation for the TA
             ta_primary_cohort AS (
@@ -521,6 +533,7 @@ class HomeQueries:
                             'numScenarios', fr.num_scenarios,
                             'numScenariosCompleted', fr.num_scenarios_completed,
                             'infiniteMode', fr.infinite_mode,
+                            'timeLimit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = fr.simulation_id AND stl.active = true),
                             'personaNames', COALESCE(pl.persona_names, ARRAY[]::text[]),
                             'personaColors', COALESCE(pl.persona_colors, ARRAY[]::text[]),
                             'score', fr.score_percent,

@@ -364,6 +364,7 @@ class PracticeQueries:
                             'numScenarios', fr.num_scenarios,
                             'numScenariosCompleted', fr.num_scenarios_completed,
                             'infiniteMode', fr.infinite_mode,
+                            'timeLimit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = fr.simulation_id AND stl.active = true),
                             'personaNames', COALESCE(pl.persona_names, ARRAY[]::text[]),
                             'personaColors', COALESCE(pl.persona_colors, ARRAY[]::text[]),
                             'score', fr.score_percent,

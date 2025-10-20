@@ -10,7 +10,7 @@ from .base import SimulationMapping, StandardGroupsMapping, StandardsMapping
 class HomeSimulationItem(BaseModel):
     """Home simulation item."""
 
-    viewMode: Literal["home"]
+    viewMode: Literal["ta", "instructional"]
     id: str
     simulationTitle: str
     simulationDescription: str | None = None
@@ -35,14 +35,26 @@ class AttemptHistoryRow(BaseModel):
     """Attempt history row."""
 
     attemptId: str
-    simulationId: str
-    scenarioId: str
-    completedAt: str
-    gradedAt: str | None = None
-    gradePercent: float | None = None
-    passed: bool | None = None
-    numMessagesTotal: int | None = None
-    timeTakenSeconds: int | None = None
+    date: str
+    profileId: str
+    profileName: str
+    simulationName: str
+    numScenarios: int | None = None
+    numScenariosCompleted: int
+    infiniteMode: bool
+    timeLimit: int | None = None  # simulation time limit in seconds (from simulation_time_limits)
+    personaNames: list[str]
+    personaColors: list[str]
+    score: int | None = None
+    simulation_id: str
+    scenario_ids: list[str]
+    scenario_titles: list[str]
+    isArchived: bool
+    showView: bool
+    showContinue: bool
+    practiceSimulation: bool
+    passPct: int | None = None
+    department_id: str
 
 
 AttemptHistoryResponse = list[AttemptHistoryRow]

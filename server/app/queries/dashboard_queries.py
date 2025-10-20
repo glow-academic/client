@@ -633,7 +633,6 @@ class DashboardQueries:
                     'numScenarios', 0,
                     'numScenariosCompleted', 0,
                     'infiniteMode', false,
-                    'infiniteModeTimeLimit', NULL,
                     'personaNames', ARRAY[]::text[],
                     'personaColors', ARRAY[]::text[],
                     'score', 0,

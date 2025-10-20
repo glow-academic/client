@@ -695,8 +695,23 @@ export default function Home() {
                   simulationTitle={item.simulationTitle}
                   simulationDescription={item.simulationDescription || ""}
                   standard_groups={item.standard_groups}
-                  standardGroupsMapping={standardGroupsMapping as Record<string, { name: string; description: string; points: number; passPoints: number }>}
-                  standardsMapping={standardsMapping as Record<string, { name: string; description: string; points: number }>}
+                  standardGroupsMapping={
+                    standardGroupsMapping as Record<
+                      string,
+                      {
+                        name: string;
+                        description: string;
+                        points: number;
+                        passPoints: number;
+                      }
+                    >
+                  }
+                  standardsMapping={
+                    standardsMapping as Record<
+                      string,
+                      { name: string; description: string; points: number }
+                    >
+                  }
                   {...(item.color && { color: item.color })}
                   {...(item.icon && { icon: item.icon })}
                   {...(typeof item.hasPassed === "boolean" && {
@@ -747,7 +762,7 @@ export default function Home() {
                   numScenarios: item.numScenarios,
                   numScenariosCompleted: item.numScenariosCompleted,
                   infiniteMode: item.infiniteMode,
-                  infiniteModeTimeLimit: item.infiniteModeTimeLimit,
+                  timeLimit: item.timeLimit ?? null, // timeLimit comes from server in seconds
                   personaNames: item.personaNames,
                   personaColors: item.personaColors,
                   scenario_titles: item.scenario_titles,

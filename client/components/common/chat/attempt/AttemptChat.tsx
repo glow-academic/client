@@ -314,18 +314,16 @@ export default function AttemptChat() {
 
   // In infinite mode, force chat view until time has expired
   const isAttemptInfinite = Boolean(simulationContext?.attempt?.infiniteMode);
-  const hasInfiniteLimit = Boolean(
-    simulationContext?.attempt?.infiniteModeTimeLimit
-  );
+  const hasTimeLimit = Boolean(simulationContext?.simulation?.timeLimit);
   const timeRemaining = simulationContext?.timer.remaining;
   const shouldForceChatView =
-    isAttemptInfinite && (!hasInfiniteLimit || (timeRemaining ?? 1) > 0);
+    isAttemptInfinite && (!hasTimeLimit || (timeRemaining ?? 1) > 0);
 
   // Show results screen (but not during active infinite mode)
   if (simulationContext?.showResults && !shouldForceChatView) {
     const isInfiniteMode = simulationContext?.attempt?.infiniteMode;
     const infiniteLimitMinutes =
-      simulationContext?.attempt?.infiniteModeTimeLimit ?? null;
+      simulationContext?.simulation?.timeLimit ?? null;
     return (
       <div className="h-[calc(100vh-4rem)]">
         <ResizablePanelGroup direction="horizontal" className="h-full">
@@ -811,8 +809,7 @@ export default function AttemptChat() {
                                     data-testid="timer"
                                   >
                                     {simulationContext?.attempt?.infiniteMode
-                                      ? simulationContext?.attempt
-                                          ?.infiniteModeTimeLimit
+                                      ? simulationContext?.simulation?.timeLimit
                                         ? formatTime(
                                             Math.max(
                                               simulationContext?.timer

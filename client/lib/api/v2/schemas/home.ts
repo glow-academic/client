@@ -44,7 +44,7 @@ export const AttemptHistoryRowSchema = z.object({
   numScenarios: z.number().nullable(),
   numScenariosCompleted: z.number(),
   infiniteMode: z.boolean(),
-  infiniteModeTimeLimit: z.number().nullable(),
+  timeLimit: z.number().nullable(), // simulation time limit in seconds (from server)
   personaNames: z.array(z.string()),
   personaColors: z.array(z.string()),
   score: z.number().nullable(),

@@ -53,7 +53,6 @@ export const AttemptFullResponseSchema = z.object({
     createdAt: z.string(),
     simulationId: z.string(),
     infiniteMode: z.boolean(),
-    infiniteModeTimeLimit: z.number().nullable(),
     archived: z.boolean(),
   }),
   simulation: z.object({
