@@ -383,10 +383,10 @@ export const cohortsDetailDefaultKeys = {
     [...cohortsDetailDefaultKeys.all, { profileId }] as const,
 };
 
-// Providers Keys
+// Providers Keys (providers are global, not department-specific)
 export const providersListKeys = {
   all: ["providers:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: { profileId: string }) =>
     [...providersListKeys.all, serializeGenericFilters(filters)] as const,
 };
 

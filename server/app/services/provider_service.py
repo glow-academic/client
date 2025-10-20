@@ -34,19 +34,24 @@ class ProviderService(BaseService):
     async def get_providers_list(
         self, filters: ProvidersFilters
     ) -> ProvidersListResponse:
-        """Get providers list with nested models (hierarchical)."""
+        """Get providers list with nested models (hierarchical).
+        
+        Note: Providers are global (not department-specific).
+        """
         # Get complete providers data with models and usage (consolidated query)
-        query, params = self.queries.list_providers_complete(
-            filters.departmentIds, filters.profileId
-        )
+        query, params = self.queries.list_providers_complete(filters.profileId)
         providers_result = await self.conn.fetch(query, *params)
 
         providers = []
 
         for row in providers_result:
-            # Parse JSONB models
+            # Parse JSONB models (may be string or list from asyncpg)
             models = []
             models_data = row.get("models_json")
+            
+            # Handle case where asyncpg returns JSON as string
+            if isinstance(models_data, str):
+                models_data = json.loads(models_data)
 
             if models_data and isinstance(models_data, list):
                 for model_obj in models_data:

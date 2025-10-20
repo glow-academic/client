@@ -6,13 +6,14 @@ from typing import Any
 class ProviderQueries:
     """Query builders for provider and model operations."""
 
-    def list_providers(
-        self, department_ids: list[str], profile_id: str
-    ) -> tuple[str, list[Any]]:
-        """Build query for providers list with permissions."""
+    def list_providers(self, profile_id: str) -> tuple[str, list[Any]]:
+        """Build query for providers list with permissions.
+        
+        Note: Providers are global (not department-specific).
+        """
         query = """
         WITH user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         )
         SELECT 
             p.id as provider_id,
@@ -24,29 +25,30 @@ class ProviderQueries:
             END as can_edit
         FROM providers p
         CROSS JOIN user_profile up
-        WHERE p.department_id = ANY($1)
         ORDER BY p.name
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [profile_id])
 
-    def list_providers_complete(
-        self, department_ids: list[str], profile_id: str
-    ) -> tuple[str, list[Any]]:
+    def list_providers_complete(self, profile_id: str) -> tuple[str, list[Any]]:
         """
-        Build complete query for providers list with models and usage in single query.
+        Build complete query for providers list with models and usage in ONE query.
+
+        Note: Providers are global (not department-specific).
 
         Consolidates:
         - Provider basic info + permissions (from list_providers)
         - Models data as JSONB array (from get_models_for_providers)
         - Model usage counts (from check_model_usage_personas + check_model_usage_agents)
+        
+        Optimization: Uses CTEs to pre-aggregate usage counts, avoiding N+1 subqueries.
 
         Returns:
             Tuple of (query, params)
         """
         query = """
         WITH user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         ),
         providers_data AS (
             SELECT 
@@ -59,7 +61,22 @@ class ProviderQueries:
                 END as can_edit
             FROM providers p
             CROSS JOIN user_profile up
-            WHERE p.department_id = ANY($1)
+        ),
+        -- Pre-aggregate persona usage counts for all models
+        persona_usage AS (
+            SELECT 
+                model_id,
+                COUNT(*) as usage_count
+            FROM personas
+            GROUP BY model_id
+        ),
+        -- Pre-aggregate agent usage counts for all models
+        agent_usage AS (
+            SELECT 
+                model_id,
+                COUNT(*) as usage_count
+            FROM agents
+            GROUP BY model_id
         ),
         models_with_usage AS (
             SELECT 
@@ -72,15 +89,13 @@ class ProviderQueries:
                         'active', m.active,
                         'custom_model', m.custom_model,
                         'updated_at', m.updated_at,
-                        'persona_usage_count', COALESCE(
-                            (SELECT COUNT(*) FROM personas WHERE model_id = m.id), 0
-                        ),
-                        'agent_usage_count', COALESCE(
-                            (SELECT COUNT(*) FROM agents WHERE model_id = m.id), 0
-                        )
+                        'persona_usage_count', COALESCE(pu.usage_count, 0),
+                        'agent_usage_count', COALESCE(au.usage_count, 0)
                     ) ORDER BY m.updated_at DESC
                 ), '[]'::jsonb) as models_json
             FROM models m
+            LEFT JOIN persona_usage pu ON pu.model_id = m.id
+            LEFT JOIN agent_usage au ON au.model_id = m.id
             WHERE m.provider_id IN (SELECT provider_id FROM providers_data)
             GROUP BY m.provider_id
         )
@@ -95,7 +110,7 @@ class ProviderQueries:
         ORDER BY pd.name
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [profile_id])
 
     def get_models_for_providers(
         self, provider_ids: list[str]

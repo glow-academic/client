@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useDeleteModel,
   useDeleteProvider,
@@ -56,8 +57,7 @@ import type {
   ProviderWithModels,
 } from "@/lib/api/v2/schemas/providers";
 import { ProvidersDataTable } from "./ProvidersDataTable";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-  
+
 export default function Providers() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -73,19 +73,19 @@ export default function Providers() {
     name: string;
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const log = useLogger();
   // Mutation hooks
   const deleteModelMutation = useDeleteModel();
   const deleteProviderMutation = useDeleteProvider();
 
   // V2 API: Single fetch with hierarchical data and permissions
+  // Note: Providers are global (not department-specific)
   const filters = useMemo(
     () => ({
-      departmentIds: departmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [departmentIds, effectiveProfile?.id]
+    [effectiveProfile?.id]
   );
 
   const { data: providersData, isLoading } = useProvidersList(filters);

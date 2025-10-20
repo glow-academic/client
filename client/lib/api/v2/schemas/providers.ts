@@ -11,11 +11,12 @@ import { DepartmentMappingSchema, ProviderMappingSchema } from "./base";
 // ============================================================================
 
 export const ProvidersFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 
 export type ProvidersFilters = z.infer<typeof ProvidersFiltersSchema>;
+
+// Note: Providers are global (not department-specific), so no department filter
 
 // ============================================================================
 // RESPONSE SCHEMAS - HIERARCHICAL LIST
