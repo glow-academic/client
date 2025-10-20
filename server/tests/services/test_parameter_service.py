@@ -298,3 +298,49 @@ async def test_parameter_can_delete_permissions(
         else:
             assert parameter.can_delete == True, \
                 f"Admin should be able to delete unlinked non-default parameter {parameter.name}"
+
+
+async def test_parameter_can_duplicate_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test parameter can_duplicate permission logic.
+    
+    Rules:
+    - True if user is admin or superadmin
+    - False otherwise (e.g., instructional, trainee)
+    """
+    dept_id = await get_cs_dept_id(db)
+    
+    # Get superadmin, admin, and instructional profile IDs
+    superadmin_id = await get_superadmin_alias(db)
+    admin_id = await db.fetchval(
+        "SELECT id FROM profiles WHERE role = 'admin' AND default_profile = false LIMIT 1"
+    )
+    instructional_id = await db.fetchval(
+        "SELECT id FROM profiles WHERE role = 'instructional' LIMIT 1"
+    )
+    
+    svc = ParameterService(db)
+    
+    # Test with superadmin - should be able to duplicate
+    resp_superadmin = await svc.get_parameters_list(
+        ParametersFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    for parameter in resp_superadmin.parameters:
+        assert parameter.can_duplicate is True, "Superadmin should be able to duplicate parameters"
+    
+    # Test with admin - should be able to duplicate
+    if admin_id:
+        resp_admin = await svc.get_parameters_list(
+            ParametersFilters(departmentIds=[dept_id], profileId=admin_id)
+        )
+        for parameter in resp_admin.parameters:
+            assert parameter.can_duplicate is True, "Admin should be able to duplicate parameters"
+    
+    # Test with instructional - should NOT be able to duplicate (instructional doesn't have access to parameters page)
+    if instructional_id:
+        resp_instructional = await svc.get_parameters_list(
+            ParametersFilters(departmentIds=[dept_id], profileId=instructional_id)
+        )
+        for parameter in resp_instructional.parameters:
+            assert parameter.can_duplicate is False, "Instructional should NOT be able to duplicate parameters"

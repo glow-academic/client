@@ -309,3 +309,49 @@ async def test_rubric_can_delete_permissions(
         else:
             assert rubric.can_delete == True, \
                 f"Admin should be able to delete unlinked non-default rubric {rubric.name}"
+
+
+async def test_rubric_can_duplicate_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test rubric can_duplicate permission logic.
+    
+    Rules:
+    - True if user is admin or superadmin
+    - False otherwise (e.g., instructional, trainee)
+    """
+    dept_id = await get_cs_dept_id(db)
+    
+    # Get superadmin, admin, and instructional profile IDs
+    superadmin_id = await get_superadmin_alias(db)
+    admin_id = await db.fetchval(
+        "SELECT id FROM profiles WHERE role = 'admin' AND default_profile = false LIMIT 1"
+    )
+    instructional_id = await db.fetchval(
+        "SELECT id FROM profiles WHERE role = 'instructional' LIMIT 1"
+    )
+    
+    svc = RubricService(db)
+    
+    # Test with superadmin - should be able to duplicate
+    resp_superadmin = await svc.get_rubrics_list(
+        RubricsFilters(departmentIds=[dept_id], profileId=superadmin_id)
+    )
+    for rubric in resp_superadmin.rubrics:
+        assert rubric.can_duplicate is True, "Superadmin should be able to duplicate rubrics"
+    
+    # Test with admin - should be able to duplicate
+    if admin_id:
+        resp_admin = await svc.get_rubrics_list(
+            RubricsFilters(departmentIds=[dept_id], profileId=admin_id)
+        )
+        for rubric in resp_admin.rubrics:
+            assert rubric.can_duplicate is True, "Admin should be able to duplicate rubrics"
+    
+    # Test with instructional - should NOT be able to duplicate (instructional doesn't have access to rubrics page)
+    if instructional_id:
+        resp_instructional = await svc.get_rubrics_list(
+            RubricsFilters(departmentIds=[dept_id], profileId=instructional_id)
+        )
+        for rubric in resp_instructional.rubrics:
+            assert rubric.can_duplicate is False, "Instructional should NOT be able to duplicate rubrics"

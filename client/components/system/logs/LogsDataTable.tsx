@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import { formatTimestamp, getLogLevelVariant } from "@/utils/logs/log-utils";
 import { FileText } from "lucide-react";
-import type { DateRange } from "react-day-picker";
 import { LogsDataTableToolbar } from "./LogsDataTableToolbar";
 
 export interface LogsDataTableProps {
@@ -36,8 +35,8 @@ export interface LogsDataTableProps {
   actorOptions: { value: string; label: string }[];
   componentOptions: { value: string; label: string }[];
   functionOptions: { value: string; label: string }[];
-  dateRange: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
+  dateOptions: { value: string; label: string }[];
+  timeOptions: { value: string; label: string }[];
   onBulkDelete: () => void;
   onViewLog: (log: LogItem) => void;
 }
@@ -53,8 +52,8 @@ export function LogsDataTable({
   actorOptions,
   componentOptions,
   functionOptions,
-  dateRange,
-  setDateRange,
+  dateOptions,
+  timeOptions,
   onBulkDelete,
   onViewLog,
 }: LogsDataTableProps) {
@@ -66,6 +65,7 @@ export function LogsDataTable({
       context_provider: false,
       context_model: false,
       context_function: false,
+      created_time: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -89,17 +89,33 @@ export function LogsDataTable({
         ),
         enableSorting: true,
         filterFn: (row, id, value) => {
-          if (!value || (!value.from && !value.to)) return true;
+          if (!value || value.length === 0) return true;
           const created = row.getValue(id) as string | null;
           if (!created) return false;
-          const createdMs = new Date(created).getTime();
-          const fromMs = value?.from
-            ? new Date(value.from).getTime()
-            : undefined;
-          const toMs = value?.to ? new Date(value.to).getTime() : undefined;
-          if (fromMs && createdMs < fromMs) return false;
-          if (toMs && createdMs > toMs) return false;
-          return true;
+          const date = new Date(created);
+          const dateStr = `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+          return value.includes(dateStr);
+        },
+      },
+      {
+        id: "created_time",
+        accessorFn: (row) => {
+          if (!row.created_at) return null;
+          return String(new Date(row.created_at).getHours());
+        },
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Time (Hour)" />
+        ),
+        cell: ({ row }) => {
+          const hour = row.getValue("created_time") as string | null;
+          if (!hour) return <span className="text-muted-foreground">N/A</span>;
+          return <div className="text-sm">{`${hour.padStart(2, "0")}:00`}</div>;
+        },
+        enableSorting: true,
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const hour = row.getValue(id) as string | null;
+          return hour ? value.includes(hour) : false;
         },
       },
       {
@@ -320,6 +336,7 @@ export function LogsDataTable({
         context_provider: false,
         context_model: false,
         context_function: false,
+        created_time: false,
       } as VisibilityState,
     },
   });
@@ -335,8 +352,8 @@ export function LogsDataTable({
         actorOptions={actorOptions}
         componentOptions={componentOptions}
         functionOptions={functionOptions}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
+        dateOptions={dateOptions}
+        timeOptions={timeOptions}
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
         onBulkDelete={onBulkDelete}

@@ -51,7 +51,10 @@ class RubricQueries:
                     WHEN up.role IN ('admin', 'superadmin') THEN true
                     ELSE false
                 END as can_delete,
-                true as can_duplicate
+                CASE 
+                    WHEN up.role IN ('admin', 'superadmin') THEN true
+                    ELSE false
+                END as can_duplicate
             FROM rubrics r
             LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
             LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id

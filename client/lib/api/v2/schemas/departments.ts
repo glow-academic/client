@@ -27,11 +27,13 @@ export const DepartmentItemSchema = z.object({
   title: z.string(),
   description: z.string(),
   active: z.boolean(),
+  default_department: z.boolean(),
   updated_at: z.string(),
   total_price_spent: z.number(),
   staff_count: z.number(),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
+  can_duplicate: z.boolean(),
 });
 
 export const DepartmentsListResponseSchema = z.object({

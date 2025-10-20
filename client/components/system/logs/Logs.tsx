@@ -12,7 +12,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import type { DateRange } from "react-day-picker";
 import { BulkDeleteLogsDialog } from "./BulkDeleteLogsDialog";
 import { LogsDataTable } from "./LogsDataTable";
 
@@ -26,7 +25,6 @@ import { useLogger, useLogsList } from "@/lib/api/v2/hooks/logs";
 export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<LogItem | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
@@ -95,6 +93,8 @@ export default function Logs() {
     actorOptions,
     componentOptions,
     functionOptions,
+    dateOptions,
+    timeOptions,
   } = useMemo(() => {
     const events = new Set(logs.map((l) => l.event));
     const providers = new Set(
@@ -108,6 +108,18 @@ export default function Logs() {
     const functions = new Set(
       logs.map((l) => l.context?.function).filter(Boolean)
     );
+    const dates = new Set<string>();
+    const hours = new Set<number>();
+
+    logs.forEach((logItem) => {
+      if (logItem.created_at) {
+        const date = new Date(logItem.created_at);
+        // Format as MM/DD for date options
+        const dateStr = `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+        dates.add(dateStr);
+        hours.add(date.getHours());
+      }
+    });
 
     return {
       eventOptions: Array.from(events)
@@ -128,6 +140,15 @@ export default function Logs() {
       functionOptions: Array.from(functions)
         .sort()
         .map((v) => ({ value: v!, label: v! })),
+      dateOptions: Array.from(dates)
+        .sort()
+        .map((d) => ({ value: d, label: d })),
+      timeOptions: Array.from(hours)
+        .sort((a, b) => a - b)
+        .map((h) => ({
+          value: String(h),
+          label: `${String(h).padStart(2, "0")}:00`,
+        })),
     };
   }, [logs]);
 
@@ -146,8 +167,8 @@ export default function Logs() {
         actorOptions={actorOptions}
         componentOptions={componentOptions}
         functionOptions={functionOptions}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
+        dateOptions={dateOptions}
+        timeOptions={timeOptions}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
         onBulkDelete={handleBulkDelete}

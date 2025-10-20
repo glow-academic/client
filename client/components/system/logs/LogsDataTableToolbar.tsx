@@ -7,10 +7,8 @@ import { useState } from "react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
-import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { Input } from "@/components/ui/input";
 import type { LogItem } from "@/lib/api/v2/schemas/logs";
-import type { DateRange } from "react-day-picker";
 import { HealthModal } from "./HealthModal";
 
 export interface LogsDataTableToolbarProps {
@@ -22,8 +20,8 @@ export interface LogsDataTableToolbarProps {
   actorOptions: { value: string; label: string }[];
   componentOptions: { value: string; label: string }[];
   functionOptions: { value: string; label: string }[];
-  dateRange: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
+  dateOptions: { value: string; label: string }[];
+  timeOptions: { value: string; label: string }[];
   onRefresh: () => void;
   isRefreshing: boolean;
   onBulkDelete: () => void;
@@ -39,8 +37,8 @@ export function LogsDataTableToolbar({
   actorOptions,
   componentOptions,
   functionOptions,
-  dateRange,
-  setDateRange,
+  dateOptions,
+  timeOptions,
   onRefresh,
   isRefreshing,
   onBulkDelete,
@@ -58,6 +56,8 @@ export function LogsDataTableToolbar({
   const functionColumn = table.getColumn("context_function");
   const providerColumn = table.getColumn("context_provider");
   const modelColumn = table.getColumn("context_model");
+  const createdAtColumn = table.getColumn("created_at");
+  const createdTimeColumn = table.getColumn("created_time");
 
   return (
     <div className="flex items-center justify-between">
@@ -66,7 +66,9 @@ export function LogsDataTableToolbar({
           <Input
             placeholder="Search by event..."
             value={(eventColumn?.getFilterValue() as string) ?? ""}
-            onChange={(event) => eventColumn?.setFilterValue(event.target.value)}
+            onChange={(event) =>
+              eventColumn?.setFilterValue(event.target.value)
+            }
             className="h-8 w-[150px] lg:w-[250px]"
           />
         </div>
@@ -150,13 +152,24 @@ export function LogsDataTableToolbar({
       </div>
 
       <div className="flex items-center space-x-2">
-        {/* Date Range */}
-        <DatePickerWithRange
-          dateRange={dateRange}
-          setDateRange={(range) => {
-            setDateRange(range);
-          }}
-        />
+        {/* Date Filter */}
+        {createdAtColumn && dateOptions.length > 0 && (
+          <DataTableFacetedFilter
+            column={createdAtColumn}
+            title="Date"
+            options={dateOptions}
+          />
+        )}
+
+        {/* Time Filter */}
+        {createdTimeColumn && timeOptions.length > 0 && (
+          <DataTableFacetedFilter
+            column={createdTimeColumn}
+            title="Hour"
+            options={timeOptions}
+          />
+        )}
+
         {/* Bulk Delete Button */}
         <Button
           variant="outline"

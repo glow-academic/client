@@ -60,11 +60,13 @@ class DepartmentService(BaseService):
                     title=row["title"],
                     description=row["description"],
                     active=row["active"],
+                    default_department=row["default_department"],
                     updated_at=row["updated_at"].isoformat(),
                     total_price_spent=float(row["total_price_spent"]),
                     staff_count=int(row["staff_count"]),
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
+                    can_duplicate=row["can_duplicate"],
                 )
             )
         return DepartmentsListResponse(departments=departments)

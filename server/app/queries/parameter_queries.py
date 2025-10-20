@@ -60,7 +60,10 @@ class ParameterQueries:
                 WHEN up.role IN ('admin', 'superadmin') THEN true
                 ELSE false
             END as can_delete,
-            true as can_duplicate
+            CASE 
+                WHEN up.role IN ('admin', 'superadmin') THEN true
+                ELSE false
+            END as can_duplicate
         FROM parameters p
         LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
         LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id

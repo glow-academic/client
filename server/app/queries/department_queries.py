@@ -15,7 +15,10 @@ class DepartmentQueries:
         Computes:
         - total_price_spent from model_runs + models pricing
         - staff_count from profile_departments
-        - can_edit/can_delete from user role (superadmin only)
+        - can_edit/can_delete/can_duplicate with permission logic based on:
+          * Active cohort links
+          * default_department flag
+          * User role (admin/superadmin only)
 
         Returns:
             Tuple of (query, params)
@@ -42,6 +45,22 @@ class DepartmentQueries:
             WHERE department_id = ANY($1)
             GROUP BY department_id
         ),
+        department_active_cohort_links AS (
+            SELECT 
+                department_id,
+                COUNT(*) as active_cohort_count
+            FROM cohorts
+            WHERE department_id = ANY($1) AND active = true
+            GROUP BY department_id
+        ),
+        department_all_cohort_links AS (
+            SELECT 
+                department_id,
+                COUNT(*) as total_cohort_links
+            FROM cohorts
+            WHERE department_id = ANY($1)
+            GROUP BY department_id
+        ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
         )
@@ -50,14 +69,31 @@ class DepartmentQueries:
             d.title,
             d.description,
             d.active,
+            d.default_department,
             d.updated_at,
             COALESCE(dps.total_price_spent, 0) as total_price_spent,
             COALESCE(dsc.staff_count, 0) as staff_count,
-            CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_edit,
-            CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_delete
+            CASE 
+                WHEN COALESCE(dacl.active_cohort_count, 0) > 0 THEN false
+                WHEN d.default_department = true AND up.role != 'superadmin' THEN false
+                WHEN up.role IN ('admin', 'superadmin') THEN true
+                ELSE false
+            END as can_edit,
+            CASE 
+                WHEN COALESCE(dacl_all.total_cohort_links, 0) > 0 THEN false
+                WHEN d.default_department = true AND up.role != 'superadmin' THEN false
+                WHEN up.role IN ('admin', 'superadmin') THEN true
+                ELSE false
+            END as can_delete,
+            CASE 
+                WHEN up.role IN ('admin', 'superadmin') THEN true
+                ELSE false
+            END as can_duplicate
         FROM departments d
         LEFT JOIN department_price_spent dps ON dps.department_id = d.id
         LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id
+        LEFT JOIN department_active_cohort_links dacl ON dacl.department_id = d.id
+        LEFT JOIN department_all_cohort_links dacl_all ON dacl_all.department_id = d.id
         CROSS JOIN user_profile up
         WHERE d.id = ANY($1)
         ORDER BY d.title

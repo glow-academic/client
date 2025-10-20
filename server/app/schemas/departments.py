@@ -29,11 +29,13 @@ class DepartmentItem(BaseModel):
     title: str
     description: str
     active: bool
+    default_department: bool
     updated_at: str
     total_price_spent: float
     staff_count: int
     can_edit: bool
     can_delete: bool
+    can_duplicate: bool
 
 
 class DepartmentsListResponse(BaseModel):
