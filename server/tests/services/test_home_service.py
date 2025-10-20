@@ -2,10 +2,9 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
-
 from app.schemas.analytics import AnalyticsFilters
 from app.services.home_service import HomeService
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
 
 pytestmark = pytest.mark.asyncio
 
@@ -65,11 +64,11 @@ async def test_home_overview_instructional_mode(
     # Check items structure
     if len(resp.items) > 0:
         first_item = resp.items[0]
-        assert first_item.get("viewMode") == "instructional"
-        assert "simulationTitle" in first_item
-        assert "passedCount" in first_item
-        assert "inProgressCount" in first_item
-        assert "notStartedCount" in first_item
+        assert first_item.viewMode == "instructional"
+        assert hasattr(first_item, "simulationTitle")
+        assert hasattr(first_item, "passedCount")
+        assert hasattr(first_item, "inProgressCount")
+        assert hasattr(first_item, "notStartedCount")
 
 
 async def test_home_overview_mappings_populated(
@@ -145,6 +144,12 @@ async def test_home_overview_history_populated(
             "History item should have simulationName"
         )
         assert hasattr(first_attempt, "date"), "History item should have date"
+        assert hasattr(first_attempt, "cohortNames"), (
+            "History item should have cohortNames"
+        )
+        assert isinstance(first_attempt.cohortNames, list), (
+            "cohortNames should be a list"
+        )
 
 
 async def test_home_overview_with_date_filters(
@@ -284,3 +289,38 @@ async def test_home_overview_role_based_access(
     # TA view would require a TA profile ID from seed data
     # For now, just verify admin mode works
     assert isinstance(admin_resp.items, list)
+
+
+async def test_home_overview_history_filtered_by_profile(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Verify history is filtered to only include attempts from the specified profile."""
+    dept_id = await get_cs_dept_id(db)
+    
+    # Get a specific profile ID from seed data
+    profile_id = await db.fetchval(
+        "SELECT id FROM profiles WHERE role = 'ta' LIMIT 1"
+    )
+    
+    if profile_id is None:
+        # Skip test if no TA profiles exist
+        pytest.skip("No TA profiles in seed data")
+        return
+
+    svc = HomeService(db)
+    resp = await svc.get_home_overview(
+        AnalyticsFilters(
+            startDate="2020-01-01",
+            endDate="2030-12-31",
+            departmentIds=[dept_id],
+            profileId=str(profile_id),
+        )
+    )
+
+    # If there are attempts in history, verify they all belong to the specified profile
+    if len(resp.history) > 0:
+        for attempt in resp.history:
+            assert attempt.profileId == str(profile_id), (
+                f"History should only contain attempts from profile {profile_id}, "
+                f"but found attempt from {attempt.profileId}"
+            )

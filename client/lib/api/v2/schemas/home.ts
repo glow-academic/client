@@ -57,6 +57,7 @@ export const AttemptHistoryRowSchema = z.object({
   showContinue: z.boolean(),
   practiceSimulation: z.boolean(),
   passPct: z.number().nullable(),
+  cohortNames: z.array(z.string()),
 });
 
 export const AttemptHistoryResponseSchema = z.array(AttemptHistoryRowSchema);

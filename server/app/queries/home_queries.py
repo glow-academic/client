@@ -433,6 +433,12 @@ class HomeQueries:
                 FROM filt a
                 GROUP BY a.attempt_id, a.simulation_id
             ),
+            attempt_cohort_ids AS (
+                SELECT DISTINCT ON (attempt_id)
+                    attempt_id,
+                    profile_cohort_ids
+                FROM filt
+            ),
             attempt_joined AS (
                 SELECT
                     ar.*,
@@ -456,6 +462,16 @@ class HomeQueries:
                 JOIN simulations s ON s.id = ar.simulation_id
                 LEFT JOIN rubrics r ON r.id = s.rubric_id
                 JOIN profiles p ON p.id = ap.profile_id
+            ),
+            attempt_cohort_names AS (
+                SELECT
+                    aj.attempt_id,
+                    COALESCE(ARRAY_AGG(c.title ORDER BY c.title) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::text[]) AS cohort_names
+                FROM attempt_joined aj
+                LEFT JOIN attempt_cohort_ids aci ON aci.attempt_id = aj.attempt_id
+                LEFT JOIN LATERAL unnest(COALESCE(aci.profile_cohort_ids, ARRAY[]::uuid[])) AS cohort_id ON TRUE
+                LEFT JOIN cohorts c ON c.id = cohort_id
+                GROUP BY aj.attempt_id
             ),
             final_rows AS (
                 SELECT
@@ -545,7 +561,8 @@ class HomeQueries:
                             'showContinue', fr.show_continue,
                             'practiceSimulation', COALESCE(fr.practice_simulation, false),
                             'passPct', fr.pass_pct,
-                            'department_id', fr.department_id::text
+                            'department_id', fr.department_id::text,
+                            'cohortNames', COALESCE(acn.cohort_names, ARRAY[]::text[])
                         )
                         ORDER BY fr.attempt_date DESC, fr.attempt_id
                     ),
@@ -554,6 +571,7 @@ class HomeQueries:
                 FROM final_rows fr
                 LEFT JOIN persona_labels pl ON pl.attempt_id = fr.attempt_id
                 LEFT JOIN scenario_names sn ON sn.attempt_id = fr.attempt_id
+                LEFT JOIN attempt_cohort_names acn ON acn.attempt_id = fr.attempt_id
             ),
             simulation_mapping_data AS (
                 SELECT COALESCE(

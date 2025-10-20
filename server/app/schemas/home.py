@@ -29,6 +29,8 @@ class HomeSimulationItem(BaseModel):
     inProgressCount: int | None = None
     notStartedCount: int | None = None
     passPct: float | None = None
+    cohortName: str | None = None
+    cohortNames: str | None = None
 
 
 class AttemptHistoryRow(BaseModel):
@@ -55,6 +57,7 @@ class AttemptHistoryRow(BaseModel):
     practiceSimulation: bool
     passPct: int | None = None
     department_id: str
+    cohortNames: list[str]
 
 
 AttemptHistoryResponse = list[AttemptHistoryRow]

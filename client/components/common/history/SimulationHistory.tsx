@@ -43,6 +43,7 @@ export interface HistoryDataItem {
   showContinue: boolean;
   practiceSimulation?: boolean; // Needed for routing to /practice/ vs /home/
   passPct: number; // Pass percentage threshold for this simulation
+  cohortNames: string[];
 }
 
 export interface SimulationHistoryProps {
