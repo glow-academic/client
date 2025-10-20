@@ -4,7 +4,8 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.schemas.analytics import AnalyticsFilters, PracticeOverviewResponse
+from app.schemas.analytics import AnalyticsFilters
+from app.schemas.practice import PracticeOverviewResponse
 from app.services.practice_service import PracticeService
 from fastapi import APIRouter, Depends, HTTPException
 

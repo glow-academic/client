@@ -6,7 +6,12 @@ from typing import Any
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.queries.dashboard_queries import DashboardQueries
-from app.schemas.analytics import (AnalyticsFilters, AttemptImprovementData,
+from app.schemas.analytics import AnalyticsFilters, Method, MetricResponse
+from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem,
+                              RubricMapping, RubricMappingItem,
+                              SimulationMapping, SimulationMappingItem)
+from app.schemas.dashboard import (AttemptImprovementData,
                                    AttemptImprovementResponse, CohortData,
                                    CohortPerformanceResponse,
                                    DashboardBundleResponse,
@@ -15,8 +20,7 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptImprovementData,
                                    DashboardPrimaryMetrics,
                                    DashboardSecondaryMetrics,
                                    GrowthDataResponse, GrowthWindowAverages,
-                                   Method, MetricResponse, NumericAttemptFact,
-                                   PersonaPerformanceData,
+                                   NumericAttemptFact, PersonaPerformanceData,
                                    PersonaPerformanceResponse,
                                    PersonaTrendData, RubricHeatmapResponse,
                                    RubricMatrixPackage,
@@ -28,10 +32,6 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptImprovementData,
                                    SimulationPerformanceResponse,
                                    SkillPerformanceResponse, SkillRadarData,
                                    Thresholds)
-from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              SimulationMapping, SimulationMappingItem)
 from app.services.base import BaseService, with_cache
 
 
@@ -372,7 +372,7 @@ class DashboardService(BaseService):
 
     def _parse_window_average(self, avg_data: dict[str, Any]) -> Any:
         """Parse window average from JSON data."""
-        from app.schemas.analytics import GrowthWindowAverage
+        from app.schemas.dashboard import GrowthWindowAverage
 
         return GrowthWindowAverage(
             n=avg_data.get("n", 7),

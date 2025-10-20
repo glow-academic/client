@@ -4,7 +4,8 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.schemas.analytics import AnalyticsFilters, DashboardBundleResponse
+from app.schemas.analytics import AnalyticsFilters
+from app.schemas.dashboard import DashboardBundleResponse
 from app.services.dashboard_service import DashboardService
 from fastapi import APIRouter, Depends, HTTPException
 

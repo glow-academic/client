@@ -4,17 +4,12 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.home_queries import HomeQueries
-from app.services.base import AnalyticsQueryBuilder
-from app.schemas.analytics import (
-    AnalyticsFilters,
-    AttemptHistoryRow,
-    HomeOverviewResponse,
-)
+from app.schemas.analytics import AnalyticsFilters
 from app.schemas.base import SimulationMappingItem
-from app.services.base import BaseService, with_cache
+from app.schemas.home import AttemptHistoryRow, HomeOverviewResponse
+from app.services.base import AnalyticsQueryBuilder, BaseService, with_cache
 
 
 class HomeService(BaseService):

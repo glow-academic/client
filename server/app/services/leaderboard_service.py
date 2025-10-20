@@ -4,10 +4,10 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.leaderboard_queries import LeaderboardQueries
-from app.schemas.analytics import AnalyticsFilters, LeaderboardBundleResponse
+from app.schemas.analytics import AnalyticsFilters
+from app.schemas.leaderboard import LeaderboardBundleResponse
 from app.services.base import BaseService, with_cache
 
 

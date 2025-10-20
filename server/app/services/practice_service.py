@@ -6,11 +6,12 @@ from typing import Any
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.queries.practice_queries import PracticeQueries
-from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryRow,
-                                   PracticeOverviewResponse)
+from app.schemas.analytics import AnalyticsFilters
 from app.schemas.base import (ParameterItemMappingItem, ParameterMappingItem,
                               PersonaMappingItem, ScenarioMappingItem,
                               SimulationMappingItem)
+from app.schemas.home import AttemptHistoryRow
+from app.schemas.practice import PracticeOverviewResponse
 from app.services.base import BaseService, with_cache
 
 

@@ -4,7 +4,8 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.schemas.analytics import AnalyticsFilters, LeaderboardBundleResponse
+from app.schemas.analytics import AnalyticsFilters
+from app.schemas.leaderboard import LeaderboardBundleResponse
 from app.services.leaderboard_service import LeaderboardService
 from fastapi import APIRouter, Depends, HTTPException
 
