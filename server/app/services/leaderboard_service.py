@@ -6,7 +6,7 @@ from typing import Any
 import asyncpg  # type: ignore
 
 from app.cache import keys
-from app.queries.analytics.bundle_queries import BundleQueries
+from app.queries.leaderboard_queries import LeaderboardQueries
 from app.schemas.analytics import AnalyticsFilters, LeaderboardBundleResponse
 from app.services.base import BaseService, with_cache
 
@@ -17,7 +17,7 @@ class LeaderboardService(BaseService):
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
         super().__init__(conn)
-        self.bundle_queries = BundleQueries()
+        self.queries = LeaderboardQueries()
 
     @with_cache(lambda self, filters: keys.analytics_leaderboard_bundle(filters))
     async def get_leaderboard_bundle(
@@ -52,7 +52,7 @@ class LeaderboardService(BaseService):
         all leaderboard metrics and profile data in a single database round-trip.
         """
         # Build query with all filters
-        query, params = self.bundle_queries.leaderboard_bundle(
+        query, params = self.queries.leaderboard_bundle(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,

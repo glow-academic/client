@@ -4,52 +4,34 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
-from app.queries.analytics.dashboard_queries import DashboardQueries
-from app.schemas.analytics import (
-    AnalyticsFilters,
-    AttemptImprovementData,
-    AttemptImprovementResponse,
-    CohortData,
-    CohortPerformanceResponse,
-    DashboardBundleResponse,
-    DashboardFooterMetrics,
-    DashboardHeaderMetrics,
-    DashboardInsights,
-    DashboardPrimaryMetrics,
-    DashboardSecondaryMetrics,
-    GrowthDataResponse,
-    GrowthWindowAverages,
-    Method,
-    MetricResponse,
-    NumericAttemptFact,
-    ParameterItemMapping,
-    ParameterMapping,
-    PersonaPerformanceData,
-    PersonaPerformanceResponse,
-    PersonaTrendData,
-    RubricHeatmapResponse,
-    RubricMapping,
-    RubricMatrixPackage,
-    ScenarioAttributeAttemptFact,
-    ScenarioFact,
-    ScenarioPerformanceResponse,
-    ScenarioStatsResponse,
-    SimulationCompositionResponse,
-    SimulationFact,
-    SimulationMapping,
-    SimulationPerformanceResponse,
-    SkillPerformanceResponse,
-    SkillRadarData,
-    Thresholds,
-)
-from app.schemas.base import (
-    ParameterItemMappingItem,
-    ParameterMappingItem,
-    RubricMappingItem,
-    SimulationMappingItem,
-)
+from app.queries.dashboard_queries import DashboardQueries
+from app.schemas.analytics import (AnalyticsFilters, AttemptImprovementData,
+                                   AttemptImprovementResponse, CohortData,
+                                   CohortPerformanceResponse,
+                                   DashboardBundleResponse,
+                                   DashboardFooterMetrics,
+                                   DashboardHeaderMetrics, DashboardInsights,
+                                   DashboardPrimaryMetrics,
+                                   DashboardSecondaryMetrics,
+                                   GrowthDataResponse, GrowthWindowAverages,
+                                   Method, MetricResponse, NumericAttemptFact,
+                                   PersonaPerformanceData,
+                                   PersonaPerformanceResponse,
+                                   PersonaTrendData, RubricHeatmapResponse,
+                                   RubricMatrixPackage,
+                                   ScenarioAttributeAttemptFact, ScenarioFact,
+                                   ScenarioPerformanceResponse,
+                                   ScenarioStatsResponse,
+                                   SimulationCompositionResponse,
+                                   SimulationFact,
+                                   SimulationPerformanceResponse,
+                                   SkillPerformanceResponse, SkillRadarData,
+                                   Thresholds)
+from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem,
+                              RubricMapping, RubricMappingItem,
+                              SimulationMapping, SimulationMappingItem)
 from app.services.base import BaseService, with_cache
 
 
@@ -82,7 +64,9 @@ class DashboardService(BaseService):
             filters.endDate,
             filters.cohortIds,
             filters.roles,
-            filters.simulationFilters,
+            [f.value for f in filters.simulationFilters]
+            if filters.simulationFilters
+            else None,
             filters.profileId,
             filters.departmentIds,
         )
@@ -260,7 +244,6 @@ class DashboardService(BaseService):
                     simulationId=sf.get("simulationId", ""),
                     title=sf.get("title", ""),
                     avgScore=sf.get("avgScore", 0),
-                    passRate=sf.get("passRate", 0),
                     completionRate=sf.get("completionRate", 0),
                     totalAttempts=sf.get("totalAttempts", 0),
                     scenarioCount=sf.get("scenarioCount", 0),
@@ -313,8 +296,8 @@ class DashboardService(BaseService):
             parameter_item_mapping[pi_id] = ParameterItemMappingItem(
                 name=pi_data.get("name", ""),
                 description=pi_data.get("description", ""),
-                parameterId=pi_data.get("parameterId", ""),
-                parameterName=pi_data.get("parameterName", ""),
+                parameter_id=pi_data.get("parameterId", ""),
+                parameter_name=pi_data.get("parameterName", ""),
             )
 
         # Compute all actionable insights (inlined from analytics_insights.py)

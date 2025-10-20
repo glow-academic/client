@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from app.queries.analytics.base import AnalyticsQueryBuilder
+from app.services.base import AnalyticsQueryBuilder
 
 
 class ReportsQueries:

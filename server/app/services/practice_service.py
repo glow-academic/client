@@ -5,7 +5,7 @@ from typing import Any
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.queries.analytics.practice_queries import PracticeQueries
+from app.queries.practice_queries import PracticeQueries
 from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryRow,
                                    PracticeOverviewResponse)
 from app.schemas.base import (ParameterItemMappingItem, ParameterMappingItem,

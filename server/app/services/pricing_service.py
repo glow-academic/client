@@ -4,17 +4,12 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
-from app.queries.analytics.base import AnalyticsQueryBuilder
-from app.queries.analytics.pricing_queries import PricingQueries
-from app.schemas.analytics import (
-    AnalyticsFilters,
-    DebugInfoItem,
-    ModelMappingWithPricing,
-    ModelRunItem,
-    PricingAnalyticsResponse,
-)
+from app.queries.pricing_queries import PricingQueries
+from app.services.base import AnalyticsQueryBuilder
+from app.schemas.analytics import (AnalyticsFilters, DebugInfoItem,
+                                   ModelMappingWithPricing, ModelRunItem,
+                                   PricingAnalyticsResponse)
 from app.services.base import BaseService, with_cache
 
 

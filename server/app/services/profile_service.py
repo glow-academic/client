@@ -7,21 +7,13 @@ from typing import Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.profile_queries import ProfileQueries
 from app.schemas.permissions import ProfileRole
-from app.schemas.profile import (
-    BreadcrumbItem,
-    CohortItem,
-    CohortsData,
-    DepartmentItem,
-    ProfileContextRequest,
-    ProfileContextResponse,
-    ProfileItem,
-    SimulationContextItem,
-    SimulationsData,
-)
+from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
+                                 DepartmentItem, ProfileContextRequest,
+                                 ProfileContextResponse, ProfileItem,
+                                 SimulationContextItem, SimulationsData)
 from app.services.base import BaseService, with_cache
 from app.services.permissions_service import PermissionsService
 from app.utils.csv import parse_csv_file
@@ -312,7 +304,7 @@ class ProfileService(BaseService):
                             return ""
                         if isinstance(val, str):
                             return val  # Already a string (from JSONB)
-                        return val.isoformat()  # datetime object
+                        return val.isoformat()  # type: ignore
 
                     simulatable_profiles.append(
                         ProfileItem(
