@@ -118,8 +118,8 @@ class DashboardService(BaseService):
         # Growth data
         growth_data_raw = primary_data.get("growthData", {})
         growth_data = GrowthDataResponse(
-            chartData=[],
-            availableMetrics=[],
+            chartData=growth_data_raw.get("chartData", []),
+            availableMetrics=growth_data_raw.get("availableMetrics", []),
             windowAverages=GrowthWindowAverages(
                 averageScore=self._parse_window_average(
                     growth_data_raw.get("windowAverages", {}).get("averageScore", {})

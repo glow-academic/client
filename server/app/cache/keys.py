@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 24  # Bumped: Enhanced dashboard query with all analytics metrics from SHA a510c858; fixed parameter/parameter_item mappings to include all active params
+GLOBAL_CACHE_VERSION = 25  # Bumped: Added availableMetrics to growth data for UI metric picker
 
 # Namespaces
 NS_ANALYTICS = "analytics"

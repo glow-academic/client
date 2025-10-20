@@ -1292,7 +1292,24 @@ class DashboardQueries:
                             'averageScore', average_score,
                             'passRate', pass_rate
                         ) ORDER BY date_val) FROM growth_chart_dates), '[]'::json),
-                        'availableMetrics', '[]'::json,
+                        'availableMetrics', json_build_array(
+                            json_build_object(
+                                'id', 'averageScore',
+                                'name', 'Average Score',
+                                'color', '#3b82f6',
+                                'unit', '%',
+                                'description', 'Average score across all attempts',
+                                'formatterId', 'percent'
+                            ),
+                            json_build_object(
+                                'id', 'passRate',
+                                'name', 'Pass Rate',
+                                'color', '#10b981',
+                                'unit', '%',
+                                'description', 'Percentage of first attempts that passed',
+                                'formatterId', 'percent'
+                            )
+                        ),
                         'windowAverages', json_build_object(
                             'averageScore', json_build_object(
                                 'n', 7,
