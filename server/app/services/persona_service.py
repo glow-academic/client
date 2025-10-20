@@ -402,19 +402,150 @@ class PersonaService(BaseService):
         self, request: PersonaDetailDefaultRequest
     ) -> PersonaDetailResponse:
         """Internal method to fetch default persona detail from database."""
-        # Get default persona for profile
-        query, params = self.queries.get_default_persona(request.profileId)
-        persona = await self.conn.fetchrow(query, *params)
+        # Use consolidated query that finds default and fetches detail in one go
+        query, params = self.queries.get_persona_detail_default_complete(
+            request.profileId
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        if not persona:
+        if not result:
             raise ValueError("No personas found for user's departments")
 
-        # Reuse the detail logic with the found persona_id
-        detail_request = PersonaDetailRequest(
-            personaId=str(persona["id"]), profileId=request.profileId
+        # Compute permissions
+        user_role = result["user_role"] if result.get("user_role") else "trainee"
+        usage_count = result["usage_count"]
+        scenario_count = usage_count
+        in_use = usage_count > 0
+        is_admin = user_role in ("admin", "instructional", "superadmin")
+        can_edit = is_admin and (
+            not result["default_persona"] or user_role == "superadmin"
+        )
+        can_duplicate = is_admin
+        can_delete = is_admin and not in_use and (
+            not result["default_persona"] or user_role == "superadmin"
         )
 
-        return await self._fetch_persona_detail(detail_request)
+        # Parse department_mapping from JSONB
+        department_mapping_json = json.loads(result["dept_mapping"])
+        valid_department_ids = result["valid_department_ids"]
+
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        for dept_id, ddata in department_mapping_json.items():
+            department_mapping[dept_id] = DepartmentMappingItem(
+                name=ddata.get("name", ""),
+                description=ddata.get("description", ""),
+            )
+
+        # Parse model_mapping from JSONB
+        model_mapping_json = json.loads(result["model_mapping"])
+        valid_model_ids = result["valid_model_ids"]
+
+        model_mapping: dict[str, ModelMappingItem] = {}
+        for model_id, mdata in model_mapping_json.items():
+            model_mapping[model_id] = ModelMappingItem(
+                name=mdata.get("name", ""),
+                description=mdata.get("description", ""),
+            )
+
+        # Hardcoded metadata (same as regular detail method)
+        preset_colors = [
+            "#EF4444",  # Red
+            "#F97316",  # Orange
+            "#F59E0B",  # Amber
+            "#10B981",  # Green
+            "#3B82F6",  # Blue
+            "#6366F1",  # Indigo
+            "#8B5CF6",  # Purple
+            "#EC4899",  # Pink
+        ]
+
+        suggested_icons = ["Sparkles", "Zap", "Star", "Heart", "Users"]
+
+        valid_icons = [
+            "Activity",
+            "Anchor",
+            "Award",
+            "Bell",
+            "Book",
+            "Briefcase",
+            "Calendar",
+            "Camera",
+            "ChevronRight",
+            "Clock",
+            "Cloud",
+            "Code",
+            "Compass",
+            "Database",
+            "FileText",
+            "Globe",
+            "Mail",
+            "Mic",
+            "Monitor",
+            "Phone",
+            "Radio",
+            "Search",
+            "Settings",
+            "Shield",
+            "Video",
+            "Wifi",
+        ]
+
+        reasoning_options = ["minimal", "low", "medium", "high"]
+
+        reasoning_mapping = {
+            "none": ReasoningMappingItem(
+                name="None", description="No extended reasoning"
+            ),
+            "minimal": ReasoningMappingItem(
+                name="Minimal", description="Basic reasoning for straightforward tasks"
+            ),
+            "low": ReasoningMappingItem(
+                name="Low", description="Light reasoning for simple problem-solving"
+            ),
+            "medium": ReasoningMappingItem(
+                name="Medium", description="Balanced reasoning for moderate complexity"
+            ),
+            "high": ReasoningMappingItem(
+                name="High",
+                description="Deep reasoning for complex, multi-step problems",
+            ),
+        }
+
+        return PersonaDetailResponse(
+            # Basic fields
+            name=result["name"],
+            description=result["description"],
+            department_id=str(result["department_id"]),
+            active=result["active"],
+            default_persona=result["default_persona"],
+            color=result["color"],
+            icon=result["icon"],
+            model_id=str(result["model_id"]),
+            reasoning=result["reasoning"],
+            temperature=float(result["temperature"]),
+            system_prompt=result["system_prompt"],
+            # Usage and permissions
+            in_use=in_use,
+            scenario_count=scenario_count,
+            can_edit=can_edit,
+            can_duplicate=can_duplicate,
+            can_delete=can_delete,
+            # Metadata
+            preset_colors=preset_colors,
+            suggested_icons=suggested_icons,
+            valid_icons=valid_icons,
+            valid_model_ids=valid_model_ids,
+            reasoning_options=reasoning_options,
+            valid_department_ids=valid_department_ids,
+            temperature_lower=0.0,
+            temperature_upper=2.0,
+            # Mappings
+            model_mapping=model_mapping,
+            reasoning_mapping=reasoning_mapping,
+            department_mapping=department_mapping,
+            # Debug info
+            debug_info=[],
+        )
 
     async def create_persona(
         self, request: CreatePersonaRequest
@@ -614,36 +745,45 @@ class PersonaService(BaseService):
             return {"error": f"Invalid persona_id format: {persona_id}"}
 
         try:
-            # Get persona details with scenarios
-            query, params = self.queries.get_persona_with_scenarios(str(persona_uuid))
-            persona = await self.conn.fetchrow(query, *params)
+            # Get all data in ONE consolidated query (C2 consolidation)
+            cutoff_date = datetime.now() - timedelta(days=window_days)
+            query, params = self.queries.get_persona_response_times_complete(
+                str(persona_uuid), cutoff_date
+            )
+            result = await self.conn.fetchrow(query, *params)
 
-            if not persona:
+            if not result:
                 return {"error": f"Persona not found: {persona_id}"}
 
-            # Parse scenarios from JSON
-            scenarios = persona["scenarios"] if persona["scenarios"] else []
+            # Parse scenarios from JSONB
+            scenarios = result["scenarios"] if result["scenarios"] else []
 
-            if not scenarios:
+            if not scenarios or len(scenarios) == 0:
                 return {
                     "persona": {
-                        "id": str(persona["persona_id"]),
-                        "name": persona["persona_name"],
-                        "description": persona["persona_description"],
+                        "id": str(result["persona_id"]),
+                        "name": result["persona_name"],
+                        "description": result["persona_description"],
                     },
                     "stats": {"message": "No scenarios found for this persona"},
                     "recent_responses": [],
                 }
 
-            # Get recent response times for this persona's scenarios
-            cutoff_date = datetime.now() - timedelta(days=window_days)
-            scenario_ids = [str(s["id"]) for s in scenarios]
+            # Parse response data from JSONB
+            import json
+            response_data_raw = result["response_data"]
+            if isinstance(response_data_raw, str):
+                response_data = json.loads(response_data_raw)
+            else:
+                response_data = response_data_raw if response_data_raw else []
 
-            # Get response time data
-            query, params = self.queries.get_persona_response_time_data(
-                scenario_ids, cutoff_date
-            )
-            response_data = await self.conn.fetch(query, *params)
+            # Sort by response_time_seconds descending (since removed from SQL for DISTINCT compatibility)
+            if response_data:
+                response_data = sorted(
+                    response_data,
+                    key=lambda x: x.get("response_time_seconds", 0),
+                    reverse=True
+                )
 
             response_times: list[float] = []
             recent_responses: list[dict[str, Any]] = []
@@ -652,12 +792,25 @@ class PersonaService(BaseService):
                 response_time_seconds = float(row["response_time_seconds"])
                 response_times.append(response_time_seconds)
 
+                # Handle datetime objects that may already be serialized
+                query_time = row["query_time"]
+                if hasattr(query_time, "isoformat"):
+                    query_time = query_time.isoformat()
+                elif not isinstance(query_time, str):
+                    query_time = str(query_time)
+
+                response_time = row["response_time"]
+                if hasattr(response_time, "isoformat"):
+                    response_time = response_time.isoformat()
+                elif not isinstance(response_time, str):
+                    response_time = str(response_time)
+
                 recent_responses.append(
                     {
                         "chat_id": str(row["chat_id"]),
                         "scenario_name": row["scenario_name"],
-                        "query_time": row["query_time"].isoformat(),
-                        "response_time": row["response_time"].isoformat(),
+                        "query_time": query_time,
+                        "response_time": response_time,
                         "response_time_seconds": response_time_seconds,
                         "query_length": row["query_length"],
                         "response_length": row["response_length"],
@@ -692,9 +845,9 @@ class PersonaService(BaseService):
 
             return {
                 "persona": {
-                    "id": str(persona["persona_id"]),
-                    "name": persona["persona_name"],
-                    "description": persona["persona_description"],
+                    "id": str(result["persona_id"]),
+                    "name": result["persona_name"],
+                    "description": result["persona_description"],
                     "scenario_count": len(scenarios),
                 },
                 "stats": stats,

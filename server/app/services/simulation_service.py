@@ -382,20 +382,219 @@ class SimulationService(BaseService):
         self, request: SimulationDetailDefaultRequest
     ) -> SimulationDetailResponse:
         """Get default simulation details based on profile."""
+        # Use consolidated query that finds default and fetches detail in one go
+        query, params = self.queries.get_simulation_detail_default_complete(
+            request.profileId
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        # Get default simulation for profile
-        query, params = self.queries.get_default_simulation(request.profileId)
-        simulation = await self.conn.fetchrow(query, *params)
-
-        if not simulation:
+        if not result:
             raise ValueError("No simulations found for user's departments")
 
-        # Reuse the detail logic with the found simulation_id
-        detail_request = SimulationDetailRequest(
-            simulationId=str(simulation["id"]), profileId=request.profileId
-        )
+        # Extract user role and cohort count for permissions
+        user_role = result["user_role"] if result.get("user_role") else "trainee"
+        cohort_count = result.get("cohort_count", 0)
+        in_use = cohort_count > 0
 
-        return await self.get_simulation_detail(detail_request)
+        # Compute permissions
+        is_admin = user_role in ("admin", "superadmin")
+        can_edit = is_admin and (
+            not result["default_simulation"] or user_role == "superadmin"
+        )
+        can_duplicate = is_admin
+        can_delete = is_admin and not in_use
+
+        # Parse scenarios list from JSONB with type safety (may be string or list)
+        scenarios_list: list[ScenarioInSimulation] = []
+        scenarios_list_data = result.get("scenarios_list")
+        if isinstance(scenarios_list_data, str):
+            scenarios_list_data = json.loads(scenarios_list_data)
+        if scenarios_list_data and isinstance(scenarios_list_data, list):
+            for s_data in scenarios_list_data:
+                if isinstance(s_data, dict):
+                    scenarios_list.append(
+                        ScenarioInSimulation(
+                            scenario_id=s_data.get("scenario_id", ""),
+                            title=s_data.get("title", ""),
+                            description=s_data.get("description", ""),
+                            active=s_data.get("active", True),
+                            default_scenario=s_data.get("default_scenario", False),
+                            position=s_data.get("position", 0),
+                            parameter_item_ids=s_data.get("parameter_item_ids", []),
+                            usage_count=s_data.get("usage_count", 0),
+                            success_rate=s_data.get("success_rate", 0),
+                            last_used=s_data.get("last_used"),
+                            can_remove=s_data.get("can_remove", True),
+                        )
+                    )
+
+        scenario_ids = result.get("scenario_ids", [])
+        valid_scenario_ids = result.get("valid_scenario_ids", [])
+        valid_rubric_ids = result.get("valid_rubric_ids", [])
+        valid_department_ids = result.get("valid_department_ids", [])
+
+        # Parse rubric mapping from JSONB with type safety (may be string or dict)
+        rubric_mapping: RubricMapping = {}
+        rubric_mapping_data = result.get("rubric_mapping")
+        if isinstance(rubric_mapping_data, str):
+            rubric_mapping_data = json.loads(rubric_mapping_data)
+        if rubric_mapping_data and isinstance(rubric_mapping_data, dict):
+            for rid, rdata in rubric_mapping_data.items():
+                if isinstance(rdata, dict):
+                    rubric_mapping[rid] = RubricMappingItem(
+                        name=rdata.get("name", ""),
+                        description=rdata.get("description", ""),
+                    )
+
+        # Parse scenario mapping from JSONB with type safety (may be string or dict)
+        scenario_mapping: dict[str, ScenarioMappingItem] = {}
+        scenario_mapping_data = result.get("scenario_mapping")
+        if isinstance(scenario_mapping_data, str):
+            scenario_mapping_data = json.loads(scenario_mapping_data)
+        if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
+            for sid, sdata in scenario_mapping_data.items():
+                if isinstance(sdata, dict):
+                    # Parse nested persona mapping
+                    persona_mapping = {}
+                    if sdata.get("persona_mapping") and isinstance(
+                        sdata["persona_mapping"], dict
+                    ):
+                        for pid, pdata in sdata["persona_mapping"].items():
+                            if isinstance(pdata, dict):
+                                from app.schemas.base import PersonaMappingItem
+
+                                persona_mapping[pid] = PersonaMappingItem(
+                                    name=pdata.get("name", ""),
+                                    description=pdata.get("description", ""),
+                                    color=pdata.get("color", ""),
+                                    icon=pdata.get("icon", ""),
+                                )
+
+                    # Parse nested document mapping
+                    document_mapping = {}
+                    if sdata.get("document_mapping") and isinstance(
+                        sdata["document_mapping"], dict
+                    ):
+                        for did, ddata in sdata["document_mapping"].items():
+                            if isinstance(ddata, dict):
+                                from app.schemas.base import \
+                                    DocumentMappingItem
+
+                                document_mapping[did] = DocumentMappingItem(
+                                    name=ddata.get("name", ""),
+                                    description=ddata.get("description", ""),
+                                )
+
+                    # Parse nested parameter_item mapping
+                    param_item_mapping = {}
+                    if sdata.get("parameter_item_mapping") and isinstance(
+                        sdata["parameter_item_mapping"], dict
+                    ):
+                        for piid, pidata in sdata["parameter_item_mapping"].items():
+                            if isinstance(pidata, dict):
+                                param_item_mapping[piid] = ParameterItemMappingItem(
+                                    name=pidata.get("name", ""),
+                                    description=pidata.get("description", ""),
+                                    parameter_id=pidata.get("parameter_id", ""),
+                                    parameter_name=pidata.get("parameter_name", ""),
+                                )
+
+                    scenario_mapping[sid] = ScenarioMappingItem(
+                        name=sdata.get("name", ""),
+                        description=sdata.get("description", ""),
+                        persona_id=sdata.get("persona_id"),
+                        persona_mapping=persona_mapping,
+                        document_mapping=document_mapping,
+                        parameter_item_mapping=param_item_mapping,
+                        parameter_item_ids=sdata.get("parameter_item_ids", []),
+                        document_ids=sdata.get("document_ids", []),
+                    )
+
+        # Parse department mapping from JSONB with type safety
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        if result.get("department_mapping") and isinstance(
+            result["department_mapping"], dict
+        ):
+            for did, ddata in result["department_mapping"].items():
+                if isinstance(ddata, dict):
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
+
+        # Parse parameter mapping from JSONB with type safety
+        parameter_mapping: ParameterMapping = {}
+        if result.get("parameter_mapping") and isinstance(
+            result["parameter_mapping"], dict
+        ):
+            for pid, pdata in result["parameter_mapping"].items():
+                if isinstance(pdata, dict):
+                    parameter_mapping[pid] = ParameterMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                    )
+
+        # Parse parameter item mapping from JSONB with type safety
+        parameter_item_mapping: ParameterItemMapping = {}
+        if result.get("parameter_item_mapping") and isinstance(
+            result["parameter_item_mapping"], dict
+        ):
+            for piid, pidata in result["parameter_item_mapping"].items():
+                if isinstance(pidata, dict):
+                    parameter_item_mapping[piid] = ParameterItemMappingItem(
+                        name=pidata.get("name", ""),
+                        description=pidata.get("description", ""),
+                        parameter_id=pidata.get("parameter_id", ""),
+                        parameter_name=pidata.get("parameter_name", ""),
+                    )
+
+        # Parse parameter items list from JSONB with type safety
+        parameter_items_list: list[ParameterItemForSimulation] = []
+        if result.get("parameter_items_list") and isinstance(
+            result["parameter_items_list"], list
+        ):
+            for pi_data in result["parameter_items_list"]:
+                if isinstance(pi_data, dict):
+                    parameter_items_list.append(
+                        ParameterItemForSimulation(
+                            id=pi_data.get("id", ""),
+                            parameter_id=pi_data.get("parameter_id", ""),
+                            name=pi_data.get("name", ""),
+                            description=pi_data.get("description", ""),
+                        )
+                    )
+
+        return SimulationDetailResponse(
+            name=result["title"],  # Schema uses 'name' but DB has 'title'
+            description=result["description"],
+            department_id=result["department_id"],
+            time_limit=result.get("time_limit"),
+            rubric_id=result.get("rubric_id"),
+            active=result["active"],
+            default_simulation=result["default_simulation"],
+            practice_simulation=result["practice_simulation"],
+            hints_enabled=result["hints_enabled"],
+            input_guardrail_active=result["input_guardrail_active"],
+            output_guardrail_active=result["output_guardrail_active"],
+            image_input_active=result["image_input_active"],
+            can_edit=can_edit,
+            can_duplicate=can_duplicate,
+            can_delete=can_delete,
+            in_use=in_use,
+            cohort_count=cohort_count,
+            scenarios=scenarios_list,
+            scenario_ids=scenario_ids,
+            valid_scenario_ids=valid_scenario_ids,
+            valid_rubric_ids=valid_rubric_ids,
+            valid_department_ids=valid_department_ids,
+            parameters=[],  # Empty list for now
+            parameter_items=parameter_items_list,
+            parameter_mapping=parameter_mapping,
+            scenario_mapping=scenario_mapping,
+            rubric_mapping=rubric_mapping,
+            department_mapping=department_mapping,
+            parameter_item_mapping=parameter_item_mapping,
+        )
 
     async def create_simulation(
         self, request: CreateSimulationRequest

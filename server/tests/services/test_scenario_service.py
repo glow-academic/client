@@ -485,3 +485,106 @@ async def test_get_scenario_detail_default_no_departments(
         await svc.get_scenario_detail_default(
             ScenarioDetailDefaultRequest(profileId=str(profile_id))
         )
+
+
+# ============================================================================
+# BUILD ENHANCED SCENARIO MAPPING TESTS (C1 CONSOLIDATION)
+# ============================================================================
+
+
+async def test_build_enhanced_scenario_mapping_consolidated_query(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test C1 consolidation: enhanced scenario mapping uses single consolidated query."""
+    # Setup - Get test scenarios
+    dept_id = await get_cs_dept_id(db)
+    scenario_ids = await db.fetch(
+        "SELECT id FROM scenarios WHERE department_id = $1 LIMIT 2", dept_id
+    )
+
+    if not scenario_ids:
+        pytest.skip("No scenarios found in test database")
+
+    scenario_id_list = [str(row["id"]) for row in scenario_ids]
+
+    # Execute
+    svc = ScenarioService(db)
+    result = await svc.build_enhanced_scenario_mapping(scenario_id_list)
+
+    # Assert - Check basic structure
+    assert isinstance(result, dict)
+    assert len(result) == len(scenario_id_list), (
+        f"Expected {len(scenario_id_list)} scenarios in mapping, got {len(result)}"
+    )
+
+    # Verify each scenario has all required fields and nested mappings
+    for scenario_id in scenario_id_list:
+        assert scenario_id in result, f"Scenario {scenario_id} should be in mapping"
+        
+        mapping_item = result[scenario_id]
+        # Check basic fields
+        assert hasattr(mapping_item, "name")
+        assert hasattr(mapping_item, "description")
+        assert hasattr(mapping_item, "persona_id")
+        
+        # Check nested mappings exist
+        assert hasattr(mapping_item, "persona_mapping")
+        assert hasattr(mapping_item, "document_mapping")
+        assert hasattr(mapping_item, "parameter_item_mapping")
+        
+        # Check ID lists
+        assert hasattr(mapping_item, "parameter_item_ids")
+        assert hasattr(mapping_item, "document_ids")
+        assert isinstance(mapping_item.parameter_item_ids, list)
+        assert isinstance(mapping_item.document_ids, list)
+        
+        # Verify persona mapping consistency
+        if mapping_item.persona_id:
+            assert len(mapping_item.persona_mapping) > 0, (
+                f"Scenario {scenario_id} with persona should have persona_mapping populated"
+            )
+            assert mapping_item.persona_id in mapping_item.persona_mapping, (
+                f"Persona {mapping_item.persona_id} should be in persona_mapping"
+            )
+            persona_item = mapping_item.persona_mapping[mapping_item.persona_id]
+            assert hasattr(persona_item, "name") and len(persona_item.name) > 0
+            assert hasattr(persona_item, "color")
+            assert hasattr(persona_item, "icon")
+        
+        # Verify document mapping consistency
+        if len(mapping_item.document_ids) > 0:
+            assert len(mapping_item.document_mapping) > 0, (
+                f"Scenario {scenario_id} with documents should have document_mapping populated"
+            )
+            for doc_id in mapping_item.document_ids:
+                assert doc_id in mapping_item.document_mapping, (
+                    f"Document {doc_id} should be in document_mapping"
+                )
+                doc_item = mapping_item.document_mapping[doc_id]
+                assert hasattr(doc_item, "name") and len(doc_item.name) > 0
+                assert hasattr(doc_item, "description")
+        
+        # Verify parameter_item mapping consistency
+        if len(mapping_item.parameter_item_ids) > 0:
+            assert len(mapping_item.parameter_item_mapping) > 0, (
+                f"Scenario {scenario_id} with parameter items should have parameter_item_mapping populated"
+            )
+            for param_item_id in mapping_item.parameter_item_ids:
+                assert param_item_id in mapping_item.parameter_item_mapping, (
+                    f"Parameter item {param_item_id} should be in parameter_item_mapping"
+                )
+                param_item = mapping_item.parameter_item_mapping[param_item_id]
+                assert hasattr(param_item, "name") and len(param_item.name) > 0
+                assert hasattr(param_item, "parameter_id")
+                assert hasattr(param_item, "parameter_name")
+
+
+async def test_build_enhanced_scenario_mapping_empty_list(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test enhanced scenario mapping with empty list returns empty dict."""
+    svc = ScenarioService(db)
+    result = await svc.build_enhanced_scenario_mapping([])
+
+    assert isinstance(result, dict)
+    assert len(result) == 0, "Empty scenario_ids should return empty mapping"

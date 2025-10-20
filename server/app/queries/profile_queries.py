@@ -500,22 +500,27 @@ class ProfileQueries:
     # ===== Profile context queries =====
 
     def get_profile_context_complete(
-        self, profile_id: str, requester_role: str
+        self, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build optimized query to get complete profile context in ONE query.
 
         Fetches profile, departments, cohorts, simulations, simulatable profiles,
         and earliest attempt date using CTEs and JSON aggregation.
+        
+        The query determines the user's role internally to filter simulatable profiles,
+        eliminating the need for a separate role lookup query.
 
         Args:
             profile_id: UUID of the profile
-            requester_role: Role of the requester for simulatable profiles
 
         Returns:
             Tuple of (query string, params list)
         """
         query = """
-        WITH profile_data AS (
+        WITH profile_role AS (
+            SELECT role FROM profiles WHERE id = $1
+        ),
+        profile_data AS (
             SELECT 
                 p.id,
                 p.first_name,
@@ -595,13 +600,14 @@ class ProfileQueries:
                 p.updated_at,
                 pd.department_id as primary_department_id
             FROM profiles p
+            CROSS JOIN profile_role pr
             LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
             WHERE p.id != $1
               AND CASE 
-                WHEN $2 = 'superadmin' THEN true
-                WHEN $2 = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
-                WHEN $2 = 'instructional' THEN p.role IN ('ta', 'guest')
+                WHEN pr.role = 'superadmin' THEN true
+                WHEN pr.role = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
+                WHEN pr.role = 'instructional' THEN p.role IN ('ta', 'guest')
                 ELSE false
               END
         ),
@@ -673,4 +679,4 @@ class ProfileQueries:
             (SELECT earliest FROM earliest_attempt) as earliest_attempt_date
         FROM profile_data pd
         """
-        return (query, [profile_id, requester_role])
+        return (query, [profile_id])

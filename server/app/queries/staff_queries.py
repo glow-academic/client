@@ -150,7 +150,7 @@ class StaffQueries:
         """
         return (query, [profile_id])
 
-    def get_staff_detail_complete(self, profile_id: str) -> tuple[str, list[Any]]:
+    def get_staff_detail_complete(self, profile_id: str, current_profile_id: str) -> tuple[str, list[Any]]:
         """Build complete query for staff detail with all related data and JSONB mappings."""
         query = """
         WITH profile_data AS (
@@ -188,6 +188,19 @@ class StaffQueries:
                 SELECT cohort_id FROM cohort_profiles 
                 WHERE profile_id = $1 AND active = true
             )
+        ),
+        valid_department_ids_data AS (
+            SELECT array_agg(d.id::text ORDER BY d.title) as valid_department_ids
+            FROM departments d
+            WHERE d.active = true
+        ),
+        department_mapping_full AS (
+            SELECT COALESCE(jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object('name', d.title, 'description', COALESCE(d.description, ''))
+            ), '{}'::jsonb) as department_mapping
+            FROM departments d
+            WHERE d.active = true
         )
         SELECT 
             pd.name,
@@ -197,9 +210,13 @@ class StaffQueries:
             pd.active,
             COALESCE(pde.department_id::text, '') as department_id,
             COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
-            cmd.cohort_mapping
+            cmd.cohort_mapping,
+            COALESCE(vdid.valid_department_ids, ARRAY[]::text[]) as valid_department_ids,
+            dmf.department_mapping as department_mapping_full
         FROM profile_data pd
         CROSS JOIN cohort_mapping_data cmd
+        CROSS JOIN valid_department_ids_data vdid
+        CROSS JOIN department_mapping_full dmf
         LEFT JOIN profile_department pde ON true
         LEFT JOIN profile_cohorts pc ON true
         """
@@ -234,7 +251,7 @@ class StaffQueries:
         """
         return (query, [])
 
-    def get_profiles_by_ids(self, profile_ids: list[str]) -> tuple[str, list[Any]]:
+    def get_profiles_by_ids(self, profile_ids: list[str], current_profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get multiple profiles with department data and JSONB mapping."""
         query = """
         WITH profile_departments_agg AS (
@@ -260,17 +277,34 @@ class StaffQueries:
             ), '{}'::jsonb) as department_mapping
             FROM departments d
             WHERE d.id IN (SELECT department_id FROM all_department_ids)
+        ),
+        valid_department_ids_data AS (
+            SELECT array_agg(d.id::text ORDER BY d.title) as valid_department_ids
+            FROM departments d
+            WHERE d.active = true
+        ),
+        department_mapping_full_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object('name', d.title, 'description', COALESCE(d.description, ''))
+            ), '{}'::jsonb) as department_mapping_full
+            FROM departments d
+            WHERE d.active = true
         )
         SELECT 
             p.id,
             p.role,
             prl.requests_per_day as requests_per_day,
             COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
-            dmd.department_mapping
+            dmd.department_mapping,
+            COALESCE(vdid.valid_department_ids, ARRAY[]::text[]) as valid_department_ids,
+            dmfd.department_mapping_full
         FROM profiles p
         LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
         CROSS JOIN department_mapping_data dmd
+        CROSS JOIN valid_department_ids_data vdid
+        CROSS JOIN department_mapping_full_data dmfd
         WHERE p.id = ANY($1)
         """
         return (query, [profile_ids])

@@ -4,11 +4,8 @@ Tests for parameter_service - list methods.
 
 import asyncpg  # type: ignore
 import pytest
-
-from app.schemas.parameters import (
-    ParameterDetailRequest,  # type: ignore
-    ParametersFilters,  # type: ignore
-)
+from app.schemas.parameters import ParameterDetailRequest  # type: ignore
+from app.schemas.parameters import ParametersFilters  # type: ignore
 from app.services.parameter_service import ParameterService  # type: ignore
 
 # --- Helper Functions ---
@@ -371,3 +368,40 @@ async def test_parameter_can_duplicate_permissions(
             assert parameter.can_duplicate is False, (
                 "Instructional should NOT be able to duplicate parameters"
             )
+
+
+@pytest.mark.asyncio
+async def test_get_parameter_detail_default_consolidated(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting default parameter detail with consolidated query (1 query instead of 2)."""
+    # Setup - Get test profile ID
+    profile_id = await get_test_profile_id(db)
+
+    # Create request
+    from app.schemas.parameters import ParameterDetailDefaultRequest
+
+    request = ParameterDetailDefaultRequest(profileId=profile_id)
+
+    # Execute - Call the service method
+    svc = ParameterService(db)
+    result = await svc.get_parameter_detail_default(request)
+
+    # Assert - Check basic structure
+    assert result is not None
+    assert hasattr(result, "name")
+    assert hasattr(result, "description")
+    assert hasattr(result, "numerical")
+    assert hasattr(result, "active")
+    assert hasattr(result, "default_parameter")
+    assert hasattr(result, "department_id")
+    assert hasattr(result, "parameter_items")
+    assert hasattr(result, "department_mapping")
+    assert hasattr(result, "valid_department_ids")
+
+    # Check that it returns actual data
+    assert result.name is not None
+    assert result.department_id is not None
+    assert isinstance(result.parameter_items, list)
+    assert isinstance(result.department_mapping, dict)
+    assert isinstance(result.valid_department_ids, list)

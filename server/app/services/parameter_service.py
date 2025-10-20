@@ -136,19 +136,54 @@ class ParameterService(BaseService):
         self, request: ParameterDetailDefaultRequest
     ) -> ParameterDetailResponse:
         """Get default parameter details based on profile."""
-        # Get default parameter for profile
-        query, params = self.queries.get_default_parameter(request.profileId)
-        parameter = await self.conn.fetchrow(query, *params)
+        # Use consolidated query that finds default and fetches detail in one go
+        query, params = self.queries.get_parameter_detail_default_complete(
+            request.profileId
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        if not parameter:
+        if not result:
             raise ValueError("No parameters found for user's departments")
 
-        # Reuse the detail logic with the found parameter_id
-        detail_request = ParameterDetailRequest(
-            parameterId=str(parameter["id"]), profileId=request.profileId
-        )
+        # Parse the consolidated result
+        parameter_items_json = json.loads(result["parameter_items_json"])
+        department_mapping_json = json.loads(result["department_mapping"])
+        valid_department_ids = result["valid_department_ids"]
 
-        return await self.get_parameter_detail(detail_request)
+        # Transform department mapping
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        for dept_id, ddata in department_mapping_json.items():
+            department_mapping[dept_id] = DepartmentMappingItem(
+                name=ddata.get("name", ""),
+                description=ddata.get("description", ""),
+            )
+
+        # Transform parameter items and compute can_delete
+        parameter_items = []
+        for item_data in parameter_items_json:
+            usage_count = item_data.get("usage_count", 0)
+            parameter_items.append(
+                ParameterItemDetail(
+                    parameter_item_id=item_data.get("parameter_item_id", ""),
+                    name=item_data.get("name", ""),
+                    description=item_data.get("description", ""),
+                    value=item_data.get("value", ""),
+                    default_item=item_data.get("default_item", False),
+                    can_delete=usage_count == 0,
+                )
+            )
+
+        return ParameterDetailResponse(
+            name=result["name"],
+            description=result["description"],
+            numerical=result["numerical"],
+            active=result["active"],
+            default_parameter=result["default_parameter"],
+            department_id=str(result["department_id"]),
+            parameter_items=parameter_items,
+            department_mapping=department_mapping,
+            valid_department_ids=valid_department_ids,
+        )
 
     async def create_parameter(
         self, request: CreateParameterRequest

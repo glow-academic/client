@@ -47,105 +47,72 @@ class ScenarioService(BaseService):
         """Build enhanced scenario mapping with nested persona, document, and parameter data."""
         if not scenario_ids:
             return {}
-        # Get base scenario data with persona_id and parameter_item_ids
-        query, params = self.queries.get_enhanced_scenario_mapping(scenario_ids)
-        scenario_result = await self.conn.fetch(query, *params)
+        
+        # Get all data in ONE consolidated query (C1 consolidation)
+        query, params = self.queries.get_enhanced_scenario_mapping_complete(scenario_ids)
+        result = await self.conn.fetch(query, *params)
 
-        # Collect all IDs we need to fetch
-        all_persona_ids = list(
-            set(
-                [str(row["persona_id"]) for row in scenario_result if row["persona_id"]]
-            )
-        )
-        all_parameter_item_ids = list(
-            set(
-                [
-                    str(pid)
-                    for row in scenario_result
-                    for pid in (row["parameter_item_ids"] or [])
-                ]
-            )
-        )
+        # Parse the consolidated result with JSONB mappings
+        import json
 
-        # Get document IDs for each scenario
-        scenario_document_map: dict[str, list[str]] = {}
-        if scenario_ids:
-            query, params = self.queries.get_scenario_documents_aggregated(scenario_ids)
-            doc_result = await self.conn.fetch(query, *params)
-            for row in doc_result:
-                scenario_document_map[str(row["scenario_id"])] = [
-                    str(did) for did in (row["document_ids"] or [])
-                ]
-
-        all_document_ids = list(
-            set([did for doc_ids in scenario_document_map.values() for did in doc_ids])
-        )
-
-        # Fetch persona mapping
-        persona_mapping = {}
-        if all_persona_ids:
-            query, params = self.queries.get_persona_mapping(all_persona_ids)
-            persona_result = await self.conn.fetch(query, *params)
-            for row in persona_result:
-                persona_mapping[str(row["id"])] = PersonaMappingItem(
-                    name=row["name"],
-                    description=row["description"] or "",
-                    color=row["color"],
-                    icon=row["icon"],
-                )
-
-        # Fetch document mapping
-        document_mapping = {}
-        if all_document_ids:
-            query, params = self.queries.get_documents_mapping(all_document_ids)
-            doc_mapping_result = await self.conn.fetch(query, *params)
-            for row in doc_mapping_result:
-                document_mapping[str(row["id"])] = DocumentMappingItem(
-                    name=row["name"], description=row["description"]
-                )
-
-        # Fetch parameter_item mapping
-        parameter_item_mapping = {}
-        if all_parameter_item_ids:
-            query, params = self.queries.get_parameter_item_mapping(
-                all_parameter_item_ids
-            )
-            param_item_result = await self.conn.fetch(query, *params)
-            for row in param_item_result:
-                parameter_item_mapping[str(row["id"])] = ParameterItemMappingItem(
-                    name=row["name"],
-                    description=row["description"] or "",
-                    parameter_id=str(row["parameter_id"]),
-                    parameter_name=row["parameter_name"],
-                )
-
-        # Build the final mapping
         enhanced_mapping = {}
-        for row in scenario_result:
+        for row in result:
             scenario_id = str(row["scenario_id"])
             parameter_item_ids = [str(pid) for pid in (row["parameter_item_ids"] or [])]
-            document_ids = scenario_document_map.get(scenario_id, [])
+            document_ids = [str(did) for did in (row["document_ids"] or [])]
 
-            # Filter mappings to only include relevant items for this scenario
+            # Parse JSONB persona mapping (may be string or dict)
+            persona_mapping_raw = row["persona_mapping"]
+            if isinstance(persona_mapping_raw, str):
+                persona_mapping_global = json.loads(persona_mapping_raw)
+            else:
+                persona_mapping_global = persona_mapping_raw or {}
+            
             scenario_persona_mapping = {}
             if row["persona_id"]:
                 persona_id_str = str(row["persona_id"])
-                if persona_id_str in persona_mapping:
-                    scenario_persona_mapping[persona_id_str] = persona_mapping[
-                        persona_id_str
-                    ]
+                if persona_id_str in persona_mapping_global:
+                    pdata = persona_mapping_global[persona_id_str]
+                    scenario_persona_mapping[persona_id_str] = PersonaMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                        color=pdata.get("color", ""),
+                        icon=pdata.get("icon", ""),
+                    )
 
-            scenario_document_mapping = {
-                did: document_mapping[did]
-                for did in document_ids
-                if did in document_mapping
-            }
+            # Parse JSONB document mapping (may be string or dict)
+            document_mapping_raw = row["document_mapping"]
+            if isinstance(document_mapping_raw, str):
+                document_mapping_global = json.loads(document_mapping_raw)
+            else:
+                document_mapping_global = document_mapping_raw or {}
+            
+            scenario_document_mapping = {}
+            for did in document_ids:
+                if did in document_mapping_global:
+                    ddata = document_mapping_global[did]
+                    scenario_document_mapping[did] = DocumentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
 
-            scenario_parameter_item_mapping = {
-                pid: parameter_item_mapping[pid]
-                for pid in parameter_item_ids
-                if pid in parameter_item_mapping
-            }
+            # Parse JSONB parameter_item mapping (may be string or dict)
+            param_item_mapping_raw = row["param_item_mapping"]
+            if isinstance(param_item_mapping_raw, str):
+                param_item_mapping_global = json.loads(param_item_mapping_raw)
+            else:
+                param_item_mapping_global = param_item_mapping_raw or {}
+            
+            scenario_parameter_item_mapping = {}
+            for pid in parameter_item_ids:
+                if pid in param_item_mapping_global:
+                    pidata = param_item_mapping_global[pid]
+                    scenario_parameter_item_mapping[pid] = ParameterItemMappingItem(
+                        name=pidata.get("name", ""),
+                        description=pidata.get("description", ""),
+                        parameter_id=pidata.get("parameter_id", ""),
+                        parameter_name=pidata.get("parameter_name", ""),
+                    )
 
             enhanced_mapping[scenario_id] = ScenarioMappingItem(
                 name=row["name"],

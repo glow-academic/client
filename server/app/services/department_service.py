@@ -157,27 +157,29 @@ class DepartmentService(BaseService):
         Returns:
             DepartmentDetailResponse with defaults
         """
-        # Get user role for permissions
-        query, params = self.queries.get_profile_role(profile_id)
-        profile_row = await self.conn.fetchrow(query, *params)
+        # Get all data in ONE consolidated query (C3 consolidation)
+        query, params = self.queries.get_department_default_complete(profile_id)
+        result = await self.conn.fetchrow(query, *params)
 
-        if not profile_row:
+        if not result:
             raise ValueError(f"Profile {profile_id} not found")
 
-        is_superadmin = profile_row["role"] == "superadmin"
+        is_superadmin = result["profile_role"] == "superadmin"
 
-        # Get valid agents for selection
-        query, params = self.queries.get_valid_agents()
-        agent_rows = await self.conn.fetch(query, *params)
-
-        valid_agent_ids: list[str] = []
+        # Parse agent mapping from JSONB
+        valid_agent_ids: list[str] = result["valid_agent_ids"] or []
         agent_mapping: AgentMapping = {}
 
-        for row in agent_rows:
-            valid_agent_ids.append(row["agent_id"])
-            agent_mapping[row["agent_id"]] = AgentMappingItem(
-                name=row["name"], description=row["description"]
-            )
+        agent_mapping_data = result.get("agent_mapping")
+        if isinstance(agent_mapping_data, str):
+            agent_mapping_data = json.loads(agent_mapping_data)
+        if agent_mapping_data and isinstance(agent_mapping_data, dict):
+            for agent_id, agent_info in agent_mapping_data.items():
+                if isinstance(agent_info, dict):
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=agent_info.get("name", ""),
+                        description=agent_info.get("description", ""),
+                    )
 
         # Return defaults for creation
         return DepartmentDetailResponse(

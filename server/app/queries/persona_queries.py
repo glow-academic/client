@@ -518,6 +518,110 @@ class PersonaQueries:
         """
         return (query, [persona_id, profile_id])
 
+    def get_persona_detail_default_complete(
+        self, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get default persona detail in ONE query.
+
+        Combines default persona lookup with full detail fetch using CTEs.
+        Consolidates 2 queries into 1.
+
+        Args:
+            profile_id: UUID of the profile for finding default persona
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH user_departments AS (
+            SELECT DISTINCT pd.department_id
+            FROM profile_departments pd
+            WHERE pd.profile_id = $1
+        ),
+        default_persona AS (
+            SELECT p.id
+            FROM personas p
+            JOIN user_departments ud ON ud.department_id = p.department_id
+            WHERE p.active = true
+            ORDER BY p.default_persona DESC, p.created_at DESC
+            LIMIT 1
+        ),
+        persona_data AS (
+            SELECT 
+                p.name,
+                p.description,
+                p.department_id,
+                p.active,
+                p.default_persona,
+                p.color,
+                p.icon,
+                p.model_id,
+                p.reasoning,
+                p.temperature,
+                p.system_prompt
+            FROM personas p
+            JOIN default_persona dp ON p.id = dp.id
+        ),
+        valid_depts AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $1 AND d.active = true
+        ),
+        valid_models AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        m.id::text,
+                        jsonb_build_object(
+                            'name', m.name,
+                            'description', COALESCE(m.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as model_mapping,
+                array_agg(m.id::text ORDER BY m.name) as model_ids
+            FROM models m 
+            WHERE m.active = true
+        ),
+        usage_data AS (
+            SELECT COUNT(*) as usage_count
+            FROM scenario_personas sp
+            JOIN default_persona dp ON sp.persona_id = dp.id
+            WHERE sp.active = true
+        ),
+        profile_data AS (
+            SELECT role as user_role 
+            FROM profiles 
+            WHERE id = $1
+        )
+        SELECT 
+            p.*,
+            vd.dept_mapping,
+            vd.dept_ids as valid_department_ids,
+            vm.model_mapping,
+            vm.model_ids as valid_model_ids,
+            u.usage_count,
+            pr.user_role
+        FROM persona_data p
+        CROSS JOIN valid_depts vd
+        CROSS JOIN valid_models vm
+        CROSS JOIN usage_data u
+        CROSS JOIN profile_data pr
+        """
+        return (query, [profile_id])
+
     def get_persona_overview_complete(self, persona_id: Any) -> tuple[str, list[Any]]:
         """Build optimized query to get persona overview with all related data in ONE query.
 
@@ -552,3 +656,91 @@ class PersonaQueries:
                  p.default_persona, p.created_at, p.updated_at
         """
         return (query, [persona_id])
+
+    def get_persona_response_times_complete(
+        self, persona_id: str, cutoff_date: Any
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get persona response time analysis in ONE query.
+
+        Consolidates:
+        - Persona details with scenarios (from get_persona_with_scenarios)
+        - Response time data for all scenarios (from get_persona_response_time_data)
+
+        Args:
+            persona_id: UUID of the persona
+            cutoff_date: Cutoff date for analysis window
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH persona_scenarios AS (
+            SELECT 
+                s.id,
+                s.name
+            FROM scenario_personas sp
+            JOIN scenarios s ON s.id = sp.scenario_id
+            WHERE sp.persona_id = $1 AND sp.active = true
+        ),
+        scenario_ids_array AS (
+            SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) as ids
+            FROM persona_scenarios
+        ),
+        message_pairs AS (
+            SELECT 
+                sc.id as chat_id,
+                s.name as scenario_name,
+                sm1.created_at as query_time,
+                sm2.created_at as response_time,
+                sm2.created_at - sm1.created_at as response_interval,
+                LENGTH(sm1.content) as query_length,
+                LENGTH(sm2.content) as response_length,
+                ROW_NUMBER() OVER (
+                    PARTITION BY sc.id 
+                    ORDER BY sm1.created_at
+                ) as pair_num
+            FROM simulation_chats sc
+            JOIN scenarios s ON s.id = sc.scenario_id
+            JOIN simulation_messages sm1 ON sm1.chat_id = sc.id
+            JOIN simulation_messages sm2 ON sm2.chat_id = sc.id
+            CROSS JOIN scenario_ids_array sia
+            WHERE sc.scenario_id = ANY(sia.ids)
+              AND sia.ids != ARRAY[]::uuid[]
+              AND sc.created_at >= $2
+              AND sm1.type = 'query'
+              AND sm2.type = 'response'
+              AND sm2.created_at > sm1.created_at
+              AND NOT EXISTS (
+                  SELECT 1 FROM simulation_messages sm_between
+                  WHERE sm_between.chat_id = sc.id
+                    AND sm_between.created_at > sm1.created_at
+                    AND sm_between.created_at < sm2.created_at
+              )
+        )
+        SELECT 
+            p.id::text as persona_id,
+            p.name as persona_name,
+            p.description as persona_description,
+            (
+                SELECT COALESCE(json_agg(jsonb_build_object(
+                    'id', ps.id::text,
+                    'name', ps.name
+                )), '[]'::json)
+                FROM persona_scenarios ps
+            ) as scenarios,
+            (
+                SELECT COALESCE(json_agg(jsonb_build_object(
+                    'chat_id', mp.chat_id::text,
+                    'scenario_name', mp.scenario_name,
+                    'query_time', mp.query_time,
+                    'response_time', mp.response_time,
+                    'response_time_seconds', EXTRACT(EPOCH FROM mp.response_interval),
+                    'query_length', mp.query_length,
+                    'response_length', mp.response_length
+                )), '[]'::json)
+                FROM message_pairs mp
+            ) as response_data
+        FROM personas p
+        WHERE p.id = $1
+        """
+        return (query, [persona_id, cutoff_date])

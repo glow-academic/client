@@ -770,6 +770,130 @@ class ScenarioQueries:
         """
         return (query, [scenario_ids])
 
+    def get_enhanced_scenario_mapping_complete(
+        self, scenario_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """Build complete enhanced scenario mapping in ONE query with all nested data.
+
+        Consolidates 5 queries into 1:
+        - Base scenario data (from get_enhanced_scenario_mapping)
+        - Document IDs per scenario (from get_scenario_documents_aggregated)
+        - Persona mapping (from get_persona_mapping)
+        - Document mapping (from get_documents_mapping)
+        - Parameter item mapping (from get_parameter_item_mapping)
+
+        Returns all data as rows with JSONB mappings embedded.
+
+        Args:
+            scenario_ids: List of scenario IDs to fetch
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH scenarios_base AS (
+            SELECT 
+                s.id as scenario_id,
+                s.name,
+                s.problem_statement as description,
+                sp.persona_id,
+                COALESCE(
+                    (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
+                     FROM scenario_parameter_items spi
+                     WHERE spi.scenario_id = s.id AND spi.active = true),
+                    ARRAY[]::uuid[]
+                ) as parameter_item_ids
+            FROM scenarios s
+            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+            WHERE s.id = ANY($1)
+        ),
+        scenario_documents AS (
+            SELECT 
+                scenario_id,
+                COALESCE(ARRAY_AGG(document_id ORDER BY document_id), ARRAY[]::uuid[]) as document_ids
+            FROM scenario_documents
+            WHERE scenario_id = ANY($1) AND active = true
+            GROUP BY scenario_id
+        ),
+        all_document_ids AS (
+            SELECT DISTINCT unnest(document_ids) as document_id
+            FROM scenario_documents
+        ),
+        all_persona_ids AS (
+            SELECT DISTINCT persona_id
+            FROM scenarios_base
+            WHERE persona_id IS NOT NULL
+        ),
+        all_param_item_ids AS (
+            SELECT DISTINCT unnest(parameter_item_ids) as param_item_id
+            FROM scenarios_base
+        ),
+        persona_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'name', p.name,
+                        'description', COALESCE(p.description, ''),
+                        'color', p.color,
+                        'icon', p.icon
+                    )
+                ) FILTER (WHERE p.id IS NOT NULL),
+                '{}'::jsonb
+            ) as persona_mapping
+            FROM personas p
+            WHERE p.id IN (SELECT persona_id FROM all_persona_ids)
+        ),
+        document_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.name,
+                        'description', COALESCE(d.type::text, '')
+                    )
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '{}'::jsonb
+            ) as document_mapping
+            FROM documents d
+            WHERE d.id IN (SELECT document_id FROM all_document_ids)
+        ),
+        param_item_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    pi.id::text,
+                    jsonb_build_object(
+                        'name', pi.name,
+                        'description', COALESCE(pi.description, ''),
+                        'parameter_id', pi.parameter_id::text,
+                        'parameter_name', p.name
+                    )
+                ) FILTER (WHERE pi.id IS NOT NULL),
+                '{}'::jsonb
+            ) as param_item_mapping
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE pi.id IN (SELECT param_item_id FROM all_param_item_ids)
+        )
+        SELECT 
+            sb.scenario_id,
+            sb.name,
+            sb.description,
+            sb.persona_id,
+            sb.parameter_item_ids,
+            COALESCE(sd.document_ids, ARRAY[]::uuid[]) as document_ids,
+            pm.persona_mapping,
+            dm.document_mapping,
+            pim.param_item_mapping
+        FROM scenarios_base sb
+        LEFT JOIN scenario_documents sd ON sd.scenario_id = sb.scenario_id
+        CROSS JOIN persona_mapping_data pm
+        CROSS JOIN document_mapping_data dm
+        CROSS JOIN param_item_mapping_data pim
+        ORDER BY sb.name
+        """
+        return (query, [scenario_ids])
+
     # Queries for randomly_fill_scenario_attributes
     def get_scenario_persona_link(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's active persona link."""

@@ -170,6 +170,37 @@ async def test_get_department_detail_default_success(
         )
 
 
+async def test_get_department_detail_default_consolidated_query(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test C3 consolidation: department default uses single consolidated query."""
+    admin_id = await get_superadmin_alias(db)
+
+    svc = DepartmentService(db)
+    resp = await svc.get_department_detail_default(admin_id)
+
+    # Verify permissions based on profile role
+    assert resp.can_edit is True, "Superadmin should have edit permissions"
+    assert resp.can_duplicate is False, "Can't duplicate when creating"
+    assert resp.can_delete is False, "Can't delete when creating"
+
+    # Verify agent data is populated in single query
+    assert resp.valid_agent_ids is not None
+    assert resp.agent_mapping is not None
+    assert isinstance(resp.valid_agent_ids, list)
+    assert isinstance(resp.agent_mapping, dict)
+
+    # If agents exist, verify mapping contains all valid agents
+    if len(resp.valid_agent_ids) > 0:
+        assert len(resp.agent_mapping) == len(resp.valid_agent_ids), (
+            "agent_mapping should contain all valid_agent_ids"
+        )
+        for agent_id in resp.valid_agent_ids:
+            assert agent_id in resp.agent_mapping, (
+                f"Agent {agent_id} from valid_agent_ids should be in agent_mapping"
+            )
+
+
 # ============================================================================
 # DEPARTMENT PERMISSIONS TESTS
 # ============================================================================

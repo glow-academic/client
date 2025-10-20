@@ -499,3 +499,47 @@ class DepartmentQueries:
         """
         query = "SELECT role FROM profiles WHERE id = $1"
         return query, [profile_id]
+
+    def get_department_default_complete(
+        self, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get department default creation data with profile role and valid agents in ONE query.
+
+        Consolidates:
+        - Profile role for permissions (from get_profile_role)
+        - Valid agents list and mapping (from get_valid_agents)
+
+        Args:
+            profile_id: Profile ID
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH profile_data AS (
+            SELECT role FROM profiles WHERE id = $1
+        ),
+        valid_agents_data AS (
+            SELECT 
+                COALESCE(array_agg(id::text ORDER BY name), ARRAY[]::text[]) as valid_agent_ids,
+                COALESCE(
+                    jsonb_object_agg(
+                        id::text,
+                        jsonb_build_object(
+                            'name', name,
+                            'description', COALESCE(description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as agent_mapping
+            FROM agents
+        )
+        SELECT 
+            pd.role as profile_role,
+            vad.valid_agent_ids,
+            vad.agent_mapping
+        FROM profile_data pd
+        CROSS JOIN valid_agents_data vad
+        """
+        return query, [profile_id]

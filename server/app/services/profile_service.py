@@ -193,15 +193,8 @@ class ProfileService(BaseService):
             else:
                 raise ValueError("No default guest profile found in database")
 
-        # Get profile to determine role for simulatable profiles query
-        profile = await self.get_profile(effective_profile_id)
-        if not profile:
-            raise ValueError(f"Profile not found: {effective_profile_id}")
-
-        # Get all context data in ONE optimized query
-        query, params = self.queries.get_profile_context_complete(
-            effective_profile_id, profile.role
-        )
+        # Get all context data in ONE optimized query (includes role lookup internally)
+        query, params = self.queries.get_profile_context_complete(effective_profile_id)
         result = await self.conn.fetchrow(query, *params)
 
         if not result:

@@ -120,7 +120,9 @@ class StaffService(BaseService):
         campus_email = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
 
         # Get complete profile data with JSONB mappings (consolidated query)
-        query, params = self.queries.get_staff_detail_complete(request.profileId)
+        query, params = self.queries.get_staff_detail_complete(
+            request.profileId, request.currentProfileId
+        )
         profile = await self.conn.fetchrow(query, *params)
 
         if not profile:
@@ -146,20 +148,22 @@ class StaffService(BaseService):
                         description=cdata.get("description", ""),
                     )
 
-        # Get valid departments (still separate query - returns list of all departments)
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.currentProfileId
-        )
-        dept_list = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row["id"]) for row in dept_list]
+        # Parse valid departments from consolidated query
+        valid_department_ids = profile.get("valid_department_ids") or []
+        valid_department_ids = [str(did) for did in valid_department_ids]
 
-        # Build department mapping from valid departments
-        department_mapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in dept_list
-        }
+        # Parse department mapping from consolidated query
+        department_mapping = {}
+        dept_mapping_data = profile.get("department_mapping_full")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for did, ddata in dept_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
 
         # Role options
         role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
@@ -188,7 +192,9 @@ class StaffService(BaseService):
     ) -> StaffDetailBulkResponse:
         """Get bulk staff detail information."""
         # Get profiles with JSONB department mapping (consolidated query)
-        query, params = self.queries.get_profiles_by_ids(request.profileIds)
+        query, params = self.queries.get_profiles_by_ids(
+            request.profileIds, request.currentProfileId
+        )
         profiles = await self.conn.fetch(query, *params)
 
         if not profiles:
@@ -231,12 +237,25 @@ class StaffService(BaseService):
                             description=ddata.get("description", ""),
                         )
 
-        # Get valid departments (still separate query - returns list of all departments)
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.currentProfileId
-        )
-        dept_list = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row["id"]) for row in dept_list]
+        # Parse valid departments from consolidated query
+        valid_department_ids = []
+        if profiles and len(profiles) > 0:
+            valid_dept_ids_raw = profiles[0].get("valid_department_ids") or []
+            valid_department_ids = [str(did) for did in valid_dept_ids_raw]
+
+            # Update department_mapping to use department_mapping_full
+            dept_mapping_full = profiles[0].get("department_mapping_full")
+            if isinstance(dept_mapping_full, str):
+                dept_mapping_full = json.loads(dept_mapping_full)
+            if dept_mapping_full and isinstance(dept_mapping_full, dict):
+                # Override with full department mapping
+                department_mapping = {}
+                for did, ddata in dept_mapping_full.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
 
         # Role options
         role_options = ["superadmin", "admin", "instructional", "ta", "guest"]

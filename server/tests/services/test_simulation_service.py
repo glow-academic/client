@@ -4,7 +4,6 @@ Tests for simulation_service - list and search methods.
 
 import asyncpg  # type: ignore
 import pytest
-
 from app.schemas.simulations import SimulationsFilters  # type: ignore
 from app.services.simulation_service import SimulationService  # type: ignore
 
@@ -854,7 +853,8 @@ async def test_scenario_ordering_active_first(
 
     # Create request with mixed active/inactive scenarios
     # First scenario inactive, rest active - should reorder to active first
-    from app.schemas.simulations import ScenarioInRequest, UpdateSimulationRequest
+    from app.schemas.simulations import (ScenarioInRequest,
+                                         UpdateSimulationRequest)
 
     scenario_ids = [
         ScenarioInRequest(
@@ -942,7 +942,8 @@ async def test_create_simulation_with_scenario_active_states(
     ]
 
     # Execute - Create simulation
-    from app.schemas.simulations import CreateSimulationRequest, ScenarioInRequest
+    from app.schemas.simulations import (CreateSimulationRequest,
+                                         ScenarioInRequest)
 
     svc = SimulationService(db)
     request = CreateSimulationRequest(
@@ -1043,7 +1044,8 @@ async def test_update_simulation_scenario_active_states(
     time_limit = time_limit_result["time_limit_seconds"] if time_limit_result else None
 
     # Execute - Update simulation
-    from app.schemas.simulations import ScenarioInRequest, UpdateSimulationRequest
+    from app.schemas.simulations import (ScenarioInRequest,
+                                         UpdateSimulationRequest)
 
     svc = SimulationService(db)
     request = UpdateSimulationRequest(
@@ -1081,3 +1083,46 @@ async def test_update_simulation_scenario_active_states(
         assert scenario.active is False, (
             f"Scenario {scenario.scenario_id} should be inactive"
         )
+
+
+@pytest.mark.asyncio
+async def test_get_simulation_detail_default_consolidated(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting default simulation detail with consolidated query (1 query instead of 2)."""
+    # Setup - Get test profile ID
+    profile_id = await get_test_profile_id(db)
+
+    # Create request
+    from app.schemas.simulations import SimulationDetailDefaultRequest
+
+    request = SimulationDetailDefaultRequest(profileId=profile_id)
+
+    # Execute - Call the service method
+    svc = SimulationService(db)
+    result = await svc.get_simulation_detail_default(request)
+
+    # Assert - Check basic structure
+    assert result is not None
+    assert hasattr(result, "name")
+    assert hasattr(result, "description")
+    assert hasattr(result, "department_id")
+    assert hasattr(result, "active")
+    assert hasattr(result, "default_simulation")
+    assert hasattr(result, "practice_simulation")
+    assert hasattr(result, "scenarios")
+    assert hasattr(result, "scenario_ids")
+    assert hasattr(result, "valid_scenario_ids")
+    assert hasattr(result, "valid_rubric_ids")
+    assert hasattr(result, "valid_department_ids")
+    assert hasattr(result, "scenario_mapping")
+    assert hasattr(result, "rubric_mapping")
+    assert hasattr(result, "department_mapping")
+
+    # Check that it returns actual data
+    assert result.name is not None
+    assert result.department_id is not None
+    assert isinstance(result.scenarios, list)
+    assert isinstance(result.scenario_ids, list)
+    assert isinstance(result.scenario_mapping, dict)
+    assert isinstance(result.department_mapping, dict)
