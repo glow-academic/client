@@ -236,7 +236,7 @@ class DashboardQueries:
             header_stagnation AS (
                 SELECT
                     COALESCE(ROUND((100.0 * SUM(is_stagnant) / NULLIF(COUNT(*), 0)))::int, 0) AS current_value,
-                    COUNT(*) > 0 AS has_data
+                       COUNT(*) > 0 AS has_data
                 FROM stagnant_attempts
             ),
             
@@ -279,14 +279,82 @@ class DashboardQueries:
                 FROM first_attempts
                 GROUP BY date
             ),
+            growth_completion_rate AS (
+                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                       AVG(CASE WHEN expected > 0 THEN (100.0 * completed_chats / expected) ELSE 0 END)::float AS value
+                FROM attempt_norm
+                GROUP BY date
+            ),
+            growth_first_attempt_pass_rate AS (
+                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                       (100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0))) 
+                        / NULLIF(COUNT(*), 0))::float AS value
+                FROM first_attempts
+                GROUP BY date
+            ),
+            growth_messages AS (
+                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                       AVG(num_messages_total)::float AS value
+                FROM filt WHERE num_messages_total IS NOT NULL
+                GROUP BY date
+            ),
+            growth_persona_times_daily AS (
+                SELECT to_char(pt.attempt_created_at, 'YYYY-MM-DD') AS date,
+                       AVG(pt.delta_sec)::float AS value
+                FROM (
+                    SELECT attempt_created_at, UNNEST(message_time_taken_seconds) AS delta_sec
+                    FROM filt WHERE cardinality(message_time_taken_seconds) > 0
+                ) pt
+                GROUP BY date
+            ),
+            growth_efficiency AS (
+                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                       AVG(grade_percent / NULLIF(time_taken_seconds / 60.0, 0))::float AS value
+                FROM filt WHERE time_taken_seconds > 0 AND grade_percent IS NOT NULL
+                GROUP BY date
+            ),
+            growth_stagnation AS (
+                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                       (100.0 * SUM(is_stagnant) / NULLIF(COUNT(*), 0))::float AS value
+                FROM stagnant_attempts
+                GROUP BY date
+            ),
+            growth_time_spent AS (
+                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                       AVG(time_taken_seconds)::float AS value
+                FROM filt WHERE time_taken_seconds IS NOT NULL
+                GROUP BY date
+            ),
+            growth_total_attempts AS (
+                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                       COUNT(DISTINCT attempt_id)::float AS value
+                FROM filt
+                GROUP BY date
+            ),
             growth_chart_dates AS (
                 SELECT s.d AS date_val,
                        to_char(s.d, 'YYYY-MM-DD') AS date,
                        ROUND(COALESCE(gas.value, 0))::int AS average_score,
-                       ROUND(COALESCE(gpr.value, 0))::int AS pass_rate
+                       ROUND(COALESCE(gpr.value, 0))::int AS pass_rate,
+                       ROUND(COALESCE(gcr.value, 0))::int AS completion_rate,
+                       ROUND(COALESCE(gfapr.value, 0))::int AS first_attempt_pass_rate,
+                       ROUND(COALESCE(gm.value, 0))::int AS messages_per_session,
+                       ROUND(COALESCE(gpt.value, 0))::int AS persona_response_times,
+                       ROUND(COALESCE(ge.value, 0))::int AS session_efficiency,
+                       ROUND(COALESCE(gst.value, 0))::int AS stagnation_rate,
+                       ROUND(COALESCE(gts.value, 0))::int AS time_spent,
+                       ROUND(COALESCE(gta.value, 0))::int AS total_attempts
                 FROM spine s
                 LEFT JOIN growth_avg_score gas ON gas.date = to_char(s.d, 'YYYY-MM-DD')
                 LEFT JOIN growth_pass_rate gpr ON gpr.date = to_char(s.d, 'YYYY-MM-DD')
+                LEFT JOIN growth_completion_rate gcr ON gcr.date = to_char(s.d, 'YYYY-MM-DD')
+                LEFT JOIN growth_first_attempt_pass_rate gfapr ON gfapr.date = to_char(s.d, 'YYYY-MM-DD')
+                LEFT JOIN growth_messages gm ON gm.date = to_char(s.d, 'YYYY-MM-DD')
+                LEFT JOIN growth_persona_times_daily gpt ON gpt.date = to_char(s.d, 'YYYY-MM-DD')
+                LEFT JOIN growth_efficiency ge ON ge.date = to_char(s.d, 'YYYY-MM-DD')
+                LEFT JOIN growth_stagnation gst ON gst.date = to_char(s.d, 'YYYY-MM-DD')
+                LEFT JOIN growth_time_spent gts ON gts.date = to_char(s.d, 'YYYY-MM-DD')
+                LEFT JOIN growth_total_attempts gta ON gta.date = to_char(s.d, 'YYYY-MM-DD')
             ),
             growth_window AS (
                 SELECT AVG(average_score) FILTER (WHERE date_val >= (SELECT MAX(date_val) FROM growth_chart_dates) - interval '7 days') AS last_avg,
@@ -913,10 +981,10 @@ class DashboardQueries:
             sim_summary AS (
                 SELECT
                     f.simulation_id,
-                    AVG(f.grade_percent)::float AS avg_score,
+                       AVG(f.grade_percent)::float AS avg_score,
                     (100.0 * AVG((f.passed)::int))::float AS pass_rate,
                     (100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int))::float AS completion_rate,
-                    COUNT(*)::int AS attempts
+                       COUNT(*)::int AS attempts
                 FROM filt f
                 WHERE f.grade_percent IS NOT NULL
                 GROUP BY f.simulation_id
@@ -1290,7 +1358,15 @@ class DashboardQueries:
                         'chartData', COALESCE((SELECT json_agg(json_build_object(
                             'date', date,
                             'averageScore', average_score,
-                            'passRate', pass_rate
+                            'passRate', pass_rate,
+                            'completionRate', completion_rate,
+                            'firstAttemptPassRate', first_attempt_pass_rate,
+                            'messagesPerSession', messages_per_session,
+                            'personaResponseTimes', persona_response_times,
+                            'sessionEfficiency', session_efficiency,
+                            'stagnationRate', stagnation_rate,
+                            'timeSpent', time_spent,
+                            'totalAttempts', total_attempts
                         ) ORDER BY date_val) FROM growth_chart_dates), '[]'::json),
                         'availableMetrics', json_build_array(
                             json_build_object(
@@ -1308,6 +1384,70 @@ class DashboardQueries:
                                 'unit', '%',
                                 'description', 'Percentage of first attempts that passed',
                                 'formatterId', 'percent'
+                            ),
+                            json_build_object(
+                                'id', 'completionRate',
+                                'name', 'Completion Rate',
+                                'color', '#8b5cf6',
+                                'unit', '%',
+                                'description', 'Percentage of scenarios completed',
+                                'formatterId', 'percent'
+                            ),
+                            json_build_object(
+                                'id', 'firstAttemptPassRate',
+                                'name', 'First Attempt Pass Rate',
+                                'color', '#06b6d4',
+                                'unit', '%',
+                                'description', 'Pass rate on first attempts',
+                                'formatterId', 'percent'
+                            ),
+                            json_build_object(
+                                'id', 'messagesPerSession',
+                                'name', 'Messages Per Session',
+                                'color', '#f59e0b',
+                                'unit', 'messages',
+                                'description', 'Average messages per session',
+                                'formatterId', 'int'
+                            ),
+                            json_build_object(
+                                'id', 'personaResponseTimes',
+                                'name', 'Persona Response Times',
+                                'color', '#ef4444',
+                                'unit', 'seconds',
+                                'description', 'Average persona response time',
+                                'formatterId', 'sec'
+                            ),
+                            json_build_object(
+                                'id', 'sessionEfficiency',
+                                'name', 'Session Efficiency',
+                                'color', '#84cc16',
+                                'unit', 'pts/min',
+                                'description', 'Score per minute ratio',
+                                'formatterId', 'int'
+                            ),
+                            json_build_object(
+                                'id', 'stagnationRate',
+                                'name', 'Stagnation Rate',
+                                'color', '#ec4899',
+                                'unit', '%',
+                                'description', 'Percentage of attempts with no improvement',
+                                'formatterId', 'percent'
+                            ),
+                            json_build_object(
+                                'id', 'timeSpent',
+                                'name', 'Time Spent',
+                                'color', '#a855f7',
+                                'unit', 'seconds',
+                                'description', 'Average time per session',
+                                'formatterId', 'sec'
+                            ),
+                            json_build_object(
+                                'id', 'totalAttempts',
+                                'name', 'Total Attempts',
+                                'color', '#14b8a6',
+                                'unit', 'attempts',
+                                'description', 'Total number of attempts',
+                                'formatterId', 'int'
                             )
                         ),
                         'windowAverages', json_build_object(
@@ -1482,7 +1622,7 @@ class DashboardQueries:
                         'simulationFacts', COALESCE((
                             SELECT json_agg(
                                 json_build_object(
-                                    'simulationId', simulation_id::text,
+                            'simulationId', simulation_id::text,
                                     'title', simulation_title,
                                     'avgScore', avg_score,
                                     'passRate', pass_rate,
