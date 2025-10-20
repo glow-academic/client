@@ -3,16 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-
 from app.db import get_db
-from app.schemas.analytics import (
-    AnalyticsFilters,
-    AttemptHistoryResponse,
-    HomeOverviewResponse,
-    PracticeOverviewResponse,
-)
-from app.services.analytics_service import get_analytics_service
+from app.schemas.analytics import (AnalyticsFilters, HomeOverviewResponse,
+                                   PracticeOverviewResponse)
+from app.services.home_service import HomeService
+from app.services.practice_service import PracticeService
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(tags=["analytics-pages"])
 
@@ -24,21 +20,8 @@ async def get_home_overview(
 ) -> HomeOverviewResponse:
     """Get home overview analytics."""
     try:
-        service = get_analytics_service(conn)
+        service = HomeService(conn)
         return await service.get_home_overview(filters)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/history", response_model=AttemptHistoryResponse)
-async def get_attempt_history(
-    filters: AnalyticsFilters,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> AttemptHistoryResponse:
-    """Get attempt history analytics."""
-    try:
-        service = get_analytics_service(conn)
-        return await service.get_attempt_history(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -50,7 +33,7 @@ async def get_practice_overview(
 ) -> PracticeOverviewResponse:
     """Get practice overview analytics."""
     try:
-        service = get_analytics_service(conn)
+        service = PracticeService(conn)
         return await service.get_practice_overview(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

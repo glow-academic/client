@@ -1,6 +1,5 @@
 """Rubrics V2 API schemas with hierarchical structure."""
 
-
 from pydantic import BaseModel
 
 from .base import DepartmentMapping

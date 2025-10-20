@@ -4,20 +4,31 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.persona_queries import PersonaQueries
-from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
-                              ReasoningMappingItem)
-from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
-                                  DebugInfoItem, DeletePersonaRequest,
-                                  DeletePersonaResponse,
-                                  DuplicatePersonaRequest,
-                                  DuplicatePersonaResponse,
-                                  PersonaDetailDefaultRequest,
-                                  PersonaDetailRequest, PersonaDetailResponse,
-                                  PersonaItem, PersonasFilters,
-                                  PersonasListResponse, UpdatePersonaRequest,
-                                  UpdatePersonaResponse)
+from app.schemas.base import (
+    DepartmentMappingItem,
+    ModelMappingItem,
+    ReasoningMappingItem,
+)
+from app.schemas.personas import (
+    CreatePersonaRequest,
+    CreatePersonaResponse,
+    DebugInfoItem,
+    DeletePersonaRequest,
+    DeletePersonaResponse,
+    DuplicatePersonaRequest,
+    DuplicatePersonaResponse,
+    PersonaDetailDefaultRequest,
+    PersonaDetailRequest,
+    PersonaDetailResponse,
+    PersonaItem,
+    PersonasFilters,
+    PersonasListResponse,
+    UpdatePersonaRequest,
+    UpdatePersonaResponse,
+)
 from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
@@ -225,7 +236,7 @@ class PersonaService(BaseService):
                 if isinstance(mdata, dict):
                     model_mapping[model_id] = ModelMappingItem(
                         name=mdata.get("name", ""),
-                        description=mdata.get("description", "")
+                        description=mdata.get("description", ""),
                     )
 
         # Parse department_mapping from JSONB with type safety (may be string or dict)
@@ -238,11 +249,13 @@ class PersonaService(BaseService):
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
-                        description=ddata.get("description", "")
+                        description=ddata.get("description", ""),
                     )
 
         # Get usage and role from query result
-        scenario_count = int(persona["usage_count"]) if persona.get("usage_count") else 0
+        scenario_count = (
+            int(persona["usage_count"]) if persona.get("usage_count") else 0
+        )
         in_use = scenario_count > 0
         user_role = persona.get("user_role", "student")
 
@@ -336,24 +349,20 @@ class PersonaService(BaseService):
         # Matches database enum: ('none', 'minimal', 'low', 'medium', 'high')
         reasoning_mapping = {
             "none": ReasoningMappingItem(
-                name="None",
-                description="No extended reasoning"
+                name="None", description="No extended reasoning"
             ),
             "minimal": ReasoningMappingItem(
-                name="Minimal",
-                description="Basic reasoning for straightforward tasks"
+                name="Minimal", description="Basic reasoning for straightforward tasks"
             ),
             "low": ReasoningMappingItem(
-                name="Low",
-                description="Light reasoning for simple problem-solving"
+                name="Low", description="Light reasoning for simple problem-solving"
             ),
             "medium": ReasoningMappingItem(
-                name="Medium",
-                description="Balanced reasoning for moderate complexity"
+                name="Medium", description="Balanced reasoning for moderate complexity"
             ),
             "high": ReasoningMappingItem(
                 name="High",
-                description="Deep reasoning for complex, multi-step problems"
+                description="Deep reasoning for complex, multi-step problems",
             ),
         }
 

@@ -1,6 +1,5 @@
 """Feedback V2 API schemas."""
 
-
 from pydantic import BaseModel
 
 # ============================================================================

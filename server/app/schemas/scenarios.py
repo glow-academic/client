@@ -1,6 +1,5 @@
 """Scenarios V2 API schemas."""
 
-
 from pydantic import BaseModel
 
 from .base import (

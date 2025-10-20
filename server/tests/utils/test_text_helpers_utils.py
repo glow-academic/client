@@ -6,8 +6,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.text_helpers import *  # type: ignore
 from sqlmodel import Session
+
+from app.utils.text_helpers import *  # type: ignore
 
 
 @pytest.fixture
@@ -147,7 +148,7 @@ class TestWeighted_Sample_Without_Replacement:
         items = ["a", "b", "c", "d"]
         scores = [1.0, 2.0, 3.0, 4.0]
         result = weighted_sample_without_replacement(items, scores, 2)
-        
+
         assert len(result) == 2
         assert len(set(result)) == 2  # No duplicates
         assert all(item in items for item in result)
@@ -160,7 +161,7 @@ class TestWeighted_Sample_Without_Replacement:
         items = ["a", "b"]
         scores = [1.0, 2.0]
         result = weighted_sample_without_replacement(items, scores, 5)
-        
+
         assert len(result) == 2  # Should return all items
         assert set(result) == {"a", "b"}
 
@@ -172,7 +173,7 @@ class TestWeighted_Sample_Without_Replacement:
         items = ["a", "b", "c"]
         scores = [0.0, 0.0, 0.0]
         result = weighted_sample_without_replacement(items, scores, 2)
-        
+
         assert len(result) == 2
         assert all(item in items for item in result)
 
@@ -184,48 +185,54 @@ class TestWeighted_Sample_Without_Replacement:
         items = ["a", "b", "c"]
         scores = [1.0, 2.0, 3.0]
         result = weighted_sample_without_replacement(items, scores, 0)
-        
+
         assert result == []
 
 
 class TestRead_Document_Content_For_Similarity:
     """Tests for read_document_content_for_similarity function."""
 
-    def test_read_document_content_for_similarity_text_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_read_document_content_for_similarity_text_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test reading text file."""
         from app.utils.text_helpers import read_document_content_for_similarity
 
         # Create a temporary text file
         test_file = tmp_path / "test.txt"
         test_file.write_text("Hello World Test Content")
-        
+
         # Mock UPLOAD_FOLDER to use tmp_path
         monkeypatch.setattr("app.utils.text_helpers.UPLOAD_FOLDER", str(tmp_path))
-        
+
         result = read_document_content_for_similarity("test.txt")
         assert result == "Hello World Test Content"
 
-    def test_read_document_content_for_similarity_nonexistent_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_read_document_content_for_similarity_nonexistent_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test reading non-existent file."""
         from app.utils.text_helpers import read_document_content_for_similarity
 
         # Mock UPLOAD_FOLDER to use tmp_path
         monkeypatch.setattr("app.utils.text_helpers.UPLOAD_FOLDER", str(tmp_path))
-        
+
         result = read_document_content_for_similarity("nonexistent.txt")
         assert result == ""
 
-    def test_read_document_content_for_similarity_latin1_fallback(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_read_document_content_for_similarity_latin1_fallback(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test reading file with latin-1 encoding fallback."""
         from app.utils.text_helpers import read_document_content_for_similarity
 
         # Create a file with latin-1 encoding
         test_file = tmp_path / "latin1.txt"
         test_file.write_bytes(b"Hello \xe9 World")  # latin-1 encoded é
-        
+
         # Mock UPLOAD_FOLDER to use tmp_path
         monkeypatch.setattr("app.utils.text_helpers.UPLOAD_FOLDER", str(tmp_path))
-        
+
         result = read_document_content_for_similarity("latin1.txt")
         # Should successfully read with latin-1 fallback
         assert "Hello" in result

@@ -5,8 +5,9 @@ Tests for app.utils.debug_info
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.debug_info import *  # type: ignore
 from sqlmodel import Session
+
+from app.utils.debug_info import *  # type: ignore
 
 
 @pytest.fixture
@@ -22,7 +23,7 @@ class TestDebug_Info:
     def test_debug_info_success(self) -> None:
         """Test successful debug_info execution."""
         import uuid
-        from unittest.mock import AsyncMock, MagicMock
+        from unittest.mock import MagicMock
 
         from app.utils.debug_info import DebugContext, debug_info
 
@@ -30,14 +31,14 @@ class TestDebug_Info:
         mock_conn = MagicMock()
         model_run_id = uuid.uuid4()
         debug_context = DebugContext(conn=mock_conn, model_run_id=model_run_id)
-        
+
         # Create mock RunContextWrapper
         mock_ctx = MagicMock()
         mock_ctx.context = debug_context
-        
+
         # Call debug_info
         result = debug_info(mock_ctx, "Test debug message")
-        
+
         # Should return a confirmation string
         assert result == "Saved debug info"
 
@@ -52,15 +53,15 @@ class TestDebug_Info:
         mock_conn = MagicMock()
         model_run_id = uuid.uuid4()
         debug_context = DebugContext(conn=mock_conn, model_run_id=model_run_id)
-        
+
         # Create mock RunContextWrapper
         mock_ctx = MagicMock()
         mock_ctx.context = debug_context
-        
+
         # Mock ModelRunService to raise an exception
         with MagicMock() as mock_service:
             mock_service.insert_debug_info.side_effect = Exception("Database error")
-            
+
             # Should still return a message (may be error message)
             result = debug_info(mock_ctx, "Test debug message")
             assert isinstance(result, str)

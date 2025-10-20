@@ -4,30 +4,42 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.scenario_queries import ScenarioQueries
-from app.schemas.base import (CohortMappingItem, DepartmentMappingItem,
-                              DocumentMappingItem, ObjectiveMappingItem,
-                              ParameterItemMappingItem, ParameterMappingItem,
-                              PersonaMappingItem, ScenarioMappingItem,
-                              SimulationMappingItem)
-from app.schemas.scenarios import (CreateScenarioRequest,
-                                   CreateScenarioResponse,
-                                   DeleteScenarioRequest,
-                                   DeleteScenarioResponse,
-                                   DuplicateScenarioRequest,
-                                   DuplicateScenarioResponse,
-                                   GenerateScenarioAIRequest,
-                                   GenerateScenarioAIResponse, ParameterDetail,
-                                   RandomizeScenarioRequest,
-                                   RandomizeScenarioResponse,
-                                   ScenarioDetailDefaultRequest,
-                                   ScenarioDetailRequest,
-                                   ScenarioDetailResponse, ScenarioItem,
-                                   ScenariosFilters, ScenariosListResponse,
-                                   UpdateScenarioRequest,
-                                   UpdateScenarioResponse)
+from app.schemas.base import (
+    CohortMappingItem,
+    DepartmentMappingItem,
+    DocumentMappingItem,
+    ObjectiveMappingItem,
+    ParameterItemMappingItem,
+    ParameterMappingItem,
+    PersonaMappingItem,
+    ScenarioMappingItem,
+    SimulationMappingItem,
+)
+from app.schemas.scenarios import (
+    CreateScenarioRequest,
+    CreateScenarioResponse,
+    DeleteScenarioRequest,
+    DeleteScenarioResponse,
+    DuplicateScenarioRequest,
+    DuplicateScenarioResponse,
+    GenerateScenarioAIRequest,
+    GenerateScenarioAIResponse,
+    ParameterDetail,
+    RandomizeScenarioRequest,
+    RandomizeScenarioResponse,
+    ScenarioDetailDefaultRequest,
+    ScenarioDetailRequest,
+    ScenarioDetailResponse,
+    ScenarioItem,
+    ScenariosFilters,
+    ScenariosListResponse,
+    UpdateScenarioRequest,
+    UpdateScenarioResponse,
+)
 from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
@@ -497,7 +509,8 @@ class ScenarioService(BaseService):
             for did, ddata in document_mapping_data.items():
                 if isinstance(ddata, dict):
                     document_mapping[did] = DocumentMappingItem(
-                        name=ddata.get("name", ""), description=ddata.get("description", "")
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
                     )
 
         parameter_mapping_data = result.get("parameter_mapping") or {}
@@ -508,7 +521,8 @@ class ScenarioService(BaseService):
             for param_id, pdata in parameter_mapping_data.items():
                 if isinstance(pdata, dict):
                     parameter_mapping[param_id] = ParameterMappingItem(
-                        name=pdata.get("name", ""), description=pdata.get("description", "")
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
                     )
 
         parameter_item_mapping_data = result.get("parameter_item_mapping") or {}
@@ -533,7 +547,8 @@ class ScenarioService(BaseService):
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[did] = DepartmentMappingItem(
-                        name=ddata.get("name", ""), description=ddata.get("description", "")
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
                     )
 
         # Return empty scenario with all valid options
@@ -1257,10 +1272,15 @@ class ScenarioService(BaseService):
         import logging
         import random
 
-        from app.utils.text_helpers import (
-            normalize_text, read_document_content_for_similarity, tokenize,
-            weighted_choice, weighted_sample_without_replacement)
         from rapidfuzz import fuzz  # type: ignore
+
+        from app.utils.text_helpers import (
+            normalize_text,
+            read_document_content_for_similarity,
+            tokenize,
+            weighted_choice,
+            weighted_sample_without_replacement,
+        )
 
         logger = logging.getLogger(__name__)
         targets_set = {t.lower() for t in (targets or [])}

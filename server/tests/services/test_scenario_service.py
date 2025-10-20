@@ -2,11 +2,16 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.schemas.scenarios import ScenarioDetailRequest  # type: ignore
-from app.schemas.scenarios import ScenariosFilters  # type: ignore
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,  # type: ignore
+)
+
+from app.schemas.scenarios import (
+    ScenarioDetailRequest,  # type: ignore
+    ScenariosFilters,  # type: ignore
+)
 from app.services.scenario_service import ScenarioService  # type: ignore
-from tests.seed_helpers import get_cs_dept_id  # type: ignore
-from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -41,13 +46,16 @@ async def test_scenarios_list_only_returns_root_scenarios(
     admin_id = await get_superadmin_alias(db)
 
     # Get count of root scenarios in database for this department
-    root_count = await db.fetchval("""
+    root_count = await db.fetchval(
+        """
         SELECT COUNT(DISTINCT st.parent_id)
         FROM scenario_tree st
         JOIN scenarios s ON s.id = st.parent_id
         WHERE st.parent_id = st.child_id
           AND s.department_id = $1
-    """, dept_id)
+    """,
+        dept_id,
+    )
 
     # Execute service call
     svc = ScenarioService(db)
@@ -56,19 +64,25 @@ async def test_scenarios_list_only_returns_root_scenarios(
     )
 
     # Assert - should return only root scenarios
-    assert len(resp.scenarios) == root_count, \
+    assert len(resp.scenarios) == root_count, (
         f"Expected {root_count} root scenarios, got {len(resp.scenarios)}"
-    
+    )
+
     # Verify each returned scenario is a root
     for scenario in resp.scenarios:
-        is_root = await db.fetchval("""
+        is_root = await db.fetchval(
+            """
             SELECT EXISTS (
                 SELECT 1 FROM scenario_tree 
                 WHERE parent_id = $1 AND child_id = $1
             )
-        """, scenario.scenario_id)
-        
-        assert is_root, f"Scenario {scenario.scenario_id} should be marked as root in scenario_tree"
+        """,
+            scenario.scenario_id,
+        )
+
+        assert is_root, (
+            f"Scenario {scenario.scenario_id} should be marked as root in scenario_tree"
+        )
 
 
 async def test_scenario_can_edit_permissions(
@@ -77,66 +91,79 @@ async def test_scenario_can_edit_permissions(
     """Test can_edit permission logic for scenarios."""
     dept_id = await get_cs_dept_id(db)
     superadmin_id = await get_superadmin_alias(db)
-    
+
     # Get an admin profile (not superadmin)
-    admin_id_result = await db.fetchval("""
+    admin_id_result = await db.fetchval(
+        """
         SELECT p.id FROM profiles p
         JOIN profile_departments pd ON pd.profile_id = p.id
         WHERE p.role = 'admin' AND pd.department_id = $1
         LIMIT 1
-    """, dept_id)
-    
+    """,
+        dept_id,
+    )
+
     if not admin_id_result:
         pytest.skip("No admin profile found for testing")
-    
+
     admin_id = str(admin_id_result)
-    
+
     # Execute as superadmin
     svc = ScenarioService(db)
     resp_superadmin = await svc.get_scenarios_list(
         ScenariosFilters(departmentIds=[dept_id], profileId=superadmin_id)
     )
-    
+
     # Execute as admin
     resp_admin = await svc.get_scenarios_list(
         ScenariosFilters(departmentIds=[dept_id], profileId=admin_id)
     )
-    
+
     # Test rules (in order of precedence):
     # 1. Scenarios used in active simulations (num_simulations > 0): cannot edit (highest priority)
     # 2. Scenarios with default_scenario=true: only superadmin can edit (if not used)
     # 3. Other scenarios: admin and superadmin can edit
-    
+
     for scenario_sa in resp_superadmin.scenarios:
         # Find same scenario in admin response
         scenario_admin = next(
-            (s for s in resp_admin.scenarios if s.scenario_id == scenario_sa.scenario_id),
-            None
+            (
+                s
+                for s in resp_admin.scenarios
+                if s.scenario_id == scenario_sa.scenario_id
+            ),
+            None,
         )
-        
+
         if not scenario_admin:
             continue
-        
+
         # Rule 1 (Highest priority): Scenarios used in active simulations - nobody can edit
         if scenario_sa.num_simulations > 0:
-            assert scenario_sa.can_edit == False, \
+            assert scenario_sa.can_edit == False, (
                 f"Scenario {scenario_sa.title} used in {scenario_sa.num_simulations} simulations should not be editable (superadmin)"
-            assert scenario_admin.can_edit == False, \
+            )
+            assert scenario_admin.can_edit == False, (
                 f"Scenario {scenario_sa.title} used in {scenario_admin.num_simulations} simulations should not be editable (admin)"
-        
+            )
+
         # Rule 2: Unused default scenarios - only superadmin can edit
         elif scenario_sa.default_scenario and scenario_sa.num_simulations == 0:
-            assert scenario_sa.can_edit == True, \
+            assert scenario_sa.can_edit == True, (
                 f"Superadmin should be able to edit unused default scenario {scenario_sa.title}"
-            assert scenario_admin.can_edit == False, \
+            )
+            assert scenario_admin.can_edit == False, (
                 f"Admin should NOT be able to edit default scenario {scenario_sa.title}"
-        
+            )
+
         # Rule 3: Unused, non-default scenarios - both can edit
         elif not scenario_sa.default_scenario and scenario_sa.num_simulations == 0:
-            assert scenario_sa.can_edit == True, \
+            assert scenario_sa.can_edit == True, (
                 f"Superadmin should be able to edit unused non-default scenario {scenario_sa.title}"
-            assert scenario_admin.can_edit == True, \
+            )
+            assert scenario_admin.can_edit == True, (
                 f"Admin should be able to edit unused non-default scenario {scenario_sa.title}"
+            )
 
 
 async def test_scenario_can_delete_permissions(
@@ -145,72 +172,88 @@ async def test_scenario_can_delete_permissions(
     """Test can_delete permission logic for scenarios."""
     dept_id = await get_cs_dept_id(db)
     superadmin_id = await get_superadmin_alias(db)
-    
+
     # Get an admin profile (not superadmin)
-    admin_id_result = await db.fetchval("""
+    admin_id_result = await db.fetchval(
+        """
         SELECT p.id FROM profiles p
         JOIN profile_departments pd ON pd.profile_id = p.id
         WHERE p.role = 'admin' AND pd.department_id = $1
         LIMIT 1
-    """, dept_id)
-    
+    """,
+        dept_id,
+    )
+
     if not admin_id_result:
         pytest.skip("No admin profile found for testing")
-    
+
     admin_id = str(admin_id_result)
-    
+
     # Execute as superadmin
     svc = ScenarioService(db)
     resp_superadmin = await svc.get_scenarios_list(
         ScenariosFilters(departmentIds=[dept_id], profileId=superadmin_id)
     )
-    
+
     # Execute as admin
     resp_admin = await svc.get_scenarios_list(
         ScenariosFilters(departmentIds=[dept_id], profileId=admin_id)
     )
-    
+
     # Test rules:
     # 1. Scenarios with ANY links in simulation_scenarios (active or inactive): cannot delete
     # 2. Scenarios with default_scenario=true: only superadmin can delete (if no links)
     # 3. Other scenarios: admin and superadmin can delete (if no links)
-    
+
     for scenario_sa in resp_superadmin.scenarios:
         # Get total links count from database
-        total_links = await db.fetchval("""
+        total_links = await db.fetchval(
+            """
             SELECT COUNT(*) FROM simulation_scenarios 
             WHERE scenario_id = $1
-        """, scenario_sa.scenario_id)
-        
+        """,
+            scenario_sa.scenario_id,
+        )
+
         # Find same scenario in admin response
         scenario_admin = next(
-            (s for s in resp_admin.scenarios if s.scenario_id == scenario_sa.scenario_id),
-            None
+            (
+                s
+                for s in resp_admin.scenarios
+                if s.scenario_id == scenario_sa.scenario_id
+            ),
+            None,
         )
-        
+
         if not scenario_admin:
             continue
-        
+
         # Rule 1: Scenarios with any simulation links - nobody can delete
         if total_links > 0:
-            assert scenario_sa.can_delete == False, \
+            assert scenario_sa.can_delete == False, (
                 f"Scenario {scenario_sa.title} with {total_links} simulation links should not be deletable (superadmin)"
-            assert scenario_admin.can_delete == False, \
+            )
+            assert scenario_admin.can_delete == False, (
                 f"Scenario {scenario_sa.title} with {total_links} simulation links should not be deletable (admin)"
-        
+            )
+
         # Rule 2: Unlinked default scenarios - only superadmin can delete
         elif scenario_sa.default_scenario and total_links == 0:
-            assert scenario_sa.can_delete == True, \
+            assert scenario_sa.can_delete == True, (
                 f"Superadmin should be able to delete unlinked default scenario {scenario_sa.title}"
-            assert scenario_admin.can_delete == False, \
+            )
+            assert scenario_admin.can_delete == False, (
                 f"Admin should NOT be able to delete default scenario {scenario_sa.title}"
-        
+            )
+
         # Rule 3: Unlinked, non-default scenarios - both can delete
         elif not scenario_sa.default_scenario and total_links == 0:
-            assert scenario_sa.can_delete == True, \
+            assert scenario_sa.can_delete == True, (
                 f"Superadmin should be able to delete unlinked non-default scenario {scenario_sa.title}"
-            assert scenario_admin.can_delete == True, \
+            )
+            assert scenario_admin.can_delete == True, (
                 f"Admin should be able to delete unlinked non-default scenario {scenario_sa.title}"
+            )
 
 
 # ============================================================================
@@ -242,30 +285,48 @@ async def test_get_scenario_detail_needs_scenario_in_seed(
     assert resp.persona_mapping is not None
     assert resp.document_mapping is not None
     assert resp.parameter_mapping is not None
-    
+
     # CRITICAL: Verify persona_mapping is populated when persona_id exists
     if resp.persona_id:
-        assert len(resp.persona_mapping) > 0, "persona_mapping should be populated when scenario has persona"
-        assert resp.persona_id in resp.persona_mapping, f"Persona {resp.persona_id} should be in persona_mapping"
+        assert len(resp.persona_mapping) > 0, (
+            "persona_mapping should be populated when scenario has persona"
+        )
+        assert resp.persona_id in resp.persona_mapping, (
+            f"Persona {resp.persona_id} should be in persona_mapping"
+        )
         persona_item = resp.persona_mapping[resp.persona_id]
-        assert hasattr(persona_item, 'name') and len(persona_item.name) > 0, "Persona mapping should have valid name"
-        assert hasattr(persona_item, 'description'), "Persona mapping should have description field"
-    
+        assert hasattr(persona_item, "name") and len(persona_item.name) > 0, (
+            "Persona mapping should have valid name"
+        )
+        assert hasattr(persona_item, "description"), (
+            "Persona mapping should have description field"
+        )
+
     # CRITICAL: Verify document_mapping is populated when document_ids exist
     if resp.document_ids and len(resp.document_ids) > 0:
-        assert len(resp.document_mapping) > 0, "document_mapping should be populated when scenario has documents"
+        assert len(resp.document_mapping) > 0, (
+            "document_mapping should be populated when scenario has documents"
+        )
         first_doc_id = resp.document_ids[0]
-        assert first_doc_id in resp.document_mapping, f"Document {first_doc_id} should be in document_mapping"
+        assert first_doc_id in resp.document_mapping, (
+            f"Document {first_doc_id} should be in document_mapping"
+        )
         doc_item = resp.document_mapping[first_doc_id]
-        assert hasattr(doc_item, 'name') and len(doc_item.name) > 0, "Document mapping should have valid name"
-        assert hasattr(doc_item, 'description'), "Document mapping should have description field"
-    
+        assert hasattr(doc_item, "name") and len(doc_item.name) > 0, (
+            "Document mapping should have valid name"
+        )
+        assert hasattr(doc_item, "description"), (
+            "Document mapping should have description field"
+        )
+
     # CRITICAL: Verify parameter_item_mapping is populated when parameter_item_mapping has IDs
     # Note: ScenarioDetailResponse doesn't have parameter_item_ids field, check the mapping directly
-    if hasattr(resp, 'parameter_item_mapping') and len(resp.parameter_item_mapping) > 0:
+    if hasattr(resp, "parameter_item_mapping") and len(resp.parameter_item_mapping) > 0:
         first_param_id = next(iter(resp.parameter_item_mapping.keys()))
         param_item = resp.parameter_item_mapping[first_param_id]
-        assert hasattr(param_item, 'name') and len(param_item.name) > 0, "Parameter item mapping should have valid name"
+        assert hasattr(param_item, "name") and len(param_item.name) > 0, (
+            "Parameter item mapping should have valid name"
+        )
 
 
 async def test_get_scenario_detail_invalid_id(
@@ -308,57 +369,103 @@ async def test_get_scenario_detail_default(
     assert resp.can_edit is True
 
     # CRITICAL: Verify department info is populated
-    assert len(resp.valid_department_ids) > 0, "valid_department_ids should be populated for superadmin"
-    assert resp.department_id is not None, "department_id should be set to first valid department"
-    assert resp.department_id in resp.valid_department_ids, "department_id should be in valid_department_ids"
+    assert len(resp.valid_department_ids) > 0, (
+        "valid_department_ids should be populated for superadmin"
+    )
+    assert resp.department_id is not None, (
+        "department_id should be set to first valid department"
+    )
+    assert resp.department_id in resp.valid_department_ids, (
+        "department_id should be in valid_department_ids"
+    )
 
     # CRITICAL: Verify persona_mapping is populated when valid_persona_ids exist
     if len(resp.valid_persona_ids) > 0:
-        assert len(resp.persona_mapping) > 0, "persona_mapping should be populated when valid_persona_ids exist"
+        assert len(resp.persona_mapping) > 0, (
+            "persona_mapping should be populated when valid_persona_ids exist"
+        )
         # Verify at least one persona is mapped correctly
         first_persona_id = resp.valid_persona_ids[0]
-        assert first_persona_id in resp.persona_mapping, f"Persona {first_persona_id} should be in persona_mapping"
+        assert first_persona_id in resp.persona_mapping, (
+            f"Persona {first_persona_id} should be in persona_mapping"
+        )
         persona_item = resp.persona_mapping[first_persona_id]
-        assert hasattr(persona_item, 'name') and len(persona_item.name) > 0, "Persona mapping should have valid name"
-        assert hasattr(persona_item, 'description'), "Persona mapping should have description field"
-        assert hasattr(persona_item, 'color') and len(persona_item.color) > 0, "Persona mapping should have color"
-        assert hasattr(persona_item, 'icon') and len(persona_item.icon) > 0, "Persona mapping should have icon"
+        assert hasattr(persona_item, "name") and len(persona_item.name) > 0, (
+            "Persona mapping should have valid name"
+        )
+        assert hasattr(persona_item, "description"), (
+            "Persona mapping should have description field"
+        )
+        assert hasattr(persona_item, "color") and len(persona_item.color) > 0, (
+            "Persona mapping should have color"
+        )
+        assert hasattr(persona_item, "icon") and len(persona_item.icon) > 0, (
+            "Persona mapping should have icon"
+        )
 
     # CRITICAL: Verify document_mapping is populated when valid_document_ids exist
     if len(resp.valid_document_ids) > 0:
-        assert len(resp.document_mapping) > 0, "document_mapping should be populated when valid_document_ids exist"
+        assert len(resp.document_mapping) > 0, (
+            "document_mapping should be populated when valid_document_ids exist"
+        )
         # Verify at least one document is mapped correctly
         first_doc_id = resp.valid_document_ids[0]
-        assert first_doc_id in resp.document_mapping, f"Document {first_doc_id} should be in document_mapping"
+        assert first_doc_id in resp.document_mapping, (
+            f"Document {first_doc_id} should be in document_mapping"
+        )
         doc_item = resp.document_mapping[first_doc_id]
-        assert hasattr(doc_item, 'name') and len(doc_item.name) > 0, "Document mapping should have valid name"
-        assert hasattr(doc_item, 'description'), "Document mapping should have description field"
+        assert hasattr(doc_item, "name") and len(doc_item.name) > 0, (
+            "Document mapping should have valid name"
+        )
+        assert hasattr(doc_item, "description"), (
+            "Document mapping should have description field"
+        )
 
     # CRITICAL: Verify parameter_mapping is populated
     if len(resp.parameter_mapping) > 0:
         first_param_id = next(iter(resp.parameter_mapping.keys()))
         param_item = resp.parameter_mapping[first_param_id]
-        assert hasattr(param_item, 'name') and len(param_item.name) > 0, "Parameter mapping should have valid name"
-        assert hasattr(param_item, 'description'), "Parameter mapping should have description field"
+        assert hasattr(param_item, "name") and len(param_item.name) > 0, (
+            "Parameter mapping should have valid name"
+        )
+        assert hasattr(param_item, "description"), (
+            "Parameter mapping should have description field"
+        )
 
     # CRITICAL: Verify parameter_item_mapping is populated
     if len(resp.parameter_item_mapping) > 0:
         first_item_id = next(iter(resp.parameter_item_mapping.keys()))
         item = resp.parameter_item_mapping[first_item_id]
-        assert hasattr(item, 'name') and len(item.name) > 0, "Parameter item mapping should have valid name"
-        assert hasattr(item, 'description'), "Parameter item mapping should have description field"
-        assert hasattr(item, 'parameter_id') and len(item.parameter_id) > 0, "Parameter item should have parameter_id"
-        assert hasattr(item, 'parameter_name') and len(item.parameter_name) > 0, "Parameter item should have parameter_name"
+        assert hasattr(item, "name") and len(item.name) > 0, (
+            "Parameter item mapping should have valid name"
+        )
+        assert hasattr(item, "description"), (
+            "Parameter item mapping should have description field"
+        )
+        assert hasattr(item, "parameter_id") and len(item.parameter_id) > 0, (
+            "Parameter item should have parameter_id"
+        )
+        assert hasattr(item, "parameter_name") and len(item.parameter_name) > 0, (
+            "Parameter item should have parameter_name"
+        )
 
     # CRITICAL: Verify department_mapping is populated when valid_department_ids exist
     if len(resp.valid_department_ids) > 0:
-        assert len(resp.department_mapping) > 0, "department_mapping should be populated when valid_department_ids exist"
+        assert len(resp.department_mapping) > 0, (
+            "department_mapping should be populated when valid_department_ids exist"
+        )
         # Verify at least one department is mapped correctly
         first_dept_id = resp.valid_department_ids[0]
-        assert first_dept_id in resp.department_mapping, f"Department {first_dept_id} should be in department_mapping"
+        assert first_dept_id in resp.department_mapping, (
+            f"Department {first_dept_id} should be in department_mapping"
+        )
         dept_item = resp.department_mapping[first_dept_id]
-        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
-        assert hasattr(dept_item, 'description'), "Department mapping should have description field"
+        assert hasattr(dept_item, "name") and len(dept_item.name) > 0, (
+            "Department mapping should have valid name"
+        )
+        assert hasattr(dept_item, "description"), (
+            "Department mapping should have description field"
+        )
 
 
 async def test_get_scenario_detail_default_no_departments(

@@ -438,9 +438,7 @@ async def disconnect(sid: str) -> None:
                     # Update default guest profile: refresh last_active, set active False only when all guests are gone
                     queries = ProfileQueries()
                     query = queries.update_default_guest_profile_activity()
-                    await conn.execute(
-                        query, datetime.now(UTC), remaining_guests > 0
-                    )
+                    await conn.execute(query, datetime.now(UTC), remaining_guests > 0)
                     logger.info(
                         f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
                     )

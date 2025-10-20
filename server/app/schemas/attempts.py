@@ -1,6 +1,5 @@
 """Attempts schemas for v2 API."""
 
-
 from pydantic import BaseModel
 
 

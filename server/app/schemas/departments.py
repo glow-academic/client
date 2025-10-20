@@ -1,6 +1,5 @@
 """Departments V2 API schemas with agent role assignments."""
 
-
 from pydantic import BaseModel
 
 from .base import AgentMapping

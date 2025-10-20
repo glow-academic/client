@@ -5,8 +5,9 @@ Tests for app.utils.search
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.search import *  # type: ignore
 from sqlmodel import Session
+
+from app.utils.search import *  # type: ignore
 
 
 @pytest.fixture
@@ -74,19 +75,19 @@ class TestBuild_Fuzzy_Conditions:
 
         fields = ["s.name", "s.description"]
         query = "test query"
-        
+
         where_clause, params, next_idx = build_fuzzy_conditions(fields, query, 1)
-        
+
         # Should return a where clause with multiple conditions
         assert isinstance(where_clause, str)
         assert "LOWER(s.name)" in where_clause
         assert "LOWER(s.description)" in where_clause
         assert "OR" in where_clause
-        
+
         # Should return parameters
         assert isinstance(params, list)
         assert len(params) > 0
-        
+
         # Should return next index
         assert next_idx > 1
 
@@ -96,9 +97,9 @@ class TestBuild_Fuzzy_Conditions:
 
         fields = ["s.name"]
         query = "test"
-        
+
         where_clause, params, next_idx = build_fuzzy_conditions(fields, query, 1)
-        
+
         assert "LOWER(s.name)" in where_clause
         assert len(params) > 0
 
@@ -108,9 +109,9 @@ class TestBuild_Fuzzy_Conditions:
 
         fields = ["s.name"]
         query = "test"
-        
+
         where_clause, params, next_idx = build_fuzzy_conditions(fields, query, 5)
-        
+
         # Should start parameter indexing at 5
         assert "$5" in where_clause
         assert next_idx > 5

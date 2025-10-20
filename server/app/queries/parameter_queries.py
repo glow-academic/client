@@ -77,7 +77,7 @@ class ParameterQueries:
 
     def get_parameter_by_id(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter by ID.
-        
+
         NOTE: Used by create_parameter_item method for validation.
         For detail views, use get_parameter_detail_complete() instead.
         """

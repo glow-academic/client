@@ -4,7 +4,6 @@ Actionable insights computation service for analytics.
 Ported from client/lib/analytics.ts to compute insights on the server.
 """
 
-
 from app.schemas.analytics import (
     AttemptImprovementData,
     CohortData,

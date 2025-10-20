@@ -75,7 +75,7 @@ class AssistantQueries:
     ) -> tuple[str, list[Any]]:
         """
         Get complete assistant run context in ONE optimized query.
-        
+
         Fetches chat, profile, agent, model, provider, messages, and tool calls
         using CTEs and JSONB aggregation to eliminate parallel queries.
 
@@ -173,7 +173,6 @@ class AssistantQueries:
 
         params: list[Any] = [chat_id, department_id]
         return query, params
-
 
     def update_chat_title(self, chat_id: str, title: str) -> tuple[str, list[Any]]:
         """
@@ -384,12 +383,10 @@ class AssistantQueries:
         params: list[Any] = [tool_result, completed, tool_call_id]
         return query, params
 
-
-
     def get_usage_stats_complete(self, cutoff_date: datetime) -> tuple[str, list[Any]]:
         """
         Get complete usage statistics in ONE optimized query.
-        
+
         Eliminates N+1 queries by fetching chats, messages, tool_calls,
         and top user profiles using CTEs and JSONB aggregation.
 

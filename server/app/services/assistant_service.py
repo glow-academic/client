@@ -1,12 +1,12 @@
 """Assistant service layer - business logic for assistant agent execution."""
 
-import asyncio
 import json
 from datetime import UTC
 from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.assistant_queries import AssistantQueries
 from app.schemas.assistant import AssistantRunContext
@@ -61,7 +61,7 @@ class AssistantService(BaseService):
 
         # Parse messages from JSONB (may be string or list)
         messages: list[dict[str, Any]] = []
-        messages_data = result['messages']
+        messages_data = result["messages"]
         if isinstance(messages_data, str):
             messages_data = json.loads(messages_data)
         if messages_data and isinstance(messages_data, list):
@@ -69,7 +69,7 @@ class AssistantService(BaseService):
 
         # Parse tool_calls from JSONB (may be string or list)
         tool_calls: list[dict[str, Any]] = []
-        tool_calls_data = result['tool_calls']
+        tool_calls_data = result["tool_calls"]
         if isinstance(tool_calls_data, str):
             tool_calls_data = json.loads(tool_calls_data)
         if tool_calls_data and isinstance(tool_calls_data, list):
@@ -362,9 +362,9 @@ class AssistantService(BaseService):
         Returns:
             Dict containing summary, daily_stats, top_users, and tool_usage
         """
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
         # Get all usage data in ONE optimized query (eliminates N+1)
         query, params = self.queries.get_usage_stats_complete(cutoff_date)
@@ -374,60 +374,63 @@ class AssistantService(BaseService):
         def parse_datetime(val: Any) -> datetime:
             if isinstance(val, str):
                 # Parse ISO format string to timezone-aware datetime
-                dt = datetime.fromisoformat(val.replace('Z', '+00:00'))
+                dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
                 # Ensure timezone-aware
                 if dt.tzinfo is None:
-                    from datetime import timezone
-                    dt = dt.replace(tzinfo=timezone.utc)
+
+                    dt = dt.replace(tzinfo=UTC)
                 return dt
             # If already datetime, ensure it's timezone-aware
             if isinstance(val, datetime) and val.tzinfo is None:
-                from datetime import timezone
-                return val.replace(tzinfo=timezone.utc)
+
+                return val.replace(tzinfo=UTC)
             return val
 
         # Parse chats from JSONB (may be string or list)
         chats = []
-        chats_data = result['chats']
+        chats_data = result["chats"]
         if isinstance(chats_data, str):
             chats_data = json.loads(chats_data)
         if chats_data and isinstance(chats_data, list):
             # Convert created_at strings to datetime objects
             chats = [
-                {**c, "created_at": parse_datetime(c.get("created_at"))} 
-                if c.get("created_at") else c
+                {**c, "created_at": parse_datetime(c.get("created_at"))}
+                if c.get("created_at")
+                else c
                 for c in chats_data
             ]
 
         # Parse messages from JSONB (may be string or list)
         messages = []
-        messages_data = result['messages']
+        messages_data = result["messages"]
         if isinstance(messages_data, str):
             messages_data = json.loads(messages_data)
         if messages_data and isinstance(messages_data, list):
             # Convert created_at strings to datetime objects
             messages = [
-                {**m, "created_at": parse_datetime(m.get("created_at"))} 
-                if m.get("created_at") else m
+                {**m, "created_at": parse_datetime(m.get("created_at"))}
+                if m.get("created_at")
+                else m
                 for m in messages_data
             ]
 
         # Parse tool_calls from JSONB (may be string or list)
         tool_calls = []
-        tool_calls_data = result['tool_calls']
+        tool_calls_data = result["tool_calls"]
         if isinstance(tool_calls_data, str):
             tool_calls_data = json.loads(tool_calls_data)
         if tool_calls_data and isinstance(tool_calls_data, list):
             # Convert created_at strings to datetime objects
             tool_calls = [
-                {**tc, "created_at": parse_datetime(tc.get("created_at"))} 
-                if tc.get("created_at") else tc
+                {**tc, "created_at": parse_datetime(tc.get("created_at"))}
+                if tc.get("created_at")
+                else tc
                 for tc in tool_calls_data
             ]
 
         # Parse top users profiles from JSONB (may be string or list)
         top_users_profiles_raw = []
-        top_users_data = result['top_users_profiles']
+        top_users_data = result["top_users_profiles"]
         if isinstance(top_users_data, str):
             top_users_data = json.loads(top_users_data)
         if top_users_data and isinstance(top_users_data, list):
@@ -449,7 +452,9 @@ class AssistantService(BaseService):
                 chat
                 for chat in chats
                 if any(
-                    msg.get("completed") for msg in messages if msg.get("chat_id") == chat.get("id")
+                    msg.get("completed")
+                    for msg in messages
+                    if msg.get("chat_id") == chat.get("id")
                 )
             ]
         )
@@ -477,7 +482,11 @@ class AssistantService(BaseService):
                     "messages": len(day_messages),
                     "tool_calls": len(day_tool_calls),
                     "unique_users": len(
-                        set(c.get("profile_id") for c in day_chats if c.get("profile_id"))
+                        set(
+                            c.get("profile_id")
+                            for c in day_chats
+                            if c.get("profile_id")
+                        )
                     ),
                 }
             )
@@ -488,9 +497,11 @@ class AssistantService(BaseService):
             if isinstance(user_profile, dict):
                 user_id = user_profile.get("user_id")
                 chat_count = user_profile.get("chat_count", 0)
-                
+
                 # Calculate message and tool call counts for this user
-                user_chats_ids = [c.get("id") for c in chats if c.get("profile_id") == user_id]
+                user_chats_ids = [
+                    c.get("id") for c in chats if c.get("profile_id") == user_id
+                ]
                 user_messages = len(
                     [m for m in messages if m.get("chat_id") in user_chats_ids]
                 )

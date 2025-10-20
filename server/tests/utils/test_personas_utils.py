@@ -2,7 +2,6 @@
 Tests for app.utils.personas
 """
 
-import pytest
 
 
 class TestFormat_Persona_Info:
@@ -12,13 +11,10 @@ class TestFormat_Persona_Info:
         """Test successful format_persona_info execution."""
         from app.utils.personas import format_persona_info  # type: ignore
 
-        persona_data = {
-            "name": "Test Student",
-            "description": "A test student persona"
-        }
-        
+        persona_data = {"name": "Test Student", "description": "A test student persona"}
+
         result = format_persona_info(persona_data)
-        
+
         assert result["role"] == "user"
         assert "Test Student" in result["content"]
         assert "A test student persona" in result["content"]
@@ -28,11 +24,9 @@ class TestFormat_Persona_Info:
         """Test format_persona_info with missing description."""
         from app.utils.personas import format_persona_info  # type: ignore
 
-        persona_data = {
-            "name": "Test Student"
-        }
-        
+        persona_data = {"name": "Test Student"}
+
         result = format_persona_info(persona_data)
-        
+
         assert result["role"] == "user"
         assert "Test Student" in result["content"]

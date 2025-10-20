@@ -866,7 +866,7 @@ class SimulationQueries:
         self, simulation_id: str, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build optimized query to get all simulation detail data in ONE query.
-        
+
         Consolidates ~16 queries into 1 using CTEs and JSONB aggregations.
         Returns all data needed for SimulationDetailResponse.
         """
@@ -1887,9 +1887,7 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
     ]
     aggregated_results = None
     if completed_rubrics:
-        total_score = sum(
-            r["score"] for r in completed_rubrics if isinstance(r, dict)
-        )  # type: ignore
+        total_score = sum(r["score"] for r in completed_rubrics if isinstance(r, dict))  # type: ignore
         average_score = total_score / len(completed_rubrics)
         passed_chats = sum(
             1 for r in completed_rubrics if isinstance(r, dict) and r.get("passed")

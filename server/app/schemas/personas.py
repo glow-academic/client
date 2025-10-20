@@ -1,10 +1,8 @@
 """Personas V2 API schemas."""
 
-
 from pydantic import BaseModel
 
-from .base import (DepartmentMapping, ModelMapping, ReasoningMapping,
-                   ScenarioMapping)
+from .base import DepartmentMapping, ModelMapping, ReasoningMapping, ScenarioMapping
 
 
 class PersonasFilters(BaseModel):

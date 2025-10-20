@@ -4,6 +4,7 @@ Tests for simulation_service - list and search methods.
 
 import asyncpg  # type: ignore
 import pytest
+
 from app.schemas.simulations import SimulationsFilters  # type: ignore
 from app.services.simulation_service import SimulationService  # type: ignore
 
@@ -67,23 +68,39 @@ async def test_get_simulations_list(
         assert hasattr(sim, "scenario_ids")
         assert hasattr(sim, "rubric_id")
         assert isinstance(sim.scenario_ids, list)
-        
+
         # CRITICAL: Verify rubric_mapping is populated when rubric_id exists
         if sim.rubric_id:
-            assert len(result.rubric_mapping) > 0, "rubric_mapping should be populated when simulations have rubrics"
-            assert sim.rubric_id in result.rubric_mapping, f"Rubric {sim.rubric_id} should be in rubric_mapping"
+            assert len(result.rubric_mapping) > 0, (
+                "rubric_mapping should be populated when simulations have rubrics"
+            )
+            assert sim.rubric_id in result.rubric_mapping, (
+                f"Rubric {sim.rubric_id} should be in rubric_mapping"
+            )
             rubric_item = result.rubric_mapping[sim.rubric_id]
-            assert hasattr(rubric_item, 'name') and len(rubric_item.name) > 0, "Rubric mapping should have valid name"
-            assert hasattr(rubric_item, 'description'), "Rubric mapping should have description field"
-        
+            assert hasattr(rubric_item, "name") and len(rubric_item.name) > 0, (
+                "Rubric mapping should have valid name"
+            )
+            assert hasattr(rubric_item, "description"), (
+                "Rubric mapping should have description field"
+            )
+
         # CRITICAL: Verify scenario_mapping is populated when scenario_ids exist
         if len(sim.scenario_ids) > 0:
-            assert len(result.scenario_mapping) > 0, "scenario_mapping should be populated when simulations have scenarios"
+            assert len(result.scenario_mapping) > 0, (
+                "scenario_mapping should be populated when simulations have scenarios"
+            )
             first_scenario_id = sim.scenario_ids[0]
-            assert first_scenario_id in result.scenario_mapping, f"Scenario {first_scenario_id} should be in scenario_mapping"
+            assert first_scenario_id in result.scenario_mapping, (
+                f"Scenario {first_scenario_id} should be in scenario_mapping"
+            )
             scenario_item = result.scenario_mapping[first_scenario_id]
-            assert hasattr(scenario_item, 'name') and len(scenario_item.name) > 0, "Scenario mapping should have valid name"
-            assert hasattr(scenario_item, 'description'), "Scenario mapping should have description field"
+            assert hasattr(scenario_item, "name") and len(scenario_item.name) > 0, (
+                "Scenario mapping should have valid name"
+            )
+            assert hasattr(scenario_item, "description"), (
+                "Scenario mapping should have description field"
+            )
 
 
 @pytest.mark.asyncio
@@ -195,9 +212,7 @@ async def test_get_simulation_detail_single_query(
     from app.schemas.simulations import SimulationDetailRequest
 
     svc = SimulationService(db)
-    request = SimulationDetailRequest(
-        simulationId=simulation_id, profileId=profile_id
-    )
+    request = SimulationDetailRequest(simulationId=simulation_id, profileId=profile_id)
     result = await svc.get_simulation_detail(request)
 
     # Assert - Check basic structure (not over-asserting implementation details)
@@ -235,23 +250,39 @@ async def test_get_simulation_detail_single_query(
     assert isinstance(result.department_mapping, dict)
     assert isinstance(result.parameter_mapping, dict)
     assert isinstance(result.parameter_item_mapping, dict)
-    
+
     # CRITICAL: Verify rubric_mapping is populated when rubric_id exists
     if result.rubric_id:
-        assert len(result.rubric_mapping) > 0, "rubric_mapping should be populated when simulation has rubric"
-        assert result.rubric_id in result.rubric_mapping, f"Rubric {result.rubric_id} should be in rubric_mapping"
+        assert len(result.rubric_mapping) > 0, (
+            "rubric_mapping should be populated when simulation has rubric"
+        )
+        assert result.rubric_id in result.rubric_mapping, (
+            f"Rubric {result.rubric_id} should be in rubric_mapping"
+        )
         rubric_item = result.rubric_mapping[result.rubric_id]
-        assert hasattr(rubric_item, 'name') and len(rubric_item.name) > 0, "Rubric mapping should have valid name"
-        assert hasattr(rubric_item, 'description'), "Rubric mapping should have description field"
-    
+        assert hasattr(rubric_item, "name") and len(rubric_item.name) > 0, (
+            "Rubric mapping should have valid name"
+        )
+        assert hasattr(rubric_item, "description"), (
+            "Rubric mapping should have description field"
+        )
+
     # CRITICAL: Verify scenario_mapping is populated when scenario_ids exist
     if len(result.scenario_ids) > 0:
-        assert len(result.scenario_mapping) > 0, "scenario_mapping should be populated when simulation has scenarios"
+        assert len(result.scenario_mapping) > 0, (
+            "scenario_mapping should be populated when simulation has scenarios"
+        )
         first_scenario_id = result.scenario_ids[0]
-        assert first_scenario_id in result.scenario_mapping, f"Scenario {first_scenario_id} should be in scenario_mapping"
+        assert first_scenario_id in result.scenario_mapping, (
+            f"Scenario {first_scenario_id} should be in scenario_mapping"
+        )
         scenario_item = result.scenario_mapping[first_scenario_id]
-        assert hasattr(scenario_item, 'name') and len(scenario_item.name) > 0, "Scenario mapping should have valid name"
-        assert hasattr(scenario_item, 'description'), "Scenario mapping should have description field"
+        assert hasattr(scenario_item, "name") and len(scenario_item.name) > 0, (
+            "Scenario mapping should have valid name"
+        )
+        assert hasattr(scenario_item, "description"), (
+            "Scenario mapping should have description field"
+        )
 
     # Parameter data
     assert hasattr(result, "parameters")
@@ -273,7 +304,7 @@ async def test_scenario_statistics_in_detail(
         WHERE s.active = true
         LIMIT 1
     """)
-    
+
     if not sim_result:
         pytest.skip("No simulations with scenarios found in test database")
 
@@ -284,30 +315,28 @@ async def test_scenario_statistics_in_detail(
     from app.schemas.simulations import SimulationDetailRequest
 
     svc = SimulationService(db)
-    request = SimulationDetailRequest(
-        simulationId=simulation_id, profileId=profile_id
-    )
+    request = SimulationDetailRequest(simulationId=simulation_id, profileId=profile_id)
     result = await svc.get_simulation_detail(request)
 
     # Assert - Check that scenarios have statistics fields
     assert hasattr(result, "scenarios")
     assert isinstance(result.scenarios, list)
-    
+
     if result.scenarios:
         scenario = result.scenarios[0]
-        
+
         # Check all new statistics fields exist
         assert hasattr(scenario, "usage_count")
         assert hasattr(scenario, "success_rate")
         assert hasattr(scenario, "last_used")
         assert hasattr(scenario, "can_remove")
-        
+
         # Check types
         assert isinstance(scenario.usage_count, int)
         assert isinstance(scenario.success_rate, int)
         assert scenario.last_used is None or isinstance(scenario.last_used, str)
         assert isinstance(scenario.can_remove, bool)
-        
+
         # Check value constraints
         assert scenario.usage_count >= 0
         assert 0 <= scenario.success_rate <= 100
@@ -326,7 +355,7 @@ async def test_scenario_can_remove_flag(
         WHERE s.active = true
         LIMIT 1
     """)
-    
+
     if not sim_result:
         pytest.skip("No simulations with scenarios found in test database")
 
@@ -337,9 +366,7 @@ async def test_scenario_can_remove_flag(
     from app.schemas.simulations import SimulationDetailRequest
 
     svc = SimulationService(db)
-    request = SimulationDetailRequest(
-        simulationId=simulation_id, profileId=profile_id
-    )
+    request = SimulationDetailRequest(simulationId=simulation_id, profileId=profile_id)
     result = await svc.get_simulation_detail(request)
 
     # Assert - Check can_remove logic
@@ -347,9 +374,13 @@ async def test_scenario_can_remove_flag(
         for scenario in result.scenarios:
             # Verify can_remove matches usage_count == 0
             if scenario.usage_count == 0:
-                assert scenario.can_remove is True, "Scenario with 0 usage should be removable"
+                assert scenario.can_remove is True, (
+                    "Scenario with 0 usage should be removable"
+                )
             else:
-                assert scenario.can_remove is False, "Scenario with usage should not be removable"
+                assert scenario.can_remove is False, (
+                    "Scenario with usage should not be removable"
+                )
 
 
 @pytest.mark.asyncio
@@ -365,7 +396,7 @@ async def test_scenarios_list_json_parsing(
         WHERE s.active = true
         LIMIT 1
     """)
-    
+
     if not sim_result:
         pytest.skip("No simulations with scenarios found in test database")
 
@@ -376,16 +407,16 @@ async def test_scenarios_list_json_parsing(
     from app.schemas.simulations import SimulationDetailRequest
 
     svc = SimulationService(db)
-    request = SimulationDetailRequest(
-        simulationId=simulation_id, profileId=profile_id
-    )
+    request = SimulationDetailRequest(simulationId=simulation_id, profileId=profile_id)
     result = await svc.get_simulation_detail(request)
 
     # Assert - Scenarios should be parsed and populated
     assert hasattr(result, "scenarios")
     assert isinstance(result.scenarios, list)
-    assert len(result.scenarios) > 0, "Scenarios list should not be empty when simulation has scenarios"
-    
+    assert len(result.scenarios) > 0, (
+        "Scenarios list should not be empty when simulation has scenarios"
+    )
+
     # Verify first scenario has all expected fields
     first_scenario = result.scenarios[0]
     assert hasattr(first_scenario, "scenario_id")
@@ -396,7 +427,7 @@ async def test_scenarios_list_json_parsing(
     assert hasattr(first_scenario, "success_rate")
     assert hasattr(first_scenario, "last_used")
     assert hasattr(first_scenario, "can_remove")
-    
+
     # Verify data types
     assert isinstance(first_scenario.scenario_id, str)
     assert isinstance(first_scenario.title, str)
@@ -417,7 +448,7 @@ async def test_scenario_mapping_includes_all_valid_scenarios(
         WHERE s.active = true
         LIMIT 1
     """)
-    
+
     if not sim_result:
         pytest.skip("No simulations found in test database")
 
@@ -428,20 +459,19 @@ async def test_scenario_mapping_includes_all_valid_scenarios(
     from app.schemas.simulations import SimulationDetailRequest
 
     svc = SimulationService(db)
-    request = SimulationDetailRequest(
-        simulationId=simulation_id, profileId=profile_id
-    )
+    request = SimulationDetailRequest(simulationId=simulation_id, profileId=profile_id)
     result = await svc.get_simulation_detail(request)
 
     # Assert - scenario_mapping should have entries for all valid_scenario_ids
     assert hasattr(result, "scenario_mapping")
     assert hasattr(result, "valid_scenario_ids")
-    
+
     # Every valid scenario ID should have a mapping entry
     for scenario_id in result.valid_scenario_ids:
-        assert scenario_id in result.scenario_mapping, \
+        assert scenario_id in result.scenario_mapping, (
             f"Valid scenario {scenario_id} should have mapping entry"
-        
+        )
+
         scenario_item = result.scenario_mapping[scenario_id]
         assert hasattr(scenario_item, "name")
         assert hasattr(scenario_item, "description")
@@ -456,8 +486,10 @@ async def test_scenario_mapping_resolves_to_root(
 ) -> None:
     """Test that scenario_mapping only includes root scenarios from scenario_tree."""
     # Setup
-    sim_result = await db.fetchrow("SELECT id FROM simulations WHERE active = true LIMIT 1")
-    
+    sim_result = await db.fetchrow(
+        "SELECT id FROM simulations WHERE active = true LIMIT 1"
+    )
+
     if not sim_result:
         pytest.skip("No simulations found in test database")
 
@@ -468,34 +500,39 @@ async def test_scenario_mapping_resolves_to_root(
     from app.schemas.simulations import SimulationDetailRequest
 
     svc = SimulationService(db)
-    request = SimulationDetailRequest(
-        simulationId=simulation_id, profileId=profile_id
-    )
+    request = SimulationDetailRequest(simulationId=simulation_id, profileId=profile_id)
     result = await svc.get_simulation_detail(request)
 
     # Assert - All scenarios in mapping should be root scenarios
     # Check a few scenarios to verify they are roots (parent_id = child_id or no parent)
     for scenario_id in list(result.scenario_mapping.keys())[:10]:  # Check first 10
         # Query to check if this is a root scenario
-        is_child = await db.fetchval("""
+        is_child = await db.fetchval(
+            """
             SELECT EXISTS (
                 SELECT 1 FROM scenario_tree 
                 WHERE child_id = $1 AND parent_id != child_id
             )
-        """, scenario_id)
-        
+        """,
+            scenario_id,
+        )
+
         # If it's a child of another scenario, it should not be in the mapping
         # (unless it's also marked as a root with parent_id = child_id)
         if is_child:
-            is_also_root = await db.fetchval("""
+            is_also_root = await db.fetchval(
+                """
                 SELECT EXISTS (
                     SELECT 1 FROM scenario_tree 
                     WHERE child_id = $1 AND parent_id = child_id
                 )
-            """, scenario_id)
-            
-            assert is_also_root, \
+            """,
+                scenario_id,
+            )
+
+            assert is_also_root, (
                 f"Scenario {scenario_id} is a child but not marked as root in scenario_tree"
+            )
 
 
 @pytest.mark.asyncio
@@ -506,25 +543,30 @@ async def test_simulations_list_shows_cohort_count(
     # Setup
     dept_id = await get_test_dept_id(db)
     profile_id = await get_test_profile_id(db)
-    
+
     # Execute
     svc = SimulationService(db)
     filters = SimulationsFilters(departmentIds=[dept_id], profileId=profile_id)
     result = await svc.get_simulations_list(filters)
-    
+
     # Assert - Check num_cohorts field exists and matches database
     for simulation in result.simulations:
         # Count cohorts for this simulation in database
-        cohort_count = await db.fetchval("""
+        cohort_count = await db.fetchval(
+            """
             SELECT COUNT(DISTINCT cohort_id)
             FROM cohort_simulations
             WHERE simulation_id = $1
-        """, simulation.simulation_id)
-        
-        assert hasattr(simulation, "num_cohorts"), \
+        """,
+            simulation.simulation_id,
+        )
+
+        assert hasattr(simulation, "num_cohorts"), (
             f"Simulation {simulation.name} should have num_cohorts field"
-        assert simulation.num_cohorts == cohort_count, \
+        )
+        assert simulation.num_cohorts == cohort_count, (
             f"Simulation {simulation.name} num_cohorts should be {cohort_count}, got {simulation.num_cohorts}"
+        )
 
 
 @pytest.mark.asyncio
@@ -534,26 +576,29 @@ async def test_simulation_practice_default_cannot_be_deleted(
     """Test that simulations marked as both practice AND default cannot be deleted by anyone."""
     # Setup
     dept_id = await get_test_dept_id(db)
-    superadmin_id = await db.fetchval("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
-    
+    superadmin_id = await db.fetchval(
+        "SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1"
+    )
+
     if not superadmin_id:
         pytest.skip("No superadmin profile found")
-    
+
     superadmin_id = str(superadmin_id)
-    
+
     # Execute
     from app.schemas.simulations import SimulationsFilters
-    
+
     svc = SimulationService(db)
     result = await svc.get_simulations_list(
         SimulationsFilters(departmentIds=[dept_id], profileId=superadmin_id)
     )
-    
+
     # Assert - Find simulations that are both practice and default
     for simulation in result.simulations:
         if simulation.practice_simulation and simulation.default_simulation:
-            assert simulation.can_delete == False, \
+            assert simulation.can_delete == False, (
                 f"Simulation {simulation.name} marked as practice+default should NOT be deletable (even by superadmin)"
+            )
 
 
 @pytest.mark.asyncio
@@ -562,30 +607,37 @@ async def test_simulation_can_edit_permissions(
 ) -> None:
     """Test can_edit permission logic for simulations based on cohort links."""
     # Setup - Get test data
-    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_result = await db.fetchrow(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     if not dept_result:
         pytest.skip("No departments found")
-    
+
     dept_id = str(dept_result["id"])
-    
+
     # Get superadmin and admin profiles
-    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
-    admin_result = await db.fetchrow("""
+    superadmin_result = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1"
+    )
+    admin_result = await db.fetchrow(
+        """
         SELECT p.id FROM profiles p
         JOIN profile_departments pd ON pd.profile_id = p.id
         WHERE p.role = 'admin' AND pd.department_id = $1
         LIMIT 1
-    """, dept_id)
-    
+    """,
+        dept_id,
+    )
+
     if not superadmin_result or not admin_result:
         pytest.skip("Need both superadmin and admin profiles")
-    
+
     superadmin_id = str(superadmin_result["id"])
     admin_id = str(admin_result["id"])
-    
+
     # Execute
     from app.schemas.simulations import SimulationsFilters
-    
+
     svc = SimulationService(db)
     resp_superadmin = await svc.get_simulations_list(
         SimulationsFilters(departmentIds=[dept_id], profileId=superadmin_id)
@@ -593,47 +645,60 @@ async def test_simulation_can_edit_permissions(
     resp_admin = await svc.get_simulations_list(
         SimulationsFilters(departmentIds=[dept_id], profileId=admin_id)
     )
-    
+
     # Test rules:
     # 1. Simulations with active cohort links: cannot edit
     # 2. Default simulations: only superadmin can edit
     # 3. Other simulations: instructional, admin, superadmin can edit
-    
+
     for sim_sa in resp_superadmin.simulations:
         # Get cohort link counts from database
-        active_cohort_count = await db.fetchval("""
+        active_cohort_count = await db.fetchval(
+            """
             SELECT COUNT(*) FROM cohort_simulations 
             WHERE simulation_id = $1 AND active = true
-        """, sim_sa.simulation_id)
-        
-        sim_admin = next(
-            (s for s in resp_admin.simulations if s.simulation_id == sim_sa.simulation_id),
-            None
+        """,
+            sim_sa.simulation_id,
         )
-        
+
+        sim_admin = next(
+            (
+                s
+                for s in resp_admin.simulations
+                if s.simulation_id == sim_sa.simulation_id
+            ),
+            None,
+        )
+
         if not sim_admin:
             continue
-        
+
         # Rule 1: Simulations with active cohort links - nobody can edit
         if active_cohort_count > 0:
-            assert sim_sa.can_edit == False, \
+            assert sim_sa.can_edit == False, (
                 f"Simulation {sim_sa.name} with {active_cohort_count} active cohort links should not be editable (superadmin)"
-            assert sim_admin.can_edit == False, \
+            )
+            assert sim_admin.can_edit == False, (
                 f"Simulation {sim_admin.name} with {active_cohort_count} active cohort links should not be editable (admin)"
-        
+            )
+
         # Rule 2: Default simulations - only superadmin can edit
         elif sim_sa.default_simulation:
-            assert sim_sa.can_edit == True, \
+            assert sim_sa.can_edit == True, (
                 f"Superadmin should be able to edit default simulation {sim_sa.name}"
-            assert sim_admin.can_edit == False, \
+            )
+            assert sim_admin.can_edit == False, (
                 f"Admin should NOT be able to edit default simulation {sim_admin.name}"
-        
+            )
+
         # Rule 3: Non-default simulations without active cohort links - all can edit
         elif not sim_sa.default_simulation and active_cohort_count == 0:
-            assert sim_sa.can_edit == True, \
+            assert sim_sa.can_edit == True, (
                 f"Superadmin should be able to edit non-default simulation {sim_sa.name}"
-            assert sim_admin.can_edit == True, \
+            )
+            assert sim_admin.can_edit == True, (
                 f"Admin should be able to edit non-default simulation {sim_admin.name}"
+            )
 
 
 @pytest.mark.asyncio
@@ -642,29 +707,36 @@ async def test_simulation_can_delete_permissions(
 ) -> None:
     """Test can_delete permission logic for simulations based on cohort links."""
     # Setup
-    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_result = await db.fetchrow(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     if not dept_result:
         pytest.skip("No departments found")
-    
+
     dept_id = str(dept_result["id"])
-    
-    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
-    admin_result = await db.fetchrow("""
+
+    superadmin_result = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1"
+    )
+    admin_result = await db.fetchrow(
+        """
         SELECT p.id FROM profiles p
         JOIN profile_departments pd ON pd.profile_id = p.id
         WHERE p.role = 'admin' AND pd.department_id = $1
         LIMIT 1
-    """, dept_id)
-    
+    """,
+        dept_id,
+    )
+
     if not superadmin_result or not admin_result:
         pytest.skip("Need both superadmin and admin profiles")
-    
+
     superadmin_id = str(superadmin_result["id"])
     admin_id = str(admin_result["id"])
-    
+
     # Execute
     from app.schemas.simulations import SimulationsFilters
-    
+
     svc = SimulationService(db)
     resp_superadmin = await svc.get_simulations_list(
         SimulationsFilters(departmentIds=[dept_id], profileId=superadmin_id)
@@ -672,55 +744,74 @@ async def test_simulation_can_delete_permissions(
     resp_admin = await svc.get_simulations_list(
         SimulationsFilters(departmentIds=[dept_id], profileId=admin_id)
     )
-    
+
     # Test rules:
     # 1. Practice + Default simulations: NEVER deletable (highest priority)
     # 2. Simulations with ANY cohort links: cannot delete
     # 3. Default simulations (not practice): only superadmin can delete (if no links)
     # 4. Other simulations: instructional, admin, superadmin can delete (if no links)
-    
+
     for sim_sa in resp_superadmin.simulations:
         # Get total cohort link count from database
-        total_cohort_links = await db.fetchval("""
+        total_cohort_links = await db.fetchval(
+            """
             SELECT COUNT(*) FROM cohort_simulations 
             WHERE simulation_id = $1
-        """, sim_sa.simulation_id)
-        
-        sim_admin = next(
-            (s for s in resp_admin.simulations if s.simulation_id == sim_sa.simulation_id),
-            None
+        """,
+            sim_sa.simulation_id,
         )
-        
+
+        sim_admin = next(
+            (
+                s
+                for s in resp_admin.simulations
+                if s.simulation_id == sim_sa.simulation_id
+            ),
+            None,
+        )
+
         if not sim_admin:
             continue
-        
+
         # Rule 1: Practice + Default simulations - NEVER deletable
         if sim_sa.default_simulation and sim_sa.practice_simulation:
-            assert sim_sa.can_delete == False, \
+            assert sim_sa.can_delete == False, (
                 f"Simulation {sim_sa.name} (practice+default) should NEVER be deletable"
-            assert sim_admin.can_delete == False, \
+            )
+            assert sim_admin.can_delete == False, (
                 f"Simulation {sim_admin.name} (practice+default) should NEVER be deletable"
-        
+            )
+
         # Rule 2: Simulations with any cohort links - nobody can delete
         elif total_cohort_links > 0:
-            assert sim_sa.can_delete == False, \
+            assert sim_sa.can_delete == False, (
                 f"Simulation {sim_sa.name} with {total_cohort_links} cohort links should not be deletable (superadmin)"
-            assert sim_admin.can_delete == False, \
+            )
+            assert sim_admin.can_delete == False, (
                 f"Simulation {sim_admin.name} with {total_cohort_links} cohort links should not be deletable (admin)"
-        
+            )
+
         # Rule 3: Unlinked default simulations (not practice) - only superadmin can delete
-        elif sim_sa.default_simulation and not sim_sa.practice_simulation and total_cohort_links == 0:
-            assert sim_sa.can_delete == True, \
+        elif (
+            sim_sa.default_simulation
+            and not sim_sa.practice_simulation
+            and total_cohort_links == 0
+        ):
+            assert sim_sa.can_delete == True, (
                 f"Superadmin should be able to delete unlinked default (non-practice) simulation {sim_sa.name}"
-            assert sim_admin.can_delete == False, \
+            )
+            assert sim_admin.can_delete == False, (
                 f"Admin should NOT be able to delete default simulation {sim_admin.name}"
-        
+            )
+
         # Rule 4: Unlinked, non-default simulations - all can delete
         elif not sim_sa.default_simulation and total_cohort_links == 0:
-            assert sim_sa.can_delete == True, \
+            assert sim_sa.can_delete == True, (
                 f"Superadmin should be able to delete unlinked non-default simulation {sim_sa.name}"
-            assert sim_admin.can_delete == True, \
+            )
+            assert sim_admin.can_delete == True, (
                 f"Admin should be able to delete unlinked non-default simulation {sim_admin.name}"
+            )
 
 
 @pytest.mark.asyncio
@@ -738,44 +829,49 @@ async def test_scenario_ordering_active_first(
         WHERE s.active = true
         LIMIT 1
     """)
-    
+
     if not sim_result:
         pytest.skip("No simulations found in test database")
-    
+
     simulation_id = str(sim_result["id"])
     profile_id = await get_test_profile_id(db)
-    
+
     # Get current scenarios (at least 2)
     scenario_results = await db.fetch(
         "SELECT scenario_id FROM simulation_scenarios WHERE simulation_id = $1 ORDER BY position LIMIT 3",
-        simulation_id
+        simulation_id,
     )
-    
+
     if len(scenario_results) < 2:
         pytest.skip("Need at least 2 scenarios for this test")
-    
+
     # Get time limit
     time_limit_result = await db.fetchrow(
         "SELECT time_limit_seconds FROM simulation_time_limits WHERE simulation_id = $1 AND active = true",
-        simulation_id
+        simulation_id,
     )
     time_limit = time_limit_result["time_limit_seconds"] if time_limit_result else None
-    
+
     # Create request with mixed active/inactive scenarios
     # First scenario inactive, rest active - should reorder to active first
-    from app.schemas.simulations import (ScenarioInRequest,
-                                         UpdateSimulationRequest)
-    
+    from app.schemas.simulations import ScenarioInRequest, UpdateSimulationRequest
+
     scenario_ids = [
-        ScenarioInRequest(scenario_id=str(scenario_results[0]["scenario_id"]), active=False),  # Inactive
-        ScenarioInRequest(scenario_id=str(scenario_results[1]["scenario_id"]), active=True),   # Active
+        ScenarioInRequest(
+            scenario_id=str(scenario_results[0]["scenario_id"]), active=False
+        ),  # Inactive
+        ScenarioInRequest(
+            scenario_id=str(scenario_results[1]["scenario_id"]), active=True
+        ),  # Active
     ]
-    
+
     if len(scenario_results) >= 3:
         scenario_ids.append(
-            ScenarioInRequest(scenario_id=str(scenario_results[2]["scenario_id"]), active=True)  # Active
+            ScenarioInRequest(
+                scenario_id=str(scenario_results[2]["scenario_id"]), active=True
+            )  # Active
         )
-    
+
     # Execute - Update simulation
     svc = SimulationService(db)
     request = UpdateSimulationRequest(
@@ -792,27 +888,28 @@ async def test_scenario_ordering_active_first(
         image_input_active=sim_result["image_input_active"],
         time_limit=time_limit,
         rubric_id=sim_result["rubric_id"],
-        scenario_ids=scenario_ids
+        scenario_ids=scenario_ids,
     )
-    
+
     result = await svc.update_simulation(request)
     assert result.success is True
-    
+
     # Verify ordering in database: active scenarios should come first
     db_scenarios = await db.fetch(
         "SELECT scenario_id, active, position FROM simulation_scenarios WHERE simulation_id = $1 ORDER BY position",
-        simulation_id
+        simulation_id,
     )
-    
+
     # First scenarios should be active (active=true)
     # Last scenario should be inactive (active=false)
     active_positions = [i for i, s in enumerate(db_scenarios) if s["active"]]
     inactive_positions = [i for i, s in enumerate(db_scenarios) if not s["active"]]
-    
+
     # All active scenarios should come before any inactive scenarios
     if active_positions and inactive_positions:
-        assert max(active_positions) < min(inactive_positions), \
+        assert max(active_positions) < min(inactive_positions), (
             "Active scenarios should come before inactive scenarios in position order"
+        )
 
 
 @pytest.mark.asyncio
@@ -824,30 +921,29 @@ async def test_create_simulation_with_scenario_active_states(
     # Setup
     dept_id = await get_test_dept_id(db)
     profile_id = await get_test_profile_id(db)
-    
+
     # Get test rubric and scenarios
     rubric_result = await db.fetchrow(
         "SELECT id FROM rubrics WHERE department_id = $1 AND active = true LIMIT 1",
-        dept_id
+        dept_id,
     )
     scenario_results = await db.fetch(
         "SELECT id FROM scenarios WHERE department_id = $1 AND active = true LIMIT 2",
-        dept_id
+        dept_id,
     )
-    
+
     if not rubric_result or len(scenario_results) < 2:
         pytest.skip("Insufficient test data (need rubric and 2+ scenarios)")
-    
+
     rubric_id = str(rubric_result["id"])
     scenario_ids = [
         {"scenario_id": str(scenario_results[0]["id"]), "active": True},
-        {"scenario_id": str(scenario_results[1]["id"]), "active": False}
+        {"scenario_id": str(scenario_results[1]["id"]), "active": False},
     ]
-    
+
     # Execute - Create simulation
-    from app.schemas.simulations import (CreateSimulationRequest,
-                                         ScenarioInRequest)
-    
+    from app.schemas.simulations import CreateSimulationRequest, ScenarioInRequest
+
     svc = SimulationService(db)
     request = CreateSimulationRequest(
         title="Test Simulation with Active States",
@@ -864,33 +960,37 @@ async def test_create_simulation_with_scenario_active_states(
         rubric_id=rubric_id,
         scenario_ids=[
             ScenarioInRequest(**scenario_ids[0]),
-            ScenarioInRequest(**scenario_ids[1])
-        ]
+            ScenarioInRequest(**scenario_ids[1]),
+        ],
     )
-    
+
     result = await svc.create_simulation(request)
-    
+
     # Assert
     assert result.success is True
     assert result.simulationId
-    
+
     # Verify active states were saved correctly
     from app.schemas.simulations import SimulationDetailRequest
+
     detail_request = SimulationDetailRequest(
-        simulationId=result.simulationId,
-        profileId=profile_id
+        simulationId=result.simulationId, profileId=profile_id
     )
     detail = await svc.get_simulation_detail(detail_request)
-    
+
     assert len(detail.scenarios) == 2
     # First scenario should be active
-    first_scenario = next(s for s in detail.scenarios if s.scenario_id == scenario_ids[0]["scenario_id"])
+    first_scenario = next(
+        s for s in detail.scenarios if s.scenario_id == scenario_ids[0]["scenario_id"]
+    )
     assert first_scenario.active is True
-    
+
     # Second scenario should be inactive
-    second_scenario = next(s for s in detail.scenarios if s.scenario_id == scenario_ids[1]["scenario_id"])
+    second_scenario = next(
+        s for s in detail.scenarios if s.scenario_id == scenario_ids[1]["scenario_id"]
+    )
     assert second_scenario.active is False
-    
+
     # Cleanup
     await db.execute("DELETE FROM simulations WHERE id = $1", result.simulationId)
 
@@ -914,35 +1014,37 @@ async def test_update_simulation_scenario_active_states(
         HAVING COUNT(ss.scenario_id) >= 1
         LIMIT 1
     """)
-    
+
     if not sim_result:
         pytest.skip("No simulations with scenarios found in test database")
-    
+
     simulation_id = str(sim_result["id"])
     profile_id = await get_test_profile_id(db)
-    
+
     # Get current scenarios
     scenario_results = await db.fetch(
         "SELECT scenario_id FROM simulation_scenarios WHERE simulation_id = $1 ORDER BY position",
-        simulation_id
+        simulation_id,
     )
-    
+
     scenario_ids = [
-        {"scenario_id": str(row["scenario_id"]), "active": False}  # Toggle all to inactive
+        {
+            "scenario_id": str(row["scenario_id"]),
+            "active": False,
+        }  # Toggle all to inactive
         for row in scenario_results
     ]
-    
+
     # Get time limit
     time_limit_result = await db.fetchrow(
         "SELECT time_limit_seconds FROM simulation_time_limits WHERE simulation_id = $1 AND active = true",
-        simulation_id
+        simulation_id,
     )
     time_limit = time_limit_result["time_limit_seconds"] if time_limit_result else None
-    
+
     # Execute - Update simulation
-    from app.schemas.simulations import (ScenarioInRequest,
-                                         UpdateSimulationRequest)
-    
+    from app.schemas.simulations import ScenarioInRequest, UpdateSimulationRequest
+
     svc = SimulationService(db)
     request = UpdateSimulationRequest(
         simulationId=simulation_id,
@@ -958,22 +1060,24 @@ async def test_update_simulation_scenario_active_states(
         image_input_active=sim_result["image_input_active"],
         time_limit=time_limit,
         rubric_id=sim_result["rubric_id"],
-        scenario_ids=[ScenarioInRequest(**sid) for sid in scenario_ids]
+        scenario_ids=[ScenarioInRequest(**sid) for sid in scenario_ids],
     )
-    
+
     result = await svc.update_simulation(request)
-    
+
     # Assert
     assert result.success is True
-    
+
     # Verify active states were updated
     from app.schemas.simulations import SimulationDetailRequest
+
     detail_request = SimulationDetailRequest(
-        simulationId=simulation_id,
-        profileId=profile_id
+        simulationId=simulation_id, profileId=profile_id
     )
     detail = await svc.get_simulation_detail(detail_request)
-    
+
     # All scenarios should now be inactive
     for scenario in detail.scenarios:
-        assert scenario.active is False, f"Scenario {scenario.scenario_id} should be inactive"
+        assert scenario.active is False, (
+            f"Scenario {scenario.scenario_id} should be inactive"
+        )

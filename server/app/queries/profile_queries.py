@@ -92,7 +92,6 @@ class ProfileQueries:
         """
         return (query, params)
 
-
     def get_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile role."""
         query = """

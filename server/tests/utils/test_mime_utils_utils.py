@@ -5,8 +5,9 @@ Tests for app.utils.mime_utils
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.mime_utils import *  # type: ignore
 from sqlmodel import Session
+
+from app.utils.mime_utils import *  # type: ignore
 
 
 @pytest.fixture
@@ -39,7 +40,11 @@ class TestInfer_Mime_From_Name:
 
         result = infer_mime_from_name("script.js")
         # Python's mimetypes returns this (or our override if mimetypes fails)
-        assert result in ["text/javascript", "text/javascript; charset=utf-8", "application/javascript"]
+        assert result in [
+            "text/javascript",
+            "text/javascript; charset=utf-8",
+            "application/javascript",
+        ]
 
     def test_infer_mime_from_name_image(self) -> None:
         """Test infer_mime_from_name with image file."""

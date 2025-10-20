@@ -87,31 +87,7 @@ async def test_get_growth_data(db: asyncpg.Connection, disable_cache) -> None:
     assert len(result.availableMetrics) == 10  # Should have all 10 metrics
 
 
-@pytest.mark.asyncio
-async def test_get_reports_bundle(db: asyncpg.Connection, disable_cache) -> None:
-    """Test reports bundle with embedded mappings in single query."""
-    dept_id = await get_test_dept_id(db)
-    if not dept_id:
-        pytest.skip("No test department found")
-
-    # Use a wide date range
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=90)
-
-    filters = AnalyticsFilters(
-        startDate=start_date.isoformat() + "Z",
-        endDate=end_date.isoformat() + "Z",
-        departmentIds=[dept_id],
-    )
-
-    svc = AnalyticsService(db)
-    result = await svc.get_reports_bundle(filters)
-
-    # Verify structure
-    assert result is not None
-    assert isinstance(result.data, list)
-    assert isinstance(result.scenario_mapping, dict)
-    assert isinstance(result.simulation_mapping, dict)
+# Reports bundle test removed - now in test_reports_service.py
 
 
 @pytest.mark.asyncio
@@ -610,23 +586,7 @@ class TestGet_Practice_Overview:
 
 import pytest
 
-
-@pytest.mark.skip(reason="TODO: implement tests for `get_reports_bundle`")
-class TestGet_Reports_Bundle:
-    """Tests for get_reports_bundle function."""
-
-    def test_get_reports_bundle_success(self):
-        """Test successful get_reports_bundle execution."""
-        # TODO: Implement test for get_reports_bundle
-        assert False, "IMPLEMENT: Test for get_reports_bundle"
-
-    def test_get_reports_bundle_error(self):
-        """Test get_reports_bundle error handling."""
-        # TODO: Implement error test for get_reports_bundle
-        assert False, "IMPLEMENT: Error test for get_reports_bundle"
-
-
-import pytest
+# Reports bundle tests moved to test_reports_service.py
 
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_leaderboard_bundle`")

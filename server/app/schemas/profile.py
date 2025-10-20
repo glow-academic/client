@@ -1,6 +1,5 @@
 """Auth V2 API schemas for profile and emulation operations."""
 
-
 from pydantic import BaseModel
 
 # ============================================================================

@@ -7,8 +7,9 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.rubric import get_dynamic_rubric  # type: ignore
 from sqlmodel import Session
+
+from app.utils.rubric import get_dynamic_rubric  # type: ignore
 
 
 @pytest.fixture
@@ -25,12 +26,12 @@ class TestGet_Dynamic_Rubric:
         # Create rubric dict
         group1_id = uuid.uuid4()
         group2_id = uuid.uuid4()
-        
+
         rubric = {
             "name": "Test Rubric",
             "description": "A test rubric description",
             "points": 100,
-            "pass_points": 70
+            "pass_points": 70,
         }
 
         # Create standard groups
@@ -41,7 +42,7 @@ class TestGet_Dynamic_Rubric:
                 "short_name": "COMM",
                 "description": "Communication skills",
                 "points": 50,
-                "pass_points": 35
+                "pass_points": 35,
             },
             {
                 "id": group2_id,
@@ -49,8 +50,8 @@ class TestGet_Dynamic_Rubric:
                 "short_name": "PROB",
                 "description": "Problem solving skills",
                 "points": 50,
-                "pass_points": 35
-            }
+                "pass_points": 35,
+            },
         ]
 
         # Create standards
@@ -59,14 +60,14 @@ class TestGet_Dynamic_Rubric:
                 "standard_group_id": group1_id,
                 "points": 5,
                 "name": "Excellent",
-                "description": "Excellent communication"
+                "description": "Excellent communication",
             },
             {
                 "standard_group_id": group1_id,
                 "points": 3,
                 "name": "Good",
-                "description": "Good communication"
-            }
+                "description": "Good communication",
+            },
         ]
 
         result = get_dynamic_rubric(rubric, standard_groups, standards)
@@ -90,12 +91,12 @@ class TestGet_Dynamic_Rubric:
         """Test get_dynamic_rubric with empty standards."""
         # Create rubric dict
         group_id = uuid.uuid4()
-        
+
         rubric = {
             "name": "Test Rubric",
             "description": "A test rubric description",
             "points": 100,
-            "pass_points": 70
+            "pass_points": 70,
         }
 
         # Create standard groups
@@ -106,7 +107,7 @@ class TestGet_Dynamic_Rubric:
                 "short_name": "COMM",
                 "description": "Communication skills",
                 "points": 50,
-                "pass_points": 35
+                "pass_points": 35,
             }
         ]
         standards: list[dict[str, Any]] = []  # Empty standards

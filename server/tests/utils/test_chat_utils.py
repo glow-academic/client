@@ -6,8 +6,9 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from app.utils.chat import *  # type: ignore
 from sqlmodel import Session
+
+from app.utils.chat import *  # type: ignore
 
 
 @pytest.fixture
@@ -29,17 +30,17 @@ class TestGet_Simulation_Conversation_History:
             {
                 "type": "query",
                 "content": "Hello",
-                "created_at": datetime(2024, 1, 1, 10, 0, 0)
+                "created_at": datetime(2024, 1, 1, 10, 0, 0),
             },
             {
                 "type": "response",
                 "content": "Hi there!",
-                "created_at": datetime(2024, 1, 1, 10, 0, 1)
-            }
+                "created_at": datetime(2024, 1, 1, 10, 0, 1),
+            },
         ]
-        
+
         result = get_simulation_conversation_history(messages)
-        
+
         assert len(result) == 2
         assert result[0]["role"] == "user"
         assert result[0]["content"] == "Hello"
@@ -56,17 +57,17 @@ class TestGet_Simulation_Conversation_History:
             {
                 "type": "query",
                 "content": "Hello",
-                "created_at": datetime(2024, 1, 1, 10, 0, 0)
+                "created_at": datetime(2024, 1, 1, 10, 0, 0),
             },
             {
                 "type": "response",
                 "content": "Error: Something went wrong",
-                "created_at": datetime(2024, 1, 1, 10, 0, 1)
-            }
+                "created_at": datetime(2024, 1, 1, 10, 0, 1),
+            },
         ]
-        
+
         result = get_simulation_conversation_history(messages)
-        
+
         # Error message should be filtered out
         assert len(result) == 1
         assert result[0]["content"] == "Hello"
@@ -81,22 +82,22 @@ class TestGet_Simulation_Conversation_History:
             {
                 "type": "query",
                 "content": "Hello",
-                "created_at": datetime(2024, 1, 1, 10, 0, 0)
+                "created_at": datetime(2024, 1, 1, 10, 0, 0),
             },
             {
                 "type": "response",
                 "content": "First response",
-                "created_at": datetime(2024, 1, 1, 10, 0, 1)
+                "created_at": datetime(2024, 1, 1, 10, 0, 1),
             },
             {
                 "type": "response",
                 "content": "Second response",
-                "created_at": datetime(2024, 1, 1, 10, 0, 2)
-            }
+                "created_at": datetime(2024, 1, 1, 10, 0, 2),
+            },
         ]
-        
+
         result = get_simulation_conversation_history(messages)
-        
+
         # Should only keep the latest response
         assert len(result) == 2
         assert result[1]["content"] == "Second response"
@@ -106,7 +107,7 @@ class TestGet_Simulation_Conversation_History:
         from app.utils.chat import get_simulation_conversation_history
 
         result = get_simulation_conversation_history([])
-        
+
         assert result == []
 
 
@@ -123,18 +124,18 @@ class TestGet_Assistant_Conversation_History:
             {
                 "role": "user",
                 "content": "Hello",
-                "created_at": datetime(2024, 1, 1, 10, 0, 0)
+                "created_at": datetime(2024, 1, 1, 10, 0, 0),
             },
             {
                 "role": "assistant",
                 "content": "Hi there!",
-                "created_at": datetime(2024, 1, 1, 10, 0, 1)
-            }
+                "created_at": datetime(2024, 1, 1, 10, 0, 1),
+            },
         ]
         tool_calls: list[dict[str, Any]] = []
-        
+
         result = get_assistant_conversation_history(messages, tool_calls)
-        
+
         assert len(result) == 2
         assert result[0]["role"] == "user"
         assert result[0]["content"] == "Hello"
@@ -151,7 +152,7 @@ class TestGet_Assistant_Conversation_History:
             {
                 "role": "user",
                 "content": "Search for documents",
-                "created_at": datetime(2024, 1, 1, 10, 0, 0)
+                "created_at": datetime(2024, 1, 1, 10, 0, 0),
             }
         ]
         tool_calls = [
@@ -160,17 +161,21 @@ class TestGet_Assistant_Conversation_History:
                 "tool_name": "search_documents",
                 "tool_arguments": '{"query": "test"}',
                 "tool_result": '{"results": ["doc1", "doc2"]}',
-                "created_at": datetime(2024, 1, 1, 10, 0, 1)
+                "created_at": datetime(2024, 1, 1, 10, 0, 1),
             }
         ]
-        
+
         result = get_assistant_conversation_history(messages, tool_calls)
-        
+
         # Should include user message, tool call, and tool output
         assert len(result) >= 3
         assert result[0]["role"] == "user"
         # Tool call and output should be in the result
-        tool_items = [item for item in result if "type" in item and "function_call" in item["type"]]
+        tool_items = [
+            item
+            for item in result
+            if "type" in item and "function_call" in item["type"]
+        ]
         assert len(tool_items) >= 1
 
     def test_get_assistant_conversation_history_empty(self) -> None:
@@ -178,7 +183,7 @@ class TestGet_Assistant_Conversation_History:
         from app.utils.chat import get_assistant_conversation_history
 
         result = get_assistant_conversation_history([], [])
-        
+
         assert result == []
 
     def test_get_assistant_conversation_history_chronological_order(self) -> None:
@@ -191,18 +196,18 @@ class TestGet_Assistant_Conversation_History:
             {
                 "role": "assistant",
                 "content": "Second message",
-                "created_at": datetime(2024, 1, 1, 10, 0, 2)
+                "created_at": datetime(2024, 1, 1, 10, 0, 2),
             },
             {
                 "role": "user",
                 "content": "First message",
-                "created_at": datetime(2024, 1, 1, 10, 0, 0)
-            }
+                "created_at": datetime(2024, 1, 1, 10, 0, 0),
+            },
         ]
         tool_calls: list[dict[str, Any]] = []
-        
+
         result = get_assistant_conversation_history(messages, tool_calls)
-        
+
         # Should be sorted chronologically
         assert len(result) == 2
         assert result[0]["role"] == "user"
@@ -217,9 +222,9 @@ class TestFormat_Chat_Scenario:
         from app.utils.chat import format_chat_scenario
 
         problem_statement = "You are a customer service representative helping a user."
-        
+
         result = format_chat_scenario(problem_statement)
-        
+
         assert result["role"] == "user"
         assert "The following is the scenario for the chat:" in result["content"]
         assert problem_statement in result["content"]
@@ -229,6 +234,6 @@ class TestFormat_Chat_Scenario:
         from app.utils.chat import format_chat_scenario
 
         result = format_chat_scenario("")
-        
+
         assert result["role"] == "user"
         assert "The following is the scenario for the chat:" in result["content"]

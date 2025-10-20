@@ -548,9 +548,7 @@ async def process_simulation_message_websocket(
                         )
                     )
                 else:
-                    logger.debug(
-                        "Skipping hint generation for non-practice simulation"
-                    )
+                    logger.debug("Skipping hint generation for non-practice simulation")
 
         except Exception as e:
             logger.error(f"Error in process_simulation_message_websocket: {str(e)}")

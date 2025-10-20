@@ -3,7 +3,6 @@ Tests for app.utils.csv
 """
 
 from pathlib import Path
-from typing import Any
 
 from app.utils.csv import parse_csv_file, validate_csv_format  # type: ignore
 

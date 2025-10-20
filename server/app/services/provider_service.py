@@ -3,21 +3,32 @@
 import json
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
-from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
-                                   CreateProviderRequest,
-                                   CreateProviderResponse, DeleteModelRequest,
-                                   DeleteModelResponse, DeleteProviderRequest,
-                                   DeleteProviderResponse, ModelDetailRequest,
-                                   ModelDetailResponse, ModelItem,
-                                   ProviderDetailRequest,
-                                   ProviderDetailResponse, ProvidersFilters,
-                                   ProvidersListResponse, ProviderWithModels,
-                                   UpdateModelRequest, UpdateModelResponse,
-                                   UpdateProviderRequest,
-                                   UpdateProviderResponse)
+from app.schemas.providers import (
+    CreateModelRequest,
+    CreateModelResponse,
+    CreateProviderRequest,
+    CreateProviderResponse,
+    DeleteModelRequest,
+    DeleteModelResponse,
+    DeleteProviderRequest,
+    DeleteProviderResponse,
+    ModelDetailRequest,
+    ModelDetailResponse,
+    ModelItem,
+    ProviderDetailRequest,
+    ProviderDetailResponse,
+    ProvidersFilters,
+    ProvidersListResponse,
+    ProviderWithModels,
+    UpdateModelRequest,
+    UpdateModelResponse,
+    UpdateProviderRequest,
+    UpdateProviderResponse,
+)
 from app.services.base import BaseService, with_cache
 from app.utils.auth import encrypt_api_key
 
@@ -116,7 +127,7 @@ class ProviderService(BaseService):
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
-                        description=ddata.get("description", "")
+                        description=ddata.get("description", ""),
                     )
 
         return ProviderDetailResponse(
@@ -156,7 +167,7 @@ class ProviderService(BaseService):
                 if isinstance(pdata, dict):
                     provider_mapping[provider_id] = ProviderMappingItem(
                         name=pdata.get("name", ""),
-                        description=pdata.get("description", "")
+                        description=pdata.get("description", ""),
                     )
 
         return ModelDetailResponse(

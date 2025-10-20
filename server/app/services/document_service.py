@@ -11,25 +11,33 @@ import uuid
 import zipfile
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.extensions import CSV_FOLDER, UPLOAD_FOLDER
 from app.queries.document_queries import DocumentQueries
-from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
-                              ParameterItemMappingItem)
-from app.schemas.documents import (BulkDeleteDocumentsRequest,
-                                   BulkUpdateDocumentsRequest,
-                                   DeleteDocumentRequest,
-                                   DeleteDocumentResponse,
-                                   DocumentDetailBulkRequest,
-                                   DocumentDetailBulkResponse,
-                                   DocumentDetailRequest,
-                                   DocumentDetailResponse, DocumentItem,
-                                   DocumentsFilters, DocumentsListResponse,
-                                   FinalizeUploadRequest,
-                                   FinalizeUploadResponse,
-                                   GenerateCertificateRequest,
-                                   UpdateDocumentRequest,
-                                   UpdateDocumentResponse)
+from app.schemas.base import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ParameterItemMappingItem,
+)
+from app.schemas.documents import (
+    BulkDeleteDocumentsRequest,
+    BulkUpdateDocumentsRequest,
+    DeleteDocumentRequest,
+    DeleteDocumentResponse,
+    DocumentDetailBulkRequest,
+    DocumentDetailBulkResponse,
+    DocumentDetailRequest,
+    DocumentDetailResponse,
+    DocumentItem,
+    DocumentsFilters,
+    DocumentsListResponse,
+    FinalizeUploadRequest,
+    FinalizeUploadResponse,
+    GenerateCertificateRequest,
+    UpdateDocumentRequest,
+    UpdateDocumentResponse,
+)
 from app.services.base import BaseService, with_cache
 from app.utils.mime_utils import get_content_type
 
@@ -180,7 +188,7 @@ class DocumentService(BaseService):
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
-                        description=ddata.get("description", "")
+                        description=ddata.get("description", ""),
                     )
 
         # Parse parameter_item_mapping from JSONB with type safety (may be string or dict)
@@ -263,7 +271,7 @@ class DocumentService(BaseService):
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
-                        description=ddata.get("description", "")
+                        description=ddata.get("description", ""),
                     )
 
         # Parse parameter_item_mapping from JSONB with type safety (may be string or dict)
@@ -728,7 +736,6 @@ class DocumentService(BaseService):
             # Auto-classify if requested
             if request.autoClassify:
                 try:
-
                     # Note: run_classify_agent might be async or have different signature
                     # Skipping auto-classification for now to avoid type errors
                     logger.info(
@@ -754,9 +761,7 @@ class DocumentService(BaseService):
 
     # Download Methods
     @with_cache(lambda self, document_id: keys.document_file_info(document_id))
-    async def get_document_file(
-        self, document_id: str
-    ) -> tuple[str, str, str] | None:
+    async def get_document_file(self, document_id: str) -> tuple[str, str, str] | None:
         """
         Get document file path and metadata for download.
 
@@ -811,13 +816,20 @@ class DocumentService(BaseService):
             from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import ParagraphStyle  # type: ignore
-            from reportlab.lib.styles import getSampleStyleSheet
+            from reportlab.lib.styles import (
+                ParagraphStyle,  # type: ignore
+                getSampleStyleSheet,
+            )
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import Frame  # type: ignore
-            from reportlab.platypus import (PageTemplate, Paragraph,
-                                            SimpleDocTemplate, Spacer, Table,
-                                            TableStyle)
+            from reportlab.platypus import (
+                Frame,  # type: ignore
+                PageTemplate,
+                Paragraph,
+                SimpleDocTemplate,
+                Spacer,
+                Table,
+                TableStyle,
+            )
 
             # Create PDF in memory
             buffer = io.BytesIO()

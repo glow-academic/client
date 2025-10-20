@@ -3,7 +3,6 @@ Base schemas and types for v2 API
 Centralized mapping types used across all resources
 """
 
-
 from pydantic import BaseModel
 
 

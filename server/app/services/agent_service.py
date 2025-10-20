@@ -5,18 +5,27 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.agent_queries import AgentQueries
 from app.queries.profile_queries import ProfileQueries
-from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
-                                AgentItem, AgentsListRequest,
-                                AgentsListResponse, CreateAgentRequest,
-                                CreateAgentResponse, DebugInfoItem,
-                                DeleteAgentRequest, DeleteAgentResponse,
-                                DuplicateAgentRequest, DuplicateAgentResponse,
-                                UpdateAgentRequest, UpdateAgentResponse)
-from app.schemas.base import (ModelMapping, ModelMappingItem,
-                              ReasoningMappingItem)
+from app.schemas.agents import (
+    AgentDetailRequest,
+    AgentDetailResponse,
+    AgentItem,
+    AgentsListRequest,
+    AgentsListResponse,
+    CreateAgentRequest,
+    CreateAgentResponse,
+    DebugInfoItem,
+    DeleteAgentRequest,
+    DeleteAgentResponse,
+    DuplicateAgentRequest,
+    DuplicateAgentResponse,
+    UpdateAgentRequest,
+    UpdateAgentResponse,
+)
+from app.schemas.base import ModelMapping, ModelMappingItem, ReasoningMappingItem
 from app.services.base import BaseService, with_cache
 
 
@@ -61,16 +70,16 @@ class AgentService(BaseService):
         # Build model mapping from the single result set
         model_mapping: ModelMapping = {}
         agents: list[AgentItem] = []
-        
+
         for row in rows:
             # Add to model mapping if we have model info
             model_id = row["model_id"]
             if model_id and model_id not in model_mapping:
                 model_mapping[model_id] = ModelMappingItem(
                     name=row["model_name"] or "",
-                    description=row["model_description"] or ""
+                    description=row["model_description"] or "",
                 )
-            
+
             agents.append(
                 AgentItem(
                     agent_id=row["agent_id"],
@@ -115,7 +124,7 @@ class AgentService(BaseService):
 
         # Parse debug_info from JSONB (may be string or list)
         debug_info: list[DebugInfoItem] = []
-        debug_info_data = result['debug_info']
+        debug_info_data = result["debug_info"]
         if isinstance(debug_info_data, str):
             debug_info_data = json.loads(debug_info_data)
         if debug_info_data and isinstance(debug_info_data, list):
@@ -124,7 +133,9 @@ class AgentService(BaseService):
                     created_at_value = item.get("created_at")
                     debug_info.append(
                         DebugInfoItem(
-                            created_at=created_at_value.isoformat() if created_at_value else "",
+                            created_at=created_at_value.isoformat()
+                            if created_at_value
+                            else "",
                             model_id=item.get("model_id", ""),
                             content=item.get("content", ""),
                         )
@@ -132,7 +143,7 @@ class AgentService(BaseService):
 
         # Parse model_mapping from JSONB (may be string or dict)
         model_mapping: ModelMapping = {}
-        model_mapping_data = result['model_mapping']
+        model_mapping_data = result["model_mapping"]
         if isinstance(model_mapping_data, str):
             model_mapping_data = json.loads(model_mapping_data)
         if model_mapping_data and isinstance(model_mapping_data, dict):
@@ -140,12 +151,12 @@ class AgentService(BaseService):
                 if isinstance(model_data, dict):
                     model_mapping[model_id] = ModelMappingItem(
                         name=model_data.get("name", ""),
-                        description=model_data.get("description", "")
+                        description=model_data.get("description", ""),
                     )
 
         # Parse valid_model_ids from JSONB (may be string or list)
         valid_model_ids: list[str] = []
-        valid_model_ids_data = result['valid_model_ids']
+        valid_model_ids_data = result["valid_model_ids"]
         if isinstance(valid_model_ids_data, str):
             valid_model_ids_data = json.loads(valid_model_ids_data)
         if valid_model_ids_data and isinstance(valid_model_ids_data, list):
@@ -155,24 +166,20 @@ class AgentService(BaseService):
         # Matches database enum: ('none', 'minimal', 'low', 'medium', 'high')
         reasoning_mapping = {
             "none": ReasoningMappingItem(
-                name="None",
-                description="No extended reasoning"
+                name="None", description="No extended reasoning"
             ),
             "minimal": ReasoningMappingItem(
-                name="Minimal",
-                description="Basic reasoning for straightforward tasks"
+                name="Minimal", description="Basic reasoning for straightforward tasks"
             ),
             "low": ReasoningMappingItem(
-                name="Low",
-                description="Light reasoning for simple problem-solving"
+                name="Low", description="Light reasoning for simple problem-solving"
             ),
             "medium": ReasoningMappingItem(
-                name="Medium",
-                description="Balanced reasoning for moderate complexity"
+                name="Medium", description="Balanced reasoning for moderate complexity"
             ),
             "high": ReasoningMappingItem(
                 name="High",
-                description="Deep reasoning for complex, multi-step problems"
+                description="Deep reasoning for complex, multi-step problems",
             ),
         }
 

@@ -4,8 +4,11 @@ Tests for persona_service - list and search methods.
 
 import asyncpg  # type: ignore
 import pytest
-from app.schemas.personas import PersonaDetailRequest  # type: ignore
-from app.schemas.personas import PersonasFilters  # type: ignore
+
+from app.schemas.personas import (
+    PersonaDetailRequest,  # type: ignore
+    PersonasFilters,  # type: ignore
+)
 from app.services.persona_service import PersonaService  # type: ignore
 
 # --- Helper Functions ---
@@ -16,7 +19,7 @@ async def get_test_dept_id(db: asyncpg.Connection) -> str:
     result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
     if not result:
         raise ValueError("No departments found in test database")
-    return str(result['id'])
+    return str(result["id"])
 
 
 async def get_test_profile_id(db: asyncpg.Connection) -> str:
@@ -24,26 +27,21 @@ async def get_test_profile_id(db: asyncpg.Connection) -> str:
     result = await db.fetchrow("SELECT id FROM profiles LIMIT 1")
     if not result:
         raise ValueError("No profiles found in test database")
-    return str(result['id'])
+    return str(result["id"])
 
 
 # --- Tests ---
 
 
 @pytest.mark.asyncio
-async def test_get_personas_list(
-    db: asyncpg.Connection, disable_cache: None
-) -> None:
+async def test_get_personas_list(db: asyncpg.Connection, disable_cache: None) -> None:
     """Test getting personas list with embedded mappings."""
     # Setup - Get test data IDs
     dept_id = await get_test_dept_id(db)
     profile_id = await get_test_profile_id(db)
 
     # Create filters
-    filters = PersonasFilters(
-        departmentIds=[dept_id],
-        profileId=profile_id
-    )
+    filters = PersonasFilters(departmentIds=[dept_id], profileId=profile_id)
 
     # Execute - Call the service method
     svc = PersonaService(db)
@@ -51,9 +49,9 @@ async def test_get_personas_list(
 
     # Assert - Check basic structure
     assert result is not None
-    assert hasattr(result, 'personas')
-    assert hasattr(result, 'scenario_mapping')
-    assert hasattr(result, 'model_mapping')
+    assert hasattr(result, "personas")
+    assert hasattr(result, "scenario_mapping")
+    assert hasattr(result, "model_mapping")
 
     # Check that personas is a list (could be empty)
     assert isinstance(result.personas, list)
@@ -66,10 +64,10 @@ async def test_get_personas_list(
     # If personas exist, check basic fields
     if result.personas:
         persona = result.personas[0]
-        assert hasattr(persona, 'persona_id')
-        assert hasattr(persona, 'name')
-        assert hasattr(persona, 'scenario_ids')
-        assert hasattr(persona, 'model_id')
+        assert hasattr(persona, "persona_id")
+        assert hasattr(persona, "name")
+        assert hasattr(persona, "scenario_ids")
+        assert hasattr(persona, "model_id")
         assert isinstance(persona.scenario_ids, list)
 
 
@@ -82,10 +80,7 @@ async def test_get_personas_list_empty_departments(
     profile_id = await get_test_profile_id(db)
 
     # Create filters with empty department list
-    filters = PersonasFilters(
-        departmentIds=[],
-        profileId=profile_id
-    )
+    filters = PersonasFilters(departmentIds=[], profileId=profile_id)
 
     # Execute
     svc = PersonaService(db)
@@ -107,31 +102,33 @@ async def test_personas_only_count_root_scenarios(
     # Setup
     dept_id = await get_test_dept_id(db)
     profile_id = await get_test_profile_id(db)
-    
+
     # Execute
     svc = PersonaService(db)
     filters = PersonasFilters(departmentIds=[dept_id], profileId=profile_id)
     result = await svc.get_personas_list(filters)
-    
+
     # Assert - For each persona, verify num_scenarios matches root scenario count
     for persona in result.personas:
         # Count root scenarios for this persona in database
-        root_scenario_count = await db.fetchval("""
+        root_scenario_count = await db.fetchval(
+            """
             SELECT COUNT(DISTINCT s.id)
             FROM scenario_personas sp
             JOIN scenarios s ON s.id = sp.scenario_id
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
             WHERE sp.persona_id = $1 AND sp.active = true
-        """, persona.persona_id)
-        
-        assert persona.num_scenarios == root_scenario_count, \
+        """,
+            persona.persona_id,
+        )
+
+        assert persona.num_scenarios == root_scenario_count, (
             f"Persona {persona.name} num_scenarios should be {root_scenario_count} (roots only), got {persona.num_scenarios}"
+        )
 
 
 @pytest.mark.asyncio
-async def test_search_personas(
-    db: asyncpg.Connection, disable_cache: None
-) -> None:
+async def test_search_personas(db: asyncpg.Connection, disable_cache: None) -> None:
     """Test searching personas by name."""
     # Setup
     svc = PersonaService(db)
@@ -139,9 +136,9 @@ async def test_search_personas(
     # Get a persona name to search for
     persona_result = await db.fetchrow("SELECT name FROM personas LIMIT 1")
 
-    if persona_result and persona_result['name']:
+    if persona_result and persona_result["name"]:
         # Use first word of name as search query
-        search_query = persona_result['name'].split()[0]
+        search_query = persona_result["name"].split()[0]
 
         # Execute
         result = await svc.search_personas(search_query, limit=10)
@@ -153,11 +150,11 @@ async def test_search_personas(
         # If results exist, check structure
         if result:
             item = result[0]
-            assert 'id' in item
-            assert 'name' in item
-            assert 'score' in item
-            assert 'description' in item
-            assert isinstance(item['score'], (int, float))
+            assert "id" in item
+            assert "name" in item
+            assert "score" in item
+            assert "description" in item
+            assert isinstance(item["score"], (int, float))
     else:
         # No personas in database, just test empty search
         result = await svc.search_personas("nonexistent", limit=10)
@@ -206,15 +203,12 @@ async def test_get_persona_detail_optimized(
     persona_result = await db.fetchrow("SELECT id FROM personas LIMIT 1")
     if not persona_result:
         pytest.skip("No personas found in test database")
-    
-    persona_id = str(persona_result['id'])
+
+    persona_id = str(persona_result["id"])
     profile_id = await get_test_profile_id(db)
 
     # Create request
-    request = PersonaDetailRequest(
-        personaId=persona_id,
-        profileId=profile_id
-    )
+    request = PersonaDetailRequest(personaId=persona_id, profileId=profile_id)
 
     # Execute - Call the service method
     svc = PersonaService(db)
@@ -224,7 +218,7 @@ async def test_get_persona_detail_optimized(
     assert result is not None
     assert result.name is not None
     assert result.description is not None
-    
+
     # Check mappings exist
     assert result.model_mapping is not None
     assert isinstance(result.model_mapping, dict)
@@ -232,38 +226,63 @@ async def test_get_persona_detail_optimized(
     assert isinstance(result.reasoning_mapping, dict)
     assert result.department_mapping is not None
     assert isinstance(result.department_mapping, dict)
-    
+
     # Check valid IDs lists
     assert result.valid_model_ids is not None
     assert isinstance(result.valid_model_ids, list)
     assert result.valid_department_ids is not None
     assert isinstance(result.valid_department_ids, list)
-    
+
     # CRITICAL: Verify model_mapping is populated when model_id exists
     if result.model_id:
-        assert len(result.model_mapping) > 0, "model_mapping should be populated when persona has model"
-        assert result.model_id in result.model_mapping, f"Model {result.model_id} should be in model_mapping"
+        assert len(result.model_mapping) > 0, (
+            "model_mapping should be populated when persona has model"
+        )
+        assert result.model_id in result.model_mapping, (
+            f"Model {result.model_id} should be in model_mapping"
+        )
         model_item = result.model_mapping[result.model_id]
-        assert hasattr(model_item, 'name') and len(model_item.name) > 0, "Model mapping should have valid name"
-        assert hasattr(model_item, 'description'), "Model mapping should have description field"
-    
+        assert hasattr(model_item, "name") and len(model_item.name) > 0, (
+            "Model mapping should have valid name"
+        )
+        assert hasattr(model_item, "description"), (
+            "Model mapping should have description field"
+        )
+
     # CRITICAL: Verify department_mapping is populated when department_id exists
     if result.department_id:
-        assert len(result.department_mapping) > 0, "department_mapping should be populated when persona has department"
-        assert result.department_id in result.department_mapping, f"Department {result.department_id} should be in department_mapping"
+        assert len(result.department_mapping) > 0, (
+            "department_mapping should be populated when persona has department"
+        )
+        assert result.department_id in result.department_mapping, (
+            f"Department {result.department_id} should be in department_mapping"
+        )
         dept_item = result.department_mapping[result.department_id]
-        assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
-        assert hasattr(dept_item, 'description'), "Department mapping should have description field"
-    
+        assert hasattr(dept_item, "name") and len(dept_item.name) > 0, (
+            "Department mapping should have valid name"
+        )
+        assert hasattr(dept_item, "description"), (
+            "Department mapping should have description field"
+        )
+
     # CRITICAL: Verify reasoning_mapping contains all expected levels
-    assert len(result.reasoning_mapping) == 5, "reasoning_mapping should have 5 levels (none, minimal, low, medium, high)"
+    assert len(result.reasoning_mapping) == 5, (
+        "reasoning_mapping should have 5 levels (none, minimal, low, medium, high)"
+    )
     expected_reasoning_levels = ["none", "minimal", "low", "medium", "high"]
     for level in expected_reasoning_levels:
-        assert level in result.reasoning_mapping, f"Reasoning level '{level}' should be in reasoning_mapping"
+        assert level in result.reasoning_mapping, (
+            f"Reasoning level '{level}' should be in reasoning_mapping"
+        )
         reasoning_item = result.reasoning_mapping[level]
-        assert hasattr(reasoning_item, 'name') and len(reasoning_item.name) > 0, f"Reasoning level '{level}' should have valid name"
-        assert hasattr(reasoning_item, 'description') and len(reasoning_item.description) > 0, f"Reasoning level '{level}' should have valid description"
-    
+        assert hasattr(reasoning_item, "name") and len(reasoning_item.name) > 0, (
+            f"Reasoning level '{level}' should have valid name"
+        )
+        assert (
+            hasattr(reasoning_item, "description")
+            and len(reasoning_item.description) > 0
+        ), f"Reasoning level '{level}' should have valid description"
+
     # Check permission flags exist
     assert isinstance(result.can_edit, bool)
     assert isinstance(result.can_duplicate, bool)
@@ -277,11 +296,10 @@ async def test_get_persona_detail_not_found(
     """Test getting persona detail with invalid ID raises error."""
     # Setup
     profile_id = await get_test_profile_id(db)
-    
+
     # Create request with non-existent persona ID
     request = PersonaDetailRequest(
-        personaId="00000000-0000-0000-0000-000000000000",
-        profileId=profile_id
+        personaId="00000000-0000-0000-0000-000000000000", profileId=profile_id
     )
 
     # Execute & Assert - Should raise ValueError
@@ -296,25 +314,31 @@ async def test_persona_can_edit_permissions(
 ) -> None:
     """Test can_edit permission logic for personas based on active scenario links."""
     # Setup - Get test data
-    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_result = await db.fetchrow(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     if not dept_result:
         pytest.skip("No departments found")
-    
+
     dept_id = str(dept_result["id"])
-    
+
     # Get superadmin and admin profiles
-    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
-    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'instructional') LIMIT 1")
-    
+    superadmin_result = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1"
+    )
+    admin_result = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role IN ('admin', 'instructional') LIMIT 1"
+    )
+
     if not superadmin_result or not admin_result:
         pytest.skip("Need both superadmin and admin/instructional profiles")
-    
+
     superadmin_id = str(superadmin_result["id"])
     admin_id = str(admin_result["id"])
-    
+
     # Execute
     from app.schemas.personas import PersonasFilters
-    
+
     svc = PersonaService(db)
     resp_superadmin = await svc.get_personas_list(
         PersonasFilters(departmentIds=[dept_id], profileId=superadmin_id)
@@ -322,47 +346,56 @@ async def test_persona_can_edit_permissions(
     resp_admin = await svc.get_personas_list(
         PersonasFilters(departmentIds=[dept_id], profileId=admin_id)
     )
-    
+
     # Test rules:
     # 1. Personas with active scenario links: cannot edit
     # 2. Default personas: only superadmin can edit
     # 3. Other personas: instructional, admin, superadmin can edit
-    
+
     for persona_sa in resp_superadmin.personas:
         # Get active scenario link counts from database
-        active_scenario_count = await db.fetchval("""
+        active_scenario_count = await db.fetchval(
+            """
             SELECT COUNT(*) FROM scenario_personas 
             WHERE persona_id = $1 AND active = true
-        """, persona_sa.persona_id)
-        
+        """,
+            persona_sa.persona_id,
+        )
+
         persona_admin = next(
             (p for p in resp_admin.personas if p.persona_id == persona_sa.persona_id),
-            None
+            None,
         )
-        
+
         if not persona_admin:
             continue
-        
+
         # Rule 1: Personas with active scenario links - nobody can edit
         if active_scenario_count > 0:
-            assert persona_sa.can_edit == False, \
+            assert persona_sa.can_edit == False, (
                 f"Persona {persona_sa.persona_name} with {active_scenario_count} active scenario links should not be editable (superadmin)"
-            assert persona_admin.can_edit == False, \
+            )
+            assert persona_admin.can_edit == False, (
                 f"Persona {persona_admin.persona_name} with {active_scenario_count} active scenario links should not be editable (admin)"
-        
+            )
+
         # Rule 2: Default personas - only superadmin can edit
         elif persona_sa.default_persona:
-            assert persona_sa.can_edit == True, \
+            assert persona_sa.can_edit == True, (
                 f"Superadmin should be able to edit default persona {persona_sa.persona_name}"
-            assert persona_admin.can_edit == False, \
+            )
+            assert persona_admin.can_edit == False, (
                 f"Admin should NOT be able to edit default persona {persona_admin.persona_name}"
-        
+            )
+
         # Rule 3: Non-default personas without active scenario links - all can edit
         elif not persona_sa.default_persona and active_scenario_count == 0:
-            assert persona_sa.can_edit == True, \
+            assert persona_sa.can_edit == True, (
                 f"Superadmin should be able to edit non-default persona {persona_sa.persona_name}"
-            assert persona_admin.can_edit == True, \
+            )
+            assert persona_admin.can_edit == True, (
                 f"Admin should be able to edit non-default persona {persona_admin.persona_name}"
+            )
 
 
 @pytest.mark.asyncio
@@ -371,25 +404,31 @@ async def test_persona_can_delete_permissions(
 ) -> None:
     """Test can_delete permission logic for personas based on all scenario links."""
     # Setup - Get test data
-    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_result = await db.fetchrow(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     if not dept_result:
         pytest.skip("No departments found")
-    
+
     dept_id = str(dept_result["id"])
-    
+
     # Get superadmin and admin profiles
-    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
-    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'instructional') LIMIT 1")
-    
+    superadmin_result = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1"
+    )
+    admin_result = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role IN ('admin', 'instructional') LIMIT 1"
+    )
+
     if not superadmin_result or not admin_result:
         pytest.skip("Need both superadmin and admin/instructional profiles")
-    
+
     superadmin_id = str(superadmin_result["id"])
     admin_id = str(admin_result["id"])
-    
+
     # Execute
     from app.schemas.personas import PersonasFilters
-    
+
     svc = PersonaService(db)
     resp_superadmin = await svc.get_personas_list(
         PersonasFilters(departmentIds=[dept_id], profileId=superadmin_id)
@@ -397,44 +436,53 @@ async def test_persona_can_delete_permissions(
     resp_admin = await svc.get_personas_list(
         PersonasFilters(departmentIds=[dept_id], profileId=admin_id)
     )
-    
+
     # Test rules:
     # 1. Personas with ANY scenario links (active or inactive): cannot delete
     # 2. Default personas (not linked): only superadmin can delete
     # 3. Other personas: instructional, admin, superadmin can delete (if no links)
-    
+
     for persona_sa in resp_superadmin.personas:
         # Get total scenario link count from database
-        total_scenario_links = await db.fetchval("""
+        total_scenario_links = await db.fetchval(
+            """
             SELECT COUNT(*) FROM scenario_personas 
             WHERE persona_id = $1
-        """, persona_sa.persona_id)
-        
+        """,
+            persona_sa.persona_id,
+        )
+
         persona_admin = next(
             (p for p in resp_admin.personas if p.persona_id == persona_sa.persona_id),
-            None
+            None,
         )
-        
+
         if not persona_admin:
             continue
-        
+
         # Rule 1: Personas with any scenario links - nobody can delete
         if total_scenario_links > 0:
-            assert persona_sa.can_delete == False, \
+            assert persona_sa.can_delete == False, (
                 f"Persona {persona_sa.persona_name} with {total_scenario_links} scenario links should not be deletable (superadmin)"
-            assert persona_admin.can_delete == False, \
+            )
+            assert persona_admin.can_delete == False, (
                 f"Persona {persona_admin.persona_name} with {total_scenario_links} scenario links should not be deletable (admin)"
-        
+            )
+
         # Rule 2: Unlinked default personas - only superadmin can delete
         elif persona_sa.default_persona and total_scenario_links == 0:
-            assert persona_sa.can_delete == True, \
+            assert persona_sa.can_delete == True, (
                 f"Superadmin should be able to delete unlinked default persona {persona_sa.persona_name}"
-            assert persona_admin.can_delete == False, \
+            )
+            assert persona_admin.can_delete == False, (
                 f"Admin should NOT be able to delete default persona {persona_admin.persona_name}"
-        
+            )
+
         # Rule 3: Unlinked, non-default personas - all can delete
         elif not persona_sa.default_persona and total_scenario_links == 0:
-            assert persona_sa.can_delete == True, \
+            assert persona_sa.can_delete == True, (
                 f"Superadmin should be able to delete unlinked non-default persona {persona_sa.persona_name}"
-            assert persona_admin.can_delete == True, \
+            )
+            assert persona_admin.can_delete == True, (
                 f"Admin should be able to delete unlinked non-default persona {persona_admin.persona_name}"
+            )

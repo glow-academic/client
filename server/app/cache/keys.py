@@ -1426,3 +1426,18 @@ def tag_model_run_all() -> str:
 def tag_model_run_by_id(model_run_id: str) -> str:
     """Fine tag to invalidate specific model run caches."""
     return f"{NS_MODEL_RUN}:{model_run_id}"
+
+
+# ============================================================================
+# CONVENIENCE WRAPPERS
+# ============================================================================
+
+
+def practice_overview(filters: Any) -> str:
+    """Generate cache key for practice overview (convenience wrapper)."""
+    return analytics_practice_overview(filters).hash_key()
+
+
+def tag_practice_all() -> str:
+    """Tag for all practice analytics."""
+    return f"{NS_ANALYTICS}:practice:*"

@@ -11,25 +11,18 @@ from app.queries.analytics.footer_queries import FooterQueries
 from app.queries.analytics.header_queries import HeaderQueries
 from app.queries.analytics.leaderboard_queries import LeaderboardQueries
 from app.queries.analytics.page_queries import PageQueries
-from app.queries.analytics.pricing_queries import PricingQueries
 from app.queries.analytics.primary_queries import PrimaryQueries
 from app.queries.analytics.secondary_queries import SecondaryQueries
-from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
-                                   AttemptHistoryRow,
+from app.schemas.analytics import (AnalyticsFilters,
                                    AttemptImprovementResponse,
                                    CohortPerformanceResponse,
                                    DashboardBundleResponse,
                                    DashboardFooterMetrics,
                                    DashboardHeaderMetrics, DashboardInsights,
                                    DashboardPrimaryMetrics,
-                                   DashboardSecondaryMetrics, DebugInfoItem,
-                                   GrowthDataResponse, HomeOverviewResponse,
-                                   LeaderboardBundleResponse, Method,
-                                   MetricResponse, ModelMappingWithPricing,
-                                   ModelRunItem, PersonaPerformanceResponse,
-                                   PracticeOverviewResponse,
-                                   PricingAnalyticsResponse,
-                                   ReportsBundleResponse,
+                                   DashboardSecondaryMetrics,
+                                   GrowthDataResponse, Method, MetricResponse,
+                                   PersonaPerformanceResponse,
                                    RubricHeatmapResponse,
                                    ScenarioPerformanceResponse,
                                    ScenarioStatsResponse,
@@ -38,8 +31,7 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    SkillPerformanceResponse, Thresholds)
 from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
                               ParameterMapping, ParameterMappingItem,
-                              PersonaMappingItem, RubricMapping,
-                              RubricMappingItem, ScenarioMappingItem,
+                              RubricMapping, RubricMappingItem,
                               SimulationMapping, SimulationMappingItem)
 from app.services import analytics_insights
 from app.services.base import BaseService, with_cache
@@ -59,7 +51,6 @@ class AnalyticsService(BaseService):
         self.page_queries = PageQueries()
         self.bundle_queries = BundleQueries()
         self.leaderboard_queries = LeaderboardQueries()
-        self.pricing_queries = PricingQueries()
 
     def _compute_trend_analysis(
         self, trend_data: list[Any], metric_name: str
@@ -717,381 +708,18 @@ class AnalyticsService(BaseService):
         return SimulationPerformanceResponse.model_validate(parsed_result)
 
     # Page-specific Analytics
-    @with_cache(lambda self, filters: keys.analytics_home_overview(filters))
-    async def get_home_overview(
-        self, filters: AnalyticsFilters
-    ) -> HomeOverviewResponse:
-        """Get home overview data with history and simulation mapping."""
-        # Determine effective profile ID based on role
-        # Admins, superadmins, and instructional staff see all data (no profile filter)
-        effective_profile_id = None
-        if filters.profileId:
-            # Fetch profile role to determine if we should use profileId
-            query, params = self.query_builder.get_profile_role(filters.profileId)
-            role_row = await self.conn.fetchrow(query, *params)
-            if role_row:
-                role = role_row["role"]
-                # Only use profileId for non-admin roles (ta, guest, etc.)
-                if role not in ("admin", "superadmin", "instructional"):
-                    effective_profile_id = filters.profileId
-
-        # Get overview items
-        query, params = self.page_queries.home_overview(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
-            profile_id=effective_profile_id,
-            department_ids=filters.departmentIds,
-        )
-        result = await self.conn.fetchval(query, *params)
-        # Parse JSON string to dict if needed
-        parsed_result = self._parse_json_strings_recursive(result or {})
-
-        # Parse embedded history
-        history = []
-        if isinstance(parsed_result.get("history"), list):
-            for row in parsed_result["history"]:
-                if isinstance(row, dict):
-                    history.append(AttemptHistoryRow.model_validate(row))
-
-        # Parse embedded simulation mapping
-        simulation_mapping = {}
-        if isinstance(parsed_result.get("simulation_mapping"), dict):
-            for sim_id, sim_data in parsed_result["simulation_mapping"].items():
-                if isinstance(sim_data, dict):
-                    simulation_mapping[sim_id] = SimulationMappingItem(
-                        name=sim_data.get("name", ""),
-                        description=sim_data.get("description", ""),
-                    )
-
-        return HomeOverviewResponse(
-            mode=parsed_result.get("mode", "empty"),
-            hasData=parsed_result.get("hasData", False),
-            items=parsed_result.get("items", []),
-            history=history,
-            standard_groups_mapping=parsed_result.get("standard_groups_mapping", {}),
-            standards_mapping=parsed_result.get("standards_mapping", {}),
-            simulation_mapping=simulation_mapping,
-        )
-
-    @with_cache(lambda self, filters: keys.analytics_attempt_history(filters))
-    async def get_attempt_history(
-        self, filters: AnalyticsFilters
-    ) -> AttemptHistoryResponse:
-        """Get attempt history data."""
-        query, params = self.page_queries.attempt_history(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        result = await self.conn.fetchval(query, *params)
-        if not result:
-            return []
-        # Parse JSON string to list if needed
-        if isinstance(result, str):
-            result = json.loads(result)
-        return [AttemptHistoryRow.model_validate(row) for row in result]
-
-    @with_cache(lambda self, filters: keys.analytics_practice_overview(filters))
-    async def get_practice_overview(
-        self, filters: AnalyticsFilters
-    ) -> PracticeOverviewResponse:
-        """Get practice overview data with history and all entity mappings."""
-        # Get overview items
-        query, params = self.page_queries.practice_overview(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        result = await self.conn.fetchval(query, *params)
-        # Parse JSON string to dict if needed
-        parsed_result = self._parse_json_strings_recursive(result or {})
-
-        # Parse embedded history
-        history = []
-        if isinstance(parsed_result.get("history"), list):
-            for row in parsed_result["history"]:
-                if isinstance(row, dict):
-                    history.append(AttemptHistoryRow.model_validate(row))
-
-        # Parse embedded simulation mapping
-        simulation_mapping = {}
-        if isinstance(parsed_result.get("simulation_mapping"), dict):
-            for sim_id, sim_data in parsed_result["simulation_mapping"].items():
-                if isinstance(sim_data, dict):
-                    simulation_mapping[sim_id] = SimulationMappingItem(
-                        name=sim_data.get("name", ""),
-                        description=sim_data.get("description", ""),
-                    )
-
-        # Parse embedded persona mapping
-        persona_mapping = {}
-        if isinstance(parsed_result.get("persona_mapping"), dict):
-            for persona_id, persona_data in parsed_result["persona_mapping"].items():
-                if isinstance(persona_data, dict):
-                    persona_mapping[persona_id] = PersonaMappingItem(
-                        name=persona_data.get("name", ""),
-                        description=persona_data.get("description", ""),
-                        color=persona_data.get("color"),
-                        icon=persona_data.get("icon"),
-                    )
-
-        # Parse embedded scenario mapping
-        scenario_mapping = {}
-        if isinstance(parsed_result.get("scenario_mapping"), dict):
-            for scenario_id, scenario_data in parsed_result["scenario_mapping"].items():
-                if isinstance(scenario_data, dict):
-                    scenario_mapping[scenario_id] = ScenarioMappingItem(
-                        name=scenario_data.get("name", ""),
-                        description=scenario_data.get("description", ""),
-                        persona_id=None,
-                        persona_mapping={},
-                        document_mapping={},
-                        parameter_item_mapping={},
-                        parameter_item_ids=[],
-                        document_ids=[],
-                    )
-
-        # Parse embedded parameter mapping
-        parameter_mapping = {}
-        if isinstance(parsed_result.get("parameter_mapping"), dict):
-            for param_id, param_data in parsed_result["parameter_mapping"].items():
-                if isinstance(param_data, dict):
-                    parameter_mapping[param_id] = ParameterMappingItem(
-                        name=param_data.get("name", ""),
-                        description=param_data.get("description", ""),
-                    )
-
-        # Parse embedded parameter_item mapping
-        parameter_item_mapping = {}
-        if isinstance(parsed_result.get("parameter_item_mapping"), dict):
-            for item_id, item_data in parsed_result["parameter_item_mapping"].items():
-                if isinstance(item_data, dict):
-                    parameter_item_mapping[item_id] = ParameterItemMappingItem(
-                        name=item_data.get("name", ""),
-                        description=item_data.get("description", ""),
-                        parameter_id=item_data.get("parameter_id", ""),
-                        parameter_name=item_data.get("parameter_name", ""),
-                    )
-
-        return PracticeOverviewResponse(
-            mode=parsed_result.get("mode", "practice"),
-            hasData=parsed_result.get("hasData", False),
-            items=parsed_result.get("items", []),
-            history=history,
-            standard_groups_mapping=parsed_result.get("standard_groups_mapping", {}),
-            standards_mapping=parsed_result.get("standards_mapping", {}),
-            simulation_mapping=simulation_mapping,
-            persona_mapping=persona_mapping,
-            scenario_mapping=scenario_mapping,
-            parameter_mapping=parameter_mapping,
-            parameter_item_mapping=parameter_item_mapping,
-        )
 
     # Bundle Analytics
-    @with_cache(lambda self, filters: keys.analytics_reports_bundle(filters))
-    async def get_reports_bundle(
-        self, filters: AnalyticsFilters
-    ) -> ReportsBundleResponse:
-        """Get reports bundle data with entity mappings."""
-        # Get profile metrics data
-        query, params = self.bundle_queries.reports_bundle(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        result = await self.conn.fetchval(query, *params)
-        # Parse any JSON strings in nested structures
-        parsed_result = self._parse_json_strings_recursive(result or {})
-        bundle_data = parsed_result.get("data", []) if parsed_result else []
+    # NOTE: get_leaderboard_bundle moved to leaderboard_service.py
 
-        # Parse embedded mappings from query result
-        scenario_mapping = {}
-        if isinstance(parsed_result.get("scenario_mapping"), dict):
-            for scenario_id, scenario_data in parsed_result["scenario_mapping"].items():
-                if isinstance(scenario_data, dict):
-                    scenario_mapping[scenario_id] = ScenarioMappingItem(
-                        name=scenario_data.get("name", ""),
-                        description=scenario_data.get("description", ""),
-                        persona_id=None,
-                        persona_mapping={},
-                        document_mapping={},
-                        parameter_item_mapping={},
-                        parameter_item_ids=[],
-                        document_ids=[],
-                    )
-
-        simulation_mapping = {}
-        if isinstance(parsed_result.get("simulation_mapping"), dict):
-            for sim_id, sim_data in parsed_result["simulation_mapping"].items():
-                if isinstance(sim_data, dict):
-                    simulation_mapping[sim_id] = SimulationMappingItem(
-                        name=sim_data.get("name", ""),
-                        description=sim_data.get("description", ""),
-                    )
-
-        return ReportsBundleResponse(
-            data=bundle_data,
-            scenario_mapping=scenario_mapping,
-            simulation_mapping=simulation_mapping,
-        )
-
-    @with_cache(lambda self, filters: keys.analytics_leaderboard_bundle(filters))
-    async def get_leaderboard_bundle(
-        self, filters: AnalyticsFilters
-    ) -> LeaderboardBundleResponse:
-        """Get leaderboard bundle data."""
-        query, params = self.bundle_queries.leaderboard_bundle(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        result = await self.conn.fetchval(query, *params)
-        # Parse any JSON strings in nested structures
-        parsed_result = self._parse_json_strings_recursive(result or {})
-        return LeaderboardBundleResponse.model_validate(parsed_result)
-
-    @with_cache(lambda self, filters: keys.analytics_pricing_analytics(filters))
-    async def get_pricing_analytics(
-        self, filters: AnalyticsFilters
-    ) -> PricingAnalyticsResponse:
-        """Get pricing analytics for model runs."""
-
-        # Determine effective profile ID based on role
-        # Admins, superadmins, and instructional staff see all data (no profile filter)
-        effective_profile_id = None
-        if filters.profileId:
-            # Fetch profile role to determine if we should use profileId
-            query, params = self.query_builder.get_profile_role(filters.profileId)
-            role_row = await self.conn.fetchrow(query, *params)
-            if role_row:
-                role = role_row["role"]
-                # Only use profileId for non-admin roles (ta, guest, etc.)
-                if role not in ("admin", "superadmin", "instructional"):
-                    effective_profile_id = filters.profileId
-
-        # Get complete pricing analytics with all mappings in single query
-        query, params = self.pricing_queries.get_pricing_analytics_complete(
-            department_ids=filters.departmentIds or [],
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
-            profile_id=effective_profile_id,
-        )
-
-        result = await self.conn.fetchval(query, *params)
-
-        # Parse JSONB result
-        parsed_result = self._parse_json_strings_recursive(result or {})
-
-        # Build model runs list
-        model_runs = []
-        for run_data in parsed_result.get("model_runs", []):
-            debug_info = []
-            if isinstance(run_data.get("debug_info"), list):
-                for debug in run_data["debug_info"]:
-                    if isinstance(debug, dict):
-                        debug_info.append(
-                            DebugInfoItem(
-                                id=debug["id"],
-                                created_at=debug["created_at"],
-                                content=debug["content"],
-                            )
-                        )
-
-            model_runs.append(
-                ModelRunItem(
-                    model_run_id=run_data["model_run_id"],
-                    created_at=run_data["created_at"],
-                    input_tokens=run_data["input_tokens"],
-                    output_tokens=run_data["output_tokens"],
-                    model_id=run_data.get("model_id"),
-                    profile_id=run_data.get("profile_id"),
-                    agent_id=run_data.get("agent_id"),
-                    persona_id=run_data.get("persona_id"),
-                    debug_info=debug_info,
-                )
-            )
-
-        # Build model mapping
-        model_mapping: dict[str, ModelMappingWithPricing] = {}
-        if isinstance(parsed_result.get("model_mapping"), dict):
-            for model_id, model_data in parsed_result["model_mapping"].items():
-                if isinstance(model_data, dict):
-                    model_mapping[model_id] = ModelMappingWithPricing(
-                        name=model_data["name"],
-                        description=model_data["description"],
-                        input_ppm=model_data["input_ppm"],
-                        output_ppm=model_data["output_ppm"],
-                    )
-
-        # Build profile mapping
-        profile_mapping: dict[str, str] = {}
-        if isinstance(parsed_result.get("profile_mapping"), dict):
-            for profile_id, name in parsed_result["profile_mapping"].items():
-                if isinstance(name, str):
-                    profile_mapping[profile_id] = name
-
-        # Build agent mapping
-        agent_mapping: dict[str, str] = {}
-        if isinstance(parsed_result.get("agent_mapping"), dict):
-            for agent_id, name in parsed_result["agent_mapping"].items():
-                if isinstance(name, str):
-                    agent_mapping[agent_id] = name
-
-        # Build persona mapping
-        persona_mapping: dict[str, str] = {}
-        if isinstance(parsed_result.get("persona_mapping"), dict):
-            for persona_id, name in parsed_result["persona_mapping"].items():
-                if isinstance(name, str):
-                    persona_mapping[persona_id] = name
-
-        return PricingAnalyticsResponse(
-            model_runs=model_runs,
-            model_mapping=model_mapping,
-            profile_mapping=profile_mapping,
-            agent_mapping=agent_mapping,
-            persona_mapping=persona_mapping,
-        )
-
-    # Leaderboard-Specific Metrics (3 additional metrics)
+    # Leaderboard-Specific Metrics (3 additional metrics) - DEPRECATED
+    # NOTE: These methods are kept for backward compatibility with deprecated individual
+    # metric endpoints in leaderboard.py. New code should use LeaderboardService.
     @with_cache(lambda self, filters: keys.analytics_improvement_per_day(filters))
     async def get_improvement_per_day(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
-        """Get improvement per day metric."""
+        """DEPRECATED: Use LeaderboardService.get_leaderboard_bundle() instead."""
         query, params = self.leaderboard_queries.improvement_per_day(
             start_date=filters.startDate,
             end_date=filters.endDate,
@@ -1107,7 +735,7 @@ class AnalyticsService(BaseService):
 
     @with_cache(lambda self, filters: keys.analytics_perfect_scores(filters))
     async def get_perfect_scores(self, filters: AnalyticsFilters) -> MetricResponse:
-        """Get perfect scores metric."""
+        """DEPRECATED: Use LeaderboardService.get_leaderboard_bundle() instead."""
         query, params = self.leaderboard_queries.perfect_scores(
             start_date=filters.startDate,
             end_date=filters.endDate,
@@ -1123,7 +751,7 @@ class AnalyticsService(BaseService):
 
     @with_cache(lambda self, filters: keys.analytics_quickest_pass(filters))
     async def get_quickest_pass(self, filters: AnalyticsFilters) -> MetricResponse:
-        """Get quickest pass metric."""
+        """DEPRECATED: Use LeaderboardService.get_leaderboard_bundle() instead."""
         query, params = self.leaderboard_queries.quickest_pass(
             start_date=filters.startDate,
             end_date=filters.endDate,

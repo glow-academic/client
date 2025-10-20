@@ -1,6 +1,5 @@
 """Parameters V2 API schemas with nested items."""
 
-
 from pydantic import BaseModel
 
 from .base import DepartmentMapping

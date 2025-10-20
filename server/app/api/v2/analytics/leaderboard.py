@@ -1,4 +1,10 @@
-"""Leaderboard-specific analytics API endpoints."""
+"""Leaderboard-specific analytics API endpoints.
+
+DEPRECATED: These individual metric endpoints are deprecated in favor of the
+bundled leaderboard endpoint at POST /api/v2/analytics/leaderboard which returns
+all metrics in a single optimized query. These endpoints will be removed in a
+future version once all clients have migrated to the bundle endpoint.
+"""
 
 from typing import Annotated
 

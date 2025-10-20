@@ -1,10 +1,14 @@
 """Simulations V2 API schemas."""
 
-
 from pydantic import BaseModel
 
-from .base import (DepartmentMapping, ParameterItemMapping, ParameterMapping,
-                   RubricMapping, ScenarioMapping)
+from .base import (
+    DepartmentMapping,
+    ParameterItemMapping,
+    ParameterMapping,
+    RubricMapping,
+    ScenarioMapping,
+)
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -177,7 +181,9 @@ class CreateSimulationRequest(BaseModel):
     image_input_active: bool
     time_limit: int | None
     rubric_id: str
-    scenario_ids: list[str] | list[ScenarioInRequest]  # Support both formats for backward compatibility
+    scenario_ids: (
+        list[str] | list[ScenarioInRequest]
+    )  # Support both formats for backward compatibility
 
 
 class CreateSimulationResponse(BaseModel):
@@ -204,7 +210,9 @@ class UpdateSimulationRequest(BaseModel):
     image_input_active: bool
     time_limit: int | None
     rubric_id: str
-    scenario_ids: list[str] | list[ScenarioInRequest]  # Support both formats for backward compatibility
+    scenario_ids: (
+        list[str] | list[ScenarioInRequest]
+    )  # Support both formats for backward compatibility
 
 
 class UpdateSimulationResponse(BaseModel):

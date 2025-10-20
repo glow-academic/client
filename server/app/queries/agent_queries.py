@@ -142,7 +142,7 @@ class AgentQueries:
     def get_agent_detail_complete(self, agent_id: str) -> tuple[str, list[Any]]:
         """
         Get agent detail with debug info and all models in ONE optimized query.
-        
+
         Combines agent info, debug info, and model listings using CTEs and
         JSONB aggregation to eliminate N+1 queries.
 

@@ -4,21 +4,31 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.rubric_queries import RubricQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
-                                 DeleteRubricRequest, DeleteRubricResponse,
-                                 DuplicateRubricRequest,
-                                 DuplicateRubricResponse,
-                                 RubricDetailDefaultRequest,
-                                 RubricDetailRequest, RubricDetailResponse,
-                                 RubricItem, RubricsFilters,
-                                 RubricsListResponse, StandardGroupDetail,
-                                 StandardGroupMappingDetail,
-                                 StandardGroupMappingItem, StandardMappingItem,
-                                 UpdateRubricRequest, UpdateRubricResponse)
+from app.schemas.rubrics import (
+    CreateRubricRequest,
+    CreateRubricResponse,
+    DeleteRubricRequest,
+    DeleteRubricResponse,
+    DuplicateRubricRequest,
+    DuplicateRubricResponse,
+    RubricDetailDefaultRequest,
+    RubricDetailRequest,
+    RubricDetailResponse,
+    RubricItem,
+    RubricsFilters,
+    RubricsListResponse,
+    StandardGroupDetail,
+    StandardGroupMappingDetail,
+    StandardGroupMappingItem,
+    StandardMappingItem,
+    UpdateRubricRequest,
+    UpdateRubricResponse,
+)
 from app.services.base import BaseService, with_cache
 
 
@@ -145,7 +155,7 @@ class RubricService(BaseService):
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
-                        description=ddata.get("description", "")
+                        description=ddata.get("description", ""),
                     )
 
         # Parse hierarchical standard groups structure from JSONB
@@ -188,7 +198,7 @@ class RubricService(BaseService):
                     # Build standard_groups_mapping
                     standard_groups_mapping[group_id] = StandardGroupMappingDetail(
                         name=group_data.get("name", ""),
-                        description=group_data.get("description", "")
+                        description=group_data.get("description", ""),
                     )
 
         return RubricDetailResponse(

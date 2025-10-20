@@ -6,32 +6,47 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
+from dotenv import load_dotenv
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.cohort_queries import CohortQueries
 from app.queries.staff_queries import StaffQueries
-from app.schemas.base import (CohortMapping, CohortMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              ProfileMappingItem, SimulationMappingItem)
-from app.schemas.cohorts import (AddProfilesToCohortRequest,
-                                 AddProfilesToCohortResponse,
-                                 CohortDetailDefaultRequest,
-                                 CohortDetailRequest, CohortDetailResponse,
-                                 CohortDetailWithProfilesRequest,
-                                 CohortDetailWithProfilesResponse, CohortItem,
-                                 CohortsFilters, CohortsListResponse,
-                                 CreateCohortRequest, CreateCohortResponse,
-                                 DeleteCohortRequest, DeleteCohortResponse,
-                                 DuplicateCohortRequest,
-                                 DuplicateCohortResponse, LeaveCohortRequest,
-                                 LeaveCohortResponse,
-                                 RemoveProfilesFromCohortRequest,
-                                 RemoveProfilesFromCohortResponse,
-                                 UpdateCohortRequest, UpdateCohortResponse)
+from app.schemas.base import (
+    CohortMapping,
+    CohortMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ProfileMappingItem,
+    SimulationMappingItem,
+)
+from app.schemas.cohorts import (
+    AddProfilesToCohortRequest,
+    AddProfilesToCohortResponse,
+    CohortDetailDefaultRequest,
+    CohortDetailRequest,
+    CohortDetailResponse,
+    CohortDetailWithProfilesRequest,
+    CohortDetailWithProfilesResponse,
+    CohortItem,
+    CohortsFilters,
+    CohortsListResponse,
+    CreateCohortRequest,
+    CreateCohortResponse,
+    DeleteCohortRequest,
+    DeleteCohortResponse,
+    DuplicateCohortRequest,
+    DuplicateCohortResponse,
+    LeaveCohortRequest,
+    LeaveCohortResponse,
+    RemoveProfilesFromCohortRequest,
+    RemoveProfilesFromCohortResponse,
+    UpdateCohortRequest,
+    UpdateCohortResponse,
+)
 from app.schemas.staff import StaffItem
 from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
-from dotenv import load_dotenv
 
 load_dotenv()
 
