@@ -151,13 +151,27 @@ class DashboardService(BaseService):
             )
         persona_performance = PersonaPerformanceResponse(
             chartData=persona_chart_data,
-            validSimulationIds=[],
-            personaColors={},
+            validSimulationIds=persona_perf_raw.get("validSimulationIds", []),
+            personaColors=persona_perf_raw.get("personaColors", {}),
         )
 
         # Rubric heatmap
         rubric_heatmap_raw = primary_data.get("rubricHeatmap", {})
-        rubric_heatmap = RubricHeatmapResponse(matrices=[], validRubricIds=[])
+        rubric_matrices = []
+        for matrix_data in rubric_heatmap_raw.get("matrices", []):
+            rubric_matrices.append(
+                RubricMatrixPackage(
+                    rubricId=matrix_data.get("rubricId", ""),
+                    standardGroups=matrix_data.get("standardGroups", []),
+                    matrix=matrix_data.get("matrix", []),
+                    insights=matrix_data.get("insights"),
+                    hasData=matrix_data.get("hasData", False),
+                )
+            )
+        rubric_heatmap = RubricHeatmapResponse(
+            matrices=rubric_matrices,
+            validRubricIds=rubric_heatmap_raw.get("validRubricIds", []),
+        )
 
         primary = DashboardPrimaryMetrics(
             growth_data=growth_data,
@@ -180,23 +194,76 @@ class DashboardService(BaseService):
                 )
                 for item in attempt_imp_raw.get("chartData", [])
             ],
-            facts=[],
-            validSimulationIds=[],
+            facts=attempt_imp_raw.get("facts", []),
+            validSimulationIds=attempt_imp_raw.get("validSimulationIds", []),
         )
 
         # Cohort performance
         cohort_perf_raw = secondary_data.get("cohortPerformance", {})
+        cohort_data = []
+        for c_data in cohort_perf_raw.get("cohortData", []):
+            cohort_data.append(
+                CohortData(
+                    id=c_data.get("id", ""),
+                    name=c_data.get("name", ""),
+                    passRate=c_data.get("passRate", 0.0),
+                    avgPercentageScore=c_data.get("avgPercentageScore", 0),
+                    totalStudents=c_data.get("totalStudents", 0),
+                    passedStudents=c_data.get("passedStudents", 0),
+                    totalAttempts=c_data.get("totalAttempts", 0),
+                    passedAttempts=c_data.get("passedAttempts", 0),
+                    simulationCount=c_data.get("simulationCount", 0),
+                    requiredSimulations=c_data.get("requiredSimulations", 0),
+                )
+            )
         cohort_performance = CohortPerformanceResponse(
-            cohortData=[],
-            dailyData=[],
-            cohortFacts=[],
-            dailyFacts=[],
-            validSimulationIds=[],
+            cohortData=cohort_data,
+            dailyData=cohort_perf_raw.get("dailyData", []),
+            cohortFacts=cohort_perf_raw.get("cohortFacts", []),
+            dailyFacts=cohort_perf_raw.get("dailyFacts", []),
+            validSimulationIds=cohort_perf_raw.get("validSimulationIds", []),
         )
 
         # Skill performance
         skill_perf_raw = secondary_data.get("skillPerformance", {})
-        skill_performance = SkillPerformanceResponse(packages=[], validRubricIds=[])
+        skill_packages = []
+        for pkg_data in skill_perf_raw.get("packages", []):
+            radar_data = []
+            for rd in pkg_data.get("radarData", []):
+                radar_data.append(
+                    SkillRadarData(
+                        metric=rd.get("metric", ""),
+                        description=rd.get("description", ""),
+                        value=rd.get("value", 0.0),
+                        fullMark=rd.get("fullMark", 1.0),
+                    )
+                )
+            group_facts = []
+            for gf in pkg_data.get("groupFacts", []):
+                from app.schemas.dashboard import SkillStandardFact
+                group_facts.append(
+                    SkillStandardFact(
+                        groupId=gf.get("groupId", ""),
+                        groupName=gf.get("groupName", ""),
+                        groupDescription=gf.get("groupDescription"),
+                        simulationId=gf.get("simulationId", ""),
+                        score=gf.get("score", 0.0),
+                        points=gf.get("points", 0.0),
+                        avgPct=gf.get("avgPct", 0.0),
+                    )
+                )
+            from app.schemas.dashboard import SkillPackage
+            skill_packages.append(
+                SkillPackage(
+                    rubricId=pkg_data.get("rubricId", ""),
+                    radarData=radar_data,
+                    groupFacts=group_facts,
+                )
+            )
+        skill_performance = SkillPerformanceResponse(
+            packages=skill_packages,
+            validRubricIds=skill_perf_raw.get("validRubricIds", []),
+        )
 
         secondary = DashboardSecondaryMetrics(
             attempt_improvement=attempt_improvement,
@@ -209,18 +276,42 @@ class DashboardService(BaseService):
 
         # Scenario performance
         scenario_perf_raw = footer_data.get("scenarioPerformance", {})
+        attr_attempt_facts = []
+        for fact in scenario_perf_raw.get("attributeAttemptFacts", []):
+            attr_attempt_facts.append(
+                ScenarioAttributeAttemptFact(
+                    parameterId=fact.get("parameterId", ""),
+                    parameterItemId=fact.get("parameterItemId", ""),
+                    date=fact.get("date", ""),
+                    timestamp=fact.get("timestamp", 0),
+                    avgScore=fact.get("avgScore", 0),
+                    attempts=fact.get("attempts", 0),
+                    passedAttempts=fact.get("passedAttempts", 0),
+                )
+            )
         scenario_performance = ScenarioPerformanceResponse(
-            validParameterIds=[],
-            attributeAttemptFacts=[],
-            attributeScenarioFacts=[],
+            validParameterIds=scenario_perf_raw.get("validParameterIds", []),
+            attributeAttemptFacts=attr_attempt_facts,
+            attributeScenarioFacts=scenario_perf_raw.get("attributeScenarioFacts", []),
         )
 
         # Scenario stats
         scenario_stats_raw = footer_data.get("scenarioStats", {})
+        numeric_attempt_facts = []
+        for fact in scenario_stats_raw.get("numericAttemptFacts", []):
+            numeric_attempt_facts.append(
+                NumericAttemptFact(
+                    parameterId=fact.get("parameterId", ""),
+                    levelLabel=fact.get("levelLabel", ""),
+                    levelValue=fact.get("levelValue", 0.0),
+                    score=fact.get("score", 0),
+                    attempts=fact.get("attempts", 0),
+                )
+            )
         scenario_stats = ScenarioStatsResponse(
-            validNumericParameterIds=[],
-            numericAttemptFacts=[],
-            numericScenarioFacts=[],
+            validNumericParameterIds=scenario_stats_raw.get("validNumericParameterIds", []),
+            numericAttemptFacts=numeric_attempt_facts,
+            numericScenarioFacts=scenario_stats_raw.get("numericScenarioFacts", []),
         )
 
         # Simulation performance
@@ -256,8 +347,8 @@ class DashboardService(BaseService):
                 )
                 for sf in sim_comp_raw.get("simulationFacts", [])
             ],
-            simulationParameterFactsCategorical=[],
-            simulationParameterFactsNumeric=[],
+            simulationParameterFactsCategorical=sim_comp_raw.get("simulationParameterFactsCategorical", []),
+            simulationParameterFactsNumeric=sim_comp_raw.get("simulationParameterFactsNumeric", []),
             hasData=sim_comp_raw.get("hasData", False),
         )
 
