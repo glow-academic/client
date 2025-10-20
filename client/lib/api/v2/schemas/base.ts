@@ -291,14 +291,13 @@ export type StandardsMapping = z.infer<typeof StandardsMappingSchema>;
 export const AnalyticsFiltersSchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
-  cohortIds: z.array(z.string()).nullable().optional(),
-  roles: z.array(z.string()).nullable().optional(),
+  cohortIds: z.array(z.string()).optional(),
+  roles: z.array(z.string()).optional(),
   simulationFilters: z
     .array(z.enum(["general", "practice", "archived"]))
-    .nullable()
     .optional(),
   profileId: z.string().nullable().optional(),
-  departmentIds: z.array(z.string()).nullable().optional(),
+  departmentIds: z.array(z.string()).optional(),
 });
 
 export type AnalyticsFilters = z.infer<typeof AnalyticsFiltersSchema>;

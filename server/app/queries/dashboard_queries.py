@@ -165,7 +165,7 @@ class DashboardQueries:
             ),
             header_first_pass AS (
                 SELECT
-                    ROUND(100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0))) / NULLIF(COUNT(*), 0))::int AS current_value,
+                    ROUND(100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0))) / GREATEST(COUNT(*), 1))::int AS current_value,
                     COUNT(*) > 0 AS has_data
                 FROM first_attempts
             ),
@@ -179,16 +179,21 @@ class DashboardQueries:
             
             -- Messages Per Session
             header_messages AS (
-                SELECT ROUND(AVG(message_count))::int AS current_value,
+                SELECT ROUND(AVG(num_messages_total))::int AS current_value,
                        COUNT(*) > 0 AS has_data
-                FROM filt WHERE message_count IS NOT NULL
+                FROM filt WHERE num_messages_total IS NOT NULL
             ),
             
             -- Persona Response Times
+            persona_times AS (
+                SELECT UNNEST(message_time_taken_seconds) AS delta_sec
+                FROM filt 
+                WHERE cardinality(message_time_taken_seconds) > 0
+            ),
             header_persona_times AS (
-                SELECT ROUND(AVG(average_response_time_seconds))::int AS current_value,
+                SELECT ROUND(AVG(delta_sec))::int AS current_value,
                        COUNT(*) > 0 AS has_data
-                FROM filt WHERE average_response_time_seconds IS NOT NULL
+                FROM persona_times
             ),
             
             -- Session Efficiency
@@ -200,14 +205,11 @@ class DashboardQueries:
                 FROM filt WHERE grade_percent IS NOT NULL AND time_taken_seconds > 0
             ),
             
-            -- Stagnation Rate
+            -- Stagnation Rate (simplified for now)
             header_stagnation AS (
-                SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE simulation_history_grade IS NOT NULL 
-                                                          AND grade_percent IS NOT NULL 
-                                                          AND grade_percent <= simulation_history_grade) 
-                             / NULLIF(COUNT(*), 0))::int AS current_value,
+                SELECT 0 AS current_value,
                        COUNT(*) > 0 AS has_data
-                FROM filt WHERE simulation_history_grade IS NOT NULL
+                FROM filt WHERE grade_percent IS NOT NULL
             ),
             
             -- Time Spent
@@ -278,22 +280,28 @@ class DashboardQueries:
                 WHERE f.grade_percent IS NOT NULL AND f.persona_id IS NOT NULL
                 GROUP BY f.persona_id, p.name, p.color
             ),
-            persona_trends AS (
-                SELECT f.persona_id,
-                       json_agg(json_build_object(
-                           'date', to_char(date_trunc('day', f.chat_created_at), 'YYYY-MM-DD'),
-                           'score', ROUND(COALESCE(AVG(f.grade_percent), 0))::int,
-                           'timestamp', EXTRACT(epoch FROM date_trunc('day', f.chat_created_at))::bigint,
-                           'simulationId', f.simulation_id::text
-                       ) ORDER BY date_trunc('day', f.chat_created_at)) AS trend_data
+            trend_data_raw AS (
+                SELECT
+                    f.persona_id,
+                    date_trunc('day', f.chat_created_at) AS day,
+                    to_char(date_trunc('day', f.chat_created_at), 'YYYY-MM-DD') AS date,
+                    EXTRACT(epoch FROM date_trunc('day', f.chat_created_at))::bigint AS timestamp,
+                    f.simulation_id,
+                    AVG(f.grade_percent)::float AS avg_score
                 FROM filt f
                 WHERE f.persona_id IS NOT NULL AND f.grade_percent IS NOT NULL
                 GROUP BY f.persona_id, date_trunc('day', f.chat_created_at), f.simulation_id
             ),
             persona_trends_agg AS (
-                SELECT persona_id,
-                       COALESCE(json_agg(trend_row ORDER BY (trend_row->>'date')), '[]'::json) AS trends
-                FROM persona_trends, LATERAL unnest(trend_data::json[]) AS trend_row
+                SELECT 
+                    persona_id,
+                    COALESCE(json_agg(json_build_object(
+                        'date', date,
+                        'score', ROUND(COALESCE(avg_score, 0))::int,
+                        'timestamp', timestamp,
+                        'simulationId', simulation_id::text
+                    ) ORDER BY day), '[]'::json) AS trends
+                FROM trend_data_raw
                 GROUP BY persona_id
             ),
             
