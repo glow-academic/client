@@ -41,6 +41,7 @@ import { useBulkArchiveAttempts } from "@/lib/api/v2/hooks/attempts";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 // Legacy interface - no longer used
 
@@ -101,7 +102,7 @@ export function DataTable<TData, TValue>({
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
   const bulkArchiveMutation = useBulkArchiveAttempts();
-
+  const log = useLogger();
   // Helper functions to normalize id and archived fields
   const getRowId = (item: unknown) => {
     const obj = item as Record<string, unknown>;
@@ -283,7 +284,7 @@ export function DataTable<TData, TValue>({
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveAction, table, bulkArchiveMutation]);
+  }, [archiveAction, table, bulkArchiveMutation, log]);
 
   return (
     <div className="space-y-4">

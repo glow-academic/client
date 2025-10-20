@@ -17,6 +17,7 @@ import {
   useRubricDetail,
   useRubricDetailDefault,
 } from "@/lib/api/v2/hooks/rubrics";
+import { RubricItem } from "@/lib/api/v2/schemas/rubrics";
 import RubricDetails from "./RubricDetails";
 import RubricStandardGroup from "./RubricStandardGroup";
 
@@ -47,36 +48,47 @@ export default function Rubric({ rubricId }: RubricProps) {
   const isLoading = isEditMode ? isLoadingRubricDetail : isLoadingRubricDefault;
 
   // Create a default rubric for creation mode
-  const defaultRubric = {
-    id: "new",
-    name: "",
-    description: "",
-    points: 0,
-    passPoints: 0,
-    active: true,
-    defaultRubric: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    departmentId: "",
-  };
+  const defaultRubric = useMemo(
+    () => ({
+      rubric_id: "new",
+      name: "",
+      description: "",
+      points: 0,
+      passPoints: 0,
+      active: true,
+      default_rubric: true,
+      can_edit: true,
+      can_delete: true,
+      can_duplicate: true,
+      standard_groups: {},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      departmentId: "",
+    }),
+    []
+  );
 
   // Transform v2 data to current rubric format
   const currentRubric = useMemo(() => {
     if (!isEditMode) return defaultRubric;
     if (!rubricData) return defaultRubric;
     return {
-      id: rubricId || "new",
+      rubric_id: rubricId || "new",
       name: rubricData.name,
       description: rubricData.description,
       points: rubricData.points,
       passPoints: rubricData.passPoints,
       active: rubricData.active,
-      defaultRubric: rubricData.default_rubric,
+      default_rubric: rubricData.default_rubric,
+      can_edit: rubricData.can_edit,
+      can_delete: true,
+      can_duplicate: true,
+      standard_groups: {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       departmentId: rubricData.department_id,
     };
-  }, [isEditMode, rubricData, rubricId]);
+  }, [isEditMode, rubricData, rubricId, defaultRubric]);
 
   const currentRubricId = isEditMode ? rubricId! : "new";
 
@@ -211,7 +223,7 @@ export default function Rubric({ rubricId }: RubricProps) {
     <div className="space-y-6">
       {/* Rubric Header - Use RubricDetails component for both create and edit modes */}
       <RubricDetails
-        rubric={currentRubric}
+        rubric={currentRubric as RubricItem}
         rubricId={currentRubricId}
         departmentMapping={rubricData?.department_mapping || {}}
         validDepartmentIds={rubricData?.valid_department_ids || []}
@@ -238,7 +250,7 @@ export default function Rubric({ rubricId }: RubricProps) {
               rubricDescription={currentRubric.description}
               rubricDepartmentId={currentRubric.departmentId}
               rubricActive={currentRubric.active}
-              rubricDefaultRubric={currentRubric.defaultRubric}
+              rubricDefaultRubric={currentRubric.default_rubric}
               profileId={effectiveProfile?.id || ""}
             />
           ))}
@@ -255,7 +267,7 @@ export default function Rubric({ rubricId }: RubricProps) {
             rubricDescription={currentRubric.description}
             rubricDepartmentId={currentRubric.departmentId}
             rubricActive={currentRubric.active}
-            rubricDefaultRubric={currentRubric.defaultRubric}
+            rubricDefaultRubric={currentRubric.default_rubric}
             profileId={effectiveProfile?.id || ""}
           />
         </div>

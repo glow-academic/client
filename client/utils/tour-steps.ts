@@ -1,3 +1,4 @@
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 export interface TourStep {
   id: string;
   title: string;
@@ -14,11 +15,11 @@ export interface TourState {
   isActive: boolean;
   currentStep: number;
   steps: TourStep[];
-  profile: Profile | null;
+  profile: ProfileItem | null;
 }
 
 export const createTATourSteps = (
-  profile: Profile | null,
+  profile: ProfileItem | null,
   _onNavigateToHome: () => void,
   _onNavigateToCohort: (cohortId: string) => void,
   _onStartPracticeSimulation: (simulationId: string) => void,

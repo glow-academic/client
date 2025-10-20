@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 // TAPerformanceData interface for Reports page
 interface TAPerformanceData {
@@ -87,7 +88,7 @@ export function BrightspaceExportButton<TData>({
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string>("");
-
+  const log = useLogger();
   // Use simulations prop directly
   const availableSimulations = simulations || [];
 

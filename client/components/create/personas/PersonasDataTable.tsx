@@ -17,11 +17,10 @@ import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
-  ModelMapping,
   PersonaItem,
-  ScenarioMapping,
 } from "@/lib/api/v2/schemas/personas";
 import { PersonasDataTableToolbar } from "./PersonasDataTableToolbar";
+import { ModelMapping, ScenarioMapping } from "@/lib/api/v2/schemas/base";
 
 export interface PersonasDataTableProps {
   columns: ColumnDef<PersonaItem>[];
@@ -38,8 +37,6 @@ export interface PersonasDataTableProps {
 export function PersonasDataTable({
   columns,
   data,
-  scenarioMapping,
-  modelMapping,
   scenarioOptions,
   reasoningOptions,
   modelOptions,

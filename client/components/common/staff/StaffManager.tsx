@@ -16,7 +16,7 @@ export interface StaffManagerProps {
  * - If no cohortId: Renders CreateStaff (global staff creation)
  */
 export default function StaffManager({
-  cohortId,
+  cohortId = undefined,
   onDone,
 }: StaffManagerProps) {
   if (cohortId) {

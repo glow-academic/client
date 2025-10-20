@@ -32,6 +32,7 @@ import type {
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 
 const generateGradientFromHex = (hexColor: string): string => {
   // Remove # if present
@@ -70,7 +71,7 @@ export interface SimulationCardProps {
   type: "default" | "cohort";
   onStartSimulation: (id: string) => void;
   loadingSimulation: string | null;
-  effectiveProfile: Profile;
+  effectiveProfile: ProfileItem;
 }
 
 export default function SimulationCard({

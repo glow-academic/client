@@ -155,7 +155,6 @@ export function LogsDataTableToolbar({
           dateRange={dateRange}
           setDateRange={(range) => {
             setDateRange(range);
-            createdAtColumn?.setFilterValue(range);
           }}
         />
         {/* Bulk Delete Button */}

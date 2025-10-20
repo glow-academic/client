@@ -40,6 +40,7 @@ import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 type FormData = {
   firstName?: string;
@@ -68,7 +69,7 @@ const useStaffEditBusinessLogic = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { effectiveProfile } = useEffectiveProfile();
-
+  const log = useLogger();
   // Mutation hooks
   const updateProfileMutation = useUpdateProfileSimple();
   const deleteProfileMutation = useDeleteProfile();
@@ -131,7 +132,7 @@ const useStaffEditBusinessLogic = (
       redirectOnSuccess,
       onDone,
       updateProfileMutation,
-      effectiveProfile?.role,
+      log,
     ]
   );
 
@@ -154,7 +155,7 @@ const useStaffEditBusinessLogic = (
     } finally {
       setIsSubmitting(false);
     }
-  }, [profileId, router, deleteProfileMutation]);
+  }, [profileId, router, deleteProfileMutation, log]);
 
   const handleBackNavigation = useCallback(() => {
     router.push("/management/staff");

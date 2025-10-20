@@ -62,8 +62,8 @@ export function DocumentPreviewCard({
   const [showPreviewDialog, setShowPreviewDialog] = React.useState(false);
 
   // Convert DocumentItem to Document for DocumentViewer
-  const documentForViewer: Document = {
-    id: documentItem.document_id,
+  const documentForViewer: DocumentItem = {
+    document_id: documentItem.document_id,
     name: documentItem.name,
     type: documentItem.type as
       | "homework"
@@ -74,13 +74,15 @@ export function DocumentPreviewCard({
       | "lecture"
       | "syllabus",
     active: documentItem.active,
-    filePath: documentItem.file_path,
-    mimeType: documentItem.mime_type,
-    departmentId: documentItem.department_id,
+    file_path: documentItem.file_path,
+    mime_type: documentItem.mime_type,
+    department_id: documentItem.department_id,
     updatedAt: documentItem.updatedAt,
-    createdAt: documentItem.updatedAt,
-    classified: false,
-    fileId: null,
+    extension: documentItem.extension,
+    scenario_ids: documentItem.scenario_ids,
+    can_edit: documentItem.can_edit,
+    can_delete: documentItem.can_delete,
+    parameter_item_ids: documentItem.parameter_item_ids,
   };
 
   const handlePreview = () => {

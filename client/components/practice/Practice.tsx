@@ -469,8 +469,8 @@ export default function Practice() {
       <div className="container mx-auto p-4 md:p-6 space-y-12">
         <PracticeZone
           simulations={simulationItems}
-          standardGroupsMapping={standardGroupsMapping}
-          standardsMapping={standardsMapping}
+          standardGroupsMapping={standardGroupsMapping as Record<string, { name: string; description: string; points: number; passPoints: number }>}
+          standardsMapping={standardsMapping as Record<string, { name: string; description: string; points: number }>}
           profile={effectiveProfile}
           onStartSimulation={handleStartSimulation}
           loadingSimulation={loadingSimulation}

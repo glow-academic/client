@@ -38,6 +38,7 @@ import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -52,12 +53,12 @@ export default function AttemptInput({
   const simulationContext = useSimulation();
   const { isConnected } = useWebSocket();
   const queryClient = useQueryClient();
-
+  const log = useLogger();
   const [newMessage, setNewMessage] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   // Get messages from context (v2 single source of truth)
-  const messages = simulationContext?.currentMessages || [];
+  const messages = useMemo(() => simulationContext?.currentMessages || [], [simulationContext?.currentMessages]);
 
   // Get the most recent assistant message
   const latestAssistantMessage = useMemo(() => {
@@ -70,7 +71,7 @@ export default function AttemptInput({
   }, [messages]);
 
   // Get hints from context (v2 single source of truth)
-  const currentChatHints = simulationContext?.currentChatHints || [];
+  const currentChatHints = useMemo(() => simulationContext?.currentChatHints || [], [simulationContext?.currentChatHints]);
   const hintsData = useMemo(() => {
     if (!latestAssistantMessage?.id) return [];
     const hintsForMessage = currentChatHints.find(

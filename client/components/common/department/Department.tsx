@@ -29,6 +29,7 @@ import {
   useDepartmentDetailDefault,
   useUpdateDepartment,
 } from "@/lib/api/v2/hooks/departments";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export interface DepartmentProps {
   departmentId?: string;
@@ -113,7 +114,7 @@ export default function Department({ departmentId }: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const log = useLogger();
   const isEditMode = !!departmentId;
 
   const initialFormData: FormData = useMemo(

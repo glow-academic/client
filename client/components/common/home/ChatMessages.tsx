@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssistant } from "@/contexts/assistant-context";
 import type { AssistantChatFullResponse } from "@/lib/api/v2/hooks/assistant";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChatStarterPrompts from "./ChatStarterPrompts";
@@ -234,7 +235,7 @@ export default function ChatMessages({
     useAssistant();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
-
+  const log = useLogger();
   // Track if user is scrolled to bottom
   const [isAtBottom, setIsAtBottom] = useState(true);
   // Track if there are new messages after user scrolled up
@@ -251,7 +252,7 @@ export default function ChatMessages({
         isConnected,
       },
     });
-  }, [currentChatId, messages.length, toolCalls.length, isConnected]);
+  }, [currentChatId, messages.length, toolCalls.length, isConnected, log]);
 
   const createTimeline = useCallback((): TimelineItem[] => {
     const timeline: TimelineItem[] = [];
@@ -396,7 +397,7 @@ export default function ChatMessages({
         >
           {timeline.map((item) => {
             if (item.type === "message") {
-              const message = item.data as AssistantMessage;
+              const message = item.data as AssistantChatFullResponse["messages"][number];
               return (
                 <div
                   key={message.id}
@@ -449,7 +450,7 @@ export default function ChatMessages({
                 </div>
               );
             } else {
-              const toolCall = item.data as AssistantToolCall;
+              const toolCall = item.data as AssistantChatFullResponse["toolCalls"][number];
               return (
                 <div key={toolCall.id} className="flex justify-start">
                   <div className="max-w-[80%] w-full">

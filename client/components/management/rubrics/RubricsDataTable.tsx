@@ -84,7 +84,12 @@ export function RubricsDataTable({
         const matchesRange = selectedPassPointsFilter.some((range) => {
           if (range === "100+") return rubric.passPoints >= 100;
           const [min, max] = range.split("-").map(Number);
-          return rubric.passPoints >= min && rubric.passPoints <= max;
+          return (
+            min !== undefined &&
+            max !== undefined &&
+            rubric.passPoints >= min &&
+            rubric.passPoints <= max
+          );
         });
         if (!matchesRange) return false;
       }
@@ -94,7 +99,12 @@ export function RubricsDataTable({
         const matchesRange = selectedTotalPointsFilter.some((range) => {
           if (range === "100+") return rubric.points >= 100;
           const [min, max] = range.split("-").map(Number);
-          return rubric.points >= min && rubric.points <= max;
+          return (
+            min !== undefined &&
+            max !== undefined &&
+            rubric.points >= min &&
+            rubric.points <= max
+          );
         });
         if (!matchesRange) return false;
       }
@@ -107,7 +117,12 @@ export function RubricsDataTable({
             : 0;
         const matchesRange = selectedPassPercentageFilter.some((range) => {
           const [min, max] = range.split("-").map(Number);
-          return percentage >= min && percentage <= max;
+          return (
+            min !== undefined &&
+            max !== undefined &&
+            percentage >= min &&
+            percentage <= max
+          );
         });
         if (!matchesRange) return false;
       }

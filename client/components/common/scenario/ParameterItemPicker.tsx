@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/popover";
 import type { ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export interface ParameterItemPickerProps<
   T extends ParameterItemMappingItem = ParameterItemMappingItem,
@@ -76,6 +77,7 @@ export function ParameterItemPicker<
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const createParameterItemMutation = useCreateParameterItemV2();
+  const log = useLogger();
 
   // Build items from mapping
   const items = useMemo(() => {

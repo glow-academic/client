@@ -92,15 +92,18 @@ export function PersonaPicker<
 
   // Build personas from mapping
   const personas = React.useMemo(() => {
-    return validIds.map((id) => ({
-      id,
-      ...mapping[id],
-    }));
+    return validIds
+      .map((id) => {
+        const item = mapping[id];
+        if (!item) return null;
+        return { id, ...item } as { id: string } & T;
+      })
+      .filter((p): p is { id: string } & T => p !== null);
   }, [validIds, mapping]);
 
   const [peekedPersona, setPeekedPersona] = React.useState<
     ({ id: string } & T) | undefined
-  >(personas[0]);
+  >(undefined);
 
   const handleSelect = (personaId: string) => {
     if (multiSelect) {
@@ -225,26 +228,35 @@ export function PersonaPicker<
                 <div className="text-sm text-muted-foreground">
                   {peekedPersona?.description || "No description available"}
                 </div>
-                {peekedPersona?.reasoning && (
-                  <div className="mt-4 grid gap-2">
-                    <h5 className="text-sm font-medium leading-none">
-                      Reasoning Level
-                    </h5>
-                    <div className="text-sm text-muted-foreground">
-                      {peekedPersona.reasoning}
+                {"reasoning" in (peekedPersona || {}) &&
+                  (peekedPersona as T & { reasoning?: string }).reasoning && (
+                    <div className="mt-4 grid gap-2">
+                      <h5 className="text-sm font-medium leading-none">
+                        Reasoning Level
+                      </h5>
+                      <div className="text-sm text-muted-foreground">
+                        {
+                          (peekedPersona as T & { reasoning?: string })
+                            .reasoning
+                        }
+                      </div>
                     </div>
-                  </div>
-                )}
-                {peekedPersona?.temperature !== undefined && (
-                  <div className="mt-2 grid gap-2">
-                    <h5 className="text-sm font-medium leading-none">
-                      Temperature
-                    </h5>
-                    <div className="text-sm text-muted-foreground">
-                      {(peekedPersona.temperature / 100).toFixed(2)}
+                  )}
+                {"temperature" in (peekedPersona || {}) &&
+                  (peekedPersona as T & { temperature?: number })
+                    .temperature !== undefined && (
+                    <div className="mt-2 grid gap-2">
+                      <h5 className="text-sm font-medium leading-none">
+                        Temperature
+                      </h5>
+                      <div className="text-sm text-muted-foreground">
+                        {(
+                          (peekedPersona as T & { temperature?: number })
+                            .temperature! / 100
+                        ).toFixed(2)}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </HoverCardContent>
             <Command loop>
@@ -268,7 +280,9 @@ export function PersonaPicker<
                       key={persona.id}
                       persona={persona}
                       isSelected={selectedIds.includes(persona.id)}
-                      onPeek={(persona) => setPeekedPersona(persona)}
+                      onPeek={(persona) =>
+                        setPeekedPersona(persona as { id: string } & T)
+                      }
                       onSelect={() => handleSelect(persona.id)}
                     />
                   ))}

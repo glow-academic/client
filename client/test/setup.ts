@@ -6,8 +6,3 @@ import "@/mocks/auth";
 import "@/mocks/extra";
 import "@/mocks/navigation";
 
-// Setup global test environment
-beforeEach(() => {
-  // Clear all mocks before each test for isolation
-  vi.clearAllMocks();
-});

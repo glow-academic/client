@@ -74,11 +74,9 @@ export interface CohortStaffProps {
   setProfilesToDelete: (profileIds: string[]) => void;
   isLoading?: boolean;
   isSubmitting?: boolean;
-  effectiveProfile?: Profile | null; // Current user's effective profile
+  effectiveProfile?: ProfileItem | null; // Current user's effective profile
   isReadonly?: boolean;
-  // V2 data from parent
-  profileMapping?: Record<string, { name: string; description: string }>;
-  validProfileIds?: string[];
+  cohortId?: string;
 }
 
 export default function CohortStaff({
@@ -89,8 +87,7 @@ export default function CohortStaff({
   isLoading = false,
   effectiveProfile,
   isReadonly = false,
-  profileMapping,
-  validProfileIds,
+  cohortId,
 }: CohortStaffProps) {
   // View mode state
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -108,14 +105,6 @@ export default function CohortStaff({
     { value: "instructional", label: "👨‍🏫 Instructor" },
     { value: "ta", label: "👨‍🎓 TA" },
   ];
-
-  // Handle adding new profiles from the upload component
-  const handleAddProfiles = useCallback(
-    (newProfiles: EditableProfile[]) => {
-      setProfiles([...newProfiles, ...profiles]);
-    },
-    [profiles, setProfiles]
-  );
 
   // Profile management handlers
   const stageProfileForDeletion = useCallback(
@@ -301,7 +290,7 @@ export default function CohortStaff({
             </div>
 
             {/* Add Staff Button (opens dialog) */}
-            {!isReadonly && (
+            {!isReadonly && cohortId && (
               <Dialog
                 open={isAddStaffDialogOpen}
                 onOpenChange={setIsAddStaffDialogOpen}
@@ -321,11 +310,7 @@ export default function CohortStaff({
                     </DialogDescription>
                   </DialogHeader>
                   <StaffManager
-                    cohortId={"cohort"}
-                    onAddProfiles={(newProfiles) =>
-                      handleAddProfiles(newProfiles)
-                    }
-                    existingProfileIds={profiles.map((p) => p.id)}
+                    cohortId={cohortId}
                     onDone={() => setIsAddStaffDialogOpen(false)}
                   />
                 </DialogContent>

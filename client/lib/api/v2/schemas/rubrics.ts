@@ -38,6 +38,9 @@ export const StandardGroupsMappingDetailSchema = z.record(
   StandardGroupMappingDetailSchema
 );
 
+export type StandardGroupsMapping = z.infer<typeof StandardGroupsMappingSchema>;
+export type StandardsMapping = z.infer<typeof StandardsMappingSchema>;
+
 // ============================================================================
 // REQUEST SCHEMAS
 // ============================================================================

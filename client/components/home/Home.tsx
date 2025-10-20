@@ -696,8 +696,8 @@ export default function Home() {
                   simulationTitle={item.simulationTitle}
                   simulationDescription={item.simulationDescription || ""}
                   standard_groups={item.standard_groups}
-                  standardGroupsMapping={standardGroupsMapping}
-                  standardsMapping={standardsMapping}
+                  standardGroupsMapping={standardGroupsMapping as Record<string, { name: string; description: string; points: number; passPoints: number }>}
+                  standardsMapping={standardsMapping as Record<string, { name: string; description: string; points: number }>}
                   {...(item.color && { color: item.color })}
                   {...(item.icon && { icon: item.icon })}
                   {...(typeof item.hasPassed === "boolean" && {

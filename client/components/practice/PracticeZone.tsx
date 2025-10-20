@@ -6,12 +6,13 @@ import type {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 import SimulationCard from "../common/simulation/SimulationCard";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 
 interface PracticeZoneProps {
   simulations: PracticeSimulationItem[];
   standardGroupsMapping: StandardGroupsMapping;
   standardsMapping: StandardsMapping;
-  profile: Profile | null;
+  profile: ProfileItem | null;
   onStartSimulation: (simulationId: string) => void;
   loadingSimulation: string | null;
 }

@@ -27,7 +27,11 @@ export default function Agents() {
   // Extract data from V2 response
   const agents = useMemo(() => agentsData?.agents || [], [agentsData?.agents]);
   const modelMapping = useMemo(
-    () => agentsData?.model_mapping || {},
+    () =>
+      (agentsData?.model_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
     [agentsData?.model_mapping]
   );
 
@@ -45,7 +49,7 @@ export default function Agents() {
     () =>
       Object.entries(modelMapping).map(([id, name]) => ({
         value: id,
-        label: name,
+        label: name.name,
       })),
     [modelMapping]
   );

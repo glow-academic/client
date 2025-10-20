@@ -57,7 +57,7 @@ export default function ReportProblem({
   const [isOpen, setIsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const createAppFeedbackMutation = useCreateFeedbackV2();
-  const { error: logError } = useLogger();
+  const log = useLogger();
 
   const { activeProfile } = useProfile();
 
@@ -108,14 +108,14 @@ export default function ReportProblem({
 
   // Handle feedback creation errors
   const handleError = async (error: Error) => {
-    await logError("feedback.create.failed", {
+    await log.error("feedback.create.failed", {
       message: "Failed to submit feedback",
       subject: { entityType: "app_feedback" },
       context: {
         component: "ReportProblem",
         function: "handleError",
       },
-      error,
+      error: error.message,
     });
     toast.error("Failed to submit feedback. Please try again.");
   };

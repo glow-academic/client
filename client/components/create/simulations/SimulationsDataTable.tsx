@@ -17,11 +17,10 @@ import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
-  RubricMapping,
-  ScenarioMapping,
   SimulationItem,
 } from "@/lib/api/v2/schemas/simulations";
 import { SimulationsDataTableToolbar } from "./SimulationsDataTableToolbar";
+import { RubricMapping, ScenarioMapping } from "@/lib/api/v2/schemas/base";
 
 export interface SimulationsDataTableProps {
   data: SimulationItem[];
@@ -35,8 +34,6 @@ export interface SimulationsDataTableProps {
 
 export function SimulationsDataTable({
   data,
-  scenarioMapping,
-  rubricMapping,
   scenarioOptions,
   rubricOptions,
   timeLimitOptions,

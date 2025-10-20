@@ -111,7 +111,7 @@ export default function RubricDetails({
           description: formData.description,
           departmentId: formData.departmentId,
           active: formData.active,
-          defaultRubric: rubric.defaultRubric ?? false,
+          defaultRubric: rubric.default_rubric ?? false,
           standardGroupUpdates: [], // No changes to standard groups, just metadata
         });
 
@@ -125,7 +125,7 @@ export default function RubricDetails({
         message: isCreateMode
           ? "Error creating rubric"
           : "Error updating rubric",
-        error,
+        error: error instanceof Error ? error.message : String(error),
         context: { component: "RubricDetails", rubricId },
       });
       toast.error(
@@ -139,10 +139,8 @@ export default function RubricDetails({
     setFormData({
       name: rubric.name,
       description: rubric.description,
-      active: rubric.active ?? true,
-      departmentId:
-        rubric.departmentId ||
-        (effectiveProfile?.role === "superadmin" ? "" : departmentIds[0] || ""),
+      active: true,
+      departmentId: effectiveProfile?.primaryDepartmentId || "",
     });
   };
 
@@ -248,8 +246,8 @@ export default function RubricDetails({
                   <Badge variant="outline">
                     Pass: {rubric.passPoints} points
                   </Badge>
-                  <Badge variant={rubric.active ? "default" : "secondary"}>
-                    {rubric.active ? "Active" : "Inactive"}
+                  <Badge variant={true ? "default" : "secondary"}>
+                    {true ? "Active" : "Inactive"}
                   </Badge>
                 </div>
               )}

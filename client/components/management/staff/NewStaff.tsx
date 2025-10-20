@@ -6,5 +6,5 @@ export interface NewStaffProps {
 }
 
 export default function NewStaff({ onDone }: NewStaffProps) {
-  return <StaffManager onDone={onDone ?? undefined} />;
+  return <StaffManager onDone={onDone ?? (() => {})} />;
 }

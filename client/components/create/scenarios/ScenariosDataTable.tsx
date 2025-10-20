@@ -17,12 +17,10 @@ import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
-  CohortMapping,
-  ParameterItemMapping,
-  PersonaMapping,
   ScenarioItem,
 } from "@/lib/api/v2/schemas/scenarios";
 import { ScenariosDataTableToolbar } from "./ScenariosDataTableToolbar";
+import { CohortMapping, ParameterItemMapping, PersonaMapping } from "@/lib/api/v2/schemas/base";
 
 export interface ScenariosDataTableProps {
   columns: ColumnDef<ScenarioItem>[];
@@ -40,9 +38,6 @@ export interface ScenariosDataTableProps {
 export function ScenariosDataTable({
   columns,
   data,
-  personaMapping,
-  cohortMapping,
-  parameterItemMapping,
   personaOptions,
   cohortOptions,
   renderGroupedScenarios,

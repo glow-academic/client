@@ -34,10 +34,12 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useRubricUnifiedUpdate } from "@/lib/api/v2/hooks/rubrics";
-import type {
+import {
   StandardGroupUpdate,
   StandardUpdate,
 } from "@/lib/api/v2/schemas/rubrics";
+
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   Award,
   BookOpen,
@@ -216,9 +218,32 @@ const getColorClasses = (color: string) => {
   return colorMap[color as keyof typeof colorMap] || colorMap.slate;
 };
 
+// Type definitions for standard groups and standards
+export interface StandardGroupItem {
+  id: string;
+  name: string;
+  description: string;
+  points: number;
+  passPoints: number;
+  rubricId: string;
+  createdAt: string;
+  updatedAt: string;
+  shortName: string;
+}
+
+export interface StandardItem {
+  id: string;
+  name: string;
+  description: string;
+  points: number;
+  standardGroupId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface RubricStandardGroupProps {
-  group?: StandardGroup;
-  standards?: Standard[];
+  group?: StandardGroupItem;
+  standards?: StandardItem[];
   rubricId: string;
   index: number;
   isOpen: boolean;
@@ -268,7 +293,7 @@ export default function RubricStandardGroup({
 
   // Use unified update hook
   const { updateRubric, isPending } = useRubricUnifiedUpdate();
-
+  const log = useLogger();
   // Form state for standard group
   const [groupFormData, setGroupFormData] = useState<StandardGroupFormData>({
     name: group?.name || "",
@@ -478,8 +503,12 @@ export default function RubricStandardGroup({
     } catch (error) {
       log.error("rubric.standard_group.save.failed", {
         message: "Error saving standard group changes",
-        error,
-        context: { component: "RubricStandardGroup", rubricId, mode },
+        error: error instanceof Error ? error.message : String(error),
+        context: {
+          component: "RubricStandardGroup",
+          rubricId,
+          mode,
+        },
       });
       toast.error("Failed to save changes");
     }
@@ -563,11 +592,12 @@ export default function RubricStandardGroup({
     } catch (error) {
       log.error("rubric.standard_group.delete.failed", {
         message: "Error deleting standard group",
-        error,
+        error: error instanceof Error ? error.message : String(error),
         context: {
           component: "RubricStandardGroup",
           rubricId,
           groupId: group!.id,
+          mode,
         },
       });
       toast.error("Failed to delete standard group");

@@ -8,6 +8,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { SlidersHorizontal } from "lucide-react";
 
 export function PracticeCustomizeButton() {
@@ -23,7 +24,7 @@ export function PracticeCustomizeButton() {
       return null;
     }
   }
-  const privilegedRoles: Array<import("@/types").ProfileRole> = [
+  const privilegedRoles: Array<ProfileItem["role"]> = [
     "instructional",
     "admin",
     "superadmin",

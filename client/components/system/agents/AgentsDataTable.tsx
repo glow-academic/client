@@ -21,7 +21,7 @@ import { AgentsDataTableToolbar } from "./AgentsDataTableToolbar";
 
 export interface AgentsDataTableProps {
   data: AgentItem[];
-  modelMapping: Record<string, string>;
+  modelMapping: Record<string, { name: string; description: string }>;
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];

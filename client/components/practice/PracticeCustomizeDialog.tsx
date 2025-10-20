@@ -21,6 +21,7 @@ import type {
   ScenarioMapping,
   SimulationMapping,
 } from "@/lib/api/v2/schemas/base";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -34,8 +35,8 @@ interface PracticeCustomizeDialogProps {
     timeLimit?: number;
   }) => void;
   isStartingAttempt: boolean;
-  effectiveProfile: Profile | null;
-  activeProfile: Profile | null;
+  effectiveProfile: ProfileItem | null;
+  activeProfile: ProfileItem | null;
   // Entity mappings from parent
   personaMapping: PersonaMapping;
   scenarioMapping: ScenarioMapping;

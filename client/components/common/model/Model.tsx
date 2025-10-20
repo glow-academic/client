@@ -99,7 +99,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
   }, [isEditMode, modelDetail, initialFormData]);
 
   const handleInputChange = (
-    field: keyof ModelType,
+    field: keyof FormData,
     value: string | boolean | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -293,7 +293,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
                 value={formData.inputPpm}
                 onChange={(e) =>
                   handleInputChange(
-                    "inputPpm" as keyof ModelType,
+                    "inputPpm" as keyof FormData,
                     e.target.value
                   )
                 }
@@ -318,7 +318,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
                 value={formData.outputPpm}
                 onChange={(e) =>
                   handleInputChange(
-                    "outputPpm" as keyof ModelType,
+                    "outputPpm" as keyof FormData,
                     e.target.value
                   )
                 }

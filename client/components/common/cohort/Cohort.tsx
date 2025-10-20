@@ -730,7 +730,7 @@ export default function Cohort({ cohortId }: CohortProps) {
         </div>
 
         {/* Staff Management */}
-        <CohortStaff
+        {cohortId && <CohortStaff
           profiles={staffProfiles}
           setProfiles={memoizedSetStaffProfiles}
           profilesToDelete={profilesToDelete}
@@ -739,9 +739,8 @@ export default function Cohort({ cohortId }: CohortProps) {
           isSubmitting={isSubmitting}
           effectiveProfile={effectiveProfile}
           isReadonly={isReadonly}
-          profileMapping={cohortData?.profile_mapping || {}}
-          validProfileIds={cohortData?.valid_profile_ids || []}
-        />
+          cohortId={cohortId}
+        />}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">

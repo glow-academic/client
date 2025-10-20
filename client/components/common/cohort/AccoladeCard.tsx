@@ -9,11 +9,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import { ReactNode, useRef, useState } from "react";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 
 export interface AccoladeCardProps {
   icon: ReactNode;
   title: string;
-  user: Profile | null | undefined;
+  user: ProfileItem | null | undefined;
   details: string;
   onClick?: (() => void) | undefined;
   layoutId?: string;

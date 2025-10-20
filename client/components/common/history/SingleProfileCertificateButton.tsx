@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { toast } from "sonner";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 interface CohortData {
   name: string;
@@ -40,7 +41,7 @@ export function SingleProfileCertificateButton<TData>({
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [isGenerating, setIsGenerating] = useState(false);
   const { effectiveProfile } = useProfile();
-
+  const log = useLogger();
   // Function to generate certificate
   const handleCertificateGeneration = async () => {
     try {
@@ -60,7 +61,6 @@ export function SingleProfileCertificateButton<TData>({
 
       log.info("certificate.generate.start", {
         message: "Generating certificate",
-        actor: { profileId },
         context: {
           component: "SingleProfileCertificateButton",
           profileName,

@@ -642,6 +642,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                                 updatedAt: new Date().toISOString(),
                                 viewedChat: false,
                                 viewedIntro: false,
+                                primaryDepartmentId: null,
                               }
                             : undefined
                         }
