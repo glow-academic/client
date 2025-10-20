@@ -246,3 +246,83 @@ export type ObjectiveMapping = z.infer<typeof ObjectiveMappingSchema>;
 export type ProfileMapping = z.infer<typeof ProfileMappingSchema>;
 export type StandardGroupsMapping = z.infer<typeof StandardGroupsMappingSchema>;
 export type StandardsMapping = z.infer<typeof StandardsMappingSchema>;
+
+/**
+ * ============================================================================
+ * ANALYTICS COMMON SCHEMAS
+ * ============================================================================
+ */
+
+/**
+ * Analytics filter request schema
+ */
+export const AnalyticsFiltersSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  cohortIds: z.array(z.string()).optional(),
+  roles: z.array(z.string()).optional(),
+  simulationFilters: z
+    .array(z.enum(["general", "practice", "archived"]))
+    .optional(),
+  profileId: z.string().nullable().optional(),
+  departmentIds: z.array(z.string()).optional(),
+});
+
+export type AnalyticsFilters = z.infer<typeof AnalyticsFiltersSchema>;
+
+/**
+ * Analytics computation methods enum
+ */
+export const MethodSchema = z.enum([
+  "avg",
+  "max",
+  "sum",
+  "rate",
+  "countDistinct",
+  "min",
+  "slope",
+]);
+
+export type Method = z.infer<typeof MethodSchema>;
+
+/**
+ * Trend data point
+ */
+export const TrendDataSchema = z.object({
+  date: z.string(),
+  value: z.number(),
+  count: z.number(),
+});
+
+export type TrendData = z.infer<typeof TrendDataSchema>;
+
+/**
+ * Individual data point
+ */
+export const DataPointSchema = z.object({
+  profileId: z.string(),
+  date: z.string().nullish(),
+  value: z.number().nullish(),
+  attemptId: z.string().nullish(),
+  simulationId: z.string().nullish(),
+  scenarioId: z.string().nullish(),
+  count: z.number().nullish(),
+});
+
+export type DataPoint = z.infer<typeof DataPointSchema>;
+
+/**
+ * Standard metric response
+ */
+export const MetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  currentValue: z.number(),
+  trendAnalysis: z.string().nullable().optional(),
+  valueField: z.string().nullish(),
+  keyField: z.string().nullish(),
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+});
+
+export type MetricResponse = z.infer<typeof MetricResponseSchema>;

@@ -6,7 +6,6 @@ from functools import wraps
 from typing import Any, TypeVar
 
 import asyncpg  # type: ignore
-
 from app.cache.keys import Key
 from app.db import get_pool
 from app.extensions import get_query_client
@@ -486,10 +485,6 @@ class AnalyticsQueryBuilder:
         """Build query to get profile role."""
         query = "SELECT role FROM profiles WHERE id = $1"
         return (query, [profile_id])
-
-    def refresh_materialized_view(self) -> str:
-        """Build query to refresh the analytics materialized view."""
-        return "REFRESH MATERIALIZED VIEW CONCURRENTLY analytics"
 
     # ===== Entity mapping queries for analytics =====
 

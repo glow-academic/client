@@ -1,5 +1,5 @@
-import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/analytics";
-import { fetchAnalyticsDashboard } from "@/lib/api/v2/server/analytics";
+import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/base";
+import { fetchDashboard } from "@/lib/api/v2/server/dashboard";
 import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,12 +8,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = AnalyticsFiltersSchema.parse(body);
 
-    const result = await fetchAnalyticsDashboard(filters);
+    const result = await fetchDashboard(filters);
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
-    log.error("analytics.v2.dashboard.error", {
+    log.error("dashboard.v2.error", {
       message: errorMessage,
       error,
     });

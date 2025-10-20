@@ -1,5 +1,5 @@
-import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/analytics";
-import { fetchAnalyticsHome } from "@/lib/api/v2/server/analytics";
+import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/base";
+import { fetchHome } from "@/lib/api/v2/server/home";
 import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,12 +8,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = AnalyticsFiltersSchema.parse(body);
 
-    const result = await fetchAnalyticsHome(filters);
+    const result = await fetchHome(filters);
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
-    log.error("analytics.v2.home.error", {
+    log.error("home.v2.error", {
       message: errorMessage,
       error,
     });
