@@ -59,14 +59,20 @@ class DashboardService(BaseService):
     ) -> DashboardBundleResponse:
         """Execute the actual dashboard bundle query."""
         # Get query from query builder
+        sim_filters = None
+        if filters.simulationFilters:
+            # Handle both enum and string values
+            sim_filters = [
+                f.value if hasattr(f, "value") else f
+                for f in filters.simulationFilters
+            ]
+        
         query, params = self.queries.get_dashboard_bundle(
             filters.startDate,
             filters.endDate,
             filters.cohortIds,
             filters.roles,
-            [f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
+            sim_filters,
             filters.profileId,
             filters.departmentIds,
         )
