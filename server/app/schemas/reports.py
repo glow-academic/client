@@ -4,17 +4,23 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from .analytics import MetricResponse
 from .base import ScenarioMapping, SimulationMapping
 
 
 class ProfileMetrics(BaseModel):
-    """Profile metrics."""
+    """Profile metrics - each metric is a full MetricResponse object."""
 
-    averageScore: float
-    highestScore: float
-    totalAttempts: int
-    averageMessages: float
-    averageTime: float
+    averageScore: MetricResponse
+    completionPercentage: MetricResponse
+    firstAttemptPassRate: MetricResponse
+    highestScore: MetricResponse
+    messagesPerSession: MetricResponse
+    personaResponseTimes: MetricResponse
+    sessionEfficiency: MetricResponse
+    stagnationRate: MetricResponse
+    timeSpent: MetricResponse
+    totalAttempts: MetricResponse
 
 
 class ProfileDataEnhanced(BaseModel):

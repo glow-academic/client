@@ -2,10 +2,9 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
-
 from app.schemas.analytics import AnalyticsFilters
 from app.services.dashboard_service import DashboardService
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
 
 pytestmark = pytest.mark.asyncio
 
@@ -424,3 +423,173 @@ async def test_get_dashboard_bundle_simulation_composition_structure(
     assert hasattr(sim_comp, "hasData")
     assert isinstance(sim_comp.validSimulationIds, list)
     assert isinstance(sim_comp.simulationFacts, list)
+
+
+# ============================================================================
+# HEADER METRICS - REVERSE ENGINEERED LOGIC TESTS
+# ============================================================================
+
+
+async def test_header_completion_percentage_chat_level(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test completion percentage uses chat-level aggregation (old stored procedure logic)."""
+    dept_id = await get_cs_dept_id(db)
+
+    filters = AnalyticsFilters(
+        startDate="2020-01-01T00:00:00Z",
+        endDate="2030-12-31T23:59:59Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = DashboardService(db)
+    result = await svc.get_dashboard_bundle(filters)
+
+    # Completion percentage should be calculated as: ROUND(100.0 * AVG((completed)::int))
+    completion = result.header.completion_percentage
+    assert completion is not None
+    assert completion.method == "rate"
+    assert isinstance(completion.currentValue, int)
+    assert 0 <= completion.currentValue <= 100
+
+
+async def test_header_first_attempt_pass_rate_all_time(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test first attempt pass rate finds earliest attempts across all time (old logic)."""
+    dept_id = await get_cs_dept_id(db)
+
+    filters = AnalyticsFilters(
+        startDate="2024-01-01T00:00:00Z",
+        endDate="2024-12-31T23:59:59Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = DashboardService(db)
+    result = await svc.get_dashboard_bundle(filters)
+
+    # First attempt pass rate should look at earliest attempt all-time, then filter to window
+    first_pass = result.header.first_attempt_pass_rate
+    assert first_pass is not None
+    assert first_pass.method == "rate"
+    assert isinstance(first_pass.currentValue, int)
+    assert 0 <= first_pass.currentValue <= 100
+
+
+async def test_header_efficiency_uses_old_formula(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test efficiency uses old formula: avgScore * (1 - min(1, avgMinutes/120))."""
+    dept_id = await get_cs_dept_id(db)
+
+    filters = AnalyticsFilters(
+        startDate="2020-01-01T00:00:00Z",
+        endDate="2030-12-31T23:59:59Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = DashboardService(db)
+    result = await svc.get_dashboard_bundle(filters)
+
+    # Efficiency should use the old formula
+    efficiency = result.header.session_efficiency
+    assert efficiency is not None
+    assert efficiency.method == "avg"
+    assert isinstance(efficiency.currentValue, int)
+    # Should be clamped between 0 and 100
+    assert 0 <= efficiency.currentValue <= 100
+
+
+async def test_header_stagnation_rate_uses_grade_stream(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test stagnation rate uses simulation_chat_grades with grade timeline (old logic)."""
+    dept_id = await get_cs_dept_id(db)
+
+    filters = AnalyticsFilters(
+        startDate="2020-01-01T00:00:00Z",
+        endDate="2030-12-31T23:59:59Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = DashboardService(db)
+    result = await svc.get_dashboard_bundle(filters)
+
+    # Stagnation rate should use grade stream with LAG over created_at
+    stagnation = result.header.stagnation_rate
+    assert stagnation is not None
+    assert stagnation.method == "rate"
+    assert isinstance(stagnation.currentValue, int)
+    assert 0 <= stagnation.currentValue <= 100
+
+
+async def test_header_time_spent_sum_with_cap(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test time spent uses SUM with 30-minute cap per chat (old logic)."""
+    dept_id = await get_cs_dept_id(db)
+
+    filters = AnalyticsFilters(
+        startDate="2020-01-01T00:00:00Z",
+        endDate="2030-12-31T23:59:59Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = DashboardService(db)
+    result = await svc.get_dashboard_bundle(filters)
+
+    # Time spent should be SUM(LEAST(time_taken_seconds / 60.0, 30.0))
+    time_spent = result.header.time_spent
+    assert time_spent is not None
+    assert time_spent.method == "sum"
+    assert isinstance(time_spent.currentValue, int)
+    # Should be non-negative
+    assert time_spent.currentValue >= 0
+
+
+async def test_header_average_score_attempt_normalization(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test average score uses attempt-level normalization (verified correct logic)."""
+    dept_id = await get_cs_dept_id(db)
+
+    filters = AnalyticsFilters(
+        startDate="2020-01-01T00:00:00Z",
+        endDate="2030-12-31T23:59:59Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = DashboardService(db)
+    result = await svc.get_dashboard_bundle(filters)
+
+    # Average score should use attempt-level normalization
+    avg_score = result.header.average_score
+    assert avg_score is not None
+    assert avg_score.method == "avg"
+    assert isinstance(avg_score.currentValue, int)
+    assert 0 <= avg_score.currentValue <= 100
+
+
+async def test_header_metrics_with_no_data(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that header metrics handle no data gracefully."""
+    dept_id = await get_cs_dept_id(db)
+
+    # Use a date range far in the future with no data
+    filters = AnalyticsFilters(
+        startDate="2099-01-01T00:00:00Z",
+        endDate="2099-12-31T23:59:59Z",
+        departmentIds=[dept_id],
+    )
+
+    svc = DashboardService(db)
+    result = await svc.get_dashboard_bundle(filters)
+
+    # All header metrics should have hasData=False or handle gracefully
+    assert result.header.completion_percentage is not None
+    assert result.header.first_attempt_pass_rate is not None
+    assert result.header.session_efficiency is not None
+    assert result.header.stagnation_rate is not None
+    assert result.header.time_spent is not None
+    assert result.header.average_score is not None

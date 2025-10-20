@@ -142,31 +142,38 @@ class DashboardQueries:
                 FROM attempt_norm WHERE norm IS NOT NULL
             ),
             
-            -- Completion Percentage
+            -- Completion Percentage (chat-level aggregation from old stored procedure)
             header_completion AS (
-                SELECT
-                    ROUND(AVG(CASE WHEN expected > 0 THEN (100.0 * completed_count / expected) ELSE 0 END))::int AS current_value,
-                    COUNT(*) > 0 AS has_data
-                FROM (
-                    SELECT
-                        COALESCE(MAX(sim_scenario_count), 0) AS expected,
-                        COUNT(*) FILTER (WHERE completed) AS completed_count
-                    FROM filt
-                    GROUP BY attempt_id
-                ) sub
+                SELECT ROUND(100.0 * AVG((completed)::int))::int AS current_value,
+                       COUNT(*) > 0 AS has_data
+                FROM filt
             ),
             
-            -- First Attempt Pass Rate
+            -- First Attempt Pass Rate (earliest attempt all-time, then filter to window)
+            earliest_attempt_all_time AS (
+                SELECT DISTINCT ON (a.profile_id, a.simulation_id)
+                       a.attempt_id, a.profile_id, a.simulation_id, a.attempt_created_at,
+                       a.grade_percent, a.rubric_pass_points, a.rubric_points
+                FROM analytics a
+                WHERE (
+                    -- Match simulation type filters
+                    ('general' = ANY($5::text[]) AND a.is_general = TRUE) OR
+                    ('practice' = ANY($5::text[]) AND a.is_practice = TRUE) OR
+                    ('archived' = ANY($5::text[]) AND a.is_archived = TRUE)
+                )
+                AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
+                AND (
+                    $6::uuid IS NOT NULL
+                    OR cardinality($4::text[]) = 0
+                    OR a.profile_role = ANY($4::profile_role[])
+                )
+                AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
+                AND (cardinality($3::uuid[]) = 0 OR (a.cohort_ids && $3::uuid[] OR a.profile_cohort_ids && $3::uuid[]))
+                ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
+            ),
             first_attempts AS (
-                SELECT DISTINCT ON (simulation_id, profile_id)
-                    attempt_created_at, 
-                    grade_percent, 
-                    rubric_pass_points, 
-                    rubric_points,
-                    simulation_id,
-                    profile_id
-                FROM filt
-                ORDER BY simulation_id, profile_id, attempt_created_at
+                SELECT * FROM earliest_attempt_all_time
+                WHERE attempt_created_at >= $1 AND attempt_created_at < $2
             ),
             header_first_pass AS (
                 SELECT
@@ -201,50 +208,63 @@ class DashboardQueries:
                 FROM persona_times
             ),
             
-            -- Session Efficiency
-            header_efficiency AS (
-                SELECT ROUND(AVG(CASE WHEN time_taken_seconds > 0 
-                                     THEN (grade_percent / (time_taken_seconds / 60.0)) 
-                                     ELSE 0 END))::int AS current_value,
-                       COUNT(*) > 0 AS has_data
-                FROM filt WHERE grade_percent IS NOT NULL AND time_taken_seconds > 0
-            ),
-            
-            -- Stagnation Rate (ENHANCED with LAG window function)
-            user_attempts AS (
+            -- Session Efficiency (old formula: avgScore * (1 - min(1, avgMinutes/120)))
+            user_metrics_for_efficiency AS (
                 SELECT
-                    simulation_id,
-                    profile_id,
-                    attempt_created_at,
-                    grade_percent,
-                    LAG(grade_percent) OVER (
-                        PARTITION BY simulation_id, profile_id
-                        ORDER BY attempt_created_at
-                    ) AS prev_grade
+                    AVG(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) AS avg_score,
+                    SUM(time_taken_seconds / 60.0) FILTER (WHERE time_taken_seconds IS NOT NULL) AS total_minutes,
+                    COUNT(DISTINCT chat_id) AS total_sessions
                 FROM filt
             ),
-            stagnant_attempts AS (
-                SELECT
-                    *,
-                    CASE
-                        WHEN prev_grade IS NOT NULL AND grade_percent <= prev_grade
-                        THEN 1 ELSE 0
-                    END AS is_stagnant
-                FROM user_attempts
-                WHERE prev_grade IS NOT NULL
-            ),
-            header_stagnation AS (
-                SELECT
-                    COALESCE(ROUND((100.0 * SUM(is_stagnant) / NULLIF(COUNT(*), 0)))::int, 0) AS current_value,
-                       COUNT(*) > 0 AS has_data
-                FROM stagnant_attempts
+            header_efficiency AS (
+                SELECT 
+                    GREATEST(0, LEAST(100, ROUND(
+                        avg_score * (1.0 - LEAST(1.0, (total_minutes / NULLIF(total_sessions, 0)) / 120.0))
+                    )))::int AS current_value,
+                    total_sessions > 0 AS has_data
+                FROM user_metrics_for_efficiency
             ),
             
-            -- Time Spent
-            header_time AS (
-                SELECT ROUND(AVG(time_taken_seconds))::int AS current_value,
+            -- Stagnation Rate (grade-stream approach from old stored procedure)
+            filtered_chats_for_stagnation AS (
+                SELECT DISTINCT chat_id FROM filt WHERE chat_id IS NOT NULL
+            ),
+            grade_stream AS (
+                SELECT
+                    sg.id,
+                    sg.simulation_chat_id,
+                    sg.created_at,
+                    (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
+                FROM simulation_chat_grades sg
+                JOIN filtered_chats_for_stagnation fc ON fc.chat_id = sg.simulation_chat_id
+                JOIN rubrics r ON r.id = sg.rubric_id
+            ),
+            ordered_grades AS (
+                SELECT *,
+                       LAG(norm) OVER (ORDER BY created_at) AS prev_norm
+                FROM grade_stream
+            ),
+            stagnation_flags AS (
+                SELECT *,
+                       CASE WHEN prev_norm IS NULL THEN NULL
+                            WHEN norm <= prev_norm + 0.1 THEN 1 
+                            ELSE 0 
+                       END AS stagnated
+                FROM ordered_grades
+                WHERE prev_norm IS NOT NULL
+            ),
+            header_stagnation AS (
+                SELECT ROUND(100.0 * AVG(stagnated))::int AS current_value,
                        COUNT(*) > 0 AS has_data
-                FROM filt WHERE time_taken_seconds IS NOT NULL
+                FROM stagnation_flags
+            ),
+            
+            -- Time Spent (SUM with 30-minute cap per chat, in minutes)
+            header_time AS (
+                SELECT ROUND(SUM(LEAST(time_taken_seconds / 60.0, 30.0)))::int AS current_value,
+                       COUNT(*) > 0 AS has_data
+                FROM filt 
+                WHERE time_taken_seconds IS NOT NULL
             ),
             
             -- Total Attempts
@@ -314,9 +334,9 @@ class DashboardQueries:
                 GROUP BY date
             ),
             growth_stagnation AS (
-                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                       (100.0 * SUM(is_stagnant) / NULLIF(COUNT(*), 0))::float AS value
-                FROM stagnant_attempts
+                SELECT to_char(created_at, 'YYYY-MM-DD') AS date,
+                       (100.0 * AVG(stagnated))::float AS value
+                FROM stagnation_flags
                 GROUP BY date
             ),
             growth_time_spent AS (

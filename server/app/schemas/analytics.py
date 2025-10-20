@@ -1,6 +1,7 @@
 """Shared analytics request and response schemas."""
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -79,6 +80,7 @@ class MetricResponse(BaseModel):
     keyField: str | None = None
     trendData: list[TrendData]
     dataPoints: list[DataPoint]
+    hover: dict[str, Any] | None = None
 
 
 # Utility
