@@ -1189,7 +1189,6 @@ class DashboardQueries:
                 ), '{}'::jsonb) AS mapping
                 FROM parameters p
                 WHERE p.active = true
-                  AND p.default_parameter = false
                   AND (cardinality($7::uuid[]) = 0 OR p.department_id = ANY($7::uuid[]))
             ),
             
@@ -1206,8 +1205,6 @@ class DashboardQueries:
                 FROM parameter_items pi
                 JOIN parameters p ON pi.parameter_id = p.id
                 WHERE p.active = true
-                  AND p.default_parameter = false
-                  AND pi.default_item = true
                   AND (cardinality($7::uuid[]) = 0 OR p.department_id = ANY($7::uuid[]))
             )
             
