@@ -222,8 +222,40 @@ export const ParameterItemMappingSchema = z.record(
 );
 export const ObjectiveMappingSchema = MappingSchema;
 export const ProfileMappingSchema = MappingSchema;
-export const StandardGroupsMappingSchema = MappingSchema;
-export const StandardsMappingSchema = MappingSchema;
+
+/**
+ * Standard group mapping item with rubric context
+ */
+export const StandardGroupMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  points: z.number(),
+  passPoints: z.number(),
+});
+
+export type StandardGroupMappingItem = z.infer<
+  typeof StandardGroupMappingItemSchema
+>;
+
+/**
+ * Standard mapping item
+ */
+export const StandardMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  points: z.number(),
+});
+
+export type StandardMappingItem = z.infer<typeof StandardMappingItemSchema>;
+
+export const StandardGroupsMappingSchema = z.record(
+  z.string(),
+  StandardGroupMappingItemSchema
+);
+export const StandardsMappingSchema = z.record(
+  z.string(),
+  StandardMappingItemSchema
+);
 
 /**
  * Type aliases for convenience

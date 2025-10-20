@@ -5,7 +5,8 @@ from typing import Literal
 from pydantic import BaseModel
 
 from .base import (ParameterItemMapping, ParameterMapping, PersonaMapping,
-                   ScenarioMapping, SimulationMapping)
+                   ScenarioMapping, SimulationMapping, StandardGroupsMapping,
+                   StandardsMapping)
 from .home import AttemptHistoryResponse
 
 
@@ -44,8 +45,8 @@ class PracticeOverviewResponse(BaseModel):
     hasData: bool
     items: list[PracticeSimulationItem]
     history: AttemptHistoryResponse
-    standard_groups_mapping: dict[str, str]
-    standards_mapping: dict[str, str]
+    standard_groups_mapping: StandardGroupsMapping
+    standards_mapping: StandardsMapping
     simulation_mapping: SimulationMapping
     scenario_mapping: ScenarioMapping
     persona_mapping: PersonaMapping

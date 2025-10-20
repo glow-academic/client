@@ -127,15 +127,16 @@ class ProfileMappingItem(MappingItem):
 
 
 class StandardGroupMappingItem(MappingItem):
-    """Standard group mapping item - extends MappingItem"""
+    """Standard group mapping item with rubric context"""
 
-    pass
+    points: int
+    passPoints: int
 
 
 class StandardMappingItem(MappingItem):
-    """Standard mapping item - extends MappingItem"""
+    """Standard mapping item with points"""
 
-    pass
+    points: int
 
 
 # Type aliases for Dict mappings (id -> item)
