@@ -43,7 +43,7 @@ import { useProfile } from "@/contexts/profile-context";
 import type {
   DebugInfoItem,
   ModelMappingWithPricing,
-} from "@/lib/api/v2/schemas/analytics";
+} from "@/lib/api/v2/schemas/pricing";
 import { format } from "date-fns";
 
 const currency = (value: number) =>

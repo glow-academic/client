@@ -3,7 +3,7 @@
  * These keys are used by React Query for caching and invalidation
  */
 
-import { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
+import { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
 
 // Ensure stable serialization of filter objects
 function serializeFilters(filters: AnalyticsFilters): string {

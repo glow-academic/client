@@ -38,7 +38,7 @@ import {
 import type {
   ScenarioAttributeAttemptFact,
   ScenarioAttributeScenarioFact,
-} from "@/lib/api/v2/schemas/analytics";
+} from "@/lib/api/v2/schemas/dashboard";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";

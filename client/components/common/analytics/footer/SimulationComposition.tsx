@@ -34,7 +34,7 @@ import type {
   SimulationFact,
   SimulationParameterFactCategorical,
   SimulationParameterFactNumeric,
-} from "@/lib/api/v2/schemas/analytics";
+} from "@/lib/api/v2/schemas/dashboard";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {

@@ -30,7 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { RubricMatrixPackage } from "@/lib/api/v2/schemas/analytics";
+import type { RubricMatrixPackage } from "@/lib/api/v2/schemas/dashboard";
 import { type RubricMapping } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 import { Info, Loader2, TrendingUp } from "lucide-react";

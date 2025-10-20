@@ -11,7 +11,7 @@
 import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDashboardBundle } from "@/lib/api/v2/hooks/analytics";
+import { useDashboard } from "@/lib/api/v2/hooks/dashboard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -102,7 +102,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     isLoading,
     isError,
     error,
-  } = useDashboardBundle(filters, rqOpts);
+  } = useDashboard(filters, rqOpts);
 
   // Get thresholds from server (or use defaults if not available)
   const thresholds = useMemo(

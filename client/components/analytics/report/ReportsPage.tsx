@@ -10,9 +10,9 @@
 
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useAnalyticsReportsBundle } from "@/lib/api/v2/hooks/analytics";
 import { useMemo } from "react";
 import Reports from "./Reports";
+import { useReports } from "@/lib/api/v2/hooks/reports";
 
 export default function ReportsPage() {
   const {
@@ -50,7 +50,7 @@ export default function ReportsPage() {
     data: bundle,
     isLoading,
     isError,
-  } = useAnalyticsReportsBundle(filters, rqOpts);
+  } = useReports(filters, rqOpts);
 
   // Transform bundle data to Reports component format
   const transformedData = useMemo(() => {

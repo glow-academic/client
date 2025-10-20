@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useAnalyticsHomeOverview } from "@/lib/api/v2/hooks/analytics";
+import { useHome } from "@/lib/api/v2/hooks/home";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -73,8 +73,7 @@ export default function Home() {
   );
 
   // Single optimized bundle call with items, history, and mappings
-  const { data: bundle, isLoading: isHomeOverviewLoading } =
-    useAnalyticsHomeOverview(filters);
+  const { data: bundle, isLoading: isHomeOverviewLoading } = useHome(filters);
 
   // Extract data from bundle
   const homeOverview = bundle;

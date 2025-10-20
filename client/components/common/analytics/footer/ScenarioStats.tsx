@@ -35,7 +35,7 @@ import {
 import type {
   NumericAttemptFact,
   NumericScenarioFact,
-} from "@/lib/api/v2/schemas/analytics";
+} from "@/lib/api/v2/schemas/dashboard";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";

@@ -24,8 +24,8 @@ import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { usePricingAnalytics } from "@/lib/api/v2/hooks/analytics";
-import type { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
+import { usePricing } from "@/lib/api/v2/hooks/pricing";
+import type { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
 import { Loader2 } from "lucide-react";
 import { RunsDataTable } from "./RunsDataTable";
 
@@ -86,7 +86,7 @@ export default function Pricing() {
     ]
   );
 
-  const { data: pricingData, isLoading } = usePricingAnalytics(filters);
+  const { data: pricingData, isLoading } = usePricing(filters);
 
   // Extract data from V2 API response
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);

@@ -1,4 +1,5 @@
-import { PracticeSimulationItem } from "@/lib/api/v2/schemas/analytics";
+import { PracticeSimulationItem } from "@/lib/api/v2/schemas/practice";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import type {
   StandardGroupsMapping,
   StandardsMapping,
@@ -6,7 +7,6 @@ import type {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 import SimulationCard from "../common/simulation/SimulationCard";
-import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 
 interface PracticeZoneProps {
   simulations: PracticeSimulationItem[];

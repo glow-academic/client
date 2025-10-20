@@ -25,7 +25,7 @@ import {
   YAxis,
 } from "recharts";
 
-import type { TrendData } from "@/lib/api/v2/schemas/analytics";
+import type { TrendData } from "@/lib/api/v2/schemas/base";
 
 export interface HighestScoreProps {
   highestScore: number;

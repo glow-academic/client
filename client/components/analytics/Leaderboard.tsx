@@ -9,9 +9,9 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useAnalyticsLeaderboardBundle } from "@/lib/api/v2/hooks/analytics";
-import type { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
-import { type LeaderboardRow } from "@/lib/api/v2/schemas/analytics";
+import { useLeaderboard } from "@/lib/api/v2/hooks/leaderboard";
+import type { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
+import { type LeaderboardRow } from "@/lib/api/v2/schemas/leaderboard";
 import type { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -83,7 +83,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     data: leaderboardResponse,
     isLoading,
     isError,
-  } = useAnalyticsLeaderboardBundle(filters);
+  } = useLeaderboard(filters);
 
   // Use the data directly from the API (no hydration needed)
   const hydratedRows = useMemo(() => {

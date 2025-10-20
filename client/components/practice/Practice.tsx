@@ -21,7 +21,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useAnalyticsPracticeOverview } from "@/lib/api/v2/hooks/analytics";
+import { usePractice } from "@/lib/api/v2/hooks/practice";
 // Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
 // This functionality needs to be re-implemented or removed
 import SimulationHistory from "../common/history/SimulationHistory";
@@ -94,7 +94,7 @@ export default function Practice() {
 
   // Single optimized bundle call with items, history, and mappings
   const { data: bundle, isLoading: isPracticeOverviewLoading } =
-    useAnalyticsPracticeOverview(filters);
+    usePractice(filters);
 
   // Extract data from bundle
   const practiceOverview = bundle;

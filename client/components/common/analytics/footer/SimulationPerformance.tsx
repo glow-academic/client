@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { ScenarioFact } from "@/lib/api/v2/schemas/analytics";
+import type { ScenarioFact } from "@/lib/api/v2/schemas/dashboard";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

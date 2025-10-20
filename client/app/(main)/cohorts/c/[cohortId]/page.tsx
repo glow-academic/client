@@ -8,7 +8,7 @@
 import { auth } from "@/auth";
 import Leaderboard from "@/components/analytics/Leaderboard";
 import { analyticsLeaderboardBundleKeys } from "@/lib/api/v2/keys";
-import { fetchAnalyticsLeaderboard } from "@/lib/api/v2/server/analytics";
+import { fetchLeaderboard } from "@/lib/api/v2/server/leaderboard";
 import { fetchCohortDetail } from "@/lib/api/v2/server/cohorts";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
@@ -62,7 +62,7 @@ export default async function CohortDashboardPage({
 
   await queryClient.prefetchQuery({
     queryKey: analyticsLeaderboardBundleKeys.list(filters),
-    queryFn: () => fetchAnalyticsLeaderboard(filters),
+    queryFn: () => fetchLeaderboard(filters),
   });
 
   return (
