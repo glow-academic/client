@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { profiles, profileRequestLimits, providers, providerEndpoints, departments, models, documents, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, personas, agents, modelRuns, debugInfo, parameters, parameterItems, scenarios, simulations, simulationTimeLimits, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, cohorts, scenarioObjectives, simulationHints, modelRunModels, modelRunPersonas, modelRunAgents, modelRunProfiles, scenarioPersonas, scenarioParameterItems, scenarioDocuments, documentParameterItems, scenarioTree, attemptProfiles, cohortSimulations, cohortProfiles, profileDepartments, appFeedback, appFeedbackProfiles, departmentAgents, simulationScenarios } from "./schema";
+import { profiles, profileRequestLimits, providers, providerEndpoints, departments, models, documents, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, personas, agents, modelRuns, parameters, debugInfo, parameterItems, scenarios, simulations, simulationTimeLimits, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, cohorts, scenarioObjectives, simulationHints, modelRunModels, modelRunPersonas, modelRunAgents, modelRunProfiles, scenarioPersonas, scenarioTree, scenarioParameterItems, scenarioDocuments, documentParameterItems, attemptProfiles, cohortProfiles, cohortSimulations, profileDepartments, appFeedback, appFeedbackProfiles, departmentAgents, simulationScenarios } from "./schema";
 
 export const profileRequestLimitsRelations = relations(profileRequestLimits, ({one}) => ({
 	profile: one(profiles, {
@@ -150,19 +150,19 @@ export const modelRunsRelations = relations(modelRuns, ({one, many}) => ({
 	modelRunProfiles: many(modelRunProfiles),
 }));
 
-export const debugInfoRelations = relations(debugInfo, ({one}) => ({
-	modelRun: one(modelRuns, {
-		fields: [debugInfo.modelRunId],
-		references: [modelRuns.id]
-	}),
-}));
-
 export const parametersRelations = relations(parameters, ({one, many}) => ({
 	department: one(departments, {
 		fields: [parameters.departmentId],
 		references: [departments.id]
 	}),
 	parameterItems: many(parameterItems),
+}));
+
+export const debugInfoRelations = relations(debugInfo, ({one}) => ({
+	modelRun: one(modelRuns, {
+		fields: [debugInfo.modelRunId],
+		references: [modelRuns.id]
+	}),
 }));
 
 export const parameterItemsRelations = relations(parameterItems, ({one, many}) => ({
@@ -182,14 +182,14 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 	simulationChats: many(simulationChats),
 	scenarioObjectives: many(scenarioObjectives),
 	scenarioPersonas: many(scenarioPersonas),
-	scenarioParameterItems: many(scenarioParameterItems),
-	scenarioDocuments: many(scenarioDocuments),
 	scenarioTrees_parentId: many(scenarioTree, {
 		relationName: "scenarioTree_parentId_scenarios_id"
 	}),
 	scenarioTrees_childId: many(scenarioTree, {
 		relationName: "scenarioTree_childId_scenarios_id"
 	}),
+	scenarioParameterItems: many(scenarioParameterItems),
+	scenarioDocuments: many(scenarioDocuments),
 	simulationScenarios: many(simulationScenarios),
 }));
 
@@ -273,8 +273,8 @@ export const cohortsRelations = relations(cohorts, ({one, many}) => ({
 		fields: [cohorts.departmentId],
 		references: [departments.id]
 	}),
-	cohortSimulations: many(cohortSimulations),
 	cohortProfiles: many(cohortProfiles),
+	cohortSimulations: many(cohortSimulations),
 }));
 
 export const scenarioObjectivesRelations = relations(scenarioObjectives, ({one}) => ({
@@ -346,6 +346,19 @@ export const scenarioPersonasRelations = relations(scenarioPersonas, ({one}) => 
 	}),
 }));
 
+export const scenarioTreeRelations = relations(scenarioTree, ({one}) => ({
+	scenario_parentId: one(scenarios, {
+		fields: [scenarioTree.parentId],
+		references: [scenarios.id],
+		relationName: "scenarioTree_parentId_scenarios_id"
+	}),
+	scenario_childId: one(scenarios, {
+		fields: [scenarioTree.childId],
+		references: [scenarios.id],
+		relationName: "scenarioTree_childId_scenarios_id"
+	}),
+}));
+
 export const scenarioParameterItemsRelations = relations(scenarioParameterItems, ({one}) => ({
 	scenario: one(scenarios, {
 		fields: [scenarioParameterItems.scenarioId],
@@ -379,19 +392,6 @@ export const documentParameterItemsRelations = relations(documentParameterItems,
 	}),
 }));
 
-export const scenarioTreeRelations = relations(scenarioTree, ({one}) => ({
-	scenario_parentId: one(scenarios, {
-		fields: [scenarioTree.parentId],
-		references: [scenarios.id],
-		relationName: "scenarioTree_parentId_scenarios_id"
-	}),
-	scenario_childId: one(scenarios, {
-		fields: [scenarioTree.childId],
-		references: [scenarios.id],
-		relationName: "scenarioTree_childId_scenarios_id"
-	}),
-}));
-
 export const attemptProfilesRelations = relations(attemptProfiles, ({one}) => ({
 	simulationAttempt: one(simulationAttempts, {
 		fields: [attemptProfiles.attemptId],
@@ -399,6 +399,17 @@ export const attemptProfilesRelations = relations(attemptProfiles, ({one}) => ({
 	}),
 	profile: one(profiles, {
 		fields: [attemptProfiles.profileId],
+		references: [profiles.id]
+	}),
+}));
+
+export const cohortProfilesRelations = relations(cohortProfiles, ({one}) => ({
+	cohort: one(cohorts, {
+		fields: [cohortProfiles.cohortId],
+		references: [cohorts.id]
+	}),
+	profile: one(profiles, {
+		fields: [cohortProfiles.profileId],
 		references: [profiles.id]
 	}),
 }));
@@ -411,17 +422,6 @@ export const cohortSimulationsRelations = relations(cohortSimulations, ({one}) =
 	simulation: one(simulations, {
 		fields: [cohortSimulations.simulationId],
 		references: [simulations.id]
-	}),
-}));
-
-export const cohortProfilesRelations = relations(cohortProfiles, ({one}) => ({
-	cohort: one(cohorts, {
-		fields: [cohortProfiles.cohortId],
-		references: [cohorts.id]
-	}),
-	profile: one(profiles, {
-		fields: [cohortProfiles.profileId],
-		references: [profiles.id]
 	}),
 }));
 

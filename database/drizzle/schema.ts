@@ -35,6 +35,7 @@ export const departments = pgTable("departments", {
 	title: text().notNull(),
 	description: text().notNull(),
 	active: boolean().default(true).notNull(),
+	defaultDepartment: boolean("default_department").default(false).notNull(),
 });
 
 export const profileRequestLimits = pgTable("profile_request_limits", {
@@ -287,6 +288,8 @@ export const agents = pgTable("agents", {
 	temperature: real().notNull(),
 	modelId: uuid("model_id").notNull(),
 	reasoning: reasoningEffort().default('medium').notNull(),
+	active: boolean().default(true).notNull(),
+	defaultAgent: boolean("default_agent").default(true).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],
@@ -310,19 +313,6 @@ export const modelRuns = pgTable("model_runs", {
 		}).onDelete("cascade"),
 ]);
 
-export const debugInfo = pgTable("debug_info", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	modelRunId: uuid("model_run_id").notNull(),
-	content: text().notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.modelRunId],
-			foreignColumns: [modelRuns.id],
-			name: "debug_info_model_run_id_fkey"
-		}),
-]);
-
 export const parameters = pgTable("parameters", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -339,6 +329,19 @@ export const parameters = pgTable("parameters", {
 			foreignColumns: [departments.id],
 			name: "parameters_department_id_fkey"
 		}).onDelete("cascade"),
+]);
+
+export const debugInfo = pgTable("debug_info", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	modelRunId: uuid("model_run_id").notNull(),
+	content: text().notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.modelRunId],
+			foreignColumns: [modelRuns.id],
+			name: "debug_info_model_run_id_fkey"
+		}),
 ]);
 
 export const parameterItems = pgTable("parameter_items", {
@@ -392,6 +395,7 @@ export const simulations = pgTable("simulations", {
 	inputGuardrailActive: boolean("input_guardrail_active").default(false).notNull(),
 	imageInputActive: boolean("image_input_active").default(false).notNull(),
 	hintsEnabled: boolean("hints_enabled").default(false).notNull(),
+	objectivesEnabled: boolean("objectives_enabled").default(true).notNull(),
 }, (table) => [
 	index("simulations_id_active_idx").using("btree", table.id.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
 	foreignKey({
@@ -682,6 +686,29 @@ export const scenarioPersonas = pgTable("scenario_personas", {
 	primaryKey({ columns: [table.scenarioId, table.personaId], name: "scenario_personas_pkey"}),
 ]);
 
+export const scenarioTree = pgTable("scenario_tree", {
+	parentId: uuid("parent_id").notNull(),
+	childId: uuid("child_id").notNull(),
+	active: boolean().default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("scenario_tree_child_id_idx").using("btree", table.childId.asc().nullsLast().op("uuid_ops")),
+	uniqueIndex("scenario_tree_one_parent_per_child").using("btree", table.childId.asc().nullsLast().op("uuid_ops")),
+	index("scenario_tree_parent_id_idx").using("btree", table.parentId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.parentId],
+			foreignColumns: [scenarios.id],
+			name: "scenario_tree_parent_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.childId],
+			foreignColumns: [scenarios.id],
+			name: "scenario_tree_child_id_fkey"
+		}).onDelete("cascade"),
+	primaryKey({ columns: [table.parentId, table.childId], name: "scenario_tree_pkey"}),
+]);
+
 export const scenarioParameterItems = pgTable("scenario_parameter_items", {
 	scenarioId: uuid("scenario_id").notNull(),
 	parameterItemId: uuid("parameter_item_id").notNull(),
@@ -748,29 +775,6 @@ export const documentParameterItems = pgTable("document_parameter_items", {
 	primaryKey({ columns: [table.documentId, table.parameterItemId], name: "document_parameter_items_pkey"}),
 ]);
 
-export const scenarioTree = pgTable("scenario_tree", {
-	parentId: uuid("parent_id").notNull(),
-	childId: uuid("child_id").notNull(),
-	active: boolean().default(true).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("scenario_tree_child_id_idx").using("btree", table.childId.asc().nullsLast().op("uuid_ops")),
-	uniqueIndex("scenario_tree_one_parent_per_child").using("btree", table.childId.asc().nullsLast().op("uuid_ops")),
-	index("scenario_tree_parent_id_idx").using("btree", table.parentId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.parentId],
-			foreignColumns: [scenarios.id],
-			name: "scenario_tree_parent_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.childId],
-			foreignColumns: [scenarios.id],
-			name: "scenario_tree_child_id_fkey"
-		}).onDelete("cascade"),
-	primaryKey({ columns: [table.parentId, table.childId], name: "scenario_tree_pkey"}),
-]);
-
 export const attemptProfiles = pgTable("attempt_profiles", {
 	attemptId: uuid("attempt_id").notNull(),
 	profileId: uuid("profile_id").notNull(),
@@ -796,28 +800,6 @@ export const attemptProfiles = pgTable("attempt_profiles", {
 	primaryKey({ columns: [table.attemptId, table.profileId], name: "attempt_profiles_pkey"}),
 ]);
 
-export const cohortSimulations = pgTable("cohort_simulations", {
-	cohortId: uuid("cohort_id").notNull(),
-	simulationId: uuid("simulation_id").notNull(),
-	active: boolean().default(true).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("cohort_simulations_cohort_id_idx").using("btree", table.cohortId.asc().nullsLast().op("uuid_ops")),
-	index("cohort_simulations_simulation_id_idx").using("btree", table.simulationId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.cohortId],
-			foreignColumns: [cohorts.id],
-			name: "cohort_simulations_cohort_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.simulationId],
-			foreignColumns: [simulations.id],
-			name: "cohort_simulations_simulation_id_fkey"
-		}).onDelete("cascade"),
-	primaryKey({ columns: [table.cohortId, table.simulationId], name: "cohort_simulations_pkey"}),
-]);
-
 export const cohortProfiles = pgTable("cohort_profiles", {
 	cohortId: uuid("cohort_id").notNull(),
 	profileId: uuid("profile_id").notNull(),
@@ -838,6 +820,28 @@ export const cohortProfiles = pgTable("cohort_profiles", {
 			name: "cohort_profiles_profile_id_fkey"
 		}).onDelete("cascade"),
 	primaryKey({ columns: [table.cohortId, table.profileId], name: "cohort_profiles_pkey"}),
+]);
+
+export const cohortSimulations = pgTable("cohort_simulations", {
+	cohortId: uuid("cohort_id").notNull(),
+	simulationId: uuid("simulation_id").notNull(),
+	active: boolean().default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("cohort_simulations_cohort_id_idx").using("btree", table.cohortId.asc().nullsLast().op("uuid_ops")),
+	index("cohort_simulations_simulation_id_idx").using("btree", table.simulationId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.cohortId],
+			foreignColumns: [cohorts.id],
+			name: "cohort_simulations_cohort_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.simulationId],
+			foreignColumns: [simulations.id],
+			name: "cohort_simulations_simulation_id_fkey"
+		}).onDelete("cascade"),
+	primaryKey({ columns: [table.cohortId, table.simulationId], name: "cohort_simulations_pkey"}),
 ]);
 
 export const profileDepartments = pgTable("profile_departments", {
@@ -963,4 +967,4 @@ export const analytics = pgMaterializedView("analytics", {	chatId: uuid("chat_id
 	simScenarioCount: integer("sim_scenario_count"),
 	gradeCreatedAt: timestamp("grade_created_at", { withTimezone: true, mode: 'string' }),
 	departmentId: uuid("department_id"),
-}).as(sql`WITH RECURSIVE scenario_roots AS ( SELECT s_1.id, st.parent_id, s_1.id AS root_id FROM scenarios s_1 JOIN scenario_tree st ON st.child_id = s_1.id AND st.parent_id = s_1.id UNION ALL SELECT s1.id, st.parent_id, sr.root_id FROM scenarios s1 JOIN scenario_tree st ON st.child_id = s1.id AND st.parent_id <> s1.id JOIN scenario_roots sr ON st.parent_id = sr.id ), root_map AS ( SELECT s_1.id AS leaf_scenario_id, COALESCE(sr.root_id, s_1.id) AS root_scenario_id FROM scenarios s_1 LEFT JOIN scenario_roots sr ON s_1.id = sr.id ), latest_grade AS ( SELECT DISTINCT ON (simulation_chat_grades.simulation_chat_id) simulation_chat_grades.simulation_chat_id, simulation_chat_grades.score::numeric AS score, simulation_chat_grades.time_taken::numeric AS time_taken_seconds, simulation_chat_grades.rubric_id, simulation_chat_grades.created_at FROM simulation_chat_grades ORDER BY simulation_chat_grades.simulation_chat_id, simulation_chat_grades.created_at DESC ), active_sims AS ( SELECT simulations.id, simulations.created_at, simulations.updated_at, simulations.title, simulations.description, simulations.active, simulations.rubric_id, simulations.default_simulation, simulations.practice_simulation, simulations.department_id, simulations.output_guardrail_active, simulations.input_guardrail_active, simulations.image_input_active, simulations.hints_enabled FROM simulations WHERE simulations.active = true ), active_scenarios AS ( SELECT scenarios.id, scenarios.created_at, scenarios.updated_at, scenarios.name, scenarios.problem_statement, scenarios.default_scenario, scenarios.generated, scenarios.active, scenarios.department_id FROM scenarios WHERE scenarios.active = true ), cohorts_expanded AS ( SELECT c.id, c.active FROM cohorts c ), cohorts_by_sim AS ( SELECT s_1.id AS simulation_id, ARRAY( SELECT DISTINCT c.id FROM cohorts c JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s_1.id WHERE c.active = true) AS cohort_ids FROM active_sims s_1 ), profile_cohorts_for_sim AS ( SELECT sa_1.id AS attempt_id, ap_1.profile_id, sa_1.simulation_id, ARRAY( SELECT c.id FROM cohorts c JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa_1.simulation_id JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap_1.profile_id WHERE c.active = true) AS profile_cohort_ids FROM simulation_attempts sa_1 LEFT JOIN attempt_profiles ap_1 ON ap_1.attempt_id = sa_1.id AND ap_1.active = true ), message_counts AS ( SELECT sm.chat_id, count(*)::integer AS num_messages_total, count(*) FILTER (WHERE sm.type = 'query'::simulation_message_type)::integer AS num_query_messages, count(*) FILTER (WHERE sm.type = 'response'::simulation_message_type)::integer AS num_response_messages FROM simulation_messages sm GROUP BY sm.chat_id ), message_deltas AS ( SELECT m.chat_id, CASE WHEN lag(m.type) OVER (PARTITION BY m.chat_id ORDER BY m.created_at) = 'response'::simulation_message_type AND m.type = 'query'::simulation_message_type THEN GREATEST(EXTRACT(epoch FROM m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at)) OVER (PARTITION BY m.chat_id ORDER BY m.created_at), sc_1.created_at))::integer, 0) ELSE NULL::integer END AS delta_seconds, m.created_at FROM simulation_messages m JOIN simulation_chats sc_1 ON sc_1.id = m.chat_id ), message_deltas_agg AS ( SELECT message_deltas.chat_id, array_remove(array_agg(message_deltas.delta_seconds ORDER BY message_deltas.created_at), NULL::integer) AS message_time_taken_seconds FROM message_deltas GROUP BY message_deltas.chat_id ), effective_profile_department AS ( SELECT pd.profile_id, COALESCE(( SELECT pd1.department_id FROM profile_departments pd1 WHERE pd1.profile_id = pd.profile_id AND pd1.is_primary LIMIT 1), ( SELECT pd2.department_id FROM profile_departments pd2 WHERE pd2.profile_id = pd.profile_id ORDER BY pd2.created_at LIMIT 1)) AS department_id FROM ( SELECT DISTINCT ap_1.profile_id FROM simulation_attempts sa_1 JOIN attempt_profiles ap_1 ON ap_1.attempt_id = sa_1.id AND ap_1.active = true) pd ) SELECT sc.id AS chat_id, sc.attempt_id, ap.profile_id, sa.simulation_id, rm.root_scenario_id AS scenario_id, rm.leaf_scenario_id, sp.persona_id, p.color AS persona_color, sim.practice_simulation AS is_practice, sa.archived AS is_archived, NOT sim.practice_simulation AND NOT sa.archived AS is_general, pr.role AS profile_role, cbs.cohort_ids, sc.created_at AS chat_created_at, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.points = 0 THEN NULL::numeric ELSE lg.score / r.points::numeric * 100.0 END AS grade_percent, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.pass_points IS NULL THEN NULL::boolean ELSE lg.score >= r.pass_points::numeric END AS passed, lg.time_taken_seconds, lg.rubric_id, r.points AS rubric_points, r.pass_points AS rubric_pass_points, sc.completed OR lg.simulation_chat_id IS NOT NULL AS completed, COALESCE(mc.num_messages_total, 0) AS num_messages_total, COALESCE(mc.num_query_messages, 0) AS num_query_messages, COALESCE(mc.num_response_messages, 0) AS num_response_messages, COALESCE(mda.message_time_taken_seconds, '{}'::integer[]) AS message_time_taken_seconds, sa.created_at AS attempt_created_at, pcs.profile_cohort_ids, (( SELECT count(*) AS count FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id))::integer AS sim_scenario_count, lg.created_at AS grade_created_at, COALESCE(epd.department_id, sim.department_id, r.department_id, s.department_id, p.department_id) AS department_id FROM simulation_chats sc JOIN simulation_attempts sa ON sa.id = sc.attempt_id LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true JOIN active_sims sim ON sim.id = sa.simulation_id JOIN profiles pr ON pr.id = ap.profile_id JOIN active_scenarios s ON s.id = sc.scenario_id JOIN root_map rm ON rm.leaf_scenario_id = s.id LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true LEFT JOIN personas p ON p.id = sp.persona_id LEFT JOIN latest_grade lg ON lg.simulation_chat_id = sc.id LEFT JOIN rubrics r ON r.id = lg.rubric_id LEFT JOIN cohorts_by_sim cbs ON cbs.simulation_id = sa.simulation_id LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id LEFT JOIN message_counts mc ON mc.chat_id = sc.id LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id LEFT JOIN effective_profile_department epd ON epd.profile_id = ap.profile_id`);
+}).as(sql`WITH RECURSIVE scenario_roots AS ( SELECT s_1.id, st.parent_id, s_1.id AS root_id FROM scenarios s_1 JOIN scenario_tree st ON st.child_id = s_1.id AND st.parent_id = s_1.id UNION ALL SELECT s1.id, st.parent_id, sr.root_id FROM scenarios s1 JOIN scenario_tree st ON st.child_id = s1.id AND st.parent_id <> s1.id JOIN scenario_roots sr ON st.parent_id = sr.id ), root_map AS ( SELECT s_1.id AS leaf_scenario_id, COALESCE(sr.root_id, s_1.id) AS root_scenario_id FROM scenarios s_1 LEFT JOIN scenario_roots sr ON s_1.id = sr.id ), latest_grade AS ( SELECT DISTINCT ON (simulation_chat_grades.simulation_chat_id) simulation_chat_grades.simulation_chat_id, simulation_chat_grades.score::numeric AS score, simulation_chat_grades.time_taken::numeric AS time_taken_seconds, simulation_chat_grades.rubric_id, simulation_chat_grades.created_at FROM simulation_chat_grades ORDER BY simulation_chat_grades.simulation_chat_id, simulation_chat_grades.created_at DESC ), active_sims AS ( SELECT simulations.id, simulations.created_at, simulations.updated_at, simulations.title, simulations.description, simulations.active, simulations.rubric_id, simulations.default_simulation, simulations.practice_simulation, simulations.department_id, simulations.output_guardrail_active, simulations.input_guardrail_active, simulations.image_input_active, simulations.hints_enabled, simulations.objectives_enabled FROM simulations WHERE simulations.active = true ), active_scenarios AS ( SELECT scenarios.id, scenarios.created_at, scenarios.updated_at, scenarios.name, scenarios.problem_statement, scenarios.default_scenario, scenarios.generated, scenarios.active, scenarios.department_id FROM scenarios WHERE scenarios.active = true ), cohorts_expanded AS ( SELECT c.id, c.active FROM cohorts c ), cohorts_by_sim AS ( SELECT s_1.id AS simulation_id, ARRAY( SELECT DISTINCT c.id FROM cohorts c JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s_1.id WHERE c.active = true) AS cohort_ids FROM active_sims s_1 ), profile_cohorts_for_sim AS ( SELECT sa_1.id AS attempt_id, ap_1.profile_id, sa_1.simulation_id, ARRAY( SELECT c.id FROM cohorts c JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa_1.simulation_id JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap_1.profile_id WHERE c.active = true) AS profile_cohort_ids FROM simulation_attempts sa_1 LEFT JOIN attempt_profiles ap_1 ON ap_1.attempt_id = sa_1.id AND ap_1.active = true ), message_counts AS ( SELECT sm.chat_id, count(*)::integer AS num_messages_total, count(*) FILTER (WHERE sm.type = 'query'::simulation_message_type)::integer AS num_query_messages, count(*) FILTER (WHERE sm.type = 'response'::simulation_message_type)::integer AS num_response_messages FROM simulation_messages sm GROUP BY sm.chat_id ), message_deltas AS ( SELECT m.chat_id, CASE WHEN lag(m.type) OVER (PARTITION BY m.chat_id ORDER BY m.created_at) = 'response'::simulation_message_type AND m.type = 'query'::simulation_message_type THEN GREATEST(EXTRACT(epoch FROM m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at)) OVER (PARTITION BY m.chat_id ORDER BY m.created_at), sc_1.created_at))::integer, 0) ELSE NULL::integer END AS delta_seconds, m.created_at FROM simulation_messages m JOIN simulation_chats sc_1 ON sc_1.id = m.chat_id ), message_deltas_agg AS ( SELECT message_deltas.chat_id, array_remove(array_agg(message_deltas.delta_seconds ORDER BY message_deltas.created_at), NULL::integer) AS message_time_taken_seconds FROM message_deltas GROUP BY message_deltas.chat_id ), effective_profile_department AS ( SELECT pd.profile_id, COALESCE(( SELECT pd1.department_id FROM profile_departments pd1 WHERE pd1.profile_id = pd.profile_id AND pd1.is_primary LIMIT 1), ( SELECT pd2.department_id FROM profile_departments pd2 WHERE pd2.profile_id = pd.profile_id ORDER BY pd2.created_at LIMIT 1)) AS department_id FROM ( SELECT DISTINCT ap_1.profile_id FROM simulation_attempts sa_1 JOIN attempt_profiles ap_1 ON ap_1.attempt_id = sa_1.id AND ap_1.active = true) pd ) SELECT sc.id AS chat_id, sc.attempt_id, ap.profile_id, sa.simulation_id, rm.root_scenario_id AS scenario_id, rm.leaf_scenario_id, sp.persona_id, p.color AS persona_color, sim.practice_simulation AS is_practice, sa.archived AS is_archived, NOT sim.practice_simulation AND NOT sa.archived AS is_general, pr.role AS profile_role, cbs.cohort_ids, sc.created_at AS chat_created_at, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.points = 0 THEN NULL::numeric ELSE lg.score / r.points::numeric * 100.0 END AS grade_percent, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.pass_points IS NULL THEN NULL::boolean ELSE lg.score >= r.pass_points::numeric END AS passed, lg.time_taken_seconds, lg.rubric_id, r.points AS rubric_points, r.pass_points AS rubric_pass_points, sc.completed OR lg.simulation_chat_id IS NOT NULL AS completed, COALESCE(mc.num_messages_total, 0) AS num_messages_total, COALESCE(mc.num_query_messages, 0) AS num_query_messages, COALESCE(mc.num_response_messages, 0) AS num_response_messages, COALESCE(mda.message_time_taken_seconds, '{}'::integer[]) AS message_time_taken_seconds, sa.created_at AS attempt_created_at, pcs.profile_cohort_ids, (( SELECT count(*) AS count FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id))::integer AS sim_scenario_count, lg.created_at AS grade_created_at, COALESCE(epd.department_id, sim.department_id, r.department_id, s.department_id, p.department_id) AS department_id FROM simulation_chats sc JOIN simulation_attempts sa ON sa.id = sc.attempt_id LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true JOIN active_sims sim ON sim.id = sa.simulation_id JOIN profiles pr ON pr.id = ap.profile_id JOIN active_scenarios s ON s.id = sc.scenario_id JOIN root_map rm ON rm.leaf_scenario_id = s.id LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true LEFT JOIN personas p ON p.id = sp.persona_id LEFT JOIN latest_grade lg ON lg.simulation_chat_id = sc.id LEFT JOIN rubrics r ON r.id = lg.rubric_id LEFT JOIN cohorts_by_sim cbs ON cbs.simulation_id = sa.simulation_id LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id LEFT JOIN message_counts mc ON mc.chat_id = sc.id LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id LEFT JOIN effective_profile_department epd ON epd.profile_id = ap.profile_id`);

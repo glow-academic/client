@@ -14,7 +14,9 @@ CREATE TABLE agents (
   system_prompt     TEXT        NOT NULL,
   temperature  REAL     NOT NULL, -- 0.0-1.0
   model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
-  reasoning reasoning_effort NOT NULL DEFAULT 'medium'  -- NOT NULL with default 'medium'
+  reasoning reasoning_effort NOT NULL DEFAULT 'medium',  -- NOT NULL with default 'medium'
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  default_agent BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE model_runs (

@@ -23,7 +23,8 @@ CREATE TABLE simulations (
   output_guardrail_active BOOLEAN NOT NULL DEFAULT FALSE,
   input_guardrail_active  BOOLEAN NOT NULL DEFAULT FALSE,
   image_input_active      BOOLEAN NOT NULL DEFAULT FALSE,
-  hints_enabled           BOOLEAN NOT NULL DEFAULT FALSE
+  hints_enabled           BOOLEAN NOT NULL DEFAULT FALSE,
+  objectives_enabled      BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Simulation → Scenarios junction table with ordering
