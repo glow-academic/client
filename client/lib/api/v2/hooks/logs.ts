@@ -7,6 +7,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../fetcher";
 import { logsListKeys } from "../keys";
+import { HealthResponseSchema } from "../schemas/health";
 import {
   BulkDeleteLogsResponseSchema,
   LogsListResponseSchema,
@@ -152,5 +153,25 @@ export function useBulkDeleteLogs() {
 
       return BulkDeleteLogsResponseSchema.parse(res);
     },
+  });
+}
+
+/**
+ * System health check hook
+ * Auto-refreshes every 30 seconds for real-time monitoring
+ */
+export function useSystemHealth(options?: {
+  enabled?: boolean;
+  refetchInterval?: number; // Default 30 seconds
+}) {
+  return useQuery({
+    queryKey: ["health", "system"],
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v2/logs/health");
+      return HealthResponseSchema.parse(res);
+    },
+    enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval ?? 30000,
+    staleTime: 10000,
   });
 }

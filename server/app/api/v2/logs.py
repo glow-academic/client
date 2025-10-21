@@ -6,6 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.db import get_db
+from app.schemas.health import HealthResponse
 from app.schemas.logs import (
     BulkDeleteLogsRequest,
     BulkDeleteLogsResponse,
@@ -14,6 +15,7 @@ from app.schemas.logs import (
     LogsListRequest,
     LogsListResponse,
 )
+from app.services.health_service import HealthService
 from app.services.log_service import get_log_service
 
 router = APIRouter()
@@ -55,3 +57,16 @@ async def bulk_delete_logs(
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete logs: {str(e)}")
+
+
+@router.get("/health", response_model=HealthResponse)
+async def get_system_health(
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> HealthResponse:
+    """
+    Comprehensive system health check endpoint.
+    Tests all 9 system components with real functionality checks.
+    No authentication required (for monitoring tools).
+    """
+    service = HealthService(conn)
+    return await service.get_system_health()

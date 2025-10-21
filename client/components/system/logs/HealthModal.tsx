@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { getApiBase } from "@/lib/api-base";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
+import type { HealthCheckItem } from "@/lib/api/v2/schemas/health";
 import {
   AlertCircle,
   CheckCircle,
@@ -42,7 +44,6 @@ import {
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 interface HealthCheck {
   id: string;
@@ -175,188 +176,74 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
     );
   }, [authStatus]);
 
-  const runHealthCheck = useCallback(
-    async (checkId: string): Promise<HealthCheck> => {
-      const startTime = Date.now();
-
-      // Define check info statically to avoid dependency issues
-      const checkInfo: Record<
-        string,
-        {
-          name: string;
-          description: string;
-          icon: React.ComponentType<{ className?: string }>;
-        }
-      > = {
-        "client-api": {
-          name: "Client API",
-          description: "Next.js API routes health",
-          icon: Server,
-        },
-        "server-api": {
-          name: "Server API",
-          description: "FastAPI backend service",
-          icon: Database,
-        },
-        "simulation-service": {
-          name: "Simulation Service",
-          description: "Simulation agent and chat functionality",
-          icon: TestTube,
-        },
-        "assistant-service": {
-          name: "Assistant Service",
-          description: "Assistant agent and tool functionality",
-          icon: User,
-        },
-        database: {
-          name: "Database Connection",
-          description: "PostgreSQL database connectivity",
-          icon: Database,
-        },
-        "document-upload": {
-          name: "Document Upload Service",
-          description: "File upload and processing functionality",
-          icon: FileText,
-        },
-        "route-scan": {
-          name: "Route Scanner",
-          description: "Application route accessibility check",
-          icon: Map,
-        },
-      };
-
-      const currentCheck = checkInfo[checkId];
-
-      try {
-        switch (checkId) {
-          case "client-api":
-            const clientResponse = await fetch("/api/health");
-            if (!clientResponse.ok)
-              throw new Error(`HTTP ${clientResponse.status}`);
-            break;
-
-          case "server-api":
-            const serverResponse = await fetch(`${getApiBase()}/health`);
-            if (!serverResponse.ok)
-              throw new Error(`HTTP ${serverResponse.status}`);
-            break;
-
-          case "simulation-service":
-            // Test simulation service by checking if the endpoint exists
-            const simResponse = await fetch(`${getApiBase()}/`);
-            if (!simResponse.ok) throw new Error(`HTTP ${simResponse.status}`);
-            break;
-
-          case "assistant-service":
-            // Test assistant service by checking if the endpoint exists
-            const assistantResponse = await fetch(`${getApiBase()}/`);
-            if (!assistantResponse.ok)
-              throw new Error(`HTTP ${assistantResponse.status}`);
-            break;
-
-          case "database":
-            // Test database connectivity through a simple query
-            const dbResponse = await fetch(`${getApiBase()}/`);
-            if (!dbResponse.ok) throw new Error(`HTTP ${dbResponse.status}`);
-            break;
-
-          case "document-upload":
-            // Test document upload service by checking the documents health endpoint
-            const uploadResponse = await fetch(
-              `${getApiBase()}/documents/health`
-            );
-            if (!uploadResponse.ok)
-              throw new Error(`HTTP ${uploadResponse.status}`);
-            break;
-
-          case "route-scan":
-            // Test route scanner by checking main routes
-            const routes = ["/", "/home", "/profile", "/system/health"];
-            const routePromises = routes.map((route) =>
-              fetch(route).then((res) => ({ route, status: res.status }))
-            );
-            const routeResults = await Promise.all(routePromises);
-            const failedRoutes = routeResults.filter((r) => r.status >= 400);
-            if (failedRoutes.length > 0) {
-              throw new Error(
-                `Routes with issues: ${failedRoutes.map((r) => r.route).join(", ")}`
-              );
-            }
-            break;
-
-          default:
-            throw new Error("Unknown health check");
-        }
-
-        const responseTime = Date.now() - startTime;
-        return {
-          id: checkId,
-          name: currentCheck?.name || checkId,
-          description: currentCheck?.description || "",
-          status: "healthy",
-          responseTime,
-          lastChecked: new Date(),
-          icon: currentCheck?.icon || Server,
-        };
-      } catch (error) {
-        const responseTime = Date.now() - startTime;
-        log.error("health.check.failed", {
-          message: `Health check failed for ${checkId}`,
-          error,
-          context: { component: "HealthModal", checkId },
-        });
-        return {
-          id: checkId,
-          name: currentCheck?.name || checkId,
-          description: currentCheck?.description || "",
-          status: "unhealthy",
-          responseTime,
-          error: error instanceof Error ? error.message : "Unknown error",
-          lastChecked: new Date(),
-          icon: currentCheck?.icon || Server,
-        };
-      }
-    },
-    [log]
-  );
-
   const runAllHealthChecks = useCallback(async () => {
     log.info("health.checks.start", {
       message: "Starting comprehensive health checks",
       context: { component: "HealthModal" },
     });
 
-    const checkIds = [
-      "client-api",
-      "server-api",
-      "simulation-service",
-      "assistant-service",
-      "database",
-      "document-upload",
-      "route-scan",
-    ];
-    const results = await Promise.all(checkIds.map((id) => runHealthCheck(id)));
+    try {
+      const response = await fetch("/api/v2/logs/health");
 
-    setHealthChecks((prev) =>
-      prev.map((check) => {
-        const result = results.find((r) => r.id === check.id);
-        return result || check;
-      })
-    );
+      if (!response.ok) {
+        throw new Error(`Health endpoint returned ${response.status}`);
+      }
 
-    const healthyCount = results.filter((r) => r.status === "healthy").length;
-    const totalCount = results.length;
+      const healthData = await response.json();
 
-    if (healthyCount === totalCount) {
-      toast.success(
-        `All health checks passed! (${healthyCount}/${totalCount})`
+      // Map server health checks to UI state
+      setHealthChecks((prev) =>
+        prev.map((check) => {
+          const serverCheck = healthData.checks.find(
+            (c: HealthCheckItem) => c.id === check.id
+          );
+          if (serverCheck) {
+            return {
+              ...check,
+              status: serverCheck.status,
+              responseTime: serverCheck.response_time ?? undefined,
+              lastChecked: new Date(serverCheck.last_checked),
+              error: serverCheck.error ?? undefined,
+            };
+          }
+          return check;
+        })
       );
-    } else {
-      toast.error(
-        `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`
-      );
+
+      // Show toast with results
+      const healthyCount = healthData.checks.filter(
+        (c: HealthCheckItem) => c.status === "healthy"
+      ).length;
+      const totalCount = healthData.checks.length;
+
+      if (healthyCount === totalCount) {
+        toast.success(
+          `All health checks passed! (${healthyCount}/${totalCount})`
+        );
+      } else {
+        toast.error(
+          `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`
+        );
+      }
+
+      log.info("health.checks.complete", {
+        message: "Health checks completed",
+        context: {
+          component: "HealthModal",
+          status: healthData.status,
+          healthyCount,
+          totalCount,
+        },
+      });
+    } catch (error) {
+      log.error("health.checks.failed", {
+        message: "Failed to run health checks",
+        error,
+        context: { component: "HealthModal" },
+      });
+      toast.error("Failed to run health checks");
     }
-  }, [runHealthCheck, log]);
+  }, [log]);
 
   // Run health checks when modal opens
   useEffect(() => {
