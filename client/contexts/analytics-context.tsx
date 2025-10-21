@@ -115,16 +115,24 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     [pathname]
   );
 
-  // Resolve effective roles: force TA-only for TA users
+  // Resolve effective roles: force TA-only for TA users, default to all when empty
   const effectiveRoles = useMemo<ProfileRole[]>(() => {
     if (effectiveProfile?.role === "ta") return ["ta"] as ProfileRole[];
+    // Empty selection means all roles
+    if (selectedRoles.length === 0) {
+      return ["superadmin", "admin", "instructional", "ta", "guest"];
+    }
     return selectedRoles;
   }, [effectiveProfile?.role, selectedRoles]);
 
-  // Resolve effective simulation filters: route-aware overrides
+  // Resolve effective simulation filters: route-aware overrides, default to all when empty
   const effectiveSimulationFilters = useMemo<SimulationFilter[]>(() => {
     if (isPracticePage) return ["practice"];
     if (isHomePage || isTALeaderboardPage) return ["general"];
+    // Empty selection means all simulation types
+    if (simulationFilters.length === 0) {
+      return ["general", "practice", "archived"];
+    }
     return simulationFilters;
   }, [isPracticePage, isHomePage, isTALeaderboardPage, simulationFilters]);
 
