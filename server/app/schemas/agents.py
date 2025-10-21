@@ -71,6 +71,8 @@ class AgentDetailResponse(BaseModel):
     temperature: float
     model_id: str
     reasoning: str | None
+    active: bool
+    default_agent: bool
 
     # Metadata
     valid_model_ids: list[str]
@@ -100,6 +102,8 @@ class CreateAgentRequest(BaseModel):
     temperature: float
     model_id: str
     reasoning: str | None
+    active: bool
+    default_agent: bool
 
 
 class CreateAgentResponse(BaseModel):
@@ -120,6 +124,8 @@ class UpdateAgentRequest(BaseModel):
     temperature: float
     model_id: str
     reasoning: str | None
+    active: bool
+    default_agent: bool
 
 
 class UpdateAgentResponse(BaseModel):

@@ -181,6 +181,8 @@ class AgentService(BaseService):
             temperature=float(result["temperature"]),
             model_id=result["model_id"],
             reasoning=result["reasoning"],
+            active=result["active"],
+            default_agent=result["default_agent"],
             valid_model_ids=valid_model_ids,
             reasoning_options=["none", "minimal", "low", "medium", "high"],
             temperature_lower=0.0,
@@ -207,6 +209,8 @@ class AgentService(BaseService):
             request.temperature,
             request.model_id,
             request.reasoning,
+            request.active,
+            request.default_agent,
         )
         agent_row = await self.conn.fetchrow(query, *params)
 
@@ -240,6 +244,8 @@ class AgentService(BaseService):
             request.temperature,
             request.model_id,
             request.reasoning,
+            request.active,
+            request.default_agent,
         )
         await self.conn.execute(query, *params)
 

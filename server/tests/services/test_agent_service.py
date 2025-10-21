@@ -118,6 +118,8 @@ async def test_get_agent_detail(db: asyncpg.Connection, disable_cache: None) -> 
     assert result.temperature is not None
     assert result.model_id is not None
     assert result.reasoning is not None
+    assert result.active is not None
+    assert result.default_agent is not None
     assert result.valid_model_ids is not None
     assert result.reasoning_options is not None
     assert result.debug_info is not None  # May be empty list
@@ -141,8 +143,8 @@ async def test_get_agent_detail_no_debug_info(
 
     # Create a new agent without any debug info
     agent_id = await db.fetchval(
-        "INSERT INTO agents(name, description, system_prompt, temperature, model_id, reasoning) "
-        "SELECT 'Test Agent', 'Test Description', 'Test Prompt', 0.7, id, 'none' "
+        "INSERT INTO agents(name, description, system_prompt, temperature, model_id, reasoning, active, default_agent) "
+        "SELECT 'Test Agent', 'Test Description', 'Test Prompt', 0.7, id, 'none', true, false "
         "FROM models WHERE active = true LIMIT 1 RETURNING id"
     )
 
@@ -153,6 +155,8 @@ async def test_get_agent_detail_no_debug_info(
 
     assert result is not None
     assert result.name == "Test Agent"
+    assert result.active is True
+    assert result.default_agent is False
     assert result.debug_info == []  # No debug info
 
 

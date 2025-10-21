@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
@@ -42,6 +43,8 @@ interface SystemAgentFormData {
   temperature?: number;
   modelId?: string;
   reasoning?: "none" | "minimal" | "low" | "medium" | "high";
+  active?: boolean;
+  defaultAgent?: boolean;
 }
 
 export interface SystemAgentProps {
@@ -93,6 +96,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       temperature: 0.7,
       modelId: "",
       reasoning: "none",
+      active: true,
+      defaultAgent: false,
     }),
     []
   );
@@ -112,6 +117,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             | "medium"
             | "high"
             | undefined) || "none",
+        active: agentDetail.active ?? true,
+        defaultAgent: agentDetail.default_agent ?? false,
       });
     } else if (!isEditMode && agentDetail) {
       // For create mode, use defaults from API response
@@ -128,7 +135,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,
-    value: string | number | null | undefined
+    value: string | number | boolean | null | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -191,6 +198,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               formData.reasoning && formData.reasoning !== "none"
                 ? formData.reasoning
                 : null,
+            active: formData.active ?? true,
+            default_agent: formData.defaultAgent ?? false,
           },
           {
             onSuccess: () => {
@@ -224,6 +233,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               formData.reasoning && formData.reasoning !== "none"
                 ? formData.reasoning
                 : null,
+            active: formData.active ?? true,
+            default_agent: formData.defaultAgent ?? false,
           },
           {
             onSuccess: (response) => {
@@ -299,10 +310,51 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               ) : (
                 <Skeleton className="h-10 w-full" />
               )}
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description}</p>
+            )}
+          </div>
+
+          {/* Switches - Horizontal Layout */}
+          <div className="flex gap-8">
+            {/* Agent Active Switch */}
+            <div className="flex items-center gap-2">
+              <Label htmlFor="active" className="text-sm">
+                Agent Active
+              </Label>
+              {formData?.active !== undefined && !isLoading ? (
+                <Switch
+                  id="active"
+                  checked={formData.active ?? true}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("active", checked)
+                  }
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
               )}
             </div>
+
+            {/* Default Agent Switch - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="flex items-center gap-2">
+                <Label htmlFor="defaultAgent" className="text-sm">
+                  Default Agent
+                </Label>
+                {formData?.defaultAgent !== undefined && !isLoading ? (
+                  <Switch
+                    id="defaultAgent"
+                    checked={formData.defaultAgent ?? false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("defaultAgent", checked)
+                    }
+                  />
+                ) : (
+                  <Skeleton className="h-6 w-11" />
+                )}
+              </div>
+            )}
+          </div>
 
             {/* Text Model, Reasoning Effort, and Temperature - 3 Column Grid */}
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">

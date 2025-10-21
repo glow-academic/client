@@ -158,7 +158,9 @@ class AgentQueries:
                 system_prompt,
                 temperature,
                 model_id::text,
-                reasoning
+                reasoning,
+                active,
+                default_agent
             FROM agents
             WHERE id = $1
         ),
@@ -193,6 +195,8 @@ class AgentQueries:
             ai.temperature,
             ai.model_id,
             ai.reasoning,
+            ai.active,
+            ai.default_agent,
             COALESCE(
                 (SELECT jsonb_agg(
                     jsonb_build_object(
@@ -233,6 +237,8 @@ class AgentQueries:
         temperature: float,
         model_id: str,
         reasoning: str | None,
+        active: bool,
+        default_agent: bool,
     ) -> tuple[str, list[Any]]:
         """
         Create a new agent.
@@ -241,8 +247,8 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, default_agent, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         RETURNING id::text as agent_id
         """
 
@@ -253,6 +259,8 @@ class AgentQueries:
             temperature,
             model_id,
             reasoning,
+            active,
+            default_agent,
         ]
 
         return query, params
@@ -266,6 +274,8 @@ class AgentQueries:
         temperature: float,
         model_id: str,
         reasoning: str | None,
+        active: bool,
+        default_agent: bool,
     ) -> tuple[str, list[Any]]:
         """
         Update an existing agent.
@@ -282,6 +292,8 @@ class AgentQueries:
             temperature = $5,
             model_id = $6,
             reasoning = $7,
+            active = $8,
+            default_agent = $9,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -294,6 +306,8 @@ class AgentQueries:
             temperature,
             model_id,
             reasoning,
+            active,
+            default_agent,
         ]
 
         return query, params

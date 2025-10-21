@@ -69,6 +69,8 @@ export const AgentDetailResponseSchema = z.object({
   temperature: z.number(),
   model_id: z.string(),
   reasoning: z.string().nullable(),
+  active: z.boolean(),
+  default_agent: z.boolean(),
 
   // Metadata
   valid_model_ids: z.array(z.string()),
@@ -98,6 +100,8 @@ export const CreateAgentRequestSchema = z.object({
   temperature: z.number(),
   model_id: z.string(),
   reasoning: z.string().nullable(),
+  active: z.boolean(),
+  default_agent: z.boolean(),
 });
 
 export type CreateAgentRequest = z.infer<typeof CreateAgentRequestSchema>;
@@ -119,6 +123,8 @@ export const UpdateAgentRequestSchema = z.object({
   temperature: z.number(),
   model_id: z.string(),
   reasoning: z.string().nullable(),
+  active: z.boolean(),
+  default_agent: z.boolean(),
 });
 
 export type UpdateAgentRequest = z.infer<typeof UpdateAgentRequestSchema>;
