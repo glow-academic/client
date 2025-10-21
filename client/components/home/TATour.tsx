@@ -25,7 +25,7 @@ import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component
 function GuideButton() {
-  const { effectiveProfile, activeProfile } = useProfile();
+  const { effectiveProfile, activeProfile, isFullEmulation } = useProfile();
   const { openGuide, getGuideButtonState } = useTour();
 
   const buttonState = getGuideButtonState();
@@ -37,7 +37,12 @@ function GuideButton() {
       effectiveProfile.id !== activeProfile.id
   );
 
-  if (buttonState === "hidden" || !effectiveProfile || isEmulatingAnother) {
+  if (
+    buttonState === "hidden" ||
+    !effectiveProfile ||
+    isEmulatingAnother ||
+    isFullEmulation
+  ) {
     return null;
   }
 
@@ -91,6 +96,7 @@ export default function TATour() {
     activeProfile,
     simulations,
     cohorts: taCohorts,
+    isFullEmulation,
   } = useProfile();
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
@@ -543,6 +549,11 @@ export default function TATour() {
 
   // Initialize tour steps and launch tour
   useEffect(() => {
+    // Skip entirely during full emulation to prevent infinite logging
+    if (isFullEmulation) {
+      return;
+    }
+
     const evt1: {
       message: string;
       context: Record<string, unknown>;
@@ -568,7 +579,7 @@ export default function TATour() {
         effectiveProfile.id !== activeProfile.id
     );
 
-    // If emulating another user, ensure the tour is closed and guide hidden
+    // If emulating another user (half-emulation), ensure the tour is closed and guide hidden
     if (isEmulatingAnother) {
       setShowGuideButton(false);
       closeTour();
@@ -719,6 +730,7 @@ export default function TATour() {
       // Don't close the tour - let it show the completion screen
     }
   }, [
+    isFullEmulation, // Check first to prevent infinite logging
     effectiveProfile,
     activeProfile,
     tourState.steps.length, // Add this to prevent re-initialization
@@ -799,6 +811,8 @@ export default function TATour() {
 
   // Navigate to attempt page when attemptId becomes available
   useEffect(() => {
+    if (isFullEmulation) return; // Skip during full emulation
+
     if (tourState.isOpen && tourState.attemptId && tourState.steps.length > 0) {
       const currentStep = tourState.steps[tourState.currentStep];
       debug("tour.attempt.available", {
@@ -830,6 +844,7 @@ export default function TATour() {
       }
     }
   }, [
+    isFullEmulation,
     tourState.attemptId,
     tourState.isOpen,
     tourState.currentStep,
@@ -841,6 +856,8 @@ export default function TATour() {
 
   // Monitor pathname changes to set navigating to false when we reach expected destination
   useEffect(() => {
+    if (isFullEmulation) return; // Skip during full emulation
+
     debug("tour.path.monitor", {
       message: "Pathname monitoring",
       context: {
@@ -874,6 +891,7 @@ export default function TATour() {
       }
     }
   }, [
+    isFullEmulation,
     pathname,
     setNavigating,
     tourState.isNavigating,
@@ -883,6 +901,8 @@ export default function TATour() {
 
   // Fallback mechanism: set navigating to false after a delay if it's still true
   useEffect(() => {
+    if (isFullEmulation) return; // Skip during full emulation
+
     if (tourState.isNavigating) {
       const fallbackTimeout = setTimeout(() => {
         debug("tour.navigate.timeout", {
@@ -904,10 +924,11 @@ export default function TATour() {
       return () => clearTimeout(fallbackTimeout);
     }
     return undefined;
-  }, [tourState.isNavigating, pathname, setNavigating, debug]);
+  }, [isFullEmulation, tourState.isNavigating, pathname, setNavigating, debug]);
 
   // Handle automatic step completion based on current location
   useEffect(() => {
+    if (isFullEmulation) return; // Skip during full emulation
     if (!tourState.isOpen || !effectiveProfile) return;
 
     const currentStep = tourState.steps[tourState.currentStep];
@@ -964,6 +985,7 @@ export default function TATour() {
 
     // Steps 3-4 are handled by WebSocket events
   }, [
+    isFullEmulation,
     tourState.currentStep,
     tourState.steps,
     pathname,
@@ -977,6 +999,8 @@ export default function TATour() {
 
   // Set up WebSocket event listeners for tour progression
   useEffect(() => {
+    if (isFullEmulation) return; // Skip during full emulation
+
     const handleSimulationStarted = (event: CustomEvent) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -1351,6 +1375,7 @@ export default function TATour() {
       }
     };
   }, [
+    isFullEmulation,
     router,
     handleStepComplete,
     setLoadingSimulation,
@@ -1653,6 +1678,8 @@ export default function TATour() {
 
   // Set up global action handlers for the tour context
   useEffect(() => {
+    if (isFullEmulation) return; // Skip during full emulation
+
     const handleTourAction = (event: CustomEvent) => {
       const { stepIndex } = event.detail;
       debug("tour.action.triggered", {
@@ -1688,6 +1715,7 @@ export default function TATour() {
       );
     };
   }, [
+    isFullEmulation,
     customStepActions,
     tourState.currentStep,
     tourState.isOpen,
@@ -1713,6 +1741,11 @@ export default function TATour() {
       setShowGuideButton(false);
     }
   }, [effectiveProfile, setShowGuideButton, tourState.attemptId]);
+
+  // Don't render anything during full emulation
+  if (isFullEmulation) {
+    return null;
+  }
 
   // Render the guide button
   return (

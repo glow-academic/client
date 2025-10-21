@@ -126,6 +126,7 @@ interface ProfileContextType {
   simulatedProfile: ProfileItem | null;
   effectiveProfile: ProfileItem | null;
   isSimulating: boolean;
+  isFullEmulation: boolean;
   isLoading: boolean;
 
   // Helper functions
@@ -286,6 +287,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       effectiveProfile &&
       effectiveProfile.id !== bootstrapProfile.id
     ),
+    isFullEmulation,
     isLoading: status === "loading" || layoutLoading,
 
     // Helper functions
