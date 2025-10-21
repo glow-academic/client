@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
@@ -45,7 +46,7 @@ export function Simulations() {
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
   const log = useLogger();
   // V2 API hooks - single fetch with all data
-  const { data: simulationsData } = useSimulationsList(
+  const { data: simulationsData, isLoading } = useSimulationsList(
     {
       departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
@@ -291,6 +292,68 @@ export function Simulations() {
       </CardContent>
     </Card>
   );
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {/* Toolbar skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center space-x-2">
+            <Skeleton className="h-8 w-[150px] lg:w-[250px]" />
+            <Skeleton className="h-8 w-[120px]" />
+            <Skeleton className="h-8 w-[120px]" />
+            <Skeleton className="h-8 w-[120px]" />
+          </div>
+        </div>
+
+        {/* Cards grid skeleton */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card
+              key={i}
+              className="relative flex flex-col h-full hover:shadow-md transition-shadow"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <Skeleton className="h-6 w-3/4 mb-3" />
+                    <div className="mt-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-5 w-28" />
+                        <Skeleton className="h-5 w-16" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Skeleton className="h-9 w-9" />
+                    <Skeleton className="h-9 w-9" />
+                    <Skeleton className="h-9 w-9" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 flex-grow flex flex-col justify-end">
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-2/3 mb-3" />
+                <div className="flex items-center gap-2 mt-3">
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Pagination skeleton */}
+        <div className="flex items-center justify-between px-2">
+          <Skeleton className="h-8 w-[100px]" />
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-8 w-[70px]" />
+            <Skeleton className="h-8 w-[70px]" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
