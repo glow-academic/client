@@ -77,14 +77,7 @@ export const providers = pgTable("providers", {
 	name: text().notNull(),
 	description: text().notNull(),
 	apiKey: text("api_key").notNull(),
-	departmentId: uuid("department_id").notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.departmentId],
-			foreignColumns: [departments.id],
-			name: "providers_department_id_fkey"
-		}).onDelete("cascade"),
-]);
+});
 
 export const models = pgTable("models", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -322,6 +315,7 @@ export const parameters = pgTable("parameters", {
 	numerical: boolean().default(false).notNull(),
 	active: boolean().default(false).notNull(),
 	defaultParameter: boolean("default_parameter").default(false).notNull(),
+	practiceParameter: boolean("practice_parameter").default(false).notNull(),
 	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	foreignKey({

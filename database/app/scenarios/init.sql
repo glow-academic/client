@@ -14,6 +14,7 @@ CREATE TABLE parameters (
   numerical BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT FALSE,
   default_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
   department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );
 

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { profiles, profileRequestLimits, providers, providerEndpoints, departments, models, documents, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, personas, agents, modelRuns, parameters, debugInfo, parameterItems, scenarios, simulations, simulationTimeLimits, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, cohorts, scenarioObjectives, simulationHints, modelRunModels, modelRunPersonas, modelRunAgents, modelRunProfiles, scenarioPersonas, scenarioTree, scenarioParameterItems, scenarioDocuments, documentParameterItems, attemptProfiles, cohortProfiles, cohortSimulations, profileDepartments, appFeedback, appFeedbackProfiles, departmentAgents, simulationScenarios } from "./schema";
+import { profiles, profileRequestLimits, providers, providerEndpoints, models, departments, documents, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, personas, agents, modelRuns, parameters, debugInfo, parameterItems, scenarios, simulations, simulationTimeLimits, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, cohorts, scenarioObjectives, simulationHints, modelRunModels, modelRunPersonas, modelRunAgents, modelRunProfiles, scenarioPersonas, scenarioTree, scenarioParameterItems, scenarioDocuments, documentParameterItems, attemptProfiles, cohortProfiles, cohortSimulations, profileDepartments, appFeedback, appFeedbackProfiles, departmentAgents, simulationScenarios } from "./schema";
 
 export const profileRequestLimitsRelations = relations(profileRequestLimits, ({one}) => ({
 	profile: one(profiles, {
@@ -25,27 +25,9 @@ export const providerEndpointsRelations = relations(providerEndpoints, ({one}) =
 	}),
 }));
 
-export const providersRelations = relations(providers, ({one, many}) => ({
+export const providersRelations = relations(providers, ({many}) => ({
 	providerEndpoints: many(providerEndpoints),
-	department: one(departments, {
-		fields: [providers.departmentId],
-		references: [departments.id]
-	}),
 	models: many(models),
-}));
-
-export const departmentsRelations = relations(departments, ({many}) => ({
-	providers: many(providers),
-	documents: many(documents),
-	rubrics: many(rubrics),
-	personas: many(personas),
-	modelRuns: many(modelRuns),
-	parameters: many(parameters),
-	scenarios: many(scenarios),
-	simulations: many(simulations),
-	cohorts: many(cohorts),
-	profileDepartments: many(profileDepartments),
-	departmentAgents: many(departmentAgents),
 }));
 
 export const modelsRelations = relations(models, ({one, many}) => ({
@@ -65,6 +47,19 @@ export const documentsRelations = relations(documents, ({one, many}) => ({
 	}),
 	scenarioDocuments: many(scenarioDocuments),
 	documentParameterItems: many(documentParameterItems),
+}));
+
+export const departmentsRelations = relations(departments, ({many}) => ({
+	documents: many(documents),
+	rubrics: many(rubrics),
+	personas: many(personas),
+	modelRuns: many(modelRuns),
+	parameters: many(parameters),
+	scenarios: many(scenarios),
+	simulations: many(simulations),
+	cohorts: many(cohorts),
+	profileDepartments: many(profileDepartments),
+	departmentAgents: many(departmentAgents),
 }));
 
 export const rubricsRelations = relations(rubrics, ({one, many}) => ({
