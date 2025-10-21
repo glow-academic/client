@@ -519,8 +519,12 @@ class ProfileQueries:
             Tuple of (query string, params list)
         """
         query = """
-        WITH effective_profile_role AS (
-            -- Use effective profile's role for permissions filtering
+        WITH actual_profile_role AS (
+            -- Use actual (logged-in) user's role for emulation permissions
+            SELECT role FROM profiles WHERE id = $1
+        ),
+        effective_profile_role AS (
+            -- Use effective profile's role for UI permissions filtering
             SELECT role FROM profiles WHERE id = $2
         ),
         actual_profile_data AS (
@@ -631,7 +635,7 @@ class ProfileQueries:
                 p.updated_at,
                 pd.department_id as primary_department_id
             FROM profiles p
-            CROSS JOIN effective_profile_role pr
+            CROSS JOIN actual_profile_role pr  -- ✅ Use actual user's role, not effective
             LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
             WHERE p.id != $1  -- Don't include actual user in emulation list

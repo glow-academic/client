@@ -547,8 +547,9 @@ export function UnifiedSidebar({
         });
       } else {
         // 1) server permission check using TanStack Query mutation
+        // Note: BFF route derives requesterProfileId from session for security
         const result = await authorizeMutation.mutateAsync({
-          requesterProfileId: activeProfile!.id,
+          requesterProfileId: activeProfile!.id, // Sent but overridden by server
           targetProfileId: profileId,
         });
 
@@ -1014,8 +1015,9 @@ export function UnifiedSidebar({
               onClick={async () => {
                 try {
                   // Use the same authorization flow as profile switching
+                  // Note: BFF route derives requesterProfileId from session for security
                   const result = await authorizeMutation.mutateAsync({
-                    requesterProfileId: activeProfile!.id,
+                    requesterProfileId: activeProfile!.id, // Sent but overridden by server
                     targetProfileId: effectiveProfile.id,
                   });
 
