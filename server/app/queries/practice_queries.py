@@ -439,7 +439,7 @@ class PracticeQueries:
                 ) as mapping
                 FROM parameters par
                 WHERE par.active = true
-                  AND par.default_parameter = false
+                  AND par.practice_parameter = true
                   AND (cardinality({dept_param_placeholder}) = 0 OR par.department_id = ANY({dept_param_placeholder}))
             ),
             parameter_item_mapping_data AS (
@@ -458,7 +458,7 @@ class PracticeQueries:
                 FROM parameter_items pi
                 JOIN parameters par ON pi.parameter_id = par.id
                 WHERE par.active = true
-                  AND par.default_parameter = false
+                  AND par.practice_parameter = true
                   AND pi.default_item = true
                   AND (cardinality({dept_param_placeholder}) = 0 OR par.department_id = ANY({dept_param_placeholder}))
             )

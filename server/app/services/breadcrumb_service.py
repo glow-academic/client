@@ -1,12 +1,25 @@
 """Breadcrumb generation service."""
 
 import re
+from typing import Any
 
+import asyncpg  # type: ignore
+from app.queries.breadcrumb_queries import BreadcrumbQueries
 from app.schemas.profile import BreadcrumbItem
+from app.services.base_service import BaseService
 
 
-class BreadcrumbService:
+class BreadcrumbService(BaseService):
     """Service for generating breadcrumbs from URL pathnames."""
+
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize service with database connection.
+        
+        Args:
+            conn: asyncpg database connection
+        """
+        super().__init__(conn)
+        self.queries = BreadcrumbQueries()
 
     def _should_drop_segment(self, segment: str) -> bool:
         """Check if a segment should be dropped from breadcrumbs.
@@ -70,7 +83,7 @@ class BreadcrumbService:
         
         elif first == "create":
             if second == "personas":
-                if third == "a" and fourth:
+                if third == "p" and fourth:
                     return f"persona-{fourth}"
                 return "personas"
             if second == "scenarios":
@@ -202,7 +215,7 @@ class BreadcrumbService:
         
         return segment
 
-    def generate_breadcrumbs(self, pathname: str) -> list[BreadcrumbItem]:
+    async def generate_breadcrumbs(self, pathname: str) -> list[BreadcrumbItem]:
         """Generate breadcrumbs from pathname.
         
         Port of client-side generateBreadcrumbs() logic.
@@ -227,5 +240,81 @@ class BreadcrumbService:
 
             breadcrumbs.append(BreadcrumbItem(title=title, section=section))
 
+        # Enrich breadcrumbs with database entity names
+        breadcrumbs = await self._enrich_breadcrumbs(breadcrumbs)
+
         return breadcrumbs
+
+    async def _enrich_breadcrumbs(
+        self, breadcrumbs: list[BreadcrumbItem]
+    ) -> list[BreadcrumbItem]:
+        """Enrich breadcrumbs with database entity names.
+        
+        Replace truncated IDs with actual entity names from database.
+        
+        Args:
+            breadcrumbs: List of breadcrumbs with potentially truncated titles
+            
+        Returns:
+            List of breadcrumbs with enriched titles
+        """
+        # Entity type to query method mapping
+        query_methods = {
+            "cohort": self.queries.get_cohort_title,
+            "persona": self.queries.get_persona_name,
+            "scenario": self.queries.get_scenario_name,
+            "simulation": self.queries.get_simulation_title,
+            "document": self.queries.get_document_name,
+            "profile": self.queries.get_profile_name,
+            "parameter": self.queries.get_parameter_name,
+            "rubric": self.queries.get_rubric_name,
+            "department": self.queries.get_department_title,
+            "agent": self.queries.get_agent_name,
+            "provider": self.queries.get_provider_name,
+            "chat": self.queries.get_chat_title,
+            "attempt": self.queries.get_attempt_simulation_title,
+        }
+
+        enriched: list[BreadcrumbItem] = []
+
+        for crumb in breadcrumbs:
+            # Check if this breadcrumb has a section with entity ID pattern
+            if crumb.section:
+                # Match patterns like "cohort-{id}", "persona-{id}", etc.
+                match = re.match(r"^(cohort|persona|scenario|simulation|document|profile|parameter|rubric|department|agent|provider|chat|attempt)-(.+)$", crumb.section)
+                
+                if match:
+                    entity_type = match.group(1)
+                    entity_id = match.group(2)
+                    
+                    # Get the query method for this entity type
+                    query_method = query_methods.get(entity_type)
+                    
+                    if query_method:
+                        try:
+                            # Execute query to fetch entity name
+                            query, params = query_method(entity_id)
+                            result = await self.conn.fetchrow(query, *params)
+                            
+                            if result:
+                                # Extract the name/title from result (first column)
+                                entity_name = result[0]
+                                
+                                # Special handling for attempts - prepend "Attempt: "
+                                if entity_type == "attempt" and entity_name:
+                                    entity_name = f"Attempt: {entity_name}"
+                                
+                                # Replace the truncated title with actual name
+                                enriched.append(
+                                    BreadcrumbItem(title=entity_name, section=crumb.section)
+                                )
+                                continue
+                        except Exception:
+                            # If query fails, fall back to original title
+                            pass
+            
+            # Keep original breadcrumb if no enrichment needed or failed
+            enriched.append(crumb)
+
+        return enriched
 

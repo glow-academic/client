@@ -299,7 +299,7 @@ export default function Documents() {
       {
         accessorKey: "parameter_item_ids",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Parameters" />
+          <DataTableColumnHeader column={column} title="Parameter Items" />
         ),
         cell: ({ row }) => {
           const itemIds = row.getValue("parameter_item_ids") as string[];
@@ -788,7 +788,7 @@ export default function Documents() {
                   }
                   validIds={documentDetail.valid_parameter_item_ids}
                   parameterId=""
-                  parameterName="Parameters"
+                  parameterName="Parameter Items"
                   allowCreate={false}
                 />
               </div>
@@ -878,7 +878,7 @@ export default function Documents() {
                   validIds={bulkDocumentDetail.valid_parameter_item_ids}
                   onSelect={setBulkParameterItemIds}
                   parameterId=""
-                  parameterName="Parameters"
+                  parameterName="Parameter Items"
                   allowCreate={false}
                 />
               </div>

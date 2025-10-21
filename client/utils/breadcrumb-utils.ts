@@ -58,7 +58,7 @@ const getSectionFromSegments = (segments: string[]): string => {
 
     case "create":
       if (second === "personas") {
-        if (third === "a" && fourth) {
+        if (third === "p" && fourth) {
           return `persona-${fourth}`;
         }
         return "personas";

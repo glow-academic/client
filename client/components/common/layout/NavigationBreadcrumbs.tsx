@@ -28,7 +28,7 @@ export function NavigationBreadcrumbs({
 
   const handleBreadcrumbClick = (crumb: {
     title: string;
-    section?: string;
+    section?: string | null;
   }) => {
     if (crumb.section) {
       if (onSectionChange) {

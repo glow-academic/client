@@ -388,34 +388,6 @@ class AnalyticsQueryBuilder:
         """
         return (query, [department_ids])
 
-    def get_parameters_for_mapping(
-        self, department_ids: list[str] | None
-    ) -> tuple[str, list[Any]]:
-        """Build query to get non-default parameters for mapping."""
-        query = """
-        SELECT DISTINCT p.id, p.name, p.description
-        FROM parameters p
-        WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
-        AND p.active = true
-        AND p.default_parameter = false
-        """
-        return (query, [department_ids])
-
-    def get_parameter_items_for_mapping(
-        self, department_ids: list[str] | None
-    ) -> tuple[str, list[Any]]:
-        """Build query to get default parameter items for non-default parameters."""
-        query = """
-        SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
-        FROM parameter_items pi
-        JOIN parameters p ON pi.parameter_id = p.id
-        WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
-        AND p.active = true
-        AND p.default_parameter = false
-        AND pi.default_item = true
-        """
-        return (query, [department_ids])
-
     def get_personas_for_mapping(
         self, department_ids: list[str] | None
     ) -> tuple[str, list[Any]]:
