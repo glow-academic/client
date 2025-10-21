@@ -13,7 +13,6 @@ import {
 } from "@/lib/api/v2/keys";
 import {
   AuthorizeEmulationRequest,
-  AuthorizeEmulationResponse,
   AuthorizeEmulationResponseSchema,
   BulkCreateProfileRequest,
   BulkCreateProfileResponseSchema,
@@ -319,16 +318,32 @@ export function useUpdateProfileSimple() {
 // ============================================================================
 
 /**
- * Function to check if emulation is authorized (not a hook, used for one-time checks).
+ * Hook to authorize emulation (TanStack Query mutation).
  */
-export async function authorizeEmulation(
-  request: AuthorizeEmulationRequest
-): Promise<AuthorizeEmulationResponse> {
-  const res = await api<unknown>("/api/v2/profile/authorize-emulation", {
-    method: "POST",
-    body: JSON.stringify(request),
+export function useAuthorizeEmulation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: AuthorizeEmulationRequest) => {
+      const res = await api<unknown>("/api/v2/profile/authorize-emulation", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return AuthorizeEmulationResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      // Invalidate profile context queries since emulation affects context
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            (typeof key === "string" && key.startsWith("profile:v2")) ||
+            (typeof key === "string" && key === "v2")
+          );
+        },
+      });
+    },
   });
-  return AuthorizeEmulationResponseSchema.parse(res);
 }
 
 // ============================================================================

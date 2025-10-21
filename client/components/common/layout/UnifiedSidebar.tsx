@@ -44,6 +44,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { useAuthorizeEmulation } from "@/lib/api/v2/hooks/profile";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   Brain,
@@ -209,6 +210,9 @@ export function UnifiedSidebar({
     departmentIds,
   } = useProfile();
   const { update } = useSession();
+
+  // Mutation for emulation authorization
+  const authorizeMutation = useAuthorizeEmulation();
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts || !effectiveProfile) return [];
@@ -543,24 +547,13 @@ export function UnifiedSidebar({
           emulationTTL: null,
         });
       } else {
-        // 1) server permission check using v2 auth endpoint
-        const r = await fetch("/api/v2/auth/authorize-emulation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            requesterProfileId: activeProfile!.id,
-            targetProfileId: profileId,
-            departmentIds: departmentIds,
-          }),
+        // 1) server permission check using TanStack Query mutation
+        const result = await authorizeMutation.mutateAsync({
+          requesterProfileId: activeProfile!.id,
+          targetProfileId: profileId,
+          departmentIds: departmentIds,
         });
 
-        if (!r.ok) {
-          toast.error("Failed to authorize emulation");
-          return;
-        }
-
-        const result = await r.json().catch(() => ({ allowed: false }));
         if (!result.allowed) {
           toast.error(result.reason || "Emulation not allowed");
           return;
