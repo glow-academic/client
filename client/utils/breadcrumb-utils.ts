@@ -19,7 +19,7 @@ const shouldDropSegment = (segment: string): boolean => {
 const getSectionFromSegments = (segments: string[]): string => {
   if (segments.length === 0) return "dashboard";
 
-  const [first, second, third, fourth] = segments;
+  const [first, second, third, fourth, fifth, sixth] = segments;
 
   // Handle main routes
   switch (first) {
@@ -42,8 +42,11 @@ const getSectionFromSegments = (segments: string[]): string => {
       if (second === "pricing") {
         return "pricing";
       }
+      if (second === "reports" && third === "p" && fourth) {
+        return `profile-${fourth}`;
+      }
       if (second) {
-        return second; // dashboard, reports, history
+        return second; // dashboard, reports, history, leaderboard
       }
       return "analytics";
 
@@ -121,6 +124,9 @@ const getSectionFromSegments = (segments: string[]): string => {
         return "agents";
       }
       if (second === "providers") {
+        if (third === "p" && fourth && fifth === "m" && sixth) {
+          return `model-${sixth}`;
+        }
         if (third === "p" && fourth) {
           return `provider-${fourth}`;
         }

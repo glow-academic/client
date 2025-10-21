@@ -109,7 +109,12 @@ export default function Model({ modelId, providerId }: ModelProps) {
         entityType: "model",
       });
     }
-    return () => clearEntityMetadata();
+    // Only clear the model entity, not the provider
+    return () => {
+      if (modelId) {
+        clearEntityMetadata(modelId);
+      }
+    };
   }, [
     modelDetail,
     modelId,

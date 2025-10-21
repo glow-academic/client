@@ -30,7 +30,7 @@ interface EntityMetadata {
  */
 interface BreadcrumbContextType {
   setEntityMetadata: (metadata: EntityMetadata) => void;
-  clearEntityMetadata: () => void;
+  clearEntityMetadata: (entityId?: string) => void;
   getEntityName: (entityId: string) => string | undefined;
 }
 
@@ -56,8 +56,18 @@ export function BreadcrumbProvider({
     });
   }, []);
 
-  const clearEntityMetadata = useCallback(() => {
-    setEntityMap(new Map());
+  const clearEntityMetadata = useCallback((entityId?: string) => {
+    if (entityId) {
+      // Clear specific entity
+      setEntityMap((prev) => {
+        const next = new Map(prev);
+        next.delete(entityId);
+        return next;
+      });
+    } else {
+      // Clear all entities
+      setEntityMap(new Map());
+    }
   }, []);
 
   const getEntityName = useCallback(
