@@ -518,6 +518,7 @@ export default function Practice() {
                       showContinue: item.showContinue,
                       practiceSimulation: item.practiceSimulation,
                       passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
+                      cohortNames: item.cohortNames,
                     }))
                   : []
               }

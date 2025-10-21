@@ -376,7 +376,8 @@ class PracticeQueries:
                             'showContinue', fr.show_continue,
                             'practiceSimulation', COALESCE(fr.practice_simulation, false),
                             'passPct', fr.pass_pct,
-                            'department_id', fr.department_id::text
+                            'department_id', fr.department_id::text,
+                            'cohortNames', ARRAY[]::text[]
                         )
                         ORDER BY fr.attempt_date DESC, fr.attempt_id
                     ),

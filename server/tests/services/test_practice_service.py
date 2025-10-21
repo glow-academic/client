@@ -262,10 +262,15 @@ async def test_practice_overview_history_structure(
         assert hasattr(history_item, "simulationName")
         assert hasattr(history_item, "personaNames")
         assert hasattr(history_item, "personaColors")
+        assert hasattr(history_item, "timeLimit"), "History item must have timeLimit field"
+        assert hasattr(history_item, "cohortNames"), "History item must have cohortNames field"
 
         # Verify personaNames and personaColors are arrays
         assert isinstance(history_item.personaNames, list)
         assert isinstance(history_item.personaColors, list)
+        # Verify timeLimit is nullable int and cohortNames is list
+        assert history_item.timeLimit is None or isinstance(history_item.timeLimit, int)
+        assert isinstance(history_item.cohortNames, list), "cohortNames must be a list"
 
 
 async def test_practice_overview_standard_groups(

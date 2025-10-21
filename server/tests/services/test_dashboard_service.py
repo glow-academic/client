@@ -593,3 +593,42 @@ async def test_header_metrics_with_no_data(
     assert result.header.stagnation_rate is not None
     assert result.header.time_spent is not None
     assert result.header.average_score is not None
+
+
+async def test_dashboard_history_has_required_fields(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that dashboard history items have all required fields including timeLimit and cohortNames."""
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
+
+    filters = AnalyticsFilters(
+        startDate="2020-01-01T00:00:00Z",
+        endDate="2030-12-31T23:59:59Z",
+        departmentIds=[dept_id],
+        profileId=admin_id,
+    )
+
+    svc = DashboardService(db)
+    result = await svc.get_dashboard_bundle(filters)
+
+    # History should be a list
+    assert isinstance(result.history, list)
+
+    # If there are history items, verify they have required fields
+    if len(result.history) > 0:
+        history_item = result.history[0]
+        assert hasattr(history_item, "attemptId"), "History item must have attemptId"
+        assert hasattr(history_item, "date"), "History item must have date"
+        assert hasattr(history_item, "profileId"), "History item must have profileId"
+        assert hasattr(history_item, "simulationName"), "History item must have simulationName"
+        assert hasattr(history_item, "timeLimit"), "History item must have timeLimit field"
+        assert hasattr(history_item, "cohortNames"), "History item must have cohortNames field"
+
+        # Verify types
+        assert history_item.timeLimit is None or isinstance(
+            history_item.timeLimit, int
+        ), "timeLimit must be nullable int"
+        assert isinstance(
+            history_item.cohortNames, list
+        ), "cohortNames must be a list"

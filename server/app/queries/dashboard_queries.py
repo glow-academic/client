@@ -1222,6 +1222,7 @@ class DashboardQueries:
                        fr.num_scenarios,
                        fr.num_scenarios_completed,
                        fr.infinite_mode,
+                       (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = fr.simulation_id AND stl.active = true) AS time_limit,
                        COALESCE(pl.persona_names, ARRAY[]::text[]) AS persona_names,
                        COALESCE(pl.persona_colors, ARRAY[]::text[]) AS persona_colors,
                        fr.score_percent,
@@ -1233,7 +1234,8 @@ class DashboardQueries:
                        fr.show_view,
                        fr.show_continue,
                        fr.practice_simulation,
-                       fr.pass_pct
+                       fr.pass_pct,
+                       ARRAY[]::text[] AS cohort_names
                 FROM history_final_rows fr
                 LEFT JOIN history_persona_labels pl ON pl.attempt_id = fr.attempt_id
                 LEFT JOIN history_scenario_names sn ON sn.attempt_id = fr.attempt_id
@@ -1685,6 +1687,7 @@ class DashboardQueries:
                     'numScenarios', num_scenarios,
                     'numScenariosCompleted', num_scenarios_completed,
                     'infiniteMode', infinite_mode,
+                    'timeLimit', time_limit,
                     'personaNames', persona_names,
                     'personaColors', persona_colors,
                     'score', score_percent,
@@ -1696,7 +1699,8 @@ class DashboardQueries:
                     'showView', show_view,
                     'showContinue', show_continue,
                     'practiceSimulation', practice_simulation,
-                    'passPct', pass_pct
+                    'passPct', pass_pct,
+                    'cohortNames', cohort_names
                 ) ORDER BY date DESC) FROM history_data), '[]'::json),
                 'simulationMapping', COALESCE((SELECT mapping FROM simulation_mapping), '{}'::jsonb),
                 'rubricMapping', COALESCE((SELECT mapping FROM rubric_mapping), '{}'::jsonb),
