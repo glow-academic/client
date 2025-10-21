@@ -303,8 +303,8 @@ export function RunsDataTable({
   return (
     <div className="space-y-3">
       {/* Filters + Search */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-1 items-center space-x-2">
           {/* Search bar */}
           <Input
             placeholder="Search by run ID..."
@@ -455,11 +455,7 @@ export function RunsDataTable({
             </PopoverContent>
           </Popover>
         </div>
-      </div>
-
-      {/* Table toolbar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center space-x-2">
           {(selectedModelIds.length > 0 ||
             selectedAgentIds.length > 0 ||
             selectedPersonaIds.length > 0 ||
@@ -480,9 +476,10 @@ export function RunsDataTable({
               Reset filters
             </Button>
           )}
+          <DataTableViewOptions table={table} />
         </div>
-        <DataTableViewOptions table={table} />
       </div>
+
       <div className="border rounded-lg">
         <table className="w-full">
           <thead className="bg-muted/50">
