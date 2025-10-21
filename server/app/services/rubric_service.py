@@ -78,8 +78,12 @@ class RubricService(BaseService):
         for row in rubrics_result:
             # Parse standard_groups structure for this rubric
             standard_groups_dict = {}
-            if row.get("standard_groups") and isinstance(row["standard_groups"], dict):
-                for group_id, standards_list in row["standard_groups"].items():
+            standard_groups_data = row.get("standard_groups")
+            # Parse JSONB string to dict (asyncpg returns JSONB as string)
+            if isinstance(standard_groups_data, str):
+                standard_groups_data = json.loads(standard_groups_data)
+            if standard_groups_data and isinstance(standard_groups_data, dict):
+                for group_id, standards_list in standard_groups_data.items():
                     if isinstance(standards_list, list):
                         standard_groups_dict[group_id] = standards_list
                     else:
