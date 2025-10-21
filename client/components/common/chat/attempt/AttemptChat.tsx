@@ -46,6 +46,7 @@ import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 import { formatTime } from "@/utils/time";
 
 import { Progress } from "@/components/ui/progress";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
@@ -58,6 +59,7 @@ export default function AttemptChat() {
   const router = useRouter();
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const log = useLogger();
   const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
 
@@ -93,6 +95,24 @@ export default function AttemptChat() {
     effectiveProfile?.id,
     attemptProfileId,
     activeProfile?.role,
+  ]);
+
+  // Set breadcrumb context when attempt data is loaded
+  useEffect(() => {
+    if (simulationContext?.simulation?.title && simulationContext?.attemptId) {
+      const displayName = `Attempt: ${simulationContext.simulation.title}`;
+      setEntityMetadata({
+        entityId: simulationContext.attemptId,
+        entityName: displayName,
+        entityType: "attempt",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    simulationContext?.simulation?.title,
+    simulationContext?.attemptId,
+    setEntityMetadata,
+    clearEntityMetadata,
   ]);
 
   // Get selected chat for rubric display

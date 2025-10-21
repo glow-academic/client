@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useRubricDetail,
@@ -29,6 +30,7 @@ export default function Rubric({ rubricId }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
 
@@ -46,6 +48,24 @@ export default function Rubric({ rubricId }: RubricProps) {
   // Use edit detail when editing, default detail when creating
   const rubricData = isEditMode ? rubricDetail : rubricDetailDefault;
   const isLoading = isEditMode ? isLoadingRubricDetail : isLoadingRubricDefault;
+
+  // Set breadcrumb context when rubric data is loaded
+  useEffect(() => {
+    if (rubricDetail?.name && rubricId && isEditMode) {
+      setEntityMetadata({
+        entityId: rubricId,
+        entityName: rubricDetail.name,
+        entityType: "rubric",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    rubricDetail,
+    rubricId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Create a default rubric for creation mode
   const defaultRubric = useMemo(

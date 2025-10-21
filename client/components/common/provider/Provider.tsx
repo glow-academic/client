@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
@@ -45,6 +46,7 @@ interface FormData {
 export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { error: logError } = useLogger();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
@@ -81,6 +83,24 @@ export default function Provider({ providerId }: ProviderProps) {
   const { mutate: createProvider } = useCreateProvider();
   const { mutate: updateProvider } = useUpdateProvider();
   const { mutateAsync: decryptProviderKey } = useDecryptProviderKey();
+
+  // Set breadcrumb context when provider data is loaded
+  useEffect(() => {
+    if (providerDetail?.name && providerId && isEditMode) {
+      setEntityMetadata({
+        entityId: providerId,
+        entityName: providerDetail.name,
+        entityType: "provider",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    providerDetail,
+    providerId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Initialize form when provider data loads or in create mode
   useEffect(() => {

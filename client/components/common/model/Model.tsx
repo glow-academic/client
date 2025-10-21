@@ -16,10 +16,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateModel,
   useModelDetail,
+  useProviderDetail,
   useUpdateModel,
 } from "@/lib/api/v2/hooks/providers";
 import { useRouter } from "next/navigation";
@@ -47,6 +49,7 @@ export interface ModelProps {
 export default function Model({ modelId, providerId }: ModelProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!modelId;
@@ -67,6 +70,12 @@ export default function Model({ modelId, providerId }: ModelProps) {
   const [errors, setErrors] = useState<FormErrors>({});
 
   // V2 API hooks
+  const { data: providerDetail } = useProviderDetail(
+    providerId,
+    effectiveProfile?.id || "",
+    true
+  );
+
   const { data: modelDetail, isLoading: isLoadingModelDetail } = useModelDetail(
     modelId || "",
     providerId,
@@ -79,6 +88,29 @@ export default function Model({ modelId, providerId }: ModelProps) {
   // Mutation hooks
   const { mutate: createModel } = useCreateModel();
   const { mutate: updateModel } = useUpdateModel();
+
+  // Set breadcrumb context for provider
+  useEffect(() => {
+    if (providerDetail?.name && providerId) {
+      setEntityMetadata({
+        entityId: providerId,
+        entityName: providerDetail.name,
+        entityType: "provider",
+      });
+    }
+  }, [providerDetail, providerId, setEntityMetadata]);
+
+  // Set breadcrumb context for model
+  useEffect(() => {
+    if (modelDetail?.name && modelId && isEditMode) {
+      setEntityMetadata({
+        entityId: modelId,
+        entityName: modelDetail.name,
+        entityType: "model",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [modelDetail, modelId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {

@@ -22,6 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateDepartment,
@@ -113,6 +114,7 @@ const REQUIRED_AGENT_TYPES = [
 export default function Department({ departmentId }: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const log = useLogger();
   const isEditMode = !!departmentId;
@@ -163,6 +165,24 @@ export default function Department({ departmentId }: DepartmentProps) {
   const isLoadingData = isEditMode
     ? isLoadingDepartmentDetail
     : isLoadingDepartmentDefault;
+
+  // Set breadcrumb context when department data is loaded
+  useEffect(() => {
+    if (departmentDetail?.title && departmentId && isEditMode) {
+      setEntityMetadata({
+        entityId: departmentId,
+        entityName: departmentDetail.title,
+        entityType: "department",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    departmentDetail,
+    departmentId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Mutations
   const { mutate: createDepartment } = useCreateDepartment();

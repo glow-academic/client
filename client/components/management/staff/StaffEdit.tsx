@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
 import {
   useDeleteProfile,
@@ -69,6 +70,7 @@ const useStaffEditBusinessLogic = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { effectiveProfile } = useEffectiveProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const log = useLogger();
   // Mutation hooks
   const updateProfileMutation = useUpdateProfileSimple();
@@ -82,6 +84,19 @@ const useStaffEditBusinessLogic = (
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "superadmin";
   const isLoading = isProfileLoading;
+
+  // Set breadcrumb context when profile data is loaded
+  useEffect(() => {
+    if (targetUser?.firstName && targetUser?.lastName && profileId) {
+      const fullName = `${targetUser.firstName} ${targetUser.lastName}`;
+      setEntityMetadata({
+        entityId: profileId,
+        entityName: fullName,
+        entityType: "profile",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [targetUser, profileId, setEntityMetadata, clearEntityMetadata]);
 
   const handleInputChange = useCallback((_field: string, _value: string) => {
     setHasChanges(true);

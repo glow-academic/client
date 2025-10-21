@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateSimulation as useCreateSimulationV2,
@@ -72,6 +73,7 @@ interface FormErrors {
 
 export default function Simulation({ simulationId }: SimulationProps) {
   const { effectiveProfile, departmentIds } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   // Mutation hooks (v2)
   const createSimulationMutation = useCreateSimulationV2();
@@ -106,6 +108,24 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const isLoadingData = isEditMode
     ? isLoadingSimulationDetail
     : isLoadingSimulationDefault;
+
+  // Set breadcrumb context when simulation data is loaded
+  useEffect(() => {
+    if (simulationDetail?.name && simulationId && isEditMode) {
+      setEntityMetadata({
+        entityId: simulationId,
+        entityName: simulationDetail.name,
+        entityType: "simulation",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    simulationDetail,
+    simulationId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   const initialFormData: FormData = useMemo(
     () => ({

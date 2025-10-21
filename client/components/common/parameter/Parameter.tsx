@@ -31,6 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateParameter,
@@ -72,6 +73,7 @@ export default function Parameter({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -107,6 +109,24 @@ export default function Parameter({
   const isLoadingData = isEditMode
     ? isLoadingParameterDetail
     : isLoadingParameterDefault;
+
+  // Set breadcrumb context when parameter data is loaded
+  useEffect(() => {
+    if (parameterDetail?.name && parameterId && isEditMode) {
+      setEntityMetadata({
+        entityId: parameterId,
+        entityName: parameterDetail.name,
+        entityType: "parameter",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    parameterDetail,
+    parameterId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Extract mappings from v2 response
   const departmentMapping = useMemo(
@@ -235,7 +255,9 @@ export default function Parameter({
           active: formData.active || false,
           default_parameter: formData.defaultParameter || false,
           department_id:
-            formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
+            formData.departmentId ||
+            effectiveProfile?.primaryDepartmentId ||
+            "",
           parameter_items,
         });
 
@@ -249,7 +271,9 @@ export default function Parameter({
           active: formData.active || false,
           default_parameter: formData.defaultParameter || false,
           department_id:
-            formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
+            formData.departmentId ||
+            effectiveProfile?.primaryDepartmentId ||
+            "",
           parameter_items,
         });
 

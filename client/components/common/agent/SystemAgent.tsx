@@ -25,6 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useAgentDetail,
@@ -61,6 +62,7 @@ interface FormErrors {
 export default function SystemAgent({ agentId }: SystemAgentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const log = useLogger();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,6 +103,24 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     }),
     []
   );
+
+  // Set breadcrumb context when agent data is loaded
+  useEffect(() => {
+    if (agentDetail?.name && agentId && isEditMode) {
+      setEntityMetadata({
+        entityId: agentId,
+        entityName: agentDetail.name,
+        entityType: "agent",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    agentDetail,
+    agentId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   useEffect(() => {
     if (isEditMode && agentDetail) {
@@ -310,51 +330,51 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               ) : (
                 <Skeleton className="h-10 w-full" />
               )}
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description}</p>
-            )}
-          </div>
-
-          {/* Switches - Horizontal Layout */}
-          <div className="flex gap-8">
-            {/* Agent Active Switch */}
-            <div className="flex items-center gap-2">
-              <Label htmlFor="active" className="text-sm">
-                Agent Active
-              </Label>
-              {formData?.active !== undefined && !isLoading ? (
-                <Switch
-                  id="active"
-                  checked={formData.active ?? true}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("active", checked)
-                  }
-                />
-              ) : (
-                <Skeleton className="h-6 w-11" />
+              {errors.description && (
+                <p className="text-sm text-destructive">{errors.description}</p>
               )}
             </div>
 
-            {/* Default Agent Switch - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
+            {/* Switches - Horizontal Layout */}
+            <div className="flex gap-8">
+              {/* Agent Active Switch */}
               <div className="flex items-center gap-2">
-                <Label htmlFor="defaultAgent" className="text-sm">
-                  Default Agent
+                <Label htmlFor="active" className="text-sm">
+                  Agent Active
                 </Label>
-                {formData?.defaultAgent !== undefined && !isLoading ? (
+                {formData?.active !== undefined && !isLoading ? (
                   <Switch
-                    id="defaultAgent"
-                    checked={formData.defaultAgent ?? false}
+                    id="active"
+                    checked={formData.active ?? true}
                     onCheckedChange={(checked) =>
-                      handleInputChange("defaultAgent", checked)
+                      handleInputChange("active", checked)
                     }
                   />
                 ) : (
                   <Skeleton className="h-6 w-11" />
                 )}
               </div>
-            )}
-          </div>
+
+              {/* Default Agent Switch - Only for superadmin */}
+              {effectiveProfile?.role === "superadmin" && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="defaultAgent" className="text-sm">
+                    Default Agent
+                  </Label>
+                  {formData?.defaultAgent !== undefined && !isLoading ? (
+                    <Switch
+                      id="defaultAgent"
+                      checked={formData.defaultAgent ?? false}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("defaultAgent", checked)
+                      }
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Text Model, Reasoning Effort, and Temperature - 3 Column Grid */}
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">

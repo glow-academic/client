@@ -20,6 +20,7 @@ interface EntityMetadata {
     | "department"
     | "agent"
     | "provider"
+    | "model"
     | "chat"
     | "attempt";
 }

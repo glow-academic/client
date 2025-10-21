@@ -6,8 +6,10 @@
  */
 "use client";
 
+import { useEffect } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfileSimple } from "@/lib/api/v2/hooks/profile";
 import Dashboard from "../Dashboard";
 
@@ -49,10 +51,25 @@ export interface ReportProps {
 }
 
 export default function Report({ profileId }: ReportProps) {
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  
   // Fetch profile data
   const { data: profileData, isLoading: isLoadingProfile } =
     useProfileSimple(profileId);
   const profile = profileData?.profile;
+
+  // Set breadcrumb context when profile data is loaded
+  useEffect(() => {
+    if (profile?.firstName && profile?.lastName && profileId) {
+      const fullName = `${profile.firstName} ${profile.lastName}`;
+      setEntityMetadata({
+        entityId: profileId,
+        entityName: fullName,
+        entityType: "profile",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [profile, profileId, setEntityMetadata, clearEntityMetadata]);
 
   // Loading state
   if (isLoadingProfile || !profile) {

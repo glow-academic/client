@@ -46,6 +46,7 @@ import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
@@ -84,6 +85,7 @@ export default function Scenario({
 }: ScenarioProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isEditMode = mode === "edit" && !!scenarioId;
   const log = useLogger();
   // V2 API hooks - single hook for all data
@@ -102,6 +104,24 @@ export default function Scenario({
   const isLoadingData = isEditMode
     ? isLoadingScenarioDetail
     : isLoadingScenarioDefault;
+
+  // Set breadcrumb context when scenario data is loaded
+  useEffect(() => {
+    if (scenarioDetail?.name && scenarioId && isEditMode) {
+      setEntityMetadata({
+        entityId: scenarioId,
+        entityName: scenarioDetail.name,
+        entityType: "scenario",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    scenarioDetail,
+    scenarioId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // V2 Mutation hooks
   const { mutate: createScenario } = useCreateScenario();
@@ -546,7 +566,8 @@ export default function Scenario({
       const payload = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
-        department_id: formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
+        department_id:
+          formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
         active: true,
         default_scenario: formData.defaultScenario || false,
         persona_id: selectedPersonaId,

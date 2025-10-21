@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCohortDetail,
@@ -72,6 +73,7 @@ interface FormData {
 export default function Cohort({ cohortId }: CohortProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
@@ -127,6 +129,24 @@ export default function Cohort({ cohortId }: CohortProps) {
   const isLoadingData = isEditMode
     ? isLoadingCohortDetail
     : isLoadingCohortDefault;
+
+  // Set breadcrumb context when cohort data is loaded
+  useEffect(() => {
+    if (cohortDetail?.title && cohortId && isEditMode) {
+      setEntityMetadata({
+        entityId: cohortId,
+        entityName: cohortDetail.title,
+        entityType: "cohort",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    cohortDetail,
+    cohortId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Mutation hooks
   const createCohortMutation = useCreateCohort();
@@ -730,17 +750,19 @@ export default function Cohort({ cohortId }: CohortProps) {
         </div>
 
         {/* Staff Management */}
-        {cohortId && <CohortStaff
-          profiles={staffProfiles}
-          setProfiles={memoizedSetStaffProfiles}
-          profilesToDelete={profilesToDelete}
-          setProfilesToDelete={memoizedSetProfilesToDelete}
-          isLoading={isLoading}
-          isSubmitting={isSubmitting}
-          effectiveProfile={effectiveProfile}
-          isReadonly={isReadonly}
-          cohortId={cohortId}
-        />}
+        {cohortId && (
+          <CohortStaff
+            profiles={staffProfiles}
+            setProfiles={memoizedSetStaffProfiles}
+            profilesToDelete={profilesToDelete}
+            setProfilesToDelete={memoizedSetProfilesToDelete}
+            isLoading={isLoading}
+            isSubmitting={isSubmitting}
+            effectiveProfile={effectiveProfile}
+            isReadonly={isReadonly}
+            cohortId={cohortId}
+          />
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
