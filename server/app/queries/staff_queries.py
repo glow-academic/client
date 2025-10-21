@@ -91,16 +91,19 @@ class StaffQueries:
             COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
             COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
             CASE 
-                WHEN COALESCE(pacl.active_cohort_count, 0) > 0 THEN false
                 WHEN up.role = 'superadmin' THEN true
-                WHEN up.role = 'admin' AND p.role NOT IN ('admin', 'superadmin') THEN true
+                WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
+                WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
+                WHEN up.role = 'ta' AND p.role = 'guest' THEN true
                 ELSE false
             END as can_edit,
             CASE 
                 WHEN p.default_profile = true THEN false
                 WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
                 WHEN up.role = 'superadmin' THEN true
-                WHEN up.role = 'admin' AND p.role NOT IN ('admin', 'superadmin') THEN true
+                WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
+                WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
+                WHEN up.role = 'ta' AND p.role = 'guest' THEN true
                 ELSE false
             END as can_delete,
             cmd.cohort_mapping,

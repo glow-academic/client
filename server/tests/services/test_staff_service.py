@@ -2,17 +2,12 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.seed_helpers import (
-    get_cs_dept_id,  # type: ignore
-    get_superadmin_alias,  # type: ignore
-)
-
-from app.schemas.staff import (
-    StaffDetailBulkRequest,  # type: ignore
-    StaffDetailRequest,  # type: ignore
-    StaffFilters,  # type: ignore
-)
+from app.schemas.staff import StaffDetailBulkRequest  # type: ignore
+from app.schemas.staff import StaffDetailRequest  # type: ignore
+from app.schemas.staff import StaffFilters  # type: ignore
 from app.services.staff_service import StaffService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -106,7 +101,7 @@ async def test_get_staff_list_last_active_field(
 async def test_get_staff_list_superadmin_can_edit(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test that superadmin has edit permissions on staff without active cohort links."""
+    """Test that superadmin has edit permissions on all staff regardless of active cohort links."""
     dept_id = await get_cs_dept_id(db)
     admin_id = await get_superadmin_alias(db)
 
@@ -117,25 +112,11 @@ async def test_get_staff_list_superadmin_can_edit(
         )
     )
 
-    # Superadmin should have edit permissions on staff without active cohort links
+    # Superadmin should have edit permissions on all staff (active cohort links don't prevent editing)
     for staff_member in resp.staff:
-        # Get active cohort link counts from database
-        active_cohort_count = await db.fetchval(
-            """
-            SELECT COUNT(*) FROM cohort_profiles 
-            WHERE profile_id = $1 AND active = true
-        """,
-            staff_member.profile_id,
+        assert staff_member.can_edit is True, (
+            f"Superadmin should be able to edit {staff_member.name} (role: {staff_member.role})"
         )
-
-        if active_cohort_count == 0:
-            assert staff_member.can_edit is True, (
-                f"Superadmin should be able to edit {staff_member.name} without active cohort links"
-            )
-        else:
-            assert staff_member.can_edit is False, (
-                f"{staff_member.name} with {active_cohort_count} active cohort links should not be editable"
-            )
 
 
 async def test_get_staff_list_empty_department(
@@ -380,20 +361,10 @@ async def test_staff_can_edit_permissions(
     )
 
     # Test rules:
-    # 1. Profiles with active cohort links: cannot edit
-    # 2. Superadmin: can edit anyone (except those with active cohort links)
-    # 3. Admin: can edit only trainee/instructional roles (except those with active cohort links)
+    # 1. Superadmin: can edit anyone regardless of active cohort links
+    # 2. Admin: can edit only instructional/ta/guest roles regardless of active cohort links
 
     for staff_sa in resp_superadmin.staff:
-        # Get active cohort link counts from database
-        active_cohort_count = await db.fetchval(
-            """
-            SELECT COUNT(*) FROM cohort_profiles 
-            WHERE profile_id = $1 AND active = true
-        """,
-            staff_sa.profile_id,
-        )
-
         staff_admin = next(
             (s for s in resp_admin.staff if s.profile_id == staff_sa.profile_id), None
         )
@@ -401,30 +372,20 @@ async def test_staff_can_edit_permissions(
         if not staff_admin:
             continue
 
-        # Rule 1: Profiles with active cohort links - nobody can edit
-        if active_cohort_count > 0:
-            assert staff_sa.can_edit == False, (
-                f"Staff {staff_sa.name} with {active_cohort_count} active cohort links should not be editable (superadmin)"
+        # Rule 1: Superadmin can edit everyone
+        assert staff_sa.can_edit == True, (
+            f"Superadmin should be able to edit {staff_sa.name} (role: {staff_sa.role})"
+        )
+
+        # Rule 2: Admin can only edit below-admin roles
+        if staff_admin.role in ("instructional", "ta", "guest"):
+            assert staff_admin.can_edit == True, (
+                f"Admin should be able to edit {staff_admin.name} ({staff_admin.role})"
             )
+        elif staff_admin.role in ("admin", "superadmin"):
             assert staff_admin.can_edit == False, (
-                f"Staff {staff_admin.name} with {active_cohort_count} active cohort links should not be editable (admin)"
+                f"Admin should NOT be able to edit {staff_admin.name} ({staff_admin.role})"
             )
-
-        # Rule 2: Superadmin can edit anyone without active cohort links
-        elif active_cohort_count == 0:
-            assert staff_sa.can_edit == True, (
-                f"Superadmin should be able to edit {staff_sa.name} without active cohort links"
-            )
-
-            # Rule 3: Admin can only edit below-admin roles
-            if staff_admin.role in ("trainee", "instructional"):
-                assert staff_admin.can_edit == True, (
-                    f"Admin should be able to edit {staff_admin.name} ({staff_admin.role})"
-                )
-            elif staff_admin.role in ("admin", "superadmin"):
-                assert staff_admin.can_edit == False, (
-                    f"Admin should NOT be able to edit {staff_admin.name} ({staff_admin.role})"
-                )
 
 
 async def test_staff_can_delete_permissions(
@@ -517,7 +478,7 @@ async def test_staff_can_delete_permissions(
             )
 
             # Rule 4: Admin can only delete below-admin roles
-            if staff_admin.role in ("trainee", "instructional"):
+            if staff_admin.role in ("instructional", "ta", "guest"):
                 assert staff_admin.can_delete == True, (
                     f"Admin should be able to delete {staff_admin.name} ({staff_admin.role})"
                 )
