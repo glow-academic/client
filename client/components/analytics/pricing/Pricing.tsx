@@ -421,34 +421,27 @@ export default function Pricing() {
       </Card>
 
       {/* Runs table */}
-      <Card className="w-full">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Model runs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex h-40 items-center justify-center text-muted-foreground">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading runs…
-            </div>
-          ) : (
-            <RunsDataTable
-              rows={runRows}
-              modelMapping={modelMapping}
-              profileMapping={profileMapping}
-              agentMapping={agentMapping}
-              personaMapping={personaMapping}
-              selectedModelIds={selectedModelIds}
-              selectedAgentIds={selectedAgentIds}
-              selectedPersonaIds={selectedPersonaIds}
-              selectedProfileIds={selectedProfileIds}
-              setSelectedModelIds={setSelectedModelIds}
-              setSelectedAgentIds={setSelectedAgentIds}
-              setSelectedPersonaIds={setSelectedPersonaIds}
-              setSelectedProfileIds={setSelectedProfileIds}
-            />
-          )}
-        </CardContent>
-      </Card>
+      {isLoading ? (
+        <div className="flex h-40 items-center justify-center text-muted-foreground">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading runs…
+        </div>
+      ) : (
+        <RunsDataTable
+          rows={runRows}
+          modelMapping={modelMapping}
+          profileMapping={profileMapping}
+          agentMapping={agentMapping}
+          personaMapping={personaMapping}
+          selectedModelIds={selectedModelIds}
+          selectedAgentIds={selectedAgentIds}
+          selectedPersonaIds={selectedPersonaIds}
+          selectedProfileIds={selectedProfileIds}
+          setSelectedModelIds={setSelectedModelIds}
+          setSelectedAgentIds={setSelectedAgentIds}
+          setSelectedPersonaIds={setSelectedPersonaIds}
+          setSelectedProfileIds={setSelectedProfileIds}
+        />
+      )}
     </div>
   );
 }

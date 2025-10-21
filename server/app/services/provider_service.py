@@ -12,6 +12,8 @@ from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    CreateProviderResponse, DeleteModelRequest,
                                    DeleteModelResponse, DeleteProviderRequest,
                                    DeleteProviderResponse,
+                                   DuplicateModelRequest,
+                                   DuplicateModelResponse,
                                    DuplicateProviderRequest,
                                    DuplicateProviderResponse,
                                    ModelDetailRequest, ModelDetailResponse,
@@ -494,6 +496,49 @@ class ProviderService(BaseService):
 
         return DeleteModelResponse(
             success=True, message=f"Model '{model['name']}' deleted successfully"
+        )
+
+    async def duplicate_model(
+        self, request: DuplicateModelRequest
+    ) -> DuplicateModelResponse:
+        """Duplicate a model."""
+
+        # Get original model data
+        query, params = self.queries.get_model_for_duplicate(request.modelId)
+        model = await self.conn.fetchrow(query, *params)
+
+        if not model:
+            raise ValueError(f"Model not found: {request.modelId}")
+
+        # Insert duplicate model (description gets ' Copy' appended)
+        insert_query, _ = self.queries.insert_duplicate_model()
+        new_model = await self.conn.fetchrow(
+            insert_query,
+            model["provider_id"],
+            model["name"],
+            model["description"],
+            model["active"],
+            model["custom_model"],
+            model["input_ppm"],
+            model["output_ppm"],
+        )
+
+        if not new_model:
+            raise ValueError("Failed to create duplicate model")
+
+        new_model_id = str(new_model["id"])
+
+        # Invalidate caches
+        await self._invalidate_cache(
+            [
+                keys.tag_provider_all(),
+            ]
+        )
+
+        return DuplicateModelResponse(
+            success=True,
+            modelId=new_model_id,
+            message=f"Model '{model['name']}' duplicated successfully",
         )
 
 

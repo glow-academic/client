@@ -12,6 +12,8 @@ from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    DeleteModelRequest, DeleteModelResponse,
                                    DeleteProviderRequest,
                                    DeleteProviderResponse,
+                                   DuplicateModelRequest,
+                                   DuplicateModelResponse,
                                    DuplicateProviderRequest,
                                    DuplicateProviderResponse,
                                    ModelDetailRequest, ModelDetailResponse,
@@ -206,5 +208,20 @@ async def delete_model(
         return await service.delete_model(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/models/duplicate", response_model=DuplicateModelResponse)
+async def duplicate_model(
+    request: DuplicateModelRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> DuplicateModelResponse:
+    """Duplicate a model."""
+    try:
+        service = get_provider_service(conn)
+        return await service.duplicate_model(request)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

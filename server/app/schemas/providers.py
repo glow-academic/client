@@ -235,6 +235,20 @@ class DeleteModelResponse(BaseModel):
     message: str
 
 
+class DuplicateModelRequest(BaseModel):
+    """Request to duplicate model."""
+
+    modelId: str
+
+
+class DuplicateModelResponse(BaseModel):
+    """Response from duplicate model."""
+
+    success: bool
+    modelId: str
+    message: str
+
+
 # ============================================================================
 # DECRYPT API KEY SCHEMAS
 # ============================================================================

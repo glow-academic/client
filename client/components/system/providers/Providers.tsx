@@ -51,6 +51,7 @@ import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useDeleteModel,
   useDeleteProvider,
+  useDuplicateModel,
   useDuplicateProvider,
   useProvidersList,
 } from "@/lib/api/v2/hooks/providers";
@@ -81,6 +82,7 @@ export default function Providers() {
   const deleteModelMutation = useDeleteModel();
   const deleteProviderMutation = useDeleteProvider();
   const duplicateProviderMutation = useDuplicateProvider();
+  const duplicateModelMutation = useDuplicateModel();
 
   // V2 API: Single fetch with hierarchical data and permissions
   // Note: Providers are global (not department-specific)
@@ -187,6 +189,27 @@ export default function Providers() {
         },
       });
       toast.error("Failed to duplicate provider");
+    }
+  };
+
+  const handleDuplicateModelClick = async (model: ModelItem) => {
+    try {
+      await duplicateModelMutation.mutateAsync({
+        modelId: model.model_id,
+      });
+
+      toast.success(`Model '${model.name}' duplicated successfully`);
+    } catch (error) {
+      log.error("provider.model.duplicate.failed", {
+        message: "Error duplicating model",
+        error,
+        context: {
+          component: "Providers",
+          function: "handleDuplicateModelClick",
+          modelId: model.model_id,
+        },
+      });
+      toast.error("Failed to duplicate model");
     }
   };
 
@@ -313,6 +336,14 @@ export default function Providers() {
                     <Edit className="h-4 w-4" />
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDuplicateModelClick(model)}
+                  disabled={duplicateModelMutation.isPending}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
                 {model.can_delete && (
                   <Button
                     variant="outline"

@@ -251,6 +251,23 @@ export const DeleteModelResponseSchema = z.object({
 
 export type DeleteModelResponse = z.infer<typeof DeleteModelResponseSchema>;
 
+// Duplicate model
+export const DuplicateModelRequestSchema = z.object({
+  modelId: z.string(),
+});
+
+export type DuplicateModelRequest = z.infer<typeof DuplicateModelRequestSchema>;
+
+export const DuplicateModelResponseSchema = z.object({
+  success: z.boolean(),
+  modelId: z.string(),
+  message: z.string(),
+});
+
+export type DuplicateModelResponse = z.infer<
+  typeof DuplicateModelResponseSchema
+>;
+
 // ============================================================================
 // DECRYPT API KEY SCHEMAS
 // ============================================================================

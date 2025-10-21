@@ -501,3 +501,49 @@ class ProviderQueries:
         RETURNING id
         """
         return (query, [])
+
+    # ===== Model Duplication Queries =====
+
+    def get_model_for_duplicate(self, model_id: str) -> tuple[str, list[Any]]:
+        """Build query to get model data for duplication."""
+        query = """
+        SELECT 
+            name,
+            description,
+            active,
+            custom_model,
+            input_ppm,
+            output_ppm,
+            provider_id
+        FROM models
+        WHERE id = $1
+        """
+        return (query, [model_id])
+
+    def insert_duplicate_model(self) -> tuple[str, list[Any]]:
+        """Build query to insert duplicate model.
+        
+        Note: Description gets ' Copy' appended, name remains unchanged.
+        """
+        query = """
+        INSERT INTO models (
+            provider_id,
+            name,
+            description,
+            active,
+            custom_model,
+            input_ppm,
+            output_ppm
+        )
+        VALUES (
+            $1,
+            $2,
+            $3 || ' Copy',
+            $4,
+            $5,
+            $6,
+            $7
+        )
+        RETURNING id
+        """
+        return (query, [])
