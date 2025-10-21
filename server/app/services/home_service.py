@@ -56,21 +56,12 @@ class HomeService(BaseService):
         - items (simulation list)
         - history (attempt history)
         - mappings (standard_groups, standards, simulations)
+        
+        Mode logic (determined in SQL):
+        - If role is 'ta' → TA mode (personalized view with profileId filter for items + history)
+        - Otherwise → Instructional mode (all cohort data for items, profileId filter for history only)
         """
-        # Determine effective profile ID based on role
-        # Admins, superadmins, and instructional staff see all data (no profile filter)
-        effective_profile_id = None
-        if filters.profileId:
-            # Fetch profile role to determine if we should use profileId
-            query, params = self.query_builder.get_profile_role(filters.profileId)
-            role_row = await self.conn.fetchrow(query, *params)
-            if role_row:
-                role = role_row["role"]
-                # Only use profileId for non-admin roles (ta, guest, etc.)
-                if role not in ("admin", "superadmin", "instructional"):
-                    effective_profile_id = filters.profileId
-
-        # Execute single query to get all data
+        # Execute single query - it looks up the role and determines view mode internally
         query, params = self.queries.home_overview(
             start_date=filters.startDate,
             end_date=filters.endDate,
@@ -79,7 +70,7 @@ class HomeService(BaseService):
             sim_filters=[f.value for f in filters.simulationFilters]
             if filters.simulationFilters
             else None,
-            profile_id=effective_profile_id,
+            profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)

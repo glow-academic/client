@@ -1,5 +1,4 @@
-import { render } from "@/test/custom-render";
-import { screen, waitFor } from "@/test/custom-render";
+import { render, screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -106,6 +105,8 @@ vi.mock("@/contexts/analytics-context", () => ({
     cohorts: [],
     isLoadingCohorts: false,
     effectiveCohortIds: [],
+    effectiveRoles: ["ta"],
+    effectiveSimulationFilters: ["general"],
     clearFilters: vi.fn(),
     hasActiveFilters: false,
   }),
@@ -205,7 +206,7 @@ describe("ChatWidget", () => {
       const maximizeButton = buttons.find(
         (button) =>
           button.querySelector('svg[class*="maximize2"]') ||
-          button.querySelector('svg[class*="maximize-2"]'),
+          button.querySelector('svg[class*="maximize-2"]')
       );
       expect(maximizeButton).toBeInTheDocument();
 
@@ -224,7 +225,7 @@ describe("ChatWidget", () => {
       // Test close button - look for the button with X icon
       const buttons = screen.getAllByRole("button");
       const closeButton = buttons.find((button) =>
-        button.querySelector('svg[class*="x"]'),
+        button.querySelector('svg[class*="x"]')
       );
       expect(closeButton).toBeInTheDocument();
 
@@ -240,7 +241,7 @@ describe("ChatWidget", () => {
         "@/utils/queries/assistant_chats/get-assistant-chats-by-profile"
       );
       vi.mocked(getAssistantChatsByProfile).mockRejectedValue(
-        new Error("API Error"),
+        new Error("API Error")
       );
 
       render(<ChatWidget up={false} />);

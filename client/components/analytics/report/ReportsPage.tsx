@@ -10,17 +10,17 @@
 
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useReports } from "@/lib/api/v2/hooks/reports";
 import { useMemo } from "react";
 import Reports from "./Reports";
-import { useReports } from "@/lib/api/v2/hooks/reports";
 
 export default function ReportsPage() {
   const {
     startDate,
     endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
+    effectiveCohortIds,
+    effectiveRoles,
+    effectiveSimulationFilters,
   } = useAnalytics();
   const { effectiveDepartmentIds } = useProfile();
 
@@ -28,17 +28,17 @@ export default function ReportsPage() {
     () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters,
+      cohortIds: effectiveCohortIds,
+      roles: effectiveRoles,
+      simulationFilters: effectiveSimulationFilters,
       departmentIds: effectiveDepartmentIds,
     }),
     [
       startDate,
       endDate,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
+      effectiveCohortIds,
+      effectiveRoles,
+      effectiveSimulationFilters,
       effectiveDepartmentIds,
     ]
   );
@@ -46,11 +46,7 @@ export default function ReportsPage() {
   const rqOpts = useMemo(() => ({ enabled: true, staleTime: 60_000 }), []);
 
   // Single hook call with all data and entity mappings!
-  const {
-    data: bundle,
-    isLoading,
-    isError,
-  } = useReports(filters, rqOpts);
+  const { data: bundle, isLoading, isError } = useReports(filters, rqOpts);
 
   // Transform bundle data to Reports component format
   const transformedData = useMemo(() => {

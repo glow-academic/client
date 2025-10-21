@@ -46,9 +46,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const {
     startDate,
     endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
+    effectiveCohortIds,
+    effectiveRoles,
+    effectiveSimulationFilters,
   } = useAnalytics();
 
   // Carousel states
@@ -70,18 +70,18 @@ export default function Dashboard({ profileId }: DashboardProps) {
     () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters,
+      cohortIds: effectiveCohortIds,
+      roles: effectiveRoles,
+      simulationFilters: effectiveSimulationFilters,
       profileId,
       departmentIds: effectiveDepartmentIds,
     }),
     [
       startDate,
       endDate,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
+      effectiveCohortIds,
+      effectiveRoles,
+      effectiveSimulationFilters,
       profileId,
       effectiveDepartmentIds,
     ]

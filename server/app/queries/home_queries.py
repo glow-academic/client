@@ -32,23 +32,44 @@ class HomeQueries:
         - standard_groups_mapping: JSONB mapping object
         - standards_mapping: JSONB mapping object
         - simulation_mapping: JSONB mapping object
+        
+        Parameters:
+        - profile_id: User's profile ID
+        - For TA users: profile_id filters both items and history
+        - For non-TA users: profile_id only filters history, items show all cohort data
+        - View mode determined in SQL by looking up profile's role
         """
+        # Build base filter for items (includes role filter)
         where_clause, base_params = self.builder.filters.build_base_filter(
             start_date,
             end_date,
             cohort_ids,
-            roles,
+            roles,  # Role filter applies to items
             sim_filters,
-            profile_id,
+            None,  # Don't filter by profileId in base - handled in SQL
+            department_ids,
+        )
+        
+        # Build separate filter for history (NO role filter, only profileId)
+        history_where_clause, history_params = self.builder.filters.build_base_filter(
+            start_date,
+            end_date,
+            cohort_ids,
+            None,  # No role filter for history
+            sim_filters,
+            profile_id,  # Filter history by profileId
             department_ids,
         )
 
-        # Determine mode based on profile_id
-        view_mode = "ta" if profile_id else "instructional"
-
-        # Build parameter list
+        # Build parameter list - start with base params, then add history params
         params = list(base_params)
         param_idx = len(params) + 1
+        
+        # Add history params after base params
+        history_start_idx = param_idx
+        for param in history_params:
+            params.append(param)
+            param_idx += 1
 
         # Parameters for cohort_sim CTE filtering
         cohort_param_placeholder = f"${param_idx}::uuid[]"
@@ -59,7 +80,7 @@ class HomeQueries:
         params.append(department_ids if department_ids else [])
         param_idx += 1
 
-        # Profile ID for TA view
+        # Profile ID parameter (used for TA filtering)
         profile_param_placeholder = f"${param_idx}::uuid"
         params.append(profile_id if profile_id else None)
         param_idx += 1
@@ -69,9 +90,38 @@ class HomeQueries:
         params.append(roles if roles else [])
         param_idx += 1
 
+        # Build history WHERE clause with adjusted param indices
+        history_where_adjusted = history_where_clause
+        for i, old_idx in enumerate(range(1, len(history_params) + 1)):
+            new_idx = history_start_idx + i
+            history_where_adjusted = history_where_adjusted.replace(f"${old_idx}", f"${new_idx}")
+
         query = f"""
-            WITH filt AS (
-                SELECT * FROM analytics a WHERE {where_clause}
+            WITH 
+            -- Look up profile role if profileId provided
+            profile_role_lookup AS (
+                SELECT 
+                    CASE 
+                        WHEN {profile_param_placeholder} IS NULL THEN 'instructional'
+                        WHEN (SELECT role FROM profiles WHERE id = {profile_param_placeholder}) = 'ta' THEN 'ta'
+                        ELSE 'instructional'
+                    END AS mode,
+                    CASE
+                        WHEN {profile_param_placeholder} IS NULL THEN false
+                        ELSE COALESCE((SELECT role = 'ta' FROM profiles WHERE id = {profile_param_placeholder}), false)
+                    END AS is_ta_mode
+            ),
+            -- Filter analytics for items: for TA mode include profileId filter
+            filt AS (
+                SELECT a.* 
+                FROM analytics a, profile_role_lookup prl
+                WHERE {where_clause}
+                  AND (NOT prl.is_ta_mode OR a.profile_id = {profile_param_placeholder})
+            ),
+            -- For history: use separate filter without role constraint (only profileId)
+            filt_for_history AS (
+                SELECT * FROM analytics a 
+                WHERE {history_where_adjusted}
             ),
             -- Get cohort-simulation pairs (includes empty cohorts)
             cohort_sim AS (
@@ -224,7 +274,7 @@ class HomeQueries:
                         'passRate', CASE WHEN s.rubric_points > 0
                                          THEN ROUND(100.0 * s.rubric_pass_points::numeric / s.rubric_points)::int
                                          ELSE NULL END,
-                        'status', (
+                        'status', COALESCE((
                             SELECT CASE
                                       WHEN COALESCE(uss.passed, false) THEN 'passed'
                                       WHEN COALESCE(uss.chats_completed, 0) > 0 THEN 'in-progress'
@@ -233,13 +283,13 @@ class HomeQueries:
                             FROM user_sim_status uss
                             WHERE uss.profile_id = {profile_param_placeholder}
                               AND uss.simulation_id = s.simulation_id
-                        ),
-                        'completionPct', (
+                        ), 'not-started'),
+                        'completionPct', COALESCE((
                             SELECT ROUND(GREATEST(0, LEAST(100, uss.avg_pct_over_expected)))::int
                             FROM user_sim_status uss
                             WHERE uss.profile_id = {profile_param_placeholder}
                               AND uss.simulation_id = s.simulation_id
-                        ),
+                        ), 0),
                         'passedCount', NULL,
                         'inProgressCount', NULL,
                         'notStartedCount', NULL,
@@ -286,7 +336,7 @@ class HomeQueries:
                     ) AS item
                 FROM sim_meta s
                 LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
-                WHERE {profile_param_placeholder} IS NOT NULL
+                WHERE EXISTS (SELECT 1 FROM profile_role_lookup prl WHERE prl.is_ta_mode)
                   AND EXISTS (SELECT 1 FROM ta_sim_space t WHERE t.simulation_id = s.simulation_id)
             ),
             -- INSTRUCTIONAL VIEW: counts across all cohort members
@@ -377,7 +427,7 @@ class HomeQueries:
                 JOIN inst_counts ic ON ic.simulation_id = s.simulation_id
                 LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
                 LEFT JOIN inst_cohort_names icn ON icn.simulation_id = s.simulation_id
-                WHERE {profile_param_placeholder} IS NULL
+                WHERE NOT EXISTS (SELECT 1 FROM profile_role_lookup prl WHERE prl.is_ta_mode)
             ),
             all_rubric_ids AS (
                 SELECT DISTINCT rubric_id FROM sim_meta
@@ -430,14 +480,14 @@ class HomeQueries:
                     array_agg(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct,
                     array_agg(DISTINCT a.leaf_scenario_id) FILTER (WHERE a.leaf_scenario_id IS NOT NULL) AS leaf_scenarios_seen,
                     MIN(a.department_id::text)::uuid AS department_id
-                FROM filt a
+                FROM filt_for_history a
                 GROUP BY a.attempt_id, a.simulation_id
             ),
             attempt_cohort_ids AS (
                 SELECT DISTINCT ON (attempt_id)
                     attempt_id,
                     profile_cohort_ids
-                FROM filt
+                FROM filt_for_history
             ),
             attempt_joined AS (
                 SELECT
@@ -587,10 +637,10 @@ class HomeQueries:
                   AND sim.department_id IN (SELECT DISTINCT department_id FROM filt)
             )
             SELECT json_build_object(
-                'mode', '{view_mode}',
-                'hasData', CASE WHEN '{view_mode}' = 'ta' THEN EXISTS(SELECT 1 FROM ta_rows) ELSE EXISTS(SELECT 1 FROM inst_rows) END,
+                'mode', (SELECT mode FROM profile_role_lookup),
+                'hasData', CASE WHEN (SELECT is_ta_mode FROM profile_role_lookup) THEN EXISTS(SELECT 1 FROM ta_rows) ELSE EXISTS(SELECT 1 FROM inst_rows) END,
                 'items', CASE
-                    WHEN '{view_mode}' = 'ta' THEN COALESCE((SELECT json_agg(item ORDER BY (item->>'simulationTitle')) FROM ta_rows), '[]'::json)
+                    WHEN (SELECT is_ta_mode FROM profile_role_lookup) THEN COALESCE((SELECT json_agg(item ORDER BY (item->>'simulationTitle')) FROM ta_rows), '[]'::json)
                     ELSE COALESCE((SELECT json_agg(item ORDER BY has_passed_bool ASC, sort_cohort_name NULLS LAST, sort_title) FROM inst_rows), '[]'::json)
                 END,
                 'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping), '{{}}'::jsonb),
@@ -601,3 +651,4 @@ class HomeQueries:
         """
 
         return query, params
+

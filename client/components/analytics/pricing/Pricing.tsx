@@ -54,9 +54,9 @@ export default function Pricing() {
   const {
     startDate,
     endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
+    effectiveCohortIds,
+    effectiveRoles,
+    effectiveSimulationFilters,
   } = useAnalytics();
 
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
@@ -71,18 +71,18 @@ export default function Pricing() {
       profileId: effectiveProfile?.id || "",
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters,
+      cohortIds: effectiveCohortIds,
+      roles: effectiveRoles,
+      simulationFilters: effectiveSimulationFilters,
     }),
     [
       departmentIds,
       effectiveProfile?.id,
       startDate,
       endDate,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
+      effectiveCohortIds,
+      effectiveRoles,
+      effectiveSimulationFilters,
     ]
   );
 

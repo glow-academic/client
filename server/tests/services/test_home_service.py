@@ -44,9 +44,8 @@ async def test_home_overview_returns_complete_bundle(
 async def test_home_overview_instructional_mode(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test admin/instructional view shows all cohort data."""
+    """Test instructional view shows all cohort data (no profileId filter)."""
     dept_id = await get_cs_dept_id(db)
-    admin_id = await get_superadmin_alias(db)
 
     svc = HomeService(db)
     resp = await svc.get_home_overview(
@@ -54,11 +53,11 @@ async def test_home_overview_instructional_mode(
             startDate="2020-01-01",
             endDate="2030-12-31",
             departmentIds=[dept_id],
-            profileId=admin_id,
+            profileId=None,  # No profile filter = instructional mode
         )
     )
 
-    # Admin should see instructional view
+    # Should see instructional view when no profileId provided
     assert resp.mode == "instructional"
 
     # Check items structure
@@ -157,17 +156,16 @@ async def test_home_overview_with_date_filters(
 ) -> None:
     """Test home overview with different date ranges."""
     dept_id = await get_cs_dept_id(db)
-    admin_id = await get_superadmin_alias(db)
 
     svc = HomeService(db)
 
-    # Recent date range (might have no data)
+    # Recent date range (might have no data) - instructional mode without profileId
     resp_recent = await svc.get_home_overview(
         AnalyticsFilters(
             startDate="2025-01-01",
             endDate="2025-12-31",
             departmentIds=[dept_id],
-            profileId=admin_id,
+            profileId=None,
         )
     )
     assert resp_recent.mode == "instructional"
@@ -178,7 +176,7 @@ async def test_home_overview_with_date_filters(
             startDate="2020-01-01",
             endDate="2030-12-31",
             departmentIds=[dept_id],
-            profileId=admin_id,
+            profileId=None,
         )
     )
     assert resp_wide.mode == "instructional"
@@ -188,8 +186,6 @@ async def test_home_overview_empty_mode(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test home overview returns empty mode when no data available."""
-    admin_id = await get_superadmin_alias(db)
-
     # Create a new department with no cohorts/simulations
     new_dept_id = await db.fetchval(
         "INSERT INTO departments(title, description, active) "
@@ -202,7 +198,7 @@ async def test_home_overview_empty_mode(
             startDate="2020-01-01",
             endDate="2030-12-31",
             departmentIds=[str(new_dept_id)],
-            profileId=admin_id,
+            profileId=None,  # No profileId for instructional mode
         )
     )
 
@@ -244,7 +240,6 @@ async def test_home_overview_with_cohort_filters(
 ) -> None:
     """Test home overview with specific cohort filters."""
     dept_id = await get_cs_dept_id(db)
-    admin_id = await get_superadmin_alias(db)
 
     # Get a cohort ID from the CS department
     cohort_id = "c5180001-1111-2222-3333-444444444444"  # New GTAs cohort
@@ -256,24 +251,24 @@ async def test_home_overview_with_cohort_filters(
             endDate="2030-12-31",
             departmentIds=[dept_id],
             cohortIds=[cohort_id],
-            profileId=admin_id,
+            profileId=None,  # No profileId for instructional mode
         )
     )
 
-    # Should filter to specific cohort
+    # Should filter to specific cohort in instructional mode
     assert resp.mode == "instructional"
 
 
 async def test_home_overview_role_based_access(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Verify admin sees all data while TAs see filtered view."""
+    """Verify that TA mode is only triggered for actual TAs."""
     dept_id = await get_cs_dept_id(db)
     admin_id = await get_superadmin_alias(db)
 
     svc = HomeService(db)
 
-    # Admin view
+    # Admin with profileId - shows instructional mode (cohort overview)
     admin_resp = await svc.get_home_overview(
         AnalyticsFilters(
             startDate="2020-01-01",
@@ -283,11 +278,18 @@ async def test_home_overview_role_based_access(
         )
     )
 
-    # Admin should see instructional mode
+    # Should see instructional mode even with profileId (since role is admin, not ta)
     assert admin_resp.mode == "instructional"
 
-    # TA view would require a TA profile ID from seed data
-    # For now, just verify admin mode works
+    # History should still be filtered to only this profile's attempts
+    if len(admin_resp.history) > 0:
+        for attempt in admin_resp.history:
+            assert attempt.profileId == admin_id, (
+                f"History should only show attempts for profileId {admin_id}, "
+                f"but found attempt from {attempt.profileId}"
+            )
+
+    # Verify items are present (should show cohort overview, not personal stats)
     assert isinstance(admin_resp.items, list)
 
 

@@ -39,6 +39,11 @@ export interface AnalyticsContextType {
   simulationFilters: SimulationFilter[];
   setSimulationFilters: (filters: SimulationFilter[]) => void;
 
+  // Effective values (computed from user selections)
+  effectiveCohortIds: string[];
+  effectiveRoles: ProfileRole[];
+  effectiveSimulationFilters: SimulationFilter[];
+
   // Utility functions
   clearFilters: () => void;
   hasActiveFilters: boolean;
@@ -54,7 +59,7 @@ interface AnalyticsProviderProps {
 
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Get profile context to check user role and ID
-  const { effectiveProfile, earliestAttemptDate } = useProfile();
+  const { effectiveProfile, earliestAttemptDate, cohortIds } = useProfile();
   const pathname = usePathname();
 
   // Calculate the earliest date to use as default start date
@@ -92,6 +97,12 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const [simulationFilters, setSimulationFilters] = useState<
     SimulationFilter[]
   >(["general"]);
+
+  // Compute effective cohort IDs (all user cohorts if none selected)
+  const effectiveCohortIds = useMemo(
+    () => (selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds),
+    [selectedCohortIds, cohortIds]
+  );
 
   // Route-aware flags
   const isPracticePage = useMemo(
@@ -141,10 +152,13 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       setDateRange,
       selectedCohortIds,
       setSelectedCohortIds,
-      selectedRoles: effectiveRoles,
+      selectedRoles,
       setSelectedRoles,
-      simulationFilters: effectiveSimulationFilters,
+      simulationFilters,
       setSimulationFilters,
+      effectiveCohortIds,
+      effectiveRoles,
+      effectiveSimulationFilters,
       clearFilters,
       hasActiveFilters,
     }),
@@ -158,8 +172,11 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       setSelectedRoles,
       effectiveSimulationFilters,
       setSimulationFilters,
+      effectiveCohortIds,
       clearFilters,
       hasActiveFilters,
+      selectedRoles,
+      simulationFilters,
     ]
   );
 

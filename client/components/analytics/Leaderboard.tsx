@@ -10,9 +10,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useLeaderboard } from "@/lib/api/v2/hooks/leaderboard";
-import type { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
+import type { AnalyticsFilters, ProfileRole } from "@/lib/api/v2/schemas/base";
 import { type LeaderboardRow } from "@/lib/api/v2/schemas/leaderboard";
-import type { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
@@ -49,9 +48,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const {
     startDate,
     endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
+    effectiveCohortIds,
+    effectiveRoles,
+    effectiveSimulationFilters,
   } = useAnalytics();
   const router = useRouter();
   const pathname = usePathname();
@@ -61,9 +60,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      cohortIds: cohortId ? [cohortId] : selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters,
+      cohortIds: cohortId ? [cohortId] : effectiveCohortIds,
+      roles: effectiveRoles,
+      simulationFilters: effectiveSimulationFilters,
       departmentIds: effectiveDepartmentIds,
       // profileId: undefined  <-- leave undefined for the grid; filter locally per profile
     }),
@@ -71,9 +70,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       startDate,
       endDate,
       cohortId,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
+      effectiveCohortIds,
+      effectiveRoles,
+      effectiveSimulationFilters,
       effectiveDepartmentIds,
     ]
   );

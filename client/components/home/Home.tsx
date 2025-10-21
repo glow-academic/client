@@ -30,20 +30,16 @@ import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
-  const { effectiveProfile, activeProfile, cohortIds, effectiveDepartmentIds } =
+  const { effectiveProfile, activeProfile, effectiveDepartmentIds } =
     useProfile();
   const log = useLogger();
   const {
     startDate,
     endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
+    effectiveCohortIds,
+    effectiveRoles,
+    effectiveSimulationFilters,
   } = useAnalytics();
-
-  // Use all user's cohorts if none specifically selected (same pattern as departments)
-  const effectiveCohortIds =
-    selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds;
 
   // Memoized filters for analytics query
   const filters = useMemo(
@@ -51,12 +47,10 @@ export default function Home() {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       cohortIds: effectiveCohortIds,
-      roles: selectedRoles,
-      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
-        | "general"
-        | "practice"
-        | "archived"
-      )[],
+      roles: effectiveRoles,
+      simulationFilters: effectiveSimulationFilters?.map((f) =>
+        f.toLowerCase()
+      ) as ("general" | "practice" | "archived")[],
       // Always send profileId - server will decide whether to use it based on role
       profileId: effectiveProfile?.id || undefined,
       departmentIds: effectiveDepartmentIds,
@@ -65,8 +59,8 @@ export default function Home() {
       startDate,
       endDate,
       effectiveCohortIds,
-      selectedRoles,
-      simulationFilters,
+      effectiveRoles,
+      effectiveSimulationFilters,
       effectiveProfile?.id,
       effectiveDepartmentIds,
     ]

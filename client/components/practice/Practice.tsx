@@ -60,9 +60,9 @@ export default function Practice() {
   const {
     startDate,
     endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
+    effectiveCohortIds,
+    effectiveRoles,
+    effectiveSimulationFilters,
   } = useAnalytics();
 
   // Memoized filters for practice overview query
@@ -70,13 +70,11 @@ export default function Practice() {
     () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
-        | "general"
-        | "practice"
-        | "archived"
-      )[],
+      cohortIds: effectiveCohortIds,
+      roles: effectiveRoles,
+      simulationFilters: effectiveSimulationFilters?.map((f) =>
+        f.toLowerCase()
+      ) as ("general" | "practice" | "archived")[],
       // Always pass profileId for practice (personal view)
       profileId: effectiveProfile?.id,
       departmentIds: effectiveDepartmentIds,
@@ -84,9 +82,9 @@ export default function Practice() {
     [
       startDate,
       endDate,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
+      effectiveCohortIds,
+      effectiveRoles,
+      effectiveSimulationFilters,
       effectiveProfile?.id,
       effectiveDepartmentIds,
     ]

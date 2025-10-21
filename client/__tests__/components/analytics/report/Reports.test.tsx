@@ -1,5 +1,4 @@
-import { render } from "@/test/custom-render";
-import { screen, waitFor } from "@/test/custom-render";
+import { render, screen, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -17,16 +16,16 @@ vi.mock(
   "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
   () => ({
     getSimulationChatGradesBySimulationChats: vi.fn(() => Promise.resolve([])),
-  }),
+  })
 );
 
 vi.mock(
   "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
   () => ({
     getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(() =>
-      Promise.resolve([]),
+      Promise.resolve([])
     ),
-  }),
+  })
 );
 
 // Mock the analytics context
@@ -35,6 +34,8 @@ vi.mock("@/contexts/analytics-context", () => ({
     startDate: new Date("2024-01-01"),
     endDate: new Date("2024-12-31"),
     effectiveCohortIds: [],
+    effectiveRoles: ["ta"],
+    effectiveSimulationFilters: ["general"],
   })),
   AnalyticsProvider: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -161,7 +162,7 @@ describe("Reports", () => {
       const loadingText = screen.getByText("Loading reports...");
       expect(loadingText).toBeInTheDocument();
       expect(
-        loadingText.closest("div")?.querySelector(".animate-spin"),
+        loadingText.closest("div")?.querySelector(".animate-spin")
       ).toBeInTheDocument();
     });
   });
@@ -233,7 +234,7 @@ describe("Reports", () => {
       vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
       vi.mocked(getSimulationMessagesByChats).mockResolvedValue([]);
       vi.mocked(
-        getSimulationChatFeedbacksBySimulationChatGrades,
+        getSimulationChatFeedbacksBySimulationChatGrades
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
@@ -242,14 +243,14 @@ describe("Reports", () => {
       // Wait for loading to complete
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
       // Should render the data table with processed data
       expect(screen.getByText("No results.")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias..."),
+        screen.getByPlaceholderText("Search TAs by name or alias...")
       ).toBeInTheDocument();
     });
 
@@ -335,7 +336,7 @@ describe("Reports", () => {
       vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
       vi.mocked(getSimulationMessagesByChats).mockResolvedValue([]);
       vi.mocked(
-        getSimulationChatFeedbacksBySimulationChatGrades,
+        getSimulationChatFeedbacksBySimulationChatGrades
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
@@ -343,14 +344,14 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
       // Should only show non-default profiles
       expect(screen.getByText("No results.")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias..."),
+        screen.getByPlaceholderText("Search TAs by name or alias...")
       ).toBeInTheDocument();
     });
   });
@@ -419,7 +420,7 @@ describe("Reports", () => {
       vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
       vi.mocked(getSimulationMessagesByChats).mockResolvedValue([]);
       vi.mocked(
-        getSimulationChatFeedbacksBySimulationChatGrades,
+        getSimulationChatFeedbacksBySimulationChatGrades
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
@@ -427,14 +428,14 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
       // Should render empty data table
       expect(screen.getByText("No results.")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias..."),
+        screen.getByPlaceholderText("Search TAs by name or alias...")
       ).toBeInTheDocument();
     });
   });
@@ -507,7 +508,7 @@ describe("Reports", () => {
       vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
       vi.mocked(getSimulationMessagesByChats).mockResolvedValue([]);
       vi.mocked(
-        getSimulationChatFeedbacksBySimulationChatGrades,
+        getSimulationChatFeedbacksBySimulationChatGrades
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
@@ -515,13 +516,13 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
       // Check that the table is rendered with search functionality
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias..."),
+        screen.getByPlaceholderText("Search TAs by name or alias...")
       ).toBeInTheDocument();
       expect(screen.getByText("No results.")).toBeInTheDocument();
     });
@@ -575,7 +576,7 @@ describe("Reports", () => {
       vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
       vi.mocked(getSimulationMessagesByChats).mockResolvedValue([]);
       vi.mocked(
-        getSimulationChatFeedbacksBySimulationChatGrades,
+        getSimulationChatFeedbacksBySimulationChatGrades
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
@@ -583,13 +584,13 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
       expect(screen.getByText("No results.")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias..."),
+        screen.getByPlaceholderText("Search TAs by name or alias...")
       ).toBeInTheDocument();
     });
 
@@ -659,7 +660,7 @@ describe("Reports", () => {
       vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
       vi.mocked(getSimulationMessagesByChats).mockResolvedValue([]);
       vi.mocked(
-        getSimulationChatFeedbacksBySimulationChatGrades,
+        getSimulationChatFeedbacksBySimulationChatGrades
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
@@ -667,14 +668,14 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
       // Should still render the profile with zero metrics
       expect(screen.getByText("No results.")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias..."),
+        screen.getByPlaceholderText("Search TAs by name or alias...")
       ).toBeInTheDocument();
     });
   });
@@ -686,7 +687,7 @@ describe("Reports", () => {
       const loadingText = screen.getByText("Loading reports...");
       expect(loadingText).toBeInTheDocument();
       expect(
-        loadingText.closest("div")?.querySelector(".animate-spin"),
+        loadingText.closest("div")?.querySelector(".animate-spin")
       ).toBeInTheDocument();
     });
 
@@ -764,7 +765,7 @@ describe("Reports", () => {
       vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
       vi.mocked(getSimulationMessagesByChats).mockResolvedValue([]);
       vi.mocked(
-        getSimulationChatFeedbacksBySimulationChatGrades,
+        getSimulationChatFeedbacksBySimulationChatGrades
       ).mockResolvedValue([]);
       vi.mocked(getAllScenarios).mockResolvedValue([]);
 
@@ -772,14 +773,14 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Loading reports..."),
+          screen.queryByText("Loading reports...")
         ).not.toBeInTheDocument();
       });
 
       // Should render the data table component
       expect(screen.getByText("No results.")).toBeInTheDocument();
       expect(
-        screen.getByPlaceholderText("Search TAs by name or alias..."),
+        screen.getByPlaceholderText("Search TAs by name or alias...")
       ).toBeInTheDocument();
     });
   });
