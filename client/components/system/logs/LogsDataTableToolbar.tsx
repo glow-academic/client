@@ -137,6 +137,24 @@ export function LogsDataTableToolbar({
             />
           )}
 
+          {/* Date Filter */}
+          {createdAtColumn && dateOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={createdAtColumn}
+              title="Date"
+              options={dateOptions}
+            />
+          )}
+
+          {/* Time Filter */}
+          {createdTimeColumn && timeOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={createdTimeColumn}
+              title="Hour"
+              options={timeOptions}
+            />
+          )}
+
           {/* hasError filter removed */}
 
           {isFiltered && (
@@ -152,24 +170,6 @@ export function LogsDataTableToolbar({
       </div>
 
       <div className="flex items-center space-x-2">
-        {/* Date Filter */}
-        {createdAtColumn && dateOptions.length > 0 && (
-          <DataTableFacetedFilter
-            column={createdAtColumn}
-            title="Date"
-            options={dateOptions}
-          />
-        )}
-
-        {/* Time Filter */}
-        {createdTimeColumn && timeOptions.length > 0 && (
-          <DataTableFacetedFilter
-            column={createdTimeColumn}
-            title="Hour"
-            options={timeOptions}
-          />
-        )}
-
         {/* Bulk Delete Button */}
         <Button
           variant="outline"
