@@ -70,13 +70,14 @@ class DocumentService(BaseService):
         if result:
             first_row = result[0]
 
-            # Parse scenario mapping from JSONB with type safety
-            if first_row.get("scenario_mapping") and isinstance(
-                first_row["scenario_mapping"], dict
-            ):
+            # Parse scenario mapping from JSONB with type safety (may be string or dict)
+            scenario_mapping_data = first_row.get("scenario_mapping")
+            if isinstance(scenario_mapping_data, str):
+                scenario_mapping_data = json.loads(scenario_mapping_data)
+            if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
                 from app.schemas.base import ScenarioMappingItem
 
-                for sid, sdata in first_row["scenario_mapping"].items():
+                for sid, sdata in scenario_mapping_data.items():
                     if isinstance(sdata, dict):
                         scenario_mapping[sid] = ScenarioMappingItem(
                             name=sdata.get("name", ""),

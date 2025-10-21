@@ -78,7 +78,7 @@ class DocumentQueries:
                         'parameter_item_ids', ARRAY[]::text[],
                         'document_ids', ARRAY[]::text[]
                     )
-                ) FILTER (WHERE s.id IS NOT NULL AND st.parent_id IS NOT NULL),
+                ) FILTER (WHERE s.id IS NOT NULL),
                 '{}'::jsonb
             ) as mapping
             FROM all_scenario_ids asi
@@ -119,7 +119,7 @@ class DocumentQueries:
         )
         SELECT 
             dd.*,
-            SUBSTRING(dd.mime_type FROM '\\.([^\\.]+)$') as extension,
+            SUBSTRING(dd.file_path FROM '\\.([^\\.]+)$') as extension,
             CASE 
                 WHEN dd.active_scenario_count > 0 THEN false
                 WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
