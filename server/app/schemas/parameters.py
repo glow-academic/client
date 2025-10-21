@@ -21,6 +21,15 @@ class ParametersFilters(BaseModel):
 # ============================================================================
 
 
+class ParameterSampleItem(BaseModel):
+    """Sample parameter item for list preview."""
+
+    parameter_item_id: str
+    name: str
+    description: str
+    value: str
+
+
 class ParameterItem(BaseModel):
     """Parameter item in list response."""
 
@@ -31,6 +40,7 @@ class ParameterItem(BaseModel):
     active: bool
     default_parameter: bool
     num_items: int
+    sample_items: list[ParameterSampleItem] = []
     can_edit: bool
     can_delete: bool
     can_duplicate: bool

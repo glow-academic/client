@@ -26,7 +26,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useProfile } from "@/contexts/profile-context";
 import { useParametersList } from "@/lib/api/v2/hooks/parameters";
-import type { ParameterItem } from "@/lib/api/v2/schemas/parameters";
+import type {
+  ParameterItem,
+  ParameterSampleItem,
+} from "@/lib/api/v2/schemas/parameters";
 import { ParametersDataTable } from "./ParametersDataTable";
 
 export default function Parameters() {
@@ -61,6 +64,68 @@ export default function Parameters() {
       return <Clock className="h-5 w-5" />;
     if (parameter.numerical) return <Hash className="h-5 w-5" />;
     return <List className="h-5 w-5" />;
+  };
+
+  const renderPreview = (
+    items: ParameterSampleItem[],
+    numerical: boolean,
+    totalCount: number
+  ) => {
+    if (numerical) {
+      // Sort by numeric value
+      const sortedItems = [...items].sort((a, b) => {
+        const aVal = parseFloat(a.value) || 0;
+        const bVal = parseFloat(b.value) || 0;
+        return aVal - bVal;
+      });
+
+      return (
+        <div className="space-y-2">
+          {sortedItems.map((item) => (
+            <div
+              key={item.parameter_item_id}
+              className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
+            >
+              <div>
+                <p className="text-sm font-medium">{item.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Value: {item.value}
+                </p>
+              </div>
+            </div>
+          ))}
+          {totalCount > 3 && (
+            <p className="text-xs text-muted-foreground">
+              +{totalCount - 3} more
+            </p>
+          )}
+        </div>
+      );
+    } else {
+      // Non-numerical: show name + description
+      return (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div
+              key={item.parameter_item_id}
+              className="flex items-center justify-between p-2 bg-muted/50 rounded-md"
+            >
+              <div>
+                <p className="text-sm font-medium">{item.name}</p>
+                <p className="text-xs text-muted-foreground line-clamp-1">
+                  {item.description}
+                </p>
+              </div>
+            </div>
+          ))}
+          {totalCount > 3 && (
+            <p className="text-xs text-muted-foreground">
+              +{totalCount - 3} more
+            </p>
+          )}
+        </div>
+      );
+    }
   };
 
   const renderParameterCard = (parameter: ParameterItem) => {
@@ -116,10 +181,15 @@ export default function Parameters() {
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-grow flex flex-col">
-          {/* Simplified - no item preview since items not in list response */}
-          <p className="text-sm text-muted-foreground">
-            {parameter.description}
-          </p>
+          {parameter.sample_items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No items yet</p>
+          ) : (
+            renderPreview(
+              parameter.sample_items,
+              parameter.numerical,
+              parameter.num_items
+            )
+          )}
         </CardContent>
       </Card>
     );

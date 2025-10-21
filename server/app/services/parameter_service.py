@@ -18,7 +18,8 @@ from app.schemas.parameters import (CreateParameterItemRequest,
                                     ParameterDetailDefaultRequest,
                                     ParameterDetailRequest,
                                     ParameterDetailResponse, ParameterItem,
-                                    ParameterItemDetail, ParametersFilters,
+                                    ParameterItemDetail, ParameterSampleItem,
+                                    ParametersFilters,
                                     ParametersListResponse,
                                     UpdateParameterRequest,
                                     UpdateParameterResponse)
@@ -49,6 +50,24 @@ class ParameterService(BaseService):
         parameters = []
 
         for row in result:
+            # Parse sample items from JSONB
+            sample_items = []
+            if row.get("sample_items_json"):
+                items_data = row["sample_items_json"]
+                if isinstance(items_data, str):
+                    items_data = json.loads(items_data)
+                if isinstance(items_data, list):
+                    for item_data in items_data:
+                        if isinstance(item_data, dict):
+                            sample_items.append(
+                                ParameterSampleItem(
+                                    parameter_item_id=item_data.get("parameter_item_id", ""),
+                                    name=item_data.get("name", ""),
+                                    description=item_data.get("description", ""),
+                                    value=item_data.get("value", ""),
+                                )
+                            )
+
             parameters.append(
                 ParameterItem(
                     parameter_id=str(row["parameter_id"]),
@@ -58,6 +77,7 @@ class ParameterService(BaseService):
                     active=row["active"],
                     default_parameter=row["default_parameter"],
                     num_items=row["num_items"],
+                    sample_items=sample_items,
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],

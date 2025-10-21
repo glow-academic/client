@@ -35,6 +35,25 @@ class ParameterQueries:
             FROM parameter_items
             GROUP BY parameter_id
         ),
+        parameter_sample_items AS (
+            SELECT 
+                pi.parameter_id,
+                jsonb_agg(
+                    jsonb_build_object(
+                        'parameter_item_id', pi.id::text,
+                        'name', pi.name,
+                        'description', pi.description,
+                        'value', pi.value
+                    ) ORDER BY pi.name
+                ) as sample_items
+            FROM (
+                SELECT id, parameter_id, name, description, value,
+                       ROW_NUMBER() OVER (PARTITION BY parameter_id ORDER BY name) as rn
+                FROM parameter_items
+            ) pi
+            WHERE pi.rn <= 3
+            GROUP BY pi.parameter_id
+        ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
         )
@@ -48,6 +67,7 @@ class ParameterQueries:
             COALESCE(pic.num_items, 0) as num_items,
             COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
             COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
+            COALESCE(psi.sample_items, '[]'::jsonb) as sample_items_json,
             CASE 
                 WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
                 WHEN p.default_parameter = true AND up.role != 'superadmin' THEN false
@@ -68,6 +88,7 @@ class ParameterQueries:
         LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
         LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
         LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id
+        LEFT JOIN parameter_sample_items psi ON psi.parameter_id = p.id
         CROSS JOIN user_profile up
         WHERE p.department_id = ANY($1)
         ORDER BY p.name

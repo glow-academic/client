@@ -21,6 +21,16 @@ export type ParametersFilters = z.infer<typeof ParametersFiltersSchema>;
 // RESPONSE SCHEMAS
 // ============================================================================
 
+// Sample parameter item for list preview
+export const ParameterSampleItemSchema = z.object({
+  parameter_item_id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  value: z.string(),
+});
+
+export type ParameterSampleItem = z.infer<typeof ParameterSampleItemSchema>;
+
 // Parameter item (normalized)
 export const ParameterItemSchema = z.object({
   parameter_id: z.string(),
@@ -30,6 +40,7 @@ export const ParameterItemSchema = z.object({
   active: z.boolean(),
   default_parameter: z.boolean(),
   num_items: z.number(),
+  sample_items: z.array(ParameterSampleItemSchema).default([]),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   can_duplicate: z.boolean(),
