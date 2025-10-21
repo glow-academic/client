@@ -498,6 +498,6 @@ export const profileSimpleKeys = {
 // Layout Context Keys (profile + departments + simulations + cohorts)
 export const layoutContextKeys = {
   all: ["v2", "layout", "context"] as const,
-  detail: (effectiveProfileId: string, pathname: string) =>
-    [...layoutContextKeys.all, effectiveProfileId, pathname] as const,
+  detail: (effectiveProfileId: string) =>
+    [...layoutContextKeys.all, effectiveProfileId] as const,
 };

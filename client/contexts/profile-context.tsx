@@ -182,7 +182,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const effectiveProfileId = session?.effectiveProfileId ?? "";
 
   const { data: layoutData, isLoading: layoutLoading } = useQuery({
-    queryKey: layoutContextKeys.detail(effectiveProfileId, pathname ?? "/"),
+    queryKey: layoutContextKeys.detail(effectiveProfileId),
     queryFn: async () => {
       const res = await api<unknown>("/api/v2/profile/context", {
         method: "POST",
@@ -194,9 +194,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       return LayoutContextResponseSchema.parse(res);
     },
     enabled: !!effectiveProfileId,
-    staleTime: 10 * 60 * 1000, // 10 minutes (up from 5)
+    staleTime: 15 * 60 * 1000, // 15 minutes - stable data persists across page navigation
     structuralSharing: true, // Enable deep equality check
-    gcTime: 15 * 60 * 1000, // Cache for 15 minutes
+    gcTime: 20 * 60 * 1000, // Cache for 20 minutes
   });
 
   const bootstrapProfile = layoutData?.actualProfile ?? null;
