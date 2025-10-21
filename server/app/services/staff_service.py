@@ -63,7 +63,7 @@ class StaffService(BaseService):
                     email=row["email"],
                     initials=row["initials"],
                     active=row["active"],
-                    lastActive=row["lastactive"].isoformat()
+                    last_active=row["lastactive"].isoformat()
                     if row["lastactive"]
                     else None,
                     cohort_ids=cohort_ids,

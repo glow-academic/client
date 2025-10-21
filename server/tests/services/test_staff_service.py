@@ -68,6 +68,41 @@ async def test_get_staff_list_returns_data(
     )
 
 
+async def test_get_staff_list_last_active_field(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that staff list returns last_active field in correct format."""
+    from datetime import datetime
+    
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
+
+    svc = StaffService(db)
+    resp = await svc.get_staff_list(
+        StaffFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+
+    assert len(resp.staff) > 0, "Should have staff members to test"
+    
+    for staff_member in resp.staff:
+        # Verify field exists and is named last_active (snake_case, not lastActive)
+        assert hasattr(staff_member, "last_active"), (
+            "StaffItem should have last_active field (snake_case)"
+        )
+        
+        # If last_active has a value, verify it's a valid ISO 8601 timestamp string
+        if staff_member.last_active is not None:
+            assert isinstance(staff_member.last_active, str), (
+                "last_active should be a string (ISO 8601 format)"
+            )
+            # Verify it can be parsed as ISO 8601
+            try:
+                parsed = datetime.fromisoformat(staff_member.last_active.replace('Z', '+00:00'))
+                assert parsed is not None, "Should parse as valid ISO 8601 datetime"
+            except ValueError as e:
+                pytest.fail(f"last_active '{staff_member.last_active}' is not valid ISO 8601: {e}")
+
+
 async def test_get_staff_list_superadmin_can_edit(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:

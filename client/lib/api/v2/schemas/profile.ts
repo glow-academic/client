@@ -51,7 +51,7 @@ export const ProfileListItemSchema = z.object({
   email: z.string(), // alias + NEXT_PUBLIC_CAMPUS_EMAIL
   initials: z.string(), // Derived from first_name + last_name
   active: z.boolean(),
-  lastActive: z.string().nullable(),
+  last_active: z.string().nullable(),
   cohort_ids: z.array(z.string()),
   requests_per_day: z.number().nullable(),
   default_profile: z.boolean(),

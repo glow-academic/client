@@ -33,7 +33,7 @@ class StaffItem(BaseModel):
     email: str  # alias + campus email domain
     initials: str  # Derived from first_name + last_name
     active: bool
-    lastActive: str | None
+    last_active: str | None
     cohort_ids: list[str]
     requests_per_day: int | None
     default_profile: bool
