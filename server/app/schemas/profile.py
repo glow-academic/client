@@ -120,25 +120,6 @@ class ProfileContextRequest(BaseModel):
     pathname: str  # Current path for breadcrumb generation
 
 
-class BreadcrumbItem(BaseModel):
-    """Breadcrumb item with resolved title."""
-
-    title: str
-    section: str | None = None
-
-
-class BreadcrumbsRequest(BaseModel):
-    """Request to get breadcrumbs for a pathname."""
-
-    pathname: str  # Current path for breadcrumb generation
-
-
-class BreadcrumbsResponse(BaseModel):
-    """Response with breadcrumbs for a pathname."""
-
-    breadcrumbs: list[BreadcrumbItem]
-
-
 class CohortItem(BaseModel):
     """Cohort item."""
 

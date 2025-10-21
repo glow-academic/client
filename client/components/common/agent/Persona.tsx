@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
@@ -83,6 +84,7 @@ export default function Persona({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
   const { effectiveProfile } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -172,6 +174,24 @@ export default function Persona({
       });
     }
   }, [personaData, isEditMode, initialFormData]);
+
+  // Set breadcrumb context when persona data is loaded
+  useEffect(() => {
+    if (personaDetail?.name && personaId && isEditMode) {
+      setEntityMetadata({
+        entityId: personaId,
+        entityName: personaDetail.name,
+        entityType: "persona",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    personaDetail,
+    personaId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

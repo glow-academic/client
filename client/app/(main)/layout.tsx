@@ -30,11 +30,17 @@ import TATour from "@/components/home/TATour";
 import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
+import {
+  BreadcrumbProvider,
+  useBreadcrumbContext,
+} from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { SimulationProvider } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
-import { useBreadcrumbs } from "@/lib/api/v2/hooks/breadcrumbs";
-import { getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
+import {
+  generateBreadcrumbs,
+  getActiveSectionFromPath,
+} from "@/utils/breadcrumb-utils";
 import {
   createSectionChangeHandler,
   isMainScreen,
@@ -45,10 +51,28 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
   const { effectiveProfile, isLoading, activeProfile } = useProfile();
-  
-  // Fetch breadcrumbs separately (updates on every route change)
-  const { data: breadcrumbsData } = useBreadcrumbs(pathname);
-  const breadcrumbs = breadcrumbsData?.breadcrumbs ?? [];
+  const { getEntityName } = useBreadcrumbContext();
+
+  // Generate breadcrumbs client-side and enrich with entity names from context
+  const breadcrumbs = useMemo(() => {
+    const baseBreadcrumbs = generateBreadcrumbs(pathname);
+
+    // Enrich breadcrumbs with entity names from context
+    return baseBreadcrumbs.map((crumb) => {
+      // If title is truncated (e.g., "53385232..."), check context for entity name
+      if (crumb.title.includes("...") && crumb.section) {
+        const match = crumb.section.match(/-([\w-]+)$/);
+        if (match && match[1]) {
+          const entityId = match[1];
+          const entityName = getEntityName(entityId);
+          if (entityName) {
+            return { ...crumb, title: entityName };
+          }
+        }
+      }
+      return crumb;
+    });
+  }, [pathname, getEntityName]);
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -106,9 +130,17 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   const canShowDepartmentsFilters = useMemo(() => {
     return (
-      effectiveProfile?.role === "superadmin" && !isSystemPage && !isChatPage && shouldShowChatComponents
+      effectiveProfile?.role === "superadmin" &&
+      !isSystemPage &&
+      !isChatPage &&
+      shouldShowChatComponents
     );
-  }, [effectiveProfile?.role, isSystemPage, isChatPage, shouldShowChatComponents]);
+  }, [
+    effectiveProfile?.role,
+    isSystemPage,
+    isChatPage,
+    shouldShowChatComponents,
+  ]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 
@@ -321,15 +353,17 @@ export default function MainLayout({
   // Otherwise, render the content directly.
   return (
     <TourProvider>
-      <AnalyticsProvider>
-        {attemptId ? (
-          <SimulationProvider attemptId={attemptId}>
+      <BreadcrumbProvider>
+        <AnalyticsProvider>
+          {attemptId ? (
+            <SimulationProvider attemptId={attemptId}>
+              <MainLayoutContent>{children}</MainLayoutContent>
+            </SimulationProvider>
+          ) : (
             <MainLayoutContent>{children}</MainLayoutContent>
-          </SimulationProvider>
-        ) : (
-          <MainLayoutContent>{children}</MainLayoutContent>
-        )}
-      </AnalyticsProvider>
+          )}
+        </AnalyticsProvider>
+      </BreadcrumbProvider>
     </TourProvider>
   );
 }
