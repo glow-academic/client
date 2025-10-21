@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,12 +40,11 @@ interface FormData {
   description?: string;
   apiKey?: string;
   baseUrl?: string;
-  departmentId?: string | null;
 }
 
 export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const { error: logError } = useLogger();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
@@ -62,12 +60,8 @@ export default function Provider({ providerId }: ProviderProps) {
       description: "",
       apiKey: "",
       baseUrl: "",
-      departmentId:
-        effectiveProfile?.role === "superadmin"
-          ? ""
-          : departmentIds[0] || "",
     }),
-    [effectiveProfile?.role, departmentIds]
+    []
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -96,7 +90,6 @@ export default function Provider({ providerId }: ProviderProps) {
         description: providerDetail.description,
         apiKey: "",
         baseUrl: providerDetail.base_url || "",
-        departmentId: providerDetail.department_id,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -146,12 +139,6 @@ export default function Provider({ providerId }: ProviderProps) {
       return;
     }
 
-    // Department validation for superadmin
-    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
-      toast.error("Department selection is required for superadmin users");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -169,8 +156,6 @@ export default function Provider({ providerId }: ProviderProps) {
                 ? formData.apiKey
                 : undefined,
             base_url: formData.baseUrl || null,
-            department_id:
-              formData.departmentId || departmentIds[0] || "",
           },
           {
             onSuccess: () => {
@@ -192,8 +177,6 @@ export default function Provider({ providerId }: ProviderProps) {
             description: formData.description!,
             api_key: formData.apiKey!,
             base_url: formData.baseUrl || null,
-            department_id:
-              formData.departmentId || departmentIds[0] || "",
           },
           {
             onSuccess: () => {
@@ -305,29 +288,6 @@ export default function Provider({ providerId }: ProviderProps) {
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
         </div>
-
-        {/* Department Selection - Only for superadmin */}
-        {effectiveProfile?.role === "superadmin" && (
-          <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
-            {formData?.departmentId !== undefined && !isLoading ? (
-              <DepartmentPicker
-                mapping={providerDetail?.department_mapping || {}}
-                validIds={providerDetail?.valid_department_ids || []}
-                selectedIds={
-                  formData?.departmentId ? [formData.departmentId] : []
-                }
-                onSelect={(ids) =>
-                  handleInputChange("departmentId", ids[0] || "")
-                }
-                placeholder="Select department"
-                multiSelect={false}
-              />
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
-          </div>
-        )}
 
         {/* API Key Field */}
         <div className="space-y-2">

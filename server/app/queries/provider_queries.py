@@ -173,14 +173,12 @@ class ProviderQueries:
         INSERT INTO providers (
             name,
             description,
-            api_key,
-            department_id
+            api_key
         )
         VALUES (
             $1,
             $2,
-            $3,
-            $4
+            $3
         )
         RETURNING id
         """
@@ -201,7 +199,6 @@ class ProviderQueries:
         UPDATE providers SET
             name = $2,
             description = $3,
-            department_id = $4,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -335,9 +332,9 @@ class ProviderQueries:
     def get_provider_detail_complete(
         self, provider_id: str, profile_id: str
     ) -> tuple[str, list[Any]]:
-        """Build optimized query to get provider detail with all mappings in ONE query.
+        """Build optimized query to get provider detail in ONE query.
 
-        Consolidates 3 queries into 1 using CTEs and JSONB aggregation.
+        Note: Providers are global (not department-specific).
 
         Args:
             provider_id: UUID of the provider
@@ -347,49 +344,23 @@ class ProviderQueries:
             Tuple of (query string, params list)
         """
         query = """
-        WITH provider_data AS (
-            SELECT 
-                p.name,
-                p.description,
-                p.api_key,
-                pe.base_url,
-                p.department_id
-            FROM providers p
-            LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
-            WHERE p.id = $1
-        ),
-        valid_depts AS (
-            SELECT 
-                COALESCE(
-                    jsonb_object_agg(
-                        d.id::text,
-                        jsonb_build_object(
-                            'name', d.title,
-                            'description', COALESCE(d.description, '')
-                        )
-                    ),
-                    '{}'::jsonb
-                ) as dept_mapping,
-                array_agg(d.id::text ORDER BY d.title) as dept_ids
-            FROM departments d
-            JOIN profile_departments pd ON d.id = pd.department_id
-            WHERE pd.profile_id = $2 AND d.active = true
-        )
         SELECT 
-            p.*,
-            vd.dept_mapping as department_mapping,
-            vd.dept_ids as valid_department_ids
-        FROM provider_data p
-        CROSS JOIN valid_depts vd
+            p.name,
+            p.description,
+            p.api_key,
+            pe.base_url
+        FROM providers p
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
+        WHERE p.id = $1
         """
-        return (query, [provider_id, profile_id])
+        return (query, [provider_id])
 
     def get_model_detail_complete(
         self, model_id: str, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build optimized query to get model detail with all mappings in ONE query.
 
-        Consolidates 4 queries into 1 using CTEs and JSONB aggregation.
+        Note: Providers are global (not department-specific).
 
         Args:
             model_id: UUID of the model
@@ -411,12 +382,6 @@ class ProviderQueries:
             FROM models
             WHERE id = $1
         ),
-        valid_depts AS (
-            SELECT array_agg(d.id) as dept_ids
-            FROM departments d
-            JOIN profile_departments pd ON d.id = pd.department_id
-            WHERE pd.profile_id = $2 AND d.active = true
-        ),
         valid_providers AS (
             SELECT 
                 COALESCE(
@@ -431,7 +396,6 @@ class ProviderQueries:
                 ) as provider_mapping,
                 array_agg(p.id::text ORDER BY p.name) as provider_ids
             FROM providers p
-            JOIN valid_depts vd ON p.department_id = ANY(vd.dept_ids)
         )
         SELECT 
             m.*,
@@ -440,7 +404,7 @@ class ProviderQueries:
         FROM model_data m
         CROSS JOIN valid_providers vp
         """
-        return (query, [model_id, profile_id])
+        return (query, [model_id])
 
     # ===== Provider Duplication Queries =====
 
@@ -454,7 +418,6 @@ class ProviderQueries:
             p.name,
             p.description,
             p.api_key,
-            p.department_id,
             pe.base_url
         FROM providers p
         LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
@@ -489,14 +452,12 @@ class ProviderQueries:
         INSERT INTO providers (
             name,
             description,
-            api_key,
-            department_id
+            api_key
         )
         VALUES (
             $1,
             $2 || ' Copy',
-            $3,
-            $4
+            $3
         )
         RETURNING id
         """

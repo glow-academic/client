@@ -127,6 +127,18 @@ class BreadcrumbItem(BaseModel):
     section: str | None = None
 
 
+class BreadcrumbsRequest(BaseModel):
+    """Request to get breadcrumbs for a pathname."""
+
+    pathname: str  # Current path for breadcrumb generation
+
+
+class BreadcrumbsResponse(BaseModel):
+    """Response with breadcrumbs for a pathname."""
+
+    breadcrumbs: list[BreadcrumbItem]
+
+
 class CohortItem(BaseModel):
     """Cohort item."""
 
@@ -187,7 +199,6 @@ class ProfileContextResponse(BaseModel):
     cohortIds: list[str]
     simulations: SimulationsData
     simulationIds: list[str]
-    breadcrumbs: list[BreadcrumbItem]
     simulatableProfiles: list[ProfileItem]
     earliestAttemptDate: str | None  # ISO datetime of earliest simulation attempt
     availableSections: list[str]  # Sections available to the effective profile's role

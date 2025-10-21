@@ -51,11 +51,6 @@ const CohortItemSchema = z.object({
   updatedAt: z.string(),
 });
 
-const BreadcrumbItemSchema = z.object({
-  title: z.string(),
-  section: z.string().optional().nullable(),
-});
-
 const CohortsDataSchema = z.object({
   items: z.array(CohortItemSchema),
   memberCounts: z.record(z.string(), z.number()),
@@ -88,14 +83,12 @@ const LayoutContextResponseSchema = z.object({
   cohortIds: z.array(z.string()),
   simulations: SimulationsDataSchema,
   simulationIds: z.array(z.string()),
-  breadcrumbs: z.array(BreadcrumbItemSchema),
   simulatableProfiles: z.array(ProfileItemSchema),
   earliestAttemptDate: z.string().nullable(),
   availableSections: z.array(z.string()),
   redirectPath: z.string(),
 });
 
-export type BreadcrumbItem = z.infer<typeof BreadcrumbItemSchema>;
 export type DepartmentItem = z.infer<typeof DepartmentItemSchema>;
 export type CohortItem = z.infer<typeof CohortItemSchema>;
 export type SimulationContextItem = z.infer<typeof SimulationContextItemSchema>;
@@ -143,7 +136,6 @@ interface ProfileContextType {
   simulations: SimulationContextItem[];
   simulationIds: string[];
   cohortMemberCounts: Record<string, number>;
-  breadcrumbs: BreadcrumbItem[];
   simulatableProfiles: ProfileItem[];
   earliestAttemptDate: string | null;
 
@@ -304,7 +296,6 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     simulations: layoutData?.simulations.items ?? [],
     simulationIds: layoutData?.simulationIds ?? [],
     cohortMemberCounts: layoutData?.cohorts.memberCounts ?? {},
-    breadcrumbs: layoutData?.breadcrumbs ?? [],
     simulatableProfiles: layoutData?.simulatableProfiles ?? [],
     earliestAttemptDate: layoutData?.earliestAttemptDate ?? null,
 

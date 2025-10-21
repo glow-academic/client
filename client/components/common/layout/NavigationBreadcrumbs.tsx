@@ -11,7 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
 export interface NavigationBreadcrumbsProps {
-  breadcrumbs: Array<{ title: string; section?: string }>;
+  breadcrumbs: Array<{ title: string; section?: string | null }>;
   onSectionChange?: (section: string) => void;
 }
 
@@ -23,7 +23,7 @@ export function NavigationBreadcrumbs({
   const pathname = usePathname();
   const breadcrumbNavigate = createBreadcrumbSectionChangeHandler(
     router,
-    pathname,
+    pathname
   );
 
   const handleBreadcrumbClick = (crumb: {

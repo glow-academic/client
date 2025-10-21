@@ -33,6 +33,7 @@ import { AssistantProvider } from "@/contexts/assistant-context";
 import { useProfile } from "@/contexts/profile-context";
 import { SimulationProvider } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
+import { useBreadcrumbs } from "@/lib/api/v2/hooks/breadcrumbs";
 import { getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import {
   createSectionChangeHandler,
@@ -43,8 +44,11 @@ import {
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
-  const { effectiveProfile, isLoading, activeProfile, breadcrumbs } =
-    useProfile();
+  const { effectiveProfile, isLoading, activeProfile } = useProfile();
+  
+  // Fetch breadcrumbs separately (updates on every route change)
+  const { data: breadcrumbsData } = useBreadcrumbs(pathname);
+  const breadcrumbs = breadcrumbsData?.breadcrumbs ?? [];
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);

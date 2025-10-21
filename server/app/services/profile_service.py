@@ -365,9 +365,6 @@ class ProfileService(BaseService):
         if result["earliest_attempt_date"]:
             earliest_attempt_date = result["earliest_attempt_date"].isoformat()
 
-        # Parse breadcrumbs from pathname
-        breadcrumbs = self._parse_breadcrumbs(request.pathname)
-
         # Extract IDs from collections
         dept_ids_list = [d.id for d in departments]
         cohort_ids_list = [c.id for c in cohorts]
@@ -388,7 +385,6 @@ class ProfileService(BaseService):
             cohortIds=cohort_ids_list,
             simulations=SimulationsData(items=simulations),
             simulationIds=simulation_ids_list,
-            breadcrumbs=breadcrumbs,
             simulatableProfiles=simulatable_profiles,
             earliestAttemptDate=earliest_attempt_date,
             availableSections=available_sections,

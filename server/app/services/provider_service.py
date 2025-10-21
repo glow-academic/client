@@ -3,37 +3,26 @@
 import json
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
-from app.schemas.providers import (
-    CreateModelRequest,
-    CreateModelResponse,
-    CreateProviderRequest,
-    CreateProviderResponse,
-    DeleteModelRequest,
-    DeleteModelResponse,
-    DeleteProviderRequest,
-    DeleteProviderResponse,
-    DuplicateModelRequest,
-    DuplicateModelResponse,
-    DuplicateProviderRequest,
-    DuplicateProviderResponse,
-    ModelDetailRequest,
-    ModelDetailResponse,
-    ModelItem,
-    ProviderDetailRequest,
-    ProviderDetailResponse,
-    ProvidersFilters,
-    ProvidersListResponse,
-    ProviderWithModels,
-    UpdateModelRequest,
-    UpdateModelResponse,
-    UpdateProviderRequest,
-    UpdateProviderResponse,
-)
+from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
+                                   CreateProviderRequest,
+                                   CreateProviderResponse, DeleteModelRequest,
+                                   DeleteModelResponse, DeleteProviderRequest,
+                                   DeleteProviderResponse,
+                                   DuplicateModelRequest,
+                                   DuplicateModelResponse,
+                                   DuplicateProviderRequest,
+                                   DuplicateProviderResponse,
+                                   ModelDetailRequest, ModelDetailResponse,
+                                   ModelItem, ProviderDetailRequest,
+                                   ProviderDetailResponse, ProvidersFilters,
+                                   ProvidersListResponse, ProviderWithModels,
+                                   UpdateModelRequest, UpdateModelResponse,
+                                   UpdateProviderRequest,
+                                   UpdateProviderResponse)
 from app.services.base_service import BaseService, with_cache
 from app.utils.auth import encrypt_api_key
 
@@ -114,8 +103,11 @@ class ProviderService(BaseService):
     async def get_provider_detail(
         self, request: ProviderDetailRequest
     ) -> ProviderDetailResponse:
-        """Get detailed provider information."""
-        # Get all provider data with mappings in a single query
+        """Get detailed provider information.
+        
+        Note: Providers are global (not department-specific).
+        """
+        # Get provider data in a single query
         query, params = self.queries.get_provider_detail_complete(
             request.providerId, request.profileId
         )
@@ -124,30 +116,11 @@ class ProviderService(BaseService):
         if not provider:
             raise ValueError(f"Provider not found: {request.providerId}")
 
-        # Parse valid_department_ids from array
-        valid_department_ids = provider["valid_department_ids"] or []
-
-        # Parse department_mapping from JSONB with type safety (may be string or dict)
-        department_mapping = {}
-        dept_mapping_data = provider.get("department_mapping")
-        if isinstance(dept_mapping_data, str):
-            dept_mapping_data = json.loads(dept_mapping_data)
-        if dept_mapping_data and isinstance(dept_mapping_data, dict):
-            for dept_id, ddata in dept_mapping_data.items():
-                if isinstance(ddata, dict):
-                    department_mapping[dept_id] = DepartmentMappingItem(
-                        name=ddata.get("name", ""),
-                        description=ddata.get("description", ""),
-                    )
-
         return ProviderDetailResponse(
             name=provider["name"],
             description=provider["description"],
             api_key=provider["api_key"],  # Returned encrypted
             base_url=provider["base_url"],
-            department_id=str(provider["department_id"]),
-            valid_department_ids=valid_department_ids,
-            department_mapping=department_mapping,
         )
 
     @with_cache(lambda self, request: keys.model_by_id(request.modelId))
@@ -195,7 +168,10 @@ class ProviderService(BaseService):
     async def create_provider(
         self, request: CreateProviderRequest
     ) -> CreateProviderResponse:
-        """Create a new provider with encrypted API key."""
+        """Create a new provider with encrypted API key.
+        
+        Note: Providers are global (not department-specific).
+        """
 
         # Encrypt API key before storing
         encrypted_api_key = encrypt_api_key(request.api_key)
@@ -206,7 +182,6 @@ class ProviderService(BaseService):
             request.name,
             request.description,
             encrypted_api_key,
-            request.department_id,
         )
 
         if not result:
@@ -235,7 +210,10 @@ class ProviderService(BaseService):
     async def update_provider(
         self, request: UpdateProviderRequest
     ) -> UpdateProviderResponse:
-        """Update an existing provider."""
+        """Update an existing provider.
+        
+        Note: Providers are global (not department-specific).
+        """
 
         # Check if provider exists
         query, params = self.queries.get_provider_name(request.providerId)
@@ -251,7 +229,6 @@ class ProviderService(BaseService):
             request.providerId,
             request.name,
             request.description,
-            request.department_id,
         )
 
         # Upsert provider endpoint if base_url provided
@@ -337,7 +314,10 @@ class ProviderService(BaseService):
     async def duplicate_provider(
         self, request: DuplicateProviderRequest
     ) -> DuplicateProviderResponse:
-        """Duplicate a provider with all its models."""
+        """Duplicate a provider with all its models.
+        
+        Note: Providers are global (not department-specific).
+        """
 
         # Get original provider data
         query, params = self.queries.get_provider_for_duplicate(request.providerId)
@@ -360,7 +340,6 @@ class ProviderService(BaseService):
                 provider["name"],
                 provider["description"],
                 provider["api_key"],
-                provider["department_id"],
             )
 
             if not new_provider:

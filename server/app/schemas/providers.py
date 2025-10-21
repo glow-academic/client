@@ -66,17 +66,15 @@ class ProviderDetailRequest(BaseModel):
 
 
 class ProviderDetailResponse(BaseModel):
-    """Response for provider detail endpoint."""
+    """Response for provider detail endpoint.
+    
+    Note: Providers are global (not department-specific).
+    """
 
     name: str
     description: str
     api_key: str  # Encrypted - for display only
     base_url: str | None
-    department_id: str
-    valid_department_ids: list[str]
-
-    # Top-level mappings
-    department_mapping: DepartmentMapping
 
 
 # ============================================================================
@@ -116,13 +114,15 @@ class ModelDetailResponse(BaseModel):
 
 
 class CreateProviderRequest(BaseModel):
-    """Request to create provider."""
+    """Request to create provider.
+    
+    Note: Providers are global (not department-specific).
+    """
 
     name: str
     description: str
     api_key: str  # Will be encrypted server-side
     base_url: str | None
-    department_id: str
 
 
 class CreateProviderResponse(BaseModel):
@@ -134,14 +134,16 @@ class CreateProviderResponse(BaseModel):
 
 
 class UpdateProviderRequest(BaseModel):
-    """Request to update provider."""
+    """Request to update provider.
+    
+    Note: Providers are global (not department-specific).
+    """
 
     providerId: str
     name: str
     description: str
     api_key: str | None = None  # Optional - only update if provided
     base_url: str | None
-    department_id: str
 
 
 class UpdateProviderResponse(BaseModel):

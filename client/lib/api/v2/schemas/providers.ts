@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { DepartmentMappingSchema, ProviderMappingSchema } from "./base";
+import { ProviderMappingSchema } from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -70,11 +70,6 @@ export const ProviderDetailResponseSchema = z.object({
   description: z.string(),
   api_key: z.string(), // Encrypted - for display only
   base_url: z.string().nullable(),
-  department_id: z.string(),
-  valid_department_ids: z.array(z.string()),
-
-  // Top-level mappings
-  department_mapping: DepartmentMappingSchema,
 });
 
 export type ProviderDetailResponse = z.infer<
@@ -121,7 +116,6 @@ export const CreateProviderRequestSchema = z.object({
   description: z.string(),
   api_key: z.string(), // Will be encrypted server-side
   base_url: z.string().nullable(),
-  department_id: z.string(),
 });
 
 export type CreateProviderRequest = z.infer<typeof CreateProviderRequestSchema>;
@@ -143,7 +137,6 @@ export const UpdateProviderRequestSchema = z.object({
   description: z.string(),
   api_key: z.string().optional(), // Optional - only update if provided
   base_url: z.string().nullable(),
-  department_id: z.string(),
 });
 
 export type UpdateProviderRequest = z.infer<typeof UpdateProviderRequestSchema>;

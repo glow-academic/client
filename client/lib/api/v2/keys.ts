@@ -501,3 +501,9 @@ export const layoutContextKeys = {
   detail: (effectiveProfileId: string) =>
     [...layoutContextKeys.all, effectiveProfileId] as const,
 };
+
+// Breadcrumbs Keys (lightweight, updates on every pathname change)
+export const breadcrumbsKeys = {
+  all: ["v2", "breadcrumbs"] as const,
+  detail: (pathname: string) => [...breadcrumbsKeys.all, pathname] as const,
+};
