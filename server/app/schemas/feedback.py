@@ -21,6 +21,13 @@ class CreateFeedbackRequest(BaseModel):
     profileId: str  # Author profile ID
 
 
+class BulkDeleteFeedbackRequest(BaseModel):
+    """Request for bulk deleting feedback."""
+
+    profileId: str  # User making the request
+    ids: list[int]  # Feedback IDs to delete
+
+
 # ============================================================================
 # RESPONSE SCHEMAS
 # ============================================================================
@@ -49,4 +56,12 @@ class CreateFeedbackResponse(BaseModel):
 
     feedback_id: int
     success: bool
+    message: str
+
+
+class BulkDeleteFeedbackResponse(BaseModel):
+    """Response for bulk deleting feedback."""
+
+    success: bool
+    deleted_count: int
     message: str

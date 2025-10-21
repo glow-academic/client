@@ -12,10 +12,12 @@ import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { BulkDeleteFeedbackDialog } from "./BulkDeleteFeedbackDialog";
 import { FeedbackDataTable } from "./FeedbackDataTable";
 
 export default function Feedback() {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
   const log = useLogger();
@@ -79,17 +81,37 @@ export default function Feedback() {
     }
   };
 
+  const handleBulkDelete = () => {
+    setShowBulkDeleteDialog(true);
+  };
+
+  const handleBulkDeleteSuccess = () => {
+    // The query will be invalidated by the mutation hook
+    // Dialog will close automatically after successful deletion
+  };
+
   if (isLoading) {
     return <div className="text-center p-6">Loading feedback...</div>;
   }
 
   return (
-    <FeedbackDataTable
-      data={feedback}
-      typeOptions={typeOptions}
-      profileOptions={profileOptions}
-      isRefreshing={isRefreshing}
-      onRefresh={handleRefresh}
-    />
+    <>
+      <FeedbackDataTable
+        data={feedback}
+        typeOptions={typeOptions}
+        profileOptions={profileOptions}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        onBulkDelete={handleBulkDelete}
+      />
+
+      {/* Bulk Delete Dialog */}
+      <BulkDeleteFeedbackDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        feedback={feedback}
+        onSuccess={handleBulkDeleteSuccess}
+      />
+    </>
   );
 }

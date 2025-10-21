@@ -2,7 +2,9 @@
 
 import asyncpg  # type: ignore
 from app.queries.feedback_queries import FeedbackQueries
-from app.schemas.feedback import (CreateFeedbackRequest,
+from app.schemas.feedback import (BulkDeleteFeedbackRequest,
+                                  BulkDeleteFeedbackResponse,
+                                  CreateFeedbackRequest,
                                   CreateFeedbackResponse, FeedbackItem,
                                   FeedbackListRequest, FeedbackListResponse)
 from app.services.base_service import BaseService
@@ -88,6 +90,48 @@ class FeedbackService(BaseService):
             feedback_id=result["feedback_id"],
             success=True,
             message="Feedback created successfully",
+        )
+
+    async def bulk_delete_feedback(
+        self, request: BulkDeleteFeedbackRequest
+    ) -> BulkDeleteFeedbackResponse:
+        """
+        Delete multiple feedback entries. Only superadmin can delete feedback.
+
+        Args:
+            request: Bulk delete request with profileId and feedback IDs
+
+        Returns:
+            BulkDeleteFeedbackResponse with deleted count
+
+        Raises:
+            ValueError: If profile not found
+            PermissionError: If user is not superadmin
+        """
+        # Check if user is superadmin
+        query, params = self.queries.check_profile_role(request.profileId)
+        result = await self.conn.fetchrow(query, *params)
+
+        if not result:
+            raise ValueError(f"Profile not found: {request.profileId}")
+
+        if result["role"] != "superadmin":
+            raise PermissionError("Only superadmin users can delete feedback")
+
+        if not request.ids:
+            return BulkDeleteFeedbackResponse(
+                success=True, deleted_count=0, message="No feedback to delete"
+            )
+
+        # Delete feedback
+        query, params = self.queries.delete_feedback_bulk(request.ids)
+        deleted_rows = await self.conn.fetch(query, *params)
+        deleted_count = len(deleted_rows)
+
+        return BulkDeleteFeedbackResponse(
+            success=True,
+            deleted_count=deleted_count,
+            message=f"Successfully deleted {deleted_count} feedback item(s)",
         )
 
 

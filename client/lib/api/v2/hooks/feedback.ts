@@ -3,9 +3,11 @@
  * Hooks for fetching feedback list and creating feedback
  */
 
+import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/fetcher";
 import { feedbackListKeys } from "@/lib/api/v2/keys";
 import {
+  BulkDeleteFeedbackResponseSchema,
   CreateFeedbackRequest,
   CreateFeedbackResponseSchema,
   FeedbackListResponseSchema,
@@ -53,6 +55,33 @@ export function useCreateFeedbackV2() {
     },
     onSuccess: () => {
       // Invalidate v2 feedback list cache if it exists
+      qc.invalidateQueries({ queryKey: feedbackListKeys.all });
+    },
+  });
+}
+
+/**
+ * Bulk delete feedback mutation hook
+ * Only superadmin users can delete feedback
+ */
+export function useBulkDeleteFeedback() {
+  const { effectiveProfile } = useProfile();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: { ids: number[] }) => {
+      const res = await api<unknown>("/api/v2/feedback/bulk-delete", {
+        method: "POST",
+        body: JSON.stringify({
+          profileId: effectiveProfile?.id,
+          ids: request.ids,
+        }),
+      });
+
+      return BulkDeleteFeedbackResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      // Invalidate v2 feedback list cache
       qc.invalidateQueries({ queryKey: feedbackListKeys.all });
     },
   });

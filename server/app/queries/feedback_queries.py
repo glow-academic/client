@@ -70,3 +70,43 @@ class FeedbackQueries:
         params = [feedback_type, message, profile_id]
 
         return query, params
+
+    def check_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
+        """
+        Check the role of a profile.
+
+        Args:
+            profile_id: Profile ID to check
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT role
+        FROM profiles
+        WHERE id = $1::uuid
+        """
+
+        params = [profile_id]
+
+        return query, params
+
+    def delete_feedback_bulk(self, feedback_ids: list[int]) -> tuple[str, list[Any]]:
+        """
+        Delete multiple feedback entries by ID.
+
+        Args:
+            feedback_ids: List of feedback IDs to delete
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        DELETE FROM app_feedback
+        WHERE id = ANY($1::int[])
+        RETURNING id
+        """
+
+        params = [feedback_ids]
+
+        return query, params

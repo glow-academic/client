@@ -23,6 +23,15 @@ export const CreateFeedbackRequestSchema = z.object({
 
 export type CreateFeedbackRequest = z.infer<typeof CreateFeedbackRequestSchema>;
 
+export const BulkDeleteFeedbackRequestSchema = z.object({
+  profileId: z.string(),
+  ids: z.array(z.number()),
+});
+
+export type BulkDeleteFeedbackRequest = z.infer<
+  typeof BulkDeleteFeedbackRequestSchema
+>;
+
 // ============================================================================
 // RESPONSE SCHEMAS
 // ============================================================================
@@ -53,4 +62,14 @@ export const CreateFeedbackResponseSchema = z.object({
 
 export type CreateFeedbackResponse = z.infer<
   typeof CreateFeedbackResponseSchema
+>;
+
+export const BulkDeleteFeedbackResponseSchema = z.object({
+  success: z.boolean(),
+  deleted_count: z.number(),
+  message: z.string(),
+});
+
+export type BulkDeleteFeedbackResponse = z.infer<
+  typeof BulkDeleteFeedbackResponseSchema
 >;

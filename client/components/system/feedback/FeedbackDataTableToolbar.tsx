@@ -1,7 +1,7 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { RefreshCw, X } from "lucide-react";
+import { RefreshCw, Trash2, X } from "lucide-react";
 import { useMemo } from "react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
@@ -15,6 +15,7 @@ export interface FeedbackDataTableToolbarProps<TData extends object> {
   profileOptions: { value: string; label: string }[];
   isRefreshing: boolean;
   onRefresh: () => void;
+  onBulkDelete: () => void;
   /** Which column id to use for the search input; defaults to "message" */
   searchColumnId?: string;
 }
@@ -25,6 +26,7 @@ export function FeedbackDataTableToolbar<TData extends object>({
   profileOptions,
   isRefreshing,
   onRefresh,
+  onBulkDelete,
   searchColumnId = "message",
 }: FeedbackDataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -39,7 +41,9 @@ export function FeedbackDataTableToolbar<TData extends object>({
     const uniqueIds = new Set<string>();
     table.getFilteredRowModel().rows.forEach((row) => {
       uniqueIds.add(
-        String((row as { original: { feedback_id: number } }).original.feedback_id)
+        String(
+          (row as { original: { feedback_id: number } }).original.feedback_id
+        )
       );
     });
     return Array.from(uniqueIds)
@@ -108,6 +112,17 @@ export function FeedbackDataTableToolbar<TData extends object>({
       </div>
 
       <div className="flex items-center space-x-2 mb-2">
+        {/* Bulk Delete Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBulkDelete}
+          className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+
+        {/* Refresh Button */}
         <Button
           variant="outline"
           size="sm"
