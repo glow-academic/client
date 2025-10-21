@@ -177,6 +177,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   );
 
   // Internal hook: Get ALL data from consolidated API (single source of truth!)
+  // Note: effectiveProfileId is derived from session on the server for security
   const effectiveProfileId = session?.effectiveProfileId ?? "";
 
   const { data: layoutData, isLoading: layoutLoading } = useQuery({
@@ -185,7 +186,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       const res = await api<unknown>("/api/v2/profile/context", {
         method: "POST",
         body: JSON.stringify({
-          effectiveProfileId,
+          // Only send pathname - BFF route derives profile IDs from session
           pathname: pathname ?? "/",
         }),
       });

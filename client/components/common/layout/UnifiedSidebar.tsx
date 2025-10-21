@@ -207,7 +207,6 @@ export function UnifiedSidebar({
     cohorts,
     simulatableProfiles,
     availableSections,
-    departmentIds,
   } = useProfile();
   const { update } = useSession();
 
@@ -551,7 +550,6 @@ export function UnifiedSidebar({
         const result = await authorizeMutation.mutateAsync({
           requesterProfileId: activeProfile!.id,
           targetProfileId: profileId,
-          departmentIds: departmentIds,
         });
 
         if (!result.allowed) {
@@ -1015,20 +1013,14 @@ export function UnifiedSidebar({
               className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
               onClick={async () => {
                 try {
-                  // Use the same server authorization flow as profile switching
-                  const r = await fetch("/api/emulate/authorize", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({
-                      targetProfileId: effectiveProfile.id,
-                      departmentIds: departmentIds,
-                    }),
+                  // Use the same authorization flow as profile switching
+                  const result = await authorizeMutation.mutateAsync({
+                    requesterProfileId: activeProfile!.id,
+                    targetProfileId: effectiveProfile.id,
                   });
-                  if (!r.ok) {
-                    const msg =
-                      (await r.json().catch(() => ({})))?.error || "Forbidden";
-                    toast.error(msg);
+
+                  if (!result.allowed) {
+                    toast.error(result.reason || "Emulation not allowed");
                     return;
                   }
 

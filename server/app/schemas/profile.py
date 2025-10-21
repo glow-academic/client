@@ -98,7 +98,6 @@ class AuthorizeEmulationRequest(BaseModel):
 
     requesterProfileId: str
     targetProfileId: str
-    departmentIds: list[str]
 
 
 class AuthorizeEmulationResponse(BaseModel):
@@ -116,8 +115,9 @@ class AuthorizeEmulationResponse(BaseModel):
 class ProfileContextRequest(BaseModel):
     """Request to get consolidated profile context."""
 
-    effectiveProfileId: str
-    pathname: str
+    actualProfileId: str      # The logged-in user's profile ID
+    effectiveProfileId: str   # Could be same as actual, or emulated profile ID
+    pathname: str             # Current path for breadcrumb generation
 
 
 class BreadcrumbItem(BaseModel):

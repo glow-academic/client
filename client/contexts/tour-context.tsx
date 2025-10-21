@@ -21,10 +21,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { TourStep } from "@/utils/tour-steps";
-import { useRouter } from "next/navigation";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { ProfileItem } from "@/lib/api/v2/schemas/profile";
+import { TourStep } from "@/utils/tour-steps";
+import { useRouter } from "next/navigation";
 
 // Tour state interface
 export interface TourContextState {
@@ -43,7 +43,11 @@ export interface TourContextState {
 type TourAction =
   | {
       type: "OPEN";
-      payload: { steps: TourStep[]; profile: ProfileItem; initialStep?: number };
+      payload: {
+        steps: TourStep[];
+        profile: ProfileItem;
+        initialStep?: number;
+      };
     }
   | { type: "CLOSE" }
   | { type: "NEXT" }
@@ -148,7 +152,11 @@ function tourReducer(
 // Context
 interface TourContextValue {
   state: TourContextState;
-  openTour: (steps: TourStep[], profile: ProfileItem, initialStep?: number) => void;
+  openTour: (
+    steps: TourStep[],
+    profile: ProfileItem,
+    initialStep?: number
+  ) => void;
   closeTour: () => void;
   nextStep: () => void;
   prevStep: () => void;

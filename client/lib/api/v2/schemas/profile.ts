@@ -366,7 +366,6 @@ export type CreateUserProfileResponse = z.infer<
 export const AuthorizeEmulationRequestSchema = z.object({
   requesterProfileId: z.string(),
   targetProfileId: z.string(),
-  departmentIds: z.array(z.string()),
 });
 
 export type AuthorizeEmulationRequest = z.infer<
@@ -414,8 +413,8 @@ export type MarkTourStepResponse = z.infer<typeof MarkTourStepResponseSchema>;
 // ============================================================================
 
 export const ProfileContextRequestSchema = z.object({
-  effectiveProfileId: z.string(),
   pathname: z.string(),
+  // Note: actualProfileId and effectiveProfileId are derived from session in BFF
 });
 
 export type ProfileContextRequest = z.infer<typeof ProfileContextRequestSchema>;

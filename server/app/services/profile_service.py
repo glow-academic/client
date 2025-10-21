@@ -117,7 +117,7 @@ class ProfileService(BaseService):
         return UUID(str(result["id"]))
 
     async def get_simulatable_profiles(
-        self, profile_id: str, department_ids: list[str]
+        self, profile_id: str
     ) -> list[ProfileItem]:
         """Get profiles that the requester can emulate.
 
@@ -144,14 +144,12 @@ class ProfileService(BaseService):
         self,
         requester_profile_id: str,
         target_profile_id: str,
-        department_ids: list[str],
     ) -> tuple[bool, str | None]:
         """Check if emulation is authorized.
 
         Args:
             requester_profile_id: UUID of the requester
             target_profile_id: UUID of the target profile to emulate
-            department_ids: List of department IDs (for future filtering)
 
         Returns:
             Tuple of (allowed, reason)
@@ -162,7 +160,7 @@ class ProfileService(BaseService):
 
         # Get simulatable profiles for the requester
         simulatable_profiles = await self.get_simulatable_profiles(
-            requester_profile_id, department_ids
+            requester_profile_id
         )
 
         # Check if target is in the list
@@ -179,13 +177,15 @@ class ProfileService(BaseService):
         """Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
 
         Args:
-            request: ProfileContextRequest with effectiveProfileId, pathname
+            request: ProfileContextRequest with actualProfileId, effectiveProfileId, pathname
 
         Returns:
             ProfileContextResponse with all consolidated data
         """
         # Resolve "guest-profile-id" to actual default guest profile
+        actual_profile_id = request.actualProfileId
         effective_profile_id = request.effectiveProfileId
+        
         if effective_profile_id == "guest-profile-id":
             guest_id = await self.get_default_guest_profile_id()
             if guest_id:
@@ -193,15 +193,57 @@ class ProfileService(BaseService):
             else:
                 raise ValueError("No default guest profile found in database")
 
-        # Get all context data in ONE optimized query (includes role lookup internally)
-        query, params = self.queries.get_profile_context_complete(effective_profile_id)
+        # Validate emulation is authorized when profiles differ
+        if actual_profile_id != effective_profile_id:
+            allowed, reason = await self.authorize_emulation(
+                actual_profile_id,
+                effective_profile_id,
+            )
+            if not allowed:
+                raise PermissionError(
+                    reason or "You do not have permission to view this profile's context"
+                )
+
+        # Get all context data in ONE optimized query (includes BOTH profiles)
+        query, params = self.queries.get_profile_context_complete(
+            actual_profile_id, effective_profile_id
+        )
         result = await self.conn.fetchrow(query, *params)
 
         if not result:
             raise ValueError(f"Profile context not found: {effective_profile_id}")
 
-        # Parse profile from result
-        profile = ProfileItem(
+        # Parse actual profile from result (with actual_ prefix)
+        actual_profile = ProfileItem(
+            id=str(result["actual_id"]),
+            firstName=result["actual_first_name"],
+            lastName=result["actual_last_name"],
+            alias=result["actual_alias"],
+            role=result["actual_role"],
+            active=result["actual_active"],
+            viewedIntro=result["actual_viewed_intro"],
+            viewedChat=result["actual_viewed_chat"],
+            defaultProfile=result["actual_default_profile"],
+            reqPerDay=result["actual_req_per_day"],
+            lastLogin=result["actual_last_login"].isoformat()
+            if result["actual_last_login"]
+            else "",
+            lastActive=result["actual_last_active"].isoformat()
+            if result["actual_last_active"]
+            else "",
+            createdAt=result["actual_created_at"].isoformat()
+            if result["actual_created_at"]
+            else "",
+            updatedAt=result["actual_updated_at"].isoformat()
+            if result["actual_updated_at"]
+            else "",
+            primaryDepartmentId=str(result["actual_primary_department_id"])
+            if result.get("actual_primary_department_id")
+            else None,
+        )
+
+        # Parse effective profile from result (unprefixed for backward compatibility)
+        effective_profile = ProfileItem(
             id=str(result["id"]),
             firstName=result["first_name"],
             lastName=result["last_name"],
@@ -335,13 +377,14 @@ class ProfileService(BaseService):
         simulation_ids_list = [s.id for s in simulations]
 
         # Use permissions service for available sections and redirect path
-        role = cast(ProfileRole, profile.role)
+        # (based on effective profile's role)
+        role = cast(ProfileRole, effective_profile.role)
         available_sections = PermissionsService.get_available_subsections_for_role(role)  # type: ignore
         redirect_path = PermissionsService.get_redirect_path_for_role(role)  # type: ignore
 
         return ProfileContextResponse(
-            actualProfile=profile,
-            effectiveProfile=profile,
+            actualProfile=actual_profile,
+            effectiveProfile=effective_profile,
             departments=departments,
             departmentIds=dept_ids_list,
             cohorts=CohortsData(items=cohorts, memberCounts={}),

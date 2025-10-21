@@ -1,12 +1,25 @@
+import { auth } from "@/auth";
 import { getApiBase } from "@/lib/api-base";
 import { AuthorizeEmulationRequestSchema } from "@/lib/api/v2/schemas/profile";
-import { NextRequest, NextResponse } from "next/server";
 import { log } from "@/lib/api/v2/server/logs";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
+    // Get session to derive the actual requester's profile ID
+    const session = await auth();
+    if (!session?.user?.profileId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const request = AuthorizeEmulationRequestSchema.parse(body);
+
+    // Parse the request but override requesterProfileId with session value
+    // to prevent privilege escalation via client-supplied ID
+    const request = AuthorizeEmulationRequestSchema.parse({
+      ...body,
+      requesterProfileId: session.user.profileId,
+    });
 
     const url = `${getApiBase()}/api/v2/profile/authorize-emulation`;
     const response = await fetch(url, {

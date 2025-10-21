@@ -264,7 +264,6 @@ async def authorize_emulation(
         allowed, reason = await service.authorize_emulation(
             request.requesterProfileId,
             request.targetProfileId,
-            request.departmentIds,
         )
 
         return AuthorizeEmulationResponse(allowed=allowed, reason=reason)

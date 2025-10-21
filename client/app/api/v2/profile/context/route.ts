@@ -1,12 +1,20 @@
+import { auth } from "@/auth";
 import { getApiBase } from "@/lib/api-base";
-import { ProfileContextRequestSchema } from "@/lib/api/v2/schemas/profile";
 import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
+    // Get session to derive the actual user's identity
+    const session = await auth();
+    if (!session?.user?.profileId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const request = ProfileContextRequestSchema.parse(body);
+
+    // Extract pathname from request, but derive profile IDs from session
+    const pathname = body.pathname || "/";
 
     const url = `${getApiBase()}/api/v2/profile/context`;
     const response = await fetch(url, {
@@ -16,8 +24,9 @@ export async function POST(req: NextRequest) {
       },
       credentials: "include",
       body: JSON.stringify({
-        effectiveProfileId: request.effectiveProfileId,
-        pathname: request.pathname,
+        actualProfileId: session.user.profileId, // Server-trusted: logged-in user
+        effectiveProfileId: session.effectiveProfileId, // Server-trusted: could be emulated
+        pathname: pathname, // Safe metadata for breadcrumbs
       }),
     });
 

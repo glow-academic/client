@@ -500,27 +500,31 @@ class ProfileQueries:
     # ===== Profile context queries =====
 
     def get_profile_context_complete(
-        self, profile_id: str
+        self, actual_profile_id: str, effective_profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build optimized query to get complete profile context in ONE query.
 
-        Fetches profile, departments, cohorts, simulations, simulatable profiles,
-        and earliest attempt date using CTEs and JSON aggregation.
+        Fetches BOTH actual and effective profiles, plus departments, cohorts, 
+        simulations, simulatable profiles, and earliest attempt date using CTEs 
+        and JSON aggregation.
         
-        The query determines the user's role internally to filter simulatable profiles,
-        eliminating the need for a separate role lookup query.
+        The query uses effective_profile_id for role-based filtering and context data,
+        and returns both profiles to avoid a second query.
 
         Args:
-            profile_id: UUID of the profile
+            actual_profile_id: UUID of the logged-in user's profile
+            effective_profile_id: UUID of the profile being viewed (could be same or emulated)
 
         Returns:
             Tuple of (query string, params list)
         """
         query = """
-        WITH profile_role AS (
-            SELECT role FROM profiles WHERE id = $1
+        WITH effective_profile_role AS (
+            -- Use effective profile's role for permissions filtering
+            SELECT role FROM profiles WHERE id = $2
         ),
-        profile_data AS (
+        actual_profile_data AS (
+            -- Fetch the logged-in user's profile
             SELECT 
                 p.id,
                 p.first_name,
@@ -542,47 +546,8 @@ class ProfileQueries:
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
             WHERE p.id = $1
         ),
-        dept_data AS (
-            SELECT 
-                d.id,
-                d.title,
-                d.description,
-                d.active,
-                pd.is_primary
-            FROM profile_departments pd
-            JOIN departments d ON d.id = pd.department_id
-            WHERE pd.profile_id = $1 AND pd.active = true
-        ),
-        cohort_data AS (
-            SELECT DISTINCT
-                c.id,
-                c.title,
-                c.description,
-                c.active,
-                c.department_id
-            FROM cohorts c
-            JOIN cohort_profiles pc ON pc.cohort_id = c.id
-            WHERE pc.profile_id = $1 
-              AND pc.active = true
-              AND c.active = true
-        ),
-        sim_data AS (
-            SELECT DISTINCT
-                s.id,
-                s.title,
-                s.description,
-                s.department_id,
-                COALESCE(stl.time_limit_seconds, 0) as time_limit,
-                s.active,
-                s.default_simulation,
-                s.practice_simulation
-            FROM simulations s
-            JOIN cohort_simulations cs ON cs.simulation_id = s.id
-            JOIN cohort_data cd ON cd.id = cs.cohort_id
-            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
-            WHERE s.active = true
-        ),
-        simulatable_data AS (
+        effective_profile_data AS (
+            -- Fetch the profile being viewed (could be same as actual or emulated)
             SELECT 
                 p.id,
                 p.first_name,
@@ -600,10 +565,76 @@ class ProfileQueries:
                 p.updated_at,
                 pd.department_id as primary_department_id
             FROM profiles p
-            CROSS JOIN profile_role pr
             LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-            WHERE p.id != $1
+            WHERE p.id = $2
+        ),
+        dept_data AS (
+            -- Departments for the effective profile
+            SELECT 
+                d.id,
+                d.title,
+                d.description,
+                d.active,
+                pd.is_primary
+            FROM profile_departments pd
+            JOIN departments d ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND pd.active = true
+        ),
+        cohort_data AS (
+            -- Cohorts for the effective profile
+            SELECT DISTINCT
+                c.id,
+                c.title,
+                c.description,
+                c.active,
+                c.department_id
+            FROM cohorts c
+            JOIN cohort_profiles pc ON pc.cohort_id = c.id
+            WHERE pc.profile_id = $2 
+              AND pc.active = true
+              AND c.active = true
+        ),
+        sim_data AS (
+            -- Simulations for the effective profile's cohorts
+            SELECT DISTINCT
+                s.id,
+                s.title,
+                s.description,
+                s.department_id,
+                COALESCE(stl.time_limit_seconds, 0) as time_limit,
+                s.active,
+                s.default_simulation,
+                s.practice_simulation
+            FROM simulations s
+            JOIN cohort_simulations cs ON cs.simulation_id = s.id
+            JOIN cohort_data cd ON cd.id = cs.cohort_id
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+            WHERE s.active = true
+        ),
+        simulatable_data AS (
+            -- Profiles that the actual user can emulate (based on actual user's role)
+            SELECT 
+                p.id,
+                p.first_name,
+                p.last_name,
+                p.alias,
+                p.role,
+                p.active,
+                p.viewed_intro,
+                p.viewed_chat,
+                p.default_profile,
+                COALESCE(prl.requests_per_day, 0) as req_per_day,
+                p.last_login,
+                p.last_active,
+                p.created_at,
+                p.updated_at,
+                pd.department_id as primary_department_id
+            FROM profiles p
+            CROSS JOIN effective_profile_role pr
+            LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+            LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+            WHERE p.id != $1  -- Don't include actual user in emulation list
               AND CASE 
                 WHEN pr.role = 'superadmin' THEN true
                 WHEN pr.role = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
@@ -612,13 +643,46 @@ class ProfileQueries:
               END
         ),
         earliest_attempt AS (
+            -- Earliest attempt for the effective profile
             SELECT MIN(sa.created_at) as earliest
             FROM simulation_attempts sa
             JOIN attempt_profiles ap ON ap.attempt_id = sa.id
-            WHERE ap.profile_id = $1
+            WHERE ap.profile_id = $2
         )
         SELECT 
-            pd.*,
+            -- Actual profile fields (prefixed with actual_)
+            apd.id as actual_id,
+            apd.first_name as actual_first_name,
+            apd.last_name as actual_last_name,
+            apd.alias as actual_alias,
+            apd.role as actual_role,
+            apd.active as actual_active,
+            apd.viewed_intro as actual_viewed_intro,
+            apd.viewed_chat as actual_viewed_chat,
+            apd.default_profile as actual_default_profile,
+            apd.req_per_day as actual_req_per_day,
+            apd.last_login as actual_last_login,
+            apd.last_active as actual_last_active,
+            apd.created_at as actual_created_at,
+            apd.updated_at as actual_updated_at,
+            apd.primary_department_id as actual_primary_department_id,
+            -- Effective profile fields (unprefixed for backward compatibility)
+            epd.id,
+            epd.first_name,
+            epd.last_name,
+            epd.alias,
+            epd.role,
+            epd.active,
+            epd.viewed_intro,
+            epd.viewed_chat,
+            epd.default_profile,
+            epd.req_per_day,
+            epd.last_login,
+            epd.last_active,
+            epd.created_at,
+            epd.updated_at,
+            epd.primary_department_id,
+            -- Context data (based on effective profile)
             COALESCE(
                 (SELECT jsonb_agg(jsonb_build_object(
                     'id', d.id::text,
@@ -677,6 +741,7 @@ class ProfileQueries:
                 '[]'::jsonb
             ) as simulatable_profiles,
             (SELECT earliest FROM earliest_attempt) as earliest_attempt_date
-        FROM profile_data pd
+        FROM actual_profile_data apd
+        CROSS JOIN effective_profile_data epd
         """
-        return (query, [profile_id])
+        return (query, [actual_profile_id, effective_profile_id])
