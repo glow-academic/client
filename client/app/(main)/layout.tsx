@@ -77,10 +77,14 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
 
+  const isReportPage = useMemo(() => {
+    return pathname.startsWith("/analytics/reports/p");
+  }, [pathname]);
+
   // Check if we're on a main screen that should show chat components
   const shouldShowChatComponents = useMemo(() => {
-    return isMainScreen(pathname);
-  }, [pathname]);
+    return isMainScreen(pathname) || isReportPage;
+  }, [pathname, isReportPage]);
 
   // Check if user has permission to see chat components (instructional, admin, superadmin only)
   const canShowChatComponents = useMemo(() => {
@@ -97,10 +101,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   const isHomePage = useMemo(() => {
     return pathname === "/home";
-  }, [pathname]);
-
-  const isReportPage = useMemo(() => {
-    return pathname.startsWith("/analytics/reports/p");
   }, [pathname]);
 
   const isSystemPage = useMemo(() => {

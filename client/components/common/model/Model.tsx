@@ -110,7 +110,13 @@ export default function Model({ modelId, providerId }: ModelProps) {
       });
     }
     return () => clearEntityMetadata();
-  }, [modelDetail, modelId, isEditMode, setEntityMetadata, clearEntityMetadata]);
+  }, [
+    modelDetail,
+    modelId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {

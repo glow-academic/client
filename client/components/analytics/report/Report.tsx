@@ -6,11 +6,11 @@
  */
 "use client";
 
-import { useEffect } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfileSimple } from "@/lib/api/v2/hooks/profile";
+import { useEffect } from "react";
 import Dashboard from "../Dashboard";
 
 // Helper function to get initials
@@ -52,7 +52,7 @@ export interface ReportProps {
 
 export default function Report({ profileId }: ReportProps) {
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  
+
   // Fetch profile data
   const { data: profileData, isLoading: isLoadingProfile } =
     useProfileSimple(profileId);

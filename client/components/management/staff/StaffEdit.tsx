@@ -31,6 +31,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useDeleteProfile,
   useProfileSimple,
@@ -41,7 +42,6 @@ import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 type FormData = {
   firstName?: string;
@@ -141,14 +141,7 @@ const useStaffEditBusinessLogic = (
         setIsSubmitting(false);
       }
     },
-    [
-      profileId,
-      router,
-      redirectOnSuccess,
-      onDone,
-      updateProfileMutation,
-      log,
-    ]
+    [profileId, router, redirectOnSuccess, onDone, updateProfileMutation, log]
   );
 
   const handleDelete = useCallback(async () => {
