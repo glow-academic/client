@@ -65,6 +65,8 @@ export const getSectionRoute = (
       return "/analytics/dashboard";
     case "reports":
       return "/analytics/reports";
+    case "pricing":
+      return "/analytics/pricing";
     case "leaderboard":
       return "/analytics/leaderboard";
 
@@ -86,8 +88,6 @@ export const getSectionRoute = (
       return "/create/scenarios";
     case "simulations":
       return "/create/simulations";
-    case "rubrics":
-      return "/management/rubrics";
     case "personas":
       return "/create/personas";
     case "documents":
@@ -96,22 +96,22 @@ export const getSectionRoute = (
     // Management routes
     case "management":
       return "/management";
-    case "parameters":
-      return "/management/parameters";
+    case "departments":
+      return "/management/departments";
     case "staff":
       return "/management/staff";
-    case "pricing":
-      return "/analytics/pricing";
-    case "providers":
-      return "/system/providers";
+    case "rubrics":
+      return "/management/rubrics";
+    case "parameters":
+      return "/management/parameters";
 
     // System routes
     case "system":
       return "/system";
-    case "departments":
-      return "/management/departments";
     case "agents":
       return "/system/agents";
+    case "providers":
+      return "/system/providers";
     case "feedback":
       return "/system/feedback";
     case "logs":
@@ -141,10 +141,6 @@ export const getSectionRoute = (
       if (section.startsWith("simulation-")) {
         const simulationId = section.replace("simulation-", "");
         return `/create/simulations/s/${simulationId}`;
-      }
-      if (section.startsWith("agent-")) {
-        const agentId = section.replace("agent-", "");
-        return `/create/agents/a/${agentId}`;
       }
       if (section.startsWith("scenario-")) {
         const scenarioId = section.replace("scenario-", "");
@@ -182,13 +178,34 @@ export const getSectionRoute = (
         return `/system/providers/p/${providerId}`;
       }
       if (section.startsWith("model-")) {
-        const providerId = section.replace("provider-", "");
         const modelId = section.replace("model-", "");
-        return `/system/providers/p/${providerId}/m/${modelId}`;
+        // Need to extract providerId from current pathname
+        if (currentPathname) {
+          const providerMatch = currentPathname.match(
+            /\/providers\/p\/([^/]+)/
+          );
+          if (providerMatch) {
+            return `/system/providers/p/${providerMatch[1]}/m/${modelId}`;
+          }
+        }
+        // Fallback if we can't determine provider
+        return "/system/providers";
       }
-      if (section.startsWith("report-")) {
-        const profileId = section.replace("report-", "");
-        return `/analytics/reports/p/${profileId}`;
+      if (section.startsWith("profile-")) {
+        const profileId = section.replace("profile-", "");
+        // Check if we're in reports context or staff context
+        if (currentPathname && currentPathname.includes("/analytics/reports")) {
+          return `/analytics/reports/p/${profileId}`;
+        }
+        return `/management/staff/p/${profileId}`;
+      }
+      if (section.startsWith("department-")) {
+        const departmentId = section.replace("department-", "");
+        return `/management/departments/d/${departmentId}`;
+      }
+      if (section.startsWith("persona-")) {
+        const personaId = section.replace("persona-", "");
+        return `/create/personas/p/${personaId}`;
       }
 
       // System dynamic routes
