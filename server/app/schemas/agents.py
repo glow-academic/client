@@ -31,6 +31,7 @@ class AgentItem(BaseModel):
     model_id: str
     updated_at: str
     can_edit: bool
+    can_duplicate: bool
     can_delete: bool
 
 

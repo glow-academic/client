@@ -5,14 +5,14 @@
  * 07/20/2025
  */
 "use client";
-import { Brain, Edit, Thermometer } from "lucide-react";
+import { Brain, Copy, Edit, Thermometer } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import { useAgentsList } from "@/lib/api/v2/hooks/agents";
+import { useAgentsList, useDuplicateAgent } from "@/lib/api/v2/hooks/agents";
 import { useMemo } from "react";
 import { AgentsDataTable } from "./AgentsDataTable";
 
@@ -23,6 +23,7 @@ export default function Agents() {
   // V2 API hook
   const profileId = effectiveProfile?.id || "";
   const { data: agentsData, isLoading } = useAgentsList(profileId, !!profileId);
+  const duplicateMutation = useDuplicateAgent();
 
   // Extract data from V2 response
   const agents = useMemo(() => agentsData?.agents || [], [agentsData?.agents]);
@@ -67,6 +68,16 @@ export default function Agents() {
     router.push(`/system/agents/a/${id}`);
   };
 
+  const handleDuplicate = async (id: string, name: string) => {
+    try {
+      await duplicateMutation.mutateAsync({ agentId: id });
+      // Optional: show success toast
+    } catch (error) {
+      console.error("Failed to duplicate agent:", error);
+      // Optional: show error toast
+    }
+  };
+
   const formatTemperature = (temp: number) => {
     return temp.toFixed(2);
   };
@@ -102,13 +113,25 @@ export default function Agents() {
             </p>
           </div>
           <div className="flex gap-2 items-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEdit(agent.agent_id)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
+            {agent.can_duplicate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicate(agent.agent_id, agent.name)}
+                disabled={duplicateMutation.isPending}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            )}
+            {agent.can_edit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(agent.agent_id)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

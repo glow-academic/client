@@ -2,15 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.seed_helpers import (
-    get_superadmin_alias,  # type: ignore
-)
-
-from app.schemas.agents import (
-    AgentDetailRequest,  # type: ignore
-    AgentsListRequest,  # type: ignore
-)
+from app.schemas.agents import AgentDetailRequest  # type: ignore
+from app.schemas.agents import AgentsListRequest  # type: ignore
 from app.services.agent_service import AgentService  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -61,23 +56,24 @@ async def test_get_agents_list_empty_for_new_department(
 async def test_get_agents_list_permissions_superadmin(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test superadmin has edit/delete permissions."""
+    """Test superadmin has edit/duplicate permissions and correct delete logic."""
     profile_id = await get_superadmin_alias(db)
 
     svc = AgentService(db)
     result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
 
     assert result is not None
-    # Superadmin should have edit and delete permissions
+    # Superadmin should have edit and duplicate permissions
     for agent in result.agents:
         assert agent.can_edit is True
-        assert agent.can_delete is True
+        assert agent.can_duplicate is True
+        # can_delete depends on default_agent and department_agents links
 
 
 async def test_get_agents_list_permissions_non_superadmin(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test non-superadmin does not have edit/delete permissions."""
+    """Test non-superadmin does not have edit/delete permissions but can duplicate."""
     # Create a non-superadmin profile
     ta_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, alias, role) "
@@ -88,9 +84,10 @@ async def test_get_agents_list_permissions_non_superadmin(
     result = await svc.get_agents_list(AgentsListRequest(profileId=str(ta_id)))
 
     assert result is not None
-    # TA should not have edit or delete permissions
+    # TA should not have edit or delete permissions, but can duplicate
     for agent in result.agents:
         assert agent.can_edit is False
+        assert agent.can_duplicate is True
         assert agent.can_delete is False
 
 
@@ -270,3 +267,99 @@ async def test_agent_detail_single_query_optimization(
     # Verify all valid_model_ids have entries in model_mapping
     for model_id in result.valid_model_ids:
         assert model_id in result.model_mapping
+
+
+# ============================================================================
+# PERMISSIONS TESTS
+# ============================================================================
+
+
+async def test_can_delete_false_when_default_agent(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that default agents cannot be deleted."""
+    profile_id = await get_superadmin_alias(db)
+
+    # Create a default agent
+    agent_id = await db.fetchval(
+        "INSERT INTO agents(name, description, system_prompt, temperature, model_id, reasoning, active, default_agent) "
+        "SELECT 'Default Agent', 'Test', 'Prompt', 0.7, id, 'none', true, true "
+        "FROM models WHERE active = true LIMIT 1 RETURNING id"
+    )
+
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+
+    # Find the default agent
+    default_agent = next((a for a in result.agents if a.agent_id == str(agent_id)), None)
+    assert default_agent is not None
+    assert default_agent.can_delete is False
+
+
+async def test_can_delete_false_when_linked_to_department(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that agents linked to departments cannot be deleted."""
+    profile_id = await get_superadmin_alias(db)
+
+    # Create a non-default agent
+    agent_id = await db.fetchval(
+        "INSERT INTO agents(name, description, system_prompt, temperature, model_id, reasoning, active, default_agent) "
+        "SELECT 'Linked Agent', 'Test', 'Prompt', 0.7, id, 'none', true, false "
+        "FROM models WHERE active = true LIMIT 1 RETURNING id"
+    )
+
+    # Link it to a department
+    await db.execute(
+        "INSERT INTO department_agents(department_id, role, agent_id) "
+        "SELECT id, 'classify', $1 FROM departments LIMIT 1",
+        agent_id,
+    )
+
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+
+    # Find the linked agent
+    linked_agent = next((a for a in result.agents if a.agent_id == str(agent_id)), None)
+    assert linked_agent is not None
+    assert linked_agent.can_delete is False
+
+
+async def test_can_delete_true_when_not_linked_and_not_default(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that non-default, unlinked agents can be deleted by superadmin."""
+    profile_id = await get_superadmin_alias(db)
+
+    # Create a non-default, unlinked agent
+    agent_id = await db.fetchval(
+        "INSERT INTO agents(name, description, system_prompt, temperature, model_id, reasoning, active, default_agent) "
+        "SELECT 'Deletable Agent', 'Test', 'Prompt', 0.7, id, 'none', true, false "
+        "FROM models WHERE active = true LIMIT 1 RETURNING id"
+    )
+
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+
+    # Find the deletable agent
+    deletable_agent = next(
+        (a for a in result.agents if a.agent_id == str(agent_id)), None
+    )
+    assert deletable_agent is not None
+    assert deletable_agent.can_edit is True
+    assert deletable_agent.can_duplicate is True
+    assert deletable_agent.can_delete is True
+
+
+async def test_can_duplicate_always_true(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that all agents can be duplicated regardless of status."""
+    profile_id = await get_superadmin_alias(db)
+
+    svc = AgentService(db)
+    result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
+
+    # All agents should have can_duplicate = true
+    for agent in result.agents:
+        assert agent.can_duplicate is True

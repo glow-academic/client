@@ -3,33 +3,26 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-
 from app.db import get_db
-from app.schemas.providers import (
-    CreateModelRequest,
-    CreateModelResponse,
-    CreateProviderRequest,
-    CreateProviderResponse,
-    DecryptProviderKeyRequest,
-    DecryptProviderKeyResponse,
-    DeleteModelRequest,
-    DeleteModelResponse,
-    DeleteProviderRequest,
-    DeleteProviderResponse,
-    ModelDetailRequest,
-    ModelDetailResponse,
-    ProviderDetailRequest,
-    ProviderDetailResponse,
-    ProvidersFilters,
-    ProvidersListResponse,
-    UpdateModelRequest,
-    UpdateModelResponse,
-    UpdateProviderRequest,
-    UpdateProviderResponse,
-)
+from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
+                                   CreateProviderRequest,
+                                   CreateProviderResponse,
+                                   DecryptProviderKeyRequest,
+                                   DecryptProviderKeyResponse,
+                                   DeleteModelRequest, DeleteModelResponse,
+                                   DeleteProviderRequest,
+                                   DeleteProviderResponse,
+                                   DuplicateProviderRequest,
+                                   DuplicateProviderResponse,
+                                   ModelDetailRequest, ModelDetailResponse,
+                                   ProviderDetailRequest,
+                                   ProviderDetailResponse, ProvidersFilters,
+                                   ProvidersListResponse, UpdateModelRequest,
+                                   UpdateModelResponse, UpdateProviderRequest,
+                                   UpdateProviderResponse)
 from app.services.provider_service import get_provider_service
 from app.utils.auth import decrypt_api_key
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 
@@ -108,6 +101,21 @@ async def delete_provider(
         return await service.delete_provider(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/duplicate", response_model=DuplicateProviderResponse)
+async def duplicate_provider(
+    request: DuplicateProviderRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> DuplicateProviderResponse:
+    """Duplicate a provider with all its models."""
+    try:
+        service = get_provider_service(conn)
+        return await service.duplicate_provider(request)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

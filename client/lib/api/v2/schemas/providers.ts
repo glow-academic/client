@@ -173,6 +173,25 @@ export type DeleteProviderResponse = z.infer<
   typeof DeleteProviderResponseSchema
 >;
 
+// Duplicate provider
+export const DuplicateProviderRequestSchema = z.object({
+  providerId: z.string(),
+});
+
+export type DuplicateProviderRequest = z.infer<
+  typeof DuplicateProviderRequestSchema
+>;
+
+export const DuplicateProviderResponseSchema = z.object({
+  success: z.boolean(),
+  providerId: z.string(),
+  message: z.string(),
+});
+
+export type DuplicateProviderResponse = z.infer<
+  typeof DuplicateProviderResponseSchema
+>;
+
 // ============================================================================
 // MODEL MUTATION SCHEMAS
 // ============================================================================

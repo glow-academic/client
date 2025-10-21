@@ -51,6 +51,13 @@ class AgentQueries:
         query = """
         WITH user_profile AS (
             SELECT role FROM profiles WHERE id = $1
+        ),
+        agent_department_links AS (
+            SELECT 
+                agent_id,
+                COUNT(*) as total_links
+            FROM department_agents
+            GROUP BY agent_id
         )
         SELECT 
             a.id::text as agent_id,
@@ -61,11 +68,18 @@ class AgentQueries:
             a.model_id::text,
             a.updated_at,
             CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_edit,
-            CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_delete,
+            true as can_duplicate,
+            CASE 
+                WHEN COALESCE(adl.total_links, 0) > 0 THEN false
+                WHEN a.default_agent = true THEN false
+                WHEN up.role = 'superadmin' THEN true
+                ELSE false
+            END as can_delete,
             m.name as model_name,
             COALESCE(m.description, '') as model_description
         FROM agents a
         CROSS JOIN user_profile up
+        LEFT JOIN agent_department_links adl ON adl.agent_id = a.id
         LEFT JOIN models m ON m.id = a.model_id
         ORDER BY a.name
         """
@@ -320,7 +334,7 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, created_at, updated_at)
+        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, default_agent, created_at, updated_at)
         SELECT 
             name || ' Copy',
             description,
@@ -328,6 +342,8 @@ class AgentQueries:
             temperature,
             model_id,
             reasoning,
+            false,
+            false,
             NOW(),
             NOW()
         FROM agents

@@ -21,6 +21,8 @@ import {
   DeleteModelResponseSchema,
   DeleteProviderRequest,
   DeleteProviderResponseSchema,
+  DuplicateProviderRequest,
+  DuplicateProviderResponseSchema,
   ModelDetailResponseSchema,
   ProviderDetailResponseSchema,
   ProvidersFilters,
@@ -145,6 +147,28 @@ export function useDeleteProvider() {
         body: JSON.stringify(request),
       });
       return DeleteProviderResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("providers:v2:list");
+        },
+      });
+    },
+  });
+}
+
+export function useDuplicateProvider() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: DuplicateProviderRequest) => {
+      const res = await api<unknown>("/api/v2/providers/duplicate", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return DuplicateProviderResponseSchema.parse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

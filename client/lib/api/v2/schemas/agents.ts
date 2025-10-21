@@ -30,6 +30,7 @@ export const AgentItemSchema = z.object({
   model_id: z.string(),
   updated_at: z.string(),
   can_edit: z.boolean(),
+  can_duplicate: z.boolean(),
   can_delete: z.boolean(),
 });
 

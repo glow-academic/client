@@ -81,6 +81,7 @@ class AgentService(BaseService):
                     model_id=model_id,
                     updated_at=row["updated_at"].isoformat(),
                     can_edit=row["can_edit"],
+                    can_duplicate=row["can_duplicate"],
                     can_delete=row["can_delete"],
                 )
             )

@@ -6,6 +6,7 @@
  */
 "use client";
 import {
+  Copy,
   Cpu,
   Edit,
   Loader2,
@@ -50,6 +51,7 @@ import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useDeleteModel,
   useDeleteProvider,
+  useDuplicateProvider,
   useProvidersList,
 } from "@/lib/api/v2/hooks/providers";
 import type {
@@ -78,6 +80,7 @@ export default function Providers() {
   // Mutation hooks
   const deleteModelMutation = useDeleteModel();
   const deleteProviderMutation = useDeleteProvider();
+  const duplicateProviderMutation = useDuplicateProvider();
 
   // V2 API: Single fetch with hierarchical data and permissions
   // Note: Providers are global (not department-specific)
@@ -166,6 +169,27 @@ export default function Providers() {
     }
   };
 
+  const handleDuplicateProviderClick = async (provider: ProviderWithModels) => {
+    try {
+      await duplicateProviderMutation.mutateAsync({
+        providerId: provider.provider_id,
+      });
+
+      toast.success(`Provider '${provider.name}' duplicated successfully`);
+    } catch (error) {
+      log.error("provider.duplicate.failed", {
+        message: "Error duplicating provider",
+        error,
+        context: {
+          component: "Providers",
+          function: "handleDuplicateProviderClick",
+          providerId: provider.provider_id,
+        },
+      });
+      toast.error("Failed to duplicate provider");
+    }
+  };
+
   const handleEdit = (model: ModelItem, provider: ProviderWithModels) => {
     router.push(
       `/system/providers/p/${provider.provider_id}/m/${model.model_id}`
@@ -216,6 +240,21 @@ export default function Providers() {
               </TooltipContent>
             </Tooltip>
           )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicateProviderClick(provider)}
+                disabled={duplicateProviderMutation.isPending}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Duplicate Provider</p>
+            </TooltipContent>
+          </Tooltip>
           {provider.can_delete && (
             <Tooltip>
               <TooltipTrigger asChild>

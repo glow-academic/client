@@ -441,3 +441,63 @@ class ProviderQueries:
         CROSS JOIN valid_providers vp
         """
         return (query, [model_id, profile_id])
+
+    # ===== Provider Duplication Queries =====
+
+    def get_provider_for_duplicate(self, provider_id: str) -> tuple[str, list[Any]]:
+        """Build query to get provider data for duplication.
+        
+        Fetches provider details and base_url from provider_endpoints in a single query.
+        """
+        query = """
+        SELECT 
+            p.name,
+            p.description,
+            p.api_key,
+            p.department_id,
+            pe.base_url
+        FROM providers p
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
+        WHERE p.id = $1
+        """
+        return (query, [provider_id])
+
+    def get_provider_models_for_duplicate(
+        self, provider_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build query to get all models for a provider for duplication."""
+        query = """
+        SELECT 
+            name,
+            description,
+            active,
+            custom_model,
+            input_ppm,
+            output_ppm
+        FROM models
+        WHERE provider_id = $1
+        ORDER BY created_at
+        """
+        return (query, [provider_id])
+
+    def insert_duplicate_provider(self) -> tuple[str, list[Any]]:
+        """Build query to insert duplicate provider.
+        
+        Note: Description gets ' Copy' appended, name remains unchanged.
+        """
+        query = """
+        INSERT INTO providers (
+            name,
+            description,
+            api_key,
+            department_id
+        )
+        VALUES (
+            $1,
+            $2 || ' Copy',
+            $3,
+            $4
+        )
+        RETURNING id
+        """
+        return (query, [])

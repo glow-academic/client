@@ -4,15 +4,18 @@ import json
 
 import asyncpg  # type: ignore
 from app.cache import keys
+from app.db import transaction
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    CreateProviderRequest,
                                    CreateProviderResponse, DeleteModelRequest,
                                    DeleteModelResponse, DeleteProviderRequest,
-                                   DeleteProviderResponse, ModelDetailRequest,
-                                   ModelDetailResponse, ModelItem,
-                                   ProviderDetailRequest,
+                                   DeleteProviderResponse,
+                                   DuplicateProviderRequest,
+                                   DuplicateProviderResponse,
+                                   ModelDetailRequest, ModelDetailResponse,
+                                   ModelItem, ProviderDetailRequest,
                                    ProviderDetailResponse, ProvidersFilters,
                                    ProvidersListResponse, ProviderWithModels,
                                    UpdateModelRequest, UpdateModelResponse,
@@ -316,6 +319,75 @@ class ProviderService(BaseService):
 
         return DeleteProviderResponse(
             success=True, message=f"Provider '{provider['name']}' deleted successfully"
+        )
+
+    async def duplicate_provider(
+        self, request: DuplicateProviderRequest
+    ) -> DuplicateProviderResponse:
+        """Duplicate a provider with all its models."""
+
+        # Get original provider data
+        query, params = self.queries.get_provider_for_duplicate(request.providerId)
+        provider = await self.conn.fetchrow(query, *params)
+
+        if not provider:
+            raise ValueError(f"Provider not found: {request.providerId}")
+
+        # Get all models for the provider
+        models_query, models_params = self.queries.get_provider_models_for_duplicate(
+            request.providerId
+        )
+        models = await self.conn.fetch(models_query, *models_params)
+
+        async with transaction(self.conn):
+            # Insert duplicate provider (description gets ' Copy' appended)
+            insert_query, _ = self.queries.insert_duplicate_provider()
+            new_provider = await self.conn.fetchrow(
+                insert_query,
+                provider["name"],
+                provider["description"],
+                provider["api_key"],
+                provider["department_id"],
+            )
+
+            if not new_provider:
+                raise ValueError("Failed to create duplicate provider")
+
+            new_provider_id = str(new_provider["id"])
+
+            # Copy provider endpoint if base_url exists
+            if provider["base_url"]:
+                endpoint_query, _ = self.queries.insert_provider_endpoint()
+                await self.conn.execute(
+                    endpoint_query, new_provider_id, provider["base_url"]
+                )
+
+            # Copy all models
+            if models:
+                model_insert_query, _ = self.queries.create_model()
+                for model in models:
+                    await self.conn.execute(
+                        model_insert_query,
+                        new_provider_id,
+                        model["name"],
+                        model["description"],
+                        model["active"],
+                        model["custom_model"],
+                        model["input_ppm"],
+                        model["output_ppm"],
+                    )
+
+        # Invalidate caches
+        await self._invalidate_cache(
+            [
+                keys.tag_provider_all(),
+            ]
+        )
+
+        return DuplicateProviderResponse(
+            success=True,
+            providerId=new_provider_id,
+            message=f"Provider '{provider['name']}' duplicated successfully",
         )
 
     async def create_model(self, request: CreateModelRequest) -> CreateModelResponse:

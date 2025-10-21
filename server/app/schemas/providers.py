@@ -164,6 +164,20 @@ class DeleteProviderResponse(BaseModel):
     message: str
 
 
+class DuplicateProviderRequest(BaseModel):
+    """Request to duplicate provider."""
+
+    providerId: str
+
+
+class DuplicateProviderResponse(BaseModel):
+    """Response from duplicate provider."""
+
+    success: bool
+    providerId: str
+    message: str
+
+
 # ============================================================================
 # MODEL MUTATION SCHEMAS
 # ============================================================================
