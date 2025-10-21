@@ -1,6 +1,7 @@
 """Analytics service layer - utility operations for analytics infrastructure."""
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.analytics_queries import AnalyticsQueries
 from app.services.base_service import BaseService
@@ -26,4 +27,3 @@ class AnalyticsService(BaseService):
 def get_analytics_service(conn: asyncpg.Connection) -> AnalyticsService:
     """Get analytics service instance."""
     return AnalyticsService(conn)
-

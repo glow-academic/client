@@ -1,8 +1,9 @@
 """Tests for analytics service - refresh utilities only."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
+
 from app.services.analytics_service import AnalyticsService
 
 
@@ -32,4 +33,3 @@ async def test_refresh_materialized_view():
     invalidation_tags = service._invalidate_cache.call_args[0][0]
     assert len(invalidation_tags) == 1
     assert "analytics:v2:all" in invalidation_tags[0]
-

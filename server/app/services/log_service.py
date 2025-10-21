@@ -5,13 +5,22 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.log_queries import LogQueries
-from app.schemas.logs import (ActorData, BulkDeleteLogsRequest,
-                              BulkDeleteLogsResponse, ContextData,
-                              CreateLogRequest, CreateLogResponse, ErrorData,
-                              LogItem, LogsListRequest, LogsListResponse,
-                              SubjectData)
+from app.schemas.logs import (
+    ActorData,
+    BulkDeleteLogsRequest,
+    BulkDeleteLogsResponse,
+    ContextData,
+    CreateLogRequest,
+    CreateLogResponse,
+    ErrorData,
+    LogItem,
+    LogsListRequest,
+    LogsListResponse,
+    SubjectData,
+)
 from app.services.base_service import BaseService, with_cache
 
 

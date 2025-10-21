@@ -4,9 +4,15 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from .base import (ParameterItemMapping, ParameterMapping, PersonaMapping,
-                   ScenarioMapping, SimulationMapping, StandardGroupsMapping,
-                   StandardsMapping)
+from .base import (
+    ParameterItemMapping,
+    ParameterMapping,
+    PersonaMapping,
+    ScenarioMapping,
+    SimulationMapping,
+    StandardGroupsMapping,
+    StandardsMapping,
+)
 from .home import AttemptHistoryResponse
 
 
@@ -52,4 +58,3 @@ class PracticeOverviewResponse(BaseModel):
     persona_mapping: PersonaMapping
     parameter_mapping: ParameterMapping
     parameter_item_mapping: ParameterItemMapping
-

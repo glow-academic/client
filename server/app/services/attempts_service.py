@@ -3,13 +3,16 @@
 from datetime import datetime
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.attempts_queries import AttemptsQueries
-from app.schemas.attempts import (BulkArchiveAttemptsRequest,
-                                  BulkArchiveAttemptsResponse,
-                                  UpdateChatCompletedAtRequest,
-                                  UpdateChatCreatedAtRequest,
-                                  UpdateChatTimestampResponse)
+from app.schemas.attempts import (
+    BulkArchiveAttemptsRequest,
+    BulkArchiveAttemptsResponse,
+    UpdateChatCompletedAtRequest,
+    UpdateChatCreatedAtRequest,
+    UpdateChatTimestampResponse,
+)
 from app.services.base_service import BaseService
 
 

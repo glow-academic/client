@@ -6,19 +6,32 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.staff_queries import StaffQueries
 from app.schemas.base import CohortMappingItem, DepartmentMappingItem
-from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
-                               BulkDeleteStaffRequest, BulkDeleteStaffResponse,
-                               BulkUpdateStaffRequest, BulkUpdateStaffResponse,
-                               CreateStaffRequest, CreateStaffResponse,
-                               DeleteStaffRequest, DeleteStaffResponse,
-                               StaffDetailBulkRequest, StaffDetailBulkResponse,
-                               StaffDetailRequest, StaffDetailResponse,
-                               StaffFilters, StaffItem, StaffListResponse,
-                               UpdateStaffRequest, UpdateStaffResponse)
+from app.schemas.staff import (
+    BulkCreateStaffRequest,
+    BulkCreateStaffResponse,
+    BulkDeleteStaffRequest,
+    BulkDeleteStaffResponse,
+    BulkUpdateStaffRequest,
+    BulkUpdateStaffResponse,
+    CreateStaffRequest,
+    CreateStaffResponse,
+    DeleteStaffRequest,
+    DeleteStaffResponse,
+    StaffDetailBulkRequest,
+    StaffDetailBulkResponse,
+    StaffDetailRequest,
+    StaffDetailResponse,
+    StaffFilters,
+    StaffItem,
+    StaffListResponse,
+    UpdateStaffRequest,
+    UpdateStaffResponse,
+)
 from app.services.base_service import BaseService, with_cache
 
 

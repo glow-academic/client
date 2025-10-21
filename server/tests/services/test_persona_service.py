@@ -4,8 +4,11 @@ Tests for persona_service - list and search methods.
 
 import asyncpg  # type: ignore
 import pytest
-from app.schemas.personas import PersonaDetailRequest  # type: ignore
-from app.schemas.personas import PersonasFilters  # type: ignore
+
+from app.schemas.personas import (
+    PersonaDetailRequest,  # type: ignore
+    PersonasFilters,  # type: ignore
+)
 from app.services.persona_service import PersonaService  # type: ignore
 
 # --- Helper Functions ---
@@ -485,7 +488,9 @@ async def test_persona_can_delete_permissions(
             )
 
 
-@pytest.mark.skip(reason="C2 consolidation query needs debugging - scenario_count mismatch with subqueries")
+@pytest.mark.skip(
+    reason="C2 consolidation query needs debugging - scenario_count mismatch with subqueries"
+)
 @pytest.mark.asyncio
 async def test_get_persona_response_times_consolidated_query(
     db: asyncpg.Connection, disable_cache: None

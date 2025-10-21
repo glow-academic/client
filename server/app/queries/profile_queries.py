@@ -504,10 +504,10 @@ class ProfileQueries:
     ) -> tuple[str, list[Any]]:
         """Build optimized query to get complete profile context in ONE query.
 
-        Fetches BOTH actual and effective profiles, plus departments, cohorts, 
-        simulations, simulatable profiles, and earliest attempt date using CTEs 
+        Fetches BOTH actual and effective profiles, plus departments, cohorts,
+        simulations, simulatable profiles, and earliest attempt date using CTEs
         and JSON aggregation.
-        
+
         The query uses effective_profile_id for role-based filtering and context data,
         and returns both profiles to avoid a second query.
 

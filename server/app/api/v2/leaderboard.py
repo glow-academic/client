@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
 from app.schemas.analytics import AnalyticsFilters
 from app.schemas.leaderboard import LeaderboardBundleResponse
 from app.services.leaderboard_service import LeaderboardService
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
@@ -23,4 +24,3 @@ async def get_leaderboard(
         return await service.get_leaderboard_bundle(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

@@ -1,6 +1,5 @@
 """Unit tests for health check service."""
 
-import asyncio
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -150,11 +149,12 @@ async def test_check_simulation_service_no_agents(health_service, mock_conn):
 @pytest.mark.asyncio
 async def test_check_document_upload_healthy(health_service):
     """Test document upload check when healthy."""
-    with patch("app.services.health_service.os.path.exists", return_value=True), patch(
-        "app.services.health_service.os.access", return_value=True
-    ), patch("app.services.health_service.Path") as mock_path, patch(
-        "app.services.health_service.os.statvfs"
-    ) as mock_statvfs:
+    with (
+        patch("app.services.health_service.os.path.exists", return_value=True),
+        patch("app.services.health_service.os.access", return_value=True),
+        patch("app.services.health_service.Path") as mock_path,
+        patch("app.services.health_service.os.statvfs") as mock_statvfs,
+    ):
         # Mock file operations
         test_file = MagicMock()
         test_file.exists.return_value = True
@@ -177,7 +177,6 @@ async def test_check_document_upload_healthy(health_service):
 @pytest.mark.asyncio
 async def test_check_authentication_healthy(health_service):
     """Test authentication check when endpoint responds."""
-    import httpx
 
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -199,15 +198,14 @@ async def test_get_system_health_integration(health_service, mock_conn):
     mock_conn.fetchval.return_value = 1
     mock_conn.fetchrow.return_value = None  # No agents
 
-    with patch("app.services.health_service.get_pool") as mock_pool, patch(
-        "app.services.health_service.redis_client", None
-    ), patch("app.services.health_service.get_socketio_instance") as mock_sio, patch(
-        "app.services.health_service.os.path.exists", return_value=True
-    ), patch(
-        "app.services.health_service.os.access", return_value=True
-    ), patch(
-        "httpx.AsyncClient"
-    ) as mock_client:
+    with (
+        patch("app.services.health_service.get_pool") as mock_pool,
+        patch("app.services.health_service.redis_client", None),
+        patch("app.services.health_service.get_socketio_instance") as mock_sio,
+        patch("app.services.health_service.os.path.exists", return_value=True),
+        patch("app.services.health_service.os.access", return_value=True),
+        patch("httpx.AsyncClient") as mock_client,
+    ):
         # Setup mocks
         pool = MagicMock()
         pool.get_size.return_value = 10
@@ -224,9 +222,10 @@ async def test_get_system_health_integration(health_service, mock_conn):
         )
 
         # Mock file operations for document upload
-        with patch("app.services.health_service.Path") as mock_path, patch(
-            "app.services.health_service.os.statvfs"
-        ) as mock_statvfs:
+        with (
+            patch("app.services.health_service.Path") as mock_path,
+            patch("app.services.health_service.os.statvfs") as mock_statvfs,
+        ):
             test_file = MagicMock()
             test_file.exists.return_value = True
             test_file.read_text.return_value = "test"
@@ -259,21 +258,16 @@ async def test_system_health_degraded_status(health_service, mock_conn):
         mock_pool.return_value = pool
 
         # Mock other checks to be mocked/skipped
-        with patch.object(health_service, "check_redis") as mock_redis, patch.object(
-            health_service, "check_websocket"
-        ) as mock_ws, patch.object(
-            health_service, "check_simulation_service"
-        ) as mock_sim, patch.object(
-            health_service, "check_assistant_service"
-        ) as mock_asst, patch.object(
-            health_service, "check_document_upload"
-        ) as mock_doc, patch.object(
-            health_service, "check_authentication"
-        ) as mock_auth, patch.object(
-            health_service, "check_client_api"
-        ) as mock_client, patch.object(
-            health_service, "check_route_scan"
-        ) as mock_routes:
+        with (
+            patch.object(health_service, "check_redis") as mock_redis,
+            patch.object(health_service, "check_websocket") as mock_ws,
+            patch.object(health_service, "check_simulation_service") as mock_sim,
+            patch.object(health_service, "check_assistant_service") as mock_asst,
+            patch.object(health_service, "check_document_upload") as mock_doc,
+            patch.object(health_service, "check_authentication") as mock_auth,
+            patch.object(health_service, "check_client_api") as mock_client,
+            patch.object(health_service, "check_route_scan") as mock_routes,
+        ):
             # All other checks healthy
             mock_redis.return_value = HealthCheckItem(
                 id="redis",
@@ -344,4 +338,3 @@ async def test_system_health_degraded_status(health_service, mock_conn):
 
             # Should be degraded due to database warning
             assert result.status == "degraded"
-

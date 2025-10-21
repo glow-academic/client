@@ -4,6 +4,7 @@ Tests for simulation_service - list and search methods.
 
 import asyncpg  # type: ignore
 import pytest
+
 from app.schemas.simulations import SimulationsFilters  # type: ignore
 from app.services.simulation_service import SimulationService  # type: ignore
 
@@ -853,8 +854,7 @@ async def test_scenario_ordering_active_first(
 
     # Create request with mixed active/inactive scenarios
     # First scenario inactive, rest active - should reorder to active first
-    from app.schemas.simulations import (ScenarioInRequest,
-                                         UpdateSimulationRequest)
+    from app.schemas.simulations import ScenarioInRequest, UpdateSimulationRequest
 
     scenario_ids = [
         ScenarioInRequest(
@@ -942,8 +942,7 @@ async def test_create_simulation_with_scenario_active_states(
     ]
 
     # Execute - Create simulation
-    from app.schemas.simulations import (CreateSimulationRequest,
-                                         ScenarioInRequest)
+    from app.schemas.simulations import CreateSimulationRequest, ScenarioInRequest
 
     svc = SimulationService(db)
     request = CreateSimulationRequest(
@@ -1044,8 +1043,7 @@ async def test_update_simulation_scenario_active_states(
     time_limit = time_limit_result["time_limit_seconds"] if time_limit_result else None
 
     # Execute - Update simulation
-    from app.schemas.simulations import (ScenarioInRequest,
-                                         UpdateSimulationRequest)
+    from app.schemas.simulations import ScenarioInRequest, UpdateSimulationRequest
 
     svc = SimulationService(db)
     request = UpdateSimulationRequest(

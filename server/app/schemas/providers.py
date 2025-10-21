@@ -11,7 +11,7 @@ from .base import DepartmentMapping, ProviderMapping
 
 class ProvidersFilters(BaseModel):
     """Filters for providers list.
-    
+
     Note: Providers are global (not department-specific), so no department filter.
     """
 

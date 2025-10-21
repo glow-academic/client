@@ -2,12 +2,17 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.schemas.staff import StaffDetailBulkRequest  # type: ignore
-from app.schemas.staff import StaffDetailRequest  # type: ignore
-from app.schemas.staff import StaffFilters  # type: ignore
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,  # type: ignore
+)
+
+from app.schemas.staff import (
+    StaffDetailBulkRequest,  # type: ignore
+    StaffDetailRequest,  # type: ignore
+    StaffFilters,  # type: ignore
+)
 from app.services.staff_service import StaffService  # type: ignore
-from tests.seed_helpers import get_cs_dept_id  # type: ignore
-from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -68,7 +73,7 @@ async def test_get_staff_list_last_active_field(
 ) -> None:
     """Test that staff list returns last_active field in correct format."""
     from datetime import datetime
-    
+
     dept_id = await get_cs_dept_id(db)
     admin_id = await get_superadmin_alias(db)
 
@@ -78,13 +83,13 @@ async def test_get_staff_list_last_active_field(
     )
 
     assert len(resp.staff) > 0, "Should have staff members to test"
-    
+
     for staff_member in resp.staff:
         # Verify field exists and is named last_active (snake_case, not lastActive)
         assert hasattr(staff_member, "last_active"), (
             "StaffItem should have last_active field (snake_case)"
         )
-        
+
         # If last_active has a value, verify it's a valid ISO 8601 timestamp string
         if staff_member.last_active is not None:
             assert isinstance(staff_member.last_active, str), (
@@ -92,10 +97,14 @@ async def test_get_staff_list_last_active_field(
             )
             # Verify it can be parsed as ISO 8601
             try:
-                parsed = datetime.fromisoformat(staff_member.last_active.replace('Z', '+00:00'))
+                parsed = datetime.fromisoformat(
+                    staff_member.last_active.replace("Z", "+00:00")
+                )
                 assert parsed is not None, "Should parse as valid ISO 8601 datetime"
             except ValueError as e:
-                pytest.fail(f"last_active '{staff_member.last_active}' is not valid ISO 8601: {e}")
+                pytest.fail(
+                    f"last_active '{staff_member.last_active}' is not valid ISO 8601: {e}"
+                )
 
 
 async def test_get_staff_list_superadmin_can_edit(

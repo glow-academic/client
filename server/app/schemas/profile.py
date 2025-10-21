@@ -115,17 +115,16 @@ class AuthorizeEmulationResponse(BaseModel):
 class ProfileContextRequest(BaseModel):
     """Request to get consolidated profile context."""
 
-    actualProfileId: str      # The logged-in user's profile ID
-    effectiveProfileId: str   # Could be same as actual, or emulated profile ID
-    pathname: str             # Current path for breadcrumb generation
+    actualProfileId: str  # The logged-in user's profile ID
+    effectiveProfileId: str  # Could be same as actual, or emulated profile ID
+    pathname: str  # Current path for breadcrumb generation
 
 
 class BreadcrumbItem(BaseModel):
     """Breadcrumb item with resolved title."""
 
-    segment: str
     title: str
-    context: str | None = None
+    section: str | None = None
 
 
 class CohortItem(BaseModel):

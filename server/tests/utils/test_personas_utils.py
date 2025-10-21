@@ -3,7 +3,6 @@ Tests for app.utils.personas
 """
 
 
-
 class TestFormat_Persona_Info:
     """Tests for format_persona_info function."""
 

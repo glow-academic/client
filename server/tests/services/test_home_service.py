@@ -2,9 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+
 from app.schemas.analytics import AnalyticsFilters
 from app.services.home_service import HomeService
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
 
 pytestmark = pytest.mark.asyncio
 
@@ -298,12 +299,10 @@ async def test_home_overview_history_filtered_by_profile(
 ) -> None:
     """Verify history is filtered to only include attempts from the specified profile."""
     dept_id = await get_cs_dept_id(db)
-    
+
     # Get a specific profile ID from seed data
-    profile_id = await db.fetchval(
-        "SELECT id FROM profiles WHERE role = 'ta' LIMIT 1"
-    )
-    
+    profile_id = await db.fetchval("SELECT id FROM profiles WHERE role = 'ta' LIMIT 1")
+
     if profile_id is None:
         # Skip test if no TA profiles exist
         pytest.skip("No TA profiles in seed data")

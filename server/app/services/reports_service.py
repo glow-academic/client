@@ -3,11 +3,16 @@
 import json
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.reports_queries import ReportsQueries
 from app.schemas.analytics import AnalyticsFilters
-from app.schemas.base import (ScenarioMapping, ScenarioMappingItem,
-                              SimulationMapping, SimulationMappingItem)
+from app.schemas.base import (
+    ScenarioMapping,
+    ScenarioMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
+)
 from app.schemas.reports import ReportsBundleResponse
 from app.services.base_service import BaseService, with_cache
 

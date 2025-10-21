@@ -8,7 +8,7 @@ class ProviderQueries:
 
     def list_providers(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query for providers list with permissions.
-        
+
         Note: Providers are global (not department-specific).
         """
         query = """
@@ -40,7 +40,7 @@ class ProviderQueries:
         - Provider basic info + permissions (from list_providers)
         - Models data as JSONB array (from get_models_for_providers)
         - Model usage counts (from check_model_usage_personas + check_model_usage_agents)
-        
+
         Optimization: Uses CTEs to pre-aggregate usage counts, avoiding N+1 subqueries.
 
         Returns:
@@ -446,7 +446,7 @@ class ProviderQueries:
 
     def get_provider_for_duplicate(self, provider_id: str) -> tuple[str, list[Any]]:
         """Build query to get provider data for duplication.
-        
+
         Fetches provider details and base_url from provider_endpoints in a single query.
         """
         query = """
@@ -482,7 +482,7 @@ class ProviderQueries:
 
     def insert_duplicate_provider(self) -> tuple[str, list[Any]]:
         """Build query to insert duplicate provider.
-        
+
         Note: Description gets ' Copy' appended, name remains unchanged.
         """
         query = """
@@ -522,7 +522,7 @@ class ProviderQueries:
 
     def insert_duplicate_model(self) -> tuple[str, list[Any]]:
         """Build query to insert duplicate model.
-        
+
         Note: Description gets ' Copy' appended, name remains unchanged.
         """
         query = """

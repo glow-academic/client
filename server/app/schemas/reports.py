@@ -1,6 +1,5 @@
 """Reports bundle schemas."""
 
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -40,4 +39,3 @@ class ReportsBundleResponse(BaseModel):
     data: list[ProfileDataEnhanced]
     scenario_mapping: ScenarioMapping
     simulation_mapping: SimulationMapping
-

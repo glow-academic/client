@@ -32,7 +32,7 @@ class HomeQueries:
         - standard_groups_mapping: JSONB mapping object
         - standards_mapping: JSONB mapping object
         - simulation_mapping: JSONB mapping object
-        
+
         Parameters:
         - profile_id: User's profile ID
         - For TA users: profile_id filters both items and history
@@ -49,7 +49,7 @@ class HomeQueries:
             None,  # Don't filter by profileId in base - handled in SQL
             department_ids,
         )
-        
+
         # Build separate filter for history (NO role filter, only profileId)
         history_where_clause, history_params = self.builder.filters.build_base_filter(
             start_date,
@@ -64,7 +64,7 @@ class HomeQueries:
         # Build parameter list - start with base params, then add history params
         params = list(base_params)
         param_idx = len(params) + 1
-        
+
         # Add history params after base params
         history_start_idx = param_idx
         for param in history_params:
@@ -94,7 +94,9 @@ class HomeQueries:
         history_where_adjusted = history_where_clause
         for i, old_idx in enumerate(range(1, len(history_params) + 1)):
             new_idx = history_start_idx + i
-            history_where_adjusted = history_where_adjusted.replace(f"${old_idx}", f"${new_idx}")
+            history_where_adjusted = history_where_adjusted.replace(
+                f"${old_idx}", f"${new_idx}"
+            )
 
         query = f"""
             WITH 
@@ -651,4 +653,3 @@ class HomeQueries:
         """
 
         return query, params
-

@@ -4,20 +4,31 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.persona_queries import PersonaQueries
-from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
-                              ReasoningMappingItem)
-from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
-                                  DebugInfoItem, DeletePersonaRequest,
-                                  DeletePersonaResponse,
-                                  DuplicatePersonaRequest,
-                                  DuplicatePersonaResponse,
-                                  PersonaDetailDefaultRequest,
-                                  PersonaDetailRequest, PersonaDetailResponse,
-                                  PersonaItem, PersonasFilters,
-                                  PersonasListResponse, UpdatePersonaRequest,
-                                  UpdatePersonaResponse)
+from app.schemas.base import (
+    DepartmentMappingItem,
+    ModelMappingItem,
+    ReasoningMappingItem,
+)
+from app.schemas.personas import (
+    CreatePersonaRequest,
+    CreatePersonaResponse,
+    DebugInfoItem,
+    DeletePersonaRequest,
+    DeletePersonaResponse,
+    DuplicatePersonaRequest,
+    DuplicatePersonaResponse,
+    PersonaDetailDefaultRequest,
+    PersonaDetailRequest,
+    PersonaDetailResponse,
+    PersonaItem,
+    PersonasFilters,
+    PersonasListResponse,
+    UpdatePersonaRequest,
+    UpdatePersonaResponse,
+)
 from app.services.base_service import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
@@ -421,8 +432,10 @@ class PersonaService(BaseService):
             not result["default_persona"] or user_role == "superadmin"
         )
         can_duplicate = is_admin
-        can_delete = is_admin and not in_use and (
-            not result["default_persona"] or user_role == "superadmin"
+        can_delete = (
+            is_admin
+            and not in_use
+            and (not result["default_persona"] or user_role == "superadmin")
         )
 
         # Parse department_mapping from JSONB
@@ -771,6 +784,7 @@ class PersonaService(BaseService):
 
             # Parse response data from JSONB
             import json
+
             response_data_raw = result["response_data"]
             if isinstance(response_data_raw, str):
                 response_data = json.loads(response_data_raw)
@@ -782,7 +796,7 @@ class PersonaService(BaseService):
                 response_data = sorted(
                     response_data,
                     key=lambda x: x.get("response_time_seconds", 0),
-                    reverse=True
+                    reverse=True,
                 )
 
             response_times: list[float] = []

@@ -427,4 +427,3 @@ class AnalyticsQueryBuilder:
         AND p.active = true
         """
         return (query, [department_ids])
-

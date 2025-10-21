@@ -4,34 +4,50 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.dashboard_queries import DashboardQueries
 from app.schemas.analytics import AnalyticsFilters, Method, MetricResponse
-from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              SimulationMapping, SimulationMappingItem)
-from app.schemas.dashboard import (AttemptImprovementData,
-                                   AttemptImprovementResponse, CohortData,
-                                   CohortPerformanceResponse,
-                                   DashboardBundleResponse,
-                                   DashboardFooterMetrics,
-                                   DashboardHeaderMetrics, DashboardInsights,
-                                   DashboardPrimaryMetrics,
-                                   DashboardSecondaryMetrics,
-                                   GrowthDataResponse, GrowthWindowAverages,
-                                   NumericAttemptFact, PersonaPerformanceData,
-                                   PersonaPerformanceResponse,
-                                   PersonaTrendData, RubricHeatmapResponse,
-                                   RubricMatrixPackage,
-                                   ScenarioAttributeAttemptFact, ScenarioFact,
-                                   ScenarioPerformanceResponse,
-                                   ScenarioStatsResponse,
-                                   SimulationCompositionResponse,
-                                   SimulationFact,
-                                   SimulationPerformanceResponse,
-                                   SkillPerformanceResponse, SkillRadarData,
-                                   Thresholds)
+from app.schemas.base import (
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    RubricMapping,
+    RubricMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
+)
+from app.schemas.dashboard import (
+    AttemptImprovementData,
+    AttemptImprovementResponse,
+    CohortData,
+    CohortPerformanceResponse,
+    DashboardBundleResponse,
+    DashboardFooterMetrics,
+    DashboardHeaderMetrics,
+    DashboardInsights,
+    DashboardPrimaryMetrics,
+    DashboardSecondaryMetrics,
+    GrowthDataResponse,
+    GrowthWindowAverages,
+    NumericAttemptFact,
+    PersonaPerformanceData,
+    PersonaPerformanceResponse,
+    PersonaTrendData,
+    RubricHeatmapResponse,
+    RubricMatrixPackage,
+    ScenarioAttributeAttemptFact,
+    ScenarioFact,
+    ScenarioPerformanceResponse,
+    ScenarioStatsResponse,
+    SimulationCompositionResponse,
+    SimulationFact,
+    SimulationPerformanceResponse,
+    SkillPerformanceResponse,
+    SkillRadarData,
+    Thresholds,
+)
 from app.services.base_service import BaseService, with_cache
 
 
@@ -63,10 +79,9 @@ class DashboardService(BaseService):
         if filters.simulationFilters:
             # Handle both enum and string values
             sim_filters = [
-                f.value if hasattr(f, "value") else f
-                for f in filters.simulationFilters
+                f.value if hasattr(f, "value") else f for f in filters.simulationFilters
             ]
-        
+
         query, params = self.queries.get_dashboard_bundle(
             filters.startDate,
             filters.endDate,
@@ -241,6 +256,7 @@ class DashboardService(BaseService):
             group_facts = []
             for gf in pkg_data.get("groupFacts", []):
                 from app.schemas.dashboard import SkillStandardFact
+
                 group_facts.append(
                     SkillStandardFact(
                         groupId=gf.get("groupId", ""),
@@ -253,6 +269,7 @@ class DashboardService(BaseService):
                     )
                 )
             from app.schemas.dashboard import SkillPackage
+
             skill_packages.append(
                 SkillPackage(
                     rubricId=pkg_data.get("rubricId", ""),
@@ -309,7 +326,9 @@ class DashboardService(BaseService):
                 )
             )
         scenario_stats = ScenarioStatsResponse(
-            validNumericParameterIds=scenario_stats_raw.get("validNumericParameterIds", []),
+            validNumericParameterIds=scenario_stats_raw.get(
+                "validNumericParameterIds", []
+            ),
             numericAttemptFacts=numeric_attempt_facts,
             numericScenarioFacts=scenario_stats_raw.get("numericScenarioFacts", []),
         )
@@ -347,8 +366,12 @@ class DashboardService(BaseService):
                 )
                 for sf in sim_comp_raw.get("simulationFacts", [])
             ],
-            simulationParameterFactsCategorical=sim_comp_raw.get("simulationParameterFactsCategorical", []),
-            simulationParameterFactsNumeric=sim_comp_raw.get("simulationParameterFactsNumeric", []),
+            simulationParameterFactsCategorical=sim_comp_raw.get(
+                "simulationParameterFactsCategorical", []
+            ),
+            simulationParameterFactsNumeric=sim_comp_raw.get(
+                "simulationParameterFactsNumeric", []
+            ),
             hasData=sim_comp_raw.get("hasData", False),
         )
 

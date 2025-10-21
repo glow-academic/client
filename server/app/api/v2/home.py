@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
 from app.schemas.analytics import AnalyticsFilters
 from app.schemas.home import HomeOverviewResponse
 from app.services.home_service import HomeService
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/home", tags=["home"])
 
@@ -23,4 +24,3 @@ async def get_home(
         return await service.get_home_overview(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

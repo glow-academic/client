@@ -3,26 +3,31 @@
 import json
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.parameters import (CreateParameterItemRequest,
-                                    CreateParameterItemResponse,
-                                    CreateParameterRequest,
-                                    CreateParameterResponse,
-                                    DeleteParameterRequest,
-                                    DeleteParameterResponse,
-                                    DuplicateParameterRequest,
-                                    DuplicateParameterResponse,
-                                    ParameterDetailDefaultRequest,
-                                    ParameterDetailRequest,
-                                    ParameterDetailResponse, ParameterItem,
-                                    ParameterItemDetail, ParameterSampleItem,
-                                    ParametersFilters,
-                                    ParametersListResponse,
-                                    UpdateParameterRequest,
-                                    UpdateParameterResponse)
+from app.schemas.parameters import (
+    CreateParameterItemRequest,
+    CreateParameterItemResponse,
+    CreateParameterRequest,
+    CreateParameterResponse,
+    DeleteParameterRequest,
+    DeleteParameterResponse,
+    DuplicateParameterRequest,
+    DuplicateParameterResponse,
+    ParameterDetailDefaultRequest,
+    ParameterDetailRequest,
+    ParameterDetailResponse,
+    ParameterItem,
+    ParameterItemDetail,
+    ParameterSampleItem,
+    ParametersFilters,
+    ParametersListResponse,
+    UpdateParameterRequest,
+    UpdateParameterResponse,
+)
 from app.services.base_service import BaseService, with_cache
 
 
@@ -61,7 +66,9 @@ class ParameterService(BaseService):
                         if isinstance(item_data, dict):
                             sample_items.append(
                                 ParameterSampleItem(
-                                    parameter_item_id=item_data.get("parameter_item_id", ""),
+                                    parameter_item_id=item_data.get(
+                                        "parameter_item_id", ""
+                                    ),
                                     name=item_data.get("name", ""),
                                     description=item_data.get("description", ""),
                                     value=item_data.get("value", ""),

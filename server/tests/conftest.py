@@ -99,7 +99,9 @@ def disable_cache(monkeypatch: pytest.MonkeyPatch) -> None:
         from app.services.base_service import with_cache
 
         monkeypatch.setattr(
-            "app.services.base_service.with_cache", lambda _: lambda fn: fn, raising=False
+            "app.services.base_service.with_cache",
+            lambda _: lambda fn: fn,
+            raising=False,
         )
     except ImportError:
         # If base service doesn't exist yet, skip

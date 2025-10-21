@@ -153,7 +153,9 @@ class StaffQueries:
         """
         return (query, [profile_id])
 
-    def get_staff_detail_complete(self, profile_id: str, current_profile_id: str) -> tuple[str, list[Any]]:
+    def get_staff_detail_complete(
+        self, profile_id: str, current_profile_id: str
+    ) -> tuple[str, list[Any]]:
         """Build complete query for staff detail with all related data and JSONB mappings."""
         query = """
         WITH profile_data AS (
@@ -254,7 +256,9 @@ class StaffQueries:
         """
         return (query, [])
 
-    def get_profiles_by_ids(self, profile_ids: list[str], current_profile_id: str) -> tuple[str, list[Any]]:
+    def get_profiles_by_ids(
+        self, profile_ids: list[str], current_profile_id: str
+    ) -> tuple[str, list[Any]]:
         """Build query to get multiple profiles with department data and JSONB mapping."""
         query = """
         WITH profile_departments_agg AS (

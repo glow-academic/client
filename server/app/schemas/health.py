@@ -25,4 +25,3 @@ class HealthResponse(BaseModel):
     checks: list[HealthCheckItem]
     timestamp: str  # ISO timestamp
     overall_response_time: int  # milliseconds
-

@@ -8,4 +8,3 @@ class AnalyticsQueries:
     def refresh_materialized_view() -> str:
         """Build query to refresh the analytics materialized view."""
         return "REFRESH MATERIALIZED VIEW CONCURRENTLY analytics"
-

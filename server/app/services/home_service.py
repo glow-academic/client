@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.base_queries import AnalyticsQueryBuilder
 from app.queries.home_queries import HomeQueries
@@ -56,7 +57,7 @@ class HomeService(BaseService):
         - items (simulation list)
         - history (attempt history)
         - mappings (standard_groups, standards, simulations)
-        
+
         Mode logic (determined in SQL):
         - If role is 'ta' → TA mode (personalized view with profileId filter for items + history)
         - Otherwise → Instructional mode (all cohort data for items, profileId filter for history only)

@@ -4,8 +4,11 @@ Tests for parameter_service - list methods.
 
 import asyncpg  # type: ignore
 import pytest
-from app.schemas.parameters import ParameterDetailRequest  # type: ignore
-from app.schemas.parameters import ParametersFilters  # type: ignore
+
+from app.schemas.parameters import (
+    ParameterDetailRequest,  # type: ignore
+    ParametersFilters,  # type: ignore
+)
 from app.services.parameter_service import ParameterService  # type: ignore
 
 # --- Helper Functions ---

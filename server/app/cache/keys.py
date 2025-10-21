@@ -7,7 +7,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 27  # Bumped: Active cohort links now only prevent deletion, not editing
+GLOBAL_CACHE_VERSION = (
+    27  # Bumped: Active cohort links now only prevent deletion, not editing
+)
 
 # Namespaces
 NS_ANALYTICS = "analytics"

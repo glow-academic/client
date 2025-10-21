@@ -44,7 +44,9 @@ class AttemptHistoryRow(BaseModel):
     numScenarios: int | None = None
     numScenariosCompleted: int
     infiniteMode: bool
-    timeLimit: int | None = None  # simulation time limit in seconds (from simulation_time_limits)
+    timeLimit: int | None = (
+        None  # simulation time limit in seconds (from simulation_time_limits)
+    )
     personaNames: list[str]
     personaColors: list[str]
     score: int | None = None
@@ -73,4 +75,3 @@ class HomeOverviewResponse(BaseModel):
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
     simulation_mapping: SimulationMapping
-

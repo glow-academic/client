@@ -4,30 +4,42 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.scenario_queries import ScenarioQueries
-from app.schemas.base import (CohortMappingItem, DepartmentMappingItem,
-                              DocumentMappingItem, ObjectiveMappingItem,
-                              ParameterItemMappingItem, ParameterMappingItem,
-                              PersonaMappingItem, ScenarioMappingItem,
-                              SimulationMappingItem)
-from app.schemas.scenarios import (CreateScenarioRequest,
-                                   CreateScenarioResponse,
-                                   DeleteScenarioRequest,
-                                   DeleteScenarioResponse,
-                                   DuplicateScenarioRequest,
-                                   DuplicateScenarioResponse,
-                                   GenerateScenarioAIRequest,
-                                   GenerateScenarioAIResponse, ParameterDetail,
-                                   RandomizeScenarioRequest,
-                                   RandomizeScenarioResponse,
-                                   ScenarioDetailDefaultRequest,
-                                   ScenarioDetailRequest,
-                                   ScenarioDetailResponse, ScenarioItem,
-                                   ScenariosFilters, ScenariosListResponse,
-                                   UpdateScenarioRequest,
-                                   UpdateScenarioResponse)
+from app.schemas.base import (
+    CohortMappingItem,
+    DepartmentMappingItem,
+    DocumentMappingItem,
+    ObjectiveMappingItem,
+    ParameterItemMappingItem,
+    ParameterMappingItem,
+    PersonaMappingItem,
+    ScenarioMappingItem,
+    SimulationMappingItem,
+)
+from app.schemas.scenarios import (
+    CreateScenarioRequest,
+    CreateScenarioResponse,
+    DeleteScenarioRequest,
+    DeleteScenarioResponse,
+    DuplicateScenarioRequest,
+    DuplicateScenarioResponse,
+    GenerateScenarioAIRequest,
+    GenerateScenarioAIResponse,
+    ParameterDetail,
+    RandomizeScenarioRequest,
+    RandomizeScenarioResponse,
+    ScenarioDetailDefaultRequest,
+    ScenarioDetailRequest,
+    ScenarioDetailResponse,
+    ScenarioItem,
+    ScenariosFilters,
+    ScenariosListResponse,
+    UpdateScenarioRequest,
+    UpdateScenarioResponse,
+)
 from app.services.base_service import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
@@ -47,9 +59,11 @@ class ScenarioService(BaseService):
         """Build enhanced scenario mapping with nested persona, document, and parameter data."""
         if not scenario_ids:
             return {}
-        
+
         # Get all data in ONE consolidated query (C1 consolidation)
-        query, params = self.queries.get_enhanced_scenario_mapping_complete(scenario_ids)
+        query, params = self.queries.get_enhanced_scenario_mapping_complete(
+            scenario_ids
+        )
         result = await self.conn.fetch(query, *params)
 
         # Parse the consolidated result with JSONB mappings
@@ -67,7 +81,7 @@ class ScenarioService(BaseService):
                 persona_mapping_global = json.loads(persona_mapping_raw)
             else:
                 persona_mapping_global = persona_mapping_raw or {}
-            
+
             scenario_persona_mapping = {}
             if row["persona_id"]:
                 persona_id_str = str(row["persona_id"])
@@ -86,7 +100,7 @@ class ScenarioService(BaseService):
                 document_mapping_global = json.loads(document_mapping_raw)
             else:
                 document_mapping_global = document_mapping_raw or {}
-            
+
             scenario_document_mapping = {}
             for did in document_ids:
                 if did in document_mapping_global:
@@ -102,7 +116,7 @@ class ScenarioService(BaseService):
                 param_item_mapping_global = json.loads(param_item_mapping_raw)
             else:
                 param_item_mapping_global = param_item_mapping_raw or {}
-            
+
             scenario_parameter_item_mapping = {}
             for pid in parameter_item_ids:
                 if pid in param_item_mapping_global:
@@ -1227,10 +1241,15 @@ class ScenarioService(BaseService):
         import logging
         import random
 
-        from app.utils.text_helpers import (
-            normalize_text, read_document_content_for_similarity, tokenize,
-            weighted_choice, weighted_sample_without_replacement)
         from rapidfuzz import fuzz  # type: ignore
+
+        from app.utils.text_helpers import (
+            normalize_text,
+            read_document_content_for_similarity,
+            tokenize,
+            weighted_choice,
+            weighted_sample_without_replacement,
+        )
 
         logger = logging.getLogger(__name__)
         targets_set = {t.lower() for t in (targets or [])}

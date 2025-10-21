@@ -4,21 +4,31 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.rubric_queries import RubricQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
-                                 DeleteRubricRequest, DeleteRubricResponse,
-                                 DuplicateRubricRequest,
-                                 DuplicateRubricResponse,
-                                 RubricDetailDefaultRequest,
-                                 RubricDetailRequest, RubricDetailResponse,
-                                 RubricItem, RubricsFilters,
-                                 RubricsListResponse, StandardGroupDetail,
-                                 StandardGroupMappingDetail,
-                                 StandardGroupMappingItem, StandardMappingItem,
-                                 UpdateRubricRequest, UpdateRubricResponse)
+from app.schemas.rubrics import (
+    CreateRubricRequest,
+    CreateRubricResponse,
+    DeleteRubricRequest,
+    DeleteRubricResponse,
+    DuplicateRubricRequest,
+    DuplicateRubricResponse,
+    RubricDetailDefaultRequest,
+    RubricDetailRequest,
+    RubricDetailResponse,
+    RubricItem,
+    RubricsFilters,
+    RubricsListResponse,
+    StandardGroupDetail,
+    StandardGroupMappingDetail,
+    StandardGroupMappingItem,
+    StandardMappingItem,
+    UpdateRubricRequest,
+    UpdateRubricResponse,
+)
 from app.services.base_service import BaseService, with_cache
 
 

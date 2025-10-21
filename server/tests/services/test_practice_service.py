@@ -2,9 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
+from tests.seed_helpers import get_cs_dept_id
+
 from app.schemas.analytics import AnalyticsFilters
 from app.services.practice_service import PracticeService
-from tests.seed_helpers import get_cs_dept_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -262,8 +263,12 @@ async def test_practice_overview_history_structure(
         assert hasattr(history_item, "simulationName")
         assert hasattr(history_item, "personaNames")
         assert hasattr(history_item, "personaColors")
-        assert hasattr(history_item, "timeLimit"), "History item must have timeLimit field"
-        assert hasattr(history_item, "cohortNames"), "History item must have cohortNames field"
+        assert hasattr(history_item, "timeLimit"), (
+            "History item must have timeLimit field"
+        )
+        assert hasattr(history_item, "cohortNames"), (
+            "History item must have cohortNames field"
+        )
 
         # Verify personaNames and personaColors are arrays
         assert isinstance(history_item.personaNames, list)

@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
 from app.schemas.analytics import AnalyticsFilters
 from app.schemas.reports import ReportsBundleResponse
 from app.services.reports_service import ReportsService
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -23,4 +24,3 @@ async def get_reports(
         return await service.get_reports_bundle(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

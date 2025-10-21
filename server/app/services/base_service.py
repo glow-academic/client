@@ -5,6 +5,7 @@ from functools import wraps
 from typing import Any, TypeVar
 
 import asyncpg  # type: ignore
+
 from app.cache.keys import Key
 from app.db import get_pool
 from app.extensions import get_query_client

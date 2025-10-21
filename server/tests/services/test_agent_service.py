@@ -2,10 +2,13 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.schemas.agents import AgentDetailRequest  # type: ignore
-from app.schemas.agents import AgentsListRequest  # type: ignore
-from app.services.agent_service import AgentService  # type: ignore
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
+
+from app.schemas.agents import (
+    AgentDetailRequest,  # type: ignore
+    AgentsListRequest,  # type: ignore
+)
+from app.services.agent_service import AgentService  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -291,7 +294,9 @@ async def test_can_delete_false_when_default_agent(
     result = await svc.get_agents_list(AgentsListRequest(profileId=profile_id))
 
     # Find the default agent
-    default_agent = next((a for a in result.agents if a.agent_id == str(agent_id)), None)
+    default_agent = next(
+        (a for a in result.agents if a.agent_id == str(agent_id)), None
+    )
     assert default_agent is not None
     assert default_agent.can_delete is False
 

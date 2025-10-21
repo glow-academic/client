@@ -3,28 +3,37 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
-from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
-                                   CreateProviderRequest,
-                                   CreateProviderResponse,
-                                   DecryptProviderKeyRequest,
-                                   DecryptProviderKeyResponse,
-                                   DeleteModelRequest, DeleteModelResponse,
-                                   DeleteProviderRequest,
-                                   DeleteProviderResponse,
-                                   DuplicateModelRequest,
-                                   DuplicateModelResponse,
-                                   DuplicateProviderRequest,
-                                   DuplicateProviderResponse,
-                                   ModelDetailRequest, ModelDetailResponse,
-                                   ProviderDetailRequest,
-                                   ProviderDetailResponse, ProvidersFilters,
-                                   ProvidersListResponse, UpdateModelRequest,
-                                   UpdateModelResponse, UpdateProviderRequest,
-                                   UpdateProviderResponse)
+from app.schemas.providers import (
+    CreateModelRequest,
+    CreateModelResponse,
+    CreateProviderRequest,
+    CreateProviderResponse,
+    DecryptProviderKeyRequest,
+    DecryptProviderKeyResponse,
+    DeleteModelRequest,
+    DeleteModelResponse,
+    DeleteProviderRequest,
+    DeleteProviderResponse,
+    DuplicateModelRequest,
+    DuplicateModelResponse,
+    DuplicateProviderRequest,
+    DuplicateProviderResponse,
+    ModelDetailRequest,
+    ModelDetailResponse,
+    ProviderDetailRequest,
+    ProviderDetailResponse,
+    ProvidersFilters,
+    ProvidersListResponse,
+    UpdateModelRequest,
+    UpdateModelResponse,
+    UpdateProviderRequest,
+    UpdateProviderResponse,
+)
 from app.services.provider_service import get_provider_service
 from app.utils.auth import decrypt_api_key
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 

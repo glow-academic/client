@@ -500,9 +500,7 @@ class DepartmentQueries:
         query = "SELECT role FROM profiles WHERE id = $1"
         return query, [profile_id]
 
-    def get_department_default_complete(
-        self, profile_id: str
-    ) -> tuple[str, list[Any]]:
+    def get_department_default_complete(self, profile_id: str) -> tuple[str, list[Any]]:
         """
         Get department default creation data with profile role and valid agents in ONE query.
 

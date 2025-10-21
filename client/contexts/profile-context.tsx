@@ -52,9 +52,8 @@ const CohortItemSchema = z.object({
 });
 
 const BreadcrumbItemSchema = z.object({
-  segment: z.string(),
   title: z.string(),
-  context: z.string().optional().nullable(),
+  section: z.string().optional().nullable(),
 });
 
 const CohortsDataSchema = z.object({

@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import asyncpg  # type: ignore
+
 from app.db import get_pool
 from app.extensions import UPLOAD_FOLDER
 from app.queries.health_queries import HealthQueries
@@ -77,7 +78,7 @@ class HealthService(BaseService):
 
         # Calculate overall system status
         from typing import Literal
-        
+
         statuses = [check.status for check in checks]
         overall_status: Literal["healthy", "degraded", "unhealthy"]
         if "unhealthy" in statuses:
@@ -105,7 +106,7 @@ class HealthService(BaseService):
 
             # Check pool utilization
             from typing import Literal
-            
+
             status: Literal["healthy", "unhealthy", "warning", "n/a"]
             pool = get_pool()
             if pool:
@@ -115,7 +116,7 @@ class HealthService(BaseService):
 
                 # Warning at >80% utilization
                 status = "warning" if utilization > 0.8 else "healthy"
-                message = f"Pool: {size - free}/{size} ({utilization*100:.0f}% used)"
+                message = f"Pool: {size - free}/{size} ({utilization * 100:.0f}% used)"
             else:
                 status = "healthy"
                 message = "Connected"
@@ -258,7 +259,8 @@ class HealthService(BaseService):
 
                 generic_agent = GenericAgent(
                     agent_name=agent["name"],
-                    system_prompt=agent["system_prompt"] or "You are a helpful assistant.",
+                    system_prompt=agent["system_prompt"]
+                    or "You are a helpful assistant.",
                     temperature=agent["temperature"] or 0.7,
                     model_name=agent["model_name"],
                     model_provider=agent["provider_name"],
@@ -333,7 +335,8 @@ class HealthService(BaseService):
                 try:
                     generic_agent = GenericAgent(
                         agent_name=agent["name"],
-                        system_prompt=agent["system_prompt"] or "You are a helpful assistant.",
+                        system_prompt=agent["system_prompt"]
+                        or "You are a helpful assistant.",
                         temperature=agent["temperature"] or 0.7,
                         model_name=agent["model_name"],
                         model_provider=agent["provider_name"],
@@ -349,7 +352,9 @@ class HealthService(BaseService):
                     ai_healthy = False
 
                 # Test MCP server
-                internal_api_base = os.getenv("INTERNAL_API_BASE", "http://localhost:8000")
+                internal_api_base = os.getenv(
+                    "INTERNAL_API_BASE", "http://localhost:8000"
+                )
                 mcp_url = f"{internal_api_base}/domain/mcp/"
 
                 mcp_healthy = False
@@ -364,7 +369,7 @@ class HealthService(BaseService):
 
                 # Combine results
                 from typing import Literal
-                
+
                 status: Literal["healthy", "unhealthy", "warning", "n/a"]
                 if ai_healthy and mcp_healthy:
                     status = "healthy"
@@ -430,7 +435,7 @@ class HealthService(BaseService):
             from app.services.document_service import DocumentService
 
             upload_id = None
-            
+
             # Get connection from pool for DocumentService
             pool = get_pool()
             if not pool:
@@ -493,6 +498,7 @@ class HealthService(BaseService):
             upload_dir = tus_uploads_dir / upload_id
             if upload_dir.exists():
                 import shutil
+
                 shutil.rmtree(upload_dir)
 
             # Check disk space
@@ -500,7 +506,7 @@ class HealthService(BaseService):
             free_gb = (stat.f_bavail * stat.f_frsize) / (1024**3)
 
             from typing import Literal, cast
-            
+
             status = "warning" if free_gb < 1 else "healthy"
             message = f"TUS protocol OK, {free_gb:.1f}GB free"
 
@@ -522,6 +528,7 @@ class HealthService(BaseService):
                     upload_dir = tus_uploads_dir / upload_id
                     if upload_dir.exists():
                         import shutil
+
                         shutil.rmtree(upload_dir)
                 except Exception:
                     pass  # Ignore cleanup errors
@@ -634,7 +641,7 @@ class HealthService(BaseService):
                 )
 
             import httpx
-            
+
             failed_routes = []
             for route, result in zip(routes, results):
                 if isinstance(result, (Exception, BaseException)):

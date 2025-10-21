@@ -42,4 +42,3 @@ class PricingAnalyticsResponse(BaseModel):
     profile_mapping: dict[str, str]
     agent_mapping: dict[str, str]
     persona_mapping: dict[str, str]
-

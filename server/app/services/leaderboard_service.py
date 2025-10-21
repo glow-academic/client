@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.leaderboard_queries import LeaderboardQueries
 from app.schemas.analytics import AnalyticsFilters

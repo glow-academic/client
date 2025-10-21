@@ -54,4 +54,3 @@ class HealthQueries:
             LIMIT 1
         """
         return query, []
-

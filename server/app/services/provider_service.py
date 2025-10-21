@@ -3,26 +3,37 @@
 import json
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.db import transaction
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
-from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
-                                   CreateProviderRequest,
-                                   CreateProviderResponse, DeleteModelRequest,
-                                   DeleteModelResponse, DeleteProviderRequest,
-                                   DeleteProviderResponse,
-                                   DuplicateModelRequest,
-                                   DuplicateModelResponse,
-                                   DuplicateProviderRequest,
-                                   DuplicateProviderResponse,
-                                   ModelDetailRequest, ModelDetailResponse,
-                                   ModelItem, ProviderDetailRequest,
-                                   ProviderDetailResponse, ProvidersFilters,
-                                   ProvidersListResponse, ProviderWithModels,
-                                   UpdateModelRequest, UpdateModelResponse,
-                                   UpdateProviderRequest,
-                                   UpdateProviderResponse)
+from app.schemas.providers import (
+    CreateModelRequest,
+    CreateModelResponse,
+    CreateProviderRequest,
+    CreateProviderResponse,
+    DeleteModelRequest,
+    DeleteModelResponse,
+    DeleteProviderRequest,
+    DeleteProviderResponse,
+    DuplicateModelRequest,
+    DuplicateModelResponse,
+    DuplicateProviderRequest,
+    DuplicateProviderResponse,
+    ModelDetailRequest,
+    ModelDetailResponse,
+    ModelItem,
+    ProviderDetailRequest,
+    ProviderDetailResponse,
+    ProvidersFilters,
+    ProvidersListResponse,
+    ProviderWithModels,
+    UpdateModelRequest,
+    UpdateModelResponse,
+    UpdateProviderRequest,
+    UpdateProviderResponse,
+)
 from app.services.base_service import BaseService, with_cache
 from app.utils.auth import encrypt_api_key
 
@@ -40,7 +51,7 @@ class ProviderService(BaseService):
         self, filters: ProvidersFilters
     ) -> ProvidersListResponse:
         """Get providers list with nested models (hierarchical).
-        
+
         Note: Providers are global (not department-specific).
         """
         # Get complete providers data with models and usage (consolidated query)
@@ -53,7 +64,7 @@ class ProviderService(BaseService):
             # Parse JSONB models (may be string or list from asyncpg)
             models = []
             models_data = row.get("models_json")
-            
+
             # Handle case where asyncpg returns JSON as string
             if isinstance(models_data, str):
                 models_data = json.loads(models_data)

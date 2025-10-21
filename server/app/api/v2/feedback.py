@@ -3,14 +3,18 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.schemas.feedback import (BulkDeleteFeedbackRequest,
-                                  BulkDeleteFeedbackResponse,
-                                  CreateFeedbackRequest,
-                                  CreateFeedbackResponse, FeedbackListRequest,
-                                  FeedbackListResponse)
-from app.services.feedback_service import get_feedback_service
 from fastapi import APIRouter, Depends, HTTPException
+
+from app.db import get_db
+from app.schemas.feedback import (
+    BulkDeleteFeedbackRequest,
+    BulkDeleteFeedbackResponse,
+    CreateFeedbackRequest,
+    CreateFeedbackResponse,
+    FeedbackListRequest,
+    FeedbackListResponse,
+)
+from app.services.feedback_service import get_feedback_service
 
 router = APIRouter()
 
@@ -52,4 +56,6 @@ async def bulk_delete_feedback(
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete feedback: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete feedback: {str(e)}"
+        )

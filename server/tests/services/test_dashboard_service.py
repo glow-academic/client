@@ -2,9 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
+
 from app.schemas.analytics import AnalyticsFilters
 from app.services.dashboard_service import DashboardService
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
 
 pytestmark = pytest.mark.asyncio
 
@@ -621,14 +622,18 @@ async def test_dashboard_history_has_required_fields(
         assert hasattr(history_item, "attemptId"), "History item must have attemptId"
         assert hasattr(history_item, "date"), "History item must have date"
         assert hasattr(history_item, "profileId"), "History item must have profileId"
-        assert hasattr(history_item, "simulationName"), "History item must have simulationName"
-        assert hasattr(history_item, "timeLimit"), "History item must have timeLimit field"
-        assert hasattr(history_item, "cohortNames"), "History item must have cohortNames field"
+        assert hasattr(history_item, "simulationName"), (
+            "History item must have simulationName"
+        )
+        assert hasattr(history_item, "timeLimit"), (
+            "History item must have timeLimit field"
+        )
+        assert hasattr(history_item, "cohortNames"), (
+            "History item must have cohortNames field"
+        )
 
         # Verify types
         assert history_item.timeLimit is None or isinstance(
             history_item.timeLimit, int
         ), "timeLimit must be nullable int"
-        assert isinstance(
-            history_item.cohortNames, list
-        ), "cohortNames must be a list"
+        assert isinstance(history_item.cohortNames, list), "cohortNames must be a list"

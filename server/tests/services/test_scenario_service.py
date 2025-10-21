@@ -520,24 +520,24 @@ async def test_build_enhanced_scenario_mapping_consolidated_query(
     # Verify each scenario has all required fields and nested mappings
     for scenario_id in scenario_id_list:
         assert scenario_id in result, f"Scenario {scenario_id} should be in mapping"
-        
+
         mapping_item = result[scenario_id]
         # Check basic fields
         assert hasattr(mapping_item, "name")
         assert hasattr(mapping_item, "description")
         assert hasattr(mapping_item, "persona_id")
-        
+
         # Check nested mappings exist
         assert hasattr(mapping_item, "persona_mapping")
         assert hasattr(mapping_item, "document_mapping")
         assert hasattr(mapping_item, "parameter_item_mapping")
-        
+
         # Check ID lists
         assert hasattr(mapping_item, "parameter_item_ids")
         assert hasattr(mapping_item, "document_ids")
         assert isinstance(mapping_item.parameter_item_ids, list)
         assert isinstance(mapping_item.document_ids, list)
-        
+
         # Verify persona mapping consistency
         if mapping_item.persona_id:
             assert len(mapping_item.persona_mapping) > 0, (
@@ -550,7 +550,7 @@ async def test_build_enhanced_scenario_mapping_consolidated_query(
             assert hasattr(persona_item, "name") and len(persona_item.name) > 0
             assert hasattr(persona_item, "color")
             assert hasattr(persona_item, "icon")
-        
+
         # Verify document mapping consistency
         if len(mapping_item.document_ids) > 0:
             assert len(mapping_item.document_mapping) > 0, (
@@ -563,7 +563,7 @@ async def test_build_enhanced_scenario_mapping_consolidated_query(
                 doc_item = mapping_item.document_mapping[doc_id]
                 assert hasattr(doc_item, "name") and len(doc_item.name) > 0
                 assert hasattr(doc_item, "description")
-        
+
         # Verify parameter_item mapping consistency
         if len(mapping_item.parameter_item_ids) > 0:
             assert len(mapping_item.parameter_item_mapping) > 0, (

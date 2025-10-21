@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.grading_queries import GradingQueries
 from app.services.base_service import BaseService

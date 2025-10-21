@@ -5,8 +5,12 @@ from typing import Literal
 from pydantic import BaseModel
 
 from .analytics import MetricResponse
-from .base import (ParameterItemMapping, ParameterMapping, RubricMapping,
-                   SimulationMapping)
+from .base import (
+    ParameterItemMapping,
+    ParameterMapping,
+    RubricMapping,
+    SimulationMapping,
+)
 from .home import AttemptHistoryResponse
 
 
@@ -443,4 +447,3 @@ class DashboardBundleResponse(BaseModel):
     rubric_mapping: RubricMapping
     parameter_mapping: ParameterMapping
     parameter_item_mapping: ParameterItemMapping
-

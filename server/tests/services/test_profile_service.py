@@ -248,38 +248,42 @@ async def test_get_profile_context_single_query(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that get_profile_context_complete query includes role lookup internally.
-    
+
     This test verifies the query consolidation for Batch D - the query
     should include a CTE for role lookup instead of requiring a separate query.
     """
     profile_id = await get_superadmin_alias(db)
-    
+
     svc = ProfileService(db)
-    
+
     # Get the query string from the query builder
     query, params = svc.queries.get_profile_context_complete(profile_id)
-    
+
     # Verify the query contains the profile_role CTE for consolidation
-    assert "WITH profile_role AS" in query, \
+    assert "WITH profile_role AS" in query, (
         "Query should include profile_role CTE for role lookup consolidation"
-    assert "SELECT role FROM profiles WHERE id = $1" in query, \
+    )
+    assert "SELECT role FROM profiles WHERE id = $1" in query, (
         "profile_role CTE should fetch role from profiles table"
-    
+    )
+
     # Verify query only expects 1 parameter (profile_id), not 2 (profile_id + role)
     assert len(params) == 1, f"Expected 1 parameter, got {len(params)}"
     assert params[0] == profile_id, "The single parameter should be the profile_id"
-    
+
     # Verify the simulatable_data CTE uses the profile_role CTE
-    assert "CROSS JOIN profile_role pr" in query, \
+    assert "CROSS JOIN profile_role pr" in query, (
         "simulatable_data should CROSS JOIN with profile_role CTE"
-    assert "pr.role = 'superadmin'" in query, \
+    )
+    assert "pr.role = 'superadmin'" in query, (
         "Role filtering should reference pr.role from the CTE"
-    
+    )
+
     # Execute the query to ensure it actually works
     result = await svc.get_profile_context(
         ProfileContextRequest(effectiveProfileId=profile_id, pathname="/home")
     )
-    
+
     # Verify result structure
     assert result is not None
     assert result.actualProfile is not None
@@ -294,7 +298,7 @@ async def test_get_profile_context_role_filtering(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that simulatable profiles are filtered correctly by role.
-    
+
     Verifies that the role-based filtering in the consolidated query works:
     - superadmin can see all profiles
     - admin can see instructional, ta, guest
@@ -302,7 +306,7 @@ async def test_get_profile_context_role_filtering(
     """
     # Get superadmin profile
     superadmin_id = await get_superadmin_alias(db)
-    
+
     # Create test profiles with different roles
     test_profiles = []
     for idx, role in enumerate(["admin", "instructional", "ta", "guest"]):
@@ -311,24 +315,26 @@ async def test_get_profile_context_role_filtering(
             "VALUES($1, $2, $3, $4) "
             "ON CONFLICT (alias) DO UPDATE SET role = EXCLUDED.role "
             "RETURNING id",
-            f"Test{idx}", "User", f"test_user_{role}", role
+            f"Test{idx}",
+            "User",
+            f"test_user_{role}",
+            role,
         )
         test_profiles.append((profile_id, role))
-    
+
     svc = ProfileService(db)
-    
+
     # Test as superadmin - should see all test profiles
     result = await svc.get_profile_context(
         ProfileContextRequest(effectiveProfileId=superadmin_id, pathname="/home")
     )
     assert result is not None
     simulatable_ids = [p.id for p in result.simulatableProfiles]
-    
+
     # Superadmin should see all the test profiles we created
     for profile_id, _ in test_profiles:
-        assert str(profile_id) in simulatable_ids, \
-            f"Superadmin should see {profile_id}"
-    
+        assert str(profile_id) in simulatable_ids, f"Superadmin should see {profile_id}"
+
     # Test as admin - should see instructional, ta, guest (not other admins)
     admin_id = test_profiles[0][0]  # admin role
     result = await svc.get_profile_context(
@@ -336,13 +342,14 @@ async def test_get_profile_context_role_filtering(
     )
     assert result is not None
     simulatable_ids = [p.id for p in result.simulatableProfiles]
-    
+
     # Admin should NOT see other admin profiles
     assert str(admin_id) not in simulatable_ids
     # But should see instructional, ta, guest
     for profile_id, role in test_profiles[1:]:  # Skip admin
-        assert str(profile_id) in simulatable_ids, \
+        assert str(profile_id) in simulatable_ids, (
             f"Admin should see {role} profile {profile_id}"
+        )
 
 
 async def test_get_student_simulation_report(

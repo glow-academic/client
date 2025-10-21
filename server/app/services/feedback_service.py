@@ -1,12 +1,17 @@
 """Feedback service with business logic and dynamic SQL."""
 
 import asyncpg  # type: ignore
+
 from app.queries.feedback_queries import FeedbackQueries
-from app.schemas.feedback import (BulkDeleteFeedbackRequest,
-                                  BulkDeleteFeedbackResponse,
-                                  CreateFeedbackRequest,
-                                  CreateFeedbackResponse, FeedbackItem,
-                                  FeedbackListRequest, FeedbackListResponse)
+from app.schemas.feedback import (
+    BulkDeleteFeedbackRequest,
+    BulkDeleteFeedbackResponse,
+    CreateFeedbackRequest,
+    CreateFeedbackResponse,
+    FeedbackItem,
+    FeedbackListRequest,
+    FeedbackListResponse,
+)
 from app.services.base_service import BaseService
 
 

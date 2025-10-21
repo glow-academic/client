@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
 from app.schemas.analytics import AnalyticsFilters
 from app.schemas.practice import PracticeOverviewResponse
 from app.services.practice_service import PracticeService
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/practice", tags=["practice"])
 
@@ -23,4 +24,3 @@ async def get_practice(
         return await service.get_practice_overview(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

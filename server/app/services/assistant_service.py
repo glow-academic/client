@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.assistant_queries import AssistantQueries
 from app.schemas.assistant import AssistantRunContext
@@ -376,12 +377,10 @@ class AssistantService(BaseService):
                 dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
                 # Ensure timezone-aware
                 if dt.tzinfo is None:
-
                     dt = dt.replace(tzinfo=UTC)
                 return dt
             # If already datetime, ensure it's timezone-aware
             if isinstance(val, datetime) and val.tzinfo is None:
-
                 return val.replace(tzinfo=UTC)
             return val  # type: ignore
 
@@ -468,10 +467,14 @@ class AssistantService(BaseService):
 
             day_chats = [c for c in chats if day_start <= c.get("created_at") < day_end]  # type: ignore
             day_messages = [
-                m for m in messages if day_start <= m.get("created_at") < day_end  # type: ignore
+                m
+                for m in messages
+                if day_start <= m.get("created_at") < day_end  # type: ignore
             ]
             day_tool_calls = [
-                tc for tc in tool_calls if day_start <= tc.get("created_at") < day_end  # type: ignore
+                tc
+                for tc in tool_calls
+                if day_start <= tc.get("created_at") < day_end  # type: ignore
             ]
 
             daily_stats.append(

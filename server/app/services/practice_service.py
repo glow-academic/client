@@ -4,12 +4,17 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.queries.practice_queries import PracticeQueries
 from app.schemas.analytics import AnalyticsFilters
-from app.schemas.base import (ParameterItemMappingItem, ParameterMappingItem,
-                              PersonaMappingItem, ScenarioMappingItem,
-                              SimulationMappingItem)
+from app.schemas.base import (
+    ParameterItemMappingItem,
+    ParameterMappingItem,
+    PersonaMappingItem,
+    ScenarioMappingItem,
+    SimulationMappingItem,
+)
 from app.schemas.home import AttemptHistoryRow
 from app.schemas.practice import PracticeOverviewResponse
 from app.services.base_service import BaseService, with_cache

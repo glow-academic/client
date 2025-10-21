@@ -2,9 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+
 from app.schemas.analytics import AnalyticsFilters
 from app.services.reports_service import ReportsService
-from tests.seed_helpers import get_cs_dept_id  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

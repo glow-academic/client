@@ -43,4 +43,3 @@ class LeaderboardBundleResponse(BaseModel):
     """Leaderboard bundle response."""
 
     data: list[LeaderboardRow]
-

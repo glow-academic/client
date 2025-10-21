@@ -1,5 +1,7 @@
 """Main v2 API router."""
 
+from fastapi import APIRouter
+
 from app.api.v2.agents import router as agents_router
 from app.api.v2.analytics import router as analytics_router
 from app.api.v2.assistant import router as assistant_router
@@ -22,7 +24,6 @@ from app.api.v2.reports import router as reports_router
 from app.api.v2.rubrics import router as rubrics_router
 from app.api.v2.scenarios import router as scenarios_router
 from app.api.v2.simulations import router as simulations_router
-from fastapi import APIRouter
 
 # Create main v2 router
 router = APIRouter(prefix="/api/v2")

@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.db import get_db
 from app.schemas.analytics import AnalyticsFilters
 from app.schemas.dashboard import DashboardBundleResponse
 from app.services.dashboard_service import DashboardService
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -23,4 +24,3 @@ async def get_dashboard(
         return await service.get_dashboard_bundle(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

@@ -11,25 +11,33 @@ import uuid
 import zipfile
 
 import asyncpg  # type: ignore
+
 from app.cache import keys
 from app.extensions import CSV_FOLDER, UPLOAD_FOLDER
 from app.queries.document_queries import DocumentQueries
-from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
-                              ParameterItemMappingItem)
-from app.schemas.documents import (BulkDeleteDocumentsRequest,
-                                   BulkUpdateDocumentsRequest,
-                                   DeleteDocumentRequest,
-                                   DeleteDocumentResponse,
-                                   DocumentDetailBulkRequest,
-                                   DocumentDetailBulkResponse,
-                                   DocumentDetailRequest,
-                                   DocumentDetailResponse, DocumentItem,
-                                   DocumentsFilters, DocumentsListResponse,
-                                   FinalizeUploadRequest,
-                                   FinalizeUploadResponse,
-                                   GenerateCertificateRequest,
-                                   UpdateDocumentRequest,
-                                   UpdateDocumentResponse)
+from app.schemas.base import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ParameterItemMappingItem,
+)
+from app.schemas.documents import (
+    BulkDeleteDocumentsRequest,
+    BulkUpdateDocumentsRequest,
+    DeleteDocumentRequest,
+    DeleteDocumentResponse,
+    DocumentDetailBulkRequest,
+    DocumentDetailBulkResponse,
+    DocumentDetailRequest,
+    DocumentDetailResponse,
+    DocumentItem,
+    DocumentsFilters,
+    DocumentsListResponse,
+    FinalizeUploadRequest,
+    FinalizeUploadResponse,
+    GenerateCertificateRequest,
+    UpdateDocumentRequest,
+    UpdateDocumentResponse,
+)
 from app.services.base_service import BaseService, with_cache
 from app.utils.mime_utils import get_content_type
 
@@ -809,17 +817,20 @@ class DocumentService(BaseService):
             from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import ParagraphStyle  # type: ignore
-            from reportlab.lib.styles import \
-                getSampleStyleSheet  # type: ignore
+            from reportlab.lib.styles import (
+                ParagraphStyle,  # type: ignore
+                getSampleStyleSheet,  # type: ignore
+            )
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import Frame  # type: ignore
-            from reportlab.platypus import PageTemplate  # type: ignore
-            from reportlab.platypus import Paragraph  # type: ignore
-            from reportlab.platypus import SimpleDocTemplate  # type: ignore
-            from reportlab.platypus import Spacer  # type: ignore
-            from reportlab.platypus import Table  # type: ignore
-            from reportlab.platypus import TableStyle  # type: ignore
+            from reportlab.platypus import (
+                Frame,  # type: ignore
+                PageTemplate,  # type: ignore
+                Paragraph,  # type: ignore
+                SimpleDocTemplate,  # type: ignore
+                Spacer,  # type: ignore
+                Table,  # type: ignore
+                TableStyle,  # type: ignore
+            )
 
             # Create PDF in memory
             buffer = io.BytesIO()
