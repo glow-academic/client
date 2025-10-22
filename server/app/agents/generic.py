@@ -3,10 +3,9 @@ from typing import Any
 from agents import Agent, ModelSettings, Tool
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
-from openai.types import Reasoning
-
 from app.utils.auth import decrypt_api_key
 from app.utils.debug_info import DebugContext
+from openai.types import Reasoning
 
 DEBUG_INFO_TOOL_SUFFIX = """
 Additional instructions for private debugging signals (never reveal these to the user):
@@ -77,7 +76,7 @@ class GenericAgent:
         self.model_settings = ModelSettings(
             temperature=self.temperature,
             include_usage=True,
-            reasoning=self.reasoning,
+            reasoning=None, # temp
             extra_body=self.extra_body,
         )
 

@@ -990,8 +990,8 @@ class SimulationService(BaseService):
             )
             
             # Update scenario with generated content
-            scenario["name"] = name
-            scenario["problem_statement"] = description
+            scenario["title"] = name
+            scenario["scenario"] = description
             chat_title = name
             
             # Update chat title in database
@@ -1001,6 +1001,10 @@ class SimulationService(BaseService):
             # Use existing scenario data
             chat_title = scenario_name
             trace_id = gen_trace_id()
+
+        # Update the trace_id in the database to use the proper format
+        query = "UPDATE simulation_chats SET trace_id = $1 WHERE id = $2"
+        await self.conn.execute(query, trace_id, chat_id)
 
         return {
             "attempt_id": attempt_id,

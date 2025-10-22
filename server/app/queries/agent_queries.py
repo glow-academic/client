@@ -403,7 +403,7 @@ class AgentQueries:
             -- Provider data
             pr.id::text as provider_id,
             pr.name as provider_name,
-            pr.base_url,
+            COALESCE(pe.base_url, '') as base_url,
             pr.api_key,
             
             -- Documents data (aggregated as JSON array)
@@ -423,11 +423,12 @@ class AgentQueries:
         INNER JOIN agents a ON a.id = da.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN documents d ON d.id = ANY($1::uuid[])
         WHERE da.department_id = $2 AND da.role = 'classify'
         GROUP BY a.id, a.name, a.system_prompt, a.temperature, a.reasoning,
                  m.id, m.name, m.custom_model,
-                 pr.id, pr.name, pr.base_url, pr.api_key
+                 pr.id, pr.name, pr.api_key, pe.base_url
         """
 
         params: list[Any] = [document_ids, department_id]
@@ -499,7 +500,7 @@ class AgentQueries:
             -- Provider data
             pr.id::text as provider_id,
             pr.name as provider_name,
-            pr.base_url,
+            COALESCE(pe.base_url, '') as base_url,
             pr.api_key,
             
             -- Persona data (nullable)
@@ -549,6 +550,7 @@ class AgentQueries:
         INNER JOIN agents a ON a.id = da.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN personas p ON p.id = $2
         CROSS JOIN default_guest dg
         WHERE da.department_id = $1 AND da.role = 'scenario'
@@ -581,7 +583,7 @@ class AgentQueries:
         """
         query = """
         WITH target_message AS (
-            SELECT id, chat_id, role, content, created_at
+            SELECT id, chat_id, type, content, created_at
             FROM simulation_messages
             WHERE id = $1 AND chat_id = $2
         ),
@@ -641,7 +643,7 @@ class AgentQueries:
             -- Provider data
             pr.id::text as provider_id,
             pr.name as provider_name,
-            pr.base_url,
+            COALESCE(pe.base_url, '') as base_url,
             pr.api_key,
             
             -- Profile data
@@ -675,6 +677,7 @@ class AgentQueries:
         INNER JOIN agents a ON a.id = da.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         """
 
         params: list[Any] = [message_id, chat_id, department_id]
@@ -725,7 +728,7 @@ class AgentQueries:
             -- Provider data
             pr.id::text as provider_id,
             pr.name as provider_name,
-            pr.base_url,
+            COALESCE(pe.base_url, '') as base_url,
             pr.api_key,
             
             -- Simulation settings
@@ -757,6 +760,7 @@ class AgentQueries:
         INNER JOIN personas p ON p.id = sp.persona_id
         INNER JOIN models m ON m.id = p.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
         LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
         LEFT JOIN documents d ON d.id = sd.document_id
@@ -766,7 +770,7 @@ class AgentQueries:
                  s.id, s.department_id, s.problem_statement,
                  p.id, p.name, p.system_prompt, p.temperature, p.reasoning,
                  m.id, m.name, m.custom_model,
-                 pr.id, pr.name, pr.base_url, pr.api_key,
+                 pr.id, pr.name, pr.api_key, pe.base_url,
                  sim.image_input_active, sim.output_guardrail_active,
                  ap.profile_id
         """
@@ -914,7 +918,7 @@ class AgentQueries:
             -- Provider data
             pr.id::text as provider_id,
             pr.name as provider_name,
-            pr.base_url,
+            COALESCE(pe.base_url, '') as base_url,
             pr.api_key,
             
             -- Profile data (via attempt_profiles junction)
@@ -931,6 +935,7 @@ class AgentQueries:
         INNER JOIN agents a ON a.id = da.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN attempt_profiles ap ON ap.attempt_id = ai.id AND ap.active = true
         GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created_at, ci.completed_at,
                  sc.problem_statement,
@@ -939,7 +944,7 @@ class AgentQueries:
                  r.id, r.name, r.description, r.points, r.pass_points,
                  a.id, a.name, a.system_prompt, a.temperature, a.reasoning,
                  m.id, m.name, m.custom_model,
-                 pr.id, pr.name, pr.base_url, pr.api_key,
+                 pr.id, pr.name, pr.api_key, pe.base_url,
                  ap.profile_id
         """
 
@@ -960,7 +965,7 @@ class AgentQueries:
         SELECT 
             id::text,
             chat_id::text,
-            role,
+            type,
             content,
             created_at,
             completed
@@ -1033,7 +1038,7 @@ class AgentQueries:
             -- Provider data
             pr.id::text as provider_id,
             pr.name as provider_name,
-            pr.base_url,
+            COALESCE(pe.base_url, '') as base_url,
             pr.api_key,
             
             -- Chat data
@@ -1055,6 +1060,7 @@ class AgentQueries:
         INNER JOIN agents a ON a.id = da.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
         WHERE sc.id = $1
         """
@@ -1095,7 +1101,7 @@ class AgentQueries:
             -- Provider data
             pr.id::text as provider_id,
             pr.name as provider_name,
-            pr.base_url,
+            COALESCE(pe.base_url, '') as base_url,
             pr.api_key,
             
             -- Chat data
@@ -1108,6 +1114,7 @@ class AgentQueries:
         INNER JOIN agents a ON a.id = da.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         INNER JOIN assistant_chats ac ON ac.id = $1
         WHERE da.department_id = $2 AND da.role = 'title'
         """

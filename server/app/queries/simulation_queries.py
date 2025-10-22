@@ -1368,6 +1368,15 @@ class SimulationQueries:
                 p.reasoning,
                 p.color as persona_color,
                 p.icon as persona_icon,
+                -- Model data
+                m.id as model_id,
+                m.name as model_name,
+                m.custom_model,
+                -- Provider data
+                pr.id as provider_id,
+                pr.name as provider_name,
+                COALESCE(pe.base_url, '') as base_url,
+                pr.api_key,
                 -- Documents (aggregated)
                 COALESCE(
                     json_agg(
@@ -1402,6 +1411,9 @@ class SimulationQueries:
             CROSS JOIN chosen_scenario_id csi
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN personas p ON p.id = sp.persona_id
+            LEFT JOIN models m ON m.id = p.model_id
+            LEFT JOIN providers pr ON pr.id = m.provider_id
+            LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
             LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
             LEFT JOIN documents d ON d.id = sd.document_id
             LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
@@ -1410,7 +1422,8 @@ class SimulationQueries:
             WHERE s.id = csi.scenario_id
             GROUP BY s.id, s.name, s.problem_statement, s.active, s.default_scenario, 
                      s.generated, s.department_id, p.id, p.name, p.system_prompt, 
-                     p.temperature, p.reasoning, p.color, p.icon
+                     p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.custom_model,
+                     pr.id, pr.name, pr.api_key, pe.base_url
         ),
         -- Create simulation chat
         new_chat AS (
@@ -1462,6 +1475,13 @@ class SimulationQueries:
                 'persona_reasoning', sfd.reasoning,
                 'persona_color', sfd.persona_color,
                 'persona_icon', sfd.persona_icon,
+                'model_id', sfd.model_id::text,
+                'model_name', sfd.model_name,
+                'model_custom_model', sfd.custom_model,
+                'provider_id', sfd.provider_id::text,
+                'provider_name', sfd.provider_name,
+                'provider_base_url', sfd.base_url,
+                'provider_api_key', sfd.api_key,
                 'documents', sfd.documents,
                 'parameter_items', sfd.parameter_items,
                 'active', sfd.active,
