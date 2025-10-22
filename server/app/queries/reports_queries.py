@@ -476,7 +476,7 @@ class ReportsQueries:
                         s.id::text,
                         jsonb_build_object(
                             'name', s.name,
-                            'description', sps.problem_statement
+                            'description', COALESCE(sps.problem_statement, '')
                         )
                     )
                     FROM scenarios s

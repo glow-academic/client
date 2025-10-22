@@ -643,7 +643,7 @@ class PersonaQueries:
                 jsonb_agg(DISTINCT jsonb_build_object(
                     'id', s.id,
                     'name', s.name,
-                    'problem_statement', sps.problem_statement,
+                    'problem_statement', COALESCE(sps.problem_statement, ''),
                     'default_scenario', s.default_scenario,
                     'created_at', s.created_at
                 )) FILTER (WHERE s.id IS NOT NULL),

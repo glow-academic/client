@@ -97,32 +97,35 @@ You have access to scenario generation tools. Use these tools to create your sce
 WHERE name = 'Scenario';
 
 -- Ensure all agents are properly associated with departments
--- Add missing agents to Computer Science department
-INSERT INTO department_agents (department_id, role, agent_id, active, created_at, updated_at)
-SELECT 
-    d.id as department_id,
-    CASE a.name
-        WHEN 'Assistant' THEN 'assistant'
-        WHEN 'Classify' THEN 'classify'
-        WHEN 'Grade' THEN 'grade'
-        WHEN 'Hint' THEN 'hint'
-        WHEN 'Input Guardrail' THEN 'input_guardrail'
-        WHEN 'Output Guardrail' THEN 'output_guardrail'
-        WHEN 'Title' THEN 'title'
-    END as role,
-    a.id as agent_id,
-    true as active,
-    NOW() as created_at,
-    NOW() as updated_at
-FROM departments d
-CROSS JOIN agents a
-WHERE d.title = 'Computer Science'
-  AND a.active = true
-  AND a.name IN ('Assistant', 'Classify', 'Grade', 'Hint', 'Input Guardrail', 'Output Guardrail', 'Title')
-  AND NOT EXISTS (
-    SELECT 1 FROM department_agents da 
-    WHERE da.department_id = d.id AND da.agent_id = a.id
-  );
+-- First, let's check what departments exist and what agents are available
+DO $$
+DECLARE
+    dept_record RECORD;
+    agent_record RECORD;
+    agent_count INTEGER;
+BEGIN
+    -- Get all departments
+    FOR dept_record IN SELECT id, title FROM departments LOOP
+        RAISE NOTICE 'Processing department: % (%)', dept_record.title, dept_record.id;
+        
+        -- Get all agents
+        FOR agent_record IN SELECT id, name FROM agents WHERE active = true LOOP
+            -- Check if this agent is already associated with this department
+            SELECT COUNT(*) INTO agent_count
+            FROM department_agents 
+            WHERE department_id = dept_record.id AND agent_id = agent_record.id;
+            
+            -- If not associated, add the association
+            IF agent_count = 0 THEN
+                INSERT INTO department_agents (department_id, agent_id, active, created_at, updated_at)
+                VALUES (dept_record.id, agent_record.id, true, NOW(), NOW());
+                RAISE NOTICE 'Added agent % to department %', agent_record.name, dept_record.title;
+            ELSE
+                RAISE NOTICE 'Agent % already associated with department %', agent_record.name, dept_record.title;
+            END IF;
+        END LOOP;
+    END LOOP;
+END $$;
 
 -- Verify the updates
 SELECT 
@@ -170,19 +173,10 @@ WHERE problem_statement IS NOT NULL AND problem_statement != '';
 -- Set use_documents to TRUE for all existing scenarios
 UPDATE scenarios SET use_documents = TRUE;
 
--- Drop the analytics materialized view that depends on problem_statement
-DROP MATERIALIZED VIEW IF EXISTS analytics CASCADE;
-
 -- Drop the old problem_statement column
 ALTER TABLE scenarios DROP COLUMN problem_statement;
 
--- Set reasoning to 'none' for all personas
-UPDATE personas SET reasoning = 'none';
-
 COMMIT;
-
--- Recreate the analytics materialized view
-\i database/app/analytics/init.sql
 
 -- Display final status
 SELECT 

@@ -421,7 +421,7 @@ class PracticeQueries:
                 SELECT COALESCE(
                     jsonb_object_agg(
                         s.id::text,
-                        jsonb_build_object('name', s.name, 'description', sps.problem_statement)
+                        jsonb_build_object('name', s.name, 'description', COALESCE(sps.problem_statement, ''))
                     ),
                     '{{}}'::jsonb
                 ) as mapping
