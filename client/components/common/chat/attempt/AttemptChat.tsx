@@ -407,37 +407,44 @@ export default function AttemptChat() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {/* Documents Toggle */}
-                        {simulationContext?.scenarioDocuments &&
-                          simulationContext?.scenarioDocuments.length > 0 && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={
-                                      showDocuments ? "default" : "outline"
-                                    }
-                                    size="sm"
-                                    onClick={() =>
-                                      simulationContext?.setShowDocuments(
-                                        !showDocuments
-                                      )
-                                    }
-                                    className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {showDocuments
-                                      ? "Hide Documents"
-                                      : "Show Documents"}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
+                        {/* Documents Toggle - only show if current chat has documents */}
+                        {(() => {
+                          const currentChatDocIds =
+                            displayChat?.documentIds || [];
+                          const hasDocumentsForCurrentChat =
+                            simulationContext?.scenarioDocuments?.some((doc) =>
+                              currentChatDocIds.includes(doc.document_id)
+                            );
+                          return hasDocumentsForCurrentChat;
+                        })() && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant={
+                                    showDocuments ? "default" : "outline"
+                                  }
+                                  size="sm"
+                                  onClick={() =>
+                                    simulationContext?.setShowDocuments(
+                                      !showDocuments
+                                    )
+                                  }
+                                  className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {showDocuments
+                                    ? "Hide Documents"
+                                    : "Show Documents"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
 
                         <TooltipProvider>
                           <Tooltip>
@@ -798,8 +805,16 @@ export default function AttemptChat() {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {simulationContext?.scenarioDocuments.length >
-                              0 && (
+                            {(() => {
+                              const currentChatDocIds =
+                                displayChat?.documentIds || [];
+                              const hasDocumentsForCurrentChat =
+                                simulationContext?.scenarioDocuments?.some(
+                                  (doc) =>
+                                    currentChatDocIds.includes(doc.document_id)
+                                );
+                              return hasDocumentsForCurrentChat;
+                            })() && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
