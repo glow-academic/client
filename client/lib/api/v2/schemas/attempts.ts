@@ -170,6 +170,7 @@ export const AttemptFullResponseSchema = z.object({
           achievedStandards: z.record(z.string(), z.boolean()),
           passedStandards: z.record(z.string(), z.boolean()),
           gradeDescription: z.string().optional(),
+          feedbackByStandardId: z.record(z.string(), z.string()).optional(),
         })
         .nullable(),
     })

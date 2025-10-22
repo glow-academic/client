@@ -68,27 +68,6 @@ export default function TableRubric({
     return gradingState.passedStandards[standardId] || false;
   };
 
-  // Helper function to determine if a standard should be highlighted (achieved or below achieved)
-  const shouldHighlight = (
-    _standardId: string,
-    standardPoints: number,
-    groupStandardIds: string[]
-  ) => {
-    if (!gradingState) return false;
-
-    // Find the achieved standard in this group
-    const achievedStandardId = groupStandardIds.find((id) =>
-      isStandardAchieved(id)
-    );
-    if (!achievedStandardId) return false;
-
-    const achievedStandard = standardsMapping[achievedStandardId];
-    if (!achievedStandard) return false;
-
-    // Highlight if this standard's points are <= achieved standard's points
-    return standardPoints <= achievedStandard.points;
-  };
-
   // Group standards by standard group using props data
   const groupedStandards = Object.entries(standardGroups).map(
     ([groupId, standardIds]) => {
@@ -224,11 +203,7 @@ export default function TableRubric({
 
                     const isAchieved = isStandardAchieved(standardId);
                     const isPassed = isStandardPassed(standardId);
-                    const shouldHighlightCell = shouldHighlight(
-                      standardId,
-                      standardInfo.points,
-                      standardIds
-                    );
+                    const shouldHighlightCell = isAchieved; // Only the achieved cell
 
                     return (
                       <TableCell
@@ -239,8 +214,8 @@ export default function TableRubric({
                             ? "bg-white dark:bg-white/10"
                             : shouldHighlightCell
                               ? isPassed
-                                ? "bg-green-200 dark:bg-green-900/40"
-                                : "bg-red-200 dark:bg-red-900/40"
+                                ? "bg-green-200 dark:bg-green-900/40" // Green if passed
+                                : "bg-red-200 dark:bg-red-900/40" // Red if not passed
                               : ""
                         }`}
                         role={isAchieved ? "button" : undefined}
@@ -288,9 +263,13 @@ export default function TableRubric({
                              If we're ABOUT to show the front (isFlipped false), spin backward (-1). */
                           const dir = isFlipped ? 1 : -1;
 
+                          // Get feedback for this standard
+                          const feedbackText =
+                            gradingState?.feedbackByStandardId?.[standardId];
+
                           const frontContent = (
                             <div className="text-xs leading-tight">
-                              {standardInfo.description}
+                              {feedbackText || standardInfo.description}
                             </div>
                           );
                           const backContent = (

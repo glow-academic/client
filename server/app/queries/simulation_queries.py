@@ -2053,13 +2053,9 @@ class SimulationQueries:
                             'achievedStandards', COALESCE(
                                 (SELECT jsonb_object_agg(
                                     (fb->>'standardId')::text,
-                                    (fb->>'total')::numeric = mspgc.max_score
+                                    true  -- Simply mark standards that have feedback as achieved
                                 )
-                                FROM jsonb_array_elements(fg.feedbacks) fb
-                                JOIN standards s ON s.id = ((fb->>'standardId')::uuid)
-                                LEFT JOIN max_scores_per_group_chat mspgc 
-                                    ON mspgc.chat_id = gd.chat_id 
-                                    AND mspgc.standard_group_id = s.standard_group_id),
+                                FROM jsonb_array_elements(fg.feedbacks) fb),
                                 '{}'::jsonb
                             ),
                             'passedStandards', COALESCE(
@@ -2072,6 +2068,14 @@ class SimulationQueries:
                                 LEFT JOIN max_scores_per_group_chat mspgc 
                                     ON mspgc.chat_id = gd.chat_id 
                                     AND mspgc.standard_group_id = s.standard_group_id),
+                                '{}'::jsonb
+                            ),
+                            'feedbackByStandardId', COALESCE(
+                                (SELECT jsonb_object_agg(
+                                    (fb->>'standardId')::text,
+                                    (fb->>'feedback')::text
+                                )
+                                FROM jsonb_array_elements(fg.feedbacks) fb),
                                 '{}'::jsonb
                             ),
                             'gradeDescription', COALESCE(gd.grade->>'description', '')
