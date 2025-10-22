@@ -1338,7 +1338,7 @@ class SimulationQueries:
         chosen_scenario_id AS (
             SELECT 
                 CASE 
-                    WHEN $4 IS NOT NULL AND $4 != '' THEN $4::uuid  -- scenario_id_override
+                    WHEN COALESCE($4, '') != '' THEN $4::uuid  -- scenario_id_override
                     WHEN EXISTS(SELECT 1 FROM simulation_scenarios) THEN 
                         (SELECT scenario_id FROM simulation_scenarios LIMIT 1)
                     ELSE (

@@ -920,8 +920,10 @@ class SimulationService(BaseService):
         from app.agents.collection.scenario import run_scenario_agent
 
         # Use single consolidated query to get all data and create all records
+        # Convert None to empty string to avoid PostgreSQL parameter type ambiguity
+        scenario_override = scenario_id_override if scenario_id_override else ""
         query, params = self.queries.start_simulation_attempt_complete(
-            simulation_id, profile_id, scenario_id_override, infinite, department_id
+            simulation_id, profile_id, scenario_override, infinite, department_id
         )
         result = await self.conn.fetchrow(query, *params)
         
@@ -938,6 +940,14 @@ class SimulationService(BaseService):
         needs_generation = result["needs_generation"]
         simulation_data = result["simulation_data"]
         scenario_metadata = result["scenario_metadata"]
+        
+        # Parse JSONB fields if they're strings
+        if isinstance(simulation_data, str):
+            import json
+            simulation_data = json.loads(simulation_data)
+        if isinstance(scenario_metadata, str):
+            import json
+            scenario_metadata = json.loads(scenario_metadata)
 
         # Build scenario object from metadata
         scenario = {
