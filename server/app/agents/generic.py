@@ -76,7 +76,7 @@ class GenericAgent:
         self.model_settings = ModelSettings(
             temperature=self.temperature,
             include_usage=True,
-            reasoning=None, # temp
+            reasoning=self.reasoning,
             extra_body=self.extra_body,
         )
 
