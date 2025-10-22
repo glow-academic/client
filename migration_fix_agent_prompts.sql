@@ -139,11 +139,50 @@ WHERE a.name IN ('Grade', 'Scenario')
 GROUP BY a.id, a.name, a.system_prompt
 ORDER BY a.name;
 
+-- ============================================================================
+-- SCENARIO PROBLEM STATEMENTS MIGRATION
+-- ============================================================================
+
+-- Create new scenario_problem_statements table
+CREATE TABLE scenario_problem_statements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  problem_statement TEXT NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Only one active problem statement per scenario
+CREATE UNIQUE INDEX scenario_problem_statements_one_active_per_scenario
+  ON scenario_problem_statements(scenario_id) WHERE active;
+
+CREATE INDEX ON scenario_problem_statements(scenario_id);
+CREATE INDEX ON scenario_problem_statements(scenario_id, active);
+
+-- Add use_documents column to scenarios
+ALTER TABLE scenarios 
+ADD COLUMN use_documents BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Backfill existing problem_statements into new table
+INSERT INTO scenario_problem_statements (scenario_id, problem_statement, active, created_at, updated_at)
+SELECT id, problem_statement, true, created_at, NOW()
+FROM scenarios
+WHERE problem_statement IS NOT NULL AND problem_statement != '';
+
+-- Set use_documents to TRUE for all existing scenarios
+UPDATE scenarios SET use_documents = TRUE;
+
+-- Drop the old problem_statement column
+ALTER TABLE scenarios DROP COLUMN problem_statement;
+
 COMMIT;
 
 -- Display final status
 SELECT 
     'Migration completed successfully' as status,
-    COUNT(*) as total_agents,
-    COUNT(CASE WHEN name IN ('Grade', 'Scenario') THEN 1 END) as updated_agents
-FROM agents;
+    (SELECT COUNT(*) FROM agents) as total_agents,
+    (SELECT COUNT(*) FROM agents WHERE name IN ('Grade', 'Scenario')) as updated_agents,
+    (SELECT COUNT(*) FROM scenarios) as total_scenarios,
+    (SELECT COUNT(*) FROM scenarios WHERE use_documents = true) as scenarios_with_documents,
+    (SELECT COUNT(*) FROM scenario_problem_statements WHERE active = true) as active_problem_statements;

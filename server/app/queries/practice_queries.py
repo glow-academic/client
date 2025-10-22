@@ -421,11 +421,12 @@ class PracticeQueries:
                 SELECT COALESCE(
                     jsonb_object_agg(
                         s.id::text,
-                        jsonb_build_object('name', s.name, 'description', s.problem_statement)
+                        jsonb_build_object('name', s.name, 'description', sps.problem_statement)
                     ),
                     '{{}}'::jsonb
                 ) as mapping
                 FROM scenarios s
+                LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
                 WHERE s.active = true
                   AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
             ),

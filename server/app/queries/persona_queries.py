@@ -76,7 +76,7 @@ class PersonaQueries:
                     s.id::text,
                     jsonb_build_object(
                         'name', s.name,
-                        'description', COALESCE(s.problem_statement, ''),
+                        'description', COALESCE(sps.problem_statement, ''),
                         'active', s.active,
                         'persona_id', NULL,
                         'persona_mapping', '{}'::jsonb,
@@ -90,6 +90,7 @@ class PersonaQueries:
             ) as mapping
             FROM all_scenario_ids asi
             LEFT JOIN scenarios s ON s.id = asi.scenario_id
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         )
         SELECT 
             pd.persona_id,
@@ -642,7 +643,7 @@ class PersonaQueries:
                 jsonb_agg(DISTINCT jsonb_build_object(
                     'id', s.id,
                     'name', s.name,
-                    'problem_statement', s.problem_statement,
+                    'problem_statement', sps.problem_statement,
                     'default_scenario', s.default_scenario,
                     'created_at', s.created_at
                 )) FILTER (WHERE s.id IS NOT NULL),
@@ -651,6 +652,7 @@ class PersonaQueries:
         FROM personas p
         LEFT JOIN scenario_personas sp ON sp.persona_id = p.id AND sp.active = true
         LEFT JOIN scenarios s ON s.id = sp.scenario_id
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         WHERE p.id = $1
         GROUP BY p.id, p.name, p.description, p.system_prompt, p.temperature, 
                  p.default_persona, p.created_at, p.updated_at

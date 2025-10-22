@@ -78,7 +78,7 @@ class DocumentQueries:
                     s.id::text,
                     jsonb_build_object(
                         'name', s.name,
-                        'description', COALESCE(s.problem_statement, ''),
+                        'description', COALESCE(sps.problem_statement, ''),
                         'active', s.active,
                         'persona_id', NULL,
                         'persona_mapping', '{}'::jsonb,
@@ -92,6 +92,7 @@ class DocumentQueries:
             ) as mapping
             FROM all_scenario_ids asi
             LEFT JOIN scenarios s ON s.id = asi.scenario_id
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             -- Only include root scenarios (parent_id = child_id in scenario_tree)
             LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
         ),

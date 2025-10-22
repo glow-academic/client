@@ -476,10 +476,11 @@ class ReportsQueries:
                         s.id::text,
                         jsonb_build_object(
                             'name', s.name,
-                            'description', s.problem_statement
+                            'description', sps.problem_statement
                         )
                     )
                     FROM scenarios s
+                    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
                     WHERE s.active = true
                       AND s.department_id IN (SELECT DISTINCT department_id FROM filt)
                 ), '{{}}'::jsonb),

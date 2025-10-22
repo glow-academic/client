@@ -356,8 +356,9 @@ class AnalyticsQueryBuilder:
     ) -> tuple[str, list[Any]]:
         """Build query to get scenarios for mapping."""
         query = """
-        SELECT DISTINCT s.id, s.name, s.problem_statement
+        SELECT DISTINCT s.id, s.name, sps.problem_statement
         FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
         AND s.active = true
         """

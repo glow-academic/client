@@ -1474,7 +1474,7 @@ class ScenarioService(BaseService):
 
         # Build fuzzy search conditions
         where_clause, params, param_idx = build_fuzzy_conditions(
-            ["s.name", "s.problem_statement"], query
+            ["s.name", "sps.problem_statement"], query
         )
 
         # Build and execute query

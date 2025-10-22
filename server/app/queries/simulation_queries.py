@@ -82,7 +82,7 @@ class SimulationQueries:
                     s.id::text,
                     jsonb_build_object(
                         'name', s.name,
-                        'description', COALESCE(s.problem_statement, ''),
+                        'description', COALESCE(sps.problem_statement, ''),
                         'active', s.active,
                         'persona_id', (
                             SELECT persona_id 
@@ -101,6 +101,7 @@ class SimulationQueries:
             ) as mapping
             FROM all_scenario_ids asi
             LEFT JOIN scenarios s ON s.id = asi.scenario_id
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         ),
         all_rubric_ids AS (
             SELECT DISTINCT rubric_id
@@ -749,11 +750,12 @@ class SimulationQueries:
         SELECT 
             s.id,
             s.name,
-            s.problem_statement,
+            sps.problem_statement,
             s.active,
             s.default_scenario,
             ss.position
         FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         JOIN simulation_scenarios ss ON ss.scenario_id = s.id
         WHERE ss.simulation_id = $1 AND s.id = ANY($2::uuid[])
         ORDER BY ss.position
@@ -913,7 +915,7 @@ class SimulationQueries:
             SELECT 
                 s.id as scenario_id,
                 s.name,
-                s.problem_statement,
+                sps.problem_statement,
                 s.active,
                 s.default_scenario,
                 ss.position,
@@ -1005,8 +1007,9 @@ class SimulationQueries:
             SELECT DISTINCT
                 s.id,
                 s.name,
-                s.problem_statement
+                sps.problem_statement
             FROM scenarios s
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             CROSS JOIN user_department_ids udi
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
             WHERE s.department_id = ANY(udi.ids) 
@@ -1356,7 +1359,7 @@ class SimulationQueries:
             SELECT 
                 s.id as scenario_id,
                 s.name as scenario_name,
-                s.problem_statement,
+                sps.problem_statement,
                 s.active,
                 s.default_scenario,
                 s.generated,
@@ -1405,10 +1408,11 @@ class SimulationQueries:
                 ) as parameter_items,
                 -- Check if scenario needs generation
                 CASE 
-                    WHEN s.problem_statement IS NULL OR s.problem_statement = '' THEN true
+                    WHEN sps.problem_statement IS NULL OR sps.problem_statement = '' THEN true
                     ELSE false
                 END as needs_generation
             FROM scenarios s
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             CROSS JOIN chosen_scenario_id csi
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN personas p ON p.id = sp.persona_id
@@ -1421,7 +1425,7 @@ class SimulationQueries:
             LEFT JOIN parameter_items pi ON pi.id = spi.parameter_item_id
             LEFT JOIN parameters p_param ON p_param.id = pi.parameter_id
             WHERE s.id = csi.scenario_id
-            GROUP BY s.id, s.name, s.problem_statement, s.active, s.default_scenario, 
+            GROUP BY s.id, s.name, sps.problem_statement, s.active, s.default_scenario, 
                      s.generated, s.department_id, p.id, p.name, p.system_prompt, 
                      p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.custom_model,
                      pr.id, pr.name, pr.api_key, pe.base_url
@@ -1575,7 +1579,7 @@ class SimulationQueries:
             SELECT 
                 s.id as scenario_id,
                 s.name,
-                s.problem_statement,
+                sps.problem_statement,
                 s.active,
                 s.default_scenario,
                 ss.position,
@@ -1661,8 +1665,9 @@ class SimulationQueries:
             SELECT DISTINCT
                 s.id,
                 s.name,
-                s.problem_statement
+                sps.problem_statement
             FROM scenarios s
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             CROSS JOIN user_department_ids udi
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
             WHERE s.department_id = ANY(udi.ids) 
@@ -2004,7 +2009,7 @@ class SimulationQueries:
                 jsonb_build_object(
                     'id', s.id::text,
                     'name', s.name,
-                    'problemStatement', s.problem_statement,
+                    'problemStatement', sps.problem_statement,
                     'departmentId', s.department_id::text,
                     'active', s.active,
                     'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
@@ -2014,6 +2019,7 @@ class SimulationQueries:
                     'defaultScenario', s.default_scenario
                 ) as scenario_data
             FROM scenarios s
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             CROSS JOIN scenario_ids_list sil
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             WHERE s.id = ANY(sil.scenario_ids)

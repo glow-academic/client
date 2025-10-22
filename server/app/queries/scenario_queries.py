@@ -65,7 +65,7 @@ class ScenarioQueries:
             SELECT 
                 s.id as scenario_id,
                 s.name as title,
-                s.problem_statement,
+                sps.problem_statement,
                 s.active,
                 s.default_scenario,
                 s.generated,
@@ -95,6 +95,7 @@ class ScenarioQueries:
             -- Only include root scenarios (parent_id = child_id in scenario_tree)
             JOIN scenario_tree root_check ON root_check.parent_id = s.id AND root_check.child_id = s.id
             LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
             LEFT JOIN scenario_parameters spar ON spar.scenario_id = s.id
             LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id
@@ -212,11 +213,12 @@ class ScenarioQueries:
         query = """
         SELECT 
             s.name,
-            s.problem_statement,
+            sps.problem_statement,
             s.active,
             s.default_scenario,
             s.department_id
         FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         WHERE s.id = $1
         """
         return (query, [scenario_id])
@@ -246,7 +248,7 @@ class ScenarioQueries:
             SELECT 
                 s.id,
                 s.name,
-                s.problem_statement,
+                sps.problem_statement,
                 s.active,
                 s.default_scenario,
                 s.generated,
@@ -254,6 +256,7 @@ class ScenarioQueries:
                 st.parent_id::text as parent_scenario_id
             FROM scenarios s
             LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             WHERE s.id = $1
         ),
         scenario_persona AS (
@@ -1063,10 +1066,11 @@ class ScenarioQueries:
             SELECT 
                 s.id,
                 s.name,
-                s.problem_statement,
+                sps.problem_statement,
                 s.default_scenario,
                 sp.persona_id
             FROM scenarios s
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             WHERE {where_clause}
             LIMIT ${{param_count}}

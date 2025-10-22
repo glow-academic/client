@@ -37,12 +37,29 @@ CREATE TABLE scenarios (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
-  problem_statement TEXT        NOT NULL,
+  use_documents BOOLEAN NOT NULL DEFAULT FALSE,
   default_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT TRUE,
   department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );
+
+-- Scenario problem statements table (supports historical tracking)
+CREATE TABLE scenario_problem_statements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  problem_statement TEXT NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Only one active problem statement per scenario
+CREATE UNIQUE INDEX scenario_problem_statements_one_active_per_scenario
+  ON scenario_problem_statements(scenario_id) WHERE active;
+
+CREATE INDEX ON scenario_problem_statements(scenario_id);
+CREATE INDEX ON scenario_problem_statements(scenario_id, active);
 
 -- Scenario ↔ Persona junction table (BCNF normalization - replaces scenarios.persona_id)
 CREATE TABLE scenario_personas (

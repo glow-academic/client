@@ -598,8 +598,9 @@ class AgentQueries:
             JOIN chat_info ci ON ci.attempt_id = sa.id
         ),
         scenario_info AS (
-            SELECT s.id, s.problem_statement
+            SELECT s.id, sps.problem_statement
             FROM scenarios s
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             JOIN chat_info ci ON ci.scenario_id = s.id
         ),
         profile_info AS (
@@ -711,7 +712,7 @@ class AgentQueries:
             -- Scenario data
             s.id::text as scenario_id,
             s.department_id::text,
-            s.problem_statement,
+            sps.problem_statement,
             
             -- Persona data (via scenario_personas junction)
             p.id::text as persona_id,
@@ -755,6 +756,7 @@ class AgentQueries:
         FROM simulation_chats sc
         INNER JOIN simulation_attempts sa ON sa.id = sc.attempt_id
         INNER JOIN scenarios s ON s.id = sc.scenario_id
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         INNER JOIN simulations sim ON sim.id = sa.simulation_id
         INNER JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
         INNER JOIN personas p ON p.id = sp.persona_id
@@ -767,7 +769,7 @@ class AgentQueries:
         WHERE sc.id = $1
         GROUP BY sc.id, sc.title, sc.trace_id,
                  sa.id, sa.simulation_id,
-                 s.id, s.department_id, s.problem_statement,
+                 s.id, s.department_id, sps.problem_statement,
                  p.id, p.name, p.system_prompt, p.temperature, p.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url,
@@ -928,6 +930,7 @@ class AgentQueries:
         CROSS JOIN attempt_info ai
         CROSS JOIN simulation_info si
         INNER JOIN scenarios sc ON sc.id = ci.scenario_id
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = sc.id AND sps.active = true
         INNER JOIN rubrics r ON r.id = si.rubric_id
         LEFT JOIN standard_groups sg ON sg.rubric_id = r.id
         LEFT JOIN standards std ON std.standard_group_id = sg.id
@@ -938,7 +941,7 @@ class AgentQueries:
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN attempt_profiles ap ON ap.attempt_id = ai.id AND ap.active = true
         GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created_at, ci.completed,
-                 sc.problem_statement,
+                 sps.problem_statement,
                  ai.id, ai.simulation_id, ai.total_chats,
                  si.id, si.rubric_id, si.department_id, si.time_limit,
                  r.id, r.name, r.description, r.points, r.pass_points,
