@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 
 type StandardGroupMappingItem = {
   name: string;
@@ -42,11 +43,7 @@ export interface TableRubricProps {
   standardsMapping: Record<string, StandardMappingItem>;
 
   // Optional: grading state for visualization (from v2 server-side)
-  gradingState?: {
-    achievedStandards: Record<string, boolean>;
-    passedStandards: Record<string, boolean>;
-    gradeDescription?: string; // Overall rubric summary/description
-  } | null;
+  gradingState?: AttemptFullResponse["chats"][number]["gradingState"] | null;
 }
 
 export default function TableRubric({

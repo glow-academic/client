@@ -364,8 +364,8 @@ export default function AttemptChat() {
                       {/* Show scenario information */}
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {selectedScenario?.title ||
-                            simulationContext?.scenario?.title ||
+                          {selectedScenario?.problemStatement ||
+                            simulationContext?.scenario?.problemStatement ||
                             "Session Results"}
                         </span>
                       </div>
@@ -641,9 +641,9 @@ export default function AttemptChat() {
                             }
                             gradingState={
                               selectedChat?.id
-                                ? (simulationContext.gradingStatesByChatId[
+                                ? simulationContext.gradingStatesByChatId[
                                     selectedChat.id
-                                  ] ?? null)
+                                  ] || null
                                 : null
                             }
                           />
@@ -740,7 +740,7 @@ export default function AttemptChat() {
                         <div className="flex items-center gap-4">
                           <div className="flex items-start gap-2">
                             <span className="font-medium">
-                              {simulationContext?.scenario?.title ||
+                              {simulationContext?.scenario?.name ||
                                 simulationContext?.currentChat?.title}
                             </span>
                           </div>

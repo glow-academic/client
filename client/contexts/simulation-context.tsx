@@ -6,8 +6,6 @@
  */
 "use client";
 import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
-import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
-import type { ScenarioItem } from "@/lib/api/v2/schemas/scenarios";
 
 import {
   useAttemptFull,
@@ -29,82 +27,31 @@ import React, {
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
 
-// Dynamic rubric interface based on grades/feedback
-interface DynamicRubric {
-  chatId: string;
-  score: number;
-  passed: boolean;
-  timeTaken: number;
-  skillScores: Record<string, number>;
-  skillFeedbacks: Record<string, string>;
-  totalPossiblePoints: number;
-}
-
-// Aggregated results interface
-interface AggregatedResults {
-  totalChats: number;
-  passedChats: number;
-  averageScore: number;
-  totalTime: number;
-  overallPassed: boolean;
-}
-
-// Timer state interface
-interface TimerState {
-  elapsed: number;
-  remaining: number | null;
-  expired: boolean;
-}
-
 export interface SimulationContextType {
-  // Attempt and simulation data
+  // Attempt and simulation data (exact types from AttemptFullResponse)
   attemptId: string;
   attempt: AttemptFullResponse["attempt"] | null;
   simulation: AttemptFullResponse["simulation"] | null;
   scenario: AttemptFullResponse["chats"][number]["scenario"];
-  scenarioDocuments: DocumentItem[];
+  scenarioDocuments: AttemptFullResponse["scenarioDocuments"];
 
-  // Attempt profiles for ownership checks
-  attemptProfiles: Array<{
-    profileId: string;
-    attemptId: string;
-    active: boolean;
-  }>;
+  // Attempt profiles (exact type from AttemptFullResponse)
+  attemptProfiles: AttemptFullResponse["attemptProfiles"];
   attemptProfileId: string | null;
 
   // Scenarios map (chatId -> scenario) for all chats
-  scenariosByChatId: Record<string, ScenarioItem | null>;
+  scenariosByChatId: Record<
+    string,
+    AttemptFullResponse["chats"][number]["scenario"]
+  >;
 
-  // Rubric structure (from v2) for TableRubric component
-  rubricStructure: {
-    standardGroups: Record<string, string[]>;
-    standardGroupsMapping: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        points: number;
-        passPoints: number;
-      }
-    >;
-    standardsMapping: Record<
-      string,
-      {
-        name: string;
-        description: string;
-        points: number;
-      }
-    >;
-  } | null;
+  // Rubric structure (exact type from AttemptFullResponse)
+  rubricStructure: AttemptFullResponse["rubricStructure"];
 
-  // Grading states by chat ID (which standards achieved/passed)
+  // Grading states (exact type from AttemptFullResponse)
   gradingStatesByChatId: Record<
     string,
-    {
-      achievedStandards: Record<string, boolean>;
-      passedStandards: Record<string, boolean>;
-      gradeDescription?: string;
-    }
+    NonNullable<AttemptFullResponse["chats"][number]["gradingState"]>
   >;
 
   // Current chat management
@@ -114,16 +61,18 @@ export interface SimulationContextType {
   chats: AttemptFullResponse["chats"][number]["chat"][];
   isLoadingChats: boolean;
 
-  // Messages (from v2 - all messages for current chat)
+  // Messages (exact type from AttemptFullResponse)
   currentMessages: AttemptFullResponse["chats"][number]["messages"];
 
-  // Hints (from v2 - hints for current chat)
+  // Hints (exact type from AttemptFullResponse)
   currentChatHints: AttemptFullResponse["chats"][number]["hints"];
 
-  // Results and grading
-  currentDynamicRubric: DynamicRubric | null;
-  allDynamicRubrics: DynamicRubric[];
-  aggregatedResults: AggregatedResults | null;
+  // Results and grading (exact types from AttemptFullResponse)
+  currentDynamicRubric: AttemptFullResponse["chats"][number]["dynamicRubric"];
+  allDynamicRubrics: NonNullable<
+    AttemptFullResponse["chats"][number]["dynamicRubric"]
+  >[];
+  aggregatedResults: AttemptFullResponse["aggregatedResults"];
 
   // Grading progress
   gradingProgress: {
@@ -132,8 +81,8 @@ export interface SimulationContextType {
   } | null;
   isGrading: boolean;
 
-  // Timer state
-  timer: TimerState;
+  // Timer state (exact type from AttemptFullResponse)
+  timer: AttemptFullResponse["timer"];
   isActive: boolean;
 
   // UI state
@@ -255,8 +204,6 @@ export function SimulationProvider({
   }, [attemptData, currentChat]);
 
   const scenarioDocuments = attemptData?.scenarioDocuments || [];
-
-  // Attempt profiles from v2
   const attemptProfiles = useMemo(
     () => attemptData?.attemptProfiles || [],
     [attemptData?.attemptProfiles]
@@ -269,9 +216,12 @@ export function SimulationProvider({
   // Scenarios map from v2 - map chatId -> scenario for all chats
   const scenariosByChatId = useMemo(() => {
     if (!attemptData?.chats) return {};
-    const map: Record<string, ScenarioItem | null> = {};
+    const map: Record<
+      string,
+      AttemptFullResponse["chats"][number]["scenario"]
+    > = {};
     attemptData.chats.forEach((chatData) => {
-      map[chatData.chat.id] = chatData.scenario as ScenarioItem | null;
+      map[chatData.chat.id] = chatData.scenario;
     });
     return map;
   }, [attemptData]);
@@ -284,10 +234,7 @@ export function SimulationProvider({
     if (!attemptData?.chats) return {};
     const map: Record<
       string,
-      {
-        achievedStandards: Record<string, boolean>;
-        passedStandards: Record<string, boolean>;
-      }
+      NonNullable<AttemptFullResponse["chats"][number]["gradingState"]>
     > = {};
     attemptData.chats.forEach((chatData) => {
       if (chatData.gradingState) {
@@ -328,7 +275,13 @@ export function SimulationProvider({
     () =>
       attemptData?.chats
         .map((c) => c.dynamicRubric)
-        .filter((r): r is DynamicRubric => r !== null) || [],
+        .filter(
+          (
+            r
+          ): r is NonNullable<
+            AttemptFullResponse["chats"][number]["dynamicRubric"]
+          > => r !== null
+        ) || [],
     [attemptData]
   );
 
@@ -340,11 +293,11 @@ export function SimulationProvider({
   const isLastAttempt = attemptData?.isLastAttempt ?? true;
 
   // Timer from v2 (server computed)
-  const timer = useMemo(
-    (): TimerState =>
-      attemptData?.timer || { elapsed: 0, remaining: null, expired: false },
-    [attemptData]
-  );
+  const timer: AttemptFullResponse["timer"] = attemptData?.timer || {
+    elapsed: 0,
+    remaining: null,
+    expired: false,
+  };
 
   // Update simulation ref when simulation changes
   useEffect(() => {
@@ -955,46 +908,20 @@ export function SimulationProvider({
     attempt: attempt,
     simulation: simulation,
     scenario: scenario,
-    scenarioDocuments: scenarioDocuments as DocumentItem[] | [],
+    scenarioDocuments,
 
     // Attempt profiles (from v2)
     attemptProfiles,
     attemptProfileId,
 
     // Scenarios map (from v2)
-    scenariosByChatId: scenariosByChatId as Record<string, ScenarioItem | null>,
+    scenariosByChatId,
 
     // Rubric structure (from v2)
-    rubricStructure: rubricStructure as {
-      standardGroups: Record<string, string[]>;
-      standardGroupsMapping: Record<
-        string,
-        {
-          name: string;
-          description: string;
-          points: number;
-          passPoints: number;
-        }
-      >;
-      standardsMapping: Record<
-        string,
-        {
-          name: string;
-          description: string;
-          points: number;
-        }
-      >;
-    },
+    rubricStructure,
 
     // Grading states (from v2)
-    gradingStatesByChatId: gradingStatesByChatId as Record<
-      string,
-      {
-        achievedStandards: Record<string, boolean>;
-        passedStandards: Record<string, boolean>;
-        gradeDescription?: string;
-      }
-    >,
+    gradingStatesByChatId,
 
     // Current chat management
     currentChatIndex,
@@ -1004,8 +931,7 @@ export function SimulationProvider({
     isLoadingChats,
 
     // Messages and hints (from v2)
-    currentMessages:
-      currentMessages as AttemptFullResponse["chats"][number]["messages"],
+    currentMessages,
     currentChatHints,
 
     // Results and grading (from v2 server-side computations)
