@@ -2,21 +2,8 @@
 Tests for app.services.permissions_service
 """
 
-from unittest.mock import MagicMock
-
 import pytest
-from sqlmodel import Session
-
 from app.services.permissions_service import *
-
-
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
-
-
-import pytest
 
 
 @pytest.mark.skip(reason="TODO: implement tests for `normalize_path_for_matching`")

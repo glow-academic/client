@@ -2,21 +2,8 @@
 Tests for app.services.schema_service
 """
 
-from unittest.mock import MagicMock
-
 import pytest
-from sqlmodel import Session
-
 from app.services.schema_service import *
-
-
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
-
-
-import pytest
 
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_schema_service`")

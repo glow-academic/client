@@ -2,18 +2,8 @@
 Tests for app.utils.mime_utils
 """
 
-from unittest.mock import MagicMock
-
 import pytest
-from sqlmodel import Session
-
 from app.utils.mime_utils import *  # type: ignore
-
-
-@pytest.fixture
-def mock_session() -> MagicMock:
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 
 
 class TestInfer_Mime_From_Name:

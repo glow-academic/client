@@ -2,18 +2,8 @@
 Tests for app.utils.search
 """
 
-from unittest.mock import MagicMock
-
 import pytest
-from sqlmodel import Session
-
 from app.utils.search import *  # type: ignore
-
-
-@pytest.fixture
-def mock_session() -> MagicMock:
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 
 
 class TestNormalize_Text:

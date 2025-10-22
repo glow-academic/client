@@ -5,39 +5,28 @@ from datetime import UTC
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.simulation_queries import SimulationQueries
-from app.schemas.base import (
-    DepartmentMappingItem,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    ScenarioMappingItem,
-)
-from app.schemas.simulations import (
-    CreateSimulationRequest,
-    CreateSimulationResponse,
-    DeleteSimulationRequest,
-    DeleteSimulationResponse,
-    DuplicateSimulationRequest,
-    DuplicateSimulationResponse,
-    ParameterItem,
-    ParameterItemDetail,
-    ScenarioInSimulation,
-    SimulationDetailDefaultRequest,
-    SimulationDetailRequest,
-    SimulationDetailResponse,
-    SimulationItem,
-    SimulationsFilters,
-    SimulationsListResponse,
-    UpdateSimulationRequest,
-    UpdateSimulationResponse,
-)
+from app.schemas.base import (DepartmentMappingItem, ParameterItemMapping,
+                              ParameterItemMappingItem, ParameterMapping,
+                              ParameterMappingItem, RubricMapping,
+                              RubricMappingItem, ScenarioMappingItem)
+from app.schemas.simulations import (CreateSimulationRequest,
+                                     CreateSimulationResponse,
+                                     DeleteSimulationRequest,
+                                     DeleteSimulationResponse,
+                                     DuplicateSimulationRequest,
+                                     DuplicateSimulationResponse,
+                                     ParameterItem, ParameterItemDetail,
+                                     ScenarioInSimulation,
+                                     SimulationDetailDefaultRequest,
+                                     SimulationDetailRequest,
+                                     SimulationDetailResponse, SimulationItem,
+                                     SimulationsFilters,
+                                     SimulationsListResponse,
+                                     UpdateSimulationRequest,
+                                     UpdateSimulationResponse)
 from app.services.base_service import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
@@ -254,7 +243,8 @@ class SimulationService(BaseService):
                     ):
                         for did, ddata in sdata["document_mapping"].items():
                             if isinstance(ddata, dict):
-                                from app.schemas.base import DocumentMappingItem
+                                from app.schemas.base import \
+                                    DocumentMappingItem
 
                                 document_mapping[did] = DocumentMappingItem(
                                     name=ddata.get("name", ""),
@@ -487,7 +477,8 @@ class SimulationService(BaseService):
                     ):
                         for did, ddata in sdata["document_mapping"].items():
                             if isinstance(ddata, dict):
-                                from app.schemas.base import DocumentMappingItem
+                                from app.schemas.base import \
+                                    DocumentMappingItem
 
                                 document_mapping[did] = DocumentMappingItem(
                                     name=ddata.get("name", ""),
@@ -913,7 +904,7 @@ class SimulationService(BaseService):
         infinite: bool,
         department_id: str,
     ) -> dict[str, Any]:
-        """Create simulation attempt with all related entities.
+        """Create simulation attempt with all related entities using single query.
 
         Returns:
             {
@@ -923,126 +914,87 @@ class SimulationService(BaseService):
                 "scenario": Dict
             }
         """
-        import random
-        from datetime import datetime
-
-        from agents import gen_trace_id
-
-        from app.agents.collection.scenario import run_scenario_agent
-
-        # Get the simulation
-        query, params = self.queries.get_simulation_by_id(simulation_id)
-        simulation = await self.conn.fetchrow(query, *params)
-        if not simulation:
-            raise ValueError(f"Simulation {simulation_id} not found")
-
-        # Create the attempt
-        query = self.queries.create_attempt()
-        new_attempt = await self.conn.fetchrow(query, simulation_id, infinite)
-        attempt_id = new_attempt["id"]
-
-        # Create attempt_profiles junction record if profile exists
-        if profile_id:
-            query = self.queries.create_attempt_profile()
-            await self.conn.execute(query, attempt_id, profile_id, True)
-
-        # Load scenarios for this simulation from junction table
-        query, params = self.queries.get_simulation_scenarios_ordered(simulation_id)
-        scenario_links = await self.conn.fetch(query, *params)
-
-        # Determine which scenario to use
-        if scenario_id_override:
-            query, params = self.queries.get_scenario_by_id(scenario_id_override)
-            old_scenario = await self.conn.fetchrow(query, *params)
-            if not old_scenario:
-                raise ValueError(f"Scenario {scenario_id_override} not found")
-            chosen_scenario_id = old_scenario["id"]
-        elif not scenario_links:
-            # No scenarios configured, select random scenario
-            query, params = self.queries.get_all_scenarios_minimal()
-            all_scenarios = await self.conn.fetch(query, *params)
-            if not all_scenarios:
-                raise ValueError("No scenarios available in the system")
-            random_scenario = random.choice(all_scenarios)
-            chosen_scenario_id = random_scenario["id"]
-        else:
-            chosen_scenario_id = scenario_links[0]["scenario_id"]
-
-        query, params = self.queries.get_scenario_by_id(str(chosen_scenario_id))
-        old_scenario = await self.conn.fetchrow(query, *params)
-        if not old_scenario:
-            raise ValueError(f"Scenario {chosen_scenario_id} not found")
-
-        # Randomly fill any null attributes in the scenario
         import uuid as uuid_module
 
-        # Create scenario service locally to avoid storing service dependencies
-        from app.services.scenario_service import ScenarioService
+        from agents import gen_trace_id
+        from app.agents.collection.scenario import run_scenario_agent
 
-        scenario_service = ScenarioService(self.conn)
-        scenario = await scenario_service.randomly_fill_scenario_attributes(
-            dict(old_scenario), uuid_module.UUID(department_id)
+        # Use single consolidated query to get all data and create all records
+        query, params = self.queries.start_simulation_attempt_complete(
+            simulation_id, profile_id, scenario_id_override, infinite, department_id
         )
+        result = await self.conn.fetchrow(query, *params)
+        
+        if not result:
+            raise ValueError(f"Failed to start simulation {simulation_id}")
 
-        # Generate scenario problem_statement if empty
-        if (
-            not scenario.get("problem_statement")
-            or scenario.get("problem_statement") == ""
-        ):
-            # Use optimized query to get all scenario metadata in one query
-            query, params = self.queries.get_scenario_full_metadata(str(scenario["id"]))
-            scenario_metadata = await self.conn.fetchrow(query, *params)
+        # Extract data from query result
+        attempt_id = result["attempt_id"]
+        chat_id = result["chat_id"]
+        chat_title = result["chat_title"]
+        scenario_id = result["scenario_id"]
+        scenario_name = result["scenario_name"]
+        problem_statement = result["problem_statement"]
+        needs_generation = result["needs_generation"]
+        simulation_data = result["simulation_data"]
+        scenario_metadata = result["scenario_metadata"]
 
-            doc_ids = (
-                list(scenario_metadata["document_ids"])
-                if scenario_metadata["document_ids"]
-                else []
-            )
-            param_ids = (
-                list(scenario_metadata["parameter_item_ids"])
-                if scenario_metadata["parameter_item_ids"]
-                else []
-            )
-            scenario_persona_id = scenario_metadata["persona_id"]
+        # Build scenario object from metadata
+        scenario = {
+            "id": scenario_id,
+            "name": scenario_name,
+            "problem_statement": problem_statement,
+            "active": scenario_metadata["active"],
+            "default_scenario": scenario_metadata["default_scenario"],
+            "generated": scenario_metadata["generated"],
+            "department_id": scenario_metadata["department_id"],
+        }
 
-            # Get profile from attempt with optimized query
-            query, params = self.queries.get_attempt_with_profile(str(attempt_id))
+        # Handle scenario generation if needed
+        if needs_generation:
+            # Extract metadata for agent call
+            persona_id = scenario_metadata.get("persona_id")
+            documents = scenario_metadata.get("documents", [])
+            parameter_items = scenario_metadata.get("parameter_items", [])
+            
+            # Convert to expected formats
+            doc_ids = [doc["id"] for doc in documents] if documents else []
+            param_ids = [item["id"] for item in parameter_items] if parameter_items else []
+            
+            # Get profile from attempt
+            query, params = self.queries.get_attempt_with_profile(attempt_id)
             attempt_with_profile = await self.conn.fetchrow(query, *params)
             attempt_profile_id = (
                 attempt_with_profile["profile_id"] if attempt_with_profile else None
             )
 
+            # Generate scenario content
             name, description, objectives, trace_id = await run_scenario_agent(
                 department_id=uuid_module.UUID(department_id),
-                persona_id=scenario_persona_id,
+                persona_id=persona_id,
                 document_ids=doc_ids,
                 parameter_item_ids=param_ids,
-                group_id=uuid_module.UUID(str(attempt_id)),
+                group_id=uuid_module.UUID(attempt_id),
                 conn=self.conn,
                 profile_id=attempt_profile_id,
             )
+            
+            # Update scenario with generated content
             scenario["name"] = name
             scenario["problem_statement"] = description
-            chat_title = scenario["name"]
+            chat_title = name
+            
+            # Update chat title in database
+            query = self.queries.update_chat_title()
+            await self.conn.execute(query, chat_id, name)
         else:
-            chat_title = scenario["name"]
+            # Use existing scenario data
+            chat_title = scenario_name
             trace_id = gen_trace_id()
-
-        # Create the chat
-        query = self.queries.create_simulation_chat()
-        chat = await self.conn.fetchrow(
-            query,
-            datetime.now(UTC),
-            chat_title,
-            scenario["id"],
-            attempt_id,
-            False,
-            trace_id,
-        )
 
         return {
             "attempt_id": attempt_id,
-            "chat_id": chat["id"],
+            "chat_id": chat_id,
             "chat_title": chat_title,
             "scenario": scenario,
         }
@@ -1317,7 +1269,6 @@ class SimulationService(BaseService):
         from datetime import datetime
 
         from agents import gen_trace_id
-
         from app.agents.collection.scenario import run_scenario_agent
 
         query, params = self.queries.get_scenario_by_id(scenario_id)

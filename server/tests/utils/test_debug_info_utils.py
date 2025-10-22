@@ -2,18 +2,8 @@
 Tests for app.utils.debug_info
 """
 
-from unittest.mock import MagicMock
-
 import pytest
-from sqlmodel import Session
-
 from app.utils.debug_info import *  # type: ignore
-
-
-@pytest.fixture
-def mock_session() -> MagicMock:
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 
 
 @pytest.mark.skip(reason="Requires complex async mocking of ModelRunService")

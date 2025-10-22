@@ -3,18 +3,9 @@ Tests for app.utils.chat
 """
 
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
-from sqlmodel import Session
-
 from app.utils.chat import *  # type: ignore
-
-
-@pytest.fixture
-def mock_session() -> MagicMock:
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 
 
 class TestGet_Simulation_Conversation_History:

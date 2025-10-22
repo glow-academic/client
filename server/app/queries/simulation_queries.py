@@ -1267,6 +1267,228 @@ class SimulationQueries:
         """
         return (query, [simulation_id, profile_id])
 
+    def start_simulation_attempt_complete(
+        self,
+        simulation_id: str,
+        profile_id: str | None,
+        scenario_id_override: str | None,
+        infinite: bool,
+        department_id: str,
+    ) -> tuple[str, list[Any]]:
+        """
+        Single query to start simulation attempt with all related data.
+        
+        Consolidates 6-10 separate queries into one using CTEs and data-modifying statements.
+        Handles attempt creation, scenario selection, metadata fetching, and chat creation.
+        
+        Args:
+            simulation_id: UUID of simulation to start
+            profile_id: UUID of profile (can be None for guests)
+            scenario_id_override: UUID of specific scenario to use (optional)
+            infinite: Whether attempt has infinite time
+            department_id: UUID of department for context
+            
+        Returns:
+            Tuple of (query, params) that returns single row with all needed data
+        """
+        query = """
+        WITH 
+        -- Create the attempt first
+        new_attempt AS (
+            INSERT INTO simulation_attempts (simulation_id, infinite_mode, created_at)
+            VALUES ($1, $2, now())
+            RETURNING id as attempt_id
+        ),
+        -- Create attempt_profiles junction if profile exists
+        attempt_profile_link AS (
+            INSERT INTO attempt_profiles (attempt_id, profile_id, active, created_at, updated_at)
+            SELECT na.attempt_id, $3::uuid, true, now(), now()
+            FROM new_attempt na
+            WHERE $3 IS NOT NULL
+            RETURNING attempt_id
+        ),
+        -- Get simulation data
+        simulation_data AS (
+            SELECT 
+                s.id,
+                s.title,
+                s.description,
+                s.department_id,
+                s.active,
+                s.default_simulation,
+                s.practice_simulation,
+                s.hints_enabled,
+                s.input_guardrail_active,
+                s.output_guardrail_active,
+                s.image_input_active,
+                s.rubric_id
+            FROM simulations s
+            WHERE s.id = $1
+        ),
+        -- Get simulation scenarios in order
+        simulation_scenarios AS (
+            SELECT 
+                ss.scenario_id,
+                ss.position
+            FROM simulation_scenarios ss
+            WHERE ss.simulation_id = $1 AND ss.active = true
+            ORDER BY ss.position
+        ),
+        -- Determine chosen scenario
+        chosen_scenario_id AS (
+            SELECT 
+                CASE 
+                    WHEN $4 IS NOT NULL AND $4 != '' THEN $4::uuid  -- scenario_id_override
+                    WHEN EXISTS(SELECT 1 FROM simulation_scenarios) THEN 
+                        (SELECT scenario_id FROM simulation_scenarios LIMIT 1)
+                    ELSE (
+                        SELECT s.id 
+                        FROM scenarios s 
+                        WHERE s.department_id = $5::uuid 
+                        ORDER BY random() 
+                        LIMIT 1
+                    )
+                END as scenario_id
+        ),
+        -- Get full scenario data with all metadata
+        scenario_full_data AS (
+            SELECT 
+                s.id as scenario_id,
+                s.name as scenario_name,
+                s.problem_statement,
+                s.active,
+                s.default_scenario,
+                s.generated,
+                s.department_id,
+                -- Persona data
+                p.id as persona_id,
+                p.name as persona_name,
+                p.system_prompt,
+                p.temperature,
+                p.reasoning,
+                p.color as persona_color,
+                p.icon as persona_icon,
+                -- Documents (aggregated)
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', d.id::text,
+                            'name', d.name,
+                            'file_path', d.file_path,
+                            'mime_type', d.mime_type
+                        ) ORDER BY d.id
+                    ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true),
+                    '[]'::json
+                ) as documents,
+                -- Parameter items (aggregated)
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', pi.id::text,
+                            'name', pi.name,
+                            'description', pi.description,
+                            'parameter_id', pi.parameter_id::text,
+                            'parameter_name', p_param.name
+                        ) ORDER BY pi.id
+                    ) FILTER (WHERE pi.id IS NOT NULL AND spi.active = true),
+                    '[]'::json
+                ) as parameter_items,
+                -- Check if scenario needs generation
+                CASE 
+                    WHEN s.problem_statement IS NULL OR s.problem_statement = '' THEN true
+                    ELSE false
+                END as needs_generation
+            FROM scenarios s
+            CROSS JOIN chosen_scenario_id csi
+            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+            LEFT JOIN personas p ON p.id = sp.persona_id
+            LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
+            LEFT JOIN documents d ON d.id = sd.document_id
+            LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
+            LEFT JOIN parameter_items pi ON pi.id = spi.parameter_item_id
+            LEFT JOIN parameters p_param ON p_param.id = pi.parameter_id
+            WHERE s.id = csi.scenario_id
+            GROUP BY s.id, s.name, s.problem_statement, s.active, s.default_scenario, 
+                     s.generated, s.department_id, p.id, p.name, p.system_prompt, 
+                     p.temperature, p.reasoning, p.color, p.icon
+        ),
+        -- Create simulation chat
+        new_chat AS (
+            INSERT INTO simulation_chats (
+                created_at, title, scenario_id, attempt_id, completed, trace_id, updated_at
+            )
+            SELECT 
+                now(),
+                COALESCE(sfd.scenario_name, 'New Simulation'),
+                sfd.scenario_id,
+                na.attempt_id,
+                false,
+                gen_random_uuid(),
+                now()
+            FROM new_attempt na
+            CROSS JOIN scenario_full_data sfd
+            RETURNING id as chat_id, title as chat_title
+        )
+        -- Return all data in single row
+        SELECT 
+            na.attempt_id::text,
+            nc.chat_id::text,
+            nc.chat_title,
+            sfd.scenario_id::text,
+            sfd.scenario_name,
+            sfd.problem_statement,
+            sfd.needs_generation,
+            -- Simulation metadata as JSONB
+            jsonb_build_object(
+                'id', sd.id::text,
+                'title', sd.title,
+                'description', sd.description,
+                'department_id', sd.department_id::text,
+                'active', sd.active,
+                'default_simulation', sd.default_simulation,
+                'practice_simulation', sd.practice_simulation,
+                'hints_enabled', sd.hints_enabled,
+                'input_guardrail_active', sd.input_guardrail_active,
+                'output_guardrail_active', sd.output_guardrail_active,
+                'image_input_active', sd.image_input_active,
+                'rubric_id', sd.rubric_id::text
+            ) as simulation_data,
+            -- Scenario metadata as JSONB
+            jsonb_build_object(
+                'persona_id', sfd.persona_id::text,
+                'persona_name', sfd.persona_name,
+                'persona_system_prompt', sfd.system_prompt,
+                'persona_temperature', sfd.temperature,
+                'persona_reasoning', sfd.reasoning,
+                'persona_color', sfd.persona_color,
+                'persona_icon', sfd.persona_icon,
+                'documents', sfd.documents,
+                'parameter_items', sfd.parameter_items,
+                'active', sfd.active,
+                'default_scenario', sfd.default_scenario,
+                'generated', sfd.generated,
+                'department_id', sfd.department_id::text
+            ) as scenario_metadata
+        FROM new_attempt na
+        CROSS JOIN new_chat nc
+        CROSS JOIN scenario_full_data sfd
+        CROSS JOIN simulation_data sd
+        """
+        
+        params = [simulation_id, infinite, profile_id, scenario_id_override, department_id]
+        return (query, params)
+
+    def update_chat_title(self) -> str:
+        """Update simulation chat title.
+        
+        Params order: chat_id, title
+        """
+        return """
+        UPDATE simulation_chats 
+        SET title = $2, updated_at = now()
+        WHERE id = $1
+        """
+
     def get_simulation_detail_default_complete(
         self, profile_id: str
     ) -> tuple[str, list[Any]]:

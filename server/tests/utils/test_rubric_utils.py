@@ -4,18 +4,9 @@ Tests for app.utils.rubric
 
 import uuid
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
-from sqlmodel import Session
-
 from app.utils.rubric import get_dynamic_rubric  # type: ignore
-
-
-@pytest.fixture
-def mock_session() -> MagicMock:
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 
 
 class TestGet_Dynamic_Rubric:

@@ -178,13 +178,11 @@ import os
 from app.main import app
 
 @pytest.fixture(scope="session")
-def test_engine():
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
-    SQLModel.metadata.create_all(engine)
-    return engine
+def test_engine() -> Engine:
+    return create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 
 @pytest.fixture
-def test_session(test_engine):
+def test_session(test_engine: Engine) -> Session:
     with Session(test_engine) as session:
         yield session
 
