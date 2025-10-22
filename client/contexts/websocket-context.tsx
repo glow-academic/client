@@ -248,7 +248,32 @@ export function WebSocketProvider({
             context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
-          // Dispatch window event for UI updates (used by streaming display)
+          // Optimistically update the query cache with accumulated content
+          // This updates ALL attempt queries to find the right message
+          queryClient.setQueriesData(
+            { queryKey: attemptsFullKeys.all },
+            (oldData: any) => {
+              if (!oldData?.chats) return oldData;
+
+              return {
+                ...oldData,
+                chats: oldData.chats.map((chat: any) => {
+                  if (chat.chat.id !== data.chat_id) return chat;
+
+                  return {
+                    ...chat,
+                    messages: chat.messages.map((msg: any) =>
+                      msg.id === data.message_id
+                        ? { ...msg, content: data.accumulated_content }
+                        : msg
+                    ),
+                  };
+                }),
+              };
+            }
+          );
+
+          // Keep window event for potential future use
           window.dispatchEvent(
             new CustomEvent("simulationMessageToken", {
               detail: {
