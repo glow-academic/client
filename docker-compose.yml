@@ -57,13 +57,14 @@ services:
       - RESERVE_POOL_TIMEOUT=3
       - MAX_DB_CONNECTIONS=100
       - SERVER_IDLE_TIMEOUT=600
+      - AUTH_TYPE=scram-sha-256
     depends_on:
       database:
         condition: service_healthy
     networks:
       - internal
     healthcheck:
-      test: ["CMD", "psql", "-U", "${DB_USER}", "-h", "localhost", "-p", "5432", "-d", "pgbouncer", "-c", "SHOW POOLS;"]
+      test: ["CMD", "pgrep", "pgbouncer"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -88,19 +89,19 @@ services:
         set -e
 
         # Copy uploads if the volume is still empty
-        if [ -z "$(ls -A /app/uploads 2>/dev/null)" ]; then
+        if [ -z "$$(ls -A /app/uploads 2>/dev/null)" ]; then
           echo "[init] Seeding uploads volume…"
           cp -a /seed/uploads/. /app/uploads/
         fi
 
         # Copy history if the volume is still empty
-        if [ -z "$(ls -A /app/history 2>/dev/null)" ]; then
+        if [ -z "$$(ls -A /app/history 2>/dev/null)" ]; then
           echo "[init] Seeding history volume…"
           cp -a /seed/history/. /app/history/
         fi
 
         # Copy csv if the volume is still empty
-        if [ -z "$(ls -A /app/csv 2>/dev/null)" ]; then
+        if [ -z "$$(ls -A /app/csv 2>/dev/null)" ]; then
           echo "[init] Seeding csv volume…"
           cp -a /seed/csv/. /app/csv/
         fi
