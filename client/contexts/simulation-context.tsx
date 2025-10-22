@@ -13,7 +13,9 @@ import {
   useAttemptFull,
   useUpdateChatCompletedAt,
 } from "@/lib/api/v2/hooks/attempts";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
+import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -26,8 +28,6 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
-import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -484,7 +484,8 @@ export function SimulationProvider({
         currentChatIdRef.current = null;
       }
     };
-  }, [currentChat?.id, isConnected, joinRoom, leaveRoom, log]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentChat?.id, isConnected, joinRoom, leaveRoom]);
 
   // Update the ref whenever currentChat changes
   useEffect(() => {
@@ -977,25 +978,34 @@ export function SimulationProvider({
     // Rubric structure (from v2)
     rubricStructure: rubricStructure as {
       standardGroups: Record<string, string[]>;
-      standardGroupsMapping: Record<string, {
-        name: string;
-        description: string;
-        points: number;
-        passPoints: number;
-      }>;
-      standardsMapping: Record<string, {
-        name: string;
-        description: string;
-        points: number;
-      }>;
+      standardGroupsMapping: Record<
+        string,
+        {
+          name: string;
+          description: string;
+          points: number;
+          passPoints: number;
+        }
+      >;
+      standardsMapping: Record<
+        string,
+        {
+          name: string;
+          description: string;
+          points: number;
+        }
+      >;
     },
 
     // Grading states (from v2)
-    gradingStatesByChatId: gradingStatesByChatId as Record<string, {
-      achievedStandards: Record<string, boolean>;
-      passedStandards: Record<string, boolean>;
-      gradeDescription?: string;
-    }>,
+    gradingStatesByChatId: gradingStatesByChatId as Record<
+      string,
+      {
+        achievedStandards: Record<string, boolean>;
+        passedStandards: Record<string, boolean>;
+        gradeDescription?: string;
+      }
+    >,
 
     // Current chat management
     currentChatIndex,
@@ -1005,7 +1015,8 @@ export function SimulationProvider({
     isLoadingChats,
 
     // Messages and hints (from v2)
-    currentMessages: currentMessages as AttemptFullResponse["chats"][number]["messages"],
+    currentMessages:
+      currentMessages as AttemptFullResponse["chats"][number]["messages"],
     currentChatHints,
 
     // Results and grading (from v2 server-side computations)
