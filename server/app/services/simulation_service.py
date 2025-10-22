@@ -1345,49 +1345,9 @@ class SimulationService(BaseService):
             dict(old_scenario), uuid_module.UUID(department_id)
         )
 
-        # Generate scenario problem_statement if empty
-        if (
-            not scenario.get("problem_statement")
-            or scenario.get("problem_statement") == ""
-        ):
-            # Use optimized query to get all scenario metadata in one query
-            query, params = self.queries.get_scenario_full_metadata(scenario_id)
-            scenario_metadata = await self.conn.fetchrow(query, *params)
-
-            doc_ids = (
-                list(scenario_metadata["document_ids"])
-                if scenario_metadata["document_ids"]
-                else []
-            )
-            param_ids = (
-                list(scenario_metadata["parameter_item_ids"])
-                if scenario_metadata["parameter_item_ids"]
-                else []
-            )
-            scenario_persona_id = scenario_metadata["persona_id"]
-
-            # Get profile from attempt with optimized query
-            query, params = self.queries.get_attempt_with_profile(attempt_id)
-            attempt_with_profile = await self.conn.fetchrow(query, *params)
-            attempt_profile_id = (
-                attempt_with_profile["profile_id"] if attempt_with_profile else None
-            )
-
-            name, description, objectives, trace_id = await run_scenario_agent(
-                department_id=uuid_module.UUID(department_id),
-                persona_id=scenario_persona_id,
-                document_ids=doc_ids,
-                parameter_item_ids=param_ids,
-                group_id=uuid_module.UUID(attempt_id) if attempt_id else None,
-                conn=self.conn,
-                profile_id=attempt_profile_id,
-            )
-            scenario["name"] = name
-            scenario["problem_statement"] = description
-            chat_title = scenario["name"]
-        else:
-            chat_title = scenario["name"]
-            trace_id = gen_trace_id()
+        # Set chat title and generate trace_id
+        chat_title = scenario["name"]
+        trace_id = gen_trace_id()
 
         # Create chat
         query = self.queries.create_simulation_chat()

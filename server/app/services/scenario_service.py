@@ -974,6 +974,50 @@ class ScenarioService(BaseService):
                 scenario_persona_id = None
                 logger.info("No active personas found")
 
+        # NEW BUSINESS LOGIC: Get objectives (first 3 by idx)
+        query, params = self.queries.get_scenario_objectives_top_n(str(scenario_id), 3)
+        objectives_data = await self.conn.fetch(query, *params)
+        scenario_objectives = [obj["objective"] for obj in objectives_data]
+        logger.info(f"Found {len(scenario_objectives)} objectives for scenario: {scenario_objectives}")
+
+        # NEW BUSINESS LOGIC: Get most recent active problem statement
+        query, params = self.queries.get_scenario_problem_statement_active(str(scenario_id))
+        problem_statement_row = await self.conn.fetchrow(query, *params)
+        scenario_problem_statement = problem_statement_row["problem_statement"] if problem_statement_row else None
+        logger.info(f"Found problem statement: {scenario_problem_statement}")
+        
+        # If no problem statement exists, generate one using AI
+        if not scenario_problem_statement:
+            logger.info("No problem statement found, generating one using AI")
+            try:
+                from app.agents.collection.scenario import run_scenario_agent
+
+                # Get scenario metadata for AI generation
+                query, params = self.queries.get_scenario_full_metadata(str(scenario_id))
+                scenario_metadata = await self.conn.fetchrow(query, *params)
+                
+                doc_ids = list(scenario_metadata["document_ids"]) if scenario_metadata["document_ids"] else []
+                param_ids = list(scenario_metadata["parameter_item_ids"]) if scenario_metadata["parameter_item_ids"] else []
+                persona_id = scenario_metadata["persona_id"]
+                
+                # Generate problem statement using AI
+                name, description, objectives, trace_id = await run_scenario_agent(
+                    department_id=department_id,
+                    persona_id=persona_id,
+                    document_ids=[uuid.UUID(doc_id) for doc_id in doc_ids],
+                    parameter_item_ids=[uuid.UUID(param_id) for param_id in param_ids],
+                    group_id=None,  # No attempt context for scenario generation
+                    conn=self.conn,
+                    profile_id=None,  # No profile context for scenario generation
+                )
+                
+                scenario_problem_statement = description
+                logger.info(f"Generated problem statement: {scenario_problem_statement}")
+                
+            except Exception as e:
+                logger.error(f"Failed to generate problem statement: {e}")
+                scenario_problem_statement = None
+
         # Load existing documents and parameters from junction tables
         query, params = self.queries.get_scenario_document_links(str(scenario_id))
         doc_links = await self.conn.fetch(query, *params)
@@ -983,80 +1027,115 @@ class ScenarioService(BaseService):
         param_links = await self.conn.fetch(query, *params)
         existing_param_ids = [link["parameter_item_id"] for link in param_links]
 
+        # NEW BUSINESS LOGIC: Skip document selection if documents already exist
         if not existing_doc_ids:
-            # Only select from active documents
-            query, params = self.queries.get_active_documents()
-            active_documents = await self.conn.fetch(query, *params)
-
-            if active_documents:
-                # Build scenario signal text from name/problem_statement
-                scenario_text = f"{scenario.get('name') or ''} {scenario.get('problem_statement') or ''}"
-                scenario_tokens = set(tokenize(scenario_text))
-
-                known_types = [
-                    "homework",
-                    "project",
-                    "quiz",
-                    "midterm",
-                    "lab",
-                    "lecture",
-                    "syllabus",
-                ]
-                scenario_has_type = {
-                    t: (t in scenario_tokens) or (t in normalize_text(scenario_text))
-                    for t in known_types
-                }
-
-                def _score(doc: dict[str, Any]) -> float:
-                    score = 0.0
-                    name_tokens = set(tokenize(doc.get("name") or ""))
-                    score += 2.0 * len(scenario_tokens.intersection(name_tokens))
-                    doc_type = (doc.get("type") or "").lower()
-                    if doc_type and (scenario_has_type.get(doc_type, False)):
-                        score += 10.0
-                    if doc_type and doc_type in normalize_text(scenario_text):
-                        score += 3.0
-                    # add jitter to reduce determinism
-                    score += random.random() * 0.25
-                    return score
-
-                # Build clusters per tag and choose one tag to ensure all selected share the same tag
-                tag_to_docs: dict[str, list[dict[str, Any]]] = {}
-                for d in active_documents:
-                    tags = ["__untagged__"]  # doc.tags removed in BCNF migration
-                    for t in tags:
-                        tag_to_docs.setdefault(t, []).append(d)
-
-                # Score each tag by the best document score in that cluster
-                tag_scores: list[tuple[str, float]] = []
-                for t, docs in tag_to_docs.items():
-                    best = 0.0
-                    for d in docs:
-                        s = _score(d)
-                        if s > best:
-                            best = s
-                    # jitter per tag to avoid ties
-                    tag_scores.append((t, best + random.random() * 0.1))
-
-                tag_scores.sort(key=lambda x: x[1], reverse=True)
-                chosen_tag = tag_scores[0][0] if tag_scores else "__untagged__"
-                candidates = tag_to_docs.get(chosen_tag, [])
-                # Sort candidates by score and take 1, but sample randomly among top N
-                cand_scored = [(d, _score(d)) for d in candidates]
-                cand_scored.sort(key=lambda x: x[1], reverse=True)
-                top_n = cand_scored[: min(6, len(cand_scored))]
-                k = min(1, len(top_n))
-                selected_docs = [d for d, _ in random.sample(top_n, k)] if k > 0 else []
-                logger.info(
-                    f"Selected document with shared tag '{chosen_tag}' (count={len(selected_docs)}): {[d['id'] for d in selected_docs]}"
-                )
-
-                scenario_documents = [doc["id"] for doc in selected_docs]
+            # First, get parameter items for this scenario
+            scenario_parameter_item_ids = []
+            if existing_param_ids:
+                scenario_parameter_item_ids = [str(pid) for pid in existing_param_ids]
             else:
-                scenario_documents = []
-                logger.info("No active documents found")
+                # Get parameter items that will be selected below
+                query, params = self.queries.get_active_parameters()
+                active_parameters = await self.conn.fetch(query, *params)
+                if active_parameters:
+                    for param in active_parameters:
+                        query, params = self.queries.get_parameter_items_by_parameter(
+                            str(param["id"])
+                        )
+                        param_items = await self.conn.fetch(query, *params)
+                        if param_items:
+                            selected_item = random.choice(param_items)
+                            scenario_parameter_item_ids.append(str(selected_item["id"]))
+
+            # Try to find documents that match parameter items via document_parameter_items junction
+            matching_documents = []
+            if scenario_parameter_item_ids:
+                query, params = self.queries.get_documents_by_parameter_items(scenario_parameter_item_ids)
+                matching_documents = await self.conn.fetch(query, *params)
+                logger.info(f"Found {len(matching_documents)} documents matching parameter items: {scenario_parameter_item_ids}")
+
+            if matching_documents:
+                # Select 1 document from matching documents
+                selected_doc = random.choice(matching_documents)
+                scenario_documents = [selected_doc["id"]]
+                logger.info(f"Selected document via parameter items: {selected_doc['id']} ({selected_doc['name']})")
+            else:
+                # Fallback to text similarity scoring
+                logger.info("No documents match parameter items, falling back to text similarity")
+                query, params = self.queries.get_active_documents()
+                active_documents = await self.conn.fetch(query, *params)
+
+                if active_documents:
+                    # Build scenario signal text from name/problem_statement
+                    scenario_text = f"{scenario.get('name') or ''} {scenario.get('problem_statement') or ''}"
+                    scenario_tokens = set(tokenize(scenario_text))
+
+                    known_types = [
+                        "homework",
+                        "project",
+                        "quiz",
+                        "midterm",
+                        "lab",
+                        "lecture",
+                        "syllabus",
+                    ]
+                    scenario_has_type = {
+                        t: (t in scenario_tokens) or (t in normalize_text(scenario_text))
+                        for t in known_types
+                    }
+
+                    def _score(doc: dict[str, Any]) -> float:
+                        score = 0.0
+                        name_tokens = set(tokenize(doc.get("name") or ""))
+                        score += 2.0 * len(scenario_tokens.intersection(name_tokens))
+                        doc_type = (doc.get("type") or "").lower()
+                        if doc_type and (scenario_has_type.get(doc_type, False)):
+                            score += 10.0
+                        if doc_type and doc_type in normalize_text(scenario_text):
+                            score += 3.0
+                        # add jitter to reduce determinism
+                        score += random.random() * 0.25
+                        return score
+
+                    # Build clusters per tag and choose one tag to ensure all selected share the same tag
+                    tag_to_docs: dict[str, list[dict[str, Any]]] = {}
+                    for d in active_documents:
+                        tags = ["__untagged__"]  # doc.tags removed in BCNF migration
+                        for t in tags:
+                            tag_to_docs.setdefault(t, []).append(d)
+
+                    # Score each tag by the best document score in that cluster
+                    tag_scores: list[tuple[str, float]] = []
+                    for t, docs in tag_to_docs.items():
+                        best = 0.0
+                        for d in docs:
+                            s = _score(d)
+                            if s > best:
+                                best = s
+                        # jitter per tag to avoid ties
+                        tag_scores.append((t, best + random.random() * 0.1))
+
+                    tag_scores.sort(key=lambda x: x[1], reverse=True)
+                    chosen_tag = tag_scores[0][0] if tag_scores else "__untagged__"
+                    candidates = tag_to_docs.get(chosen_tag, [])
+                    # Sort candidates by score and take 1, but sample randomly among top N
+                    cand_scored = [(d, _score(d)) for d in candidates]
+                    cand_scored.sort(key=lambda x: x[1], reverse=True)
+                    top_n = cand_scored[: min(6, len(cand_scored))]
+                    k = min(1, len(top_n))
+                    selected_docs = [d for d, _ in random.sample(top_n, k)] if k > 0 else []
+                    logger.info(
+                        f"Selected document via text similarity with shared tag '{chosen_tag}' (count={len(selected_docs)}): {[d['id'] for d in selected_docs]}"
+                    )
+
+                    scenario_documents = [doc["id"] for doc in selected_docs]
+                else:
+                    scenario_documents = []
+                    logger.info("No active documents found")
         else:
+            # Keep existing documents - don't add more
             scenario_documents = existing_doc_ids
+            logger.info(f"Scenario already has {len(existing_doc_ids)} documents, skipping document selection")
 
         # Random parameter item selection if no parameters linked via junction
         if not existing_param_ids:
@@ -1171,16 +1250,28 @@ class ScenarioService(BaseService):
         )
 
         new_scenario_id = new_scenario_row["id"]
+        new_scenario = dict(new_scenario_row)
         
-        # Insert problem statement if provided
-        if scenario.get("problem_statement"):
-            await self.conn.fetchrow(
+        # NEW BUSINESS LOGIC: Copy objectives to new scenario
+        if scenario_objectives:
+            for idx, objective in enumerate(scenario_objectives, 1):
+                await self.conn.execute(
+                    self.queries.insert_scenario_objective(),
+                    new_scenario_id,
+                    idx,
+                    objective,
+                )
+            logger.info(f"Copied {len(scenario_objectives)} objectives to new scenario variant")
+        
+        # NEW BUSINESS LOGIC: Copy problem statement to new scenario (if not already in insert_scenario_variant)
+        if scenario_problem_statement and not new_scenario_row.get("problem_statement"):
+            await self.conn.execute(
                 self.queries.insert_scenario_problem_statement(),
                 new_scenario_id,
-                scenario.get("problem_statement"),
+                scenario_problem_statement,
                 True,
             )
-        new_scenario = dict(new_scenario_row)
+            logger.info(f"Copied problem statement to new scenario variant")
 
         # Create scenario_tree edge (parent -> child)
         await self.conn.execute(
@@ -1216,6 +1307,10 @@ class ScenarioService(BaseService):
                     True,
                 )
 
+        # NEW BUSINESS LOGIC: Add objectives and problem statement to return value
+        new_scenario["objectives"] = scenario_objectives
+        new_scenario["problem_statement"] = scenario_problem_statement
+        
         return new_scenario
 
     async def suggest_randomized_sections(

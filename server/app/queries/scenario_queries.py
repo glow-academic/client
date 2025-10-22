@@ -1461,3 +1461,75 @@ class ScenarioQueries:
             (SELECT mapping FROM parameter_item_mapping_data) as parameter_item_mapping
         """
         return (query, [profile_id])
+
+    # ===== New queries for scenario attribute selection logic =====
+
+    def get_documents_by_parameter_items(self, parameter_item_ids: list[str]) -> tuple[str, list[Any]]:
+        """Get documents that match given parameter items via document_parameter_items junction."""
+        query = """
+        SELECT DISTINCT d.id, d.name, d.type, d.file_path
+        FROM documents d
+        JOIN document_parameter_items dpi ON dpi.document_id = d.id
+        WHERE dpi.parameter_item_id = ANY($1::uuid[]) 
+          AND dpi.active = true
+          AND d.active = true
+        """
+        return (query, [parameter_item_ids])
+
+    def get_scenario_objectives_top_n(self, scenario_id: str, limit: int) -> tuple[str, list[Any]]:
+        """Get top N objectives for scenario ordered by idx."""
+        query = """
+        SELECT idx, objective
+        FROM scenario_objectives
+        WHERE scenario_id = $1
+        ORDER BY idx ASC
+        LIMIT $2
+        """
+        return (query, [scenario_id, limit])
+
+    def get_scenario_problem_statement_active(self, scenario_id: str) -> tuple[str, list[Any]]:
+        """Get most recent active problem statement for scenario."""
+        query = """
+        SELECT problem_statement
+        FROM scenario_problem_statements
+        WHERE scenario_id = $1 AND active = true
+        ORDER BY created_at DESC, updated_at DESC
+        LIMIT 1
+        """
+        return (query, [scenario_id])
+
+    def get_scenario_full_metadata(self, scenario_id: str) -> tuple[str, list[Any]]:
+        """Build optimized query to get scenario with all related data in single query.
+
+        Returns scenario data plus:
+        - document_ids: array of document IDs
+        - parameter_item_ids: array of parameter item IDs
+        - persona_id: active persona ID (or null)
+
+        This prevents N+1 queries by using LEFT JOINs and ARRAY_AGG.
+        """
+        query = """
+        SELECT 
+            s.id,
+            s.name,
+            sps.problem_statement,
+            s.active,
+            s.default_scenario,
+            s.generated,
+            s.department_id,
+            s.created_at,
+            s.updated_at,
+            s.use_documents,
+            COALESCE(ARRAY_AGG(DISTINCT sd.document_id) FILTER (WHERE sd.document_id IS NOT NULL), ARRAY[]::uuid[]) as document_ids,
+            COALESCE(ARRAY_AGG(DISTINCT spi.parameter_item_id) FILTER (WHERE spi.parameter_item_id IS NOT NULL), ARRAY[]::uuid[]) as parameter_item_ids,
+            (SELECT persona_id FROM scenario_personas WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
+        FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+        LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
+        LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
+        WHERE s.id = $1
+        GROUP BY s.id, s.name, sps.problem_statement, s.active, s.default_scenario, 
+                 s.generated, s.department_id, s.created_at, s.updated_at, s.use_documents
+        """
+        return (query, [scenario_id])
+

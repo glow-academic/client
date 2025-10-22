@@ -3,11 +3,9 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import Runner, ToolsToFinalOutputResult, function_tool, gen_trace_id, trace
+from agents import (Runner, ToolsToFinalOutputResult, function_tool,
+                    gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from fastapi import Depends
-from pydantic import Field
-
 from app.agents.generic import GenericAgent
 from app.db import get_db
 from app.services.agent_service import AgentService
@@ -17,6 +15,8 @@ from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
+from fastapi import Depends
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
