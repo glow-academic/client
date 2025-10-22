@@ -62,6 +62,7 @@ export interface WebSocketContextType {
     chat_id: string;
     attempt_id: string;
     end_all?: boolean;
+    department_id?: string;
   }) => void;
 
   // Assistant event emitters
@@ -1114,7 +1115,12 @@ export function WebSocketProvider({
   );
 
   const emitContinueSimulation = useCallback(
-    (data: { chat_id: string; attempt_id: string; end_all?: boolean }) => {
+    (data: {
+      chat_id: string;
+      attempt_id: string;
+      end_all?: boolean;
+      department_id?: string;
+    }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.continue.skip_not_connected", {
           context: { function: "emitContinueSimulation" },

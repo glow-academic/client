@@ -7,10 +7,7 @@
 "use client";
 import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 
-import {
-  useAttemptFull,
-  useUpdateChatCompletedAt,
-} from "@/lib/api/v2/hooks/attempts";
+import { useAttemptFull } from "@/lib/api/v2/hooks/attempts";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
@@ -164,7 +161,7 @@ export function SimulationProvider({
   const [isGrading, setIsGrading] = useState(false);
 
   const queryClient = useQueryClient();
-  const { mutateAsync: updateChatCompletedAt } = useUpdateChatCompletedAt();
+  // Note: updateChatCompletedAt removed - completed_at column was removed from database
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
@@ -508,36 +505,21 @@ export function SimulationProvider({
       if (readOnly) return;
       const targetChatId = chatId || currentChat?.id;
       if (!targetChatId) return;
+      if (!simulation?.departmentId) return;
 
       setEndChatLoading(true);
 
       try {
-        // Update the database immediately for persistence
-        const completionTime = new Date().toISOString();
-        try {
-          await updateChatCompletedAt({
-            chatId: targetChatId,
-            completedAt: completionTime,
-          });
-        } catch (dbError) {
-          log.error("chat.completion.db_update.failed", {
-            message: "Failed to update chat completion in database",
-            subject: { entityType: "simulation_chat", entityId: targetChatId },
-            context: {
-              component: "SimulationContext",
-              function: "endChat",
-              attemptId,
-            },
-            error: dbError,
-          });
-          // Continue with the flow even if DB update fails - backend will handle it
-        }
+        // Note: completed_at column was removed from simulation_chats table
+        // Completion time is now tracked via simulation_chat_grades.time_taken
+        // Backend handles completion tracking automatically
 
         // Call backend with end_all=false for single chat ending
         emitContinueSimulation({
           chat_id: targetChatId,
           attempt_id: attemptId,
           end_all: false,
+          department_id: simulation?.departmentId,
         });
       } catch (error) {
         // Invalidate to refetch on error
@@ -554,8 +536,7 @@ export function SimulationProvider({
       attemptId,
       readOnly,
       queryClient,
-      updateChatCompletedAt,
-      log,
+      simulation?.departmentId,
     ]
   );
 
@@ -566,41 +547,16 @@ export function SimulationProvider({
     setEndChatLoading(true);
 
     try {
-      // Get all incomplete chats
-      const incompleteChats = chats.filter((chat) => !chat.completed);
-      const completionTime = new Date().toISOString();
-
-      // Update the database immediately for persistence
-      try {
-        // Update each chat individually since there's no bulk update function
-        await Promise.all(
-          incompleteChats.map((chat) =>
-            updateChatCompletedAt({
-              chatId: chat.id,
-              completedAt: completionTime,
-            })
-          )
-        );
-      } catch (dbError) {
-        log.error("chat.completion.db_update.failed", {
-          message: "Failed to update chat completions in database",
-          subject: { entityType: "simulation_chat" },
-          context: {
-            component: "SimulationContext",
-            function: "endAllChats",
-            attemptId,
-            chatCount: incompleteChats.length,
-          },
-          error: dbError,
-        });
-        // Continue with the flow even if DB update fails - backend will handle it
-      }
+      // Note: completed_at column was removed from simulation_chats table
+      // Completion time is now tracked via simulation_chat_grades.time_taken
+      // Backend handles completion tracking automatically
 
       // Call backend with end_all=true to handle all remaining chats
       emitContinueSimulation({
         chat_id: currentChat.id,
         attempt_id: attemptId,
         end_all: true,
+        department_id: simulation?.departmentId,
       });
     } catch (error) {
       // Invalidate to refetch on error
@@ -618,9 +574,6 @@ export function SimulationProvider({
     emitContinueSimulation,
     readOnly,
     queryClient,
-    chats,
-    updateChatCompletedAt,
-    log,
   ]);
 
   // Listen for WebSocket loading state changes
