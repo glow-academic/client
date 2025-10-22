@@ -57,8 +57,23 @@ class AttemptsService(BaseService):
         if result == "UPDATE 0":
             raise ValueError(f"Chat not found: {request.chatId}")
 
-        # Invalidate analytics cache (timestamp changes affect analytics)
-        await self._invalidate_cache([keys.tag_analytics_all()])
+        # Get attempt_id for this chat to invalidate its cache
+        attempt_query = "SELECT attempt_id FROM simulation_chats WHERE id = $1"
+        attempt_result = await self.conn.fetchrow(attempt_query, request.chatId)
+        
+        if attempt_result:
+            attempt_id = str(attempt_result["attempt_id"])
+            # Invalidate attempts cache (timer data depends on created_at)
+            await self._invalidate_cache([
+                keys.tag_analytics_all(),
+                keys.tag_attempt_by_id(attempt_id),
+            ])
+        else:
+            # Fallback: invalidate all attempts cache if we can't find the attempt
+            await self._invalidate_cache([
+                keys.tag_analytics_all(),
+                keys.tag_attempt_all(),
+            ])
 
         return UpdateChatTimestampResponse(
             success=True,

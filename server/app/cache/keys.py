@@ -1400,6 +1400,16 @@ def tag_rubric_by_id(rubric_id: str) -> str:
     return f"{NS_RUBRIC}:{rubric_id}"
 
 
+def tag_attempt_all() -> str:
+    """Coarse tag to invalidate all attempt caches."""
+    return f"{NS_ATTEMPT}:*"
+
+
+def tag_attempt_by_id(attempt_id: str) -> str:
+    """Fine tag to invalidate specific attempt caches."""
+    return f"{NS_ATTEMPT}:{attempt_id}"
+
+
 # ============================================================================
 # LOG KEY FACTORIES
 # ============================================================================

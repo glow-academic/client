@@ -303,12 +303,56 @@ export function SimulationProvider({
   const isSingleChatAttempt = attemptData?.isSingleChatAttempt ?? true;
   const isLastAttempt = attemptData?.isLastAttempt ?? true;
 
-  // Timer from v2 (server computed)
-  const timer: AttemptFullResponse["timer"] = attemptData?.timer || {
+  // Timer from v2 (server computed baseline)
+  const serverTimer: AttemptFullResponse["timer"] = attemptData?.timer || {
     elapsed: 0,
     remaining: null,
     expired: false,
   };
+
+  // Track when we last fetched data
+  const dataFetchedAtRef = useRef<number>(Date.now());
+  const [localElapsedOffset, setLocalElapsedOffset] = useState(0);
+
+  // Update baseline when server data changes
+  useEffect(() => {
+    dataFetchedAtRef.current = Date.now();
+    setLocalElapsedOffset(0);
+  }, [attemptData?.timer.elapsed]);
+
+  // Tick timer every second for active simulations
+  useEffect(() => {
+    if (!currentChat || currentChat.completed || showResults) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const secondsSinceFetch = Math.floor(
+        (now - dataFetchedAtRef.current) / 1000
+      );
+      setLocalElapsedOffset(secondsSinceFetch);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentChat?.id, currentChat?.completed, showResults]);
+
+  // Compute display timer
+  const timer: AttemptFullResponse["timer"] = useMemo(() => {
+    const displayElapsed = serverTimer.elapsed + localElapsedOffset;
+
+    return {
+      elapsed: displayElapsed,
+      remaining:
+        serverTimer.remaining !== null
+          ? Math.max(serverTimer.remaining - localElapsedOffset, 0)
+          : null,
+      expired:
+        serverTimer.expired ||
+        (serverTimer.remaining !== null &&
+          serverTimer.remaining - localElapsedOffset <= 0),
+    };
+  }, [serverTimer, localElapsedOffset]);
 
   // Update simulation ref when simulation changes
   useEffect(() => {
