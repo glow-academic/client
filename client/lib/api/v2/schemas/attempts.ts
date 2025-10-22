@@ -92,6 +92,7 @@ export const AttemptFullResponseSchema = z.object({
         completed: z.boolean(),
         completedAt: z.string().nullable(),
         traceId: z.string().nullable(),
+        documentIds: z.array(z.string()),
       }),
       scenario: z
         .object({

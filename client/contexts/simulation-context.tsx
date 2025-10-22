@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
 
 export interface SimulationContextType {
+  // Raw attempt data for lookups
+  attemptData: AttemptFullResponse | null;
   // Attempt and simulation data (exact types from AttemptFullResponse)
   attemptId: string;
   attempt: AttemptFullResponse["attempt"] | null;
@@ -903,6 +905,8 @@ export function SimulationProvider({
   }, [chats, log]);
 
   const value: SimulationContextType = {
+    // Raw attempt data for lookups
+    attemptData: attemptData || null,
     // Data (from v2)
     attemptId,
     attempt: attempt,

@@ -1735,7 +1735,14 @@ class SimulationQueries:
             sc.scenario_id,
             sc.attempt_id,
             sc.completed,
-            sc.trace_id
+            sc.trace_id,
+            -- Add document IDs for this chat's scenario
+            COALESCE(
+                (SELECT array_agg(DISTINCT sd.document_id::text)
+                 FROM scenario_documents sd
+                 WHERE sd.scenario_id = sc.scenario_id AND sd.active = true),
+                ARRAY[]::text[]
+            ) as document_ids
         FROM simulation_chats sc
         WHERE sc.attempt_id = $1
         ORDER BY sc.created_at
@@ -2091,7 +2098,12 @@ class SimulationQueries:
                             THEN gd.grade->>'createdAt'
                             ELSE NULL 
                         END,
-                        'traceId', CASE WHEN cb.trace_id IS NOT NULL THEN cb.trace_id::text ELSE NULL END
+                        'traceId', CASE WHEN cb.trace_id IS NOT NULL THEN cb.trace_id::text ELSE NULL END,
+                        'documentIds', COALESCE(
+                            (SELECT jsonb_agg(did)
+                             FROM unnest(cb.document_ids) as did),
+                            '[]'::jsonb
+                        )
                     ),
                     'scenario', sd.scenario_data,
                     'messages', COALESCE(mg.messages, '[]'::jsonb),

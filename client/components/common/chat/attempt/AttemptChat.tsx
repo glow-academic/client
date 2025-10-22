@@ -63,7 +63,6 @@ export default function AttemptChat() {
   const log = useLogger();
   const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
 
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
   const [showDocuments, setShowDocuments] = useState(true);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
@@ -115,26 +114,21 @@ export default function AttemptChat() {
     clearEntityMetadata,
   ]);
 
-  // Get selected chat for rubric display
-  const selectedChat = useMemo(() => {
-    if (!selectedChatId || !simulationContext?.chats) return null;
-    return simulationContext?.chats.find(
-      (chat: AttemptFullResponse["chats"][number]["chat"]) =>
-        chat.id === selectedChatId
-    );
-  }, [selectedChatId, simulationContext?.chats]);
+  // Get current chat from context
+  const displayChat =
+    simulationContext?.chats[simulationContext.currentChatIndex];
 
   // Get selected scenario from context (v2 single source of truth)
   const selectedScenario = useMemo(() => {
-    if (!selectedChat?.id || !simulationContext?.scenariosByChatId) {
+    if (!displayChat?.id || !simulationContext?.scenariosByChatId) {
       return simulationContext?.scenario;
     }
     return (
-      simulationContext.scenariosByChatId[selectedChat.id] ||
+      simulationContext.scenariosByChatId[displayChat.id] ||
       simulationContext.scenario
     );
   }, [
-    selectedChat?.id,
+    displayChat?.id,
     simulationContext?.scenariosByChatId,
     simulationContext?.scenario,
   ]);
@@ -250,11 +244,14 @@ export default function AttemptChat() {
       simulationContext?.showResults &&
       simulationContext?.chats &&
       simulationContext?.chats.length > 0 &&
-      !selectedChatId
+      simulationContext.currentChatIndex === 0
     ) {
-      // Select the first available chat (not just completed ones)
-      if (simulationContext?.chats[0]) {
-        setSelectedChatId(simulationContext.chats[0].id);
+      // Ensure we're on the first chat
+      if (
+        simulationContext?.chats[0] &&
+        simulationContext.currentChatIndex !== 0
+      ) {
+        simulationContext.setCurrentChatIndex(0);
       }
 
       // If all chats are completed, default to showing rubric
@@ -268,7 +265,9 @@ export default function AttemptChat() {
   }, [
     simulationContext?.showResults,
     simulationContext?.chats,
-    selectedChatId,
+    simulationContext?.currentChatIndex,
+    simulationContext?.setCurrentChatIndex,
+    simulationContext,
   ]);
 
   // Set default selected document
@@ -297,7 +296,7 @@ export default function AttemptChat() {
       );
     }
   }, [
-    selectedChatId,
+    simulationContext?.currentChatIndex,
     simulationContext?.currentChat?.id,
     simulationContext?.scenarioDocuments,
   ]);
@@ -372,7 +371,7 @@ export default function AttemptChat() {
                     </div>
                     <div className="flex items-start justify-end gap-2">
                       <div className="flex items-center gap-4">
-                        {selectedChat && (
+                        {displayChat && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -430,18 +429,17 @@ export default function AttemptChat() {
                             <TooltipTrigger asChild>
                               <div
                                 className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                  selectedChat &&
+                                  displayChat &&
                                   simulationContext?.allDynamicRubrics.find(
-                                    (rubric) =>
-                                      rubric.chatId === selectedChat.id
+                                    (rubric) => rubric.chatId === displayChat.id
                                   )
                                     ? simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
-                                          rubric.chatId === selectedChat.id
+                                          rubric.chatId === displayChat.id
                                       )?.passed
                                       ? "bg-green-100 dark:bg-green-900/30"
                                       : "bg-red-100 dark:bg-red-900/30"
-                                    : selectedChat && !selectedChat.completed
+                                    : displayChat && !displayChat.completed
                                       ? "bg-red-100 dark:bg-red-900/30"
                                       : simulationContext?.aggregatedResults
                                         ? simulationContext?.aggregatedResults
@@ -458,8 +456,8 @@ export default function AttemptChat() {
                                 )}
                                 <span
                                   className={`text-sm font-medium ${
-                                    selectedChat && selectedChat.completed
-                                      ? calculateTimeExceeded(selectedChat) >
+                                    displayChat && displayChat.completed
+                                      ? calculateTimeExceeded(displayChat) >
                                           0 &&
                                         simulationContext?.simulation?.timeLimit
                                         ? "text-red-500"
@@ -468,9 +466,9 @@ export default function AttemptChat() {
                                   }`}
                                   data-testid="timer"
                                 >
-                                  {selectedChat && selectedChat.completed
+                                  {displayChat && displayChat.completed
                                     ? formatTime(
-                                        calculateChatTimeTaken(selectedChat)
+                                        calculateChatTimeTaken(displayChat)
                                       )
                                     : isInfiniteMode
                                       ? infiniteLimitMinutes
@@ -480,27 +478,27 @@ export default function AttemptChat() {
                                               0
                                           )
                                       : simulationContext?.simulation
-                                            ?.timeLimit && selectedChat
+                                            ?.timeLimit && displayChat
                                         ? formatTime(
                                             calculateAdjustedTimeLimit(
-                                              selectedChat
+                                              displayChat
                                             )
                                           )
                                         : "No time limit"}
                                 </span>
                               </div>
                             </TooltipTrigger>
-                            {selectedChat &&
+                            {displayChat &&
                             showGrades &&
                             simulationContext?.allDynamicRubrics.find(
-                              (rubric) => rubric.chatId === selectedChat.id
+                              (rubric) => rubric.chatId === displayChat.id
                             ) ? (
                               <TooltipContent>
                                 <p className="flex items-center flex-wrap gap-x-0">
                                   <span>
                                     {simulationContext?.allDynamicRubrics.find(
                                       (rubric) =>
-                                        rubric.chatId === selectedChat.id
+                                        rubric.chatId === displayChat.id
                                     )?.passed
                                       ? "Passed"
                                       : "Failed"}
@@ -508,31 +506,31 @@ export default function AttemptChat() {
                                     {
                                       simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
-                                          rubric.chatId === selectedChat.id
+                                          rubric.chatId === displayChat.id
                                       )?.score
                                     }
                                     /
                                     {
                                       simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
-                                          rubric.chatId === selectedChat.id
+                                          rubric.chatId === displayChat.id
                                       )?.totalPossiblePoints
                                     }
                                     )
                                   </span>
-                                  {calculateTimeExceeded(selectedChat) > 0 &&
+                                  {calculateTimeExceeded(displayChat) > 0 &&
                                     simulationContext?.simulation
                                       ?.timeLimit && (
                                       <span className="text-xs text-muted-foreground ml-2">
                                         +
                                         {formatTime(
-                                          calculateTimeExceeded(selectedChat)
+                                          calculateTimeExceeded(displayChat)
                                         )}
                                       </span>
                                     )}
                                 </p>
                               </TooltipContent>
-                            ) : selectedChat && !selectedChat.completed ? (
+                            ) : displayChat && !displayChat.completed ? (
                               <TooltipContent>
                                 <p>Incomplete</p>
                               </TooltipContent>
@@ -565,8 +563,19 @@ export default function AttemptChat() {
                   {!simulationContext?.isSingleChatAttempt && (
                     <div className="flex justify-end">
                       <Select
-                        value={selectedChatId || ""}
-                        onValueChange={setSelectedChatId}
+                        value={
+                          simulationContext?.chats[
+                            simulationContext.currentChatIndex
+                          ]?.id || ""
+                        }
+                        onValueChange={(chatId) => {
+                          const chatIndex = simulationContext?.chats.findIndex(
+                            (chat) => chat.id === chatId
+                          );
+                          if (chatIndex !== undefined && chatIndex >= 0) {
+                            simulationContext?.setCurrentChatIndex(chatIndex);
+                          }
+                        }}
                       >
                         <SelectTrigger className="w-64">
                           <SelectValue placeholder="Select chat to view results" />
@@ -625,7 +634,7 @@ export default function AttemptChat() {
                     <div className="space-y-4 py-4">
                       {/* Show rubric when toggle is on */}
                       {showGrades &&
-                      selectedChat &&
+                      displayChat &&
                       simulationContext?.rubricStructure ? (
                         <div className="space-y-4 py-4">
                           <TableRubric
@@ -640,19 +649,19 @@ export default function AttemptChat() {
                               simulationContext.rubricStructure.standardsMapping
                             }
                             gradingState={
-                              selectedChat?.id
+                              displayChat?.id
                                 ? simulationContext.gradingStatesByChatId[
-                                    selectedChat.id
+                                    displayChat.id
                                   ] || null
                                 : null
                             }
                           />
                         </div>
-                      ) : selectedChat ? (
+                      ) : displayChat ? (
                         /* Show chat messages for both single and multi-chat attempts */
                         <div className="space-y-4">
                           <AttemptMessages
-                            chatId={selectedChat.id}
+                            chatId={displayChat.id}
                             isAttemptOwner={isAttemptOwner}
                           />
                         </div>
@@ -672,43 +681,56 @@ export default function AttemptChat() {
           </ResizablePanel>
 
           {/* Right Panel - Documents */}
-          {showDocuments && simulationContext?.scenarioDocuments.length > 0 && (
-            <>
-              <ResizableHandle className="bg-transparent" />
-              <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-                <Card className="h-full flex flex-col ml-4 p-0">
-                  <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
-                    {/* Select dropdown directly above document */}
-                    {simulationContext?.scenarioDocuments.length > 1 && (
-                      <div className="p-3 pb-2 border-b">
-                        <DocumentSelect
-                          documents={simulationContext?.scenarioDocuments}
-                          selectedDocumentId={selectedDocumentId}
-                          onDocumentSelect={setSelectedDocumentId}
-                        />
-                      </div>
-                    )}
-                    {/* Document viewer with minimal padding */}
-                    <div className="flex-1 min-h-0 p-2">
-                      {selectedDocumentId &&
-                        (() => {
-                          const document =
-                            simulationContext.scenarioDocuments.find(
-                              (doc) => doc.document_id === selectedDocumentId
-                            ) || simulationContext.scenarioDocuments[0];
-                          return document ? (
-                            <DocumentViewer
-                              key={selectedDocumentId}
-                              document={document}
-                            />
-                          ) : null;
-                        })()}
-                    </div>
-                  </CardContent>
-                </Card>
-              </ResizablePanel>
-            </>
-          )}
+          {showDocuments &&
+            (() => {
+              // Filter documents for current chat's scenario
+              const currentChatDocIds = displayChat?.documentIds || [];
+              const filteredDocs =
+                simulationContext?.scenarioDocuments.filter((doc) =>
+                  currentChatDocIds.includes(doc.document_id)
+                ) || [];
+
+              return (
+                filteredDocs.length > 0 && (
+                  <>
+                    <ResizableHandle className="bg-transparent" />
+                    <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                      <Card className="h-full flex flex-col ml-4 p-0">
+                        <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
+                          {/* Select dropdown directly above document */}
+                          {filteredDocs.length > 1 && (
+                            <div className="p-3 pb-2 border-b">
+                              <DocumentSelect
+                                documents={filteredDocs}
+                                selectedDocumentId={selectedDocumentId}
+                                onDocumentSelect={setSelectedDocumentId}
+                              />
+                            </div>
+                          )}
+                          {/* Document viewer with minimal padding */}
+                          <div className="flex-1 min-h-0 p-2">
+                            {selectedDocumentId &&
+                              (() => {
+                                const document =
+                                  filteredDocs.find(
+                                    (doc) =>
+                                      doc.document_id === selectedDocumentId
+                                  ) || filteredDocs[0];
+                                return document ? (
+                                  <DocumentViewer
+                                    key={selectedDocumentId}
+                                    document={document}
+                                  />
+                                ) : null;
+                              })()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </ResizablePanel>
+                  </>
+                )
+              );
+            })()}
         </ResizablePanelGroup>
       </div>
     );

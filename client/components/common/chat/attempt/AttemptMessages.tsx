@@ -43,7 +43,7 @@ export default function AttemptMessages({
   isAttemptOwner = true,
 }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
-  
+
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -57,8 +57,14 @@ export default function AttemptMessages({
   // State to track if report dialog is open
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
-  // Get messages from context (v2 single source of truth)
-  const messages = useMemo(() => simulationContext?.currentMessages || [], [simulationContext?.currentMessages]);
+  // Get messages from context for the specific chat (not just currentMessages)
+  const messages = useMemo(() => {
+    if (!targetChatId || !simulationContext?.attemptData?.chats) return [];
+    const chatData = simulationContext.attemptData.chats.find(
+      (c) => c.chat.id === targetChatId
+    );
+    return chatData?.messages || [];
+  }, [targetChatId, simulationContext?.attemptData]);
   const messagesLoading = simulationContext?.isLoadingChats || false;
 
   // Group messages by conversation turns (user message + all its responses)
