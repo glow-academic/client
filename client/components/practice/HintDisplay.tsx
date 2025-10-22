@@ -1,31 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2, X } from "lucide-react";
 
 import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 
 interface HintDisplayProps {
   hints: AttemptFullResponse["chats"][number]["hints"][number]["hints"];
   isLoading?: boolean;
-  onSelectHint: (hint: string) => void;
   onClose?: () => void;
 }
 
 export default function HintDisplay({
   hints,
   isLoading = false,
-  onSelectHint,
   onClose,
 }: HintDisplayProps) {
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Hint copied to clipboard!");
-  };
-
   return (
     <Card className="w-full max-w-md mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-0">
         <CardTitle className="text-lg font-semibold flex items-center justify-between">
           <div className="flex items-center gap-2">
             Hints
@@ -43,43 +35,25 @@ export default function HintDisplay({
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="pt-0 -mt-4">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>Generating suggestions...</span>
             </div>
           </div>
         ) : hints.length > 0 ? (
-          hints.map((hintObj) => (
-            <div
-              key={hintObj.idx}
-              className="flex flex-col p-3 border rounded-md bg-gray-50 dark:bg-gray-700"
-            >
-              <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
+          <ul className="space-y-2 list-disc list-inside pl-4">
+            {hints.map((hintObj) => (
+              <li
+                key={hintObj.idx}
+                className="text-sm text-gray-800 dark:text-gray-200"
+              >
                 {hintObj.hint}
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleCopy(hintObj.hint)}
-                  className="text-xs"
-                >
-                  <Copy className="h-3 w-3 mr-1" /> Copy
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => onSelectHint(hintObj.hint)}
-                  className="text-xs"
-                >
-                  Use This
-                </Button>
-              </div>
-            </div>
-          ))
+              </li>
+            ))}
+          </ul>
         ) : (
           <p className="text-sm text-muted-foreground text-center py-4">
             Send a message to get hints

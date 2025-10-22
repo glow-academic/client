@@ -784,7 +784,8 @@ export default function AttemptChat() {
                         <div className="flex items-center gap-4">
                           <div className="flex items-start gap-2">
                             <span className="font-medium">
-                              {simulationContext?.scenario?.name ||
+                              {simulationContext?.scenario?.problemStatement ||
+                                simulationContext?.scenario?.name ||
                                 simulationContext?.currentChat?.title}
                             </span>
                           </div>

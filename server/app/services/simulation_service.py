@@ -1019,6 +1019,15 @@ class SimulationService(BaseService):
             # Update chat to reference the new scenario
             query = "UPDATE simulation_chats SET scenario_id = $1 WHERE id = $2"
             await self.conn.execute(query, new_scenario["id"], chat_id)
+            
+            # Copy persona relationship from original scenario to new scenario
+            query = """
+                INSERT INTO scenario_personas (scenario_id, persona_id, active, created_at, updated_at)
+                SELECT $1, sp.persona_id, sp.active, now(), now()
+                FROM scenario_personas sp
+                WHERE sp.scenario_id = $2 AND sp.active = true
+            """
+            await self.conn.execute(query, new_scenario["id"], scenario_id)
         else:
             # Use existing scenario data
             chat_title = scenario_name

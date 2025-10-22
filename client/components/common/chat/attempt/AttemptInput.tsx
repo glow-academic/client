@@ -35,10 +35,10 @@ import HintDisplay from "@/components/practice/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -58,7 +58,10 @@ export default function AttemptInput({
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   // Get messages from context (v2 single source of truth)
-  const messages = useMemo(() => simulationContext?.currentMessages || [], [simulationContext?.currentMessages]);
+  const messages = useMemo(
+    () => simulationContext?.currentMessages || [],
+    [simulationContext?.currentMessages]
+  );
 
   // Get the most recent assistant message
   const latestAssistantMessage = useMemo(() => {
@@ -71,7 +74,10 @@ export default function AttemptInput({
   }, [messages]);
 
   // Get hints from context (v2 single source of truth)
-  const currentChatHints = useMemo(() => simulationContext?.currentChatHints || [], [simulationContext?.currentChatHints]);
+  const currentChatHints = useMemo(
+    () => simulationContext?.currentChatHints || [],
+    [simulationContext?.currentChatHints]
+  );
   const hintsData = useMemo(() => {
     if (!latestAssistantMessage?.id) return [];
     const hintsForMessage = currentChatHints.find(
@@ -195,12 +201,6 @@ export default function AttemptInput({
     simulationContext?.sendMessage(messageToSend);
   };
   const handleStopMessage = () => simulationContext?.stopMessage();
-
-  const handleSelectHint = (hint: string) => {
-    setNewMessage(hint);
-    textareaRef.current?.focus();
-    setIsPopoverOpen(false); // Close popover after selection
-  };
 
   // --- Effects ---
   useEffect(() => {
@@ -342,9 +342,9 @@ export default function AttemptInput({
                   </Tooltip>
                 </motion.div>
                 <PopoverContent
-                  className="w-96 p-0 -translate-y-20 -translate-x-30"
+                  className="w-96 p-0"
                   align="end"
-                  side="right"
+                  side="top"
                   sideOffset={8}
                   onInteractOutside={(e) => e.preventDefault()}
                   onEscapeKeyDown={(e) => e.preventDefault()}
@@ -352,7 +352,6 @@ export default function AttemptInput({
                   <HintDisplay
                     hints={hintsData}
                     isLoading={hintsHookLoading}
-                    onSelectHint={handleSelectHint}
                     onClose={() => setIsPopoverOpen(false)}
                   />
                 </PopoverContent>
