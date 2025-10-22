@@ -1677,18 +1677,15 @@ class SimulationQueries:
         """
         return (query, [profile_id])
 
+    def get_attempt_full_data_complete(self, attempt_id: str) -> tuple[str, list[Any]]:
+        """Build optimized query to get complete attempt data in ONE query.
 
-async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
-    """Get complete attempt data with all related entities and computed values."""
-    from datetime import datetime
-    from typing import Any
-
-    # Convert attempt_id to string for SQL
-    attempt_id_str = str(attempt_id)
-
-    # 1. Get attempt and simulation
-    attempt_result = await conn.fetchrow(
+        Consolidates 12+ queries into 1 using CTEs and JSONB aggregations.
+        Returns all attempt data including chats, messages, grades, rubrics,
+        documents, and computed metrics (timer, aggregated results, dynamic rubrics).
         """
+        query = """
+        WITH attempt_base AS (
         SELECT 
             sa.id,
             sa.created_at,
@@ -1714,63 +1711,22 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         JOIN simulations s ON s.id = sa.simulation_id
         LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
         WHERE sa.id = $1
-    """,
-        attempt_id_str,
-    )
-
-    if not attempt_result:
-        raise ValueError(f"Attempt {attempt_id} not found")
-
-    attempt = {
-        "id": str(attempt_result["id"]),
-        "createdAt": attempt_result["created_at"].isoformat(),
-        "simulationId": str(attempt_result["simulation_id"]),
-        "infiniteMode": attempt_result["infinite_mode"],
-        "archived": attempt_result["archived"],
-    }
-
-    simulation = {
-        "id": str(attempt_result["sim_id"]),
-        "title": attempt_result["sim_title"],
-        "description": attempt_result["sim_description"],
-        "departmentId": str(attempt_result["sim_department_id"]),
-        "active": attempt_result["sim_active"],
-        "defaultSimulation": attempt_result["sim_default_simulation"],
-        "practiceSimulation": attempt_result["sim_practice_simulation"],
-        "hintsEnabled": attempt_result["sim_hints_enabled"],
-        "inputGuardrailActive": attempt_result["sim_input_guardrail_active"],
-        "outputGuardrailActive": attempt_result["sim_output_guardrail_active"],
-        "imageInputActive": attempt_result["sim_image_input_active"],
-        "timeLimit": attempt_result["sim_time_limit"],
-        "rubricId": str(attempt_result["sim_rubric_id"])
-        if attempt_result["sim_rubric_id"]
-        else None,
-        "createdAt": attempt_result["sim_created_at"].isoformat(),
-        "updatedAt": attempt_result["sim_updated_at"].isoformat(),
-    }
-
-    # 2. Get attempt profiles
-    attempt_profiles_result = await conn.fetch(
-        """
-        SELECT profile_id, attempt_id, active
-        FROM attempt_profiles
-        WHERE attempt_id = $1
-    """,
-        attempt_id_str,
-    )
-
-    attempt_profiles = [
-        {
-            "profileId": str(row["profile_id"]),
-            "attemptId": str(row["attempt_id"]),
-            "active": row["active"],
-        }
-        for row in attempt_profiles_result
-    ]
-
-    # 3. Get all chats for this attempt
-    chats_result = await conn.fetch(
-        """
+        ),
+        attempt_profiles_data AS (
+            SELECT COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'profileId', ap.profile_id::text,
+                        'attemptId', ap.attempt_id::text,
+                        'active', ap.active
+                    )
+                ),
+                '[]'::jsonb
+            ) as attempt_profiles
+            FROM attempt_profiles ap
+            WHERE ap.attempt_id = $1
+        ),
+        chats_base AS (
         SELECT 
             sc.id,
             sc.created_at,
@@ -1783,636 +1739,539 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         FROM simulation_chats sc
         WHERE sc.attempt_id = $1
         ORDER BY sc.created_at
-    """,
-        attempt_id_str,
-    )
-
-    chat_ids = [str(row["id"]) for row in chats_result]
-    scenario_ids = list(set([str(row["scenario_id"]) for row in chats_result]))
-
-    # 4. Get all scenarios
-    scenarios = {}
-    if scenario_ids:
-        scenarios_result = await conn.fetch(
-            """
+        ),
+        chat_ids_list AS (
+            SELECT array_agg(id) as chat_ids
+            FROM chats_base
+        ),
+        scenario_ids_list AS (
+            SELECT array_agg(DISTINCT scenario_id) as scenario_ids
+            FROM chats_base
+        ),
+        scenarios_data AS (
             SELECT 
                 s.id,
-                s.name,
-                s.problem_statement,
-                s.department_id,
-                s.active,
-                s.created_at,
-                s.updated_at,
-                s.generated,
-                s.default_scenario,
-                (SELECT persona_id FROM scenario_personas WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
+                jsonb_build_object(
+                    'id', s.id::text,
+                    'name', s.name,
+                    'problemStatement', s.problem_statement,
+                    'departmentId', s.department_id::text,
+                    'active', s.active,
+                    'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
+                    'createdAt', s.created_at,
+                    'updatedAt', s.updated_at,
+                    'generated', s.generated,
+                    'defaultScenario', s.default_scenario
+                ) as scenario_data
             FROM scenarios s
-            WHERE s.id = ANY($1::uuid[])
-        """,
-            scenario_ids,
-        )
-
-        scenarios = {
-            str(row["id"]): {
-                "id": str(row["id"]),
-                "name": row["name"],
-                "problemStatement": row["problem_statement"],
-                "departmentId": str(row["department_id"]),
-                "active": row["active"],
-                "personaId": str(row["persona_id"]) if row["persona_id"] else None,
-                "createdAt": row["created_at"].isoformat(),
-                "updatedAt": row["updated_at"].isoformat(),
-                "generated": row["generated"],
-                "defaultScenario": row["default_scenario"],
-            }
-            for row in scenarios_result
-        }
-
-    # 5. Get all messages for all chats
-    messages_by_chat: dict[str, list[dict[str, Any]]] = {}
-    if chat_ids:
-        messages_result = await conn.fetch(
-            """
+            CROSS JOIN scenario_ids_list sil
+            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+            WHERE s.id = ANY(sil.scenario_ids)
+        ),
+        messages_grouped AS (
             SELECT 
-                id,
-                created_at,
-                updated_at,
-                chat_id,
-                content,
-                type,
-                completed
-            FROM simulation_messages
-            WHERE chat_id = ANY($1::uuid[])
-            ORDER BY created_at
-        """,
-            chat_ids,
-        )
-
-        for row in messages_result:
-            chat_id = str(row["chat_id"])
-            if chat_id not in messages_by_chat:
-                messages_by_chat[chat_id] = []
-            messages_by_chat[chat_id].append(
-                {
-                    "id": str(row["id"]),
-                    "createdAt": row["created_at"].isoformat(),
-                    "updatedAt": row["updated_at"].isoformat(),
-                    "chatId": chat_id,
-                    "content": row["content"],
-                    "type": row["type"],
-                    "completed": row["completed"],
-                }
-            )
-
-    # 6. Get all hints for practice simulations
-    hints_by_message: dict[str, list[dict[str, Any]]] = {}
-    if simulation["practiceSimulation"] and messages_by_chat:
-        all_message_ids = []
-        for messages in messages_by_chat.values():
-            all_message_ids.extend(
-                [msg["id"] for msg in messages if msg["type"] == "response"]
-            )
-
-        if all_message_ids:
-            hints_result = await conn.fetch(
-                """
+                sm.chat_id,
+                COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'id', sm.id::text,
+                            'createdAt', sm.created_at,
+                            'updatedAt', sm.updated_at,
+                            'chatId', sm.chat_id::text,
+                            'content', sm.content,
+                            'type', sm.type,
+                            'completed', sm.completed
+                        ) ORDER BY sm.created_at
+                    ),
+                    '[]'::jsonb
+                ) as messages
+            FROM simulation_messages sm
+            CROSS JOIN chat_ids_list cil
+            WHERE sm.chat_id = ANY(cil.chat_ids)
+            GROUP BY sm.chat_id
+        ),
+        hints_data AS (
+            SELECT 
+                sm.chat_id,
+                COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'messageId', sm.id::text,
+                            'hints', COALESCE(
+                                (SELECT jsonb_agg(
+                                    jsonb_build_object(
+                                        'simulationMessageId', sh.simulation_message_id::text,
+                                        'hint', sh.hint,
+                                        'idx', sh.idx,
+                                        'createdAt', sh.created_at
+                                    ) ORDER BY sh.idx
+                                )
+                                FROM simulation_hints sh
+                                WHERE sh.simulation_message_id = sm.id),
+                                '[]'::jsonb
+                            )
+                        )
+                    ) FILTER (WHERE sm.type = 'response'),
+                    '[]'::jsonb
+                ) as hints
+            FROM simulation_messages sm
+            CROSS JOIN chat_ids_list cil
+            CROSS JOIN attempt_base ab
+            WHERE sm.chat_id = ANY(cil.chat_ids)
+              AND ab.sim_practice_simulation = true
+            GROUP BY sm.chat_id
+        ),
+        grades_data AS (
                 SELECT 
-                    simulation_message_id,
-                    idx,
-                    hint,
-                    created_at
-                FROM simulation_hints
-                WHERE simulation_message_id = ANY($1::uuid[])
-                ORDER BY simulation_message_id, idx
-            """,
-                all_message_ids,
-            )
-
-            for row in hints_result:
-                message_id = str(row["simulation_message_id"])
-                if message_id not in hints_by_message:
-                    hints_by_message[message_id] = []
-                hints_by_message[message_id].append(
-                    {
-                        "id": str(row["id"]),
-                        "simulationMessageId": message_id,
-                        "hint": row["hint"],
-                        "createdAt": row["created_at"].isoformat(),
-                    }
-                )
-
-    # 7. Get grades and feedbacks
-    grades_by_chat: dict[str, dict[str, Any]] = {}
-    feedbacks_by_grade: dict[str, list[dict[str, Any]]] = {}
-    if chat_ids:
-        grades_result = await conn.fetch(
-            """
+                scg.simulation_chat_id as chat_id,
+                jsonb_build_object(
+                    'id', scg.id::text,
+                    'createdAt', scg.created_at,
+                    'simulationChatId', scg.simulation_chat_id::text,
+                    'rubricId', scg.rubric_id::text,
+                    'description', scg.description,
+                    'passed', scg.passed,
+                    'score', scg.score,
+                    'timeTaken', scg.time_taken
+                ) as grade
+            FROM simulation_chat_grades scg
+            CROSS JOIN chat_ids_list cil
+            WHERE scg.simulation_chat_id = ANY(cil.chat_ids)
+        ),
+        feedbacks_grouped AS (
             SELECT 
-                id,
-                created_at,
-                simulation_chat_id,
-                rubric_id,
-                description,
-                passed,
-                score,
-                time_taken
-            FROM simulation_chat_grades
-            WHERE simulation_chat_id = ANY($1::uuid[])
-        """,
-            chat_ids,
-        )
-
-        grade_ids = []
-        for row in grades_result:
-            chat_id = str(row["simulation_chat_id"])
-            grade_id = str(row["id"])
-            grade_ids.append(grade_id)
-            grades_by_chat[chat_id] = {
-                "id": grade_id,
-                "createdAt": row["created_at"].isoformat(),
-                "simulationChatId": chat_id,
-                "rubricId": str(row["rubric_id"]),
-                "description": row["description"],
-                "passed": row["passed"],
-                "score": row["score"],
-                "timeTaken": row["time_taken"],
-            }
-
-        # Get feedbacks
-        if grade_ids:
-            feedbacks_result = await conn.fetch(
-                """
+                scf.simulation_chat_grade_id as grade_id,
+                COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'id', scf.id::text,
+                            'createdAt', scf.created_at,
+                            'standardId', scf.standard_id::text,
+                            'simulationChatGradeId', scf.simulation_chat_grade_id::text,
+                            'total', scf.total,
+                            'feedback', scf.feedback
+                        )
+                    ),
+                    '[]'::jsonb
+                ) as feedbacks
+            FROM simulation_chat_feedbacks scf
+            WHERE scf.simulation_chat_grade_id IN (
+                SELECT (grade->>'id')::uuid
+                FROM grades_data
+            )
+            GROUP BY scf.simulation_chat_grade_id
+        ),
+        rubric_standard_groups AS (
+            SELECT 
+                sg.id,
+                sg.name,
+                sg.short_name,
+                sg.points,
+                sg.pass_points,
+                sg.description,
+                sg.rubric_id
+            FROM standard_groups sg
+            CROSS JOIN attempt_base ab
+            WHERE ab.sim_rubric_id IS NOT NULL
+              AND sg.rubric_id = ab.sim_rubric_id
+        ),
+        rubric_standards_grouped AS (
                 SELECT 
-                    id,
-                    created_at,
-                    standard_id,
-                    simulation_chat_grade_id,
-                    total,
-                    feedback
-                FROM simulation_chat_feedbacks
-                WHERE simulation_chat_grade_id = ANY($1::uuid[])
-            """,
-                grade_ids,
-            )
-
-            for row in feedbacks_result:
-                grade_id = str(row["simulation_chat_grade_id"])
-                if grade_id not in feedbacks_by_grade:
-                    feedbacks_by_grade[grade_id] = []
-                feedbacks_by_grade[grade_id].append(
-                    {
-                        "id": str(row["id"]),
-                        "createdAt": row["created_at"].isoformat(),
-                        "standardId": str(row["standard_id"]),
-                        "simulationChatGradeId": grade_id,
-                        "total": row["total"],
-                        "feedback": row["feedback"],
-                    }
-                )
-
-    # 8. Get rubric structure (standard groups and standards)
-    standard_groups: dict[str, dict[str, Any]] = {}
-    standards_by_group: dict[str, list[dict[str, Any]]] = {}
-    # For TableRubric component
-    rubric_structure_groups: dict[str, list[str]] = {}
-    rubric_structure_groups_mapping: dict[str, dict[str, Any]] = {}
-    rubric_structure_standards_mapping: dict[str, dict[str, Any]] = {}
-
-    if simulation["rubricId"]:
-        # Get standard groups
-        groups_result = await conn.fetch(
-            """
-            SELECT 
-                id,
-                name,
-                short_name,
-                points,
-                pass_points,
-                description,
-                rubric_id
-            FROM standard_groups
-            WHERE rubric_id = $1
-        """,
-            simulation["rubricId"],
-        )
-
-        group_ids = []
-        for row in groups_result:
-            group_id = str(row["id"])
-            group_ids.append(group_id)
-            standard_groups[group_id] = {
-                "id": group_id,
-                "name": row["name"],
-                "shortName": row["short_name"],
-                "points": row["points"],
-                "rubricId": str(row["rubric_id"]),
-            }
-            # Build mapping for TableRubric
-            rubric_structure_groups_mapping[group_id] = {
-                "name": row["name"],
-                "description": row["description"] or "",
-                "points": row["points"],
-                "passPoints": row["pass_points"],
-            }
-
-        # Get standards
-        if group_ids:
-            standards_result = await conn.fetch(
-                """
-                SELECT 
-                    id,
-                    name,
-                    description,
-                    points,
-                    standard_group_id
-                FROM standards
-                WHERE standard_group_id = ANY($1::uuid[])
-            """,
-                group_ids,
-            )
-
-            for row in standards_result:
-                group_id = str(row["standard_group_id"])
-                standard_id = str(row["id"])
-
-                if group_id not in standards_by_group:
-                    standards_by_group[group_id] = []
-                standards_by_group[group_id].append(
-                    {
-                        "id": standard_id,
-                        "name": row["name"],
-                        "points": row["points"],
-                        "standardGroupId": group_id,
-                    }
-                )
-
-                # Build structure for TableRubric
-                if group_id not in rubric_structure_groups:
-                    rubric_structure_groups[group_id] = []
-                rubric_structure_groups[group_id].append(standard_id)
-
-                # Build standards mapping for TableRubric
-                rubric_structure_standards_mapping[standard_id] = {
-                    "name": row["name"],
-                    "description": row["description"] or "",
-                    "points": row["points"],
-                }
-
-    # 9. Get documents
-    # Get unique department IDs from scenarios
-    dept_ids = list(
-        set(
-            [scenarios[sid]["departmentId"] for sid in scenario_ids if sid in scenarios]
-        )
-    )
-
-    department_documents = []
-    scenario_documents = []
-    if dept_ids:
-        # Get all department documents
-        dept_docs_result = await conn.fetch(
-            """
-            SELECT 
-                id,
-                name,
-                file_path,
-                type,
-                classified,
-                file_id,
-                mime_type,
-                department_id,
-                active,
-                created_at,
-                updated_at
-            FROM documents
-            WHERE department_id = ANY($1::uuid[]) AND active = true
-        """,
-            dept_ids,
-        )
-
-        department_documents = [
-            {
-                "id": str(row["id"]),
-                "name": row["name"],
-                "title": row["name"],  # Use name as title
-                "description": "",  # Documents don't have description in schema
-                "filePath": row["file_path"],
-                "type": row["type"],
-                "classified": row["classified"],
-                "fileId": str(row["file_id"]) if row["file_id"] else None,
-                "mimeType": row["mime_type"],
-                "departmentId": str(row["department_id"]),
-                "fileSize": 0,  # Not in schema, default to 0
-                "active": row["active"],
-                "createdAt": row["created_at"].isoformat(),
-                "updatedAt": row["updated_at"].isoformat(),
-            }
-            for row in dept_docs_result
-        ]
-
-        # Get scenario-specific documents
-        if scenario_ids:
-            scenario_docs_result = await conn.fetch(
-                """
-                SELECT DISTINCT d.id,
-                    d.name,
-                    d.file_path,
-                    d.type,
-                    d.classified,
-                    d.file_id,
-                    d.mime_type,
-                    d.department_id,
-                    d.active,
-                    d.created_at,
-                    d.updated_at
-                FROM documents d
-                JOIN scenario_documents sd ON sd.document_id = d.id
-                WHERE sd.scenario_id = ANY($1::uuid[]) AND d.active = true
-            """,
-                scenario_ids,
-            )
-
-            scenario_documents = [
-                {
-                    "id": str(row["id"]),
-                    "name": row["name"],
-                    "title": row["name"],  # Use name as title
-                    "description": "",  # Documents don't have description in schema
-                    "filePath": row["file_path"],
-                    "type": row["type"],
-                    "classified": row["classified"],
-                    "fileId": str(row["file_id"]) if row["file_id"] else None,
-                    "mimeType": row["mime_type"],
-                    "departmentId": str(row["department_id"]),
-                    "fileSize": 0,  # Not in schema, default to 0
-                    "active": row["active"],
-                    "createdAt": row["created_at"].isoformat(),
-                    "updatedAt": row["updated_at"].isoformat(),
-                }
-                for row in scenario_docs_result
-            ]
-
-    # 10. Compute dynamic rubrics for each chat
-    def compute_dynamic_rubric(
-        chat_id: str, grade: dict[str, Any] | None, feedbacks: list[dict[str, Any]]
-    ) -> dict[str, Any] | None:
-        """Compute dynamic rubric for a chat."""
-        if not grade or not standard_groups:
-            return None
-
-        skill_scores = {}
-        skill_feedbacks = {}
-        total_possible_points = 0
-
-        # Group feedbacks by standard group
-        for group_id, group in standard_groups.items():
-            group_standards = standards_by_group.get(group_id, [])
-            if not group_standards:
-                continue
-
-            # Filter feedbacks for this group
-            group_feedback_list = [
-                f
-                for f in feedbacks
-                if any(std["id"] == f["standardId"] for std in group_standards)
-            ]
-
-            if group_feedback_list:
-                group_max_points = group["points"]
-                max_standard_points = max(std["points"] for std in group_standards)
-                avg_score = sum(f["total"] for f in group_feedback_list) / len(
-                    group_feedback_list
-                )
-                normalized_score = round((avg_score / max_standard_points) * 5)
-
-                skill_scores[group["name"]] = normalized_score
-                skill_feedbacks[group["shortName"]] = "; ".join(
-                    f["feedback"] or "" for f in group_feedback_list
-                )
-                total_possible_points += group_max_points
-
-        return {
-            "chatId": chat_id,
-            "score": grade["score"],
-            "passed": grade["passed"],
-            "timeTaken": grade["timeTaken"],
-            "skillScores": skill_scores,
-            "skillFeedbacks": skill_feedbacks,
-            "totalPossiblePoints": total_possible_points,
-        }
-
-    # 11. Build chat objects with all nested data
-    chats = []
-    for chat_row in chats_result:
-        chat_id = str(chat_row["id"])
-        scenario_id = str(chat_row["scenario_id"])
-
-        grade = grades_by_chat.get(chat_id)
-        feedbacks = feedbacks_by_grade.get(grade["id"], []) if grade else []
-        dynamic_rubric = compute_dynamic_rubric(chat_id, grade, feedbacks)
-
-        # Calculate completedAt from grade if available
-        completed_at = None
-        if chat_row["completed"] and grade:
-            # Use grade creation time as completion time (when grading happened)
-            completed_at = grade["createdAt"]
-
-        # Build hints array
-        chat_messages = messages_by_chat.get(chat_id, [])
-        hints_array = []
-        for msg in chat_messages:
-            if msg["type"] == "response" and msg["id"] in hints_by_message:
-                hints_array.append(
-                    {
-                        "messageId": msg["id"],
-                        "hints": hints_by_message[msg["id"]],
-                    }
-                )
-
-        # Compute grading state for TableRubric (which standards achieved/passed)
-        grading_state = None
-        if grade and feedbacks and standard_groups:
-            achieved_standards = {}
-            passed_standards = {}
-
-            for group_id, group in standard_groups.items():
-                group_standards = standards_by_group.get(group_id, [])
-                if not group_standards:
-                    continue
-
-                # Get feedbacks for this group
-                group_feedbacks = [
-                    f
-                    for f in feedbacks
-                    if any(std["id"] == f["standardId"] for std in group_standards)
-                ]
-
-                if group_feedbacks:
-                    # Find highest score in group
-                    max_score = max(f["total"] for f in group_feedbacks)
-                    # Get pass points from the group mapping
-                    group_mapping = rubric_structure_groups_mapping.get(group_id, {})
-                    pass_points = (
-                        group_mapping.get("passPoints", 0) if group_mapping else 0
+                s.standard_group_id,
+                array_agg(s.id::text) as standard_ids,
+                jsonb_agg(
+                    jsonb_build_object(
+                        'id', s.id::text,
+                        'name', s.name,
+                        'points', s.points,
+                        'standardGroupId', s.standard_group_id::text
                     )
-
-                    for feedback in group_feedbacks:
-                        standard_id = feedback["standardId"]
-                        # Standard is achieved if it has the max score in its group
-                        achieved_standards[standard_id] = feedback["total"] == max_score
-                        # Standard is passed if it meets pass points
-                        passed_standards[standard_id] = feedback["total"] >= pass_points
-
-            grading_state = {
-                "achievedStandards": achieved_standards,
-                "passedStandards": passed_standards,
-                "gradeDescription": grade.get("description", ""),
-            }
-
-        chats.append(
-            {
-                "chat": {
-                    "id": chat_id,
-                    "createdAt": chat_row["created_at"].isoformat(),
-                    "updatedAt": chat_row["updated_at"].isoformat(),
-                    "title": chat_row["title"],
-                    "scenarioId": scenario_id,
-                    "attemptId": str(chat_row["attempt_id"]),
-                    "completed": chat_row["completed"],
-                    "completedAt": completed_at,
-                    "traceId": str(chat_row["trace_id"])
-                    if chat_row["trace_id"]
-                    else None,
-                },
-                "scenario": scenarios.get(scenario_id),
-                "messages": chat_messages,
-                "hints": hints_array,
-                "grade": grade,
-                "feedbacks": feedbacks,
-                "dynamicRubric": dynamic_rubric,
-                "gradingState": grading_state,
-            }
+                ) as standards_list
+            FROM standards s
+            WHERE s.standard_group_id IN (SELECT id FROM rubric_standard_groups)
+            GROUP BY s.standard_group_id
+        ),
+        standards_mapping_merged AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    s.id::text,
+                    jsonb_build_object(
+                        'name', s.name,
+                        'description', COALESCE(s.description, ''),
+                        'points', s.points
+                    )
+                ),
+                '{}'::jsonb
+            ) as standards_mapping
+            FROM standards s
+            WHERE s.standard_group_id IN (SELECT id FROM rubric_standard_groups)
+        ),
+        rubric_structure_complete AS (
+            SELECT 
+                CASE 
+                    WHEN EXISTS (SELECT 1 FROM rubric_standard_groups) THEN
+                        jsonb_build_object(
+                            'standardGroups', (
+                                SELECT jsonb_object_agg(rsg.id::text, rsgroup.standard_ids)
+                                FROM rubric_standard_groups rsg
+                                LEFT JOIN rubric_standards_grouped rsgroup ON rsgroup.standard_group_id = rsg.id
+                            ),
+                            'standardGroupsMapping', (
+                                SELECT jsonb_object_agg(
+                                    rsg.id::text,
+                                    jsonb_build_object(
+                                        'name', rsg.name,
+                                        'description', COALESCE(rsg.description, ''),
+                                        'points', rsg.points,
+                                        'passPoints', rsg.pass_points
+                                    )
+                                )
+                                FROM rubric_standard_groups rsg
+                            ),
+                            'standardsMapping', smm.standards_mapping
+                        )
+                    ELSE NULL
+                END as rubric_structure
+            FROM standards_mapping_merged smm
+        ),
+        scenario_documents_data AS (
+            SELECT COALESCE(
+                jsonb_agg(DISTINCT
+                    jsonb_build_object(
+                        'document_id', d.id::text,
+                        'name', d.name,
+                        'type', d.type,
+                        'updatedAt', d.updated_at,
+                        'extension', SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'),
+                        'scenario_ids', COALESCE(
+                            (SELECT array_agg(DISTINCT st.parent_id::text)
+                             FROM scenario_documents sd2
+                             JOIN scenario_tree st ON st.child_id = sd2.scenario_id AND st.parent_id = st.child_id
+                             WHERE sd2.document_id = d.id AND sd2.active = true),
+                            ARRAY[]::text[]
+                        ),
+                        'can_edit', false,
+                        'can_delete', false,
+                        'active', d.active,
+                        'department_id', d.department_id::text,
+                        'file_path', d.file_path,
+                        'mime_type', d.mime_type,
+                        'parameter_item_ids', COALESCE(
+                            (SELECT array_agg(DISTINCT dpi.parameter_item_id::text)
+                             FROM document_parameter_items dpi
+                             WHERE dpi.document_id = d.id AND dpi.active = true),
+                            ARRAY[]::text[]
+                        )
+                    )
+                ),
+                '[]'::jsonb
+            ) as scenario_documents
+            FROM documents d
+            JOIN scenario_documents sd ON sd.document_id = d.id
+            CROSS JOIN scenario_ids_list sil
+            WHERE sd.scenario_id = ANY(sil.scenario_ids) AND d.active = true
+        ),
+        skill_scores_per_chat AS (
+            SELECT 
+                gd.chat_id,
+                rsg.id as group_id,
+                rsg.name as group_name,
+                rsg.short_name,
+                AVG((fb->>'total')::numeric) as avg_score,
+                MAX((std->>'points')::numeric) as max_points,
+                string_agg(COALESCE(fb->>'feedback', ''), '; ') as feedbacks_text
+            FROM grades_data gd
+            LEFT JOIN feedbacks_grouped fg ON fg.grade_id = (gd.grade->>'id')::uuid
+            CROSS JOIN rubric_standard_groups rsg
+            JOIN rubric_standards_grouped rsgroup ON rsgroup.standard_group_id = rsg.id
+            CROSS JOIN LATERAL jsonb_array_elements(rsgroup.standards_list) std
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(fg.feedbacks, '[]'::jsonb)) fb
+            WHERE (fb->>'standardId')::text = (std->>'id')::text
+            GROUP BY gd.chat_id, rsg.id, rsg.name, rsg.short_name
+        ),
+        dynamic_rubric_per_chat AS (
+            SELECT 
+                gd.chat_id,
+                CASE 
+                    WHEN gd.grade IS NOT NULL AND EXISTS (SELECT 1 FROM rubric_standard_groups) THEN
+                        jsonb_build_object(
+                            'chatId', gd.chat_id::text,
+                            'score', (gd.grade->>'score')::numeric,
+                            'passed', (gd.grade->>'passed')::boolean,
+                            'timeTaken', (gd.grade->>'timeTaken')::integer,
+                            'skillScores', COALESCE(
+                                (SELECT jsonb_object_agg(
+                                    group_name,
+                                    ROUND((avg_score / max_points) * 5)
+                                )
+                                FROM skill_scores_per_chat
+                                WHERE chat_id = gd.chat_id),
+                                '{}'::jsonb
+                            ),
+                            'skillFeedbacks', COALESCE(
+                                (SELECT jsonb_object_agg(short_name, feedbacks_text)
+                                FROM skill_scores_per_chat
+                                WHERE chat_id = gd.chat_id),
+                                '{}'::jsonb
+                            ),
+                            'totalPossiblePoints', COALESCE(
+                                (SELECT SUM(points) FROM rubric_standard_groups),
+                                0
+                            )
+                        )
+                    ELSE NULL
+                END as dynamic_rubric
+            FROM grades_data gd
+        ),
+        max_scores_per_group_chat AS (
+            SELECT 
+                gd.chat_id,
+                s.standard_group_id,
+                MAX((fb->>'total')::numeric) as max_score,
+                rsg.pass_points
+            FROM grades_data gd
+            LEFT JOIN feedbacks_grouped fg ON fg.grade_id = (gd.grade->>'id')::uuid
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(fg.feedbacks, '[]'::jsonb)) fb
+            JOIN standards s ON s.id = ((fb->>'standardId')::uuid)
+            JOIN rubric_standard_groups rsg ON rsg.id = s.standard_group_id
+            GROUP BY gd.chat_id, s.standard_group_id, rsg.pass_points
+        ),
+        grading_state_per_chat AS (
+            SELECT 
+                gd.chat_id,
+                CASE 
+                    WHEN gd.grade IS NOT NULL AND fg.feedbacks IS NOT NULL 
+                         AND EXISTS (SELECT 1 FROM rubric_standard_groups) THEN
+                        jsonb_build_object(
+                            'achievedStandards', COALESCE(
+                                (SELECT jsonb_object_agg(
+                                    (fb->>'standardId')::text,
+                                    (fb->>'total')::numeric = mspgc.max_score
+                                )
+                                FROM jsonb_array_elements(fg.feedbacks) fb
+                                JOIN standards s ON s.id = ((fb->>'standardId')::uuid)
+                                LEFT JOIN max_scores_per_group_chat mspgc 
+                                    ON mspgc.chat_id = gd.chat_id 
+                                    AND mspgc.standard_group_id = s.standard_group_id),
+                                '{}'::jsonb
+                            ),
+                            'passedStandards', COALESCE(
+                                (SELECT jsonb_object_agg(
+                                    (fb->>'standardId')::text,
+                                    (fb->>'total')::numeric >= mspgc.pass_points
+                                )
+                                FROM jsonb_array_elements(fg.feedbacks) fb
+                                JOIN standards s ON s.id = ((fb->>'standardId')::uuid)
+                                LEFT JOIN max_scores_per_group_chat mspgc 
+                                    ON mspgc.chat_id = gd.chat_id 
+                                    AND mspgc.standard_group_id = s.standard_group_id),
+                                '{}'::jsonb
+                            ),
+                            'gradeDescription', COALESCE(gd.grade->>'description', '')
+                        )
+                    ELSE NULL
+                END as grading_state
+            FROM grades_data gd
+            LEFT JOIN feedbacks_grouped fg ON fg.grade_id = (gd.grade->>'id')::uuid
+        ),
+        chats_with_all_data AS (
+            SELECT 
+                cb.id as chat_id,
+                jsonb_build_object(
+                    'chat', jsonb_build_object(
+                        'id', cb.id::text,
+                        'createdAt', cb.created_at,
+                        'updatedAt', cb.updated_at,
+                        'title', cb.title,
+                        'scenarioId', cb.scenario_id::text,
+                        'attemptId', cb.attempt_id::text,
+                        'completed', cb.completed,
+                        'completedAt', CASE 
+                            WHEN cb.completed AND gd.grade IS NOT NULL 
+                            THEN gd.grade->>'createdAt'
+                            ELSE NULL 
+                        END,
+                        'traceId', CASE WHEN cb.trace_id IS NOT NULL THEN cb.trace_id::text ELSE NULL END
+                    ),
+                    'scenario', sd.scenario_data,
+                    'messages', COALESCE(mg.messages, '[]'::jsonb),
+                    'hints', COALESCE(hd.hints, '[]'::jsonb),
+                    'grade', gd.grade,
+                    'feedbacks', COALESCE(fg.feedbacks, '[]'::jsonb),
+                    'dynamicRubric', drpc.dynamic_rubric,
+                    'gradingState', gspc.grading_state
+                ) as chat_data,
+                cb.completed,
+                cb.created_at,
+                gd.grade
+            FROM chats_base cb
+            LEFT JOIN scenarios_data sd ON sd.id = cb.scenario_id
+            LEFT JOIN messages_grouped mg ON mg.chat_id = cb.id
+            LEFT JOIN hints_data hd ON hd.chat_id = cb.id
+            LEFT JOIN grades_data gd ON gd.chat_id = cb.id
+            LEFT JOIN feedbacks_grouped fg ON fg.grade_id = (gd.grade->>'id')::uuid
+            LEFT JOIN dynamic_rubric_per_chat drpc ON drpc.chat_id = cb.id
+            LEFT JOIN grading_state_per_chat gspc ON gspc.chat_id = cb.id
+        ),
+        aggregated_results_data AS (
+            SELECT 
+                CASE 
+                    WHEN COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL) > 0 THEN
+                        jsonb_build_object(
+                            'totalChats', COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL),
+                            'passedChats', COUNT(*) FILTER (WHERE (grade->>'passed')::boolean = true),
+                            'averageScore', ROUND(
+                                AVG((grade->>'score')::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL),
+                                1
+                            ),
+                            'totalTime', SUM((grade->>'timeTaken')::integer) FILTER (WHERE completed = true AND grade IS NOT NULL),
+                            'overallPassed', BOOL_AND((grade->>'passed')::boolean) FILTER (WHERE completed = true AND grade IS NOT NULL)
+                        )
+                    ELSE NULL
+                END as aggregated_results
+            FROM chats_with_all_data
+        ),
+        elapsed_time_calc AS (
+            SELECT 
+                COALESCE(
+                    SUM(
+                        CASE 
+                            WHEN cwad.completed AND cwad.grade IS NOT NULL THEN
+                                (cwad.grade->>'timeTaken')::integer
+                            WHEN cwad.completed THEN
+                                EXTRACT(EPOCH FROM (
+                                    (cwad.grade->>'createdAt')::timestamp - cwad.created_at
+                                ))::integer
+                            ELSE
+                                EXTRACT(EPOCH FROM (NOW() - cwad.created_at))::integer
+                        END
+                    ),
+                    0
+                ) as total_elapsed
+            FROM chats_with_all_data cwad
+        ),
+        timer_data AS (
+            SELECT 
+                jsonb_build_object(
+                    'elapsed', etc.total_elapsed,
+                    'remaining', CASE 
+                        WHEN ab.infinite_mode AND ab.sim_time_limit IS NOT NULL THEN
+                            GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0)
+                        WHEN ab.sim_time_limit IS NOT NULL THEN
+                            (ab.sim_time_limit * 60) - etc.total_elapsed
+                        ELSE NULL
+                    END,
+                    'expired', CASE 
+                        WHEN ab.infinite_mode AND ab.sim_time_limit IS NOT NULL THEN
+                            (GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) <= 0)
+                        ELSE false
+                    END
+                ) as timer
+            FROM attempt_base ab
+            CROSS JOIN elapsed_time_calc etc
+        ),
+        metadata_computed AS (
+            SELECT 
+                COALESCE(
+                    (SELECT ROW_NUMBER() OVER (ORDER BY created_at) - 1
+                     FROM chats_with_all_data
+                     WHERE completed = false
+                     LIMIT 1),
+                    0
+                ) as current_chat_index,
+                COUNT(*)::integer as expected_chat_count,
+                COUNT(*) = 1 as is_single_chat_attempt,
+                COALESCE(
+                    (SELECT ROW_NUMBER() OVER (ORDER BY created_at) - 1
+                     FROM chats_with_all_data
+                     WHERE completed = false
+                     LIMIT 1),
+                    0
+                ) = COUNT(*) - 1 as is_last_attempt,
+                BOOL_AND(completed) as show_results
+            FROM chats_with_all_data
         )
+        SELECT 
+            jsonb_build_object(
+                'id', ab.id::text,
+                'createdAt', ab.created_at,
+                'simulationId', ab.simulation_id::text,
+                'infiniteMode', ab.infinite_mode,
+                'archived', ab.archived
+            ) as attempt,
+            jsonb_build_object(
+                'id', ab.sim_id::text,
+                'title', ab.sim_title,
+                'description', ab.sim_description,
+                'departmentId', ab.sim_department_id::text,
+                'active', ab.sim_active,
+                'defaultSimulation', ab.sim_default_simulation,
+                'practiceSimulation', ab.sim_practice_simulation,
+                'hintsEnabled', ab.sim_hints_enabled,
+                'inputGuardrailActive', ab.sim_input_guardrail_active,
+                'outputGuardrailActive', ab.sim_output_guardrail_active,
+                'imageInputActive', ab.sim_image_input_active,
+                'timeLimit', ab.sim_time_limit,
+                'rubricId', CASE WHEN ab.sim_rubric_id IS NOT NULL THEN ab.sim_rubric_id::text ELSE NULL END,
+                'createdAt', ab.sim_created_at,
+                'updatedAt', ab.sim_updated_at
+            ) as simulation,
+            apd.attempt_profiles as "attemptProfiles",
+            COALESCE(
+                (SELECT jsonb_agg(chat_data ORDER BY created_at) FROM chats_with_all_data),
+                '[]'::jsonb
+            ) as chats,
+            sdd.scenario_documents as "scenarioDocuments",
+            ard.aggregated_results as "aggregatedResults",
+            td.timer,
+            md.current_chat_index as "currentChatIndex",
+            md.expected_chat_count as "expectedChatCount",
+            md.is_single_chat_attempt as "isSingleChatAttempt",
+            md.is_last_attempt as "isLastAttempt",
+            md.show_results as "showResults",
+            NOT (COALESCE((td.timer->>'expired')::boolean, false) OR md.show_results) as "isActive",
+            rsc.rubric_structure as "rubricStructure"
+        FROM attempt_base ab
+        CROSS JOIN attempt_profiles_data apd
+        CROSS JOIN scenario_documents_data sdd
+        CROSS JOIN aggregated_results_data ard
+        CROSS JOIN timer_data td
+        CROSS JOIN metadata_computed md
+        LEFT JOIN rubric_structure_complete rsc ON true
+        """
+        return (query, [attempt_id])
 
-    # 12. Compute aggregated results
-    completed_rubrics = [
-        c["dynamicRubric"]
-        for c in chats
-        if isinstance(c.get("chat"), dict)
-        and c["chat"].get("completed")  # type: ignore
-        and c.get("dynamicRubric")
-    ]
-    aggregated_results = None
-    if completed_rubrics:
-        total_score = sum(r["score"] for r in completed_rubrics if isinstance(r, dict))  # type: ignore
-        average_score = total_score / len(completed_rubrics)
-        passed_chats = sum(
-            1 for r in completed_rubrics if isinstance(r, dict) and r.get("passed")
-        )
-        total_time = sum(
-            r["timeTaken"] for r in completed_rubrics if isinstance(r, dict)
-        )  # type: ignore
 
-        aggregated_results = {
-            "totalChats": len(completed_rubrics),
-            "passedChats": passed_chats,
-            "averageScore": round(average_score * 10) / 10,
-            "totalTime": total_time,
-            "overallPassed": passed_chats == len(completed_rubrics),
-        }
-
-    # 13. Compute timer state
-    current_time = datetime.now(UTC)
-    attempt_start_time = attempt_result["created_at"]
-
-    # Calculate total elapsed time
-    total_elapsed_seconds = 0
-    for chat in chats:
-        chat_data = chat.get("chat")
-        if not isinstance(chat_data, dict):
-            continue
-        created_at_str = chat_data.get("createdAt")
-        if not isinstance(created_at_str, str):
-            continue
-        chat_start = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
-        
-        # Use grade's time_taken if available (most accurate)
-        chat_grade = chat.get("grade")
-        if chat_data.get("completed") and chat_grade and isinstance(chat_grade, dict):
-            time_taken = chat_grade.get("timeTaken", 0)
-            total_elapsed_seconds += time_taken
-        elif chat_data.get("completed") and chat_data.get("completedAt"):
-            # Fallback to calculated time if no grade but has completedAt
-            completed_at_str = chat_data.get("completedAt")
-            if isinstance(completed_at_str, str):
-                chat_end = datetime.fromisoformat(
-                    completed_at_str.replace("Z", "+00:00")
-                )
-                chat_duration = int((chat_end - chat_start).total_seconds())
-                total_elapsed_seconds += chat_duration
-        else:
-            # Current active chat - calculate elapsed time
-            chat_duration = int((current_time - chat_start).total_seconds())
-            total_elapsed_seconds += chat_duration
-
-    # Calculate remaining time
-    time_remaining = None
-    expired = False
-    if attempt["infiniteMode"]:
-        # Infinite mode: use simulation timeLimit if available, otherwise count up only
-        if simulation["timeLimit"]:
-            total_time_seconds = simulation["timeLimit"] * 60
-            time_remaining = max(total_time_seconds - total_elapsed_seconds, 0)
-            expired = time_remaining <= 0
-        # else: no limit, count up only
-    else:
-        if simulation["timeLimit"]:
-            total_time_seconds = simulation["timeLimit"] * 60
-            time_remaining = total_time_seconds - total_elapsed_seconds
-            # Don't set expired for normal mode (allow negative display)
-
-    timer = {
-        "elapsed": total_elapsed_seconds,
-        "remaining": time_remaining,
-        "expired": expired,
-    }
-
-    # 14. Compute metadata
-    current_chat_index = 0
-    for i, chat in enumerate(chats):
-        if not chat["chat"]["completed"]:  # type: ignore
-            current_chat_index = i
-            break
-
-    expected_chat_count = len(chats)
-    is_single_chat_attempt = expected_chat_count == 1
-    is_last_attempt = current_chat_index == expected_chat_count - 1
-    show_results = all(c["chat"]["completed"] for c in chats) if chats else False  # type: ignore
-    is_active = not (expired or show_results)
-
-    # Build rubric structure for TableRubric component
-    rubric_structure = None
-    if rubric_structure_groups:
-        rubric_structure = {
-            "standardGroups": rubric_structure_groups,
-            "standardGroupsMapping": rubric_structure_groups_mapping,
-            "standardsMapping": rubric_structure_standards_mapping,
-        }
-
+async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
+    """Get complete attempt data with all related entities and computed values.
+    
+    Now uses a single optimized SQL query instead of 12+ sequential queries.
+    """
+    import json
+    
+    queries = SimulationQueries()
+    query, params = queries.get_attempt_full_data_complete(attempt_id)
+    
+    result = await conn.fetchrow(query, *params)
+    
+    if not result:
+        raise ValueError(f"Attempt {attempt_id} not found")
+    
+    # Parse JSONB fields from strings to Python objects
+    # asyncpg returns JSONB as serialized JSON strings, so we need to parse them
     return {
-        "attempt": attempt,
-        "simulation": simulation,
-        "attemptProfiles": attempt_profiles,
-        "chats": chats,
-        "scenarioDocuments": scenario_documents,
-        "departmentDocuments": department_documents,
-        "aggregatedResults": aggregated_results,
-        "timer": timer,
-        "currentChatIndex": current_chat_index,
-        "expectedChatCount": expected_chat_count,
-        "isSingleChatAttempt": is_single_chat_attempt,
-        "isLastAttempt": is_last_attempt,
-        "showResults": show_results,
-        "isActive": is_active,
-        "rubricStructure": rubric_structure,
+        "attempt": json.loads(result["attempt"]) if isinstance(result["attempt"], str) else result["attempt"],
+        "simulation": json.loads(result["simulation"]) if isinstance(result["simulation"], str) else result["simulation"],
+        "attemptProfiles": json.loads(result["attemptProfiles"]) if isinstance(result["attemptProfiles"], str) else result["attemptProfiles"],
+        "chats": json.loads(result["chats"]) if isinstance(result["chats"], str) else result["chats"],
+        "scenarioDocuments": json.loads(result["scenarioDocuments"]) if isinstance(result["scenarioDocuments"], str) else result["scenarioDocuments"],
+        "aggregatedResults": json.loads(result["aggregatedResults"]) if result["aggregatedResults"] and isinstance(result["aggregatedResults"], str) else result["aggregatedResults"],
+        "timer": json.loads(result["timer"]) if isinstance(result["timer"], str) else result["timer"],
+        "currentChatIndex": result["currentChatIndex"],
+        "expectedChatCount": result["expectedChatCount"],
+        "isSingleChatAttempt": result["isSingleChatAttempt"],
+        "isLastAttempt": result["isLastAttempt"],
+        "showResults": result["showResults"],
+        "isActive": result["isActive"],
+        "rubricStructure": json.loads(result["rubricStructure"]) if result["rubricStructure"] and isinstance(result["rubricStructure"], str) else result["rubricStructure"],
     }

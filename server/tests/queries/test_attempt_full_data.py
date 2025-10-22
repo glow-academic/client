@@ -28,7 +28,6 @@ async def test_get_attempt_full_data_returns_complete_structure(
     assert "attemptProfiles" in result
     assert "chats" in result
     assert "scenarioDocuments" in result
-    assert "departmentDocuments" in result
     assert "timer" in result
     assert "rubricStructure" in result
     

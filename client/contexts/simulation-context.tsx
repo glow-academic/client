@@ -61,8 +61,7 @@ export interface SimulationContextType {
   attemptId: string;
   attempt: AttemptFullResponse["attempt"] | null;
   simulation: AttemptFullResponse["simulation"] | null;
-  scenario: ScenarioItem | null;
-  documents: DocumentItem[];
+  scenario: AttemptFullResponse["chats"][number]["scenario"];
   scenarioDocuments: DocumentItem[];
 
   // Attempt profiles for ownership checks
@@ -119,15 +118,7 @@ export interface SimulationContextType {
   currentMessages: AttemptFullResponse["chats"][number]["messages"];
 
   // Hints (from v2 - hints for current chat)
-  currentChatHints: Array<{
-    messageId: string;
-    hints: Array<{
-      id: string;
-      simulationMessageId: string;
-      hint: string;
-      createdAt: string;
-    }>;
-  }>;
+  currentChatHints: AttemptFullResponse["chats"][number]["hints"];
 
   // Results and grading
   currentDynamicRubric: DynamicRubric | null;
@@ -264,7 +255,6 @@ export function SimulationProvider({
   }, [attemptData, currentChat]);
 
   const scenarioDocuments = attemptData?.scenarioDocuments || [];
-  const documents = attemptData?.departmentDocuments || [];
 
   // Attempt profiles from v2
   const attemptProfiles = useMemo(
@@ -964,8 +954,7 @@ export function SimulationProvider({
     attemptId,
     attempt: attempt,
     simulation: simulation,
-    scenario: scenario as ScenarioItem | null,
-    documents: documents as DocumentItem[] | [],
+    scenario: scenario,
     scenarioDocuments: scenarioDocuments as DocumentItem[] | [],
 
     // Attempt profiles (from v2)

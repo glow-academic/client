@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { DocumentItemSchema } from "./documents";
 
 export const BulkArchiveAttemptsRequestSchema = z.object({
   attemptIds: z.array(z.string()),
@@ -122,9 +123,9 @@ export const AttemptFullResponseSchema = z.object({
           messageId: z.string(),
           hints: z.array(
             z.object({
-              id: z.string(),
               simulationMessageId: z.string(),
               hint: z.string(),
+              idx: z.number(),
               createdAt: z.string(),
             })
           ),
@@ -172,58 +173,7 @@ export const AttemptFullResponseSchema = z.object({
         .nullable(),
     })
   ),
-  scenarioDocuments: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      title: z.string(),
-      description: z.string(),
-      mimeType: z.string(),
-      departmentId: z.string(),
-      fileSize: z.number(),
-      active: z.boolean(),
-      createdAt: z.string(),
-      updatedAt: z.string(),
-      filePath: z.string(),
-      type: z.enum([
-        "homework",
-        "project",
-        "quiz",
-        "midterm",
-        "lab",
-        "lecture",
-        "syllabus",
-      ]),
-      classified: z.boolean(),
-      fileId: z.string().nullable(),
-    })
-  ),
-  departmentDocuments: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      title: z.string(),
-      description: z.string(),
-      mimeType: z.string(),
-      departmentId: z.string(),
-      fileSize: z.number(),
-      active: z.boolean(),
-      createdAt: z.string(),
-      updatedAt: z.string(),
-      filePath: z.string(),
-      type: z.enum([
-        "homework",
-        "project",
-        "quiz",
-        "midterm",
-        "lab",
-        "lecture",
-        "syllabus",
-      ]),
-      classified: z.boolean(),
-      fileId: z.string().nullable(),
-    })
-  ),
+  scenarioDocuments: z.array(DocumentItemSchema),
   aggregatedResults: z
     .object({
       totalChats: z.number(),
