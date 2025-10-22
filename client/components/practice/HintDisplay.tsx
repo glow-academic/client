@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Copy, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
+import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
+
 interface HintDisplayProps {
-  hints: Array<{ id: string; hint: string }>;
+  hints: AttemptFullResponse["chats"][number]["hints"][number]["hints"];
   isLoading?: boolean;
   onSelectHint: (hint: string) => void;
   onClose?: () => void;
@@ -52,7 +54,7 @@ export default function HintDisplay({
         ) : hints.length > 0 ? (
           hints.map((hintObj) => (
             <div
-              key={hintObj.id}
+              key={hintObj.idx}
               className="flex flex-col p-3 border rounded-md bg-gray-50 dark:bg-gray-700"
             >
               <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">

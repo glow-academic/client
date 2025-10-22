@@ -15,11 +15,13 @@ import { useProfile } from "@/contexts/profile-context";
 import { useAgentsList, useDuplicateAgent } from "@/lib/api/v2/hooks/agents";
 import { useMemo } from "react";
 import { AgentsDataTable } from "./AgentsDataTable";
+import { toast } from "sonner";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export default function Agents() {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
-
+  const log = useLogger();  
   // V2 API hook
   const profileId = effectiveProfile?.id || "";
   const { data: agentsData, isLoading } = useAgentsList(profileId, !!profileId);
@@ -68,13 +70,16 @@ export default function Agents() {
     router.push(`/system/agents/a/${id}`);
   };
 
-  const handleDuplicate = async (id: string, name: string) => {
+  const handleDuplicate = async (id: string) => {
     try {
       await duplicateMutation.mutateAsync({ agentId: id });
       // Optional: show success toast
-    } catch (error) {
-      console.error("Failed to duplicate agent:", error);
-      // Optional: show error toast
+    } catch {
+      log.error("agent.duplicate.failed", {
+        error: new Error("Failed to duplicate agent"),
+        context: { component: "Agents", function: "handleDuplicate" },
+      });
+      toast.error("Failed to duplicate agent");
     }
   };
 
@@ -117,7 +122,7 @@ export default function Agents() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleDuplicate(agent.agent_id, agent.name)}
+                onClick={() => handleDuplicate(agent.agent_id)}
                 disabled={duplicateMutation.isPending}
               >
                 <Copy className="h-4 w-4" />

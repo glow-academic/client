@@ -170,7 +170,7 @@ export function StaffFilterDialog({
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           <span className="text-sm">
-                            {formatLastActive(staff.lastActive)}
+                            {formatLastActive(staff.last_active)}
                           </span>
                         </div>
                       </TableCell>
