@@ -967,10 +967,10 @@ class ScenarioQueries:
     def insert_scenario_tree_edge(self) -> str:
         """Build query to insert scenario tree edge.
 
-        Params order: parent_scenario_id, child_scenario_id, active
+        Params order: parent_id, child_id, active
         """
         return """
-        INSERT INTO scenario_tree (parent_scenario_id, child_scenario_id, active)
+        INSERT INTO scenario_tree (parent_id, child_id, active)
         VALUES ($1, $2, $3)
         """
 
@@ -1219,9 +1219,9 @@ class ScenarioQueries:
             s.default_scenario,
             s.department_id,
             COALESCE(s.generated, false) as generated,
-            st.parent_scenario_id
+            st.parent_id::text as parent_scenario_id
         FROM scenarios s
-        LEFT JOIN scenario_tree st ON st.child_scenario_id = s.id
+        LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
         WHERE s.id = $1
         """
         return (query, [scenario_id])

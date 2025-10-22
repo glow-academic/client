@@ -6,15 +6,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from sqlmodel import Session
 
 from app.utils.text_helpers import *  # type: ignore
 
-
-@pytest.fixture
-def mock_session() -> MagicMock:
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 
 
 class TestNormalize_Text:

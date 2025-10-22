@@ -132,8 +132,7 @@ Tests for app.routes.{module_name}
 """
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
-from sqlmodel import Session
+from unittest.mock import patch
 from uuid import uuid4
 from app.routes.{module_name} import router
 
@@ -143,10 +142,6 @@ def client():
     from app.main import app
     return TestClient(app)
 
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 '''
     for func_name in functions:
         test_content += generate_single_route_test_class(func_name)
@@ -160,15 +155,10 @@ def generate_service_test(module_path: str, functions: list[str]) -> str:
 Tests for app.{import_path}
 """
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from sqlmodel import Session
+from unittest.mock import patch, AsyncMock
 from uuid import uuid4
 from app.{import_path} import *
 
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
 '''
     for func_name in functions:
         test_content += generate_single_service_test_class(func_name)
@@ -183,13 +173,9 @@ Pytest configuration and shared fixtures.
 """
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, create_engine, SQLModel
-from sqlmodel.pool import StaticPool
-from unittest.mock import MagicMock
 import os
 
 from app.main import app
-from app.db import get_session
 
 @pytest.fixture(scope="session")
 def test_engine():
@@ -212,10 +198,6 @@ def client(test_session):
     app.dependency_overrides.clear()
 
 @pytest.fixture
-def mock_session():
-    return MagicMock(spec=Session)
-
-@pytest.fixture
 def sample_uuid():
     from uuid import uuid4
     return str(uuid4())
@@ -230,7 +212,7 @@ def pytest_configure(config):
 # --- Main Function with Updated Logic ---
 
 
-def main():
+def main() -> None:
     """Main function to generate/update tests and remove orphans."""
     app_dir = Path("app")
     tests_dir = Path("tests")
