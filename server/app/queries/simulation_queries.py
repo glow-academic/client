@@ -1796,18 +1796,18 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         scenarios_result = await conn.fetch(
             """
             SELECT 
-                id,
-                name,
-                problem_statement,
-                department_id,
-                active,
-                persona_id,
-                created_at,
-                updated_at,
-                generated,
-                default_scenario
-            FROM scenarios
-            WHERE id = ANY($1::uuid[])
+                s.id,
+                s.name,
+                s.problem_statement,
+                s.department_id,
+                s.active,
+                s.created_at,
+                s.updated_at,
+                s.generated,
+                s.default_scenario,
+                (SELECT persona_id FROM scenario_personas WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
+            FROM scenarios s
+            WHERE s.id = ANY($1::uuid[])
         """,
             scenario_ids,
         )
@@ -2211,6 +2211,12 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         feedbacks = feedbacks_by_grade.get(grade["id"], []) if grade else []
         dynamic_rubric = compute_dynamic_rubric(chat_id, grade, feedbacks)
 
+        # Calculate completedAt from grade if available
+        completed_at = None
+        if chat_row["completed"] and grade:
+            # Use grade creation time as completion time (when grading happened)
+            completed_at = grade["createdAt"]
+
         # Build hints array
         chat_messages = messages_by_chat.get(chat_id, [])
         hints_array = []
@@ -2273,6 +2279,7 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
                     "scenarioId": scenario_id,
                     "attemptId": str(chat_row["attempt_id"]),
                     "completed": chat_row["completed"],
+                    "completedAt": completed_at,
                     "traceId": str(chat_row["trace_id"])
                     if chat_row["trace_id"]
                     else None,
@@ -2328,7 +2335,14 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         if not isinstance(created_at_str, str):
             continue
         chat_start = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
-        if chat_data.get("completed") and chat_data.get("completedAt"):
+        
+        # Use grade's time_taken if available (most accurate)
+        chat_grade = chat.get("grade")
+        if chat_data.get("completed") and chat_grade and isinstance(chat_grade, dict):
+            time_taken = chat_grade.get("timeTaken", 0)
+            total_elapsed_seconds += time_taken
+        elif chat_data.get("completed") and chat_data.get("completedAt"):
+            # Fallback to calculated time if no grade but has completedAt
             completed_at_str = chat_data.get("completedAt")
             if isinstance(completed_at_str, str):
                 chat_end = datetime.fromisoformat(
@@ -2337,7 +2351,7 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
                 chat_duration = int((chat_end - chat_start).total_seconds())
                 total_elapsed_seconds += chat_duration
         else:
-            # Current active chat
+            # Current active chat - calculate elapsed time
             chat_duration = int((current_time - chat_start).total_seconds())
             total_elapsed_seconds += chat_duration
 
