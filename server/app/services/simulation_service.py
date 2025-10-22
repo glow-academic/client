@@ -989,14 +989,36 @@ class SimulationService(BaseService):
                 profile_id=attempt_profile_id,
             )
             
-            # Update scenario with generated content
-            scenario["title"] = name
-            scenario["scenario"] = description
+            # Create new scenario with generated content
+            from app.queries.scenario_queries import ScenarioQueries
+            scenario_queries = ScenarioQueries()
+            query = scenario_queries.insert_scenario_variant()
+            new_scenario = await self.conn.fetchrow(
+                query,
+                name,  # scenario name
+                description,  # problem_statement
+                department_id,  # department_id
+                True,  # generated = True
+                True,  # active = True
+                False,  # default_scenario = False
+            )
+            
+            # Update scenario object with new scenario data
+            scenario["id"] = str(new_scenario["id"])
+            scenario["name"] = name
+            scenario["problem_statement"] = description
+            scenario["generated"] = True
+            scenario["default_scenario"] = False
+            
             chat_title = name
             
-            # Update chat title in database
+            # Update chat title and scenario_id in database
             query = self.queries.update_chat_title()
             await self.conn.execute(query, chat_id, name)
+            
+            # Update chat to reference the new scenario
+            query = "UPDATE simulation_chats SET scenario_id = $1 WHERE id = $2"
+            await self.conn.execute(query, new_scenario["id"], chat_id)
         else:
             # Use existing scenario data
             chat_title = scenario_name
