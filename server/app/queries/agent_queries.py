@@ -804,7 +804,7 @@ class AgentQueries:
                 sc.title,
                 sc.trace_id,
                 sc.created_at,
-                sc.completed_at
+                sc.completed
             FROM simulation_chats sc
             WHERE sc.id = $1
         ),
@@ -834,7 +834,7 @@ class AgentQueries:
             ci.title,
             ci.trace_id,
             ci.created_at,
-            ci.completed_at,
+            ci.completed,
             
             -- Scenario data
             sc.problem_statement,
@@ -937,7 +937,7 @@ class AgentQueries:
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN attempt_profiles ap ON ap.attempt_id = ai.id AND ap.active = true
-        GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created_at, ci.completed_at,
+        GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created_at, ci.completed,
                  sc.problem_statement,
                  ai.id, ai.simulation_id, ai.total_chats,
                  si.id, si.rubric_id, si.department_id, si.time_limit,

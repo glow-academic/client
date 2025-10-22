@@ -693,7 +693,7 @@ export function SimulationProvider({
     };
 
     const handleSimulationError = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChatIdRef.current) {
+      if (event.detail?.chatId === currentChatIdRef.current) {
         setIsSendingMessage(false);
         setIsStoppingMessage(false);
         setEndChatLoading(false);

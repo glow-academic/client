@@ -1135,6 +1135,10 @@ class SimulationService(BaseService):
         query, params = self.queries.get_existing_chats_for_attempt(attempt_id)
         existing_chats = await self.conn.fetch(query, *params)
         next_index = len(existing_chats)
+        
+        # Debug: Check if existing_chats have 'id' field
+        if existing_chats and "id" not in existing_chats[0]:
+            raise ValueError(f"Existing chats missing 'id' field: {existing_chats[0]}")
 
         # Create next chat if not end_all
         next_chat_id = chat_id
@@ -1158,6 +1162,8 @@ class SimulationService(BaseService):
                 )
                 if created_next_chat is None:
                     raise ValueError("Next scenario not found")
+                if "id" not in created_next_chat:
+                    raise ValueError(f"Created chat missing 'id' field: {created_next_chat}")
                 next_chat_id = created_next_chat["id"]
 
         # Grade the just-completed chat if it has at least 2 messages
@@ -1338,7 +1344,7 @@ class SimulationService(BaseService):
             or scenario.get("problem_statement") == ""
         ):
             # Use optimized query to get all scenario metadata in one query
-            query, params = self.queries.get_scenario_full_metadata(str(scenario["id"]))
+            query, params = self.queries.get_scenario_full_metadata(scenario_id)
             scenario_metadata = await self.conn.fetchrow(query, *params)
 
             doc_ids = (
@@ -1361,7 +1367,7 @@ class SimulationService(BaseService):
             )
 
             name, description, objectives, trace_id = await run_scenario_agent(
-                department_id=scenario["department_id"],
+                department_id=uuid_module.UUID(department_id),
                 persona_id=scenario_persona_id,
                 document_ids=doc_ids,
                 parameter_item_ids=param_ids,
@@ -1382,7 +1388,7 @@ class SimulationService(BaseService):
             query,
             datetime.now(UTC),
             chat_title,
-            scenario["id"],
+            scenario_id,
             attempt_id,
             mark_completed,
             trace_id,

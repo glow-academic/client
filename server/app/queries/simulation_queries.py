@@ -152,6 +152,7 @@ class SimulationQueries:
         """Build query to get simulation by ID."""
         query = """
         SELECT 
+            id,
             title,
             description,
             department_id,
