@@ -759,7 +759,7 @@ class ScenarioQueries:
         SELECT 
             s.id as scenario_id,
             s.name,
-            s.problem_statement as description,
+            sps.problem_statement as description,
             sp.persona_id,
             COALESCE(
                 (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
@@ -768,6 +768,7 @@ class ScenarioQueries:
                 ARRAY[]::uuid[]
             ) as parameter_item_ids
         FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
         WHERE s.id = ANY($1)
         """
@@ -798,7 +799,7 @@ class ScenarioQueries:
             SELECT 
                 s.id as scenario_id,
                 s.name,
-                s.problem_statement as description,
+                sps.problem_statement as description,
                 sp.persona_id,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
@@ -807,6 +808,7 @@ class ScenarioQueries:
                     ARRAY[]::uuid[]
                 ) as parameter_item_ids
             FROM scenarios s
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             WHERE s.id = ANY($1)
         ),
@@ -959,11 +961,22 @@ class ScenarioQueries:
     def insert_scenario_variant(self) -> str:
         """Build query to insert a scenario variant.
 
-        Params order: name, problem_statement, department_id, generated, active, default_scenario
+        Params order: name, department_id, generated, active, default_scenario
         """
         return """
-        INSERT INTO scenarios (name, problem_statement, department_id, generated, active, default_scenario)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO scenarios (name, department_id, generated, active, default_scenario)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *
+        """
+
+    def insert_scenario_problem_statement(self) -> str:
+        """Build query to insert a scenario problem statement.
+
+        Params order: scenario_id, problem_statement, active
+        """
+        return """
+        INSERT INTO scenario_problem_statements (scenario_id, problem_statement, active)
+        VALUES ($1, $2, $3)
         RETURNING *
         """
 
@@ -1091,7 +1104,7 @@ class ScenarioQueries:
         """
         query = """
         SELECT 
-            s.id, s.name, s.problem_statement, s.default_scenario, 
+            s.id, s.name, sps.problem_statement, s.default_scenario, 
             s.created_at, s.updated_at,
             -- Simulations array (json_agg with filtering)
             COALESCE(
@@ -1108,10 +1121,11 @@ class ScenarioQueries:
             (SELECT persona_id FROM scenario_personas 
              WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
         FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         LEFT JOIN simulation_scenarios ss ON ss.scenario_id = s.id
         LEFT JOIN simulations sim ON sim.id = ss.simulation_id
         WHERE s.id = $1
-        GROUP BY s.id, s.name, s.problem_statement, s.default_scenario, 
+        GROUP BY s.id, s.name, sps.problem_statement, s.default_scenario, 
                  s.created_at, s.updated_at
         """
         return (query, [scenario_id])
@@ -1218,13 +1232,14 @@ class ScenarioQueries:
         query = """
         SELECT 
             s.name,
-            s.problem_statement,
+            sps.problem_statement,
             s.active,
             s.default_scenario,
             s.department_id,
             COALESCE(s.generated, false) as generated,
             st.parent_id::text as parent_scenario_id
         FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
         WHERE s.id = $1
         """

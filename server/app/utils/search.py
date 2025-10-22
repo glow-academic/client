@@ -15,7 +15,7 @@ from typing import Any
 _WS_RE = re.compile(r"\s+")
 
 
-def normalize_text(s: str) -> str:
+def normalize_text(s: str | None) -> str:
     """
     Lowercase, strip accents, collapse whitespace.
 
@@ -25,12 +25,13 @@ def normalize_text(s: str) -> str:
     Returns:
         Normalized text string
     """
+    s = s or ""
     s = unicodedata.normalize("NFKD", s)
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     return _WS_RE.sub(" ", s.strip().lower())
 
 
-def tokenize(s: str) -> list[str]:
+def tokenize(s: str | None) -> list[str]:
     """
     Split normalized text into tokens.
 

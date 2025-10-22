@@ -996,11 +996,18 @@ class SimulationService(BaseService):
             new_scenario = await self.conn.fetchrow(
                 query,
                 name,  # scenario name
-                description,  # problem_statement
                 department_id,  # department_id
                 True,  # generated = True
                 True,  # active = True
                 False,  # default_scenario = False
+            )
+            
+            # Insert problem statement
+            await self.conn.fetchrow(
+                scenario_queries.insert_scenario_problem_statement(),
+                new_scenario["id"],
+                description,  # problem_statement
+                True,  # active = True
             )
             
             # Update scenario object with new scenario data

@@ -465,15 +465,26 @@ class SimulationQueries:
         """
         query = """
         SELECT 
-            s.*,
+            s.id,
+            s.name,
+            sps.problem_statement,
+            s.active,
+            s.default_scenario,
+            s.generated,
+            s.department_id,
+            s.created_at,
+            s.updated_at,
+            s.use_documents,
             COALESCE(ARRAY_AGG(DISTINCT sd.document_id) FILTER (WHERE sd.document_id IS NOT NULL), ARRAY[]::uuid[]) as document_ids,
             COALESCE(ARRAY_AGG(DISTINCT spi.parameter_item_id) FILTER (WHERE spi.parameter_item_id IS NOT NULL), ARRAY[]::uuid[]) as parameter_item_ids,
             (SELECT persona_id FROM scenario_personas WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
         FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
         LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
         WHERE s.id = $1
-        GROUP BY s.id
+        GROUP BY s.id, s.name, sps.problem_statement, s.active, s.default_scenario, 
+                 s.generated, s.department_id, s.created_at, s.updated_at, s.use_documents
         """
         return (query, [scenario_id])
 

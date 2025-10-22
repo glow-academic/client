@@ -77,7 +77,7 @@ class AgentService(BaseService):
                     name=row["name"],
                     description=row["description"],
                     reasoning=row["reasoning"],
-                    temperature=float(row["temperature"]),
+                    temperature=float(row["temperature"]) if row["temperature"] is not None else 0.0,
                     model_id=model_id,
                     updated_at=row["updated_at"].isoformat(),
                     can_edit=row["can_edit"],
@@ -179,7 +179,7 @@ class AgentService(BaseService):
             name=result["name"],
             description=result["description"],
             system_prompt=result["system_prompt"],
-            temperature=float(result["temperature"]),
+            temperature=float(result["temperature"]) if result["temperature"] is not None else 0.0,
             model_id=result["model_id"],
             reasoning=result["reasoning"],
             active=result["active"],
@@ -372,7 +372,7 @@ class AgentService(BaseService):
             "agent_id": context_row["agent_id"],
             "name": context_row["agent_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]),
+            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
             "reasoning": context_row["reasoning"],
             # Model data
             "model_id": context_row["model_id"],
@@ -510,7 +510,7 @@ class AgentService(BaseService):
             "agent_id": context_row["agent_id"],
             "agent_name": context_row["agent_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]),
+            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
             "reasoning": context_row["reasoning"],
             # Model data
             "model_id": context_row["model_id"],
@@ -591,7 +591,7 @@ class AgentService(BaseService):
             "persona_id": context_row["persona_id"],
             "persona_name": context_row["persona_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]),
+            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
             "reasoning": context_row["reasoning"],
             # Model data
             "model_id": context_row["model_id"],
@@ -707,7 +707,7 @@ class AgentService(BaseService):
                 "id": context_row["agent_id"],
                 "name": context_row["agent_name"],
                 "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"]),
+                "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
                 "reasoning": context_row["reasoning"],
             },
             # Model data
@@ -865,7 +865,7 @@ class AgentService(BaseService):
             "agent_id": context_row["agent_id"],
             "agent_name": context_row["agent_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]),
+            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
             "reasoning": context_row["reasoning"],
             # Model data
             "model_id": context_row["model_id"],
@@ -947,7 +947,7 @@ class AgentService(BaseService):
             "agent_id": context_row["agent_id"],
             "agent_name": context_row["agent_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]),
+            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
             "reasoning": context_row["reasoning"],
             # Model data
             "model_id": context_row["model_id"],
@@ -1023,7 +1023,7 @@ class AgentService(BaseService):
             "agent_id": context_row["agent_id"],
             "name": context_row["agent_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]),
+            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
             "reasoning": context_row["reasoning"],
             # Model data
             "model_id": context_row["model_id"],

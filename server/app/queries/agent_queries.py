@@ -758,10 +758,10 @@ class AgentQueries:
         INNER JOIN scenarios s ON s.id = sc.scenario_id
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         INNER JOIN simulations sim ON sim.id = sa.simulation_id
-        INNER JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
-        INNER JOIN personas p ON p.id = sp.persona_id
-        INNER JOIN models m ON m.id = p.model_id
-        INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+        LEFT JOIN personas p ON p.id = sp.persona_id
+        LEFT JOIN models m ON m.id = p.model_id
+        LEFT JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
         LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id

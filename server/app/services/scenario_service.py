@@ -1164,7 +1164,6 @@ class ScenarioService(BaseService):
         new_scenario_row = await self.conn.fetchrow(
             self.queries.insert_scenario_variant(),
             scenario.get("name"),
-            scenario.get("problem_statement"),
             department_id,
             True,
             scenario.get("active", True),
@@ -1172,6 +1171,15 @@ class ScenarioService(BaseService):
         )
 
         new_scenario_id = new_scenario_row["id"]
+        
+        # Insert problem statement if provided
+        if scenario.get("problem_statement"):
+            await self.conn.fetchrow(
+                self.queries.insert_scenario_problem_statement(),
+                new_scenario_id,
+                scenario.get("problem_statement"),
+                True,
+            )
         new_scenario = dict(new_scenario_row)
 
         # Create scenario_tree edge (parent -> child)

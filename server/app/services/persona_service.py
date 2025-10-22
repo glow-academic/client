@@ -4,31 +4,20 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.persona_queries import PersonaQueries
-from app.schemas.base import (
-    DepartmentMappingItem,
-    ModelMappingItem,
-    ReasoningMappingItem,
-)
-from app.schemas.personas import (
-    CreatePersonaRequest,
-    CreatePersonaResponse,
-    DebugInfoItem,
-    DeletePersonaRequest,
-    DeletePersonaResponse,
-    DuplicatePersonaRequest,
-    DuplicatePersonaResponse,
-    PersonaDetailDefaultRequest,
-    PersonaDetailRequest,
-    PersonaDetailResponse,
-    PersonaItem,
-    PersonasFilters,
-    PersonasListResponse,
-    UpdatePersonaRequest,
-    UpdatePersonaResponse,
-)
+from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
+                              ReasoningMappingItem)
+from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
+                                  DebugInfoItem, DeletePersonaRequest,
+                                  DeletePersonaResponse,
+                                  DuplicatePersonaRequest,
+                                  DuplicatePersonaResponse,
+                                  PersonaDetailDefaultRequest,
+                                  PersonaDetailRequest, PersonaDetailResponse,
+                                  PersonaItem, PersonasFilters,
+                                  PersonasListResponse, UpdatePersonaRequest,
+                                  UpdatePersonaResponse)
 from app.services.base_service import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
