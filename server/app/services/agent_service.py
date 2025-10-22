@@ -5,27 +5,18 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.agent_queries import AgentQueries
 from app.queries.profile_queries import ProfileQueries
-from app.schemas.agents import (
-    AgentDetailRequest,
-    AgentDetailResponse,
-    AgentItem,
-    AgentsListRequest,
-    AgentsListResponse,
-    CreateAgentRequest,
-    CreateAgentResponse,
-    DebugInfoItem,
-    DeleteAgentRequest,
-    DeleteAgentResponse,
-    DuplicateAgentRequest,
-    DuplicateAgentResponse,
-    UpdateAgentRequest,
-    UpdateAgentResponse,
-)
-from app.schemas.base import ModelMapping, ModelMappingItem, ReasoningMappingItem
+from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
+                                AgentItem, AgentsListRequest,
+                                AgentsListResponse, CreateAgentRequest,
+                                CreateAgentResponse, DebugInfoItem,
+                                DeleteAgentRequest, DeleteAgentResponse,
+                                DuplicateAgentRequest, DuplicateAgentResponse,
+                                UpdateAgentRequest, UpdateAgentResponse)
+from app.schemas.base import (ModelMapping, ModelMappingItem,
+                              ReasoningMappingItem)
 from app.services.base_service import BaseService, with_cache
 
 
@@ -692,7 +683,7 @@ class AgentService(BaseService):
             "title": context_row["title"],
             "trace_id": context_row["trace_id"],
             "created_at": context_row["created_at"],
-            "completed_at": context_row["completed_at"],
+            "completed": context_row["completed"],
             # Scenario data
             "problem_statement": context_row["problem_statement"],
             # Attempt data

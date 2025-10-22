@@ -5,25 +5,20 @@ from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import (
-    Runner,
-    ToolsToFinalOutputResult,
-    TResponseInputItem,
-    function_tool,
-    trace,
-)
-from fastapi import Depends
-from pydantic import Field
-
+from agents import (Runner, ToolsToFinalOutputResult, TResponseInputItem,
+                    function_tool, trace)
 from app.agents.generic import GenericAgent
 from app.db import get_db
 from app.services.agent_service import AgentService
 from app.services.grading_service import GradingService
 from app.services.model_run_service import ModelRunService
-from app.utils.chat import format_chat_scenario, get_simulation_conversation_history
+from app.utils.chat import (format_chat_scenario,
+                            get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
+from fastapi import Depends
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +179,7 @@ def create_grading_tools(
     for group in standard_groups:
         tool = create_grading_function(group, standards, chat_id)
         tools.append(tool)
-        logger.info(f"Created grading tool for: {group.name}")
+        logger.info(f"Created grading tool for: {group['name']}")
 
     # Add summary tool
     tools.append(create_summary_function(chat_id))
@@ -342,7 +337,7 @@ async def run_grade_agent(
 
         # Get chat timestamps from context
         chat_created_at = context["created_at"]
-        chat_completed_at = context["completed_at"]
+        chat_completed = context["completed"]
 
         # Convert timestamps to UTC if they have timezone info
         if chat_created_at.tzinfo is not None:
@@ -350,22 +345,12 @@ async def run_grade_agent(
         else:
             chat_created_at = chat_created_at.replace(tzinfo=UTC)
 
-        # Handle case where completed_at might be None (fallback to current time)
-        if chat_completed_at is None:
-            current_time = datetime.now(UTC)
-            actual_time_taken = max(
-                1, int((current_time - chat_created_at).total_seconds())
-            )
-        else:
-            if chat_completed_at.tzinfo is not None:
-                chat_completed_at = chat_completed_at.astimezone(UTC)
-            else:
-                chat_completed_at = chat_completed_at.replace(tzinfo=UTC)
-
-            # Calculate time taken from created_at to completed_at
-            actual_time_taken = max(
-                1, int((chat_completed_at - chat_created_at).total_seconds())
-            )
+        # Calculate time taken - use current time since completed_at column was removed
+        # The actual completion time is tracked via simulation_chat_grades.time_taken
+        current_time = datetime.now(UTC)
+        actual_time_taken = max(
+            1, int((current_time - chat_created_at).total_seconds())
+        )
 
         def format_minutes(seconds: int) -> str:
             minutes = seconds // 60
@@ -482,16 +467,13 @@ async def run_grade_agent(
         grading_result = grading_results
 
         logger.info("Grading agent completed successfully")
+        logger.info(f"Grading result keys: {list(grading_result.keys())}")
+        logger.info(f"Grading result content: {grading_result}")
 
         # Log the time calculation
-        if chat_completed_at is None:
-            logger.info(
-                f"Time calculation: created={chat_created_at}, completed=None (using current time), taken={actual_time_taken}s"
-            )
-        else:
-            logger.info(
-                f"Time calculation: created={chat_created_at}, completed={chat_completed_at}, taken={actual_time_taken}s"
-            )
+        logger.info(
+            f"Time calculation: created={chat_created_at}, completed={chat_completed} (using current time), taken={actual_time_taken}s"
+        )
 
         # Calculate overall score from tool call results
         overall_score = 0

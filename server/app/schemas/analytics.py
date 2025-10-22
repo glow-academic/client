@@ -89,3 +89,4 @@ class RefreshResponse(BaseModel):
 
     success: bool
     message: str
+    status: str

@@ -1,13 +1,15 @@
 """Grading service layer - business logic for grading operations."""
 
+import logging
 from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.grading_queries import GradingQueries
 from app.services.base_service import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class GradingService(BaseService):
@@ -73,15 +75,21 @@ class GradingService(BaseService):
 
         # 2. Create feedback records for each standard group
         feedback_records = []
+        logger.info(f"DEBUG: Creating feedback records for {len(standard_groups)} groups")
+        logger.info(f"DEBUG: Grading results keys: {list(grading_results.keys())}")
+        logger.info(f"DEBUG: Grading results content: {grading_results}")
+        
         for group in standard_groups:
             # Get safe field name to look up results
             from app.agents.collection.grade import create_safe_field_name
 
             safe_name = create_safe_field_name(group["short_name"])
+            logger.info(f"DEBUG: Processing group '{group['name']}' with safe_name '{safe_name}'")
 
             group_data = grading_results.get(safe_name, {})
             group_score = group_data.get("score", 0)
             group_feedback = group_data.get("feedback", "")
+            logger.info(f"DEBUG: Group data: {group_data}, score: {group_score}, feedback: {group_feedback}")
 
             # Find the corresponding standard for this score
             group_standards = [
@@ -104,6 +112,7 @@ class GradingService(BaseService):
                 )
 
         # Batch insert feedback records
+        logger.info(f"DEBUG: Created {len(feedback_records)} feedback records")
         if feedback_records:
             query, _ = self.queries.create_simulation_chat_feedbacks()
             standard_ids = [str(r["standard_id"]) for r in feedback_records]
@@ -111,7 +120,10 @@ class GradingService(BaseService):
             scores = [r["score"] for r in feedback_records]
             feedbacks = [r["feedback"] for r in feedback_records]
 
+            logger.info(f"DEBUG: Inserting feedback records: {len(standard_ids)} records")
             await self.conn.execute(query, standard_ids, grade_ids, scores, feedbacks)
+        else:
+            logger.info("DEBUG: No feedback records to insert")
 
         # 3. Mark chat as completed
         query, params = self.queries.mark_chat_completed(str(simulation_chat_id))

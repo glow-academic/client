@@ -46,19 +46,5 @@ class AttemptsQueries:
         params = [created_at, chat_id]
         return query, params
 
-    def update_chat_completed_at(
-        self, chat_id: str, completed_at: Any
-    ) -> tuple[str, list[Any]]:
-        """
-        Update simulation chat completed_at timestamp.
-
-        Args:
-            chat_id: Chat UUID
-            completed_at: New completed_at timestamp
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = "UPDATE simulation_chats SET completed_at = $1 WHERE id = $2"
-        params = [completed_at, chat_id]
-        return query, params
+    # Note: update_chat_completed_at method removed - completed_at column was dropped from simulation_chats
+    # Completion time is now tracked via simulation_chat_grades.time_taken

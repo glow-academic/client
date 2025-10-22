@@ -3,16 +3,12 @@
 from datetime import datetime
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.attempts_queries import AttemptsQueries
-from app.schemas.attempts import (
-    BulkArchiveAttemptsRequest,
-    BulkArchiveAttemptsResponse,
-    UpdateChatCompletedAtRequest,
-    UpdateChatCreatedAtRequest,
-    UpdateChatTimestampResponse,
-)
+from app.schemas.attempts import (BulkArchiveAttemptsRequest,
+                                  BulkArchiveAttemptsResponse,
+                                  UpdateChatCreatedAtRequest,
+                                  UpdateChatTimestampResponse)
 from app.services.base_service import BaseService
 
 
@@ -69,31 +65,8 @@ class AttemptsService(BaseService):
             message=f"Chat {request.chatId} createdAt updated successfully",
         )
 
-    async def update_chat_completed_at(
-        self, request: UpdateChatCompletedAtRequest
-    ) -> UpdateChatTimestampResponse:
-        """Update simulation chat completedAt timestamp."""
-        # Parse ISO string to datetime
-        completed_at = datetime.fromisoformat(
-            request.completedAt.replace("Z", "+00:00")
-        )
-
-        # Update the completedAt timestamp
-        query, params = self.queries.update_chat_completed_at(
-            request.chatId, completed_at
-        )
-        result = await self.conn.execute(query, *params)
-
-        if result == "UPDATE 0":
-            raise ValueError(f"Chat not found: {request.chatId}")
-
-        # Invalidate analytics cache (timestamp changes affect analytics)
-        await self._invalidate_cache([keys.tag_analytics_all()])
-
-        return UpdateChatTimestampResponse(
-            success=True,
-            message=f"Chat {request.chatId} completedAt updated successfully",
-        )
+    # Note: update_chat_completed_at method removed - completed_at column was dropped from simulation_chats
+    # Completion time is now tracked via simulation_chat_grades.time_taken
 
 
 def get_attempts_service(conn: asyncpg.Connection) -> AttemptsService:

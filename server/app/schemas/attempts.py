@@ -25,11 +25,7 @@ class UpdateChatCreatedAtRequest(BaseModel):
     createdAt: str
 
 
-class UpdateChatCompletedAtRequest(BaseModel):
-    """Request to update chat completedAt timestamp."""
-
-    chatId: str
-    completedAt: str
+# Note: UpdateChatCompletedAtRequest removed - completed_at column was dropped from simulation_chats
 
 
 class UpdateChatTimestampResponse(BaseModel):

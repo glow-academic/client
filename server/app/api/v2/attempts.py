@@ -4,18 +4,14 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-
 from app.db import get_db
 from app.queries.simulation_queries import get_attempt_full_data
-from app.schemas.attempts import (
-    BulkArchiveAttemptsRequest,
-    BulkArchiveAttemptsResponse,
-    UpdateChatCompletedAtRequest,
-    UpdateChatCreatedAtRequest,
-    UpdateChatTimestampResponse,
-)
+from app.schemas.attempts import (BulkArchiveAttemptsRequest,
+                                  BulkArchiveAttemptsResponse,
+                                  UpdateChatCreatedAtRequest,
+                                  UpdateChatTimestampResponse)
 from app.services.attempts_service import get_attempts_service
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 
@@ -64,16 +60,5 @@ async def update_chat_created_at(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/chats/update-completed-at", response_model=UpdateChatTimestampResponse)
-async def update_chat_completed_at(
-    request: UpdateChatCompletedAtRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateChatTimestampResponse:
-    """Update simulation chat completedAt timestamp."""
-    try:
-        service = get_attempts_service(conn)
-        return await service.update_chat_completed_at(request)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# Note: update_chat_completed_at endpoint removed - completed_at column was dropped from simulation_chats
+# Completion time is now tracked via simulation_chat_grades.time_taken
