@@ -63,8 +63,6 @@ export default function AttemptChat() {
   const log = useLogger();
   const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
 
-  const [showGrades, setShowGrades] = useState(false);
-  const [showDocuments, setShowDocuments] = useState(true);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null
   );
@@ -117,6 +115,10 @@ export default function AttemptChat() {
   // Get current chat from context
   const displayChat =
     simulationContext?.chats[simulationContext.currentChatIndex];
+
+  // Get UI state from context (persists across chat switches)
+  const showGrades = simulationContext?.showGrades ?? false;
+  const showDocuments = simulationContext?.showDocuments ?? true;
 
   // Get selected scenario from context (v2 single source of truth)
   const selectedScenario = useMemo(() => {
@@ -254,12 +256,15 @@ export default function AttemptChat() {
         simulationContext.setCurrentChatIndex(0);
       }
 
-      // If all chats are completed, default to showing rubric
+      // If all chats are completed, default to showing rubric (only if user hasn't manually toggled)
       const completedChats = simulationContext?.chats.filter(
         (chat: AttemptFullResponse["chats"][number]["chat"]) => chat.completed
       );
-      if (completedChats.length === simulationContext?.chats.length) {
-        setShowGrades(true);
+      if (
+        completedChats.length === simulationContext?.chats.length &&
+        !simulationContext?.userHasManuallyToggledGrades
+      ) {
+        simulationContext?.setShowGrades(true);
       }
     }
   }, [
@@ -267,6 +272,7 @@ export default function AttemptChat() {
     simulationContext?.chats,
     simulationContext?.currentChatIndex,
     simulationContext?.setCurrentChatIndex,
+    simulationContext?.setShowGrades,
     simulationContext,
   ]);
 
@@ -378,7 +384,14 @@ export default function AttemptChat() {
                                 <Button
                                   variant={showGrades ? "default" : "outline"}
                                   size="sm"
-                                  onClick={() => setShowGrades(!showGrades)}
+                                  onClick={() => {
+                                    simulationContext?.setShowGrades(
+                                      !showGrades
+                                    );
+                                    simulationContext?.setUserHasManuallyToggledGrades(
+                                      true
+                                    );
+                                  }}
                                   className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
                                 >
                                   <Table className="h-4 w-4" />
@@ -406,7 +419,9 @@ export default function AttemptChat() {
                                     }
                                     size="sm"
                                     onClick={() =>
-                                      setShowDocuments(!showDocuments)
+                                      simulationContext?.setShowDocuments(
+                                        !showDocuments
+                                      )
                                     }
                                     className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
                                   >
@@ -793,7 +808,9 @@ export default function AttemptChat() {
                                     }
                                     size="sm"
                                     onClick={() =>
-                                      setShowDocuments(!showDocuments)
+                                      simulationContext?.setShowDocuments(
+                                        !showDocuments
+                                      )
                                     }
                                     className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
                                   >

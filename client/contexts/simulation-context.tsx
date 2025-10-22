@@ -95,6 +95,14 @@ export interface SimulationContextType {
   freshlyCompletedChats: Set<string>;
   setFreshlyCompletedChats: React.Dispatch<React.SetStateAction<Set<string>>>;
 
+  // UI preferences that persist across chat switches
+  showGrades: boolean;
+  setShowGrades: (show: boolean) => void;
+  showDocuments: boolean;
+  setShowDocuments: (show: boolean) => void;
+  userHasManuallyToggledGrades: boolean;
+  setUserHasManuallyToggledGrades: (toggled: boolean) => void;
+
   // Connection state
   isConnected: boolean;
 
@@ -143,6 +151,10 @@ export function SimulationProvider({
     Set<string>
   >(new Set());
   const [showResults, setShowResults] = useState(false);
+  const [showGrades, setShowGrades] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(true);
+  const [userHasManuallyToggledGrades, setUserHasManuallyToggledGrades] =
+    useState(false);
 
   // Grading progress state
   const [gradingProgress, setGradingProgress] = useState<{
@@ -956,6 +968,14 @@ export function SimulationProvider({
     expectedChatCount,
     freshlyCompletedChats,
     setFreshlyCompletedChats,
+
+    // UI preferences that persist across chat switches
+    showGrades,
+    setShowGrades,
+    showDocuments,
+    setShowDocuments,
+    userHasManuallyToggledGrades,
+    setUserHasManuallyToggledGrades,
 
     // Connection
     isConnected,
