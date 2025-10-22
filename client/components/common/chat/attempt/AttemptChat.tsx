@@ -100,7 +100,7 @@ export default function AttemptChat() {
   // Set breadcrumb context when attempt data is loaded
   useEffect(() => {
     if (simulationContext?.simulation?.title && simulationContext?.attemptId) {
-      const displayName = `Attempt: ${simulationContext.simulation.title}`;
+      const displayName = `${simulationContext.simulation.title}`;
       setEntityMetadata({
         entityId: simulationContext.attemptId,
         entityName: displayName,

@@ -81,6 +81,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     return pathname.startsWith("/analytics/reports/p");
   }, [pathname]);
 
+  const isChatPage = useMemo(() => {
+    return pathname.startsWith("/practice/a") || pathname.startsWith("/home/a");
+  }, [pathname]);
+
   // Check if we're on a main screen that should show chat components
   const shouldShowChatComponents = useMemo(() => {
     return isMainScreen(pathname) || isReportPage;
@@ -90,9 +94,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const canShowChatComponents = useMemo(() => {
     const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
-      effectiveProfile?.role && allowedRoles.includes(effectiveProfile.role)
+      effectiveProfile?.role &&
+      allowedRoles.includes(effectiveProfile.role) &&
+      !isChatPage
     );
-  }, [effectiveProfile?.role]);
+  }, [effectiveProfile?.role, isChatPage]);
 
   // Check if we're on an analytics page and should show filters
   const isAnalyticsPage = useMemo(() => {
@@ -105,10 +111,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   const isSystemPage = useMemo(() => {
     return pathname.startsWith("/system");
-  }, [pathname]);
-
-  const isChatPage = useMemo(() => {
-    return pathname.startsWith("/practice/a") || pathname.startsWith("/home/a");
   }, [pathname]);
 
   const canShowAnalyticsFilters = useMemo(() => {

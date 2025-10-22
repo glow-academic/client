@@ -24,11 +24,14 @@ const getSectionFromSegments = (segments: string[]): string => {
   // Handle main routes
   switch (first) {
     case "home":
+      if (second === "a" && third) {
+        return `attempt-${third}`;
+      }
       return "home";
 
     case "practice":
       if (second === "a" && third) {
-        return "practice";
+        return `attempt-${third}`;
       }
       return "practice";
 
