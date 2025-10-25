@@ -276,24 +276,26 @@ class SimulationService(BaseService):
                         document_ids=sdata.get("document_ids", []),
                     )
 
-        # Parse department mapping from JSONB with type safety
+        # Parse department mapping from JSONB with type safety (may be string or dict)
         department_mapping: dict[str, DepartmentMappingItem] = {}
-        if result.get("department_mapping") and isinstance(
-            result["department_mapping"], dict
-        ):
-            for did, ddata in result["department_mapping"].items():
+        department_mapping_data = result.get("department_mapping")
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
+        if department_mapping_data and isinstance(department_mapping_data, dict):
+            for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[did] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
                     )
 
-        # Parse parameter mapping from JSONB with type safety
+        # Parse parameter mapping from JSONB with type safety (may be string or dict)
         parameter_mapping: ParameterMapping = {}
-        if result.get("parameter_mapping") and isinstance(
-            result["parameter_mapping"], dict
-        ):
-            for pid, pdata in result["parameter_mapping"].items():
+        parameter_mapping_data = result.get("parameter_mapping")
+        if isinstance(parameter_mapping_data, str):
+            parameter_mapping_data = json.loads(parameter_mapping_data)
+        if parameter_mapping_data and isinstance(parameter_mapping_data, dict):
+            for pid, pdata in parameter_mapping_data.items():
                 if isinstance(pdata, dict):
                     parameter_mapping[pid] = ParameterMappingItem(
                         name=pdata.get("name", ""),
@@ -355,6 +357,7 @@ class SimulationService(BaseService):
             default_simulation=result["default_simulation"],
             practice_simulation=result["practice_simulation"],
             hints_enabled=result["hints_enabled"],
+            objectives_enabled=result["objectives_enabled"],
             input_guardrail_active=result["input_guardrail_active"],
             output_guardrail_active=result["output_guardrail_active"],
             image_input_active=result["image_input_active"],
@@ -510,36 +513,39 @@ class SimulationService(BaseService):
                         document_ids=sdata.get("document_ids", []),
                     )
 
-        # Parse department mapping from JSONB with type safety
+        # Parse department mapping from JSONB with type safety (may be string or dict)
         department_mapping: dict[str, DepartmentMappingItem] = {}
-        if result.get("department_mapping") and isinstance(
-            result["department_mapping"], dict
-        ):
-            for did, ddata in result["department_mapping"].items():
+        department_mapping_data = result.get("department_mapping")
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
+        if department_mapping_data and isinstance(department_mapping_data, dict):
+            for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[did] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
                     )
 
-        # Parse parameter mapping from JSONB with type safety
+        # Parse parameter mapping from JSONB with type safety (may be string or dict)
         parameter_mapping: ParameterMapping = {}
-        if result.get("parameter_mapping") and isinstance(
-            result["parameter_mapping"], dict
-        ):
-            for pid, pdata in result["parameter_mapping"].items():
+        parameter_mapping_data = result.get("parameter_mapping")
+        if isinstance(parameter_mapping_data, str):
+            parameter_mapping_data = json.loads(parameter_mapping_data)
+        if parameter_mapping_data and isinstance(parameter_mapping_data, dict):
+            for pid, pdata in parameter_mapping_data.items():
                 if isinstance(pdata, dict):
                     parameter_mapping[pid] = ParameterMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
                     )
 
-        # Parse parameter item mapping from JSONB with type safety
+        # Parse parameter item mapping from JSONB with type safety (may be string or dict)
         parameter_item_mapping: ParameterItemMapping = {}
-        if result.get("parameter_item_mapping") and isinstance(
-            result["parameter_item_mapping"], dict
-        ):
-            for piid, pidata in result["parameter_item_mapping"].items():
+        parameter_item_mapping_data = result.get("parameter_item_mapping")
+        if isinstance(parameter_item_mapping_data, str):
+            parameter_item_mapping_data = json.loads(parameter_item_mapping_data)
+        if parameter_item_mapping_data and isinstance(parameter_item_mapping_data, dict):
+            for piid, pidata in parameter_item_mapping_data.items():
                 if isinstance(pidata, dict):
                     parameter_item_mapping[piid] = ParameterItemMappingItem(
                         name=pidata.get("name", ""),
@@ -574,6 +580,7 @@ class SimulationService(BaseService):
             default_simulation=result["default_simulation"],
             practice_simulation=result["practice_simulation"],
             hints_enabled=result["hints_enabled"],
+            objectives_enabled=result["objectives_enabled"],
             input_guardrail_active=result["input_guardrail_active"],
             output_guardrail_active=result["output_guardrail_active"],
             image_input_active=result["image_input_active"],
@@ -613,6 +620,7 @@ class SimulationService(BaseService):
                 request.default_simulation,
                 request.practice_simulation,
                 request.hints_enabled,
+                request.objectives_enabled,
                 request.input_guardrail_active,
                 request.output_guardrail_active,
                 request.image_input_active,
@@ -705,6 +713,7 @@ class SimulationService(BaseService):
                 request.default_simulation,
                 request.practice_simulation,
                 request.hints_enabled,
+                request.objectives_enabled,
                 request.input_guardrail_active,
                 request.output_guardrail_active,
                 request.image_input_active,
@@ -804,6 +813,7 @@ class SimulationService(BaseService):
                 result["description"],
                 result["department_id"],
                 result["hints_enabled"],
+                result["objectives_enabled"],
                 result["input_guardrail_active"],
                 result["output_guardrail_active"],
                 result["image_input_active"],

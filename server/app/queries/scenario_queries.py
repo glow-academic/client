@@ -65,7 +65,7 @@ class ScenarioQueries:
             SELECT 
                 s.id as scenario_id,
                 s.name as title,
-                sps.problem_statement,
+                COALESCE(sps.problem_statement, '') as problem_statement,
                 s.active,
                 s.default_scenario,
                 s.generated,

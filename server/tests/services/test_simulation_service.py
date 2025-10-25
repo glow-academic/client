@@ -1128,6 +1128,55 @@ async def test_get_simulation_detail_default_consolidated(
     assert isinstance(result.department_mapping, dict)
 
 
+@pytest.mark.asyncio
+async def test_simulation_detail_includes_objectives_enabled(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that simulation detail returns objectives_enabled field."""
+    # Setup - Get test simulation and profile
+    sim_result = await db.fetchrow(
+        "SELECT id FROM simulations WHERE active = true LIMIT 1"
+    )
+    if not sim_result:
+        pytest.skip("No simulations found in test database")
+
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+
+    # Execute - Call the service method
+    from app.schemas.simulations import SimulationDetailRequest
+
+    svc = SimulationService(db)
+    request = SimulationDetailRequest(simulationId=simulation_id, profileId=profile_id)
+    result = await svc.get_simulation_detail(request)
+
+    # Assert - Check objectives_enabled field
+    assert hasattr(result, "objectives_enabled")
+    assert isinstance(result.objectives_enabled, bool)
+
+
+@pytest.mark.asyncio
+async def test_simulation_detail_default_includes_objectives_enabled(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that simulation detail-default returns objectives_enabled field."""
+    # Setup - Get test profile ID
+    profile_id = await get_test_profile_id(db)
+
+    # Create request
+    from app.schemas.simulations import SimulationDetailDefaultRequest
+
+    request = SimulationDetailDefaultRequest(profileId=profile_id)
+
+    # Execute - Call the service method
+    svc = SimulationService(db)
+    result = await svc.get_simulation_detail_default(request)
+
+    # Assert - Check objectives_enabled field
+    assert hasattr(result, "objectives_enabled")
+    assert isinstance(result.objectives_enabled, bool)
+
+
 @pytest.mark.skip(reason="Complex query needs debugging - testing via API instead")
 @pytest.mark.asyncio
 async def test_start_simulation_attempt_complete_query(

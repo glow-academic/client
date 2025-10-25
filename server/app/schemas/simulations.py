@@ -2,13 +2,8 @@
 
 from pydantic import BaseModel
 
-from .base import (
-    DepartmentMapping,
-    ParameterItemMapping,
-    ParameterMapping,
-    RubricMapping,
-    ScenarioMapping,
-)
+from .base import (DepartmentMapping, ParameterItemMapping, ParameterMapping,
+                   RubricMapping, ScenarioMapping)
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -120,6 +115,7 @@ class SimulationDetailResponse(BaseModel):
     default_simulation: bool
     practice_simulation: bool
     hints_enabled: bool
+    objectives_enabled: bool
     input_guardrail_active: bool
     output_guardrail_active: bool
     image_input_active: bool
@@ -176,6 +172,7 @@ class CreateSimulationRequest(BaseModel):
     default_simulation: bool
     practice_simulation: bool
     hints_enabled: bool
+    objectives_enabled: bool
     input_guardrail_active: bool
     output_guardrail_active: bool
     image_input_active: bool
@@ -205,6 +202,7 @@ class UpdateSimulationRequest(BaseModel):
     default_simulation: bool
     practice_simulation: bool
     hints_enabled: bool
+    objectives_enabled: bool
     input_guardrail_active: bool
     output_guardrail_active: bool
     image_input_active: bool

@@ -61,6 +61,7 @@ interface FormData {
   inputGuardrailActive?: boolean;
   imageInputActive?: boolean;
   hintsEnabled?: boolean;
+  objectivesEnabled?: boolean;
 }
 
 interface FormErrors {
@@ -142,6 +143,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       inputGuardrailActive: false,
       imageInputActive: false,
       hintsEnabled: false,
+      objectivesEnabled: false,
     }),
     []
   );
@@ -173,6 +175,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
         inputGuardrailActive: simulationData.input_guardrail_active ?? false,
         imageInputActive: simulationData.image_input_active ?? false,
         hintsEnabled: simulationData.hints_enabled ?? false,
+        objectivesEnabled: simulationData.objectives_enabled ?? false,
       };
       setFormData(formDataFromServer);
       setOriginalFormData(formDataFromServer);
@@ -301,6 +304,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           default_simulation: formData?.defaultSimulation || false,
           practice_simulation: formData?.practiceSimulation || false,
           hints_enabled: formData?.hintsEnabled || false,
+          objectives_enabled: formData?.objectivesEnabled || false,
           input_guardrail_active: formData?.inputGuardrailActive || false,
           output_guardrail_active: formData?.outputGuardrailActive || false,
           image_input_active: formData?.imageInputActive || false,
@@ -324,6 +328,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           default_simulation: formData?.defaultSimulation || false,
           practice_simulation: formData?.practiceSimulation || false,
           hints_enabled: formData?.hintsEnabled || false,
+          objectives_enabled: formData?.objectivesEnabled || false,
           input_guardrail_active: formData?.inputGuardrailActive || false,
           output_guardrail_active: formData?.outputGuardrailActive || false,
           image_input_active: formData?.imageInputActive || false,
@@ -398,6 +403,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.inputGuardrailActive !== original.inputGuardrailActive ||
       current.imageInputActive !== original.imageInputActive ||
       current.hintsEnabled !== original.hintsEnabled ||
+      current.objectivesEnabled !== original.objectivesEnabled ||
       JSON.stringify(currentScenarioIds) !==
         JSON.stringify(originalScenarioIds) ||
       JSON.stringify(scenarioActiveStates) !==
@@ -625,7 +631,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           </div>
         </div>
 
-        {/* Third Row of Switches - Hints */}
+        {/* Third Row of Switches - Hints and Objectives */}
         <div className="flex gap-8">
           <div className="flex items-center gap-2">
             <Label htmlFor="hintsEnabled" className="text-sm">
@@ -637,6 +643,24 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 checked={formData.hintsEnabled ?? false}
                 onCheckedChange={(checked) =>
                   handleInputChange("hintsEnabled", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label htmlFor="objectivesEnabled" className="text-sm">
+              Objectives Enabled
+            </Label>
+            {formData?.objectivesEnabled !== undefined && !isLoading ? (
+              <Switch
+                id="objectivesEnabled"
+                checked={formData.objectivesEnabled ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("objectivesEnabled", checked)
                 }
                 disabled={isReadonly}
               />

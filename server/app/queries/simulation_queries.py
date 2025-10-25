@@ -248,8 +248,8 @@ class SimulationQueries:
         """Build query to create simulation.
 
         Params order: title, description, department_id, active, default_simulation,
-        practice_simulation, hints_enabled, input_guardrail_active, output_guardrail_active,
-        image_input_active, rubric_id
+        practice_simulation, hints_enabled, objectives_enabled, input_guardrail_active,
+        output_guardrail_active, image_input_active, rubric_id
         """
         return """
         INSERT INTO simulations (
@@ -260,12 +260,13 @@ class SimulationQueries:
             default_simulation,
             practice_simulation,
             hints_enabled,
+            objectives_enabled,
             input_guardrail_active,
             output_guardrail_active,
             image_input_active,
             rubric_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id
         """
 
@@ -288,8 +289,8 @@ class SimulationQueries:
         """Build query to update simulation.
 
         Params order: title, description, department_id, active, default_simulation,
-        practice_simulation, hints_enabled, input_guardrail_active, output_guardrail_active,
-        image_input_active, rubric_id, simulation_id
+        practice_simulation, hints_enabled, objectives_enabled, input_guardrail_active,
+        output_guardrail_active, image_input_active, rubric_id, simulation_id
         """
         return """
         UPDATE simulations SET
@@ -300,12 +301,13 @@ class SimulationQueries:
             default_simulation = $5,
             practice_simulation = $6,
             hints_enabled = $7,
-            input_guardrail_active = $8,
-            output_guardrail_active = $9,
-            image_input_active = $10,
-            rubric_id = $11,
+            objectives_enabled = $8,
+            input_guardrail_active = $9,
+            output_guardrail_active = $10,
+            image_input_active = $11,
+            rubric_id = $12,
             updated_at = NOW()
-        WHERE id = $12
+        WHERE id = $13
         """
 
     def delete_simulation_scenarios(self, simulation_id: str) -> tuple[str, list[Any]]:
@@ -323,6 +325,7 @@ class SimulationQueries:
             description,
             department_id,
             hints_enabled,
+            objectives_enabled,
             input_guardrail_active,
             output_guardrail_active,
             image_input_active,
@@ -335,8 +338,8 @@ class SimulationQueries:
     def insert_duplicate_simulation(self) -> str:
         """Build query to insert duplicate simulation.
 
-        Params order: title, description, department_id, hints_enabled, input_guardrail_active,
-        output_guardrail_active, image_input_active, rubric_id
+        Params order: title, description, department_id, hints_enabled, objectives_enabled,
+        input_guardrail_active, output_guardrail_active, image_input_active, rubric_id
         """
         return """
         INSERT INTO simulations (
@@ -347,6 +350,7 @@ class SimulationQueries:
             default_simulation,
             practice_simulation,
             hints_enabled,
+            objectives_enabled,
             input_guardrail_active,
             output_guardrail_active,
             image_input_active,
@@ -363,7 +367,8 @@ class SimulationQueries:
             $5,
             $6,
             $7,
-            $8
+            $8,
+            $9
         )
         RETURNING id
         """
@@ -885,7 +890,7 @@ class SimulationQueries:
         Returns all data needed for SimulationDetailResponse.
         """
         query = """
-        WITH simulation_base AS (
+        WITH         simulation_base AS (
             SELECT 
                 s.id,
                 s.title,
@@ -895,6 +900,7 @@ class SimulationQueries:
                 s.default_simulation,
                 s.practice_simulation,
                 s.hints_enabled,
+                s.objectives_enabled,
                 s.input_guardrail_active,
                 s.output_guardrail_active,
                 s.image_input_active,
@@ -938,6 +944,7 @@ class SimulationQueries:
                 ) as parameter_item_ids
             FROM scenarios s
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             WHERE ss.simulation_id = $1 AND ss.active = true
             ORDER BY ss.position
         ),
@@ -1247,6 +1254,7 @@ class SimulationQueries:
             sb.default_simulation,
             sb.practice_simulation,
             sb.hints_enabled,
+            sb.objectives_enabled,
             sb.input_guardrail_active,
             sb.output_guardrail_active,
             sb.image_input_active,
@@ -1563,6 +1571,7 @@ class SimulationQueries:
                 s.default_simulation,
                 s.practice_simulation,
                 s.hints_enabled,
+                s.objectives_enabled,
                 s.input_guardrail_active,
                 s.output_guardrail_active,
                 s.image_input_active,
@@ -1602,6 +1611,7 @@ class SimulationQueries:
                 ) as parameter_item_ids
             FROM scenarios s
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             JOIN default_simulation ds ON ss.simulation_id = ds.id
             WHERE ss.active = true
             ORDER BY ss.position
@@ -1906,6 +1916,7 @@ class SimulationQueries:
             sb.default_simulation,
             sb.practice_simulation,
             sb.hints_enabled,
+            sb.objectives_enabled,
             sb.input_guardrail_active,
             sb.output_guardrail_active,
             sb.image_input_active,
@@ -1959,6 +1970,7 @@ class SimulationQueries:
             s.default_simulation as sim_default_simulation,
             s.practice_simulation as sim_practice_simulation,
             s.hints_enabled as sim_hints_enabled,
+            s.objectives_enabled as sim_objectives_enabled,
             s.input_guardrail_active as sim_input_guardrail_active,
             s.output_guardrail_active as sim_output_guardrail_active,
             s.image_input_active as sim_image_input_active,
