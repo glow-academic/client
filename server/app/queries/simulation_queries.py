@@ -55,6 +55,7 @@ class SimulationQueries:
                 s.default_simulation,
                 s.practice_simulation,
                 s.rubric_id,
+                s.updated_at,
                 COALESCE(ss.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ss.num_scenarios, 0) as num_scenarios,
                 COALESCE(sa.attempt_count, 0) as attempt_count,
@@ -144,7 +145,7 @@ class SimulationQueries:
         CROSS JOIN user_profile up
         CROSS JOIN scenario_mapping_data sm
         CROSS JOIN rubric_mapping_data rm
-        ORDER BY sd.name
+        ORDER BY sd.updated_at DESC NULLS LAST
         """
 
         return (query, [department_ids, profile_id])
