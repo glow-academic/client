@@ -50,6 +50,7 @@ class PersonaQueries:
                 p.temperature,
                 p.active,
                 p.default_persona,
+                p.updated_at,
                 COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ps.num_scenarios, 0) as num_scenarios,
                 m.name as model_name,
@@ -124,7 +125,7 @@ class PersonaQueries:
         FROM persona_data pd
         CROSS JOIN user_profile up
         CROSS JOIN scenario_mapping_data sm
-        ORDER BY pd.persona_name
+        ORDER BY pd.updated_at DESC NULLS LAST
         """
 
         return (query, [department_ids, profile_id])
@@ -251,7 +252,7 @@ class PersonaQueries:
     def check_persona_usage(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to check persona usage."""
         query = """
-        SELECT COUNT(*) as usage_count
+        SELECT COUNT(*)::integer as usage_count
         FROM scenario_personas
         WHERE persona_id = $1 AND active = true
         """

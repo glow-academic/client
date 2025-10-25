@@ -160,7 +160,8 @@ class PersonaService(BaseService):
         if not usage:
             raise ValueError("Failed to check persona usage")
 
-        if usage.usage_count > 0:
+        usage_count = usage["usage_count"] if "usage_count" in usage else usage.get("count", 0)
+        if usage_count > 0:
             raise ValueError("Cannot delete persona that is in use by scenarios")
 
         # Get persona name
