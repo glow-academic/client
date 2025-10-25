@@ -737,7 +737,6 @@ class ScenarioService(BaseService):
             new_scenario = await self.conn.fetchrow(
                 insert_query,
                 original["name"],
-                original["problem_statement"],
                 original["department_id"],
             )
 
@@ -745,6 +744,14 @@ class ScenarioService(BaseService):
                 raise ValueError("Failed to create duplicate scenario")
 
             new_scenario_id = str(new_scenario["id"])
+
+            # Copy problem statements (from junction table)
+            copy_problem_statements_query = self.queries.copy_scenario_problem_statements()
+            await self.conn.execute(
+                copy_problem_statements_query,
+                new_scenario_id,
+                request.scenarioId,
+            )
 
             # Copy persona relationship
             copy_persona_query = self.queries.copy_scenario_personas()

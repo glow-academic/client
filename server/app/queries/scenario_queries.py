@@ -656,25 +656,25 @@ class ScenarioQueries:
         """Build query to get scenario data for duplication."""
         query = """
         SELECT 
-            name,
-            problem_statement,
-            department_id,
-            active,
-            default_scenario
-        FROM scenarios
-        WHERE id = $1
+            s.name,
+            s.department_id,
+            s.active,
+            s.default_scenario,
+            sps.problem_statement
+        FROM scenarios s
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+        WHERE s.id = $1
         """
         return (query, [scenario_id])
 
     def insert_duplicate_scenario(self) -> str:
         """Build query to insert duplicate scenario.
 
-        Params order: name, problem_statement, department_id
+        Params order: name, department_id
         """
         return """
         INSERT INTO scenarios (
             name,
-            problem_statement,
             department_id,
             active,
             default_scenario
@@ -682,7 +682,6 @@ class ScenarioQueries:
         VALUES (
             $1 || ' Copy',
             $2,
-            $3,
             false,
             false
         )
@@ -734,6 +733,18 @@ class ScenarioQueries:
         INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
         SELECT $1, parameter_item_id, active
         FROM scenario_parameter_items
+        WHERE scenario_id = $2
+        """
+
+    def copy_scenario_problem_statements(self) -> str:
+        """Build query to copy scenario problem statements.
+
+        Params order: new_scenario_id, original_scenario_id
+        """
+        return """
+        INSERT INTO scenario_problem_statements (scenario_id, problem_statement, active)
+        SELECT $1, problem_statement, active
+        FROM scenario_problem_statements
         WHERE scenario_id = $2
         """
 
