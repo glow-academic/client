@@ -77,13 +77,11 @@ services:
     volumes:
       # writable named volumes
       - uploads:/app/uploads
-      - csv:/app/csv
       - history:/app/history
 
       # read‑only seed folders that live in your repo
       - ./uploads:/seed/uploads:ro
       - ./history:/seed/history:ro
-      - ./csv:/seed/csv:ro
     command: >
       sh -c '
         set -e
@@ -100,15 +98,9 @@ services:
           cp -a /seed/history/. /app/history/
         fi
 
-        # Copy csv if the volume is still empty
-        if [ -z "$$(ls -A /app/csv 2>/dev/null)" ]; then
-          echo "[init] Seeding csv volume…"
-          cp -a /seed/csv/. /app/csv/
-        fi
-
         # Always ensure perms for FastAPI UID/GID 1001
-        chown -R 1001:1001 /app/uploads /app/history /app/csv
-        chmod -R 775 /app/uploads /app/history /app/csv
+        chown -R 1001:1001 /app/uploads /app/history
+        chmod -R 775 /app/uploads /app/history
 
         echo "[init] Volume permissions & seeds ready."
       '
@@ -136,7 +128,6 @@ services:
       - REDIS_URL=redis://redis:6379
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
-      - csv:/app/csv
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -256,6 +247,5 @@ services:
 volumes:
   pgdata:
   history:
-  csv:
   uploads:
   cypress:

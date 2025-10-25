@@ -34,18 +34,6 @@ const MarkdownLink = ({
   children,
   ...props
 }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
-  const isCsvLink = href && href.startsWith("/api/v2/documents/csv/");
-  // if a csv link, we should prepend Download to the Link Name
-  if (isCsvLink) {
-    return (
-      <a
-        href={href + "?name=" + children}
-        className="prose-a inline-flex items-center gap-1 hover:underline"
-      >
-        Download {children}
-      </a>
-    );
-  }
   // Check if it's an internal GLOW link (starts with #/ or /)
   const isInternalLink =
     href && (href.startsWith("#/") || href.startsWith("/"));
@@ -85,14 +73,7 @@ export default function Markdown({ children }: MarkdownProps) {
   // Removed getDocumentLabel and renderBadges functions
 
   // Normalize newlines only - don't inject extra spaces that could break link parsing
-  let processedText = children.replace(/\r?\n/g, "\n");
-
-  // have logic to make it a link here?
-  // turn csv://token into /api/v2/documents/csv/token
-  processedText = processedText.replace(
-    /\]\(csv:\/\/([\w-]+)\)/gi,
-    "](/api/v2/documents/csv/$1)"
-  );
+  const processedText = children.replace(/\r?\n/g, "\n");
 
   return (
     <div className="latex-container">

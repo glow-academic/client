@@ -25,9 +25,6 @@ UPLOAD_FOLDER.mkdir(
     parents=True, exist_ok=True
 )  # saving each document as uploads/document_id.ext
 
-CSV_FOLDER = BASE_FOLDER / "csv"
-CSV_FOLDER.mkdir(parents=True, exist_ok=True)  # saving each csv as csv/token.ext
-
 # Redis client for socket ownership management
 redis_client: Any | None = None  # type: ignore
 

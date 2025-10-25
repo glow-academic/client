@@ -355,26 +355,6 @@ async def download_document(
         },
     )
 
-
-@router.get("/csv/{token}")
-async def download_csv(
-    token: str,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> FileResponse:
-    """Download a CSV file by token."""
-    service = DocumentService(conn)
-    file_path = await service.get_csv_file(token)
-
-    if not file_path:
-        raise HTTPException(status_code=404, detail="CSV file not found")
-
-    return FileResponse(
-        path=file_path,
-        filename=f"{token}.csv",
-        media_type="text/csv",
-    )
-
-
 # ============================================================================
 # CERTIFICATE GENERATION
 # ============================================================================
