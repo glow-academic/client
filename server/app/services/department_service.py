@@ -4,27 +4,22 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.department_queries import DepartmentQueries
 from app.schemas.base import AgentMapping, AgentMappingItem
-from app.schemas.departments import (
-    AgentRoles,
-    CreateDepartmentRequest,
-    CreateDepartmentResponse,
-    DeleteDepartmentRequest,
-    DeleteDepartmentResponse,
-    DepartmentDetailRequest,
-    DepartmentDetailResponse,
-    DepartmentItem,
-    DepartmentsFilters,
-    DepartmentsListResponse,
-    DuplicateDepartmentRequest,
-    DuplicateDepartmentResponse,
-    UpdateDepartmentRequest,
-    UpdateDepartmentResponse,
-)
+from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
+                                     CreateDepartmentResponse,
+                                     DeleteDepartmentRequest,
+                                     DeleteDepartmentResponse,
+                                     DepartmentDetailRequest,
+                                     DepartmentDetailResponse, DepartmentItem,
+                                     DepartmentsFilters,
+                                     DepartmentsListResponse,
+                                     DuplicateDepartmentRequest,
+                                     DuplicateDepartmentResponse,
+                                     UpdateDepartmentRequest,
+                                     UpdateDepartmentResponse)
 from app.services.base_service import BaseService, with_cache
 
 
@@ -261,6 +256,25 @@ class DepartmentService(BaseService):
                     department_id, role, agent_id
                 )
                 await self.conn.execute(query, *params)
+
+            # Automatically link all superadmins, default profiles, and the creator to this new department
+            auto_link_query = """
+            SELECT id FROM profiles 
+            WHERE role = 'superadmin' OR default_profile = true OR id = $1
+            """
+            profiles_to_link = await self.conn.fetch(auto_link_query, request.profile_id)
+            
+            for profile in profiles_to_link:
+                profile_dept_query = """
+                INSERT INTO profile_departments (profile_id, department_id)
+                VALUES ($1, $2)
+                ON CONFLICT (profile_id, department_id) DO NOTHING
+                """
+                await self.conn.execute(
+                    profile_dept_query,
+                    profile["id"],
+                    department_id
+                )
 
         # Invalidate caches
         await self._invalidate_cache(

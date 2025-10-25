@@ -121,6 +121,7 @@ export const CreateDepartmentRequestSchema = z.object({
   description: z.string(),
   active: z.boolean(),
   agent_roles: AgentRolesSchema,
+  profile_id: z.string(),
 });
 
 export type CreateDepartmentRequest = z.infer<

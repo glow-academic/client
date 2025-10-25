@@ -114,6 +114,7 @@ class CreateDepartmentRequest(BaseModel):
     description: str
     active: bool
     agent_roles: AgentRoles
+    profile_id: str  # Creator's profile ID
 
 
 class CreateDepartmentResponse(BaseModel):

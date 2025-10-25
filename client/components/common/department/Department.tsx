@@ -321,6 +321,7 @@ export default function Department({ departmentId }: DepartmentProps) {
             description: formData.description,
             active: formData.active ?? true,
             agent_roles: departmentAgents, // Send all 8 roles at once
+            profile_id: effectiveProfile?.id || "",
           },
           {
             onSuccess: () => {

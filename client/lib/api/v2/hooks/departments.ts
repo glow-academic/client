@@ -112,11 +112,25 @@ export function useCreateDepartment() {
       return CreateDepartmentResponseSchema.parse(res);
     },
     onSuccess: () => {
+      // Invalidate department lists
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey[0];
           return (
             typeof key === "string" && key.startsWith("departments:v2:list")
+          );
+        },
+      });
+
+      // Invalidate profile queries since profile_departments links were added
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            typeof key === "string" &&
+            (key.startsWith("profile:v2:") ||
+              (key === "v2" && query.queryKey[1] === "layout") ||
+              (key === "v2" && query.queryKey[1] === "profile"))
           );
         },
       });
@@ -162,11 +176,25 @@ export function useDuplicateDepartment() {
       return DuplicateDepartmentResponseSchema.parse(res);
     },
     onSuccess: () => {
+      // Invalidate department lists
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey[0];
           return (
             typeof key === "string" && key.startsWith("departments:v2:list")
+          );
+        },
+      });
+
+      // Invalidate profile queries since profile_departments links were added
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            typeof key === "string" &&
+            (key.startsWith("profile:v2:") ||
+              (key === "v2" && query.queryKey[1] === "layout") ||
+              (key === "v2" && query.queryKey[1] === "profile"))
           );
         },
       });
@@ -186,11 +214,25 @@ export function useDeleteDepartment() {
       return DeleteDepartmentResponseSchema.parse(res);
     },
     onSuccess: () => {
+      // Invalidate department lists
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey[0];
           return (
             typeof key === "string" && key.startsWith("departments:v2:list")
+          );
+        },
+      });
+
+      // Invalidate profile queries since profile_departments links may be removed
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            typeof key === "string" &&
+            (key.startsWith("profile:v2:") ||
+              (key === "v2" && query.queryKey[1] === "layout") ||
+              (key === "v2" && query.queryKey[1] === "profile"))
           );
         },
       });
