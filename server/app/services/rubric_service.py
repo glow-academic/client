@@ -4,31 +4,21 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.rubric_queries import RubricQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.rubrics import (
-    CreateRubricRequest,
-    CreateRubricResponse,
-    DeleteRubricRequest,
-    DeleteRubricResponse,
-    DuplicateRubricRequest,
-    DuplicateRubricResponse,
-    RubricDetailDefaultRequest,
-    RubricDetailRequest,
-    RubricDetailResponse,
-    RubricItem,
-    RubricsFilters,
-    RubricsListResponse,
-    StandardGroupDetail,
-    StandardGroupMappingDetail,
-    StandardGroupMappingItem,
-    StandardMappingItem,
-    UpdateRubricRequest,
-    UpdateRubricResponse,
-)
+from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
+                                 DeleteRubricRequest, DeleteRubricResponse,
+                                 DuplicateRubricRequest,
+                                 DuplicateRubricResponse,
+                                 RubricDetailDefaultRequest,
+                                 RubricDetailRequest, RubricDetailResponse,
+                                 RubricItem, RubricsFilters,
+                                 RubricsListResponse, StandardGroupDetail,
+                                 StandardGroupMappingDetail,
+                                 StandardGroupMappingItem, StandardMappingItem,
+                                 UpdateRubricRequest, UpdateRubricResponse)
 from app.services.base_service import BaseService, with_cache
 
 
@@ -168,10 +158,12 @@ class RubricService(BaseService):
         standard_groups_mapping = {}
         standards_mapping = {}
 
-        if rubric.get("standard_groups_complete") and isinstance(
-            rubric["standard_groups_complete"], list
-        ):
-            for group_data in rubric["standard_groups_complete"]:
+        standard_groups_data = rubric.get("standard_groups_complete")
+        if isinstance(standard_groups_data, str):
+            standard_groups_data = json.loads(standard_groups_data)
+        
+        if standard_groups_data and isinstance(standard_groups_data, list):
+            for group_data in standard_groups_data:
                 if isinstance(group_data, dict):
                     group_id = group_data.get("id", "")
                     standard_group_ids.append(group_id)
