@@ -380,8 +380,8 @@ class SimulationQueries:
         Params order: new_simulation_id, original_simulation_id
         """
         return """
-        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active)
-        SELECT $1, scenario_id, active
+        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position)
+        SELECT $1, scenario_id, active, position
         FROM simulation_scenarios
         WHERE simulation_id = $2
         """
