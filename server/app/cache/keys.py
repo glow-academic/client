@@ -794,11 +794,6 @@ def document_file_info(document_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Ke
     )
 
 
-def document_csv_file(token: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
-    """Key for CSV file metadata."""
-    return Key(ns=NS_DOCUMENT, name="csv_file", params={"token": token}, v=v)
-
-
 def _serialize_document_filters(filters: Any) -> dict[str, Any]:
     """Serialize document filters to stable dict format."""
     if hasattr(filters, "model_dump"):

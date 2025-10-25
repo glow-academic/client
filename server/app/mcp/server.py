@@ -1,18 +1,16 @@
 # server.py — Clean MCP server with inlined tool logic
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
-
 from app.db import get_pool
 from app.services.assistant_service import AssistantService
 from app.services.cohort_service import CohortService
-from app.services.export_service import ExportService
 from app.services.log_service import LogService
 from app.services.persona_service import PersonaService
 from app.services.profile_service import ProfileService
 from app.services.scenario_service import ScenarioService
 from app.services.schema_service import SchemaService
 from app.services.simulation_service import SimulationService
+from mcp.server.fastmcp import FastMCP
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Configure MCP server for stateless HTTP transport
@@ -600,34 +598,6 @@ async def _recent_app_logs(
             return await service.get_recent_logs(level, limit)
         except Exception as e:
             return [{"error": f"Database error: {str(e)}"}]
-
-
-@server.tool()
-async def _export_csv(sql: str) -> str:
-    """
-    🔎 Export query results as CSV download
-    ---------------------------------------
-    Same guard-rails as query_data but returns a downloadable CSV link.
-
-    Input
-      • sql – SELECT statement only
-
-    Returns
-      Download link for CSV file
-
-    Quick-start
-      ask:  "Export roster for Cohort C"
-      call: export_csv("SELECT first_name, last_name FROM profiles WHERE ...")
-
-    Security: Only SELECT allowed, 1000-row limit.
-    """
-    pool = get_pool()
-    if not pool:
-        return "Error: Database pool not initialized"
-
-    async with pool.acquire() as conn:
-        service = ExportService(conn)
-        return await service.export_to_csv(sql, max_rows=1000)
 
 
 @server.tool()

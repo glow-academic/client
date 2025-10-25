@@ -12,7 +12,7 @@ import zipfile
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.extensions import CSV_FOLDER, UPLOAD_FOLDER
+from app.extensions import UPLOAD_FOLDER
 from app.queries.document_queries import DocumentQueries
 from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
                               ParameterItemMappingItem)
@@ -786,21 +786,6 @@ class DocumentService(BaseService):
         content_type = get_content_type(result["name"], result["mime_type"])
 
         return file_path, result["name"], content_type
-
-    @with_cache(lambda self, token: keys.document_csv_file(token))
-    async def get_csv_file(self, token: str) -> str | None:
-        """
-        Get CSV file path for download.
-
-        Returns:
-            File path or None if not found
-        """
-        file_path = os.path.join(CSV_FOLDER, f"{token}.csv")
-
-        if not os.path.exists(file_path):
-            return None
-
-        return file_path
 
     # Certificate Generation
     def generate_certificate(
