@@ -273,11 +273,11 @@ class SimulationQueries:
     def insert_simulation_scenario(self) -> str:
         """Build query to insert simulation scenario.
 
-        Params order: simulation_id, scenario_id, active
+        Params order: simulation_id, scenario_id, active, position
         """
         return """
-        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active)
-        VALUES ($1, $2, $3)
+        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position)
+        VALUES ($1, $2, $3, $4)
         """
 
     def get_simulation_name(self, simulation_id: str) -> tuple[str, list[Any]]:
@@ -933,7 +933,7 @@ class SimulationQueries:
                 s.id as scenario_id,
                 s.name,
                 sps.problem_statement,
-                s.active,
+                ss.active,
                 s.default_scenario,
                 ss.position,
                 COALESCE(
@@ -945,7 +945,7 @@ class SimulationQueries:
             FROM scenarios s
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-            WHERE ss.simulation_id = $1 AND ss.active = true
+            WHERE ss.simulation_id = $1
             ORDER BY ss.position
         ),
         scenario_statistics AS (
@@ -1600,7 +1600,7 @@ class SimulationQueries:
                 s.id as scenario_id,
                 s.name,
                 sps.problem_statement,
-                s.active,
+                ss.active,
                 s.default_scenario,
                 ss.position,
                 COALESCE(
@@ -1613,7 +1613,6 @@ class SimulationQueries:
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             JOIN default_simulation ds ON ss.simulation_id = ds.id
-            WHERE ss.active = true
             ORDER BY ss.position
         ),
         scenario_statistics AS (

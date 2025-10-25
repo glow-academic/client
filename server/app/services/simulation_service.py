@@ -673,6 +673,7 @@ class SimulationService(BaseService):
                     simulation_id,
                     scenario_id,
                     active,
+                    idx,
                 )
 
             # Invalidate affected caches
@@ -774,6 +775,7 @@ class SimulationService(BaseService):
                     request.simulationId,
                     scenario_id,
                     active,
+                    idx,
                 )
 
             # Invalidate affected caches

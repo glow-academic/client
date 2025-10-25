@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    27  # Bumped: Active cohort links now only prevent deletion, not editing
+    28  # Bumped: Added objectives_enabled field, fixed scenario active states and department_mapping parsing
 )
 
 # Namespaces
