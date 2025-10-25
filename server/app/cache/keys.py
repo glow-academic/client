@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    31  # Bumped: Fixed rubric detail JSON parsing for standard_groups_complete
+    33  # Bumped: Fixed parameter detail JSON parsing for parameter_items_json
 )
 
 # Namespaces

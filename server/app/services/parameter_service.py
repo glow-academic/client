@@ -3,31 +3,25 @@
 import json
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.parameters import (
-    CreateParameterItemRequest,
-    CreateParameterItemResponse,
-    CreateParameterRequest,
-    CreateParameterResponse,
-    DeleteParameterRequest,
-    DeleteParameterResponse,
-    DuplicateParameterRequest,
-    DuplicateParameterResponse,
-    ParameterDetailDefaultRequest,
-    ParameterDetailRequest,
-    ParameterDetailResponse,
-    ParameterItem,
-    ParameterItemDetail,
-    ParameterSampleItem,
-    ParametersFilters,
-    ParametersListResponse,
-    UpdateParameterRequest,
-    UpdateParameterResponse,
-)
+from app.schemas.parameters import (CreateParameterItemRequest,
+                                    CreateParameterItemResponse,
+                                    CreateParameterRequest,
+                                    CreateParameterResponse,
+                                    DeleteParameterRequest,
+                                    DeleteParameterResponse,
+                                    DuplicateParameterRequest,
+                                    DuplicateParameterResponse,
+                                    ParameterDetailDefaultRequest,
+                                    ParameterDetailRequest,
+                                    ParameterDetailResponse, ParameterItem,
+                                    ParameterItemDetail, ParameterSampleItem,
+                                    ParametersFilters, ParametersListResponse,
+                                    UpdateParameterRequest,
+                                    UpdateParameterResponse)
 from app.services.base_service import BaseService, with_cache
 
 
@@ -129,10 +123,12 @@ class ParameterService(BaseService):
 
         # Parse parameter items from JSONB with type safety
         parameter_items = []
-        if parameter.get("parameter_items_json") and isinstance(
-            parameter["parameter_items_json"], list
-        ):
-            for item_data in parameter["parameter_items_json"]:
+        parameter_items_data = parameter.get("parameter_items_json")
+        if isinstance(parameter_items_data, str):
+            parameter_items_data = json.loads(parameter_items_data)
+        
+        if parameter_items_data and isinstance(parameter_items_data, list):
+            for item_data in parameter_items_data:
                 if isinstance(item_data, dict):
                     usage_count = item_data.get("usage_count", 0)
                     parameter_items.append(
@@ -162,54 +158,73 @@ class ParameterService(BaseService):
     async def get_parameter_detail_default(
         self, request: ParameterDetailDefaultRequest
     ) -> ParameterDetailResponse:
-        """Get default parameter details based on profile."""
-        # Use consolidated query that finds default and fetches detail in one go
-        query, params = self.queries.get_parameter_detail_default_complete(
-            request.profileId
+        """Get default parameter structure for creation mode (empty with valid departments)."""
+        # Get user's departments for validation
+        query = """
+        WITH user_departments AS (
+            SELECT DISTINCT pd.department_id
+            FROM profile_departments pd
+            WHERE pd.profile_id = $1
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id IN (SELECT department_id FROM user_departments)
         )
-        result = await self.conn.fetchrow(query, *params)
+        SELECT 
+            COALESCE(
+                (SELECT array_agg(department_id::text ORDER BY department_id) FROM user_departments),
+                ARRAY[]::text[]
+            ) as department_ids,
+            (SELECT mapping FROM department_mapping_data) as department_mapping
+        """
+        result = await self.conn.fetchrow(query, request.profileId)
 
         if not result:
-            raise ValueError("No parameters found for user's departments")
+            raise ValueError("Failed to fetch user departments")
 
-        # Parse the consolidated result
-        parameter_items_json = json.loads(result["parameter_items_json"])
-        department_mapping_json = json.loads(result["department_mapping"])
-        valid_department_ids = result["valid_department_ids"]
+        dept_ids = result["department_ids"] or []
+        
+        if not dept_ids:
+            raise ValueError("No accessible departments found for user")
 
-        # Transform department mapping
+        # Default department (first accessible)
+        default_dept_id = dept_ids[0]
+
+        # Parse department mapping
+        department_mapping_data = result.get("department_mapping")
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
+        
         department_mapping: dict[str, DepartmentMappingItem] = {}
-        for dept_id, ddata in department_mapping_json.items():
-            department_mapping[dept_id] = DepartmentMappingItem(
-                name=ddata.get("name", ""),
-                description=ddata.get("description", ""),
-            )
+        if isinstance(department_mapping_data, dict):
+            for dept_id, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
 
-        # Transform parameter items and compute can_delete
-        parameter_items = []
-        for item_data in parameter_items_json:
-            usage_count = item_data.get("usage_count", 0)
-            parameter_items.append(
-                ParameterItemDetail(
-                    parameter_item_id=item_data.get("parameter_item_id", ""),
-                    name=item_data.get("name", ""),
-                    description=item_data.get("description", ""),
-                    value=item_data.get("value", ""),
-                    default_item=item_data.get("default_item", False),
-                    can_delete=usage_count == 0,
-                )
-            )
-
+        # Return empty parameter with all valid options for creation
         return ParameterDetailResponse(
-            name=result["name"],
-            description=result["description"],
-            numerical=result["numerical"],
-            active=result["active"],
-            default_parameter=result["default_parameter"],
-            department_id=str(result["department_id"]),
-            parameter_items=parameter_items,
+            name="",
+            description="",
+            numerical=False,
+            active=True,
+            default_parameter=False,
+            department_id=default_dept_id,
+            parameter_items=[],  # Empty - user will define items
             department_mapping=department_mapping,
-            valid_department_ids=valid_department_ids,
+            valid_department_ids=dept_ids,
         )
 
     async def create_parameter(

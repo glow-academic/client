@@ -64,6 +64,7 @@ class ParameterQueries:
             p.numerical,
             p.active,
             p.default_parameter,
+            p.updated_at,
             COALESCE(pic.num_items, 0) as num_items,
             COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
             COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
@@ -91,7 +92,7 @@ class ParameterQueries:
         LEFT JOIN parameter_sample_items psi ON psi.parameter_id = p.id
         CROSS JOIN user_profile up
         WHERE p.department_id = ANY($1)
-        ORDER BY p.name
+        ORDER BY p.updated_at DESC NULLS LAST
         """
 
         return (query, [department_ids, profile_id])
