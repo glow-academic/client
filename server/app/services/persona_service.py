@@ -124,7 +124,7 @@ class PersonaService(BaseService):
             result["description"],
             result["system_prompt"],
             result["temperature"],
-            result["reasoning"],
+            result["reasoning"] or "none",  # Default to "none" if None
             result["model_id"],
             result["department_id"],
             result["color"],
@@ -565,7 +565,7 @@ class PersonaService(BaseService):
             request.color,
             request.icon,
             request.model_id,
-            request.reasoning,
+            request.reasoning or "none",  # Default to "none" if None
             request.temperature,
             request.system_prompt,
         )
@@ -612,7 +612,7 @@ class PersonaService(BaseService):
             request.color,
             request.icon,
             request.model_id,
-            request.reasoning,
+            request.reasoning or "none",  # Default to "none" if None
             request.temperature,
             request.system_prompt,
         )

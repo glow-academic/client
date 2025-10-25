@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    28  # Bumped: Added objectives_enabled field, fixed scenario active states and department_mapping parsing
+    30  # Bumped: Fixed empty parameters structure in scenario detail query - now includes all valid parameters for department
 )
 
 # Namespaces

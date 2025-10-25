@@ -1,5 +1,6 @@
 """Scenario service layer - business logic for scenario operations."""
 
+import json
 import uuid
 from typing import Any
 
@@ -268,6 +269,8 @@ class ScenarioService(BaseService):
         # Parse JSONB parameters into ParameterDetail dict
         parameters_dict: dict[str, ParameterDetail] = {}
         params_data = scenario.get("parameters_json")
+        if isinstance(params_data, str):
+            params_data = json.loads(params_data)
         if params_data and isinstance(params_data, dict):
             for param_id, param_detail in params_data.items():
                 if isinstance(param_detail, dict):
@@ -288,9 +291,11 @@ class ScenarioService(BaseService):
                         valid_parameter_item_ids=valid_param_item_ids,
                     )
 
-        # Parse JSONB objective mapping
+        # Parse JSONB objective mapping (may be string or dict)
         objective_mapping = {}
         obj_mapping_data = scenario.get("objective_mapping")
+        if isinstance(obj_mapping_data, str):
+            obj_mapping_data = json.loads(obj_mapping_data)
         if obj_mapping_data and isinstance(obj_mapping_data, dict):
             for oid, odata in obj_mapping_data.items():
                 if isinstance(odata, dict):
@@ -299,9 +304,11 @@ class ScenarioService(BaseService):
                         description=odata.get("description", ""),
                     )
 
-        # Parse JSONB persona mapping
+        # Parse JSONB persona mapping (may be string or dict)
         persona_mapping = {}
         persona_mapping_data = scenario.get("persona_mapping")
+        if isinstance(persona_mapping_data, str):
+            persona_mapping_data = json.loads(persona_mapping_data)
         if persona_mapping_data and isinstance(persona_mapping_data, dict):
             for pid, pdata in persona_mapping_data.items():
                 if isinstance(pdata, dict):
@@ -312,9 +319,11 @@ class ScenarioService(BaseService):
                         icon=pdata.get("icon", ""),
                     )
 
-        # Parse JSONB document mapping
+        # Parse JSONB document mapping (may be string or dict)
         document_mapping = {}
         doc_mapping_data = scenario.get("document_mapping")
+        if isinstance(doc_mapping_data, str):
+            doc_mapping_data = json.loads(doc_mapping_data)
         if doc_mapping_data and isinstance(doc_mapping_data, dict):
             for did, ddata in doc_mapping_data.items():
                 if isinstance(ddata, dict):
@@ -323,9 +332,11 @@ class ScenarioService(BaseService):
                         description=ddata.get("description", ""),
                     )
 
-        # Parse JSONB simulation mapping
+        # Parse JSONB simulation mapping (may be string or dict)
         simulation_mapping = {}
         sim_mapping_data = scenario.get("simulation_mapping")
+        if isinstance(sim_mapping_data, str):
+            sim_mapping_data = json.loads(sim_mapping_data)
         if sim_mapping_data and isinstance(sim_mapping_data, dict):
             for sid, sdata in sim_mapping_data.items():
                 if isinstance(sdata, dict):
@@ -334,9 +345,11 @@ class ScenarioService(BaseService):
                         description=sdata.get("description", ""),
                     )
 
-        # Parse JSONB parameter mapping
+        # Parse JSONB parameter mapping (may be string or dict)
         parameter_mapping = {}
         param_mapping_data = scenario.get("parameter_mapping")
+        if isinstance(param_mapping_data, str):
+            param_mapping_data = json.loads(param_mapping_data)
         if param_mapping_data and isinstance(param_mapping_data, dict):
             for pid, pdata in param_mapping_data.items():
                 if isinstance(pdata, dict):
@@ -345,9 +358,11 @@ class ScenarioService(BaseService):
                         description=pdata.get("description", ""),
                     )
 
-        # Parse JSONB parameter_item mapping
+        # Parse JSONB parameter_item mapping (may be string or dict)
         param_item_full_mapping = {}
         param_item_mapping_data = scenario.get("parameter_item_mapping")
+        if isinstance(param_item_mapping_data, str):
+            param_item_mapping_data = json.loads(param_item_mapping_data)
         if param_item_mapping_data and isinstance(param_item_mapping_data, dict):
             for piid, pidata in param_item_mapping_data.items():
                 if isinstance(pidata, dict):
@@ -358,9 +373,11 @@ class ScenarioService(BaseService):
                         parameter_name=pidata.get("parameter_name", ""),
                     )
 
-        # Parse JSONB department mapping
+        # Parse JSONB department mapping (may be string or dict)
         department_mapping = {}
         dept_mapping_data = scenario.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
         if dept_mapping_data and isinstance(dept_mapping_data, dict):
             for did, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
@@ -508,6 +525,31 @@ class ScenarioService(BaseService):
                         description=ddata.get("description", ""),
                     )
 
+        # Parse JSONB parameters into ParameterDetail dict
+        parameters_dict: dict[str, ParameterDetail] = {}
+        params_data = result.get("parameters_json")
+        if isinstance(params_data, str):
+            params_data = json.loads(params_data)
+        if params_data and isinstance(params_data, dict):
+            for param_id, param_detail in params_data.items():
+                if isinstance(param_detail, dict):
+                    # Extract arrays from JSONB
+                    param_item_ids = param_detail.get("parameter_item_ids", [])
+                    valid_param_item_ids = param_detail.get(
+                        "valid_parameter_item_ids", []
+                    )
+
+                    # Convert JSONB arrays to Python lists if needed
+                    if not isinstance(param_item_ids, list):
+                        param_item_ids = []
+                    if not isinstance(valid_param_item_ids, list):
+                        valid_param_item_ids = []
+
+                    parameters_dict[param_id] = ParameterDetail(
+                        parameter_item_ids=param_item_ids,
+                        valid_parameter_item_ids=valid_param_item_ids,
+                    )
+
         # Return empty scenario with all valid options
         return ScenarioDetailResponse(
             # Basic fields (empty defaults)
@@ -528,8 +570,8 @@ class ScenarioService(BaseService):
             # Objectives (empty defaults)
             objective_ids=[],
             valid_objectives=[],
-            # Parameters (empty defaults)
-            parameters={},
+            # Parameters (with valid options for creation)
+            parameters=parameters_dict,
             # Simulations (empty defaults)
             active_simulation_ids=[],
             # Permissions (allow all for new scenarios)
@@ -557,7 +599,6 @@ class ScenarioService(BaseService):
             result = await self.conn.fetchrow(
                 create_query,
                 request.name,
-                request.problem_statement,
                 request.department_id,
                 request.active,
                 request.default_scenario,
@@ -567,6 +608,25 @@ class ScenarioService(BaseService):
                 raise ValueError("Failed to create scenario")
 
             scenario_id = str(result["id"])
+
+            # Insert self-referencing edge in scenario_tree to mark as parent/root
+            tree_edge_query = self.queries.insert_scenario_tree_edge()
+            await self.conn.execute(
+                tree_edge_query,
+                scenario_id,
+                scenario_id,
+                True,
+            )
+
+            # Insert problem statement into junction table
+            if request.problem_statement:
+                problem_stmt_query = self.queries.insert_scenario_problem_statement()
+                await self.conn.execute(
+                    problem_stmt_query,
+                    scenario_id,
+                    request.problem_statement,
+                    True,
+                )
 
             # Insert persona relationship
             if request.persona_id:
@@ -744,6 +804,15 @@ class ScenarioService(BaseService):
                 raise ValueError("Failed to create duplicate scenario")
 
             new_scenario_id = str(new_scenario["id"])
+
+            # Insert self-referencing edge in scenario_tree to mark as parent/root
+            tree_edge_query = self.queries.insert_scenario_tree_edge()
+            await self.conn.execute(
+                tree_edge_query,
+                new_scenario_id,
+                new_scenario_id,
+                True,
+            )
 
             # Copy problem statements (from junction table)
             copy_problem_statements_query = self.queries.copy_scenario_problem_statements()

@@ -69,6 +69,7 @@ class ScenarioQueries:
                 s.active,
                 s.default_scenario,
                 s.generated,
+                s.updated_at,
                 st.parent_id::text as parent_scenario_id,
                 COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
                 sp.persona_id,
@@ -180,7 +181,7 @@ class ScenarioQueries:
         CROSS JOIN parameter_item_mapping_data pim
         CROSS JOIN cohort_mapping_data cm
         CROSS JOIN persona_mapping_data pm
-        ORDER BY sd.title
+        ORDER BY sd.updated_at DESC NULLS LAST
         """
 
         return (query, [department_ids, profile_id])
@@ -288,37 +289,40 @@ class ScenarioQueries:
             JOIN simulations s ON s.id = ss.simulation_id
             WHERE ss.scenario_id = $1 AND ss.active = true
         ),
-        scenario_parameters_data AS (
+        all_parameters_data AS (
+            SELECT 
+                p.id::text as param_id,
+                COALESCE((
+                    SELECT jsonb_agg(spi2.parameter_item_id::text ORDER BY spi2.parameter_item_id)
+                    FROM scenario_parameter_items spi2
+                    JOIN parameter_items pi2 ON pi2.id = spi2.parameter_item_id
+                    WHERE spi2.scenario_id = $1 AND pi2.parameter_id = p.id AND spi2.active = true
+                ), '[]'::jsonb) as selected_items,
+                COALESCE((
+                    SELECT jsonb_agg(pi3.id::text ORDER BY pi3.id)
+                    FROM parameter_items pi3
+                    WHERE pi3.parameter_id = p.id
+                ), '[]'::jsonb) as valid_items
+            FROM parameters p, user_departments ud
+            WHERE p.department_id = ANY(ud.dept_ids) AND p.active = true
+        ),
+        merged_parameters_data AS (
             SELECT 
                 COALESCE(jsonb_object_agg(
-                    pi.parameter_id::text,
+                    param_id,
                     jsonb_build_object(
-                        'parameter_item_ids', COALESCE((
-                            SELECT jsonb_agg(spi2.parameter_item_id::text ORDER BY spi2.parameter_item_id)
-                            FROM scenario_parameter_items spi2
-                            JOIN parameter_items pi2 ON pi2.id = spi2.parameter_item_id
-                            WHERE spi2.scenario_id = $1 AND pi2.parameter_id = pi.parameter_id AND spi2.active = true
-                        ), '[]'::jsonb),
-                        'valid_parameter_item_ids', COALESCE((
-                            SELECT jsonb_agg(id::text ORDER BY id)
-                            FROM parameter_items
-                            WHERE parameter_id = pi.parameter_id
-                        ), '[]'::jsonb)
+                        'parameter_item_ids', selected_items,
+                        'valid_parameter_item_ids', valid_items
                     )
                 ), '{}'::jsonb) as parameters_json
-            FROM (
-                SELECT DISTINCT pi.parameter_id 
-                FROM scenario_parameter_items spi
-                JOIN parameter_items pi ON pi.id = spi.parameter_item_id
-                WHERE spi.scenario_id = $1 AND spi.active = true
-            ) pi
+            FROM all_parameters_data
         ),
         all_parameter_item_ids AS (
             SELECT DISTINCT unnest(ARRAY(
                 SELECT jsonb_array_elements_text(
                     value->'parameter_item_ids'
                 )::uuid
-                FROM scenario_parameters_data, jsonb_each(parameters_json)
+                FROM merged_parameters_data, jsonb_each(parameters_json)
                 WHERE jsonb_typeof(value->'parameter_item_ids') = 'array'
             )) as param_item_id
         ),
@@ -368,7 +372,12 @@ class ScenarioQueries:
                 COALESCE(jsonb_object_agg(
                     p.id::text,
                     jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''))
-                ), '{}'::jsonb) as parameter_mapping,
+                ), '{}'::jsonb) as parameter_mapping
+            FROM parameters p, user_departments ud
+            WHERE p.department_id = ANY(ud.dept_ids) AND p.active = true
+        ),
+        parameter_item_mapping_data AS (
+            SELECT 
                 COALESCE(jsonb_object_agg(
                     pi.id::text,
                     jsonb_build_object(
@@ -379,8 +388,8 @@ class ScenarioQueries:
                     )
                 ), '{}'::jsonb) as parameter_item_mapping
             FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE pi.id IN (SELECT param_item_id FROM all_parameter_item_ids)
+            JOIN parameters p ON p.id = pi.parameter_id, user_departments ud
+            WHERE p.department_id = ANY(ud.dept_ids)
         ),
         department_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
@@ -403,18 +412,18 @@ class ScenarioQueries:
             COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
             COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,
             COALESCE(ssa.simulation_ids, ARRAY[]::text[]) as simulation_ids,
-            COALESCE(spd.parameters_json, '{}'::jsonb) as parameters_json,
-            COALESCE(vpd.valid_persona_ids, ARRAY[]::text[]) as valid_persona_ids,
+            COALESCE(mpd.parameters_json, '{}'::jsonb) as parameters_json,
+            COALESCE(vpd2.valid_persona_ids, ARRAY[]::text[]) as valid_persona_ids,
             COALESCE(vdd.valid_document_ids, ARRAY[]::text[]) as valid_document_ids,
             (SELECT dept_ids FROM user_departments) as valid_department_ids,
             COALESCE(ssa.active_usage_count, 0) as active_usage_count,
             up.role as user_role,
             sod.objective_mapping,
-            vpd.persona_mapping,
+            vpd2.persona_mapping,
             vdd.document_mapping,
             smd.simulation_mapping,
             pmd.parameter_mapping,
-            pmd.parameter_item_mapping,
+            pimd.parameter_item_mapping,
             dmd.department_mapping
         FROM scenario_core sc
         CROSS JOIN user_profile up
@@ -422,11 +431,12 @@ class ScenarioQueries:
         LEFT JOIN scenario_documents_agg sd ON true
         LEFT JOIN scenario_objectives_data sod ON true
         LEFT JOIN scenario_simulations_agg ssa ON true
-        LEFT JOIN scenario_parameters_data spd ON true
-        CROSS JOIN valid_personas_data vpd
+        CROSS JOIN merged_parameters_data mpd
+        CROSS JOIN valid_personas_data vpd2
         CROSS JOIN valid_documents_data vdd
         CROSS JOIN simulation_mapping_data smd
         CROSS JOIN parameter_mapping_data pmd
+        CROSS JOIN parameter_item_mapping_data pimd
         CROSS JOIN department_mapping_data dmd
         """
         return (query, [scenario_id, profile_id])
@@ -555,17 +565,16 @@ class ScenarioQueries:
     def create_scenario(self) -> str:
         """Build query to create scenario.
 
-        Params order: name, problem_statement, department_id, active, default_scenario
+        Params order: name, department_id, active, default_scenario
         """
         return """
         INSERT INTO scenarios (
             name,
-            problem_statement,
             department_id,
             active,
             default_scenario
         )
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3, $4)
         RETURNING id
         """
 
@@ -1451,6 +1460,23 @@ class ScenarioQueries:
                 '{}'::jsonb
             ) as mapping
             FROM parameter_item_data pi
+        ),
+        parameters_structure AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'parameter_item_ids', '[]'::jsonb,
+                        'valid_parameter_item_ids', COALESCE((
+                            SELECT jsonb_agg(pi.id::text ORDER BY pi.id)
+                            FROM parameter_items pi
+                            WHERE pi.parameter_id = p.id
+                        ), '[]'::jsonb)
+                    )
+                ),
+                '{}'::jsonb
+            ) as parameters_json
+            FROM parameter_data p
         )
         SELECT 
             COALESCE(
@@ -1469,7 +1495,8 @@ class ScenarioQueries:
             (SELECT mapping FROM persona_mapping_data) as persona_mapping,
             (SELECT mapping FROM document_mapping_data) as document_mapping,
             (SELECT mapping FROM parameter_mapping_data) as parameter_mapping,
-            (SELECT mapping FROM parameter_item_mapping_data) as parameter_item_mapping
+            (SELECT mapping FROM parameter_item_mapping_data) as parameter_item_mapping,
+            (SELECT parameters_json FROM parameters_structure) as parameters_json
         """
         return (query, [profile_id])
 
