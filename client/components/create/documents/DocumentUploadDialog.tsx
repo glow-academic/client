@@ -75,7 +75,10 @@ export function DocumentUploadDialog({
     }
   };
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (
+    file: File,
+    classification?: { type: string; tags: string[]; departmentId?: string }
+  ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
 
@@ -178,6 +181,7 @@ export function DocumentUploadDialog({
               zip: isZipFile,
               autoClassify: shouldAutoClassify,
               profile_id: effectiveProfile?.id,
+              department_id: classification?.departmentId,
             });
 
             if (result.success) {
@@ -313,13 +317,15 @@ export function DocumentUploadDialog({
             if (fileInputRef.current) fileInputRef.current.value = "";
             onClose();
           }}
-          onConfirm={async () => {
+          onConfirm={async (perFile, defaultsForZip) => {
             setShowUploadDialog(false);
             // Kick off uploads with provided classifications
             for (const file of pendingFiles) {
               // Fire without awaiting to allow parallel uploads
               (async () => {
-                await uploadFile(file);
+                // Get classification for this file (or use ZIP defaults)
+                const classification = perFile[file.name] || defaultsForZip;
+                await uploadFile(file, classification);
               })();
             }
             // Clear state so user can add the same docs again if needed

@@ -11,33 +11,25 @@ import uuid
 import zipfile
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.extensions import CSV_FOLDER, UPLOAD_FOLDER
 from app.queries.document_queries import DocumentQueries
-from app.schemas.base import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ParameterItemMappingItem,
-)
-from app.schemas.documents import (
-    BulkDeleteDocumentsRequest,
-    BulkUpdateDocumentsRequest,
-    DeleteDocumentRequest,
-    DeleteDocumentResponse,
-    DocumentDetailBulkRequest,
-    DocumentDetailBulkResponse,
-    DocumentDetailRequest,
-    DocumentDetailResponse,
-    DocumentItem,
-    DocumentsFilters,
-    DocumentsListResponse,
-    FinalizeUploadRequest,
-    FinalizeUploadResponse,
-    GenerateCertificateRequest,
-    UpdateDocumentRequest,
-    UpdateDocumentResponse,
-)
+from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
+                              ParameterItemMappingItem)
+from app.schemas.documents import (BulkDeleteDocumentsRequest,
+                                   BulkUpdateDocumentsRequest,
+                                   DeleteDocumentRequest,
+                                   DeleteDocumentResponse,
+                                   DocumentDetailBulkRequest,
+                                   DocumentDetailBulkResponse,
+                                   DocumentDetailRequest,
+                                   DocumentDetailResponse, DocumentItem,
+                                   DocumentsFilters, DocumentsListResponse,
+                                   FinalizeUploadRequest,
+                                   FinalizeUploadResponse,
+                                   GenerateCertificateRequest,
+                                   UpdateDocumentRequest,
+                                   UpdateDocumentResponse)
 from app.services.base_service import BaseService, with_cache
 from app.utils.mime_utils import get_content_type
 
@@ -556,6 +548,15 @@ class DocumentService(BaseService):
     ) -> FinalizeUploadResponse:
         """Finalize a TUS upload and process the file."""
         try:
+            # Validate department_id is provided
+            department_id = request.department_id
+            if not department_id:
+                return FinalizeUploadResponse(
+                    success=False,
+                    message="department_id is required - must be provided from frontend",
+                    status="error",
+                )
+            
             # Find the upload directory
             upload_dir = None
             for dir_name in os.listdir(TUS_UPLOADS_DIR):
@@ -661,7 +662,8 @@ class DocumentService(BaseService):
                                 filename,
                                 final_file_path,
                                 content_type,
-                                request.department_id,
+                                department_id,
+                                str(document_id),  # file_id: use document_id for extracted files
                             )
                             extracted_documents.append(
                                 {
@@ -715,7 +717,8 @@ class DocumentService(BaseService):
                 filename,
                 final_file_path,
                 content_type,
-                request.department_id,
+                department_id,
+                request.fileId,  # file_id: TUS upload file ID
             )
 
             # Clean up
@@ -817,20 +820,17 @@ class DocumentService(BaseService):
             from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import (
-                ParagraphStyle,  # type: ignore
-                getSampleStyleSheet,  # type: ignore
-            )
+            from reportlab.lib.styles import ParagraphStyle  # type: ignore
+            from reportlab.lib.styles import \
+                getSampleStyleSheet  # type: ignore
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import (
-                Frame,  # type: ignore
-                PageTemplate,  # type: ignore
-                Paragraph,  # type: ignore
-                SimpleDocTemplate,  # type: ignore
-                Spacer,  # type: ignore
-                Table,  # type: ignore
-                TableStyle,  # type: ignore
-            )
+            from reportlab.platypus import Frame  # type: ignore
+            from reportlab.platypus import PageTemplate  # type: ignore
+            from reportlab.platypus import Paragraph  # type: ignore
+            from reportlab.platypus import SimpleDocTemplate  # type: ignore
+            from reportlab.platypus import Spacer  # type: ignore
+            from reportlab.platypus import Table  # type: ignore
+            from reportlab.platypus import TableStyle  # type: ignore
 
             # Create PDF in memory
             buffer = io.BytesIO()

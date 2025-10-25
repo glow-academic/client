@@ -352,10 +352,13 @@ class DocumentQueries:
         return (query, [document_ids])
 
     def insert_document(self) -> tuple[str, list[Any]]:
-        """Build query to insert a new document."""
+        """Build query to insert a new document.
+        
+        Params order: id, name, file_path, mime_type, department_id, file_id
+        """
         query = """
-        INSERT INTO documents (id, name, file_path, mime_type, department_id)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO documents (id, name, file_path, mime_type, department_id, file_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
         """
         return (query, [])  # Parameters filled at execution time
 

@@ -77,10 +77,10 @@ export function UploadClassificationDialog({
   });
   // Additive apply-to-all temporary tags displayed below the input
   const [applyAllTempTags, setApplyAllTempTags] = React.useState<string[]>([]);
-  // Department selection state
+  // Department selection state - default to user's primary department
   const [selectedDepartmentId, setSelectedDepartmentId] = React.useState<
     string | null
-  >(null);
+  >(effectiveProfile?.primaryDepartmentId || null);
 
   React.useEffect(() => {
     // Initialize defaults for new files
