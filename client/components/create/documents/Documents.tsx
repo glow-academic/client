@@ -790,6 +790,9 @@ export default function Documents() {
                   parameterId=""
                   parameterName="Parameter Items"
                   allowCreate={false}
+                  multiSelect={true}
+                  badgesPosition="below"
+                  showClearAll={true}
                 />
               </div>
 
@@ -880,6 +883,9 @@ export default function Documents() {
                   parameterId=""
                   parameterName="Parameter Items"
                   allowCreate={false}
+                  multiSelect={true}
+                  badgesPosition="below"
+                  showClearAll={true}
                 />
               </div>
 
@@ -1113,6 +1119,8 @@ export default function Documents() {
           onClose={() => setUploadDialogOpen(false)}
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
+          parameterItemMapping={parameterItemMapping}
+          validParameterItemIds={Object.keys(parameterItemMapping)}
         />
       )}
     </div>

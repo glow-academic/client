@@ -2,6 +2,7 @@
 import * as React from "react";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { ParameterItemPicker } from "@/components/common/scenario/ParameterItemPicker";
 import { TagSelector } from "@/components/common/tags/TagSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProfile } from "@/contexts/profile-context";
-import { DocumentType } from "@/lib/api/v2/schemas/base";
+import {
+  DocumentType,
+  type ParameterItemMappingItem,
+} from "@/lib/api/v2/schemas/base";
 import { inferMimeFromName } from "@/utils/mime-map";
 
 export type FileClassification = {
   type: DocumentType;
   tags: string[];
+  parameterItemIds: string[];
   departmentId?: string;
 };
 
@@ -43,6 +48,8 @@ export interface UploadClassificationDialogProps {
   onRemoveFile?: (fileName: string) => void;
   departmentMapping: Record<string, { name: string; description: string }>;
   validDepartmentIds: string[];
+  parameterItemMapping: Record<string, ParameterItemMappingItem>;
+  validParameterItemIds: string[];
 }
 
 const TYPE_OPTIONS: { value: DocumentType; label: string }[] = [
@@ -64,6 +71,8 @@ export function UploadClassificationDialog({
   onRemoveFile,
   departmentMapping,
   validDepartmentIds,
+  parameterItemMapping,
+  validParameterItemIds,
 }: UploadClassificationDialogProps) {
   const { effectiveProfile } = useProfile();
 
@@ -74,9 +83,13 @@ export function UploadClassificationDialog({
   const [zipDefaults, setZipDefaults] = React.useState<FileClassification>({
     type: "homework",
     tags: [],
+    parameterItemIds: [],
   });
   // Additive apply-to-all temporary tags displayed below the input
   const [applyAllTempTags, setApplyAllTempTags] = React.useState<string[]>([]);
+  // Additive apply-to-all parameter items
+  const [applyAllTempParameterItemIds, setApplyAllTempParameterItemIds] =
+    React.useState<string[]>([]);
   // Department selection state - default to user's primary department
   const [selectedDepartmentId, setSelectedDepartmentId] = React.useState<
     string | null
@@ -89,6 +102,7 @@ export function UploadClassificationDialog({
       const current: FileClassification = perFile[f.name] ?? {
         type: "homework",
         tags: [],
+        parameterItemIds: [],
       };
       next[f.name] = current;
     });
@@ -110,6 +124,22 @@ export function UploadClassificationDialog({
         return acc.filter((t) => set.has(t));
       }, []);
     setApplyAllTempTags(intersection);
+  }, [perFile]);
+
+  // Keep the apply-all parameter items preselected with the intersection across all files
+  React.useEffect(() => {
+    const allFiles = Object.values(perFile);
+    if (allFiles.length === 0) {
+      setApplyAllTempParameterItemIds([]);
+      return;
+    }
+    const intersection = allFiles
+      .map((f) => new Set(f.parameterItemIds ?? []))
+      .reduce<string[]>((acc, set, index) => {
+        if (index === 0) return Array.from(set);
+        return acc.filter((id) => set.has(id));
+      }, []);
+    setApplyAllTempParameterItemIds(intersection);
   }, [perFile]);
 
   const applyTypeToAll = (type: DocumentType) => {
@@ -157,6 +187,46 @@ export function UploadClassificationDialog({
     }));
   };
 
+  const applyParameterItemsToAll = (incomingIds: string[]) => {
+    if (incomingIds.length === 0) return;
+    setPerFile((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([k, v]) => {
+          const merged = Array.from(
+            new Set([...(v.parameterItemIds ?? []), ...incomingIds])
+          );
+          return [k, { ...v, parameterItemIds: merged }];
+        })
+      )
+    );
+    setZipDefaults((p) => ({
+      ...p,
+      parameterItemIds: Array.from(
+        new Set([...(p.parameterItemIds ?? []), ...incomingIds])
+      ),
+    }));
+  };
+
+  const removeParameterItemsFromAll = (idsToRemove: string[]) => {
+    if (idsToRemove.length === 0) return;
+    setPerFile((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([k, v]) => {
+          const nextIds = (v.parameterItemIds ?? []).filter(
+            (id) => !idsToRemove.includes(id)
+          );
+          return [k, { ...v, parameterItemIds: nextIds }];
+        })
+      )
+    );
+    setZipDefaults((p) => ({
+      ...p,
+      parameterItemIds: (p.parameterItemIds ?? []).filter(
+        (id) => !idsToRemove.includes(id)
+      ),
+    }));
+  };
+
   // Previously used to show a ZIP-specific panel; now unified under apply-to-all controls
   // const hasZip = files.some((f) => f.name.toLowerCase().endsWith(".zip"));
 
@@ -179,7 +249,7 @@ export function UploadClassificationDialog({
             <div className="text-sm font-medium mb-3">
               Apply to all files below
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <Select
                   onValueChange={(v) => applyTypeToAll(v as DocumentType)}
@@ -214,6 +284,29 @@ export function UploadClassificationDialog({
                   showClearAll
                 />
               </div>
+              <div>
+                <ParameterItemPicker
+                  mapping={parameterItemMapping}
+                  validIds={validParameterItemIds}
+                  selectedIds={applyAllTempParameterItemIds}
+                  onSelect={(next) => {
+                    setApplyAllTempParameterItemIds((prev) => {
+                      const added = next.filter((id) => !prev.includes(id));
+                      const removed = prev.filter((id) => !next.includes(id));
+                      if (added.length) applyParameterItemsToAll(added);
+                      if (removed.length) removeParameterItemsFromAll(removed);
+                      return next;
+                    });
+                  }}
+                  parameterId=""
+                  parameterName="Parameter Items"
+                  allowCreate={false}
+                  multiSelect={true}
+                  badgesPosition="below"
+                  showClearAll={true}
+                  hideSelectedChips={false}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -235,7 +328,11 @@ export function UploadClassificationDialog({
 
         <div className="space-y-4 max-h-[50vh] overflow-auto pr-1">
           {files.map((file) => {
-            const fc = perFile[file.name] ?? { type: "homework", tags: [] };
+            const fc = perFile[file.name] ?? {
+              type: "homework",
+              tags: [],
+              parameterItemIds: [],
+            };
             const mime = file.type || inferMimeFromName(file.name);
             // gradient colors based on type (blue/purple theme) and mime
             const typeColorMap: Record<DocumentType, string> = {
@@ -311,7 +408,7 @@ export function UploadClassificationDialog({
                       </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
                     <div>
                       <Select
                         value={fc.type}
@@ -319,7 +416,11 @@ export function UploadClassificationDialog({
                           setPerFile((prev) => {
                             const prevForFile: FileClassification = prev[
                               file.name
-                            ] ?? { type: "homework", tags: [] };
+                            ] ?? {
+                              type: "homework",
+                              tags: [],
+                              parameterItemIds: [],
+                            };
                             return {
                               ...prev,
                               [file.name]: {
@@ -349,7 +450,11 @@ export function UploadClassificationDialog({
                           setPerFile((prev) => {
                             const prevForFile: FileClassification = prev[
                               file.name
-                            ] ?? { type: fc.type, tags: [] };
+                            ] ?? {
+                              type: fc.type,
+                              tags: [],
+                              parameterItemIds: [],
+                            };
                             return {
                               ...prev,
                               [file.name]: { ...prevForFile, tags },
@@ -359,6 +464,34 @@ export function UploadClassificationDialog({
                         knownTags={[]}
                         badgesPosition="below"
                         showClearAll
+                      />
+                    </div>
+                    <div>
+                      <ParameterItemPicker
+                        mapping={parameterItemMapping}
+                        validIds={validParameterItemIds}
+                        selectedIds={fc.parameterItemIds}
+                        onSelect={(parameterItemIds) =>
+                          setPerFile((prev) => {
+                            const prevForFile: FileClassification = prev[
+                              file.name
+                            ] ?? {
+                              type: fc.type,
+                              tags: fc.tags,
+                              parameterItemIds: [],
+                            };
+                            return {
+                              ...prev,
+                              [file.name]: { ...prevForFile, parameterItemIds },
+                            } as Record<string, FileClassification>;
+                          })
+                        }
+                        parameterId=""
+                        parameterName="Parameter Items"
+                        allowCreate={false}
+                        multiSelect={true}
+                        badgesPosition="below"
+                        showClearAll={false}
                       />
                     </div>
                   </div>

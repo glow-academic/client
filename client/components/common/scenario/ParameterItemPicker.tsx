@@ -1,17 +1,19 @@
 /**
  * ParameterItemPicker.tsx
- * Picker for selecting a single ParameterItem for a given Parameter, with search and create-new flow
+ * Picker for selecting ParameterItem(s) for a given Parameter, with search and create-new flow
+ * Supports both single-select and multi-select modes with badge display
  * Refactored to use mapping-based API pattern
  * 05/20/2025
  */
 "use client";
 
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useCreateParameterItemV2 } from "@/lib/api/v2/hooks/parameters";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -36,9 +38,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import type { ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export interface ParameterItemPickerProps<
   T extends ParameterItemMappingItem = ParameterItemMappingItem,
@@ -54,6 +56,14 @@ export interface ParameterItemPickerProps<
   allowCreateForDefaultParameters?: boolean;
   allowCreate?: boolean;
   isDefaultParameter?: boolean;
+  /** Enable multi-select mode with badge display */
+  multiSelect?: boolean;
+  /** Where to render the selected badges relative to the button */
+  badgesPosition?: "above" | "below";
+  /** Show a Clear All button when items are selected */
+  showClearAll?: boolean;
+  /** Hide the selected badges (for compact display) */
+  hideSelectedChips?: boolean;
 }
 
 export function ParameterItemPicker<
@@ -70,6 +80,10 @@ export function ParameterItemPicker<
   allowCreateForDefaultParameters = false,
   allowCreate = true,
   isDefaultParameter = false,
+  multiSelect = false,
+  badgesPosition = "below",
+  showClearAll = false,
+  hideSelectedChips = false,
 }: ParameterItemPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -102,13 +116,41 @@ export function ParameterItemPicker<
   }, [items, search]);
 
   const handleItemSelect = (itemId: string) => {
-    onSelect([itemId]);
-    setOpen(false);
+    if (multiSelect) {
+      // Toggle behavior - don't close popover
+      const isSelected = selectedIds.includes(itemId);
+      const newIds = isSelected
+        ? selectedIds.filter((id) => id !== itemId)
+        : [...selectedIds, itemId];
+      onSelect(newIds);
+    } else {
+      // Single select - close popover
+      onSelect([itemId]);
+      setOpen(false);
+    }
   };
 
   const handleClear = () => {
     onSelect([]);
-    setOpen(false);
+    if (!multiSelect) {
+      setOpen(false);
+    }
+  };
+
+  const handleRemoveItem = (itemId: string) => {
+    onSelect(selectedIds.filter((id) => id !== itemId));
+  };
+
+  const getButtonText = () => {
+    if (selectedIds.length === 0) {
+      return `Select ${parameterName.toLowerCase()}`;
+    }
+    if (multiSelect) {
+      return `${selectedIds.length} ${parameterName.toLowerCase()} selected`;
+    }
+    return (
+      mapping[selectedIds[0]!]?.name || `Select ${parameterName.toLowerCase()}`
+    );
   };
 
   const canOfferCreate =
@@ -149,8 +191,15 @@ export function ParameterItemPicker<
 
       toast.success("Parameter item created");
       setShowCreateDialog(false);
-      setOpen(false);
-      onSelect([created.parameterItemId]);
+      if (!multiSelect) {
+        setOpen(false);
+      }
+      // In multi-select mode, add to existing selection; in single-select, replace
+      if (multiSelect) {
+        onSelect([...selectedIds, created.parameterItemId]);
+      } else {
+        onSelect([created.parameterItemId]);
+      }
     } catch (error) {
       log.error("parameter_item.create.failed", {
         message: "Failed to create parameter item",
@@ -164,8 +213,42 @@ export function ParameterItemPicker<
     }
   };
 
+  // Badge display for multi-select mode
+  const Badges = (
+    <div className="flex flex-wrap gap-1">
+      {selectedIds.map((id) => {
+        const item = mapping[id];
+        if (!item) return null;
+        return (
+          <Badge
+            key={id}
+            variant="secondary"
+            className="flex items-center gap-1"
+          >
+            <span className="truncate max-w-[200px]">{item.name}</span>
+            <button
+              type="button"
+              aria-label={`Remove ${item.name}`}
+              onClick={() => handleRemoveItem(id)}
+              className="inline-flex items-center"
+              disabled={disabled}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="grid gap-2">
+      {/* Show badges above button if configured */}
+      {multiSelect &&
+        !hideSelectedChips &&
+        selectedIds.length > 0 &&
+        badgesPosition === "above" && <div className="mb-2">{Badges}</div>}
+
       <Popover
         open={disabled ? false : open}
         onOpenChange={disabled ? () => {} : setOpen}
@@ -179,11 +262,7 @@ export function ParameterItemPicker<
             className="w-full justify-between"
             disabled={disabled}
           >
-            <span className="truncate">
-              {selectedIds.length > 0 && mapping[selectedIds[0]!]
-                ? mapping[selectedIds[0]!]!.name
-                : `Select ${parameterName.toLowerCase()}`}
-            </span>
+            <span className="truncate">{getButtonText()}</span>
             <ChevronsUpDown className="opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -213,7 +292,7 @@ export function ParameterItemPicker<
                     onSelect={handleClear}
                     className="text-muted-foreground"
                   >
-                    Clear Selection
+                    Clear {multiSelect ? "All" : "Selection"}
                   </CommandItem>
                 )}
                 {filteredItems
@@ -252,6 +331,27 @@ export function ParameterItemPicker<
           </Command>
         </PopoverContent>
       </Popover>
+
+      {/* Show badges below button if configured */}
+      {multiSelect &&
+        !hideSelectedChips &&
+        selectedIds.length > 0 &&
+        badgesPosition === "below" && (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex-1">{Badges}</div>
+            {showClearAll && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClear}
+                disabled={disabled}
+              >
+                Clear All
+              </Button>
+            )}
+          </div>
+        )}
 
       {/* Create custom item dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

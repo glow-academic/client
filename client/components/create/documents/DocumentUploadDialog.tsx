@@ -10,6 +10,7 @@ import UploadClassificationDialog from "@/components/common/documents/UploadClas
 import { useProfile } from "@/contexts/profile-context";
 import { useFinalizeDocumentUpload } from "@/lib/api/v2/hooks/documents";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { type ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
 import { inferMimeFromName } from "@/utils/mime-map";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ interface DocumentUploadDialogProps {
   onClose: () => void;
   departmentMapping: Record<string, { name: string; description: string }>;
   validDepartmentIds: string[];
+  parameterItemMapping: Record<string, ParameterItemMappingItem>;
+  validParameterItemIds: string[];
 }
 
 export function DocumentUploadDialog({
@@ -28,6 +31,8 @@ export function DocumentUploadDialog({
   onClose,
   departmentMapping,
   validDepartmentIds,
+  parameterItemMapping,
+  validParameterItemIds,
 }: DocumentUploadDialogProps) {
   const { effectiveProfile } = useProfile();
   const finalizeMutation = useFinalizeDocumentUpload();
@@ -341,6 +346,8 @@ export function DocumentUploadDialog({
           }
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
+          parameterItemMapping={parameterItemMapping}
+          validParameterItemIds={validParameterItemIds}
         />
       )}
     </>
