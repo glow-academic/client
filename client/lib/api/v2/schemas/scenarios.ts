@@ -277,7 +277,7 @@ export type RandomizeScenarioRequest = z.infer<
 export const RandomizeScenarioResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  personaId: z.string().optional(),
+  personaId: z.string().nullable(),
   documentIds: z.array(z.string()),
   parameterItemIds: z.array(z.string()),
 });

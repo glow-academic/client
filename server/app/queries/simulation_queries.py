@@ -97,12 +97,14 @@ class SimulationQueries:
                         'parameter_item_ids', ARRAY[]::text[],
                         'document_ids', ARRAY[]::text[]
                     )
-                ) FILTER (WHERE s.id IS NOT NULL),
+                ) FILTER (WHERE s.id IS NOT NULL AND st.parent_id IS NOT NULL),
                 '{}'::jsonb
             ) as mapping
             FROM all_scenario_ids asi
             LEFT JOIN scenarios s ON s.id = asi.scenario_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            -- Only include root scenarios (parent_id = child_id in scenario_tree)
+            LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
         ),
         all_rubric_ids AS (
             SELECT DISTINCT rubric_id

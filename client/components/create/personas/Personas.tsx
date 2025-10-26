@@ -102,10 +102,38 @@ export default function Personas() {
 
   // Create filter options from mappings
   const scenarioOptions = useMemo(() => {
-    return Object.entries(scenarioMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj.name,
-    }));
+    const entries = Object.entries(scenarioMapping);
+
+    // Count occurrences of each name to detect duplicates
+    const nameCounts = new Map<string, number>();
+    entries.forEach(([_, obj]) => {
+      nameCounts.set(obj.name, (nameCounts.get(obj.name) || 0) + 1);
+    });
+
+    // Track how many times we've seen each duplicate name
+    const nameIndices = new Map<string, number>();
+
+    return entries.map(([id, obj]) => {
+      const isDuplicate = (nameCounts.get(obj.name) || 0) > 1;
+
+      if (isDuplicate) {
+        // For duplicates, add a disambiguator using short ID
+        const index = (nameIndices.get(obj.name) || 0) + 1;
+        nameIndices.set(obj.name, index);
+
+        // Use last 8 characters of UUID for disambiguation
+        const shortId = id.slice(-8);
+        return {
+          value: id,
+          label: `${obj.name} (${shortId})`,
+        };
+      }
+
+      return {
+        value: id,
+        label: obj.name,
+      };
+    });
   }, [scenarioMapping]);
 
   const modelOptions = useMemo(() => {
@@ -117,6 +145,7 @@ export default function Personas() {
 
   const reasoningOptions = useMemo(
     () => [
+      { value: "none", label: "None" },
       { value: "minimal", label: "Minimal" },
       { value: "low", label: "Low" },
       { value: "medium", label: "Medium" },
@@ -168,6 +197,21 @@ export default function Personas() {
           );
         },
       },
+      // Hidden faceting column for Scenarios (array of IDs)
+      {
+        id: "scenarios",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        // Return the array of scenario IDs for this row
+        accessorFn: (row: PersonaItem) => row.scenario_ids ?? [],
+        // Let filtering check membership - show if persona is used in ANY selected scenario
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("scenarios") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
       {
         accessorKey: "reasoning",
         header: "Reasoning",
@@ -184,7 +228,19 @@ export default function Personas() {
           );
         },
       },
+      // Hidden faceting column for Temperature (categorical) - returns category for filtering
       {
+        id: "temperature",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        // Return the temperature category for faceting and filtering
+        accessorFn: (row: PersonaItem) => getTemperatureRange(row.temperature),
+      },
+      // Display column for Temperature - shows actual value
+      {
+        id: "temperature_display",
         accessorKey: "temperature",
         header: "Temperature",
         cell: ({ row }) => {
@@ -192,11 +248,15 @@ export default function Personas() {
           const temp = persona.temperature.toFixed(2);
           return <div className="text-sm">{temp}</div>;
         },
-        filterFn: (row, id, value) => {
-          const temperature = row.getValue(id) as number;
-          const range = getTemperatureRange(temperature);
-          return value.includes(range);
-        },
+      },
+      // Hidden faceting column for Model (single ID) with correct ID
+      {
+        id: "modelId",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorKey: "model_id",
       },
       {
         accessorKey: "model_id",

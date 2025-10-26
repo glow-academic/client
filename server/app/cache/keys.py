@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    38  # Bumped: Added objectives to scenario data and objectivesEnabled to simulation data
+    43  # Bumped: Fixed persona service JSON parsing for scenario_mapping
 )
 
 # Namespaces

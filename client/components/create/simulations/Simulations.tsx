@@ -74,10 +74,38 @@ export function Simulations() {
 
   // Create filter options from mappings (label is .name)
   const scenarioOptions = useMemo(() => {
-    return Object.entries(scenarioMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj.name,
-    }));
+    const entries = Object.entries(scenarioMapping);
+
+    // Count occurrences of each name to detect duplicates
+    const nameCounts = new Map<string, number>();
+    entries.forEach(([_, obj]) => {
+      nameCounts.set(obj.name, (nameCounts.get(obj.name) || 0) + 1);
+    });
+
+    // Track how many times we've seen each duplicate name
+    const nameIndices = new Map<string, number>();
+
+    return entries.map(([id, obj]) => {
+      const isDuplicate = (nameCounts.get(obj.name) || 0) > 1;
+
+      if (isDuplicate) {
+        // For duplicates, add a disambiguator using short ID
+        const index = (nameIndices.get(obj.name) || 0) + 1;
+        nameIndices.set(obj.name, index);
+
+        // Use last 8 characters of UUID for disambiguation
+        const shortId = id.slice(-8);
+        return {
+          value: id,
+          label: `${obj.name} (${shortId})`,
+        };
+      }
+
+      return {
+        value: id,
+        label: obj.name,
+      };
+    });
   }, [scenarioMapping]);
 
   const rubricOptions = useMemo(() => {

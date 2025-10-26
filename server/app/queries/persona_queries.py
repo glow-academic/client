@@ -29,13 +29,12 @@ class PersonaQueries:
         persona_scenarios AS (
             SELECT 
                 sp.persona_id,
-                ARRAY_AGG(sp.scenario_id ORDER BY s.name) as scenario_ids,
-                COUNT(sp.scenario_id) as num_scenarios
+                ARRAY_AGG(DISTINCT st.parent_id) as scenario_ids,
+                COUNT(DISTINCT st.parent_id) as num_scenarios
             FROM scenario_personas sp
-            JOIN scenarios s ON s.id = sp.scenario_id
-            -- Only count root scenarios (parent_id = child_id in scenario_tree)
-            JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
-            WHERE sp.active = true
+            -- Join with scenario_tree to get root scenario for each linked scenario
+            JOIN scenario_tree st ON st.child_id = sp.scenario_id
+            WHERE sp.active = true AND st.parent_id = st.child_id
             GROUP BY sp.persona_id
         ),
         persona_data AS (
@@ -92,6 +91,9 @@ class PersonaQueries:
             FROM all_scenario_ids asi
             LEFT JOIN scenarios s ON s.id = asi.scenario_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            -- Since persona_scenarios already resolved to root scenarios,
+            -- all IDs here should be roots (parent_id = child_id)
+            LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
         )
         SELECT 
             pd.persona_id,

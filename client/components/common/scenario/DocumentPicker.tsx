@@ -216,13 +216,33 @@ export function DocumentPicker<
                   </button>
                 </div>
 
-                {/* Document preview - note: DocumentViewer expects full document object */}
+                {/* Document preview - show actual DocumentViewer if details available */}
                 <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
-                  <div className="flex items-center justify-center h-full">
-                    <span className="text-4xl">
-                      {getDocumentTypeIcon(document.type)}
-                    </span>
-                  </div>
+                  {(() => {
+                    const fullDoc = documentDetails.find(
+                      (d) => d.document_id === id
+                    );
+                    if (fullDoc) {
+                      return (
+                        <div className="w-full h-full">
+                          <DocumentViewer
+                            document={fullDoc}
+                            bare={true}
+                            isFormDocument={false}
+                            compact={true}
+                          />
+                        </div>
+                      );
+                    }
+                    // Fallback to icon if no details
+                    return (
+                      <div className="flex items-center justify-center h-full">
+                        <span className="text-4xl">
+                          {getDocumentTypeIcon(document.type)}
+                        </span>
+                      </div>
+                    );
+                  })()}
 
                   {/* Document name */}
                   <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1">
