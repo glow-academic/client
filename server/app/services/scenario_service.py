@@ -149,27 +149,30 @@ class ScenarioService(BaseService):
         parameter_item_mapping = {}
         cohort_mapping = {}
         persona_mapping = {}
+        simulation_mapping = {}
 
         # Parse mappings from first row (same across all rows)
         if result:
             first_row = result[0]
 
-            # Parse objective mapping from JSONB with type safety
-            if first_row.get("objective_mapping") and isinstance(
-                first_row["objective_mapping"], dict
-            ):
-                for oid, odata in first_row["objective_mapping"].items():
+            # Parse objective mapping from JSONB with type safety (may be string or dict)
+            objective_mapping_data = first_row.get("objective_mapping")
+            if isinstance(objective_mapping_data, str):
+                objective_mapping_data = json.loads(objective_mapping_data)
+            if objective_mapping_data and isinstance(objective_mapping_data, dict):
+                for oid, odata in objective_mapping_data.items():
                     if isinstance(odata, dict):
                         objective_mapping[oid] = ObjectiveMappingItem(
                             name=odata.get("name", ""),
                             description=odata.get("description", ""),
                         )
 
-            # Parse parameter_item mapping from JSONB with type safety
-            if first_row.get("parameter_item_mapping") and isinstance(
-                first_row["parameter_item_mapping"], dict
-            ):
-                for pid, pdata in first_row["parameter_item_mapping"].items():
+            # Parse parameter_item mapping from JSONB with type safety (may be string or dict)
+            parameter_item_mapping_data = first_row.get("parameter_item_mapping")
+            if isinstance(parameter_item_mapping_data, str):
+                parameter_item_mapping_data = json.loads(parameter_item_mapping_data)
+            if parameter_item_mapping_data and isinstance(parameter_item_mapping_data, dict):
+                for pid, pdata in parameter_item_mapping_data.items():
                     if isinstance(pdata, dict):
                         parameter_item_mapping[pid] = ParameterItemMappingItem(
                             name=pdata.get("name", ""),
@@ -181,28 +184,45 @@ class ScenarioService(BaseService):
                             value=pdata.get("value", ""),
                         )
 
-            # Parse cohort mapping from JSONB with type safety
-            if first_row.get("cohort_mapping") and isinstance(
-                first_row["cohort_mapping"], dict
-            ):
-                for cid, cdata in first_row["cohort_mapping"].items():
+            # Parse cohort mapping from JSONB with type safety (may be string or dict)
+            cohort_mapping_data = first_row.get("cohort_mapping")
+            if isinstance(cohort_mapping_data, str):
+                cohort_mapping_data = json.loads(cohort_mapping_data)
+            if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
+                for cid, cdata in cohort_mapping_data.items():
                     if isinstance(cdata, dict):
                         cohort_mapping[cid] = CohortMappingItem(
                             name=cdata.get("name", ""),
                             description=cdata.get("description", ""),
                         )
 
-            # Parse persona mapping from JSONB with type safety
-            if first_row.get("persona_mapping") and isinstance(
-                first_row["persona_mapping"], dict
-            ):
-                for persona_id, pdata in first_row["persona_mapping"].items():
+            # Parse persona mapping from JSONB with type safety (may be string or dict)
+            persona_mapping_data = first_row.get("persona_mapping")
+            if isinstance(persona_mapping_data, str):
+                persona_mapping_data = json.loads(persona_mapping_data)
+            if persona_mapping_data and isinstance(persona_mapping_data, dict):
+                for persona_id, pdata in persona_mapping_data.items():
                     if isinstance(pdata, dict):
                         persona_mapping[persona_id] = PersonaMappingItem(
                             name=pdata.get("name", ""),
                             description=pdata.get("description", ""),
                             color=pdata.get("color", ""),
                             icon=pdata.get("icon", ""),
+                        )
+
+            # Parse simulation mapping from JSONB with type safety (may be string or dict)
+            simulation_mapping_data = first_row.get("simulation_mapping")
+            if isinstance(simulation_mapping_data, str):
+                simulation_mapping_data = json.loads(simulation_mapping_data)
+            if simulation_mapping_data and isinstance(simulation_mapping_data, dict):
+                from app.schemas.base import SimulationMappingItem
+
+                for sim_id, sdata in simulation_mapping_data.items():
+                    if isinstance(sdata, dict):
+                        simulation_mapping[sim_id] = SimulationMappingItem(
+                            name=sdata.get("name", ""),
+                            description=sdata.get("description", ""),
+                            time_limit=sdata.get("time_limit"),
                         )
 
         # Build scenario items
@@ -239,6 +259,7 @@ class ScenarioService(BaseService):
             parameter_item_mapping=parameter_item_mapping,
             cohort_mapping=cohort_mapping,
             persona_mapping=persona_mapping,
+            simulation_mapping=simulation_mapping,
         )
 
     @with_cache(

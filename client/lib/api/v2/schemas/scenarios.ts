@@ -61,6 +61,7 @@ export const ScenariosListResponseSchema = z.object({
   parameter_item_mapping: ParameterItemMappingSchema,
   cohort_mapping: CohortMappingSchema,
   persona_mapping: PersonaMappingSchema,
+  simulation_mapping: SimulationMappingSchema,
 });
 
 export type ScenariosListResponse = z.infer<typeof ScenariosListResponseSchema>;

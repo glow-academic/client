@@ -17,19 +17,24 @@ import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
-  ScenarioItem,
-} from "@/lib/api/v2/schemas/scenarios";
+  CohortMapping,
+  ParameterItemMapping,
+  PersonaMapping,
+  SimulationMapping,
+} from "@/lib/api/v2/schemas/base";
+import { ScenarioItem } from "@/lib/api/v2/schemas/scenarios";
 import { ScenariosDataTableToolbar } from "./ScenariosDataTableToolbar";
-import { CohortMapping, ParameterItemMapping, PersonaMapping } from "@/lib/api/v2/schemas/base";
 
 export interface ScenariosDataTableProps {
   columns: ColumnDef<ScenarioItem>[];
   data: ScenarioItem[];
   personaMapping: PersonaMapping;
   cohortMapping: CohortMapping;
+  simulationMapping: SimulationMapping;
   parameterItemMapping: ParameterItemMapping;
   personaOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
+  simulationOptions: { value: string; label: string }[];
   renderGroupedScenarios: (
     filteredGroups?: { parent: ScenarioItem; children: ScenarioItem[] }[]
   ) => React.ReactNode;
@@ -40,6 +45,7 @@ export function ScenariosDataTable({
   data,
   personaOptions,
   cohortOptions,
+  simulationOptions,
   renderGroupedScenarios,
 }: ScenariosDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -116,6 +122,7 @@ export function ScenariosDataTable({
         table={table}
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}
+        simulationOptions={simulationOptions}
       />
       <div className="space-y-4">
         {table.getRowModel().rows.length ? (

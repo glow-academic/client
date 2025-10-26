@@ -94,6 +94,10 @@ export function Scenarios() {
     () => scenariosData?.cohort_mapping || {},
     [scenariosData?.cohort_mapping]
   );
+  const simulationMapping = useMemo(
+    () => scenariosData?.simulation_mapping || {},
+    [scenariosData?.simulation_mapping]
+  );
   const parameterItemMapping = useMemo(
     () => scenariosData?.parameter_item_mapping || {},
     [scenariosData?.parameter_item_mapping]
@@ -131,6 +135,13 @@ export function Scenarios() {
     }));
   }, [cohortMapping]);
 
+  const simulationOptions = useMemo(() => {
+    return Object.entries(simulationMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj.name,
+    }));
+  }, [simulationMapping]);
+
   // Define table columns inline
   const columns: ColumnDef<ScenarioItem>[] = useMemo(() => {
     return [
@@ -154,6 +165,41 @@ export function Scenarios() {
               {row.original.problem_statement || "No problem statement"}
             </div>
           );
+        },
+      },
+      // Hidden faceting column for Cohorts (array of IDs)
+      {
+        id: "cohort_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ScenarioItem) => row.cohort_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("cohort_ids") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Persona (single ID)
+      {
+        id: "persona_id",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorKey: "persona_id",
+      },
+      // Hidden faceting column for Simulations (array of IDs)
+      {
+        id: "simulation_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ScenarioItem) => row.simulation_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("simulation_ids") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
         },
       },
       {
@@ -517,9 +563,11 @@ export function Scenarios() {
           data={scenarios}
           personaMapping={personaMapping}
           cohortMapping={cohortMapping}
+          simulationMapping={simulationMapping}
           parameterItemMapping={parameterItemMapping}
           personaOptions={personaOptions}
           cohortOptions={cohortOptions}
+          simulationOptions={simulationOptions}
           renderGroupedScenarios={renderGroupedScenarios}
         />
 
