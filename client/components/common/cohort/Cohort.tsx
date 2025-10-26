@@ -38,7 +38,7 @@ import {
 } from "@/lib/api/v2/hooks/cohorts";
 import { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { ProfileItem } from "@/lib/api/v2/schemas/profile";
-import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
+import { BarChart3, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
 import CohortStaff from "./staff/CohortStaff";
@@ -100,6 +100,13 @@ export default function Cohort({ cohortId }: CohortProps) {
   // Staff management state
   const [staffProfiles, setStaffProfiles] = useState<EditableProfile[]>([]);
   const [profilesToDelete, setProfilesToDelete] = useState<string[]>([]);
+
+  // Simulation active state management (staged changes)
+  const [simulationActiveStates, setSimulationActiveStates] = useState<
+    Record<string, boolean>
+  >({});
+  const [originalSimulationActiveStates, setOriginalSimulationActiveStates] =
+    useState<Record<string, boolean>>({});
 
   // Memoize callback functions to prevent unnecessary re-renders
   const memoizedSetStaffProfiles = useCallback(
@@ -218,6 +225,16 @@ export default function Cohort({ cohortId }: CohortProps) {
         return hasChanged ? newIds : prev;
       });
 
+      // Initialize simulation active states from server data
+      if (cohortData.simulations) {
+        const activeStates: Record<string, boolean> = {};
+        cohortData.simulations.forEach((sim) => {
+          activeStates[sim.simulation_id] = sim.active;
+        });
+        setSimulationActiveStates(activeStates);
+        setOriginalSimulationActiveStates(activeStates);
+      }
+
       // Load staff profiles from profile_ids
       // Build EditableProfile array from profile_mapping
       const cohortProfiles: EditableProfile[] = cohortData.profile_ids.map(
@@ -295,7 +312,9 @@ export default function Cohort({ cohortId }: CohortProps) {
       JSON.stringify([...currentSimulationIds].sort()) !==
         JSON.stringify(originalSimulationIds.sort()) ||
       staffProfiles.length !== originalProfileIds.length ||
-      profilesToDelete.length > 0
+      profilesToDelete.length > 0 ||
+      JSON.stringify(simulationActiveStates) !==
+        JSON.stringify(originalSimulationActiveStates)
     );
   }, [
     formData,
@@ -306,6 +325,8 @@ export default function Cohort({ cohortId }: CohortProps) {
     currentSimulationIds,
     cohortData?.simulation_ids,
     cohortData?.profile_ids,
+    simulationActiveStates,
+    originalSimulationActiveStates,
   ]);
 
   const handleInputChange = (
@@ -406,7 +427,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
-        // UPDATE mode - V2 API handles junction tables
+        // UPDATE mode - V2 API handles junction tables with active states
         await updateCohortMutation.mutateAsync({
           cohortId: targetCohortId,
           title: formData.title || "",
@@ -417,13 +438,16 @@ export default function Cohort({ cohortId }: CohortProps) {
             "",
           active: formData.active ?? true,
           default_cohort: formData.defaultCohort ?? false,
-          simulation_ids: currentSimulationIds,
+          simulation_ids: currentSimulationIds.map((simId) => ({
+            simulation_id: simId,
+            active: simulationActiveStates[simId] ?? true,
+          })),
           profile_ids: profileIds,
         });
 
         toast.success("Cohort updated successfully!");
       } else {
-        // CREATE mode - V2 API handles junction tables
+        // CREATE mode - V2 API handles junction tables with active states
         await createCohortMutation.mutateAsync({
           title: formData.title || "",
           description: formData.description || "",
@@ -433,7 +457,10 @@ export default function Cohort({ cohortId }: CohortProps) {
             "",
           active: formData.active || true,
           default_cohort: formData.defaultCohort ?? false,
-          simulation_ids: currentSimulationIds,
+          simulation_ids: currentSimulationIds.map((simId) => ({
+            simulation_id: simId,
+            active: simulationActiveStates[simId] ?? true,
+          })),
           profile_ids: profileIds,
         });
 
@@ -684,12 +711,41 @@ export default function Cohort({ cohortId }: CohortProps) {
                 const simulation = cohortData?.simulation_mapping[simulationId];
                 if (!simulation) return null;
 
+                // Get simulation data from simulations array (with statistics)
+                const simulationData = cohortData?.simulations?.find(
+                  (s) => s.simulation_id === simulationId
+                );
+
+                // Determine if this is an existing simulation (in original server data)
+                const isExistingSimulation =
+                  cohortData?.simulation_ids.includes(simulationId) ?? false;
+
+                // Determine if Remove button should show
+                const shouldShowRemove = isExistingSimulation
+                  ? (simulationData?.can_remove ?? false)
+                  : true; // New simulations always show remove
+
+                // Get active state for styling
+                const isSimulationActive =
+                  simulationActiveStates[simulationId] ?? true;
+
+                // Helper function to format last used date
+                const formatLastUsed = (date: string | null): string => {
+                  if (!date) return "Never";
+                  const d = new Date(date);
+                  return d.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+                };
+
                 return (
                   <Card
                     key={simulationId}
-                    className={`p-3 min-h-[180px] cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                    className={`p-4 cursor-move hover:shadow-md transition-all flex flex-col h-full ${
                       draggedSimulation === simulationId ? "opacity-50" : ""
-                    }`}
+                    } ${!isSimulationActive ? "opacity-50 bg-muted" : ""}`}
                     draggable={!isReadonly}
                     onDragStart={(e) =>
                       !isReadonly && handleDragStartSimulation(e, simulationId)
@@ -697,44 +753,76 @@ export default function Cohort({ cohortId }: CohortProps) {
                     onDragOver={handleDragOver}
                     onDrop={(e) => !isReadonly && handleDrop(e, simulationId)}
                   >
-                    <div className="space-y-3 h-full flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-sm">
-                            {simulation.name || "Unnamed Simulation"}
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            {!isReadonly && (
-                              <>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => editSimulation(simulationId)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Pencil className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeSimulation(simulationId)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </div>
+                    {/* Header: Title, Description, and Active Switch */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm line-clamp-1">
+                          {simulation.name || "Unnamed Simulation"}
+                        </h4>
+                        <p className="text-xs text-muted-foreground line-clamp-4 mt-2">
+                          {simulation.description || "No description provided"}
+                        </p>
+                      </div>
+                      {isExistingSimulation && !isReadonly && (
+                        <Switch
+                          checked={simulationActiveStates[simulationId] ?? true}
+                          onCheckedChange={(checked) =>
+                            setSimulationActiveStates((prev) => ({
+                              ...prev,
+                              [simulationId]: checked,
+                            }))
+                          }
+                        />
+                      )}
+                    </div>
 
-                        <div className="space-y-2 mt-2">
-                          <p className="text-xs text-muted-foreground line-clamp-3">
-                            {simulation.description ||
-                              "No description provided"}
-                          </p>
+                    {/* Content area with flex-grow */}
+                    <div className="flex-grow flex flex-col">
+                      {/* Bottom section - Statistics and Actions */}
+                      <div className="space-y-2 mt-auto">
+                        {/* Statistics Row - Only for existing simulations */}
+                        {isExistingSimulation && simulationData && (
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">
+                            <div className="flex items-center gap-1">
+                              <BarChart3 className="h-3 w-3" />
+                              <span>Usage: {simulationData.usage_count}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>
+                                Last: {formatLastUsed(simulationData.last_used)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>
+                                Success: {simulationData.success_rate}%
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-between border-t pt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => editSimulation(simulationId)}
+                          >
+                            View Details
+                          </Button>
+
+                          {!isReadonly && shouldShowRemove && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeSimulation(simulationId)}
+                            >
+                              Remove
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

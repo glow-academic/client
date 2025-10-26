@@ -62,6 +62,21 @@ export const CohortDetailRequestSchema = z.object({
 
 export type CohortDetailRequest = z.infer<typeof CohortDetailRequestSchema>;
 
+// Simulation with cohort-specific statistics
+export const SimulationInCohortSchema = z.object({
+  simulation_id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  time_limit: z.number().nullable(),
+  active: z.boolean(),
+  usage_count: z.number(),
+  success_rate: z.number(),
+  last_used: z.string().nullable(),
+  can_remove: z.boolean(),
+});
+
+export type SimulationInCohort = z.infer<typeof SimulationInCohortSchema>;
+
 export const CohortDetailResponseSchema = z.object({
   // Basic fields
   title: z.string(), // cohorts.title
@@ -76,6 +91,9 @@ export const CohortDetailResponseSchema = z.object({
   valid_simulation_ids: z.array(z.string()),
   profile_ids: z.array(z.string()),
   valid_profile_ids: z.array(z.string()),
+
+  // Full simulation objects with cohort-specific statistics
+  simulations: z.array(SimulationInCohortSchema),
 
   // Top-level mappings
   simulation_mapping: SimulationMappingSchema,
@@ -98,6 +116,14 @@ export type CohortDetailDefaultRequest = z.infer<
 // MUTATION SCHEMAS
 // ============================================================================
 
+// Simulation with active state for create/update requests
+export const SimulationInRequestSchema = z.object({
+  simulation_id: z.string(),
+  active: z.boolean(),
+});
+
+export type SimulationInRequest = z.infer<typeof SimulationInRequestSchema>;
+
 // Create request
 export const CreateCohortRequestSchema = z.object({
   title: z.string(),
@@ -105,7 +131,10 @@ export const CreateCohortRequestSchema = z.object({
   department_id: z.string(),
   active: z.boolean(),
   default_cohort: z.boolean(),
-  simulation_ids: z.array(z.string()),
+  simulation_ids: z.union([
+    z.array(z.string()),
+    z.array(SimulationInRequestSchema),
+  ]), // Support both formats
   profile_ids: z.array(z.string()),
 });
 
@@ -127,7 +156,10 @@ export const UpdateCohortRequestSchema = z.object({
   department_id: z.string(),
   active: z.boolean(),
   default_cohort: z.boolean(),
-  simulation_ids: z.array(z.string()),
+  simulation_ids: z.union([
+    z.array(z.string()),
+    z.array(SimulationInRequestSchema),
+  ]), // Support both formats
   profile_ids: z.array(z.string()),
 });
 

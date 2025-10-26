@@ -27,7 +27,8 @@ from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  LeaveCohortResponse,
                                  RemoveProfilesFromCohortRequest,
                                  RemoveProfilesFromCohortResponse,
-                                 UpdateCohortRequest, UpdateCohortResponse)
+                                 SimulationInCohort, UpdateCohortRequest,
+                                 UpdateCohortResponse)
 from app.schemas.staff import StaffItem
 from app.services.base_service import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
@@ -188,6 +189,28 @@ class CohortService(BaseService):
                         name=ddata["name"], description=ddata["description"]
                     )
 
+        # Parse simulations list from JSONB (may be string or list)
+        simulations_list: list[SimulationInCohort] = []
+        simulations_list_data = cohort.get("simulations_list")
+        if isinstance(simulations_list_data, str):
+            simulations_list_data = json.loads(simulations_list_data)
+        if simulations_list_data and isinstance(simulations_list_data, list):
+            for sim_data in simulations_list_data:
+                if isinstance(sim_data, dict):
+                    simulations_list.append(
+                        SimulationInCohort(
+                            simulation_id=sim_data["simulation_id"],
+                            name=sim_data["name"],
+                            description=sim_data["description"],
+                            time_limit=sim_data.get("time_limit"),
+                            active=sim_data["active"],
+                            usage_count=sim_data["usage_count"],
+                            success_rate=sim_data["success_rate"],
+                            last_used=sim_data.get("last_used"),
+                            can_remove=sim_data["can_remove"],
+                        )
+                    )
+
         return CohortDetailResponse(
             title=cohort["title"],
             description=cohort["description"],
@@ -199,6 +222,7 @@ class CohortService(BaseService):
             valid_simulation_ids=cohort["valid_simulation_ids"],
             profile_ids=cohort["profile_ids"],
             valid_profile_ids=cohort["valid_profile_ids"],
+            simulations=simulations_list,
             simulation_mapping=simulation_mapping,
             profile_mapping=profile_mapping,
             department_mapping=department_mapping,
@@ -265,6 +289,28 @@ class CohortService(BaseService):
                         name=ddata["name"], description=ddata["description"]
                     )
 
+        # Parse simulations list from JSONB (may be string or list)
+        simulations_list: list[SimulationInCohort] = []
+        simulations_list_data = cohort.get("simulations_list")
+        if isinstance(simulations_list_data, str):
+            simulations_list_data = json.loads(simulations_list_data)
+        if simulations_list_data and isinstance(simulations_list_data, list):
+            for sim_data in simulations_list_data:
+                if isinstance(sim_data, dict):
+                    simulations_list.append(
+                        SimulationInCohort(
+                            simulation_id=sim_data["simulation_id"],
+                            name=sim_data["name"],
+                            description=sim_data["description"],
+                            time_limit=sim_data.get("time_limit"),
+                            active=sim_data["active"],
+                            usage_count=sim_data["usage_count"],
+                            success_rate=sim_data["success_rate"],
+                            last_used=sim_data.get("last_used"),
+                            can_remove=sim_data["can_remove"],
+                        )
+                    )
+
         return CohortDetailResponse(
             title=cohort["title"],
             description=cohort["description"],
@@ -276,6 +322,7 @@ class CohortService(BaseService):
             valid_simulation_ids=cohort["valid_simulation_ids"],
             profile_ids=cohort["profile_ids"],
             valid_profile_ids=cohort["valid_profile_ids"],
+            simulations=simulations_list,
             simulation_mapping=simulation_mapping,
             profile_mapping=profile_mapping,
             department_mapping=department_mapping,
@@ -392,10 +439,24 @@ class CohortService(BaseService):
             for profile_id in request.profile_ids:
                 await self.conn.execute(query, cohort_id, profile_id)
 
-            # Insert simulation relationships
-            query, _ = self.queries.insert_cohort_simulation()
-            for simulation_id in request.simulation_ids:
-                await self.conn.execute(query, cohort_id, simulation_id)
+            # Insert simulation relationships (handle both string and object formats)
+            for sim_item in request.simulation_ids:
+                if isinstance(sim_item, str):
+                    # Legacy format: just simulation ID (default active=True)
+                    await self.conn.execute(
+                        "INSERT INTO cohort_simulations (cohort_id, simulation_id, active) VALUES ($1, $2, $3)",
+                        cohort_id,
+                        sim_item,
+                        True,
+                    )
+                else:
+                    # New format: object with simulation_id and active
+                    await self.conn.execute(
+                        "INSERT INTO cohort_simulations (cohort_id, simulation_id, active) VALUES ($1, $2, $3)",
+                        cohort_id,
+                        sim_item.simulation_id,
+                        sim_item.active,
+                    )
 
         # Invalidate caches
         await self._invalidate_cache(
@@ -447,9 +508,24 @@ class CohortService(BaseService):
             for profile_id in request.profile_ids:
                 await self.conn.execute(query, request.cohortId, profile_id)
 
-            query, _ = self.queries.insert_cohort_simulation()
-            for simulation_id in request.simulation_ids:
-                await self.conn.execute(query, request.cohortId, simulation_id)
+            # Insert simulation relationships (handle both string and object formats)
+            for sim_item in request.simulation_ids:
+                if isinstance(sim_item, str):
+                    # Legacy format: just simulation ID (default active=True)
+                    await self.conn.execute(
+                        "INSERT INTO cohort_simulations (cohort_id, simulation_id, active) VALUES ($1, $2, $3)",
+                        request.cohortId,
+                        sim_item,
+                        True,
+                    )
+                else:
+                    # New format: object with simulation_id and active
+                    await self.conn.execute(
+                        "INSERT INTO cohort_simulations (cohort_id, simulation_id, active) VALUES ($1, $2, $3)",
+                        request.cohortId,
+                        sim_item.simulation_id,
+                        sim_item.active,
+                    )
 
         # Invalidate caches
         await self._invalidate_cache(

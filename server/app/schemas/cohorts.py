@@ -2,7 +2,8 @@
 
 from pydantic import BaseModel
 
-from .base import CohortMapping, DepartmentMapping, ProfileMapping, SimulationMapping
+from .base import (CohortMapping, DepartmentMapping, ProfileMapping,
+                   SimulationMapping)
 from .staff import StaffItem
 
 # ============================================================================
@@ -59,6 +60,22 @@ class CohortDetailRequest(BaseModel):
     profileId: str
 
 
+class SimulationInCohort(BaseModel):
+    """Simulation with cohort-specific statistics."""
+
+    simulation_id: str
+    name: str
+    description: str
+    time_limit: int | None
+    active: bool
+
+    # Cohort-specific statistics
+    usage_count: int  # Number of attempts by cohort members
+    success_rate: int  # Percentage (0-100) of graded attempts that passed
+    last_used: str | None  # ISO timestamp or None
+    can_remove: bool  # True if usage_count == 0
+
+
 class CohortDetailResponse(BaseModel):
     """Response for cohort detail endpoint."""
 
@@ -75,6 +92,9 @@ class CohortDetailResponse(BaseModel):
     valid_simulation_ids: list[str]
     profile_ids: list[str]
     valid_profile_ids: list[str]
+
+    # Full simulation objects with cohort-specific statistics
+    simulations: list[SimulationInCohort]
 
     # Top-level mappings
     simulation_mapping: SimulationMapping
@@ -93,6 +113,13 @@ class CohortDetailDefaultRequest(BaseModel):
 # ============================================================================
 
 
+class SimulationInRequest(BaseModel):
+    """Simulation with active state for create/update requests."""
+
+    simulation_id: str
+    active: bool = True
+
+
 class CreateCohortRequest(BaseModel):
     """Request to create cohort."""
 
@@ -101,7 +128,7 @@ class CreateCohortRequest(BaseModel):
     department_id: str
     active: bool
     default_cohort: bool
-    simulation_ids: list[str]
+    simulation_ids: list[str] | list[SimulationInRequest]  # Support both formats
     profile_ids: list[str]
 
 
@@ -122,7 +149,7 @@ class UpdateCohortRequest(BaseModel):
     department_id: str
     active: bool
     default_cohort: bool
-    simulation_ids: list[str]
+    simulation_ids: list[str] | list[SimulationInRequest]  # Support both formats
     profile_ids: list[str]
 
 

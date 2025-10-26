@@ -5,7 +5,16 @@
  * 05/20/2025
  */
 "use client";
-import { Check, Loader2, RotateCcw, Settings, Shuffle } from "lucide-react";
+import {
+  Check,
+  GripVertical,
+  Loader2,
+  PlusCircle,
+  RotateCcw,
+  Settings,
+  Shuffle,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +39,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -150,6 +160,7 @@ export default function Scenario({
   const [originalParameterItemIds, setOriginalParameterItemIds] = useState<
     string[]
   >([]);
+  const [originalObjectives, setOriginalObjectives] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [isRandomizingPersona, setIsRandomizingPersona] = useState(false);
@@ -159,6 +170,9 @@ export default function Scenario({
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
   const [noDocuments, setNoDocuments] = useState(false);
+  const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
+    number | null
+  >(null);
 
   // State for junction data (managed separately from scenario)
   const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
@@ -239,6 +253,12 @@ export default function Scenario({
       setOriginalParameterItemIds(
         getParameterItemIdsFromStructure(scenarioData.parameters)
       );
+      setOriginalObjectives(
+        getObjectivesFromMapping(
+          scenarioData.objective_ids,
+          scenarioData.objective_mapping
+        )
+      );
     } else if (!isEditMode && scenarioData) {
       // Create mode: use defaults from API
       setFormData({
@@ -266,7 +286,9 @@ export default function Scenario({
       JSON.stringify([...currentDocumentIds].sort()) !==
         JSON.stringify([...(originalDocumentIds || [])].sort()) ||
       JSON.stringify([...currentParameterItemIds].sort()) !==
-        JSON.stringify([...(originalParameterItemIds || [])].sort())
+        JSON.stringify([...(originalParameterItemIds || [])].sort()) ||
+      JSON.stringify(currentObjectives) !==
+        JSON.stringify(originalObjectives || [])
     );
   }, [
     formData,
@@ -278,6 +300,8 @@ export default function Scenario({
     originalDocumentIds,
     currentParameterItemIds,
     originalParameterItemIds,
+    currentObjectives,
+    originalObjectives,
   ]);
 
   // Use server-computed readonly flag from V2 API
@@ -500,6 +524,59 @@ export default function Scenario({
       });
       toast.error("Failed to reset content");
     }
+  };
+
+  // Objective handlers
+  const addObjective = () => {
+    if (currentObjectives.length >= 3) {
+      toast.error("Maximum 3 objectives allowed");
+      return;
+    }
+    setCurrentObjectives((prev) => [...prev, ""]);
+  };
+
+  const removeObjective = (index: number) => {
+    setCurrentObjectives((prev) => {
+      const next = [...prev];
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
+  const updateObjective = (index: number, value: string) => {
+    setCurrentObjectives((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const handleDragStartObjective = (
+    e: React.DragEvent<HTMLDivElement>,
+    index: number
+  ) => {
+    setDraggedObjectiveIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDropObjective = (
+    e: React.DragEvent<HTMLDivElement>,
+    targetIndex: number
+  ) => {
+    e.preventDefault();
+    if (draggedObjectiveIndex === null) return;
+    setCurrentObjectives((prev) => {
+      const next = [...prev];
+      const [removed] = next.splice(draggedObjectiveIndex, 1);
+      next.splice(targetIndex, 0, removed || "");
+      return next;
+    });
+    setDraggedObjectiveIndex(null);
   };
 
   const handleGenerateScenario = async () => {
@@ -1099,6 +1176,61 @@ export default function Scenario({
                 className="min-h-[120px]"
                 disabled={isReadonly}
               />
+            </div>
+
+            {/* Objectives Section */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Learning Objectives (Optional)
+              </Label>
+
+              <div className="space-y-2">
+                {currentObjectives.map((objective, index) => (
+                  <div
+                    key={`objective-${index}`}
+                    className={`flex items-center gap-2 ${
+                      draggedObjectiveIndex === index ? "opacity-50" : ""
+                    }`}
+                    draggable={!isReadonly}
+                    onDragStart={(e) => handleDragStartObjective(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDropObjective(e, index)}
+                  >
+                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
+                    <Input
+                      value={objective || ""}
+                      onChange={(e) => updateObjective(index, e.target.value)}
+                      placeholder={`Learning objective ${index + 1}`}
+                      className="flex-1"
+                      disabled={isReadonly}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeObjective(index)}
+                      className="h-8 w-8 shrink-0"
+                      disabled={isReadonly}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {currentObjectives.length < 3 && (
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addObjective}
+                    disabled={isReadonly}
+                    size="sm"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

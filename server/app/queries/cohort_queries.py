@@ -158,9 +158,35 @@ class CohortQueries:
             WHERE cp.cohort_id = $1 AND cp.active = true
         ),
         cohort_simulation_ids AS (
-            SELECT cs.simulation_id
+            SELECT cs.simulation_id, cs.active
             FROM cohort_simulations cs
-            WHERE cs.cohort_id = $1 AND cs.active = true
+            WHERE cs.cohort_id = $1
+        ),
+        cohort_simulation_stats AS (
+            SELECT 
+                cs.simulation_id,
+                cs.active,
+                s.title as name,
+                COALESCE(s.description, '') as description,
+                stl.time_limit_seconds as time_limit,
+                COUNT(DISTINCT sa.id) as usage_count,
+                COALESCE(
+                    ROUND(
+                        100.0 * SUM(CASE WHEN scg.passed = true THEN 1 ELSE 0 END)::numeric 
+                        / NULLIF(COUNT(scg.id), 0)
+                    )::int,
+                    0
+                ) as success_rate,
+                MAX(sa.created_at) as last_used
+            FROM cohort_simulation_ids cs
+            JOIN simulations s ON s.id = cs.simulation_id
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+            LEFT JOIN cohort_profile_ids cp ON true
+            LEFT JOIN simulation_attempts sa ON sa.simulation_id = cs.simulation_id 
+                AND sa.profile_id = cp.profile_id
+            LEFT JOIN simulation_chats sc ON sc.attempt_id = sa.id
+            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            GROUP BY cs.simulation_id, cs.active, s.title, s.description, stl.time_limit_seconds
         ),
         valid_departments AS (
             SELECT DISTINCT d.id, d.title as name, d.description
@@ -193,9 +219,10 @@ class CohortQueries:
             -- Profile IDs in cohort
             (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
              FROM cohort_profile_ids) as profile_ids,
-            -- Simulation IDs in cohort
+            -- Simulation IDs in cohort (active only)
             (SELECT COALESCE(array_agg(simulation_id::text), ARRAY[]::text[])
-             FROM cohort_simulation_ids) as simulation_ids,
+             FROM cohort_simulation_ids
+             WHERE active = true) as simulation_ids,
             -- Valid department IDs
             (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
              FROM valid_dept_ids) as valid_department_ids,
@@ -205,6 +232,22 @@ class CohortQueries:
             -- Valid profile IDs
             (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
              FROM valid_profiles) as valid_profile_ids,
+            -- Simulations list with cohort-specific statistics
+            (SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'simulation_id', css.simulation_id::text,
+                    'name', css.name,
+                    'description', css.description,
+                    'time_limit', css.time_limit,
+                    'active', css.active,
+                    'usage_count', css.usage_count,
+                    'success_rate', css.success_rate,
+                    'last_used', css.last_used,
+                    'can_remove', CASE WHEN css.usage_count = 0 THEN true ELSE false END
+                )
+             ), '[]'::jsonb)
+             FROM cohort_simulation_stats css
+            ) as simulations_list,
             -- Simulation mapping (all valid simulations user can pick from)
             (SELECT COALESCE(jsonb_object_agg(
                 s.id::text,
@@ -278,9 +321,35 @@ class CohortQueries:
             WHERE cp.cohort_id = (SELECT id FROM default_cohort) AND cp.active = true
         ),
         cohort_simulation_ids AS (
-            SELECT cs.simulation_id
+            SELECT cs.simulation_id, cs.active
             FROM cohort_simulations cs
-            WHERE cs.cohort_id = (SELECT id FROM default_cohort) AND cs.active = true
+            WHERE cs.cohort_id = (SELECT id FROM default_cohort)
+        ),
+        cohort_simulation_stats AS (
+            SELECT 
+                cs.simulation_id,
+                cs.active,
+                s.title as name,
+                COALESCE(s.description, '') as description,
+                stl.time_limit_seconds as time_limit,
+                COUNT(DISTINCT sa.id) as usage_count,
+                COALESCE(
+                    ROUND(
+                        100.0 * SUM(CASE WHEN scg.passed = true THEN 1 ELSE 0 END)::numeric 
+                        / NULLIF(COUNT(scg.id), 0)
+                    )::int,
+                    0
+                ) as success_rate,
+                MAX(sa.created_at) as last_used
+            FROM cohort_simulation_ids cs
+            JOIN simulations s ON s.id = cs.simulation_id
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+            LEFT JOIN cohort_profile_ids cp ON true
+            LEFT JOIN simulation_attempts sa ON sa.simulation_id = cs.simulation_id 
+                AND sa.profile_id = cp.profile_id
+            LEFT JOIN simulation_chats sc ON sc.attempt_id = sa.id
+            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            GROUP BY cs.simulation_id, cs.active, s.title, s.description, stl.time_limit_seconds
         ),
         valid_departments AS (
             SELECT DISTINCT d.id, d.title as name, d.description
@@ -313,13 +382,29 @@ class CohortQueries:
             (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
              FROM cohort_profile_ids) as profile_ids,
             (SELECT COALESCE(array_agg(simulation_id::text), ARRAY[]::text[])
-             FROM cohort_simulation_ids) as simulation_ids,
+             FROM cohort_simulation_ids
+             WHERE active = true) as simulation_ids,
             (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
              FROM valid_dept_ids) as valid_department_ids,
             (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
              FROM valid_simulations) as valid_simulation_ids,
             (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
              FROM valid_profiles) as valid_profile_ids,
+            (SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'simulation_id', css.simulation_id::text,
+                    'name', css.name,
+                    'description', css.description,
+                    'time_limit', css.time_limit,
+                    'active', css.active,
+                    'usage_count', css.usage_count,
+                    'success_rate', css.success_rate,
+                    'last_used', css.last_used,
+                    'can_remove', CASE WHEN css.usage_count = 0 THEN true ELSE false END
+                )
+             ), '[]'::jsonb)
+             FROM cohort_simulation_stats css
+            ) as simulations_list,
             (SELECT COALESCE(jsonb_object_agg(
                 s.id::text,
                 jsonb_build_object(
