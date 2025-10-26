@@ -211,6 +211,16 @@ export function StaffDataTable({
           );
         },
       },
+      // Hidden faceting column for search/name
+      {
+        id: "name",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ProfileListItem) =>
+          `${row.first_name} ${row.last_name} ${row.alias}`.toLowerCase(),
+      },
       {
         accessorKey: "role",
         header: ({ column }) => (
@@ -234,6 +244,28 @@ export function StaffDataTable({
           const staff = row.original;
           if (!value || value.length === 0) return true;
           return value.includes(staff.role);
+        },
+      },
+      // Hidden faceting column for Activity (boolean to string)
+      {
+        id: "active",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ProfileListItem) => (row.active ? "true" : "false"),
+      },
+      // Hidden faceting column for Cohorts (array of IDs)
+      {
+        id: "cohort_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ProfileListItem) => row.cohort_ids ?? [],
+        filterFn: (row, _, value: string[]) => {
+          const rowIds = (row.getValue("cohort_ids") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
         },
       },
       {
@@ -262,10 +294,27 @@ export function StaffDataTable({
             </div>
           );
         },
-        filterFn: (row, _, value) => {
-          const cohortIds = row.getValue("cohort_ids") as string[];
-          if (!value || value.length === 0) return true;
-          return cohortIds.some((id) => value.includes(id));
+      },
+      // Hidden faceting column for Last Active (categorical)
+      {
+        id: "lastActive",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ProfileListItem) => {
+          const lastActive = row.last_active;
+          if (!lastActive) return "never";
+
+          const date = new Date(lastActive);
+          const now = new Date();
+          const diffInDays = Math.floor(
+            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+          );
+
+          if (diffInDays < 7) return "recent";
+          if (diffInDays <= 30) return "moderate";
+          return "old";
         },
       },
       {

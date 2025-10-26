@@ -49,13 +49,37 @@ export function DepartmentsDataTable({
         accessorKey: "title",
         header: "Title",
       },
+      // Hidden faceting column for Price Spent (categorical)
       {
-        accessorKey: "total_price_spent",
-        header: "Price Spent",
+        id: "total_price_spent",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: DepartmentItem) => {
+          const price = row.total_price_spent ?? 0;
+          if (price === 0) return "0-10";
+          if (price <= 10) return "0-10";
+          if (price <= 50) return "10-50";
+          if (price <= 100) return "50-100";
+          return "100+";
+        },
       },
+      // Hidden faceting column for Staff Count (categorical)
       {
-        accessorKey: "staff_count",
-        header: "Staff Count",
+        id: "staff_count",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: DepartmentItem) => {
+          const count = row.staff_count ?? 0;
+          if (count === 0) return "1-5";
+          if (count <= 5) return "1-5";
+          if (count <= 10) return "6-10";
+          if (count <= 20) return "11-20";
+          return "20+";
+        },
       },
       {
         accessorKey: "active",
