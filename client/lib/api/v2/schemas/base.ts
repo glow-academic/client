@@ -143,6 +143,17 @@ export const MappingItemSchema = z.object({
 export type MappingItem = z.infer<typeof MappingItemSchema>;
 
 /**
+ * Parameter mapping item with numerical field
+ */
+export const ParameterMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  numerical: z.boolean(),
+});
+
+export type ParameterMappingItem = z.infer<typeof ParameterMappingItemSchema>;
+
+/**
  * Enhanced parameter item mapping with parameter context
  */
 export const ParameterItemMappingItemSchema = z.object({
@@ -150,6 +161,7 @@ export const ParameterItemMappingItemSchema = z.object({
   description: z.string(),
   parameter_id: z.string(),
   parameter_name: z.string(),
+  value: z.string(),
 });
 
 export type ParameterItemMappingItem = z.infer<
@@ -227,7 +239,10 @@ export const SimulationMappingSchema = z.record(
   z.string(),
   SimulationMappingItemSchema
 ); // Custom with time_limit
-export const ParameterMappingSchema = MappingSchema;
+export const ParameterMappingSchema = z.record(
+  z.string(),
+  ParameterMappingItemSchema
+); // Custom with numerical field
 export const CohortMappingSchema = MappingSchema;
 export const DocumentMappingSchema = MappingSchema;
 export const StaffMappingSchema = MappingSchema;

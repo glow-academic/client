@@ -528,7 +528,7 @@ class PracticeQueries:
                 SELECT COALESCE(
                     jsonb_object_agg(
                         par.id::text,
-                        jsonb_build_object('name', par.name, 'description', par.description)
+                        jsonb_build_object('name', par.name, 'description', par.description, 'numerical', par.numerical)
                     ),
                     '{{}}'::jsonb
                 ) as mapping
@@ -545,7 +545,8 @@ class PracticeQueries:
                             'name', pi.name,
                             'description', pi.description,
                             'parameter_id', pi.parameter_id::text,
-                            'parameter_name', par.name
+                            'parameter_name', par.name,
+                            'value', pi.value
                         )
                     ),
                     '{{}}'::jsonb

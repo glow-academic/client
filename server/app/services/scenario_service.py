@@ -115,6 +115,7 @@ class ScenarioService(BaseService):
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
+                        value=pidata.get("value", ""),
                     )
 
             enhanced_mapping[scenario_id] = ScenarioMappingItem(
@@ -177,6 +178,7 @@ class ScenarioService(BaseService):
                             if pdata.get("parameter_id")
                             else "",
                             parameter_name=pdata.get("parameter_name", ""),
+                            value=pdata.get("value", ""),
                         )
 
             # Parse cohort mapping from JSONB with type safety
@@ -357,6 +359,7 @@ class ScenarioService(BaseService):
                     parameter_mapping[pid] = ParameterMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
+                        numerical=pdata.get("numerical", False),
                     )
 
         # Parse JSONB parameter_item mapping (may be string or dict)
@@ -372,6 +375,7 @@ class ScenarioService(BaseService):
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
+                        value=pidata.get("value", ""),
                     )
 
         # Parse JSONB department mapping (may be string or dict)
@@ -498,6 +502,7 @@ class ScenarioService(BaseService):
                     parameter_mapping[param_id] = ParameterMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
+                        numerical=pdata.get("numerical", False),
                     )
 
         parameter_item_mapping_data = result.get("parameter_item_mapping") or {}
@@ -512,6 +517,7 @@ class ScenarioService(BaseService):
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
+                        value=pidata.get("value", ""),
                     )
 
         department_mapping_data = result.get("department_mapping") or {}

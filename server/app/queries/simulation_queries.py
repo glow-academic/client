@@ -1065,7 +1065,8 @@ class SimulationQueries:
             SELECT 
                 p.id,
                 p.name,
-                COALESCE(p.description, '') as description
+                COALESCE(p.description, '') as description,
+                p.numerical
             FROM parameters p, user_department_ids udi
             WHERE p.department_id = ANY(udi.ids)
         ),
@@ -1075,7 +1076,8 @@ class SimulationQueries:
                     pd.id::text,
                     jsonb_build_object(
                         'name', pd.name,
-                        'description', pd.description
+                        'description', pd.description,
+                        'numerical', pd.numerical
                     )
                 ),
                 '{}'::jsonb
@@ -1088,7 +1090,8 @@ class SimulationQueries:
                 pi.parameter_id,
                 pi.name,
                 COALESCE(pi.description, '') as description,
-                p.name as parameter_name
+                p.name as parameter_name,
+                pi.value
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE p.id IN (SELECT id FROM parameters_data)
@@ -1115,7 +1118,8 @@ class SimulationQueries:
                         'name', pid.name,
                         'description', pid.description,
                         'parameter_id', pid.parameter_id::text,
-                        'parameter_name', pid.parameter_name
+                        'parameter_name', pid.parameter_name,
+                        'value', pid.value
                     )
                 ),
                 '{}'::jsonb
@@ -1726,7 +1730,8 @@ class SimulationQueries:
             SELECT 
                 p.id,
                 p.name,
-                COALESCE(p.description, '') as description
+                COALESCE(p.description, '') as description,
+                p.numerical
             FROM parameters p, user_department_ids udi
             WHERE p.department_id = ANY(udi.ids)
         ),
@@ -1736,7 +1741,8 @@ class SimulationQueries:
                     pd.id::text,
                     jsonb_build_object(
                         'name', pd.name,
-                        'description', pd.description
+                        'description', pd.description,
+                        'numerical', pd.numerical
                     )
                 ),
                 '{}'::jsonb
@@ -1749,7 +1755,8 @@ class SimulationQueries:
                 pi.parameter_id,
                 pi.name,
                 COALESCE(pi.description, '') as description,
-                p.name as parameter_name
+                p.name as parameter_name,
+                pi.value
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE p.id IN (SELECT id FROM parameters_data)
@@ -1776,7 +1783,8 @@ class SimulationQueries:
                         'name', pid.name,
                         'description', pid.description,
                         'parameter_id', pid.parameter_id::text,
-                        'parameter_name', pid.parameter_name
+                        'parameter_name', pid.parameter_name,
+                        'value', pid.value
                     )
                 ),
                 '{}'::jsonb

@@ -376,7 +376,7 @@ class ScenarioQueries:
             SELECT 
                 COALESCE(jsonb_object_agg(
                     p.id::text,
-                    jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''))
+                    jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''), 'numerical', p.numerical)
                 ), '{}'::jsonb) as parameter_mapping
             FROM parameters p, user_departments ud
             WHERE p.department_id = ANY(ud.dept_ids) AND p.active = true
@@ -389,7 +389,8 @@ class ScenarioQueries:
                         'name', pi.name,
                         'description', COALESCE(pi.description, ''),
                         'parameter_id', pi.parameter_id::text,
-                        'parameter_name', p.name
+                        'parameter_name', p.name,
+                        'value', pi.value
                     )
                 ), '{}'::jsonb) as parameter_item_mapping
             FROM parameter_items pi
@@ -1428,7 +1429,8 @@ class ScenarioQueries:
             SELECT DISTINCT 
                 p.id,
                 p.name,
-                COALESCE(p.description, '') as description
+                COALESCE(p.description, '') as description,
+                p.numerical
             FROM parameters p
             WHERE p.department_id IN (SELECT id FROM user_departments)
             AND p.active = true
@@ -1440,7 +1442,8 @@ class ScenarioQueries:
                     p.id::text,
                     jsonb_build_object(
                         'name', p.name,
-                        'description', p.description
+                        'description', p.description,
+                        'numerical', p.numerical
                     )
                 ),
                 '{}'::jsonb
@@ -1453,7 +1456,8 @@ class ScenarioQueries:
                 pi.name,
                 COALESCE(pi.description, '') as description,
                 pi.parameter_id,
-                p.name as parameter_name
+                p.name as parameter_name,
+                pi.value
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE p.department_id IN (SELECT id FROM user_departments)
@@ -1468,7 +1472,8 @@ class ScenarioQueries:
                         'name', pi.name,
                         'description', pi.description,
                         'parameter_id', pi.parameter_id::text,
-                        'parameter_name', pi.parameter_name
+                        'parameter_name', pi.parameter_name,
+                        'value', pi.value
                     )
                 ),
                 '{}'::jsonb

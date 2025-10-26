@@ -49,7 +49,7 @@ class SimulationMappingItem(MappingItem):
 class ParameterMappingItem(MappingItem):
     """Parameter mapping item - extends MappingItem"""
 
-    pass
+    numerical: bool
 
 
 class ParameterItemMappingItem(MappingItem):
@@ -57,6 +57,7 @@ class ParameterItemMappingItem(MappingItem):
 
     parameter_id: str
     parameter_name: str
+    value: str
 
 
 class CohortMappingItem(MappingItem):

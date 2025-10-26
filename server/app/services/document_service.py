@@ -104,6 +104,7 @@ class DocumentService(BaseService):
                             if pdata.get("parameter_id")
                             else "",
                             parameter_name=pdata.get("parameter_name", ""),
+                            value=pdata.get("value", ""),
                         )
 
             # Parse department mapping from JSONB with type safety (may be string or dict)
@@ -197,6 +198,7 @@ class DocumentService(BaseService):
                         description=pdata.get("description", ""),
                         parameter_id=pdata.get("parameter_id", ""),
                         parameter_name=pdata.get("parameter_name", ""),
+                        value=pdata.get("value", ""),
                     )
 
         # Document type options
@@ -280,6 +282,7 @@ class DocumentService(BaseService):
                         description=pdata.get("description", ""),
                         parameter_id=pdata.get("parameter_id", ""),
                         parameter_name=pdata.get("parameter_name", ""),
+                        value=pdata.get("value", ""),
                     )
 
         document_type_options = [

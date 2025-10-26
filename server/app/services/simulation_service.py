@@ -263,6 +263,7 @@ class SimulationService(BaseService):
                                     description=pidata.get("description", ""),
                                     parameter_id=pidata.get("parameter_id", ""),
                                     parameter_name=pidata.get("parameter_name", ""),
+                                    value=pidata.get("value", ""),
                                 )
 
                     scenario_mapping[sid] = ScenarioMappingItem(
@@ -300,6 +301,7 @@ class SimulationService(BaseService):
                     parameter_mapping[pid] = ParameterMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
+                        numerical=pdata.get("numerical", False),
                     )
 
         # Parse parameter_item mapping from JSONB with type safety
@@ -314,6 +316,7 @@ class SimulationService(BaseService):
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
+                        value=pidata.get("value", ""),
                     )
 
         # Parse parameter items list from JSONB with type safety
@@ -500,6 +503,7 @@ class SimulationService(BaseService):
                                     description=pidata.get("description", ""),
                                     parameter_id=pidata.get("parameter_id", ""),
                                     parameter_name=pidata.get("parameter_name", ""),
+                                    value=pidata.get("value", ""),
                                 )
 
                     scenario_mapping[sid] = ScenarioMappingItem(
@@ -537,6 +541,7 @@ class SimulationService(BaseService):
                     parameter_mapping[pid] = ParameterMappingItem(
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
+                        numerical=pdata.get("numerical", False),
                     )
 
         # Parse parameter item mapping from JSONB with type safety (may be string or dict)
@@ -552,6 +557,7 @@ class SimulationService(BaseService):
                         description=pidata.get("description", ""),
                         parameter_id=pidata.get("parameter_id", ""),
                         parameter_name=pidata.get("parameter_name", ""),
+                        value=pidata.get("value", ""),
                     )
 
         # Parse parameter items list from JSONB with type safety

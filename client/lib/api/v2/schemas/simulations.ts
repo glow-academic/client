@@ -6,6 +6,8 @@
 import { z } from "zod";
 import {
   DepartmentMappingSchema,
+  ParameterItemMappingSchema,
+  ParameterMappingSchema,
   RubricMappingSchema,
   ScenarioMappingSchema,
 } from "./base";
@@ -98,29 +100,7 @@ export const ParameterItemDetailSchema = z.object({
   parameter_id: z.string(),
 });
 
-// Parameter mapping
-export const ParameterMappingItemSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-});
-
-export const ParameterMappingSchema = z.record(
-  z.string(),
-  ParameterMappingItemSchema
-);
-
-// Parameter item mapping
-export const ParameterItemMappingItemSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  parameter_id: z.string(),
-  parameter_name: z.string(),
-});
-
-export const ParameterItemMappingSchema = z.record(
-  z.string(),
-  ParameterItemMappingItemSchema
-);
+// Parameter mapping and parameter item mapping are imported from base.ts
 
 export const SimulationDetailResponseSchema = z.object({
   // Basic fields

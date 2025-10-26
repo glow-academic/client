@@ -127,6 +127,7 @@ class PracticeService(BaseService):
                     parameter_mapping[param_id] = ParameterMappingItem(
                         name=param_data.get("name", ""),
                         description=param_data.get("description", ""),
+                        numerical=param_data.get("numerical", False),
                     )
 
         # Parse embedded parameter_item mapping
@@ -139,6 +140,7 @@ class PracticeService(BaseService):
                         description=item_data.get("description", ""),
                         parameter_id=item_data.get("parameter_id", ""),
                         parameter_name=item_data.get("parameter_name", ""),
+                        value=item_data.get("value", ""),
                     )
 
         return PracticeOverviewResponse(

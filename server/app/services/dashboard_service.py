@@ -393,6 +393,7 @@ class DashboardService(BaseService):
             parameter_mapping[param_id] = ParameterMappingItem(
                 name=param_data.get("name", ""),
                 description=param_data.get("description", ""),
+                numerical=param_data.get("numerical", False),
             )
 
         parameter_item_mapping_raw = data.get("parameterItemMapping", {})
@@ -403,6 +404,7 @@ class DashboardService(BaseService):
                 description=pi_data.get("description", ""),
                 parameter_id=pi_data.get("parameterId", ""),
                 parameter_name=pi_data.get("parameterName", ""),
+                value=pi_data.get("value", ""),
             )
 
         # Compute all actionable insights (inlined from analytics_insights.py)
