@@ -839,7 +839,7 @@ class AgentQueries:
             ci.completed,
             
             -- Scenario data
-            sc.problem_statement,
+            sps.problem_statement,
             
             -- Attempt data
             ai.id::text as attempt_id,

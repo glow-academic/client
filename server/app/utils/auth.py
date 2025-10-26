@@ -59,6 +59,12 @@ def encrypt_api_key(api_key: str) -> str:
 
 def decrypt_api_key(encrypted_key: str) -> str:
     """Decrypt API key using the same method as the TypeScript encryptProviderKey/decryptProviderKey functions"""
+    # Handle None or empty string
+    if not encrypted_key:
+        raise ValueError(
+            "API key is missing - scenario/persona/provider chain is broken."
+        )
+    
     secret_key = os.getenv("SECRET_KEY")
     if not secret_key:
         raise ValueError("SECRET_KEY environment variable is not set")

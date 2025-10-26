@@ -1022,8 +1022,37 @@ class SimulationService(BaseService):
                 True,  # active = True
             )
             
-            # Update scenario object with new scenario data
-            scenario["id"] = str(new_scenario["id"])
+            # Create scenario_tree edge to track parent-child relationship
+            tree_edge_query = scenario_queries.insert_scenario_tree_edge()
+            await self.conn.execute(
+                tree_edge_query,
+                scenario_id,  # parent (original scenario from simulation)
+                new_scenario["id"],  # child (generated variant)
+                True,  # active
+            )
+            
+            # Use randomly_fill_scenario_attributes to ensure persona/documents/params
+            # This will randomly select any missing attributes and may create a new variant
+            from app.services.scenario_service import ScenarioService
+            scenario_service = ScenarioService(self.conn)
+            
+            # Pass complete scenario dict so it doesn't need to create a variant
+            filled_scenario = await scenario_service.randomly_fill_scenario_attributes(
+                scenario={
+                    "id": str(new_scenario["id"]),
+                    "name": name,
+                    "active": True,
+                    "default_scenario": False,
+                    "generated": True,
+                },
+                department_id=uuid_module.UUID(department_id)
+            )
+            
+            # Use the returned scenario (which might be a new variant with persona/docs/params)
+            final_scenario_id = filled_scenario["id"]
+            
+            # Update scenario object with final scenario data
+            scenario["id"] = str(final_scenario_id)
             scenario["name"] = name
             scenario["problem_statement"] = description
             scenario["generated"] = True
@@ -1035,18 +1064,9 @@ class SimulationService(BaseService):
             query = self.queries.update_chat_title()
             await self.conn.execute(query, chat_id, name)
             
-            # Update chat to reference the new scenario
+            # Update chat to reference the FINAL scenario (after persona/docs/params added)
             query = "UPDATE simulation_chats SET scenario_id = $1 WHERE id = $2"
-            await self.conn.execute(query, new_scenario["id"], chat_id)
-            
-            # Copy persona relationship from original scenario to new scenario
-            query = """
-                INSERT INTO scenario_personas (scenario_id, persona_id, active, created_at, updated_at)
-                SELECT $1, sp.persona_id, sp.active, now(), now()
-                FROM scenario_personas sp
-                WHERE sp.scenario_id = $2 AND sp.active = true
-            """
-            await self.conn.execute(query, new_scenario["id"], scenario_id)
+            await self.conn.execute(query, final_scenario_id, chat_id)
         else:
             # Use existing scenario data
             chat_title = scenario_name

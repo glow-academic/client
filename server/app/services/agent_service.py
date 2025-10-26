@@ -563,6 +563,18 @@ class AgentService(BaseService):
                 f"Simulation chat {chat_id} not found or missing required data"
             )
 
+        # Validate required fields
+        if not context_row["persona_id"]:
+            raise ValueError(
+                f"Scenario has no persona assigned. This is a data integrity issue - "
+                f"please ensure the scenario has a persona configured."
+            )
+        if not context_row["api_key"]:
+            raise ValueError(
+                f"Provider API key is not configured. This is a data integrity issue - "
+                f"please ensure the provider has an API key."
+            )
+
         # Parse documents JSON array
         documents = (
             json.loads(context_row["documents"])

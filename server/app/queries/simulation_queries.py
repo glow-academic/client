@@ -860,7 +860,7 @@ class SimulationQueries:
                 jsonb_agg(jsonb_build_object(
                     'id', sc.id,
                     'name', sc.name,
-                    'problem_statement', sc.problem_statement,
+                    'problem_statement', sps.problem_statement,
                     'position', ss.position
                 ) ORDER BY ss.position) FILTER (WHERE sc.id IS NOT NULL),
                 '[]'::jsonb
@@ -874,6 +874,7 @@ class SimulationQueries:
         LEFT JOIN cohorts c ON c.id = cs.cohort_id
         LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
         LEFT JOIN scenarios sc ON sc.id = ss.scenario_id
+        LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = sc.id AND sps.active = true
         CROSS JOIN stats st
         WHERE s.id = $1
         GROUP BY s.id, s.title, s.active, stl.time_limit_seconds, s.created_at, r.id, r.name, 
@@ -1364,7 +1365,8 @@ class SimulationQueries:
                 CASE 
                     WHEN COALESCE($4, '') != '' THEN $4::uuid  -- scenario_id_override
                     WHEN EXISTS(SELECT 1 FROM simulation_scenarios) THEN 
-                        (SELECT scenario_id FROM simulation_scenarios LIMIT 1)
+                        (SELECT scenario_id FROM simulation_scenarios 
+                         ORDER BY position LIMIT 1)
                     ELSE (
                         SELECT s.id 
                         FROM scenarios s 
