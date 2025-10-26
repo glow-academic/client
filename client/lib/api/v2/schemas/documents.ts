@@ -175,6 +175,7 @@ export const FinalizeUploadRequestSchema = z.object({
   test: z.boolean().optional(),
   profile_id: z.string().optional(),
   department_id: z.string().optional(),
+  parameter_item_ids: z.array(z.string()).optional(),
 });
 
 export type FinalizeUploadRequest = z.infer<typeof FinalizeUploadRequestSchema>;

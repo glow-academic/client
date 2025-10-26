@@ -82,7 +82,11 @@ export function DocumentUploadDialog({
 
   const uploadFile = async (
     file: File,
-    classification?: { type: string; tags: string[]; departmentId?: string }
+    classification?: {
+      type: string;
+      parameterItemIds: string[];
+      departmentId?: string;
+    }
   ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
@@ -187,6 +191,7 @@ export function DocumentUploadDialog({
               autoClassify: shouldAutoClassify,
               profile_id: effectiveProfile?.id,
               department_id: classification?.departmentId,
+              parameter_item_ids: classification?.parameterItemIds || [],
             });
 
             if (result.success) {

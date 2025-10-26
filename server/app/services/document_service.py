@@ -721,6 +721,19 @@ class DocumentService(BaseService):
                 request.fileId,  # file_id: TUS upload file ID
             )
 
+            # Insert parameter item relationships if provided
+            if request.parameter_item_ids:
+                for param_item_id in request.parameter_item_ids:
+                    await self.conn.execute(
+                        """
+                        INSERT INTO document_parameter_items (document_id, parameter_item_id)
+                        VALUES ($1, $2)
+                        ON CONFLICT (document_id, parameter_item_id) DO NOTHING
+                        """,
+                        document_id,
+                        param_item_id,
+                    )
+
             # Clean up
             try:
                 shutil.rmtree(upload_dir)

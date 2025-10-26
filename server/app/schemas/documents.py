@@ -144,6 +144,7 @@ class FinalizeUploadRequest(BaseModel):
     test: bool | None = False
     profile_id: str | None = None
     department_id: str | None = None
+    parameter_item_ids: list[str] | None = None
 
 
 class FinalizeUploadResponse(BaseModel):

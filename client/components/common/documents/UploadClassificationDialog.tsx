@@ -3,7 +3,6 @@ import * as React from "react";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemPicker } from "@/components/common/scenario/ParameterItemPicker";
-import { TagSelector } from "@/components/common/tags/TagSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +30,6 @@ import { inferMimeFromName } from "@/utils/mime-map";
 
 export type FileClassification = {
   type: DocumentType;
-  tags: string[];
   parameterItemIds: string[];
   departmentId?: string;
 };
@@ -82,11 +80,8 @@ export function UploadClassificationDialog({
   >({});
   const [zipDefaults, setZipDefaults] = React.useState<FileClassification>({
     type: "homework",
-    tags: [],
     parameterItemIds: [],
   });
-  // Additive apply-to-all temporary tags displayed below the input
-  const [applyAllTempTags, setApplyAllTempTags] = React.useState<string[]>([]);
   // Additive apply-to-all parameter items
   const [applyAllTempParameterItemIds, setApplyAllTempParameterItemIds] =
     React.useState<string[]>([]);
@@ -101,7 +96,6 @@ export function UploadClassificationDialog({
     files.forEach((f) => {
       const current: FileClassification = perFile[f.name] ?? {
         type: "homework",
-        tags: [],
         parameterItemIds: [],
       };
       next[f.name] = current;
@@ -109,22 +103,6 @@ export function UploadClassificationDialog({
     setPerFile(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files.map((f) => f.name).join("|")]);
-
-  // Keep the apply-all UI preselected with the intersection of tags across all files
-  React.useEffect(() => {
-    const allFiles = Object.values(perFile);
-    if (allFiles.length === 0) {
-      setApplyAllTempTags([]);
-      return;
-    }
-    const intersection = allFiles
-      .map((f) => new Set(f.tags ?? []))
-      .reduce<string[]>((acc, set, index) => {
-        if (index === 0) return Array.from(set);
-        return acc.filter((t) => set.has(t));
-      }, []);
-    setApplyAllTempTags(intersection);
-  }, [perFile]);
 
   // Keep the apply-all parameter items preselected with the intersection across all files
   React.useEffect(() => {
@@ -149,42 +127,6 @@ export function UploadClassificationDialog({
       )
     );
     setZipDefaults((p) => ({ ...p, type }));
-  };
-
-  const applyTagsToAll = (incomingTags: string[]) => {
-    if (incomingTags.length === 0) return;
-    setPerFile((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => {
-          const merged = Array.from(
-            new Set([...(v.tags ?? []), ...incomingTags])
-          );
-          return [k, { ...v, tags: merged }];
-        })
-      )
-    );
-    setZipDefaults((p) => ({
-      ...p,
-      tags: Array.from(new Set([...(p.tags ?? []), ...incomingTags])),
-    }));
-  };
-
-  const removeTagsFromAll = (tagsToRemove: string[]) => {
-    if (tagsToRemove.length === 0) return;
-    setPerFile((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => {
-          const nextTags = (v.tags ?? []).filter(
-            (t) => !tagsToRemove.includes(t)
-          );
-          return [k, { ...v, tags: nextTags }];
-        })
-      )
-    );
-    setZipDefaults((p) => ({
-      ...p,
-      tags: (p.tags ?? []).filter((t) => !tagsToRemove.includes(t)),
-    }));
   };
 
   const applyParameterItemsToAll = (incomingIds: string[]) => {
@@ -249,7 +191,7 @@ export function UploadClassificationDialog({
             <div className="text-sm font-medium mb-3">
               Apply to all files below
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <Select
                   onValueChange={(v) => applyTypeToAll(v as DocumentType)}
@@ -265,24 +207,6 @@ export function UploadClassificationDialog({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <TagSelector
-                  value={applyAllTempTags}
-                  onChange={(next) => {
-                    setApplyAllTempTags((prev) => {
-                      const added = next.filter((t) => !prev.includes(t));
-                      const removed = prev.filter((t) => !next.includes(t));
-                      if (added.length) applyTagsToAll(added);
-                      if (removed.length) removeTagsFromAll(removed);
-                      return next;
-                    });
-                  }}
-                  knownTags={[]}
-                  placeholder="Add tags for all files..."
-                  badgesPosition="below"
-                  showClearAll
-                />
               </div>
               <div>
                 <ParameterItemPicker
@@ -330,7 +254,6 @@ export function UploadClassificationDialog({
           {files.map((file) => {
             const fc = perFile[file.name] ?? {
               type: "homework",
-              tags: [],
               parameterItemIds: [],
             };
             const mime = file.type || inferMimeFromName(file.name);
@@ -408,7 +331,7 @@ export function UploadClassificationDialog({
                       </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                     <div>
                       <Select
                         value={fc.type}
@@ -418,7 +341,6 @@ export function UploadClassificationDialog({
                               file.name
                             ] ?? {
                               type: "homework",
-                              tags: [],
                               parameterItemIds: [],
                             };
                             return {
@@ -444,29 +366,6 @@ export function UploadClassificationDialog({
                       </Select>
                     </div>
                     <div>
-                      <TagSelector
-                        value={fc.tags}
-                        onChange={(tags) =>
-                          setPerFile((prev) => {
-                            const prevForFile: FileClassification = prev[
-                              file.name
-                            ] ?? {
-                              type: fc.type,
-                              tags: [],
-                              parameterItemIds: [],
-                            };
-                            return {
-                              ...prev,
-                              [file.name]: { ...prevForFile, tags },
-                            } as Record<string, FileClassification>;
-                          })
-                        }
-                        knownTags={[]}
-                        badgesPosition="below"
-                        showClearAll
-                      />
-                    </div>
-                    <div>
                       <ParameterItemPicker
                         mapping={parameterItemMapping}
                         validIds={validParameterItemIds}
@@ -477,7 +376,6 @@ export function UploadClassificationDialog({
                               file.name
                             ] ?? {
                               type: fc.type,
-                              tags: fc.tags,
                               parameterItemIds: [],
                             };
                             return {
