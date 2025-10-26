@@ -801,13 +801,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
                     onDragOver={handleDragOver}
                     onDrop={(e) => !isReadonly && handleDrop(e, scenarioId)}
                   >
-                    {/* Header: Title and Active Switch */}
-                    <div className="flex items-start justify-between gap-2 ">
-                      <div>
-                        <h4 className="font-medium text-sm flex-1 line-clamp-1">
+                    {/* Header: Title, Description, and Active Switch */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm line-clamp-1">
                           {scenarioData.name || "Unnamed Scenario"}
                         </h4>
-                        {/* Description - Right under title */}
                         <p className="text-xs text-muted-foreground line-clamp-4 mt-2">
                           {scenarioData.description ||
                             "No description provided"}
@@ -826,49 +825,54 @@ export default function Simulation({ simulationId }: SimulationProps) {
                       )}
                     </div>
 
-                    {/* Bottom section - Statistics and Actions */}
-                    <div className="space-y-2">
-                      {/* Statistics Row - Only for existing scenarios */}
-                      {isExistingScenario && scenarioStats && (
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">
-                          <div className="flex items-center gap-1">
-                            <BarChart3 className="h-3 w-3" />
-                            <span>Usage: {scenarioStats.usage_count}</span>
+                    {/* Content area with flex-grow */}
+                    <div className="flex-grow flex flex-col">
+                      {/* Bottom section - Statistics and Actions */}
+                      <div className="space-y-2 mt-auto">
+                        {/* Statistics Row - Only for existing scenarios */}
+                        {isExistingScenario && scenarioStats && (
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">
+                            <div className="flex items-center gap-1">
+                              <BarChart3 className="h-3 w-3" />
+                              <span>Usage: {scenarioStats.usage_count}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>
+                                Last: {formatLastUsed(scenarioStats.last_used)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>
+                                Success: {scenarioStats.success_rate}%
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>
-                              Last: {formatLastUsed(scenarioStats.last_used)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>Success: {scenarioStats.success_rate}%</span>
-                          </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center justify-between border-t pt-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => editScenario(scenarioId)}
-                        >
-                          View Details
-                        </Button>
-
-                        {!isReadonly && shouldShowRemove && (
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-between border-t pt-2">
                           <Button
                             type="button"
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleRemoveScenario(scenarioId)}
+                            onClick={() => editScenario(scenarioId)}
                           >
-                            Remove
+                            View Details
                           </Button>
-                        )}
+
+                          {!isReadonly && shouldShowRemove && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRemoveScenario(scenarioId)}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Card>

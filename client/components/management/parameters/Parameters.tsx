@@ -9,23 +9,44 @@ import {
   Book,
   Calendar,
   Clock,
+  Copy,
   Edit,
+  Eye,
   Hash,
   List,
   MapPin,
   Plus,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { ColumnDef } from "@tanstack/react-table";
+
 import { useProfile } from "@/contexts/profile-context";
-import { useParametersList } from "@/lib/api/v2/hooks/parameters";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
+import {
+  useDeleteParameter,
+  useDuplicateParameter,
+  useParametersList,
+} from "@/lib/api/v2/hooks/parameters";
 import type {
   ParameterItem,
   ParameterSampleItem,
@@ -35,6 +56,17 @@ import { ParametersDataTable } from "./ParametersDataTable";
 export default function Parameters() {
   const router = useRouter();
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  // Mutations
+  const duplicateParameterMutation = useDuplicateParameter();
+  const deleteParameterMutation = useDeleteParameter();
+  const log = useLogger();
 
   // V2 API: Single fetch with pre-calculated counts and permissions
   const filters = useMemo(
@@ -50,6 +82,140 @@ export default function Parameters() {
     () => parametersData?.parameters || [],
     [parametersData]
   );
+
+  // Column definitions for TanStack Table
+  const columns = useMemo<ColumnDef<ParameterItem>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => row.getValue("name"),
+        filterFn: (row, id, value) => {
+          const name = String(row.getValue(id)).toLowerCase();
+          const desc = String(row.original.description).toLowerCase();
+          const query = String(value).toLowerCase();
+          return name.includes(query) || desc.includes(query);
+        },
+      },
+      {
+        accessorKey: "numerical",
+        header: "Type",
+        cell: ({ row }) => (row.getValue("numerical") ? "Numerical" : "Text"),
+        filterFn: (row, id, value) => {
+          return value.includes(String(row.getValue(id)));
+        },
+      },
+      {
+        accessorKey: "num_items",
+        header: "Items",
+        cell: ({ row }) => row.getValue("num_items"),
+        filterFn: (row, id, value) => {
+          const count = Number(row.getValue(id));
+          return value.some((range: string) => {
+            if (range === "0") return count === 0;
+            if (range === "1-3") return count >= 1 && count <= 3;
+            if (range === "4-6") return count >= 4 && count <= 6;
+            if (range === "7+") return count >= 7;
+            return false;
+          });
+        },
+      },
+      {
+        accessorKey: "active",
+        header: "Status",
+        cell: ({ row }) => (row.getValue("active") ? "Active" : "Inactive"),
+        filterFn: (row, id, value) => {
+          return value.includes(String(row.getValue(id)));
+        },
+      },
+      {
+        accessorKey: "updated_at",
+        header: "Updated",
+        cell: ({ row }) => row.getValue("updated_at"),
+      },
+    ],
+    []
+  );
+
+  const handleDuplicate = async (parameter: ParameterItem) => {
+    if (!parameter.can_duplicate) {
+      toast.error("This parameter cannot be duplicated");
+      return;
+    }
+
+    setIsDuplicating(parameter.parameter_id);
+    try {
+      await duplicateParameterMutation.mutateAsync({
+        parameterId: parameter.parameter_id,
+      });
+      await log.info("parameter.duplicate.success", {
+        message: "Parameter duplicated successfully",
+        subject: { entityType: "parameter", entityId: parameter.parameter_id },
+        context: {
+          component: "Parameters",
+          function: "handleDuplicate",
+          originalName: parameter.name,
+        },
+      });
+      toast.success(`Parameter "${parameter.name}" duplicated successfully`);
+    } catch (error) {
+      await log.error("parameter.duplicate.failed", {
+        message: "Error duplicating parameter",
+        subject: { entityType: "parameter", entityId: parameter.parameter_id },
+        context: {
+          component: "Parameters",
+          function: "handleDuplicate",
+          originalName: parameter.name,
+        },
+        error,
+      });
+      toast.error("Failed to duplicate parameter");
+    } finally {
+      setIsDuplicating(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+
+    try {
+      await deleteParameterMutation.mutateAsync({
+        parameterId: deleteItem.id,
+      });
+      await log.info("parameter.delete.success", {
+        message: "Parameter deleted successfully",
+        subject: { entityType: "parameter", entityId: deleteItem.id },
+        context: {
+          component: "Parameters",
+          function: "handleDelete",
+          parameterName: deleteItem.name,
+        },
+      });
+      toast.success(`Parameter "${deleteItem.name}" deleted successfully`);
+    } catch (error) {
+      await log.error("parameter.delete.failed", {
+        message: "Error deleting parameter",
+        subject: { entityType: "parameter", entityId: deleteItem.id },
+        context: {
+          component: "Parameters",
+          function: "handleDelete",
+          parameterName: deleteItem.name,
+        },
+        error,
+      });
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete parameter"
+      );
+    } finally {
+      setShowDeleteDialog(false);
+      setDeleteItem(null);
+    }
+  };
+
+  const handleDeleteClick = (id: string, name: string) => {
+    setDeleteItem({ id, name });
+    setShowDeleteDialog(true);
+  };
 
   const getParameterIcon = (parameter: ParameterItem) => {
     // Return different icons based on parameter name or type
@@ -164,20 +330,62 @@ export default function Parameters() {
                 )}
               </div>
             </div>
-            {parameter.can_edit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  router.push(
-                    `/management/parameters/p/${parameter.parameter_id}`
-                  )
-                }
-                aria-label={`Edit ${parameter.name}`}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {parameter.can_edit ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    router.push(
+                      `/management/parameters/p/${parameter.parameter_id}`
+                    )
+                  }
+                  aria-label={`Edit ${parameter.name}`}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    router.push(
+                      `/management/parameters/p/${parameter.parameter_id}`
+                    )
+                  }
+                  aria-label={`View ${parameter.name}`}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
+              {parameter.can_duplicate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDuplicate(parameter)}
+                  disabled={isDuplicating === parameter.parameter_id}
+                  aria-label={`Duplicate ${parameter.name}`}
+                >
+                  {isDuplicating === parameter.parameter_id ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+              {parameter.can_delete && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    handleDeleteClick(parameter.parameter_id, parameter.name)
+                  }
+                  aria-label={`Delete ${parameter.name}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-0 flex-grow flex flex-col">
@@ -256,10 +464,28 @@ export default function Parameters() {
         renderEmptyState()
       ) : (
         <ParametersDataTable
+          columns={columns}
           parameters={parameters}
           renderParameterCard={renderParameterCard}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Parameter</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteItem?.name}&quot;?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
