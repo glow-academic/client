@@ -23,55 +23,67 @@ export function SimulationsDataTableToolbar({
 }: SimulationsDataTableToolbarProps) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
+  const nameColumn = table.getColumn("name");
+  const scenarioColumn = table.getColumn("scenario_ids");
+  const rubricColumn = table.getColumn("rubric_id");
+  const timeLimitColumn = table.getColumn("time_limit_category");
+
   return (
     <div className="flex items-center justify-between">
-      <div className="flex flex-1 items-center space-x-2">
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search simulations..."
-            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("title")?.setFilterValue(event.target.value)
-            }
-            className="h-8 w-[150px] lg:w-[250px] pl-8"
-          />
+      <div className="flex flex-1 items-center space-x-2 flex-wrap">
+        <div className="mb-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search simulations..."
+              value={(nameColumn?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                nameColumn?.setFilterValue(event.target.value)
+              }
+              className="h-8 w-[150px] lg:w-[250px] pl-8"
+            />
+          </div>
         </div>
 
-        {table.getColumn("scenarios") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("scenarios")!}
-            title="Scenarios"
-            options={scenarioOptions}
-          />
-        )}
+        <div className="flex items-center space-x-2 flex-wrap mb-2">
+          {/* Scenario Filter */}
+          {scenarioColumn && scenarioOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={scenarioColumn}
+              title="Scenario"
+              options={scenarioOptions}
+            />
+          )}
 
-        {table.getColumn("rubric") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("rubric")!}
-            title="Rubric"
-            options={rubricOptions}
-          />
-        )}
+          {/* Rubric Filter */}
+          {rubricColumn && rubricOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={rubricColumn}
+              title="Rubric"
+              options={rubricOptions}
+            />
+          )}
 
-        {table.getColumn("timeLimit") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("timeLimit")!}
-            title="Time Limit"
-            options={timeLimitOptions}
-          />
-        )}
+          {/* Time Limit Filter */}
+          {timeLimitColumn && timeLimitOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={timeLimitColumn}
+              title="Time Limit"
+              options={timeLimitOptions}
+            />
+          )}
 
-        {isFiltered && (
-          <Button
-            variant="ghost"
-            onClick={() => table.resetColumnFilters()}
-            className="h-8 px-2 lg:px-3"
-          >
-            Reset
-            <X className="ml-2 h-4 w-4" />
-          </Button>
-        )}
+          {isFiltered && (
+            <Button
+              variant="ghost"
+              onClick={() => table.resetColumnFilters()}
+              className="h-8 px-2 lg:px-3"
+            >
+              Reset
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

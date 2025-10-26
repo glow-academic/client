@@ -16,7 +16,7 @@ from app.schemas.base import (CohortMappingItem, DepartmentMappingItem,
 from app.schemas.scenarios import (CreateScenarioRequest,
                                    CreateScenarioResponse,
                                    DeleteScenarioRequest,
-                                   DeleteScenarioResponse,
+                                   DeleteScenarioResponse, DocumentDetailItem,
                                    DuplicateScenarioRequest,
                                    DuplicateScenarioResponse,
                                    GenerateScenarioAIRequest,
@@ -391,6 +391,32 @@ class ScenarioService(BaseService):
                         description=ddata.get("description", ""),
                     )
 
+        # Parse document_details from JSONB (array of full document objects)
+        document_details: list[DocumentDetailItem] = []
+        doc_details_data = scenario.get("document_details")
+        if isinstance(doc_details_data, str):
+            doc_details_data = json.loads(doc_details_data)
+        if doc_details_data and isinstance(doc_details_data, list):
+            for doc in doc_details_data:
+                if isinstance(doc, dict):
+                    document_details.append(
+                        DocumentDetailItem(
+                            document_id=doc.get("document_id", ""),
+                            name=doc.get("name", ""),
+                            type=doc.get("type", ""),
+                            updatedAt=doc.get("updatedAt", ""),
+                            extension=doc.get("extension", ""),
+                            scenario_ids=doc.get("scenario_ids", []),
+                            can_edit=doc.get("can_edit", True),
+                            can_delete=doc.get("can_delete", True),
+                            active=doc.get("active", True),
+                            department_id=doc.get("department_id", ""),
+                            file_path=doc.get("file_path", ""),
+                            mime_type=doc.get("mime_type", ""),
+                            parameter_item_ids=doc.get("parameter_item_ids", []),
+                        )
+                    )
+
         # Compute permissions from query data
         in_use_by_active = scenario["active_usage_count"] > 0
         is_generated = scenario["generated"]
@@ -423,6 +449,8 @@ class ScenarioService(BaseService):
             parameters=parameters_dict,
             # Simulations
             active_simulation_ids=active_simulation_ids,
+            # Document details
+            document_details=document_details,
             # Permissions
             can_edit=can_edit,
             can_duplicate=can_duplicate,
@@ -557,6 +585,32 @@ class ScenarioService(BaseService):
                         valid_parameter_item_ids=valid_param_item_ids,
                     )
 
+        # Parse document_details from JSONB (empty array for create mode)
+        document_details: list[DocumentDetailItem] = []
+        doc_details_data = result.get("document_details")
+        if isinstance(doc_details_data, str):
+            doc_details_data = json.loads(doc_details_data)
+        if doc_details_data and isinstance(doc_details_data, list):
+            for doc in doc_details_data:
+                if isinstance(doc, dict):
+                    document_details.append(
+                        DocumentDetailItem(
+                            document_id=doc.get("document_id", ""),
+                            name=doc.get("name", ""),
+                            type=doc.get("type", ""),
+                            updatedAt=doc.get("updatedAt", ""),
+                            extension=doc.get("extension", ""),
+                            scenario_ids=doc.get("scenario_ids", []),
+                            can_edit=doc.get("can_edit", True),
+                            can_delete=doc.get("can_delete", True),
+                            active=doc.get("active", True),
+                            department_id=doc.get("department_id", ""),
+                            file_path=doc.get("file_path", ""),
+                            mime_type=doc.get("mime_type", ""),
+                            parameter_item_ids=doc.get("parameter_item_ids", []),
+                        )
+                    )
+
         # Return empty scenario with all valid options
         return ScenarioDetailResponse(
             # Basic fields (empty defaults)
@@ -581,6 +635,8 @@ class ScenarioService(BaseService):
             parameters=parameters_dict,
             # Simulations (empty defaults)
             active_simulation_ids=[],
+            # Document details (empty for create mode)
+            document_details=document_details,
             # Permissions (allow all for new scenarios)
             can_edit=True,
             can_duplicate=False,  # Can't duplicate non-existent scenario

@@ -2,16 +2,9 @@
 
 from pydantic import BaseModel
 
-from .base import (
-    CohortMapping,
-    DepartmentMapping,
-    DocumentMapping,
-    ObjectiveMapping,
-    ParameterItemMapping,
-    ParameterMapping,
-    PersonaMapping,
-    SimulationMapping,
-)
+from .base import (CohortMapping, DepartmentMapping, DocumentMapping,
+                   ObjectiveMapping, ParameterItemMapping, ParameterMapping,
+                   PersonaMapping, SimulationMapping)
 
 
 class ScenariosFilters(BaseModel):
@@ -66,6 +59,24 @@ class ParameterDetail(BaseModel):
     valid_parameter_item_ids: list[str]
 
 
+class DocumentDetailItem(BaseModel):
+    """Document detail for preview - matches client DocumentItem schema."""
+
+    document_id: str
+    name: str
+    type: str
+    updatedAt: str
+    extension: str
+    scenario_ids: list[str]
+    can_edit: bool
+    can_delete: bool
+    active: bool
+    department_id: str
+    file_path: str
+    mime_type: str
+    parameter_item_ids: list[str]
+
+
 class ScenarioDetailResponse(BaseModel):
     """Detailed scenario response with all fields and metadata."""
 
@@ -96,6 +107,9 @@ class ScenarioDetailResponse(BaseModel):
 
     # Simulations
     active_simulation_ids: list[str]
+
+    # Document details (full objects for preview)
+    document_details: list[DocumentDetailItem] = []
 
     # Permissions
     can_edit: bool

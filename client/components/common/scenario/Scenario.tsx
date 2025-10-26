@@ -1005,6 +1005,7 @@ export default function Scenario({
               validIds={validDocumentIds}
               selectedIds={currentDocumentIds}
               onSelect={setCurrentDocumentIds}
+              documentDetails={scenarioData?.document_details || []}
               label=""
               placeholder="Select documents..."
               description="Choose documents that will be available during this scenario."

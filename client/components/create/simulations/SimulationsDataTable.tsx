@@ -16,11 +16,9 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import {
-  SimulationItem,
-} from "@/lib/api/v2/schemas/simulations";
-import { SimulationsDataTableToolbar } from "./SimulationsDataTableToolbar";
 import { RubricMapping, ScenarioMapping } from "@/lib/api/v2/schemas/base";
+import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
+import { SimulationsDataTableToolbar } from "./SimulationsDataTableToolbar";
 
 export interface SimulationsDataTableProps {
   data: SimulationItem[];
@@ -46,17 +44,46 @@ export function SimulationsDataTable({
         accessorKey: "name",
         header: "Name",
       },
+      // Hidden faceting column for Scenarios (array of IDs)
       {
-        accessorKey: "scenario_ids",
-        header: "Scenarios",
+        id: "scenario_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        // Return the array of scenario IDs for this row
+        accessorFn: (row: SimulationItem) => row.scenario_ids ?? [],
+        // Let filtering check membership - show if simulation contains ANY selected scenario
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("scenario_ids") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
+        },
       },
+      // Hidden faceting column for Rubric (single ID)
       {
+        id: "rubric_id",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
         accessorKey: "rubric_id",
-        header: "Rubric",
       },
+      // Hidden faceting column for Time Limit (categorical)
       {
-        accessorKey: "time_limit",
-        header: "Time Limit",
+        id: "time_limit_category",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        // Convert time_limit (seconds) to category
+        accessorFn: (row: SimulationItem) => {
+          const seconds = row.time_limit;
+          if (seconds === null) return "no-limit";
+          if (seconds <= 1800) return "0-30"; // 0-30 minutes
+          if (seconds <= 3600) return "30-60"; // 30-60 minutes
+          if (seconds <= 7200) return "60-120"; // 60-120 minutes
+          return "120+"; // 120+ minutes
+        },
       },
     ],
     []

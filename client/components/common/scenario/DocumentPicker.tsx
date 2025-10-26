@@ -12,6 +12,7 @@ import { PopoverProps } from "@radix-ui/react-popover";
 import { Check, ChevronsUpDown, Eye, X } from "lucide-react";
 import * as React from "react";
 
+import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -42,6 +43,7 @@ import {
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import type { MappingItem } from "@/lib/api/v2/schemas/base";
+import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { cn } from "@/lib/utils";
 
 // Extended mapping item for documents with tags
@@ -59,6 +61,7 @@ export interface DocumentPickerProps<
   validIds: string[];
   selectedIds: string[];
   onSelect: (ids: string[]) => void;
+  documentDetails?: DocumentItem[]; // Full document objects for preview
   multiSelect?: boolean;
   label?: string;
   placeholder?: string;
@@ -74,6 +77,7 @@ export function DocumentPicker<
   validIds,
   selectedIds,
   onSelect,
+  documentDetails = [],
   multiSelect = false,
   label = "Document",
   placeholder = "Select a document...",
@@ -321,18 +325,37 @@ export function DocumentPicker<
                 "Preview the document content below."}
             </DialogDescription>
           </DialogHeader>
-          {previewDocument && (
-            <div className="flex-1 min-h-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-8xl mb-4">
-                  {getDocumentTypeIcon(previewDocument.type)}
+          {previewDocumentId &&
+            (() => {
+              const fullDoc = documentDetails.find(
+                (d) => d.document_id === previewDocumentId
+              );
+              if (fullDoc) {
+                return (
+                  <div className="flex-1 min-h-0">
+                    <DocumentViewer
+                      document={fullDoc}
+                      bare={true}
+                      isFormDocument={false}
+                    />
+                  </div>
+                );
+              }
+              // Fallback if full document not available
+              const mappedDoc = mapping[previewDocumentId];
+              return mappedDoc ? (
+                <div className="flex-1 min-h-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-8xl mb-4">
+                      {getDocumentTypeIcon(mappedDoc.type)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Preview not available - document details missing
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {previewDocument.filePath || "No file path available"}
-                </p>
-              </div>
-            </div>
-          )}
+              ) : null;
+            })()}
           <DialogFooter>
             <Button
               variant="outline"

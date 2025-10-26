@@ -357,6 +357,42 @@ class ScenarioQueries:
                 WHERE d.department_id = ANY(ud.dept_ids)
             ) d
         ),
+        document_details_data AS (
+            SELECT COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'document_id', d.id::text,
+                        'name', d.name,
+                        'type', d.type,
+                        'updatedAt', d.updated_at::text,
+                        'extension', SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'),
+                        'scenario_ids', COALESCE((
+                            SELECT jsonb_agg(sd.scenario_id::text)
+                            FROM scenario_documents sd
+                            WHERE sd.document_id = d.id AND sd.active = true
+                        ), '[]'::jsonb),
+                        'can_edit', true,
+                        'can_delete', true,
+                        'active', d.active,
+                        'department_id', d.department_id::text,
+                        'file_path', d.file_path,
+                        'mime_type', d.mime_type,
+                        'parameter_item_ids', COALESCE((
+                            SELECT jsonb_agg(dpi.parameter_item_id::text)
+                            FROM document_parameter_items dpi
+                            WHERE dpi.document_id = d.id AND dpi.active = true
+                        ), '[]'::jsonb)
+                    ) ORDER BY d.name
+                ) FILTER (WHERE d.id = ANY(
+                    COALESCE((SELECT document_ids::uuid[] FROM scenario_documents_agg), ARRAY[]::uuid[])
+                )),
+                '[]'::jsonb
+            ) as document_details
+            FROM documents d
+            WHERE d.id = ANY(
+                COALESCE((SELECT document_ids::uuid[] FROM scenario_documents_agg), ARRAY[]::uuid[])
+            )
+        ),
         simulation_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
                 s.id::text,
@@ -430,7 +466,8 @@ class ScenarioQueries:
             smd.simulation_mapping,
             pmd.parameter_mapping,
             pimd.parameter_item_mapping,
-            dmd.department_mapping
+            dmd.department_mapping,
+            ddd.document_details
         FROM scenario_core sc
         CROSS JOIN user_profile up
         LEFT JOIN scenario_persona sp ON true
@@ -440,6 +477,7 @@ class ScenarioQueries:
         CROSS JOIN merged_parameters_data mpd
         CROSS JOIN valid_personas_data vpd2
         CROSS JOIN valid_documents_data vdd
+        CROSS JOIN document_details_data ddd
         CROSS JOIN simulation_mapping_data smd
         CROSS JOIN parameter_mapping_data pmd
         CROSS JOIN parameter_item_mapping_data pimd
@@ -1496,6 +1534,9 @@ class ScenarioQueries:
                 '{}'::jsonb
             ) as parameters_json
             FROM parameter_data p
+        ),
+        document_details_data AS (
+            SELECT '[]'::jsonb as document_details
         )
         SELECT 
             COALESCE(
@@ -1515,7 +1556,8 @@ class ScenarioQueries:
             (SELECT mapping FROM document_mapping_data) as document_mapping,
             (SELECT mapping FROM parameter_mapping_data) as parameter_mapping,
             (SELECT mapping FROM parameter_item_mapping_data) as parameter_item_mapping,
-            (SELECT parameters_json FROM parameters_structure) as parameters_json
+            (SELECT parameters_json FROM parameters_structure) as parameters_json,
+            (SELECT document_details FROM document_details_data) as document_details
         """
         return (query, [profile_id])
 

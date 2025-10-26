@@ -14,6 +14,7 @@ import {
   PersonaMappingSchema,
   SimulationMappingSchema,
 } from "./base";
+import { DocumentItemSchema } from "./documents";
 
 // ============================================================================
 // NO SCENARIO-SPECIFIC MAPPING TYPES - All use base MappingSchema
@@ -110,6 +111,9 @@ export const ScenarioDetailResponseSchema = z.object({
 
   // Simulations
   active_simulation_ids: z.array(z.string()),
+
+  // Document details (full objects for preview)
+  document_details: z.array(DocumentItemSchema),
 
   // Permissions
   can_edit: z.boolean(),
