@@ -75,12 +75,14 @@ class DepartmentDetailResponse(BaseModel):
     title: str
     description: str
     active: bool
+    default_department: bool
 
     # Agent role assignments (8 required roles)
     agent_roles: AgentRoles
 
     # Valid agents for selection
     valid_agent_ids: list[str]
+    valid_agent_ids_by_role: dict[str, list[str]]  # Maps role to valid agent IDs
 
     # Top-level mappings
     agent_mapping: AgentMapping
@@ -113,6 +115,7 @@ class CreateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
+    default_department: bool
     agent_roles: AgentRoles
     profile_id: str  # Creator's profile ID
 
@@ -132,6 +135,7 @@ class UpdateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
+    default_department: bool
     agent_roles: AgentRoles
 
 

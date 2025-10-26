@@ -360,9 +360,14 @@ class ScenarioQueries:
         simulation_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
                 s.id::text,
-                jsonb_build_object('name', s.title, 'description', COALESCE(s.description, ''))
+                jsonb_build_object(
+                    'name', s.title, 
+                    'description', COALESCE(s.description, ''),
+                    'time_limit', stl.time_limit_seconds
+                )
             ), '{}'::jsonb) as simulation_mapping
             FROM simulations s
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             WHERE s.id = ANY(
                 COALESCE((SELECT simulation_ids::uuid[] FROM scenario_simulations_agg), ARRAY[]::uuid[])
             )
@@ -520,7 +525,16 @@ class ScenarioQueries:
 
     def get_simulation_mapping(self, sim_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for simulation mapping."""
-        query = "SELECT id, title FROM simulations WHERE id = ANY($1)"
+        query = """
+        SELECT 
+            s.id, 
+            s.title, 
+            s.description,
+            stl.time_limit_seconds as time_limit
+        FROM simulations s
+        LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+        WHERE s.id = ANY($1)
+        """
         return (query, [sim_ids])
 
     def get_document_mapping(self, doc_ids: list[str]) -> tuple[str, list[Any]]:

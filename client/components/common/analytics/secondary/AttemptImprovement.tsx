@@ -182,7 +182,7 @@ export default function AttemptImprovement({
             selectedSimulationIds={selected}
             onSelect={setSelected}
             placeholder="Filter by simulation..."
-            hideSelectedChips
+            hideSelectedChips={true}
             showLabel={false}
             buttonClassName="w-48"
           />

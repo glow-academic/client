@@ -2,16 +2,11 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.seed_helpers import (
-    get_cs_dept_id,  # type: ignore
-    get_superadmin_alias,  # type: ignore
-)
-
-from app.schemas.departments import (
-    DepartmentDetailRequest,  # type: ignore
-    DepartmentsFilters,  # type: ignore
-)
+from app.schemas.departments import DepartmentDetailRequest  # type: ignore
+from app.schemas.departments import DepartmentsFilters  # type: ignore
 from app.services.department_service import DepartmentService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -97,12 +92,34 @@ async def test_get_department_detail_success(
         assert hasattr(agent_item, "description"), (
             "Agent mapping should have description field"
         )
+        assert hasattr(agent_item, "roles"), (
+            "Agent mapping should have roles field"
+        )
+        assert isinstance(agent_item.roles, list), (
+            "Agent roles should be a list"
+        )
+
+    # Verify valid_agent_ids_by_role exists and is structured correctly
+    assert hasattr(resp, "valid_agent_ids_by_role"), (
+        "Response should have valid_agent_ids_by_role field"
+    )
+    assert isinstance(resp.valid_agent_ids_by_role, dict), (
+        "valid_agent_ids_by_role should be a dict"
+    )
+    expected_roles = ["title", "scenario", "classify", "assistant", "grade", "input_guardrail", "output_guardrail", "hint"]
+    for role in expected_roles:
+        assert role in resp.valid_agent_ids_by_role, (
+            f"Role {role} should be in valid_agent_ids_by_role"
+        )
+        assert isinstance(resp.valid_agent_ids_by_role[role], list), (
+            f"valid_agent_ids_by_role[{role}] should be a list"
+        )
 
 
 async def test_get_department_detail_has_agent_mappings(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test that agent mapping contains name and description."""
+    """Test that agent mapping contains name, description, and roles."""
     dept_id = await get_cs_dept_id(db)
     admin_id = await get_superadmin_alias(db)
 
@@ -116,6 +133,8 @@ async def test_get_department_detail_has_agent_mappings(
         for agent_id, agent_info in resp.agent_mapping.items():
             assert agent_info.name is not None
             assert agent_info.description is not None
+            assert agent_info.roles is not None
+            assert isinstance(agent_info.roles, list)
 
 
 async def test_get_department_detail_invalid_id(
@@ -168,6 +187,20 @@ async def test_get_department_detail_default_success(
         assert hasattr(agent_item, "description"), (
             "Agent mapping should have description field"
         )
+        assert hasattr(agent_item, "roles"), (
+            "Agent mapping should have roles field"
+        )
+        assert isinstance(agent_item.roles, list), (
+            "Agent roles should be a list"
+        )
+
+    # Verify valid_agent_ids_by_role exists
+    assert hasattr(resp, "valid_agent_ids_by_role"), (
+        "Response should have valid_agent_ids_by_role field"
+    )
+    assert isinstance(resp.valid_agent_ids_by_role, dict), (
+        "valid_agent_ids_by_role should be a dict"
+    )
 
 
 async def test_get_department_detail_default_consolidated_query(
@@ -212,9 +245,9 @@ async def test_department_can_edit_permissions(
     """Test department can_edit permission logic.
 
     Rules:
-    - False if active cohort links exist
     - False if default_department=true and user is not superadmin
-    - True if user is admin or superadmin (and no active cohort links)
+    - True if user is admin or superadmin
+    - False otherwise
     """
     dept_id = await get_cs_dept_id(db)
 
@@ -228,45 +261,31 @@ async def test_department_can_edit_permissions(
 
     # Test with superadmin
     resp_superadmin = await svc.get_departments_list(
-        DepartmentsFilters(departmentIds=[dept_id], profileId=superadmin_id)
+        DepartmentsFilters(departmentIds=[dept_id], profileId=str(superadmin_id))
     )
 
     for dept in resp_superadmin.departments:
-        # Check if department has active cohort links
-        active_cohort_count = await db.fetchval(
-            "SELECT COUNT(*) FROM cohorts WHERE department_id = $1 AND active = true",
-            dept.department_id,
+        # Superadmin can edit all departments (including default)
+        assert dept.can_edit is True, (
+            "Superadmin should be able to edit all departments"
         )
-
-        if active_cohort_count > 0:
-            assert dept.can_edit is False, (
-                "Department with active cohort links should not be editable"
-            )
-        elif dept.default_department and superadmin_id:
-            # Superadmin can edit default departments (if no active cohort links)
-            assert dept.can_edit is True or active_cohort_count > 0
-        else:
-            assert dept.can_edit is True
 
     # Test with admin (if one exists)
     if admin_id:
         resp_admin = await svc.get_departments_list(
-            DepartmentsFilters(departmentIds=[dept_id], profileId=admin_id)
+            DepartmentsFilters(departmentIds=[dept_id], profileId=str(admin_id))
         )
 
         for dept in resp_admin.departments:
-            active_cohort_count = await db.fetchval(
-                "SELECT COUNT(*) FROM cohorts WHERE department_id = $1 AND active = true",
-                dept.department_id,
-            )
-
-            if active_cohort_count > 0:
-                assert dept.can_edit is False
-            elif dept.default_department:
+            if dept.default_department:
                 # Admin cannot edit default departments
-                assert dept.can_edit is False
+                assert dept.can_edit is False, (
+                    "Admin should NOT be able to edit default departments"
+                )
             else:
-                assert dept.can_edit is True
+                assert dept.can_edit is True, (
+                    "Admin should be able to edit non-default departments"
+                )
 
 
 async def test_department_can_delete_permissions(
@@ -275,9 +294,10 @@ async def test_department_can_delete_permissions(
     """Test department can_delete permission logic.
 
     Rules:
+    - False if default_department=true (even for superadmin)
     - False if any cohort links exist (active or inactive)
-    - False if default_department=true and user is not superadmin
-    - True if user is admin or superadmin (and no cohort links)
+    - False if would orphan profiles (profiles with only this department)
+    - True if user is admin or superadmin (and no blockers above)
     """
     dept_id = await get_cs_dept_id(db)
 
@@ -291,7 +311,7 @@ async def test_department_can_delete_permissions(
 
     # Test with superadmin
     resp_superadmin = await svc.get_departments_list(
-        DepartmentsFilters(departmentIds=[dept_id], profileId=superadmin_id)
+        DepartmentsFilters(departmentIds=[dept_id], profileId=str(superadmin_id))
     )
 
     for dept in resp_superadmin.departments:
@@ -300,20 +320,43 @@ async def test_department_can_delete_permissions(
             "SELECT COUNT(*) FROM cohorts WHERE department_id = $1", dept.department_id
         )
 
-        if total_cohort_links > 0:
+        # Check if deleting would orphan profiles
+        profiles_would_orphan = await db.fetchval(
+            """
+            SELECT COUNT(*)
+            FROM profile_departments pd
+            WHERE pd.department_id = $1
+            AND NOT EXISTS (
+                SELECT 1 FROM profile_departments pd2 
+                WHERE pd2.profile_id = pd.profile_id 
+                AND pd2.department_id != pd.department_id
+            )
+            """,
+            dept.department_id,
+        )
+
+        # Default departments can NEVER be deleted (even by superadmin)
+        if dept.default_department:
+            assert dept.can_delete is False, (
+                "Default departments should NEVER be deletable (even for superadmin)"
+            )
+        elif total_cohort_links > 0:
             assert dept.can_delete is False, (
                 "Department with cohort links should not be deletable"
             )
-        elif dept.default_department and superadmin_id:
-            # Superadmin can delete default departments (if no cohort links)
-            assert dept.can_delete is True or total_cohort_links > 0
+        elif profiles_would_orphan > 0:
+            assert dept.can_delete is False, (
+                "Department should not be deletable if it would orphan profiles"
+            )
         else:
-            assert dept.can_delete is True
+            assert dept.can_delete is True, (
+                "Superadmin should be able to delete non-default departments with no blockers"
+            )
 
     # Test with admin (if one exists)
     if admin_id:
         resp_admin = await svc.get_departments_list(
-            DepartmentsFilters(departmentIds=[dept_id], profileId=admin_id)
+            DepartmentsFilters(departmentIds=[dept_id], profileId=str(admin_id))
         )
 
         for dept in resp_admin.departments:
@@ -322,13 +365,37 @@ async def test_department_can_delete_permissions(
                 dept.department_id,
             )
 
-            if total_cohort_links > 0:
-                assert dept.can_delete is False
-            elif dept.default_department:
-                # Admin cannot delete default departments
-                assert dept.can_delete is False
+            profiles_would_orphan = await db.fetchval(
+                """
+                SELECT COUNT(*)
+                FROM profile_departments pd
+                WHERE pd.department_id = $1
+                AND NOT EXISTS (
+                    SELECT 1 FROM profile_departments pd2 
+                    WHERE pd2.profile_id = pd.profile_id 
+                    AND pd2.department_id != pd.department_id
+                )
+                """,
+                dept.department_id,
+            )
+
+            # Same rules apply for admin
+            if dept.default_department:
+                assert dept.can_delete is False, (
+                    "Admin cannot delete default departments"
+                )
+            elif total_cohort_links > 0:
+                assert dept.can_delete is False, (
+                    "Department with cohort links should not be deletable"
+                )
+            elif profiles_would_orphan > 0:
+                assert dept.can_delete is False, (
+                    "Department should not be deletable if it would orphan profiles"
+                )
             else:
-                assert dept.can_delete is True
+                assert dept.can_delete is True, (
+                    "Admin should be able to delete non-default departments with no blockers"
+                )
 
 
 async def test_department_can_duplicate_permissions(
@@ -355,7 +422,7 @@ async def test_department_can_duplicate_permissions(
 
     # Test with superadmin - should be able to duplicate
     resp_superadmin = await svc.get_departments_list(
-        DepartmentsFilters(departmentIds=[dept_id], profileId=superadmin_id)
+        DepartmentsFilters(departmentIds=[dept_id], profileId=str(superadmin_id))
     )
     for dept in resp_superadmin.departments:
         assert dept.can_duplicate is True, (
@@ -365,7 +432,7 @@ async def test_department_can_duplicate_permissions(
     # Test with admin - should be able to duplicate
     if admin_id:
         resp_admin = await svc.get_departments_list(
-            DepartmentsFilters(departmentIds=[dept_id], profileId=admin_id)
+            DepartmentsFilters(departmentIds=[dept_id], profileId=str(admin_id))
         )
         for dept in resp_admin.departments:
             assert dept.can_duplicate is True, (
@@ -375,7 +442,7 @@ async def test_department_can_duplicate_permissions(
     # Test with instructional - should NOT be able to duplicate
     if instructional_id:
         resp_instructional = await svc.get_departments_list(
-            DepartmentsFilters(departmentIds=[dept_id], profileId=instructional_id)
+            DepartmentsFilters(departmentIds=[dept_id], profileId=str(instructional_id))
         )
         for dept in resp_instructional.departments:
             assert dept.can_duplicate is False, (

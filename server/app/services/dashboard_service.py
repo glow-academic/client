@@ -4,50 +4,34 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.dashboard_queries import DashboardQueries
 from app.schemas.analytics import AnalyticsFilters, Method, MetricResponse
-from app.schemas.base import (
-    ParameterItemMapping,
-    ParameterItemMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-)
-from app.schemas.dashboard import (
-    AttemptImprovementData,
-    AttemptImprovementResponse,
-    CohortData,
-    CohortPerformanceResponse,
-    DashboardBundleResponse,
-    DashboardFooterMetrics,
-    DashboardHeaderMetrics,
-    DashboardInsights,
-    DashboardPrimaryMetrics,
-    DashboardSecondaryMetrics,
-    GrowthDataResponse,
-    GrowthWindowAverages,
-    NumericAttemptFact,
-    PersonaPerformanceData,
-    PersonaPerformanceResponse,
-    PersonaTrendData,
-    RubricHeatmapResponse,
-    RubricMatrixPackage,
-    ScenarioAttributeAttemptFact,
-    ScenarioFact,
-    ScenarioPerformanceResponse,
-    ScenarioStatsResponse,
-    SimulationCompositionResponse,
-    SimulationFact,
-    SimulationPerformanceResponse,
-    SkillPerformanceResponse,
-    SkillRadarData,
-    Thresholds,
-)
+from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem,
+                              RubricMapping, RubricMappingItem,
+                              SimulationMapping, SimulationMappingItem)
+from app.schemas.dashboard import (AttemptImprovementData,
+                                   AttemptImprovementResponse, CohortData,
+                                   CohortPerformanceResponse,
+                                   DashboardBundleResponse,
+                                   DashboardFooterMetrics,
+                                   DashboardHeaderMetrics, DashboardInsights,
+                                   DashboardPrimaryMetrics,
+                                   DashboardSecondaryMetrics,
+                                   GrowthDataResponse, GrowthWindowAverages,
+                                   NumericAttemptFact, PersonaPerformanceData,
+                                   PersonaPerformanceResponse,
+                                   PersonaTrendData, RubricHeatmapResponse,
+                                   RubricMatrixPackage,
+                                   ScenarioAttributeAttemptFact, ScenarioFact,
+                                   ScenarioPerformanceResponse,
+                                   ScenarioStatsResponse,
+                                   SimulationCompositionResponse,
+                                   SimulationFact,
+                                   SimulationPerformanceResponse,
+                                   SkillPerformanceResponse, SkillRadarData,
+                                   Thresholds)
 from app.services.base_service import BaseService, with_cache
 
 
@@ -392,6 +376,7 @@ class DashboardService(BaseService):
             simulation_mapping[sim_id] = SimulationMappingItem(
                 name=sim_data.get("name", ""),
                 description=sim_data.get("description", ""),
+                time_limit=sim_data.get("time_limit"),
             )
 
         rubric_mapping_raw = data.get("rubricMapping", {})

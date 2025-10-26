@@ -2,13 +2,11 @@
  * SimulationPicker.test.tsx
  * Tests for SimulationPicker component
  * @AshokSaravanan222 & @siladiea
- * 07/20/2025
+ * 10/25/2025
  */
 
-import {
-  Simulation,
-  SimulationPicker,
-} from "@/components/common/cohort/SimulationPicker";
+import { SimulationPicker } from "@/components/common/cohort/SimulationPicker";
+import type { SimulationMappingItem } from "@/lib/api/v2/schemas/base";
 import { fireEvent, render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,41 +15,32 @@ vi.mock("@/hooks/use-mutation-observer", () => ({
   useMutationObserver: vi.fn(),
 }));
 
-const mockSimulations: Simulation[] = [
-  {
-    id: "1",
-    title: "Basic Communication",
+const mockSimulationMapping: Record<string, SimulationMappingItem> = {
+  "1": {
+    name: "Basic Communication",
     description: "A basic communication simulation",
-    timeLimit: 30,
-    active: true,
-    defaultSimulation: false,
-    practiceSimulation: false,
+    time_limit: 30,
   },
-  {
-    id: "2",
-    title: "Advanced Leadership",
+  "2": {
+    name: "Advanced Leadership",
     description: "Advanced leadership training simulation",
-    timeLimit: 60,
-    active: true,
-    defaultSimulation: true,
-    practiceSimulation: false,
+    time_limit: 60,
   },
-  {
-    id: "3",
-    title: "Practice Session",
+  "3": {
+    name: "Practice Session",
     description: "Practice simulation for beginners",
-    timeLimit: 0, // Use 0 instead of undefined for no time limit
-    active: false,
-    defaultSimulation: false,
-    practiceSimulation: true,
+    time_limit: null,
   },
-];
+};
+
+const mockValidIds = ["1", "2", "3"];
 
 describe("SimulationPicker", () => {
   const defaultProps = {
-    simulations: mockSimulations,
+    simulationMapping: mockSimulationMapping,
+    validSimulationIds: mockValidIds,
+    selectedSimulationIds: [],
     onSelect: vi.fn(),
-    selectedSimulations: [],
   };
 
   beforeEach(() => {
@@ -63,7 +52,7 @@ describe("SimulationPicker", () => {
 
     expect(screen.getByText("Simulations")).toBeInTheDocument();
     expect(
-      screen.getByRole("combobox", { name: /select simulations/i }),
+      screen.getByRole("combobox", { name: /select simulations/i })
     ).toBeInTheDocument();
   });
 
@@ -74,68 +63,23 @@ describe("SimulationPicker", () => {
   });
 
   it("shows selected simulation count when multiple are selected", () => {
-    const selectedSims = [mockSimulations[0]!, mockSimulations[1]!];
     render(
-      <SimulationPicker {...defaultProps} selectedSimulations={selectedSims} />,
+      <SimulationPicker {...defaultProps} selectedSimulationIds={["1", "2"]} />
     );
 
     expect(screen.getByText("2 simulations selected")).toBeInTheDocument();
   });
 
   it("shows single simulation title when one is selected", () => {
-    const selectedSims = [mockSimulations[0]!];
     render(
-      <SimulationPicker {...defaultProps} selectedSimulations={selectedSims} />,
+      <SimulationPicker {...defaultProps} selectedSimulationIds={["1"]} />
     );
 
     expect(screen.getByText("Basic Communication")).toBeInTheDocument();
   });
 
-  it("filters out inactive simulations when showOnlyActive is true", async () => {
-    render(<SimulationPicker {...defaultProps} showOnlyActive={true} />);
-
-    const button = screen.getByRole("combobox", {
-      name: /select simulations/i,
-    });
-    fireEvent.click(button);
-
-    await waitFor(() => {
-      expect(screen.getByText("Basic Communication")).toBeInTheDocument();
-      expect(screen.getByText("Advanced Leadership")).toBeInTheDocument();
-      expect(screen.queryByText("Practice Session")).not.toBeInTheDocument();
-    });
-  });
-
-  it("shows all simulations when showOnlyActive is false", async () => {
-    render(<SimulationPicker {...defaultProps} showOnlyActive={false} />);
-
-    const button = screen.getByRole("combobox", {
-      name: /select simulations/i,
-    });
-    fireEvent.click(button);
-
-    await waitFor(() => {
-      expect(screen.getByText("Basic Communication")).toBeInTheDocument();
-      expect(screen.getByText("Advanced Leadership")).toBeInTheDocument();
-      // Practice Session is filtered out by default (practiceSimulation: true)
-      expect(screen.queryByText("Practice Session")).not.toBeInTheDocument();
-    });
-  });
-
-  it("shows practice simulations when not filtering them out", async () => {
-    // Create a version without practice simulations being filtered
-    const simulationsWithoutPractice = mockSimulations.map((sim) => ({
-      ...sim,
-      practiceSimulation: false,
-    }));
-
-    render(
-      <SimulationPicker
-        {...defaultProps}
-        simulations={simulationsWithoutPractice}
-        showOnlyActive={false}
-      />,
-    );
+  it("shows all simulations in the dropdown", async () => {
+    render(<SimulationPicker {...defaultProps} />);
 
     const button = screen.getByRole("combobox", {
       name: /select simulations/i,
@@ -162,27 +106,25 @@ describe("SimulationPicker", () => {
       const simulationItems = screen.getAllByText("Basic Communication");
       // Click the one in the dropdown (not the button)
       const dropdownItem = simulationItems.find(
-        (item) =>
-          item.closest('[role="option"]') || item.closest("[cmdk-item]"),
+        (item) => item.closest('[role="option"]') || item.closest("[cmdk-item]")
       );
       if (dropdownItem) {
         fireEvent.click(dropdownItem);
       }
     });
 
-    expect(onSelect).toHaveBeenCalledWith([mockSimulations[0]]);
+    expect(onSelect).toHaveBeenCalledWith(["1"]);
   });
 
-  it("removes simulation from selection when clicked again", async () => {
+  it("removes simulation from selection when clicked again in multi-select mode", async () => {
     const onSelect = vi.fn();
-    const selectedSims = [mockSimulations[0]!];
 
     render(
       <SimulationPicker
         {...defaultProps}
         onSelect={onSelect}
-        selectedSimulations={selectedSims}
-      />,
+        selectedSimulationIds={["1"]}
+      />
     );
 
     const button = screen.getByRole("combobox", {
@@ -194,8 +136,7 @@ describe("SimulationPicker", () => {
       const simulationItems = screen.getAllByText("Basic Communication");
       // Click the one in the dropdown (not the button)
       const dropdownItem = simulationItems.find(
-        (item) =>
-          item.closest('[role="option"]') || item.closest("[cmdk-item]"),
+        (item) => item.closest('[role="option"]') || item.closest("[cmdk-item]")
       );
       if (dropdownItem) {
         fireEvent.click(dropdownItem);
@@ -206,32 +147,29 @@ describe("SimulationPicker", () => {
   });
 
   it("shows selected chips when hideSelectedChips is false", () => {
-    const selectedSims = [mockSimulations[0]!];
-
     render(
       <SimulationPicker
         {...defaultProps}
-        selectedSimulations={selectedSims}
+        selectedSimulationIds={["1"]}
         hideSelectedChips={false}
-      />,
+      />
     );
 
     expect(screen.getAllByText("Basic Communication")[0]).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /remove basic communication/i }),
+      screen.getByRole("button", { name: /remove basic communication/i })
     ).toBeInTheDocument();
   });
 
   it("calls onSelect with empty array when clear all is clicked", async () => {
     const onSelect = vi.fn();
-    const selectedSims = [mockSimulations[0]!, mockSimulations[1]!];
 
     render(
       <SimulationPicker
         {...defaultProps}
         onSelect={onSelect}
-        selectedSimulations={selectedSims}
-      />,
+        selectedSimulationIds={["1", "2"]}
+      />
     );
 
     const button = screen.getByRole("combobox", {
@@ -248,33 +186,31 @@ describe("SimulationPicker", () => {
   });
 
   it("displays descriptions correctly in list items", async () => {
-    const sims = [
-      {
-        id: "1",
-        title: "Basic Communication",
-        description: "A basic communication simulation",
-        timeLimit: 30,
-        active: true,
-        defaultSimulation: false,
-        practiceSimulation: false,
-      },
-      {
-        id: "2",
-        title: "Advanced Leadership",
-        description: "Advanced leadership training simulation",
-        timeLimit: 60,
-        active: true,
-        defaultSimulation: true,
-        practiceSimulation: false,
-      },
-    ];
+    render(<SimulationPicker {...defaultProps} />);
 
+    const button = screen.getByRole("combobox", {
+      name: /select simulations/i,
+    });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("A basic communication simulation")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Advanced leadership training simulation")
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("closes popover in single-select mode after selection", async () => {
+    const onSelect = vi.fn();
     render(
       <SimulationPicker
         {...defaultProps}
-        simulations={sims}
-        showOnlyActive={false}
-      />,
+        onSelect={onSelect}
+        multiSelect={false}
+      />
     );
 
     const button = screen.getByRole("combobox", {
@@ -283,17 +219,20 @@ describe("SimulationPicker", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("A basic communication simulation"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText("Advanced leadership training simulation"),
-      ).toBeInTheDocument();
+      const simulationItems = screen.getAllByText("Basic Communication");
+      const dropdownItem = simulationItems.find(
+        (item) => item.closest('[role="option"]') || item.closest("[cmdk-item]")
+      );
+      if (dropdownItem) {
+        fireEvent.click(dropdownItem);
+      }
     });
+
+    expect(onSelect).toHaveBeenCalledWith(["1"]);
   });
 
-  it("displays simulation type badges correctly", async () => {
-    render(<SimulationPicker {...defaultProps} showOnlyActive={false} />);
+  it("sorts simulations alphabetically by name", async () => {
+    render(<SimulationPicker {...defaultProps} />);
 
     const button = screen.getByRole("combobox", {
       name: /select simulations/i,
@@ -301,11 +240,30 @@ describe("SimulationPicker", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      // The Practice badge is only shown in the hover card, not in dropdown items
-      // So we don't expect to find it in the dropdown
-      // The Default badge is also only shown in the hover card
-      expect(screen.getByText("Basic Communication")).toBeInTheDocument();
-      expect(screen.getByText("Advanced Leadership")).toBeInTheDocument();
+      const items = screen.getAllByText(/Communication|Leadership|Session/);
+      // Should be sorted: Advanced Leadership, Basic Communication, Practice Session
+      expect(items[0]?.textContent).toContain("Advanced Leadership");
+      expect(items[1]?.textContent).toContain("Basic Communication");
+      expect(items[2]?.textContent).toContain("Practice Session");
     });
+  });
+
+  it("removes individual chip when X button is clicked", () => {
+    const onSelect = vi.fn();
+    render(
+      <SimulationPicker
+        {...defaultProps}
+        onSelect={onSelect}
+        selectedSimulationIds={["1", "2"]}
+        hideSelectedChips={false}
+      />
+    );
+
+    const removeButton = screen.getByRole("button", {
+      name: /remove basic communication/i,
+    });
+    fireEvent.click(removeButton);
+
+    expect(onSelect).toHaveBeenCalledWith(["2"]);
   });
 });

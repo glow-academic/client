@@ -114,6 +114,16 @@ class DepartmentService(BaseService):
         # Parse JSONB agent_mapping
         valid_agent_ids: list[str] = []
         agent_mapping: AgentMapping = {}
+        valid_agent_ids_by_role: dict[str, list[str]] = {
+            "title": [],
+            "scenario": [],
+            "classify": [],
+            "assistant": [],
+            "grade": [],
+            "input_guardrail": [],
+            "output_guardrail": [],
+            "hint": [],
+        }
 
         agent_mapping_data = dept_row.get("agent_mapping")
         if isinstance(agent_mapping_data, str):
@@ -122,17 +132,25 @@ class DepartmentService(BaseService):
             for agent_id, agent_info in agent_mapping_data.items():
                 if isinstance(agent_info, dict):
                     valid_agent_ids.append(agent_id)
+                    roles = agent_info.get("roles", [])
                     agent_mapping[agent_id] = AgentMappingItem(
                         name=agent_info.get("name", ""),
                         description=agent_info.get("description", ""),
+                        roles=roles if isinstance(roles, list) else [],
                     )
+                    # Build role-based valid agent IDs
+                    for role in roles:
+                        if role in valid_agent_ids_by_role:
+                            valid_agent_ids_by_role[role].append(agent_id)
 
         return DepartmentDetailResponse(
             title=dept_row["title"],
             description=dept_row["description"],
             active=dept_row["active"],
+            default_department=dept_row["default_department"],
             agent_roles=AgentRoles(**agent_roles_dict),
             valid_agent_ids=valid_agent_ids,
+            valid_agent_ids_by_role=valid_agent_ids_by_role,
             agent_mapping=agent_mapping,
             # Permissions
             can_edit=dept_row["can_edit"],
@@ -169,6 +187,16 @@ class DepartmentService(BaseService):
         # Parse agent mapping from JSONB
         valid_agent_ids: list[str] = result["valid_agent_ids"] or []
         agent_mapping: AgentMapping = {}
+        valid_agent_ids_by_role: dict[str, list[str]] = {
+            "title": [],
+            "scenario": [],
+            "classify": [],
+            "assistant": [],
+            "grade": [],
+            "input_guardrail": [],
+            "output_guardrail": [],
+            "hint": [],
+        }
 
         agent_mapping_data = result.get("agent_mapping")
         if isinstance(agent_mapping_data, str):
@@ -176,16 +204,23 @@ class DepartmentService(BaseService):
         if agent_mapping_data and isinstance(agent_mapping_data, dict):
             for agent_id, agent_info in agent_mapping_data.items():
                 if isinstance(agent_info, dict):
+                    roles = agent_info.get("roles", [])
                     agent_mapping[agent_id] = AgentMappingItem(
                         name=agent_info.get("name", ""),
                         description=agent_info.get("description", ""),
+                        roles=roles if isinstance(roles, list) else [],
                     )
+                    # Build role-based valid agent IDs
+                    for role in roles:
+                        if role in valid_agent_ids_by_role:
+                            valid_agent_ids_by_role[role].append(agent_id)
 
         # Return defaults for creation
         return DepartmentDetailResponse(
             title="",
             description="",
             active=True,
+            default_department=False,
             agent_roles=AgentRoles(
                 title="",
                 scenario="",
@@ -197,6 +232,7 @@ class DepartmentService(BaseService):
                 hint="",
             ),
             valid_agent_ids=valid_agent_ids,
+            valid_agent_ids_by_role=valid_agent_ids_by_role,
             agent_mapping=agent_mapping,
             # Permissions (only superadmin can create)
             can_edit=is_superadmin,
@@ -240,7 +276,7 @@ class DepartmentService(BaseService):
         async with transaction(self.conn):
             # Create department
             query, params = self.queries.create_department(
-                request.title, request.description, request.active
+                request.title, request.description, request.active, request.default_department
             )
             dept_row = await self.conn.fetchrow(query, *params)
 
@@ -322,7 +358,7 @@ class DepartmentService(BaseService):
         async with transaction(self.conn):
             # Update department
             query, params = self.queries.update_department(
-                request.departmentId, request.title, request.description, request.active
+                request.departmentId, request.title, request.description, request.active, request.default_department
             )
             await self.conn.execute(query, *params)
 

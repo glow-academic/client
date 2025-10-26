@@ -169,6 +169,26 @@ export const PersonaMappingItemSchema = z.object({
 export type PersonaMappingItem = z.infer<typeof PersonaMappingItemSchema>;
 
 /**
+ * Simulation mapping item with time_limit
+ */
+export const SimulationMappingItemSchema = MappingItemSchema.extend({
+  time_limit: z.number().nullable().optional(),
+});
+
+export type SimulationMappingItem = z.infer<typeof SimulationMappingItemSchema>;
+
+/**
+ * Custom agent mapping item with roles field
+ */
+export const AgentMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  roles: z.array(z.string()),
+});
+
+export type AgentMappingItem = z.infer<typeof AgentMappingItemSchema>;
+
+/**
  * Generic mapping schema - id maps to { name, description }
  * This is the universal mapping type used throughout the application
  */
@@ -203,12 +223,15 @@ export const PersonaMappingSchema = z.record(
   PersonaMappingItemSchema
 ); // Custom with color and icon
 export const RubricMappingSchema = MappingSchema;
-export const SimulationMappingSchema = MappingSchema;
+export const SimulationMappingSchema = z.record(
+  z.string(),
+  SimulationMappingItemSchema
+); // Custom with time_limit
 export const ParameterMappingSchema = MappingSchema;
 export const CohortMappingSchema = MappingSchema;
 export const DocumentMappingSchema = MappingSchema;
 export const StaffMappingSchema = MappingSchema;
-export const AgentMappingSchema = MappingSchema;
+export const AgentMappingSchema = z.record(z.string(), AgentMappingItemSchema); // Custom with roles
 export const ProviderMappingSchema = MappingSchema;
 export const ScenarioMappingSchema = z.record(
   z.string(),

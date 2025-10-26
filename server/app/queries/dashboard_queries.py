@@ -1251,9 +1251,14 @@ class DashboardQueries:
             simulation_mapping AS (
                 SELECT COALESCE(jsonb_object_agg(
                     s.id::text,
-                    jsonb_build_object('name', s.title, 'description', COALESCE(s.description, ''))
+                    jsonb_build_object(
+                        'name', s.title, 
+                        'description', COALESCE(s.description, ''),
+                        'time_limit', stl.time_limit_seconds
+                    )
                 ), '{}'::jsonb) AS mapping
                 FROM simulations s
+                LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
                   AND s.active = true
                   AND (cardinality($7::uuid[]) = 0 OR s.department_id = ANY($7::uuid[]))

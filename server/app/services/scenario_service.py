@@ -343,6 +343,7 @@ class ScenarioService(BaseService):
                     simulation_mapping[sid] = SimulationMappingItem(
                         name=sdata.get("name", ""),
                         description=sdata.get("description", ""),
+                        time_limit=sdata.get("time_limit"),
                     )
 
         # Parse JSONB parameter mapping (may be string or dict)

@@ -9,16 +9,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -454,6 +448,8 @@ export default function Department({ departmentId }: DepartmentProps) {
               {REQUIRED_AGENT_TYPES.map((agentType) => {
                 const role = agentType.type as AgentRole;
                 const fieldValue = departmentAgents[role] || "";
+                const validAgentIdsForRole =
+                  departmentData?.valid_agent_ids_by_role?.[role] || [];
 
                 return (
                   <div key={agentType.type} className="space-y-2">
@@ -464,26 +460,19 @@ export default function Department({ departmentId }: DepartmentProps) {
                       {agentType.label}
                     </Label>
                     {agentOptions.length > 0 ? (
-                      <Select
-                        value={fieldValue}
-                        onValueChange={(value) =>
-                          handleAgentChange(role, value)
+                      <AgentPicker
+                        mapping={departmentData?.agent_mapping || {}}
+                        validIds={validAgentIdsForRole}
+                        selectedIds={fieldValue ? [fieldValue] : []}
+                        onSelect={(ids) =>
+                          handleAgentChange(role, ids[0] || "")
                         }
+                        placeholder={`Select ${agentType.label.toLowerCase()}...`}
+                        hideSelectedChips={true}
+                        buttonClassName={`${errors.agents ? "border-destructive" : ""}`}
                         disabled={isReadonly}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue
-                            placeholder={`Select ${agentType.label}`}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {agentOptions.map((agent) => (
-                            <SelectItem key={agent.id} value={agent.id}>
-                              {agent.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        multiSelect={false}
+                      />
                     ) : (
                       <div className="w-full p-3 text-sm text-muted-foreground bg-muted rounded-md border">
                         <div className="flex items-center gap-2">

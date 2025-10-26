@@ -4,7 +4,6 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.queries.base_queries import AnalyticsQueryBuilder
 from app.queries.home_queries import HomeQueries
@@ -94,6 +93,7 @@ class HomeService(BaseService):
                     simulation_mapping[sim_id] = SimulationMappingItem(
                         name=sim_data.get("name", ""),
                         description=sim_data.get("description", ""),
+                        time_limit=sim_data.get("time_limit"),
                     )
 
         return HomeOverviewResponse(

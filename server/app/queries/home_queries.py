@@ -629,11 +629,16 @@ class HomeQueries:
                 SELECT COALESCE(
                     jsonb_object_agg(
                         sim.id::text,
-                        jsonb_build_object('name', sim.title, 'description', sim.description)
+                        jsonb_build_object(
+                            'name', sim.title, 
+                            'description', sim.description,
+                            'time_limit', stl.time_limit_seconds
+                        )
                     ),
                     '{{}}'::jsonb
                 ) as mapping
                 FROM simulations sim
+                LEFT JOIN simulation_time_limits stl ON stl.simulation_id = sim.id AND stl.active = true
                 WHERE sim.active = true
                   AND sim.practice_simulation = true
                   AND sim.department_id IN (SELECT DISTINCT department_id FROM filt)

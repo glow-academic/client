@@ -83,6 +83,7 @@ export const DepartmentDetailResponseSchema = z.object({
 
   // Valid agents for selection
   valid_agent_ids: z.array(z.string()),
+  valid_agent_ids_by_role: z.record(z.string(), z.array(z.string())),
 
   // Top-level mappings
   agent_mapping: AgentMappingSchema,

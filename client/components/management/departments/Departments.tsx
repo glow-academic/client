@@ -5,20 +5,48 @@
  * 07/20/2025
  */
 "use client";
-import { DollarSign, Edit, Users } from "lucide-react";
+import { Copy, DollarSign, Edit, Eye, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import { useDepartmentsList } from "@/lib/api/v2/hooks/departments";
+import {
+  useDeleteDepartment,
+  useDepartmentsList,
+  useDuplicateDepartment,
+} from "@/lib/api/v2/hooks/departments";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
+import type { DepartmentItem } from "@/lib/api/v2/schemas/departments";
 import { DepartmentsDataTable } from "./DepartmentsDataTable";
 
 export default function Departments() {
   const router = useRouter();
   const { effectiveProfile, departmentIds } = useProfile();
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  // Mutations
+  const duplicateDepartmentMutation = useDuplicateDepartment();
+  const deleteDepartmentMutation = useDeleteDepartment();
+  const log = useLogger();
 
   // V2 API hook
   const filters = useMemo(
@@ -65,6 +93,92 @@ export default function Departments() {
     router.push(`/management/departments/d/${id}`);
   };
 
+  const handleDuplicate = async (department: DepartmentItem) => {
+    if (!department.can_duplicate) {
+      toast.error("This department cannot be duplicated");
+      return;
+    }
+
+    setIsDuplicating(department.department_id);
+    try {
+      await duplicateDepartmentMutation.mutateAsync({
+        departmentId: department.department_id,
+      });
+      await log.info("department.duplicate.success", {
+        message: "Department duplicated successfully",
+        subject: {
+          entityType: "department",
+          entityId: department.department_id,
+        },
+        context: {
+          component: "Departments",
+          function: "handleDuplicate",
+          originalName: department.title,
+        },
+      });
+      toast.success(`Department "${department.title}" duplicated successfully`);
+    } catch (error) {
+      await log.error("department.duplicate.failed", {
+        message: "Error duplicating department",
+        subject: {
+          entityType: "department",
+          entityId: department.department_id,
+        },
+        context: {
+          component: "Departments",
+          function: "handleDuplicate",
+          originalName: department.title,
+        },
+        error,
+      });
+      toast.error("Failed to duplicate department");
+    } finally {
+      setIsDuplicating(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+
+    try {
+      await deleteDepartmentMutation.mutateAsync({
+        departmentId: deleteItem.id,
+      });
+      await log.info("department.delete.success", {
+        message: "Department deleted successfully",
+        subject: { entityType: "department", entityId: deleteItem.id },
+        context: {
+          component: "Departments",
+          function: "handleDelete",
+          departmentName: deleteItem.name,
+        },
+      });
+      toast.success(`Department "${deleteItem.name}" deleted successfully`);
+    } catch (error) {
+      await log.error("department.delete.failed", {
+        message: "Error deleting department",
+        subject: { entityType: "department", entityId: deleteItem.id },
+        context: {
+          component: "Departments",
+          function: "handleDelete",
+          departmentName: deleteItem.name,
+        },
+        error,
+      });
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete department"
+      );
+    } finally {
+      setShowDeleteDialog(false);
+      setDeleteItem(null);
+    }
+  };
+
+  const handleDeleteClick = (id: string, title: string) => {
+    setDeleteItem({ id, name: title });
+    setShowDeleteDialog(true);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -77,11 +191,11 @@ export default function Departments() {
       <CardHeader>
         <div className="flex justify-between items-start">
           <div className="space-y-2 flex-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-base">
-                {department.title || "Unnamed Department"}
-              </CardTitle>
-              <div className="flex gap-1">
+            <CardTitle className="text-base">
+              {department.title || "Unnamed Department"}
+            </CardTitle>
+            <div className="mt-1 space-y-2">
+              <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-xs">
                   <DollarSign className="h-3 w-3 mr-1" />$
                   {department.total_price_spent.toFixed(2)}
@@ -92,18 +206,53 @@ export default function Departments() {
                 </Badge>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-2">
               {department.description || "No description available"}
             </p>
           </div>
           <div className="flex gap-2 items-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEdit(department.department_id)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
+            {department.can_edit ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(department.department_id)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(department.department_id)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+            {department.can_duplicate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicate(department)}
+                disabled={isDuplicating === department.department_id}
+              >
+                {isDuplicating === department.department_id ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            {department.can_delete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleDeleteClick(department.department_id, department.title)
+                }
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -138,6 +287,23 @@ export default function Departments() {
         staffCountOptions={staffCountOptions}
         renderDepartmentCard={renderDepartmentCard}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Department</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteItem?.name}&quot;?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -6,47 +6,32 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from dotenv import load_dotenv
-
 from app.cache import keys
 from app.db import transaction
 from app.queries.cohort_queries import CohortQueries
 from app.queries.staff_queries import StaffQueries
-from app.schemas.base import (
-    CohortMapping,
-    CohortMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ProfileMappingItem,
-    SimulationMappingItem,
-)
-from app.schemas.cohorts import (
-    AddProfilesToCohortRequest,
-    AddProfilesToCohortResponse,
-    CohortDetailDefaultRequest,
-    CohortDetailRequest,
-    CohortDetailResponse,
-    CohortDetailWithProfilesRequest,
-    CohortDetailWithProfilesResponse,
-    CohortItem,
-    CohortsFilters,
-    CohortsListResponse,
-    CreateCohortRequest,
-    CreateCohortResponse,
-    DeleteCohortRequest,
-    DeleteCohortResponse,
-    DuplicateCohortRequest,
-    DuplicateCohortResponse,
-    LeaveCohortRequest,
-    LeaveCohortResponse,
-    RemoveProfilesFromCohortRequest,
-    RemoveProfilesFromCohortResponse,
-    UpdateCohortRequest,
-    UpdateCohortResponse,
-)
+from app.schemas.base import (CohortMapping, CohortMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              ProfileMappingItem, SimulationMappingItem)
+from app.schemas.cohorts import (AddProfilesToCohortRequest,
+                                 AddProfilesToCohortResponse,
+                                 CohortDetailDefaultRequest,
+                                 CohortDetailRequest, CohortDetailResponse,
+                                 CohortDetailWithProfilesRequest,
+                                 CohortDetailWithProfilesResponse, CohortItem,
+                                 CohortsFilters, CohortsListResponse,
+                                 CreateCohortRequest, CreateCohortResponse,
+                                 DeleteCohortRequest, DeleteCohortResponse,
+                                 DuplicateCohortRequest,
+                                 DuplicateCohortResponse, LeaveCohortRequest,
+                                 LeaveCohortResponse,
+                                 RemoveProfilesFromCohortRequest,
+                                 RemoveProfilesFromCohortResponse,
+                                 UpdateCohortRequest, UpdateCohortResponse)
 from app.schemas.staff import StaffItem
 from app.services.base_service import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -129,7 +114,9 @@ class CohortService(BaseService):
                     for sid, sdata in sm.items():
                         if isinstance(sdata, dict):
                             simulation_mapping[sid] = SimulationMappingItem(
-                                name=sdata["name"], description=sdata["description"]
+                                name=sdata["name"],
+                                description=sdata["description"],
+                                time_limit=sdata.get("time_limit"),
                             )
 
         return CohortsListResponse(
@@ -172,7 +159,9 @@ class CohortService(BaseService):
             for sid, sdata in simulation_mapping_data.items():
                 if isinstance(sdata, dict):
                     simulation_mapping[sid] = SimulationMappingItem(
-                        name=sdata["name"], description=sdata["description"]
+                        name=sdata["name"],
+                        description=sdata["description"],
+                        time_limit=sdata.get("time_limit"),
                     )
 
         # Parse profile mapping from JSONB (may be string or dict)
@@ -247,7 +236,9 @@ class CohortService(BaseService):
             for sid, sdata in simulation_mapping_data.items():
                 if isinstance(sdata, dict):
                     simulation_mapping[sid] = SimulationMappingItem(
-                        name=sdata["name"], description=sdata["description"]
+                        name=sdata["name"],
+                        description=sdata["description"],
+                        time_limit=sdata.get("time_limit"),
                     )
 
         # Parse profile mapping from JSONB (may be string or dict)

@@ -223,7 +223,7 @@ export default function CohortPerformance({
             selectedSimulationIds={selected}
             onSelect={setSelected}
             placeholder="Filter by simulation..."
-            hideSelectedChips
+            hideSelectedChips={true}
             showLabel={false}
           />
         </div>

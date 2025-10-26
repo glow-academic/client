@@ -104,10 +104,12 @@ class CohortQueries:
                     s.id::text,
                     jsonb_build_object(
                         'name', s.title,
-                        'description', COALESCE(s.description, '')
+                        'description', COALESCE(s.description, ''),
+                        'time_limit', stl.time_limit_seconds
                     )
                 ), '{}'::jsonb)
                 FROM simulations s
+                LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
                 WHERE s.id IN (SELECT simulation_id FROM all_simulation_ids)
             ) as simulation_mapping
         FROM cohorts c
@@ -208,10 +210,12 @@ class CohortQueries:
                 s.id::text,
                 jsonb_build_object(
                     'name', s.title,
-                    'description', COALESCE(s.description, '')
+                    'description', COALESCE(s.description, ''),
+                    'time_limit', stl.time_limit_seconds
                 )
              ), '{}'::jsonb)
              FROM simulations s
+             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
              WHERE s.id IN (SELECT simulation_id FROM cohort_simulation_ids)
             ) as simulation_mapping,
             -- Profile mapping
@@ -320,10 +324,12 @@ class CohortQueries:
                 s.id::text,
                 jsonb_build_object(
                     'name', s.title,
-                    'description', COALESCE(s.description, '')
+                    'description', COALESCE(s.description, ''),
+                    'time_limit', stl.time_limit_seconds
                 )
              ), '{}'::jsonb)
              FROM simulations s
+             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
              WHERE s.id IN (SELECT simulation_id FROM cohort_simulation_ids)
             ) as simulation_mapping,
             (SELECT COALESCE(jsonb_object_agg(

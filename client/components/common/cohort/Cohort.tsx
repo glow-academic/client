@@ -631,10 +631,6 @@ export default function Cohort({ cohortId }: CohortProps) {
                     validSimulationIds={cohortData?.valid_simulation_ids || []}
                     selectedSimulationIds={currentSimulationIds}
                     onSelect={handleSimulationSelection}
-                    // Filtering data not available in cohort detail response
-                    scenarioFilterData={[]}
-                    personaMapping={{}}
-                    parameterItemMapping={{}}
                     placeholder="Add simulation"
                     showLabel={false}
                     buttonClassName="w-48"

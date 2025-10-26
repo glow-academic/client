@@ -41,9 +41,9 @@ class RubricMappingItem(MappingItem):
 
 
 class SimulationMappingItem(MappingItem):
-    """Simulation mapping item - extends MappingItem"""
+    """Simulation mapping item - extends MappingItem with time_limit"""
 
-    pass
+    time_limit: int | None = None
 
 
 class ParameterMappingItem(MappingItem):
@@ -78,9 +78,9 @@ class StaffMappingItem(MappingItem):
 
 
 class AgentMappingItem(MappingItem):
-    """Agent mapping item - extends MappingItem"""
+    """Agent mapping item - extends MappingItem with role information"""
 
-    pass
+    roles: list[str]  # List of roles this agent has been used for
 
 
 class ProviderMappingItem(MappingItem):
