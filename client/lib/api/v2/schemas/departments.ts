@@ -77,6 +77,7 @@ export const DepartmentDetailResponseSchema = z.object({
   title: z.string(),
   description: z.string(),
   active: z.boolean(),
+  default_department: z.boolean(),
 
   // Agent role assignments (8 required roles)
   agent_roles: AgentRolesSchema,
@@ -121,6 +122,7 @@ export const CreateDepartmentRequestSchema = z.object({
   title: z.string(),
   description: z.string(),
   active: z.boolean(),
+  default_department: z.boolean(),
   agent_roles: AgentRolesSchema,
   profile_id: z.string(),
 });
@@ -145,6 +147,7 @@ export const UpdateDepartmentRequestSchema = z.object({
   title: z.string(),
   description: z.string(),
   active: z.boolean(),
+  default_department: z.boolean(),
   agent_roles: AgentRolesSchema,
 });
 

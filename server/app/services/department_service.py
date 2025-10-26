@@ -459,9 +459,9 @@ class DepartmentService(BaseService):
         if not usage_row:
             raise ValueError(f"Department {request.departmentId} not found")
 
+        # Only count actual data dependencies (not profile links which are just access permissions)
         total_usage = (
-            usage_row["profile_count"]
-            + usage_row["simulation_count"]
+            usage_row["simulation_count"]
             + usage_row["scenario_count"]
             + usage_row["persona_count"]
             + usage_row["document_count"]
@@ -470,7 +470,7 @@ class DepartmentService(BaseService):
 
         if total_usage > 0:
             raise ValueError(
-                f"Cannot delete department: in use by {total_usage} entities"
+                f"Cannot delete department: in use by {total_usage} entities (simulations, scenarios, personas, documents, or cohorts)"
             )
 
         # Delete department (cascade deletes department_agents)

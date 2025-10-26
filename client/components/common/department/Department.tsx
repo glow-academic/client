@@ -40,6 +40,7 @@ interface FormData {
   title?: string;
   description?: string;
   active?: boolean;
+  defaultDepartment?: boolean;
 }
 
 // Agent role definitions
@@ -118,6 +119,7 @@ export default function Department({ departmentId }: DepartmentProps) {
       title: "",
       description: "",
       active: true,
+      defaultDepartment: false,
     }),
     []
   );
@@ -208,6 +210,7 @@ export default function Department({ departmentId }: DepartmentProps) {
         title: departmentData.title,
         description: departmentData.description || "",
         active: departmentData.active ?? true,
+        defaultDepartment: departmentData.default_department ?? false,
       });
       // Set agent roles directly from response
       setDepartmentAgents({
@@ -293,6 +296,7 @@ export default function Department({ departmentId }: DepartmentProps) {
             title: formData.title,
             description: formData.description,
             active: formData.active ?? true,
+            default_department: formData.defaultDepartment ?? false,
             agent_roles: departmentAgents, // Send all 8 roles at once
           },
           {
@@ -314,6 +318,7 @@ export default function Department({ departmentId }: DepartmentProps) {
             title: formData.title,
             description: formData.description,
             active: formData.active ?? true,
+            default_department: formData.defaultDepartment ?? false,
             agent_roles: departmentAgents, // Send all 8 roles at once
             profile_id: effectiveProfile?.id || "",
           },
@@ -368,9 +373,11 @@ export default function Department({ departmentId }: DepartmentProps) {
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
                 <p>
-                  {departmentData?.in_use
-                    ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."
-                    : "You do not have permission to edit this department. You can view the details but cannot make changes."}
+                  {departmentData?.default_department
+                    ? "This is a default department that cannot be edited. You can view the details but cannot make changes."
+                    : departmentData?.in_use
+                      ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."
+                      : "You do not have permission to edit this department. You can view the details but cannot make changes."}
                 </p>
               </div>
             </div>
@@ -423,21 +430,44 @@ export default function Department({ departmentId }: DepartmentProps) {
         </div>
 
         {/* Active Switch */}
-        <div className="space-y-2">
-          <Label htmlFor="active" className="text-sm">
-            Department Active
-          </Label>
-          {formData?.active !== undefined && !isLoading ? (
-            <Switch
-              id="active"
-              checked={formData.active ?? true}
-              onCheckedChange={(checked) =>
-                handleInputChange("active", checked)
-              }
-              disabled={isReadonly}
-            />
-          ) : (
-            <Skeleton className="h-6 w-11" />
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="active" className="text-sm">
+              Department Active
+            </Label>
+            {formData?.active !== undefined && !isLoading ? (
+              <Switch
+                id="active"
+                checked={formData.active ?? true}
+                onCheckedChange={(checked) =>
+                  handleInputChange("active", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          {/* Default Department Switch - Only for superadmin */}
+          {effectiveProfile?.role === "superadmin" && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="defaultDepartment" className="text-sm">
+                Default Department
+              </Label>
+              {formData?.defaultDepartment !== undefined && !isLoading ? (
+                <Switch
+                  id="defaultDepartment"
+                  checked={formData.defaultDepartment ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("defaultDepartment", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
           )}
         </div>
 

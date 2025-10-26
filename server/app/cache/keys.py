@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    33  # Bumped: Fixed parameter detail JSON parsing for parameter_items_json
+    34  # Bumped: Fixed simulation_mapping to include all valid simulations, not just cohort ones
 )
 
 # Namespaces

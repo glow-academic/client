@@ -205,7 +205,7 @@ class CohortQueries:
             -- Valid profile IDs
             (SELECT COALESCE(array_agg(id::text), ARRAY[]::text[])
              FROM valid_profiles) as valid_profile_ids,
-            -- Simulation mapping
+            -- Simulation mapping (all valid simulations user can pick from)
             (SELECT COALESCE(jsonb_object_agg(
                 s.id::text,
                 jsonb_build_object(
@@ -216,7 +216,7 @@ class CohortQueries:
              ), '{}'::jsonb)
              FROM simulations s
              LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
-             WHERE s.id IN (SELECT simulation_id FROM cohort_simulation_ids)
+             WHERE s.id IN (SELECT id FROM valid_simulations)
             ) as simulation_mapping,
             -- Profile mapping
             (SELECT COALESCE(jsonb_object_agg(
@@ -330,7 +330,7 @@ class CohortQueries:
              ), '{}'::jsonb)
              FROM simulations s
              LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
-             WHERE s.id IN (SELECT simulation_id FROM cohort_simulation_ids)
+             WHERE s.id IN (SELECT id FROM valid_simulations)
             ) as simulation_mapping,
             (SELECT COALESCE(jsonb_object_agg(
                 p.id::text,
