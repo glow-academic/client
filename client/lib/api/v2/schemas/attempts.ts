@@ -65,6 +65,7 @@ export const AttemptFullResponseSchema = z.object({
     defaultSimulation: z.boolean(),
     practiceSimulation: z.boolean(),
     hintsEnabled: z.boolean(),
+    objectivesEnabled: z.boolean(),
     inputGuardrailActive: z.boolean(),
     outputGuardrailActive: z.boolean(),
     imageInputActive: z.boolean(),
@@ -106,6 +107,7 @@ export const AttemptFullResponseSchema = z.object({
           updatedAt: z.string(),
           generated: z.boolean(),
           defaultScenario: z.boolean(),
+          objectives: z.array(z.string()).optional(),
         })
         .nullable(),
       messages: z.array(

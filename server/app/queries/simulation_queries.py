@@ -2039,7 +2039,13 @@ class SimulationQueries:
                     'createdAt', s.created_at,
                     'updatedAt', s.updated_at,
                     'generated', s.generated,
-                    'defaultScenario', s.default_scenario
+                    'defaultScenario', s.default_scenario,
+                    'objectives', COALESCE(
+                        (SELECT jsonb_agg(so.objective ORDER BY so.idx)
+                         FROM scenario_objectives so
+                         WHERE so.scenario_id = s.id),
+                        '[]'::jsonb
+                    )
                 ) as scenario_data
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
@@ -2496,6 +2502,7 @@ class SimulationQueries:
                 'defaultSimulation', ab.sim_default_simulation,
                 'practiceSimulation', ab.sim_practice_simulation,
                 'hintsEnabled', ab.sim_hints_enabled,
+                'objectivesEnabled', ab.sim_objectives_enabled,
                 'inputGuardrailActive', ab.sim_input_guardrail_active,
                 'outputGuardrailActive', ab.sim_output_guardrail_active,
                 'imageInputActive', ab.sim_image_input_active,

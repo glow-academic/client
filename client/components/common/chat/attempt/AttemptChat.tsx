@@ -29,7 +29,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Icons
-import { Clock, FileText, Infinity as InfinityIcon, Table } from "lucide-react";
+import {
+  Clock,
+  FileText,
+  Infinity as InfinityIcon,
+  ListChecks,
+  Table,
+} from "lucide-react";
 
 // Tooltip
 import {
@@ -67,6 +73,7 @@ export default function AttemptChat() {
     null
   );
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70); // Default height in pixels
+  const [showObjectives, setShowObjectives] = useState<boolean>(false);
 
   // Create a ref for the panel group
   const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
@@ -445,6 +452,46 @@ export default function AttemptChat() {
                             </Tooltip>
                           </TooltipProvider>
                         )}
+
+                        {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
+                        {simulationContext?.simulation?.objectivesEnabled &&
+                          (() => {
+                            const currentScenario = displayChat?.id
+                              ? simulationContext?.scenariosByChatId[
+                                  displayChat.id
+                                ]
+                              : null;
+                            const hasObjectives =
+                              currentScenario?.objectives &&
+                              currentScenario.objectives.length > 0;
+                            return hasObjectives;
+                          })() && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={
+                                      showObjectives ? "default" : "outline"
+                                    }
+                                    size="sm"
+                                    onClick={() =>
+                                      setShowObjectives(!showObjectives)
+                                    }
+                                    className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
+                                  >
+                                    <ListChecks className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {showObjectives
+                                      ? "Hide Objectives"
+                                      : "Show Objectives"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
 
                         <TooltipProvider>
                           <Tooltip>
@@ -843,6 +890,44 @@ export default function AttemptChat() {
                               </Tooltip>
                             )}
 
+                            {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
+                            {simulationContext?.simulation?.objectivesEnabled &&
+                              (() => {
+                                const currentScenario = displayChat?.id
+                                  ? simulationContext?.scenariosByChatId[
+                                      displayChat.id
+                                    ]
+                                  : null;
+                                const hasObjectives =
+                                  currentScenario?.objectives &&
+                                  currentScenario.objectives.length > 0;
+                                return hasObjectives;
+                              })() && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant={
+                                        showObjectives ? "default" : "outline"
+                                      }
+                                      size="sm"
+                                      onClick={() =>
+                                        setShowObjectives(!showObjectives)
+                                      }
+                                      className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
+                                    >
+                                      <ListChecks className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {showObjectives
+                                        ? "Hide Objectives"
+                                        : "Show Objectives"}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div
@@ -1026,6 +1111,60 @@ export default function AttemptChat() {
           </>
         )}
       </ResizablePanelGroup>
+
+      {/* Objectives Popover */}
+      {showObjectives && simulationContext?.simulation?.objectivesEnabled && (
+        <div
+          className="fixed inset-0 bg-black/20 z-50"
+          onClick={() => setShowObjectives(false)}
+        >
+          <div
+            className="absolute top-20 right-6 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-96 max-h-[600px] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <ListChecks className="h-5 w-5" />
+                Learning Objectives
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowObjectives(false)}
+                className="h-8 w-8 p-0"
+              >
+                ×
+              </Button>
+            </div>
+            <ScrollArea className="flex-1 p-4">
+              {(() => {
+                const currentScenario = displayChat?.id
+                  ? simulationContext?.scenariosByChatId[displayChat.id]
+                  : null;
+                const objectives = currentScenario?.objectives || [];
+
+                if (objectives.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground italic">
+                      No objectives defined for this scenario.
+                    </p>
+                  );
+                }
+
+                return (
+                  <ol className="space-y-3 list-decimal list-inside">
+                    {objectives.map((objective, index) => (
+                      <li key={index} className="text-sm leading-relaxed">
+                        {objective}
+                      </li>
+                    ))}
+                  </ol>
+                );
+              })()}
+            </ScrollArea>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
