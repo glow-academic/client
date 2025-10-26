@@ -1,4 +1,4 @@
-import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/base";
+import { HomeFiltersSchema } from "@/lib/api/v2/schemas/home";
 import { fetchHome } from "@/lib/api/v2/server/home";
 import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const filters = AnalyticsFiltersSchema.parse(body);
+    const filters = HomeFiltersSchema.parse(body);
 
     const result = await fetchHome(filters);
     return NextResponse.json(result);
@@ -21,4 +21,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-

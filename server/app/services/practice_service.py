@@ -54,16 +54,17 @@ class PracticeService(BaseService):
     async def _execute_get_practice_overview(
         self, filters: AnalyticsFilters
     ) -> PracticeOverviewResponse:
-        """Execute the actual practice overview query."""
-        # Get overview items with ONE query
+        """Execute the actual practice overview query.
+        
+        Note: Practice uses simplified filters (profile_id and department_ids only).
+        No cohort/role/date filtering for personal practice.
+        """
+        # Validate that profile_id is provided (required for practice)
+        if not filters.profileId:
+            raise ValueError("profileId is required for practice overview")
+        
+        # Get overview items with ONE query (simplified params)
         query, params = self.queries.practice_overview(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )

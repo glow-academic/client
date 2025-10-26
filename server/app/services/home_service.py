@@ -62,14 +62,11 @@ class HomeService(BaseService):
         - Otherwise → Instructional mode (all cohort data for items, profileId filter for history only)
         """
         # Execute single query - it looks up the role and determines view mode internally
+        # Note: Home always shows general simulations only (hardcoded in query, no role filter)
         query, params = self.queries.home_overview(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
-            if filters.simulationFilters
-            else None,
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )

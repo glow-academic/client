@@ -4,9 +4,21 @@
  */
 
 import { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
+import { HomeFilters } from "@/lib/api/v2/schemas/home";
+import { PracticeFilters } from "@/lib/api/v2/schemas/practice";
 
 // Ensure stable serialization of filter objects
 function serializeFilters(filters: AnalyticsFilters): string {
+  return JSON.stringify(filters, Object.keys(filters).sort());
+}
+
+// Serialization for home filters
+function serializeHomeFilters(filters: HomeFilters): string {
+  return JSON.stringify(filters, Object.keys(filters).sort());
+}
+
+// Serialization for practice filters
+function serializePracticeFilters(filters: PracticeFilters): string {
   return JSON.stringify(filters, Object.keys(filters).sort());
 }
 
@@ -173,8 +185,8 @@ export const analyticsSimulationPerformanceKeys = {
 // Page-Specific Analytics Keys (3 metrics)
 export const analyticsHomeOverviewKeys = {
   all: ["analytics:v2:home-overview"] as const,
-  list: (filters: AnalyticsFilters) =>
-    [...analyticsHomeOverviewKeys.all, serializeFilters(filters)] as const,
+  list: (filters: HomeFilters) =>
+    [...analyticsHomeOverviewKeys.all, serializeHomeFilters(filters)] as const,
 };
 
 export const analyticsAttemptHistoryKeys = {
@@ -185,8 +197,11 @@ export const analyticsAttemptHistoryKeys = {
 
 export const analyticsPracticeOverviewKeys = {
   all: ["analytics:v2:practice-overview"] as const,
-  list: (filters: AnalyticsFilters) =>
-    [...analyticsPracticeOverviewKeys.all, serializeFilters(filters)] as const,
+  list: (filters: PracticeFilters) =>
+    [
+      ...analyticsPracticeOverviewKeys.all,
+      serializePracticeFilters(filters),
+    ] as const,
 };
 
 // Bundle Analytics Keys (2 metrics)

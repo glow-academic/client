@@ -7,6 +7,16 @@ from pydantic import BaseModel
 from .base import SimulationMapping, StandardGroupsMapping, StandardsMapping
 
 
+class HomeFilters(BaseModel):
+    """Home filter request schema - always shows general simulations."""
+
+    startDate: str
+    endDate: str
+    cohortIds: list[str] | None = None
+    profileId: str | None = None
+    departmentIds: list[str] | None = None
+
+
 class HomeSimulationItem(BaseModel):
     """Home simulation item."""
 

@@ -33,24 +33,14 @@ export default function Home() {
   const { effectiveProfile, activeProfile, effectiveDepartmentIds } =
     useProfile();
   const log = useLogger();
-  const {
-    startDate,
-    endDate,
-    effectiveCohortIds,
-    effectiveRoles,
-    effectiveSimulationFilters,
-  } = useAnalytics();
+  const { startDate, endDate, effectiveCohortIds } = useAnalytics();
 
-  // Memoized filters for analytics query
+  // Memoized filters for home query (no roles/simulationFilters - always shows general)
   const filters = useMemo(
     () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       cohortIds: effectiveCohortIds,
-      roles: effectiveRoles,
-      simulationFilters: effectiveSimulationFilters?.map((f) =>
-        f.toLowerCase()
-      ) as ("general" | "practice" | "archived")[],
       // Always send profileId - server will decide whether to use it based on role
       profileId: effectiveProfile?.id || undefined,
       departmentIds: effectiveDepartmentIds,
@@ -59,8 +49,6 @@ export default function Home() {
       startDate,
       endDate,
       effectiveCohortIds,
-      effectiveRoles,
-      effectiveSimulationFilters,
       effectiveProfile?.id,
       effectiveDepartmentIds,
     ]

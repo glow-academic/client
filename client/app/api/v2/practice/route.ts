@@ -1,4 +1,4 @@
-import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/base";
+import { PracticeFiltersSchema } from "@/lib/api/v2/schemas/practice";
 import { log } from "@/lib/api/v2/server/logs";
 import { fetchPractice } from "@/lib/api/v2/server/practice";
 import { NextRequest, NextResponse } from "next/server";
@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const filters = AnalyticsFiltersSchema.parse(body);
+    const filters = PracticeFiltersSchema.parse(body);
 
     const result = await fetchPractice(filters);
     return NextResponse.json(result);

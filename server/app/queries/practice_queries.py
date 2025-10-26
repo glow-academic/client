@@ -12,23 +12,19 @@ class PracticeQueries:
 
     def practice_overview(
         self,
-        start_date: str,
-        end_date: str,
-        cohort_ids: list[str] | None = None,
-        roles: list[str] | None = None,
-        sim_filters: list[str] | None = None,
-        profile_id: str | None = None,
+        profile_id: str,
         department_ids: list[str] | None = None,
     ) -> tuple[str, list[Any]]:
-        """Build practice overview query - uses LIFETIME data for personal practice."""
-        # Practice uses lifetime data, not date-filtered for scores
-        # Only profile_id and department_ids matter
+        """Build practice overview query - uses LIFETIME data for personal practice.
+        
+        Practice is always personal (filtered by profile_id) with no cohort/role/date filters.
+        """
         params: list[Any] = []
         param_idx = 1
 
-        # Add profile_id parameter
+        # Add profile_id parameter (required)
         profile_param_placeholder = f"${param_idx}::uuid"
-        params.append(profile_id if profile_id else None)
+        params.append(profile_id)
         param_idx += 1
 
         # Add department_ids parameter
@@ -252,41 +248,134 @@ class PracticeQueries:
                        ON aps.profile_id = {profile_param_placeholder}
                       AND aps.simulation_id = sm.simulation_id
             ),
-            -- Embedded: Attempt history data for practice
+            -- FRESH HISTORY DATA: Query base tables directly, not analytics MV
+            -- Filter practice attempts by profile
+            practice_history_attempts AS (
+                SELECT DISTINCT
+                    sa.id AS attempt_id,
+                    sa.simulation_id,
+                    sa.created_at AS attempt_date,
+                    sa.archived AS is_archived,
+                    sa.infinite_mode,
+                    ap.profile_id,
+                    sim.title AS simulation_name,
+                    sim.practice_simulation,
+                    sim.department_id
+                FROM simulation_attempts sa
+                JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
+                JOIN simulations sim ON sim.id = sa.simulation_id
+                WHERE sim.practice_simulation = TRUE
+                  AND ap.profile_id = {profile_param_placeholder}
+                  AND (cardinality({dept_param_placeholder}) = 0 OR sim.department_id = ANY({dept_param_placeholder}))
+            ),
+            -- Aggregate chats per attempt
+            practice_history_chat_rollup AS (
+                SELECT
+                    sc.attempt_id,
+                    COUNT(*) FILTER (WHERE sc.completed) AS completed_chats,
+                    MIN(sc.created_at) AS first_chat_at,
+                    MAX(sc.created_at) AS last_activity_at,
+                    array_agg(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids_seen
+                FROM simulation_chats sc
+                WHERE sc.attempt_id IN (SELECT attempt_id FROM practice_history_attempts)
+                GROUP BY sc.attempt_id
+            ),
+            -- Get latest grade per chat
+            practice_history_chat_grades AS (
+                SELECT DISTINCT ON (scg.simulation_chat_id)
+                    scg.simulation_chat_id AS chat_id,
+                    scg.score,
+                    scg.rubric_id
+                FROM simulation_chat_grades scg
+                WHERE scg.simulation_chat_id IN (
+                    SELECT sc.id FROM simulation_chats sc
+                    WHERE sc.attempt_id IN (SELECT attempt_id FROM practice_history_attempts)
+                )
+                ORDER BY scg.simulation_chat_id, scg.created_at DESC
+            ),
+            -- Aggregate grades per attempt
+            practice_history_grade_rollup AS (
+                SELECT
+                    sc.attempt_id,
+                    COUNT(*) FILTER (WHERE phcg.score IS NOT NULL) AS completed_with_grade,
+                    SUM(CASE WHEN phcg.score IS NOT NULL AND r.points > 0
+                        THEN (phcg.score / r.points::numeric * 100.0)
+                        ELSE 0 END) AS sum_grade_percent
+                FROM simulation_chats sc
+                LEFT JOIN practice_history_chat_grades phcg ON phcg.chat_id = sc.id
+                LEFT JOIN rubrics r ON r.id = phcg.rubric_id
+                WHERE sc.attempt_id IN (SELECT attempt_id FROM practice_history_attempts)
+                GROUP BY sc.attempt_id
+            ),
+            -- Get personas for each attempt
+            practice_history_personas AS (
+                SELECT
+                    sc.attempt_id,
+                    array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
+                FROM simulation_chats sc
+                JOIN scenarios scn ON scn.id = sc.scenario_id
+                LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
+                WHERE sc.attempt_id IN (SELECT attempt_id FROM practice_history_attempts)
+                GROUP BY sc.attempt_id
+            ),
+            -- Count scenarios per simulation
+            practice_history_sim_scenario_count AS (
+                SELECT
+                    s.id AS simulation_id,
+                    COUNT(ss.scenario_id)::int AS scenario_count
+                FROM simulations s
+                LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+                WHERE s.id IN (SELECT simulation_id FROM practice_history_attempts)
+                GROUP BY s.id
+            ),
+            -- Get scenario info
+            practice_history_scenario_ids AS (
+                SELECT
+                    s.id AS simulation_id,
+                    ARRAY_AGG(ss.scenario_id ORDER BY ss.position)::uuid[] AS scenario_ids_assigned
+                FROM simulations s
+                LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+                WHERE s.id IN (SELECT simulation_id FROM practice_history_attempts)
+                GROUP BY s.id
+            ),
+            -- Join all history data
             practice_attempt_rollup AS (
                 SELECT
-                    a.attempt_id,
-                    a.simulation_id,
-                    MIN(a.attempt_created_at) AS attempt_date,
-                    COUNT(*) FILTER (WHERE a.completed AND a.grade_percent IS NOT NULL) AS completed_with_grade,
-                    MAX(a.sim_scenario_count) AS sim_scenario_count,
-                    SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
-                    array_agg(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct,
-                    array_agg(DISTINCT a.leaf_scenario_id) FILTER (WHERE a.leaf_scenario_id IS NOT NULL) AS leaf_scenarios_seen,
-                    MIN(a.department_id::text)::uuid AS department_id
-                FROM filt_all a
-                GROUP BY a.attempt_id, a.simulation_id
+                    pha.attempt_id,
+                    pha.simulation_id,
+                    pha.profile_id,
+                    pha.attempt_date,
+                    pha.is_archived,
+                    pha.infinite_mode,
+                    pha.simulation_name,
+                    pha.practice_simulation,
+                    pha.department_id,
+                    COALESCE(phgr.completed_with_grade, 0) AS completed_with_grade,
+                    COALESCE(phssc.scenario_count, 0) AS sim_scenario_count,
+                    COALESCE(phgr.sum_grade_percent, 0) AS sum_grade_percent_zero_fill,
+                    COALESCE(php.persona_ids, ARRAY[]::uuid[]) AS persona_ids_distinct,
+                    COALESCE(phcr.scenario_ids_seen, ARRAY[]::uuid[]) AS leaf_scenarios_seen
+                FROM practice_history_attempts pha
+                LEFT JOIN practice_history_chat_rollup phcr ON phcr.attempt_id = pha.attempt_id
+                LEFT JOIN practice_history_grade_rollup phgr ON phgr.attempt_id = pha.attempt_id
+                LEFT JOIN practice_history_personas php ON php.attempt_id = pha.attempt_id
+                LEFT JOIN practice_history_sim_scenario_count phssc ON phssc.simulation_id = pha.simulation_id
             ),
             practice_attempt_joined AS (
                 SELECT
                     ar.*,
-                    ap.profile_id,
-                    sa.archived AS is_archived,
-                    sa.infinite_mode,
-                    s.title AS simulation_name,
-                    ARRAY(SELECT ss.scenario_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id ORDER BY ss.position) AS scenario_ids_assigned,
-                    s.practice_simulation,
+                    phsi.scenario_ids_assigned,
                     CASE
                         WHEN r.points IS NULL OR r.points = 0 THEN NULL
                         ELSE ROUND((r.pass_points::numeric / r.points::numeric) * 100.0)::int
                     END AS pass_pct,
                     (p.first_name || ' ' || p.last_name) AS profile_name
                 FROM practice_attempt_rollup ar
-                JOIN simulation_attempts sa ON sa.id = ar.attempt_id
-                LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
                 JOIN simulations s ON s.id = ar.simulation_id
+                LEFT JOIN practice_history_scenario_ids phsi ON phsi.simulation_id = ar.simulation_id
                 LEFT JOIN rubrics r ON r.id = s.rubric_id
-                JOIN profiles p ON p.id = ap.profile_id
+                LEFT JOIN attempt_profiles ap ON ap.attempt_id = ar.attempt_id AND ap.active = TRUE
+                LEFT JOIN profiles p ON p.id = ap.profile_id
             ),
             practice_final_rows AS (
                 SELECT
@@ -331,8 +420,8 @@ class PracticeQueries:
             practice_persona_labels AS (
                 SELECT
                     fr.attempt_id,
-                    COALESCE(ARRAY_AGG(per.name ORDER BY per.name), ARRAY[]::text[]) AS persona_names,
-                    COALESCE(ARRAY_AGG(per.color ORDER BY per.name), ARRAY[]::text[]) AS persona_colors
+                    COALESCE(ARRAY_AGG(per.name ORDER BY per.name) FILTER (WHERE per.name IS NOT NULL), ARRAY[]::text[]) AS persona_names,
+                    COALESCE(ARRAY_AGG(per.color ORDER BY per.name) FILTER (WHERE per.color IS NOT NULL), ARRAY[]::text[]) AS persona_colors
                 FROM practice_final_rows fr
                 LEFT JOIN LATERAL (
                     SELECT DISTINCT per.name, per.color

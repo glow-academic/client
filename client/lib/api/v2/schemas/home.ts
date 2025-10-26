@@ -9,6 +9,19 @@ import {
   StandardsMappingSchema,
 } from "./base";
 
+/**
+ * Home filter schema - always shows general simulations (no roles/simulationFilters)
+ */
+export const HomeFiltersSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  cohortIds: z.array(z.string()).optional(),
+  profileId: z.string().nullable().optional(),
+  departmentIds: z.array(z.string()).optional(),
+});
+
+export type HomeFilters = z.infer<typeof HomeFiltersSchema>;
+
 export const HomeSimulationItemSchema = z.object({
   viewMode: z.enum(["ta", "instructional"]),
   id: z.string(),

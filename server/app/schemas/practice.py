@@ -4,16 +4,17 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from .base import (
-    ParameterItemMapping,
-    ParameterMapping,
-    PersonaMapping,
-    ScenarioMapping,
-    SimulationMapping,
-    StandardGroupsMapping,
-    StandardsMapping,
-)
+from .base import (ParameterItemMapping, ParameterMapping, PersonaMapping,
+                   ScenarioMapping, SimulationMapping, StandardGroupsMapping,
+                   StandardsMapping)
 from .home import AttemptHistoryResponse
+
+
+class PracticeFilters(BaseModel):
+    """Practice filter request schema - simplified to profile-only."""
+
+    profileId: str
+    departmentIds: list[str] | None = None
 
 
 class PracticeSimulationItem(BaseModel):

@@ -4,8 +4,10 @@
 
 import { api } from "@/lib/api/fetcher";
 import { analyticsPracticeOverviewKeys } from "@/lib/api/v2/keys";
-import { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
-import { PracticeOverviewResponseSchema } from "@/lib/api/v2/schemas/practice";
+import {
+  PracticeFilters,
+  PracticeOverviewResponseSchema,
+} from "@/lib/api/v2/schemas/practice";
 import { useQuery } from "@tanstack/react-query";
 
 type PracticeHookOptions = {
@@ -14,7 +16,7 @@ type PracticeHookOptions = {
 };
 
 export function usePractice(
-  filters: AnalyticsFilters,
+  filters: PracticeFilters,
   options: PracticeHookOptions | boolean = true
 ) {
   const queryOptions =
@@ -34,4 +36,3 @@ export function usePractice(
     },
   });
 }
-

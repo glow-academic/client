@@ -1,5 +1,6 @@
 """Home overview analytics queries - ONE query per service method."""
 
+from datetime import datetime
 from typing import Any
 
 from app.queries.base_queries import AnalyticsQueryBuilder
@@ -16,8 +17,6 @@ class HomeQueries:
         start_date: str,
         end_date: str,
         cohort_ids: list[str] | None = None,
-        roles: list[str] | None = None,
-        sim_filters: list[str] | None = None,
         profile_id: str | None = None,
         department_ids: list[str] | None = None,
     ) -> tuple[str, list[Any]]:
@@ -39,37 +38,21 @@ class HomeQueries:
         - For non-TA users: profile_id only filters history, items show all cohort data
         - View mode determined in SQL by looking up profile's role
         """
-        # Build base filter for items (includes role filter)
+        # Build base filter for items (hardcoded to general simulations only)
+        # Note: roles filter for cohort_membership is added separately below
         where_clause, base_params = self.builder.filters.build_base_filter(
             start_date,
             end_date,
             cohort_ids,
-            roles,  # Role filter applies to items
-            sim_filters,
+            None,  # Don't filter analytics by role here - only used for cohort_membership
+            ["general"],  # Hardcoded to general simulations only
             None,  # Don't filter by profileId in base - handled in SQL
             department_ids,
         )
 
-        # Build separate filter for history (NO role filter, only profileId)
-        history_where_clause, history_params = self.builder.filters.build_base_filter(
-            start_date,
-            end_date,
-            cohort_ids,
-            None,  # No role filter for history
-            sim_filters,
-            profile_id,  # Filter history by profileId
-            department_ids,
-        )
-
-        # Build parameter list - start with base params, then add history params
+        # Build parameter list - start with base params
         params = list(base_params)
         param_idx = len(params) + 1
-
-        # Add history params after base params
-        history_start_idx = param_idx
-        for param in history_params:
-            params.append(param)
-            param_idx += 1
 
         # Parameters for cohort_sim CTE filtering
         cohort_param_placeholder = f"${param_idx}::uuid[]"
@@ -85,18 +68,32 @@ class HomeQueries:
         params.append(profile_id if profile_id else None)
         param_idx += 1
 
-        # Roles for cohort_membership
+        # Roles for cohort_membership CTE (hardcoded to "ta" for home page)
         roles_param_placeholder = f"${param_idx}::profile_role[]"
-        params.append(roles if roles else [])
+        params.append(["ta"])  # Always filter to TA role for home
         param_idx += 1
 
-        # Build history WHERE clause with adjusted param indices
-        history_where_adjusted = history_where_clause
-        for i, old_idx in enumerate(range(1, len(history_params) + 1)):
-            new_idx = history_start_idx + i
-            history_where_adjusted = history_where_adjusted.replace(
-                f"${old_idx}", f"${new_idx}"
-            )
+        # History query parameters (fresh data, not analytics MV)
+        # Convert ISO strings to datetime objects for asyncpg
+        history_start_date_param = f"${param_idx}"
+        params.append(datetime.fromisoformat(start_date.replace("Z", "+00:00")))
+        param_idx += 1
+
+        history_end_date_param = f"${param_idx}"
+        params.append(datetime.fromisoformat(end_date.replace("Z", "+00:00")))
+        param_idx += 1
+
+        history_profile_param = f"${param_idx}::uuid"
+        params.append(profile_id if profile_id else None)
+        param_idx += 1
+
+        history_cohort_param = f"${param_idx}::uuid[]"
+        params.append(cohort_ids if cohort_ids else [])
+        param_idx += 1
+
+        history_dept_param = f"${param_idx}::uuid[]"
+        params.append(department_ids if department_ids else [])
+        param_idx += 1
 
         query = f"""
             WITH 
@@ -119,11 +116,6 @@ class HomeQueries:
                 FROM analytics a, profile_role_lookup prl
                 WHERE {where_clause}
                   AND (NOT prl.is_ta_mode OR a.profile_id = {profile_param_placeholder})
-            ),
-            -- For history: use separate filter without role constraint (only profileId)
-            filt_for_history AS (
-                SELECT * FROM analytics a 
-                WHERE {history_where_adjusted}
             ),
             -- Get cohort-simulation pairs (includes empty cohorts)
             cohort_sim AS (
@@ -468,38 +460,153 @@ class HomeQueries:
                     WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
                 )
             ),
-            -- Embedded: Attempt history data
+            -- FRESH HISTORY DATA: Query base tables directly, not analytics MV
+            -- Filter attempts by date, profile, cohorts, departments
+            history_attempts AS (
+                SELECT DISTINCT
+                    sa.id AS attempt_id,
+                    sa.simulation_id,
+                    sa.created_at AS attempt_date,
+                    sa.archived AS is_archived,
+                    sa.infinite_mode,
+                    ap.profile_id,
+                    sim.title AS simulation_name,
+                    sim.practice_simulation,
+                    sim.department_id
+                FROM simulation_attempts sa
+                JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
+                JOIN simulations sim ON sim.id = sa.simulation_id
+                WHERE sa.created_at >= {history_start_date_param}
+                  AND sa.created_at <= {history_end_date_param}
+                  AND sim.practice_simulation = FALSE
+                  AND (cardinality({history_dept_param}) = 0 OR sim.department_id = ANY({history_dept_param}))
+                  AND ({history_profile_param} IS NULL OR ap.profile_id = {history_profile_param})
+            ),
+            -- Get cohorts for each attempt's profile
+            history_attempt_cohorts AS (
+                SELECT
+                    ha.attempt_id,
+                    COALESCE(ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::uuid[]) AS cohort_ids,
+                    COALESCE(ARRAY_AGG(DISTINCT c.title) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::text[]) AS cohort_names
+                FROM history_attempts ha
+                LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
+                LEFT JOIN cohorts c ON c.id = cp.cohort_id AND c.active = TRUE
+                LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
+                WHERE (cardinality({history_cohort_param}) = 0 OR c.id = ANY({history_cohort_param}))
+                GROUP BY ha.attempt_id
+            ),
+            -- Filter attempts by cohort membership
+            history_attempts_filtered AS (
+                SELECT ha.*
+                FROM history_attempts ha
+                JOIN history_attempt_cohorts hac ON hac.attempt_id = ha.attempt_id
+                WHERE (cardinality({history_cohort_param}) = 0 OR cardinality(hac.cohort_ids) > 0)
+            ),
+            -- Aggregate chats per attempt
+            history_chat_rollup AS (
+                SELECT
+                    sc.attempt_id,
+                    COUNT(*) FILTER (WHERE sc.completed) AS completed_chats,
+                    MIN(sc.created_at) AS first_chat_at,
+                    MAX(sc.created_at) AS last_activity_at,
+                    array_agg(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids_seen
+                FROM simulation_chats sc
+                WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+                GROUP BY sc.attempt_id
+            ),
+            -- Get latest grade per chat
+            history_chat_grades AS (
+                SELECT DISTINCT ON (scg.simulation_chat_id)
+                    scg.simulation_chat_id AS chat_id,
+                    scg.score,
+                    scg.rubric_id
+                FROM simulation_chat_grades scg
+                WHERE scg.simulation_chat_id IN (
+                    SELECT sc.id FROM simulation_chats sc
+                    WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+                )
+                ORDER BY scg.simulation_chat_id, scg.created_at DESC
+            ),
+            -- Aggregate grades per attempt
+            history_grade_rollup AS (
+                SELECT
+                    sc.attempt_id,
+                    COUNT(*) FILTER (WHERE hcg.score IS NOT NULL) AS completed_with_grade,
+                    SUM(CASE WHEN hcg.score IS NOT NULL AND r.points > 0
+                        THEN (hcg.score / r.points::numeric * 100.0)
+                        ELSE 0 END) AS sum_grade_percent
+                FROM simulation_chats sc
+                LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
+                LEFT JOIN rubrics r ON r.id = hcg.rubric_id
+                WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+                GROUP BY sc.attempt_id
+            ),
+            -- Get personas for each attempt
+            history_personas AS (
+                SELECT
+                    sc.attempt_id,
+                    array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
+                FROM simulation_chats sc
+                JOIN scenarios scn ON scn.id = sc.scenario_id
+                LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
+                WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+                GROUP BY sc.attempt_id
+            ),
+            -- Count scenarios per simulation
+            history_sim_scenario_count AS (
+                SELECT
+                    s.id AS simulation_id,
+                    COUNT(ss.scenario_id)::int AS scenario_count
+                FROM simulations s
+                LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+                WHERE s.id IN (SELECT simulation_id FROM history_attempts_filtered)
+                GROUP BY s.id
+            ),
+            -- Get scenario info
+            history_scenario_ids AS (
+                SELECT
+                    s.id AS simulation_id,
+                    ARRAY_AGG(ss.scenario_id ORDER BY ss.position)::uuid[] AS scenario_ids_assigned
+                FROM simulations s
+                LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+                WHERE s.id IN (SELECT simulation_id FROM history_attempts_filtered)
+                GROUP BY s.id
+            ),
+            -- Join all history data
             attempt_rollup AS (
                 SELECT
-                    a.attempt_id,
-                    a.simulation_id,
-                    MIN(a.attempt_created_at) AS attempt_date,
-                    MIN(a.chat_created_at) AS first_chat_at,
-                    MAX(a.chat_created_at) AS last_activity_at,
-                    COUNT(*) FILTER (WHERE a.completed AND a.grade_percent IS NOT NULL) AS completed_with_grade,
-                    MAX(a.sim_scenario_count) AS sim_scenario_count,
-                    SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
-                    array_agg(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct,
-                    array_agg(DISTINCT a.leaf_scenario_id) FILTER (WHERE a.leaf_scenario_id IS NOT NULL) AS leaf_scenarios_seen,
-                    MIN(a.department_id::text)::uuid AS department_id
-                FROM filt_for_history a
-                GROUP BY a.attempt_id, a.simulation_id
+                    haf.attempt_id,
+                    haf.simulation_id,
+                    haf.attempt_date,
+                    haf.is_archived,
+                    haf.infinite_mode,
+                    haf.profile_id,
+                    haf.simulation_name,
+                    haf.practice_simulation,
+                    haf.department_id,
+                    COALESCE(hcr.first_chat_at, haf.attempt_date) AS first_chat_at,
+                    COALESCE(hcr.last_activity_at, haf.attempt_date) AS last_activity_at,
+                    COALESCE(hgr.completed_with_grade, 0) AS completed_with_grade,
+                    COALESCE(hssc.scenario_count, 0) AS sim_scenario_count,
+                    COALESCE(hgr.sum_grade_percent, 0) AS sum_grade_percent_zero_fill,
+                    COALESCE(hp.persona_ids, ARRAY[]::uuid[]) AS persona_ids_distinct,
+                    COALESCE(hcr.scenario_ids_seen, ARRAY[]::uuid[]) AS leaf_scenarios_seen
+                FROM history_attempts_filtered haf
+                LEFT JOIN history_chat_rollup hcr ON hcr.attempt_id = haf.attempt_id
+                LEFT JOIN history_grade_rollup hgr ON hgr.attempt_id = haf.attempt_id
+                LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
+                LEFT JOIN history_sim_scenario_count hssc ON hssc.simulation_id = haf.simulation_id
             ),
             attempt_cohort_ids AS (
-                SELECT DISTINCT ON (attempt_id)
+                SELECT
                     attempt_id,
-                    profile_cohort_ids
-                FROM filt_for_history
+                    cohort_ids AS profile_cohort_ids
+                FROM history_attempt_cohorts
             ),
             attempt_joined AS (
                 SELECT
                     ar.*,
-                    ap.profile_id,
-                    sa.archived AS is_archived,
-                    sa.infinite_mode,
-                    s.title AS simulation_name,
-                    ARRAY(SELECT ss.scenario_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id ORDER BY ss.position) AS scenario_ids_assigned,
-                    s.practice_simulation,
+                    hsi.scenario_ids_assigned,
                     r.id AS rubric_id,
                     r.points AS rubric_points,
                     r.pass_points AS rubric_pass_points,
@@ -509,21 +616,16 @@ class HomeQueries:
                     END AS pass_pct,
                     (p.first_name || ' ' || p.last_name) AS profile_name
                 FROM attempt_rollup ar
-                JOIN simulation_attempts sa ON sa.id = ar.attempt_id
-                LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
                 JOIN simulations s ON s.id = ar.simulation_id
+                LEFT JOIN history_scenario_ids hsi ON hsi.simulation_id = ar.simulation_id
                 LEFT JOIN rubrics r ON r.id = s.rubric_id
-                JOIN profiles p ON p.id = ap.profile_id
+                JOIN profiles p ON p.id = ar.profile_id
             ),
             attempt_cohort_names AS (
                 SELECT
-                    aj.attempt_id,
-                    COALESCE(ARRAY_AGG(c.title ORDER BY c.title) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::text[]) AS cohort_names
-                FROM attempt_joined aj
-                LEFT JOIN attempt_cohort_ids aci ON aci.attempt_id = aj.attempt_id
-                LEFT JOIN LATERAL unnest(COALESCE(aci.profile_cohort_ids, ARRAY[]::uuid[])) AS cohort_id ON TRUE
-                LEFT JOIN cohorts c ON c.id = cohort_id
-                GROUP BY aj.attempt_id
+                    attempt_id,
+                    cohort_names
+                FROM history_attempt_cohorts
             ),
             final_rows AS (
                 SELECT
@@ -568,8 +670,8 @@ class HomeQueries:
             persona_labels AS (
                 SELECT
                     fr.attempt_id,
-                    COALESCE(ARRAY_AGG(per.name ORDER BY per.name), ARRAY[]::text[]) AS persona_names,
-                    COALESCE(ARRAY_AGG(per.color ORDER BY per.name), ARRAY[]::text[]) AS persona_colors
+                    COALESCE(ARRAY_AGG(per.name ORDER BY per.name) FILTER (WHERE per.name IS NOT NULL), ARRAY[]::text[]) AS persona_names,
+                    COALESCE(ARRAY_AGG(per.color ORDER BY per.name) FILTER (WHERE per.color IS NOT NULL), ARRAY[]::text[]) AS persona_colors
                 FROM final_rows fr
                 LEFT JOIN LATERAL (
                     SELECT DISTINCT per.name, per.color

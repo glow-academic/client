@@ -5,13 +5,16 @@
 
 import { getApiBase } from "@/lib/api-base";
 import { cache } from "react";
-import { AnalyticsFilters } from "../schemas/base";
-import { PracticeOverviewResponseSchema } from "../schemas/practice";
+import {
+  PracticeFilters,
+  PracticeOverviewResponseSchema,
+} from "../schemas/practice";
 
 /**
  * Fetch practice overview analytics from FastAPI server (memoized)
+ * Note: Practice uses simplified filters (profile-only)
  */
-export const fetchPractice = cache(async (filters: AnalyticsFilters) => {
+export const fetchPractice = cache(async (filters: PracticeFilters) => {
   const res = await fetch(`${getApiBase()}/api/v2/practice`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -26,4 +29,3 @@ export const fetchPractice = cache(async (filters: AnalyticsFilters) => {
   const data = await res.json();
   return PracticeOverviewResponseSchema.parse(data);
 });
-

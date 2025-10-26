@@ -4,8 +4,10 @@
 
 import { api } from "@/lib/api/fetcher";
 import { analyticsHomeOverviewKeys } from "@/lib/api/v2/keys";
-import { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
-import { HomeOverviewResponseSchema } from "@/lib/api/v2/schemas/home";
+import {
+  HomeFilters,
+  HomeOverviewResponseSchema,
+} from "@/lib/api/v2/schemas/home";
 import { useQuery } from "@tanstack/react-query";
 
 type HomeHookOptions = {
@@ -14,7 +16,7 @@ type HomeHookOptions = {
 };
 
 export function useHome(
-  filters: AnalyticsFilters,
+  filters: HomeFilters,
   options: HomeHookOptions | boolean = true
 ) {
   const queryOptions =
@@ -34,4 +36,3 @@ export function useHome(
     },
   });
 }
-

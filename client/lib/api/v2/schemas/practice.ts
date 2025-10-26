@@ -14,6 +14,16 @@ import {
 } from "./base";
 import { AttemptHistoryResponseSchema } from "./home";
 
+/**
+ * Practice filter schema - simplified to profile-only
+ */
+export const PracticeFiltersSchema = z.object({
+  profileId: z.string(),
+  departmentIds: z.array(z.string()).optional(),
+});
+
+export type PracticeFilters = z.infer<typeof PracticeFiltersSchema>;
+
 export const PracticeSimulationItemSchema = z.object({
   viewMode: z.enum(["practice"]),
   id: z.string(),

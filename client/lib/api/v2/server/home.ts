@@ -5,13 +5,13 @@
 
 import { getApiBase } from "@/lib/api-base";
 import { cache } from "react";
-import { AnalyticsFilters } from "../schemas/base";
-import { HomeOverviewResponseSchema } from "../schemas/home";
+import { HomeFilters, HomeOverviewResponseSchema } from "../schemas/home";
 
 /**
  * Fetch home overview analytics from FastAPI server (memoized)
+ * Note: Home always shows general simulations (no roles/simulationFilters)
  */
-export const fetchHome = cache(async (filters: AnalyticsFilters) => {
+export const fetchHome = cache(async (filters: HomeFilters) => {
   const res = await fetch(`${getApiBase()}/api/v2/home`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -26,4 +26,3 @@ export const fetchHome = cache(async (filters: AnalyticsFilters) => {
   const data = await res.json();
   return HomeOverviewResponseSchema.parse(data);
 });
-

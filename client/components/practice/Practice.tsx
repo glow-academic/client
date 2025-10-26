@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/card";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { usePractice } from "@/lib/api/v2/hooks/practice";
@@ -57,37 +56,14 @@ export default function Practice() {
       window.removeEventListener("openPracticeCustomize", handleOpenCustomize);
   }, []);
 
-  const {
-    startDate,
-    endDate,
-    effectiveCohortIds,
-    effectiveRoles,
-    effectiveSimulationFilters,
-  } = useAnalytics();
-
-  // Memoized filters for practice overview query
+  // Practice uses simplified filters: only profileId and departmentIds
+  // No date/cohort/role filtering for personal practice
   const filters = useMemo(
     () => ({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: effectiveCohortIds,
-      roles: effectiveRoles,
-      simulationFilters: effectiveSimulationFilters?.map((f) =>
-        f.toLowerCase()
-      ) as ("general" | "practice" | "archived")[],
-      // Always pass profileId for practice (personal view)
-      profileId: effectiveProfile?.id,
+      profileId: effectiveProfile?.id || "",
       departmentIds: effectiveDepartmentIds,
     }),
-    [
-      startDate,
-      endDate,
-      effectiveCohortIds,
-      effectiveRoles,
-      effectiveSimulationFilters,
-      effectiveProfile?.id,
-      effectiveDepartmentIds,
-    ]
+    [effectiveProfile?.id, effectiveDepartmentIds]
   );
 
   // Single optimized bundle call with items, history, and mappings
