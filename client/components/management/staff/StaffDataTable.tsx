@@ -155,7 +155,11 @@ export function StaffDataTable({
 }: StaffDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+      name: false,
+      active: false,
+      lastActive: false,
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -211,15 +215,14 @@ export function StaffDataTable({
           );
         },
       },
-      // Hidden faceting column for search/name
       {
         id: "name",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
         accessorFn: (row: ProfileListItem) =>
           `${row.first_name} ${row.last_name} ${row.alias}`.toLowerCase(),
+        header: "Search",
+        cell: () => null,
+        enableHiding: false,
+        enableSorting: false,
       },
       {
         accessorKey: "role",
@@ -246,30 +249,21 @@ export function StaffDataTable({
           return value.includes(staff.role);
         },
       },
-      // Hidden faceting column for Activity (boolean to string)
       {
         id: "active",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
         accessorFn: (row: ProfileListItem) => (row.active ? "true" : "false"),
+        header: "Active",
+        cell: () => null,
+        enableHiding: false,
+        enableSorting: false,
       },
-      // Hidden faceting column for Cohorts (array of IDs)
       {
         id: "cohort_ids",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
         accessorFn: (row: ProfileListItem) => row.cohort_ids ?? [],
         filterFn: (row, _, value: string[]) => {
           const rowIds = (row.getValue("cohort_ids") as string[]) ?? [];
           return value.some((v) => rowIds.includes(v));
         },
-      },
-      {
-        accessorKey: "cohort_ids",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Cohorts" />
         ),
@@ -295,13 +289,8 @@ export function StaffDataTable({
           );
         },
       },
-      // Hidden faceting column for Last Active (categorical)
       {
         id: "lastActive",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
         accessorFn: (row: ProfileListItem) => {
           const lastActive = row.last_active;
           if (!lastActive) return "never";
@@ -316,6 +305,10 @@ export function StaffDataTable({
           if (diffInDays <= 30) return "moderate";
           return "old";
         },
+        header: "Last Active Category",
+        cell: () => null,
+        enableHiding: false,
+        enableSorting: false,
       },
       {
         accessorKey: "last_active",
@@ -534,6 +527,9 @@ export function StaffDataTable({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
+                    // Skip rendering hidden columns
+                    if (!header.column.getIsVisible()) return null;
+
                     return (
                       <TableHead
                         key={header.id}
