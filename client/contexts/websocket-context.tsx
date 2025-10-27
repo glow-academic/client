@@ -7,10 +7,13 @@
 
 import { getApiBase } from "@/lib/api-base";
 import {
+  analyticsHomeOverviewKeys,
+  analyticsPracticeOverviewKeys,
   assistantChatsFullKeys,
   attemptsFullKeys,
   layoutContextKeys,
 } from "@/lib/api/v2/keys";
+import { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 import { log, type LogEntry } from "@/lib/api/v2/server/logs";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
@@ -252,23 +255,28 @@ export function WebSocketProvider({
           // This updates ALL attempt queries to find the right message
           queryClient.setQueriesData(
             { queryKey: attemptsFullKeys.all },
-            (oldData: any) => {
+            (oldData: AttemptFullResponse) => {
               if (!oldData?.chats) return oldData;
 
               return {
                 ...oldData,
-                chats: oldData.chats.map((chat: any) => {
-                  if (chat.chat.id !== data.chat_id) return chat;
+                chats: oldData.chats.map(
+                  (chat: AttemptFullResponse["chats"][number]) => {
+                    if (chat.chat.id !== data.chat_id) return chat;
 
-                  return {
-                    ...chat,
-                    messages: chat.messages.map((msg: any) =>
-                      msg.id === data.message_id
-                        ? { ...msg, content: data.accumulated_content }
-                        : msg
-                    ),
-                  };
-                }),
+                    return {
+                      ...chat,
+                      messages: chat.messages.map(
+                        (
+                          msg: AttemptFullResponse["chats"][number]["messages"][number]
+                        ) =>
+                          msg.id === data.message_id
+                            ? { ...msg, content: data.accumulated_content }
+                            : msg
+                      ),
+                    };
+                  }
+                ),
               };
             }
           );
@@ -608,6 +616,14 @@ export function WebSocketProvider({
                 detail: { attemptId: data.attempt_id },
               })
             );
+
+            // Invalidate home and practice queries to refresh data
+            queryClient.invalidateQueries({
+              queryKey: analyticsHomeOverviewKeys.all,
+            });
+            queryClient.invalidateQueries({
+              queryKey: analyticsPracticeOverviewKeys.all,
+            });
           } else {
             toast.error(data.message);
           }
@@ -688,6 +704,14 @@ export function WebSocketProvider({
                 },
               })
             );
+
+            // Invalidate home and practice queries to show updated grades/history
+            queryClient.invalidateQueries({
+              queryKey: analyticsHomeOverviewKeys.all,
+            });
+            queryClient.invalidateQueries({
+              queryKey: analyticsPracticeOverviewKeys.all,
+            });
           } else {
             toast.error(data.message);
           }
@@ -716,6 +740,14 @@ export function WebSocketProvider({
                 },
               })
             );
+
+            // Invalidate home and practice queries to show updated grades/history
+            queryClient.invalidateQueries({
+              queryKey: analyticsHomeOverviewKeys.all,
+            });
+            queryClient.invalidateQueries({
+              queryKey: analyticsPracticeOverviewKeys.all,
+            });
           } else {
             toast.error(data.message);
           }

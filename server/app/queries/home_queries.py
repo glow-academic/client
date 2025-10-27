@@ -734,16 +734,15 @@ class HomeQueries:
                         jsonb_build_object(
                             'name', sim.title, 
                             'description', sim.description,
-                            'time_limit', stl.time_limit_seconds
+                            'time_limit', stl.time_limit_seconds,
+                            'department_id', sim.department_id::text
                         )
                     ),
                     '{{}}'::jsonb
                 ) as mapping
                 FROM simulations sim
                 LEFT JOIN simulation_time_limits stl ON stl.simulation_id = sim.id AND stl.active = true
-                WHERE sim.active = true
-                  AND sim.practice_simulation = true
-                  AND sim.department_id IN (SELECT DISTINCT department_id FROM filt)
+                WHERE sim.id IN (SELECT DISTINCT simulation_id FROM filt)
             )
             SELECT json_build_object(
                 'mode', (SELECT mode FROM profile_role_lookup),

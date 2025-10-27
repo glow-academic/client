@@ -118,6 +118,7 @@ class CohortService(BaseService):
                                 name=sdata["name"],
                                 description=sdata["description"],
                                 time_limit=sdata.get("time_limit"),
+                                department_id=sdata.get("department_id", ""),
                             )
 
         return CohortsListResponse(
@@ -163,6 +164,7 @@ class CohortService(BaseService):
                         name=sdata["name"],
                         description=sdata["description"],
                         time_limit=sdata.get("time_limit"),
+                        department_id=sdata.get("department_id", ""),
                     )
 
         # Parse profile mapping from JSONB (may be string or dict)
@@ -263,6 +265,7 @@ class CohortService(BaseService):
                         name=sdata["name"],
                         description=sdata["description"],
                         time_limit=sdata.get("time_limit"),
+                        department_id=sdata.get("department_id", ""),
                     )
 
         # Parse profile mapping from JSONB (may be string or dict)
@@ -376,7 +379,7 @@ class CohortService(BaseService):
                             email=profile_data["email"],
                             initials=profile_data["initials"],
                             active=profile_data["active"],
-                            lastActive=profile_data["lastActive"],
+                            last_active=profile_data["lastActive"],
                             cohort_ids=profile_data["cohort_ids"] or [],
                             requests_per_day=profile_data["requests_per_day"],
                             default_profile=profile_data["default_profile"],

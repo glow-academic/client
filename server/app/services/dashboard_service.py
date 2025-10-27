@@ -377,6 +377,7 @@ class DashboardService(BaseService):
                 name=sim_data.get("name", ""),
                 description=sim_data.get("description", ""),
                 time_limit=sim_data.get("time_limit"),
+                department_id=sim_data.get("department_id", ""),
             )
 
         rubric_mapping_raw = data.get("rubricMapping", {})

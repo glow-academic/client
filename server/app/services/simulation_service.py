@@ -561,18 +561,18 @@ class SimulationService(BaseService):
                     )
 
         # Parse parameter items list from JSONB with type safety
-        parameter_items_list: list[ParameterItemForSimulation] = []
+        parameter_items_list: list[ParameterItemDetail] = []
         if result.get("parameter_items_list") and isinstance(
             result["parameter_items_list"], list
         ):
             for pi_data in result["parameter_items_list"]:
                 if isinstance(pi_data, dict):
                     parameter_items_list.append(
-                        ParameterItemForSimulation(
+                        ParameterItemDetail(
                             id=pi_data.get("id", ""),
                             parameter_id=pi_data.get("parameter_id", ""),
                             name=pi_data.get("name", ""),
-                            description=pi_data.get("description", ""),
+                            description=pi_data.get("description"),
                         )
                     )
 
@@ -1037,12 +1037,17 @@ class SimulationService(BaseService):
                 True,  # active
             )
             
-            # Use randomly_fill_scenario_attributes to ensure persona/documents/params
-            # This will randomly select any missing attributes and may create a new variant
+            # Use randomly_fill_scenario_attributes to fill persona/documents/params
+            # Pass parent's data so child inherits from parent instead of random selection
             from app.services.scenario_service import ScenarioService
             scenario_service = ScenarioService(self.conn)
             
-            # Pass complete scenario dict so it doesn't need to create a variant
+            # Extract parent IDs for inheritance
+            parent_persona_id_str = str(persona_id) if persona_id else None
+            parent_doc_ids = [doc["id"] for doc in documents] if documents else None
+            parent_param_ids = [item["id"] for item in parameter_items] if parameter_items else None
+            
+            # Pass parent data to ensure child inherits attributes
             filled_scenario = await scenario_service.randomly_fill_scenario_attributes(
                 scenario={
                     "id": str(new_scenario["id"]),
@@ -1051,7 +1056,10 @@ class SimulationService(BaseService):
                     "default_scenario": False,
                     "generated": True,
                 },
-                department_id=uuid_module.UUID(department_id)
+                department_id=uuid_module.UUID(department_id),
+                parent_persona_id=parent_persona_id_str,
+                parent_document_ids=parent_doc_ids,
+                parent_parameter_item_ids=parent_param_ids,
             )
             
             # Use the returned scenario (which might be a new variant with persona/docs/params)

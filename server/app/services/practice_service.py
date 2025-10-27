@@ -4,7 +4,6 @@ import json
 from typing import Any
 
 import asyncpg  # type: ignore
-from app.cache import keys
 from app.queries.practice_queries import PracticeQueries
 from app.schemas.analytics import AnalyticsFilters
 from app.schemas.base import (ParameterItemMappingItem, ParameterMappingItem,
@@ -12,7 +11,7 @@ from app.schemas.base import (ParameterItemMappingItem, ParameterMappingItem,
                               SimulationMappingItem)
 from app.schemas.home import AttemptHistoryRow
 from app.schemas.practice import PracticeOverviewResponse
-from app.services.base_service import BaseService, with_cache
+from app.services.base_service import BaseService
 
 
 class PracticeService(BaseService):
@@ -44,7 +43,6 @@ class PracticeService(BaseService):
         else:
             return obj
 
-    @with_cache(lambda self, filters: keys.analytics_practice_overview(filters))
     async def get_practice_overview(
         self, filters: AnalyticsFilters
     ) -> PracticeOverviewResponse:
@@ -89,6 +87,7 @@ class PracticeService(BaseService):
                         name=sim_data.get("name", ""),
                         description=sim_data.get("description", ""),
                         time_limit=sim_data.get("time_limit"),
+                        department_id=sim_data.get("department_id", ""),
                     )
 
         # Parse embedded persona mapping

@@ -489,7 +489,8 @@ class ReportsQueries:
                         sim.id::text,
                         jsonb_build_object(
                             'name', sim.title,
-                            'description', sim.description
+                            'description', sim.description,
+                            'department_id', sim.department_id::text
                         )
                     )
                     FROM simulations sim

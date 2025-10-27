@@ -483,7 +483,8 @@ class PracticeQueries:
                         jsonb_build_object(
                             'name', sim.title, 
                             'description', sim.description,
-                            'time_limit', stl.time_limit_seconds
+                            'time_limit', stl.time_limit_seconds,
+                            'department_id', sim.department_id::text
                         )
                     ),
                     '{{}}'::jsonb

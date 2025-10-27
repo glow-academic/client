@@ -2,10 +2,9 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
-
 from app.schemas.analytics import AnalyticsFilters
 from app.services.home_service import HomeService
+from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias
 
 pytestmark = pytest.mark.asyncio
 
@@ -111,6 +110,18 @@ async def test_home_overview_mappings_populated(
             sample_item = resp.standards_mapping[sample_key]
             assert hasattr(sample_item, "name"), "Standard should have name"
             assert hasattr(sample_item, "points"), "Standard should have points"
+
+        # Check simulation_mapping
+        if resp.simulation_mapping:
+            assert len(resp.simulation_mapping) > 0, (
+                "simulation_mapping should be populated when items exist"
+            )
+            # Verify mapping structure includes department_id
+            sample_key = next(iter(resp.simulation_mapping.keys()))
+            sample_sim = resp.simulation_mapping[sample_key]
+            assert hasattr(sample_sim, "name"), "Simulation should have name"
+            assert hasattr(sample_sim, "department_id"), "Simulation should have department_id"
+            assert sample_sim.department_id != "", "department_id should not be empty"
 
 
 async def test_home_overview_history_populated(

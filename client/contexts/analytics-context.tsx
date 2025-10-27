@@ -63,19 +63,33 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const pathname = usePathname();
 
   // Calculate the earliest date to use as default start date
+  // Round to start of day for stable query keys
   const earliestDate = useMemo(() => {
     if (earliestAttemptDate) {
       // Parse ISO string to Date object
-      return new Date(earliestAttemptDate);
+      const date = new Date(earliestAttemptDate);
+      date.setHours(0, 0, 0, 0);
+      return date;
     }
     // Fallback to 30 days ago if no attempts available
     // Use a stable reference to prevent infinite loops
-    return subDays(new Date(), 30);
+    const fallback = subDays(new Date(), 30);
+    fallback.setHours(0, 0, 0, 0);
+    return fallback;
   }, [earliestAttemptDate]);
 
   // Default to earliest attempt date instead of last 30 days
-  const [startDate, setStartDate] = useState<Date>(() => earliestDate);
-  const [endDate, setEndDate] = useState<Date>(() => new Date());
+  // Round to day boundaries for stable query keys
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const date = new Date(earliestDate);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  });
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const date = new Date();
+    date.setHours(23, 59, 59, 999);
+    return date;
+  });
   const [hasUserSetDateRange, setHasUserSetDateRange] = useState(false);
 
   // Update start date when earliest date changes
@@ -137,14 +151,24 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   }, [isPracticePage, isHomePage, isTALeaderboardPage, simulationFilters]);
 
   const setDateRange = useCallback((start: Date, end: Date) => {
-    setStartDate(start);
-    setEndDate(end);
+    // Round to day boundaries for stable query keys
+    const roundedStart = new Date(start);
+    roundedStart.setHours(0, 0, 0, 0);
+    const roundedEnd = new Date(end);
+    roundedEnd.setHours(23, 59, 59, 999);
+    setStartDate(roundedStart);
+    setEndDate(roundedEnd);
     setHasUserSetDateRange(true); // Mark that the user has set the date range
   }, []);
 
   const clearFilters = useCallback(() => {
-    setStartDate(earliestDate);
-    setEndDate(new Date());
+    // Round to day boundaries for stable query keys
+    const roundedEarliest = new Date(earliestDate);
+    roundedEarliest.setHours(0, 0, 0, 0);
+    const roundedNow = new Date();
+    roundedNow.setHours(23, 59, 59, 999);
+    setStartDate(roundedEarliest);
+    setEndDate(roundedNow);
     setSelectedCohortIds([]);
     setSelectedRoles([]);
     setSimulationFilters(["general"]);

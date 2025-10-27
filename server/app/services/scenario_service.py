@@ -223,6 +223,7 @@ class ScenarioService(BaseService):
                             name=sdata.get("name", ""),
                             description=sdata.get("description", ""),
                             time_limit=sdata.get("time_limit"),
+                            department_id=sdata.get("department_id", ""),
                         )
 
         # Build scenario items
@@ -367,6 +368,7 @@ class ScenarioService(BaseService):
                         name=sdata.get("name", ""),
                         description=sdata.get("description", ""),
                         time_limit=sdata.get("time_limit"),
+                        department_id=sdata.get("department_id", ""),
                     )
 
         # Parse JSONB parameter mapping (may be string or dict)
@@ -1088,13 +1090,21 @@ class ScenarioService(BaseService):
         )
 
     async def randomly_fill_scenario_attributes(
-        self, scenario: dict[str, Any], department_id: uuid.UUID
+        self,
+        scenario: dict[str, Any],
+        department_id: uuid.UUID,
+        parent_persona_id: str | None = None,
+        parent_document_ids: list[str] | None = None,
+        parent_parameter_item_ids: list[str] | None = None,
     ) -> dict[str, Any]:
         """Randomly fill null attributes of a scenario with available options from the database.
 
         Args:
             scenario: The scenario dict with potentially null attributes
             department_id: The department ID to use when creating a new scenario
+            parent_persona_id: Optional persona_id to inherit from parent scenario
+            parent_document_ids: Optional document_ids to inherit from parent scenario
+            parent_parameter_item_ids: Optional parameter_item_ids to inherit from parent scenario
 
         Returns:
             Updated scenario dict with randomly selected values for null attributes
@@ -1107,15 +1117,22 @@ class ScenarioService(BaseService):
         logger = logging.getLogger(__name__)
         scenario_id = scenario["id"]
 
-        # Get persona from scenario_personas junction, or randomly select if none
-        query, params = self.queries.get_scenario_persona_link(str(scenario_id))
-        existing_persona_link = await self.conn.fetchrow(query, *params)
+        # Get persona from parent, or from scenario_personas junction, or randomly select
+        scenario_persona_id = None
+        
+        # Priority 1: Use parent's persona if provided
+        if parent_persona_id:
+            scenario_persona_id = parent_persona_id
+            logger.info(f"Using parent persona_id: {scenario_persona_id}")
+        else:
+            # Priority 2: Check for existing persona link in database
+            query, params = self.queries.get_scenario_persona_link(str(scenario_id))
+            existing_persona_link = await self.conn.fetchrow(query, *params)
+            scenario_persona_id = (
+                existing_persona_link["persona_id"] if existing_persona_link else None
+            )
 
-        scenario_persona_id = (
-            existing_persona_link["persona_id"] if existing_persona_link else None
-        )
-
-        # Random persona selection if none exists
+        # Priority 3: Random persona selection if still none
         if scenario_persona_id is None:
             query, params = self.queries.get_active_personas()
             active_personas = await self.conn.fetch(query, *params)
@@ -1178,16 +1195,31 @@ class ScenarioService(BaseService):
                 logger.error(f"Failed to generate problem statement: {e}")
                 scenario_problem_statement = None
 
-        # Load existing documents and parameters from junction tables
-        query, params = self.queries.get_scenario_document_links(str(scenario_id))
-        doc_links = await self.conn.fetch(query, *params)
-        existing_doc_ids = [link["document_id"] for link in doc_links]
+        # Load existing documents and parameters from parent or junction tables
+        existing_doc_ids = []
+        existing_param_ids = []
+        
+        # Priority 1: Use parent's documents if provided
+        if parent_document_ids:
+            existing_doc_ids = [uuid.UUID(doc_id) for doc_id in parent_document_ids]
+            logger.info(f"Using {len(existing_doc_ids)} parent documents")
+        else:
+            # Priority 2: Check database for existing document links
+            query, params = self.queries.get_scenario_document_links(str(scenario_id))
+            doc_links = await self.conn.fetch(query, *params)
+            existing_doc_ids = [link["document_id"] for link in doc_links]
 
-        query, params = self.queries.get_scenario_parameter_links(str(scenario_id))
-        param_links = await self.conn.fetch(query, *params)
-        existing_param_ids = [link["parameter_item_id"] for link in param_links]
+        # Priority 1: Use parent's parameter items if provided
+        if parent_parameter_item_ids:
+            existing_param_ids = [uuid.UUID(param_id) for param_id in parent_parameter_item_ids]
+            logger.info(f"Using {len(existing_param_ids)} parent parameter items")
+        else:
+            # Priority 2: Check database for existing parameter links
+            query, params = self.queries.get_scenario_parameter_links(str(scenario_id))
+            param_links = await self.conn.fetch(query, *params)
+            existing_param_ids = [link["parameter_item_id"] for link in param_links]
 
-        # NEW BUSINESS LOGIC: Skip document selection if documents already exist
+        # Priority 3: Random selection if documents still don't exist
         if not existing_doc_ids:
             # First, get parameter items for this scenario
             scenario_parameter_item_ids = []

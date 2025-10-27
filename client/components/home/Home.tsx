@@ -62,18 +62,6 @@ export default function Home() {
   const historyData = bundle?.history;
   const isHistoryLoading = isHomeOverviewLoading;
 
-  // Build simulations array from mapping
-  const simulations = useMemo(
-    () =>
-      Object.entries(bundle?.simulation_mapping || {}).map(([id, sim]) => ({
-        id,
-        title: sim.name,
-        description: sim.description,
-        departmentId: effectiveDepartmentIds[0] || "", // Use first department
-      })),
-    [bundle?.simulation_mapping, effectiveDepartmentIds]
-  );
-
   // Extract rubric mappings from home overview data
   const standardGroupsMapping = useMemo(
     () => homeOverview?.standard_groups_mapping || {},
@@ -155,9 +143,20 @@ export default function Home() {
           return;
         }
 
-        // Validate department_id is available
-        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
-          toast.error("No department found. Please contact support.");
+        // Get the simulation's department_id from simulation_mapping
+        const simulationDepartmentId = bundle?.simulation_mapping?.[simulationId]?.department_id;
+        
+        if (!simulationDepartmentId) {
+          toast.error("Simulation department not found. Please contact support.");
+          log.error("simulation.start.precheck.failed", {
+            message: "Simulation department_id not found in simulation_mapping",
+            subject: { entityType: "simulation", entityId: simulationId },
+            context: {
+              component: "Home",
+              function: "handleStartSimulation",
+              simulation_mapping: bundle?.simulation_mapping,
+            },
+          });
           return;
         }
 
@@ -192,20 +191,14 @@ export default function Home() {
             component: "Home",
             function: "handleStartSimulation",
             isConnected,
+            departmentId: simulationDepartmentId,
           },
         });
-        const departmentId = simulations?.find(
-          (simulation) => simulation.id === simulationId
-        )?.departmentId;
-        if (!departmentId) {
-          toast.error("No department found. Please contact support.");
-          return;
-        }
 
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
-          department_id: effectiveDepartmentIds[0] || "",
+          department_id: simulationDepartmentId,
         });
 
         // timeout...
@@ -238,8 +231,7 @@ export default function Home() {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-      effectiveDepartmentIds,
-      simulations,
+      bundle?.simulation_mapping,
       log,
     ]
   );

@@ -181,7 +181,8 @@ class ScenarioQueries:
                     jsonb_build_object(
                         'name', s.title,
                         'description', COALESCE(s.description, ''),
-                        'time_limit', stl.time_limit_seconds
+                        'time_limit', stl.time_limit_seconds,
+                        'department_id', s.department_id::text
                     )
                 ) FILTER (WHERE s.id IS NOT NULL),
                 '{}'::jsonb
@@ -421,7 +422,8 @@ class ScenarioQueries:
                 jsonb_build_object(
                     'name', s.title, 
                     'description', COALESCE(s.description, ''),
-                    'time_limit', stl.time_limit_seconds
+                    'time_limit', stl.time_limit_seconds,
+                    'department_id', s.department_id::text
                 )
             ), '{}'::jsonb) as simulation_mapping
             FROM simulations s

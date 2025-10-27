@@ -97,18 +97,6 @@ export default function Practice() {
     [bundle?.simulation_mapping]
   );
 
-  // Build simulations array from mapping
-  const simulations = useMemo(
-    () =>
-      Object.entries(simulationMapping).map(([id, sim]) => ({
-        id,
-        title: sim.name,
-        description: sim.description,
-        departmentId: effectiveDepartmentIds[0] || "", // Use first department
-      })),
-    [simulationMapping, effectiveDepartmentIds]
-  );
-
   // Use data directly from the hook
   const simulationItems = useMemo(() => {
     return practiceOverview?.items ?? [];
@@ -183,9 +171,23 @@ export default function Practice() {
           return;
         }
 
-        // Validate department_id is available
-        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
-          toast.error("No department found. Please contact support.");
+        // Get the simulation's department_id from simulation_mapping
+        const simulationDepartmentId = simulationMapping[simulationId]?.department_id;
+        
+        if (!simulationDepartmentId) {
+          toast.error("Simulation department not found. Please contact support.");
+          error("simulation.start.precheck.failed", {
+            message: "Simulation department_id not found in simulation_mapping",
+            subject: { entityType: "simulation", entityId: simulationId },
+            ...(effectiveProfile?.id
+              ? { actor: { profileId: effectiveProfile.id } }
+              : {}),
+            context: {
+              component: "Practice",
+              function: "handleStartSimulation",
+              simulation_mapping: simulationMapping,
+            },
+          });
           return;
         }
 
@@ -226,20 +228,14 @@ export default function Practice() {
             component: "Practice",
             function: "handleStartSimulation",
             isConnected,
+            departmentId: simulationDepartmentId,
           },
         });
-        const departmentId = simulations?.find(
-          (simulation) => simulation.id === simulationId
-        )?.departmentId;
-        if (!departmentId) {
-          toast.error("No department found. Please contact support.");
-          return;
-        }
 
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
-          department_id: departmentId,
+          department_id: simulationDepartmentId,
         });
 
         // timeout...
@@ -281,8 +277,7 @@ export default function Practice() {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-      effectiveDepartmentIds,
-      simulations,
+      simulationMapping,
       info,
       error,
     ]
@@ -524,11 +519,19 @@ export default function Practice() {
                 );
                 return;
               }
-              const departmentId = simulations?.find(
-                (simulation) => simulation.id === params.simulationId
-              )?.departmentId;
-              if (!departmentId) {
-                toast.error("No department found. Please contact support.");
+              // Get the simulation's department_id from simulation_mapping
+              const simulationDepartmentId = simulationMapping[params.simulationId]?.department_id;
+              if (!simulationDepartmentId) {
+                toast.error("Simulation department not found. Please contact support.");
+                error("simulation.start.precheck.failed", {
+                  message: "Simulation department_id not found in simulation_mapping",
+                  subject: { entityType: "simulation", entityId: params.simulationId },
+                  context: {
+                    component: "Practice",
+                    function: "onStartAttempt",
+                    simulation_mapping: simulationMapping,
+                  },
+                });
                 return;
               }
               const profileIdForEmit =
@@ -543,7 +546,7 @@ export default function Practice() {
                 profile_id: profileIdForEmit,
                 infinite: true,
                 infinite_time_limit: params.timeLimit,
-                department_id: departmentId,
+                department_id: simulationDepartmentId,
               });
               setCustomizeOpen(false);
             } else {

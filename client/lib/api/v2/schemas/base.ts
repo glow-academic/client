@@ -185,6 +185,7 @@ export type PersonaMappingItem = z.infer<typeof PersonaMappingItemSchema>;
  */
 export const SimulationMappingItemSchema = MappingItemSchema.extend({
   time_limit: z.number().nullable().optional(),
+  department_id: z.string(),
 });
 
 export type SimulationMappingItem = z.infer<typeof SimulationMappingItemSchema>;
