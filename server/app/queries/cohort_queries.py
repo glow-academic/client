@@ -57,7 +57,6 @@ class CohortQueries:
             c.title as name,
             c.description,
             c.active,
-            c.default_cohort,
             COALESCE(cp.profile_ids, ARRAY[]::uuid[]) as profile_ids,
             COALESCE(cs.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
             COALESCE(cu.usage_count, 0) as usage_count,
@@ -113,13 +112,13 @@ class CohortQueries:
                 WHERE s.id IN (SELECT simulation_id FROM all_simulation_ids)
             ) as simulation_mapping
         FROM cohorts c
+        LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
         LEFT JOIN cohort_profiles_agg cp ON cp.cohort_id = c.id
         LEFT JOIN cohort_simulations_agg cs ON cs.cohort_id = c.id
         LEFT JOIN cohort_usage cu ON cu.cohort_id = c.id
         LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
         CROSS JOIN user_profile up
-        WHERE c.department_id = ANY($1)
-            AND (
+        WHERE (
                 -- Admin/superadmin see all
                 up.role IN ('admin', 'superadmin')
                 OR
@@ -129,8 +128,12 @@ class CohortQueries:
                 -- Other roles see all
                 up.role NOT IN ('admin', 'superadmin', 'instructional')
             )
-        GROUP BY c.id, c.title, c.description, c.active, c.default_cohort, 
+        GROUP BY c.id, c.title, c.description, c.active, 
                  cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY($1)) > 0
+            OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)
         ORDER BY c.title
         """
 
@@ -141,15 +144,23 @@ class CohortQueries:
     ) -> tuple[str, list[Any]]:
         """Build optimized query to get all cohort detail data in one query."""
         query = """
-        WITH cohort_data AS (
+        WITH cohort_departments_data AS (
+            SELECT 
+                cd.cohort_id,
+                ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
+            FROM cohort_departments cd
+            WHERE cd.cohort_id = $1 AND cd.active = true
+            GROUP BY cd.cohort_id
+        ),
+        cohort_data AS (
             SELECT 
                 c.id,
                 c.title,
                 c.description,
-                c.department_id,
                 c.active,
-                c.default_cohort
+                COALESCE(cdd.department_ids, NULL) as department_ids
             FROM cohorts c
+            LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
             WHERE c.id = $1
         ),
         cohort_profile_ids AS (
@@ -198,10 +209,15 @@ class CohortQueries:
             SELECT id FROM valid_departments
         ),
         valid_simulations AS (
-            SELECT s.id
+            SELECT DISTINCT s.id
             FROM simulations s
-            WHERE s.department_id IN (SELECT id FROM valid_dept_ids)
-                AND s.active = true
+            LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
+            WHERE s.active = true
+            GROUP BY s.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT id FROM valid_dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
         ),
         valid_profiles AS (
             SELECT DISTINCT p.id
@@ -213,9 +229,8 @@ class CohortQueries:
         SELECT 
             cd.title,
             cd.description,
-            cd.department_id::text,
+            cd.department_ids,
             cd.active,
-            cd.default_cohort,
             -- Profile IDs in cohort
             (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
              FROM cohort_profile_ids) as profile_ids,
@@ -291,28 +306,41 @@ class CohortQueries:
     ) -> tuple[str, list[Any]]:
         """Build optimized query to get default cohort detail with all data in one query."""
         query = """
-        WITH user_departments AS (
-            SELECT DISTINCT pd.department_id
+        WITH         user_departments AS (
+            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
             FROM profile_departments pd
             WHERE pd.profile_id = $1
         ),
         default_cohort AS (
             SELECT c.id
             FROM cohorts c
-            JOIN user_departments ud ON ud.department_id = c.department_id
+            LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
             WHERE c.active = true
-            ORDER BY c.default_cohort ASC, c.created_at DESC
+            GROUP BY c.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+                OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)
+            ORDER BY c.created_at DESC
             LIMIT 1
+        ),
+        cohort_departments_data AS (
+            SELECT 
+                cd.cohort_id,
+                ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
+            FROM cohort_departments cd
+            WHERE cd.cohort_id = (SELECT id FROM default_cohort) AND cd.active = true
+            GROUP BY cd.cohort_id
         ),
         cohort_data AS (
             SELECT 
                 c.id,
                 c.title,
                 c.description,
-                c.department_id,
                 c.active,
-                c.default_cohort
+                COALESCE(cdd.department_ids, NULL) as department_ids
             FROM cohorts c
+            LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
             WHERE c.id = (SELECT id FROM default_cohort)
         ),
         cohort_profile_ids AS (
@@ -361,10 +389,15 @@ class CohortQueries:
             SELECT id FROM valid_departments
         ),
         valid_simulations AS (
-            SELECT s.id
+            SELECT DISTINCT s.id
             FROM simulations s
-            WHERE s.department_id IN (SELECT id FROM valid_dept_ids)
-                AND s.active = true
+            LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
+            WHERE s.active = true
+            GROUP BY s.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT id FROM valid_dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
         ),
         valid_profiles AS (
             SELECT DISTINCT p.id
@@ -376,9 +409,8 @@ class CohortQueries:
         SELECT 
             cd.title,
             cd.description,
-            cd.department_id::text,
+            cd.department_ids,
             cd.active,
-            cd.default_cohort,
             (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
              FROM cohort_profile_ids) as profile_ids,
             (SELECT COALESCE(array_agg(simulation_id::text), ARRAY[]::text[])
@@ -446,16 +478,12 @@ class CohortQueries:
         INSERT INTO cohorts (
             title,
             description,
-            department_id,
-            active,
-            default_cohort
+            active
         )
         VALUES (
             $1,
             $2,
-            $3,
-            $4,
-            $5
+            $3
         )
         RETURNING id
         """
@@ -618,9 +646,7 @@ class CohortQueries:
         UPDATE cohorts SET
             title = $2,
             description = $3,
-            department_id = $4,
-            active = $5,
-            default_cohort = $6,
+            active = $4,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -650,8 +676,7 @@ class CohortQueries:
         query = """
         SELECT 
             title,
-            description,
-            department_id
+            description
         FROM cohorts
         WHERE id = $1
         """
@@ -663,15 +688,11 @@ class CohortQueries:
         INSERT INTO cohorts (
             title,
             description,
-            department_id,
-            active,
-            default_cohort
+            active
         )
         VALUES (
             $1 || ' Copy',
             $2,
-            $3,
-            false,
             false
         )
         RETURNING id

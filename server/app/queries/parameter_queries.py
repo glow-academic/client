@@ -63,7 +63,6 @@ class ParameterQueries:
             p.description,
             p.numerical,
             p.active,
-            p.default_parameter,
             p.updated_at,
             COALESCE(pic.num_items, 0) as num_items,
             COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
@@ -71,13 +70,11 @@ class ParameterQueries:
             COALESCE(psi.sample_items, '[]'::jsonb) as sample_items_json,
             CASE 
                 WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
-                WHEN p.default_parameter = true AND up.role != 'superadmin' THEN false
                 WHEN up.role IN ('admin', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             CASE 
                 WHEN COALESCE(pasl_all.total_scenario_links, 0) > 0 THEN false
-                WHEN p.default_parameter = true AND up.role != 'superadmin' THEN false
                 WHEN up.role IN ('admin', 'superadmin') THEN true
                 ELSE false
             END as can_delete,
@@ -86,12 +83,18 @@ class ParameterQueries:
                 ELSE false
             END as can_duplicate
         FROM parameters p
+        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
         LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
         LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
         LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id
         LEFT JOIN parameter_sample_items psi ON psi.parameter_id = p.id
         CROSS JOIN user_profile up
-        WHERE p.department_id = ANY($1)
+        GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pic.num_items, 
+                 pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1)) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ORDER BY p.updated_at DESC NULLS LAST
         """
 
@@ -108,9 +111,7 @@ class ParameterQueries:
             name,
             description,
             numerical,
-            active,
-            default_parameter,
-            department_id
+            active
         FROM parameters
         WHERE id = $1
         """
@@ -133,20 +134,21 @@ class ParameterQueries:
         """Build query for default parameter."""
         query = """
         WITH user_departments AS (
-            SELECT DISTINCT pd.department_id
+            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
             FROM profile_departments pd
             WHERE pd.profile_id = $1
-        ),
-        user_parameters AS (
-            SELECT p.*
-            FROM parameters p
-            JOIN user_departments ud ON ud.department_id = p.department_id
-            WHERE p.active = true
-            ORDER BY p.default_parameter ASC, p.created_at DESC
-            LIMIT 1
         )
-        SELECT id
-        FROM user_parameters
+        SELECT p.id
+        FROM parameters p
+        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+        WHERE p.active = true
+        GROUP BY p.id
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+        ORDER BY p.created_at DESC
+        LIMIT 1
         """
         return (query, [profile_id])
 
@@ -157,17 +159,13 @@ class ParameterQueries:
             name,
             description,
             numerical,
-            active,
-            default_parameter,
-            department_id
+            active
         )
         VALUES (
             $1,
             $2,
             $3,
-            $4,
-            $5,
-            $6
+            $4
         )
         RETURNING id
         """
@@ -207,8 +205,6 @@ class ParameterQueries:
             description = $3,
             numerical = $4,
             active = $5,
-            default_parameter = $6,
-            department_id = $7,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -225,8 +221,7 @@ class ParameterQueries:
         SELECT 
             name,
             description,
-            numerical,
-            department_id
+            numerical
         FROM parameters
         WHERE id = $1
         """
@@ -239,17 +234,13 @@ class ParameterQueries:
             name,
             description,
             numerical,
-            active,
-            default_parameter,
-            department_id
+            active
         )
         VALUES (
             $1 || ' Copy',
             $2,
             $3,
-            false,
-            false,
-            $4
+            false
         )
         RETURNING id
         """
@@ -300,16 +291,24 @@ class ParameterQueries:
             Tuple of (query string, params list)
         """
         query = """
-        WITH parameter_data AS (
+        WITH parameter_departments_data AS (
             SELECT 
-                name,
-                description,
-                numerical,
-                active,
-                default_parameter,
-                department_id
-            FROM parameters
-            WHERE id = $1
+                pd.parameter_id,
+                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+            FROM parameter_departments pd
+            WHERE pd.parameter_id = $1 AND pd.active = true
+            GROUP BY pd.parameter_id
+        ),
+        parameter_data AS (
+            SELECT 
+                p.name,
+                p.description,
+                p.numerical,
+                p.active,
+                COALESCE(pdd.department_ids, NULL) as department_ids
+            FROM parameters p
+            LEFT JOIN parameter_departments_data pdd ON pdd.parameter_id = p.id
+            WHERE p.id = $1
         ),
         parameter_items_with_usage AS (
             SELECT 

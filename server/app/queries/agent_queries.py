@@ -71,7 +71,6 @@ class AgentQueries:
             true as can_duplicate,
             CASE 
                 WHEN COALESCE(adl.total_links, 0) > 0 THEN false
-                WHEN a.default_agent = true THEN false
                 WHEN up.role = 'superadmin' THEN true
                 ELSE false
             END as can_delete,
@@ -173,8 +172,7 @@ class AgentQueries:
                 temperature,
                 model_id::text,
                 reasoning,
-                active,
-                default_agent
+                active
             FROM agents
             WHERE id = $1
         ),
@@ -210,7 +208,6 @@ class AgentQueries:
             ai.model_id,
             ai.reasoning,
             ai.active,
-            ai.default_agent,
             COALESCE(
                 (SELECT jsonb_agg(
                     jsonb_build_object(
@@ -252,7 +249,6 @@ class AgentQueries:
         model_id: str,
         reasoning: str | None,
         active: bool,
-        default_agent: bool,
     ) -> tuple[str, list[Any]]:
         """
         Create a new agent.
@@ -261,8 +257,8 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, default_agent, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
         RETURNING id::text as agent_id
         """
 
@@ -274,7 +270,6 @@ class AgentQueries:
             model_id,
             reasoning,
             active,
-            default_agent,
         ]
 
         return query, params
@@ -289,7 +284,6 @@ class AgentQueries:
         model_id: str,
         reasoning: str | None,
         active: bool,
-        default_agent: bool,
     ) -> tuple[str, list[Any]]:
         """
         Update an existing agent.
@@ -307,7 +301,6 @@ class AgentQueries:
             model_id = $6,
             reasoning = $7,
             active = $8,
-            default_agent = $9,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -321,7 +314,6 @@ class AgentQueries:
             model_id,
             reasoning,
             active,
-            default_agent,
         ]
 
         return query, params
@@ -334,7 +326,7 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, default_agent, created_at, updated_at)
+        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, created_at, updated_at)
         SELECT 
             name || ' Copy',
             description,
@@ -342,7 +334,6 @@ class AgentQueries:
             temperature,
             model_id,
             reasoning,
-            false,
             false,
             NOW(),
             NOW()

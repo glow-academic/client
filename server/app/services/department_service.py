@@ -60,7 +60,6 @@ class DepartmentService(BaseService):
                     title=row["title"],
                     description=row["description"],
                     active=row["active"],
-                    default_department=row["default_department"],
                     updated_at=row["updated_at"].isoformat(),
                     total_price_spent=float(row["total_price_spent"]),
                     staff_count=int(row["staff_count"]),
@@ -147,7 +146,6 @@ class DepartmentService(BaseService):
             title=dept_row["title"],
             description=dept_row["description"],
             active=dept_row["active"],
-            default_department=dept_row["default_department"],
             agent_roles=AgentRoles(**agent_roles_dict),
             valid_agent_ids=valid_agent_ids,
             valid_agent_ids_by_role=valid_agent_ids_by_role,
@@ -220,7 +218,6 @@ class DepartmentService(BaseService):
             title="",
             description="",
             active=True,
-            default_department=False,
             agent_roles=AgentRoles(
                 title="",
                 scenario="",
@@ -276,7 +273,7 @@ class DepartmentService(BaseService):
         async with transaction(self.conn):
             # Create department
             query, params = self.queries.create_department(
-                request.title, request.description, request.active, request.default_department
+                request.title, request.description, request.active
             )
             dept_row = await self.conn.fetchrow(query, *params)
 
@@ -358,7 +355,7 @@ class DepartmentService(BaseService):
         async with transaction(self.conn):
             # Update department
             query, params = self.queries.update_department(
-                request.departmentId, request.title, request.description, request.active, request.default_department
+                request.departmentId, request.title, request.description, request.active
             )
             await self.conn.execute(query, *params)
 

@@ -76,7 +76,6 @@ class ParameterService(BaseService):
                     description=row["description"],
                     numerical=row["numerical"],
                     active=row["active"],
-                    default_parameter=row["default_parameter"],
                     num_items=row["num_items"],
                     sample_items=sample_items,
                     can_edit=row["can_edit"],
@@ -142,13 +141,17 @@ class ParameterService(BaseService):
                         )
                     )
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = parameter.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return ParameterDetailResponse(
             name=parameter["name"],
             description=parameter["description"],
             numerical=parameter["numerical"],
             active=parameter["active"],
-            default_parameter=parameter["default_parameter"],
-            department_id=str(parameter["department_id"]),
+            department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=valid_department_ids,
             parameter_items=parameter_items,
             department_mapping=department_mapping,
@@ -215,13 +218,15 @@ class ParameterService(BaseService):
                     )
 
         # Return empty parameter with all valid options for creation
+        # Default to first department or None (cross-department if superadmin)
+        default_department_ids = [default_dept_id] if default_dept_id else None
+
         return ParameterDetailResponse(
             name="",
             description="",
             numerical=False,
             active=True,
-            default_parameter=False,
-            department_id=default_dept_id,
+            department_ids=default_department_ids,
             parameter_items=[],  # Empty - user will define items
             department_mapping=department_mapping,
             valid_department_ids=dept_ids,
@@ -241,8 +246,7 @@ class ParameterService(BaseService):
                 request.description,
                 request.numerical,
                 request.active,
-                request.default_parameter,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
             )
 
             if not parameter_result:
@@ -298,8 +302,7 @@ class ParameterService(BaseService):
                 request.description,
                 request.numerical,
                 request.active,
-                request.default_parameter,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
             )
 
             # Delete existing parameter items

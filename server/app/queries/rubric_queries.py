@@ -36,18 +36,15 @@ class RubricQueries:
                 r.description,
                 r.points,
                 r.pass_points as passPoints,
-                r.default_rubric,
                 COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
                 COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links,
                 CASE 
                     WHEN COALESCE(rasl.active_simulation_count, 0) > 0 THEN false
-                    WHEN r.default_rubric = true AND up.role != 'superadmin' THEN false
                     WHEN up.role IN ('admin', 'superadmin') THEN true
                     ELSE false
                 END as can_edit,
                 CASE 
                     WHEN COALESCE(rasl_all.total_simulation_links, 0) > 0 THEN false
-                    WHEN r.default_rubric = true AND up.role != 'superadmin' THEN false
                     WHEN up.role IN ('admin', 'superadmin') THEN true
                     ELSE false
                 END as can_delete,
@@ -56,10 +53,15 @@ class RubricQueries:
                     ELSE false
                 END as can_duplicate
             FROM rubrics r
+            LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
             LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
             LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
             CROSS JOIN user_profile up
-            WHERE r.department_id = ANY($1)
+            GROUP BY r.id, r.name, r.description, r.points, r.pass_points, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(rd.rubric_id) FILTER (WHERE rd.department_id = ANY($1)) > 0
+                OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
         ),
         all_rubric_ids AS (
             SELECT DISTINCT rubric_id FROM rubric_data
@@ -149,20 +151,21 @@ class RubricQueries:
         """Build query for default rubric."""
         query = """
         WITH user_departments AS (
-            SELECT DISTINCT pd.department_id
+            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
             FROM profile_departments pd
             WHERE pd.profile_id = $1
-        ),
-        user_rubrics AS (
-            SELECT r.*
-            FROM rubrics r
-            JOIN user_departments ud ON ud.department_id = r.department_id
-            WHERE r.active = true
-            ORDER BY r.default_rubric ASC, r.created_at DESC
-            LIMIT 1
         )
-        SELECT id
-        FROM user_rubrics
+        SELECT r.id
+        FROM rubrics r
+        LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+        WHERE r.active = true
+        GROUP BY r.id
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(rd.rubric_id) FILTER (WHERE rd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+            OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+        ORDER BY r.created_at DESC
+        LIMIT 1
         """
         return (query, [profile_id])
 
@@ -172,9 +175,7 @@ class RubricQueries:
         INSERT INTO rubrics (
             name,
             description,
-            department_id,
             active,
-            default_rubric,
             points,
             pass_points
         )
@@ -183,9 +184,7 @@ class RubricQueries:
             $2,
             $3,
             $4,
-            $5,
-            $6,
-            $7
+            $5
         )
         RETURNING id
         """
@@ -244,11 +243,9 @@ class RubricQueries:
         UPDATE rubrics SET
             name = $2,
             description = $3,
-            department_id = $4,
-            active = $5,
-            default_rubric = $6,
-            points = $7,
-            pass_points = $8,
+            active = $4,
+            points = $5,
+            pass_points = $6,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -265,7 +262,6 @@ class RubricQueries:
         SELECT 
             name,
             description,
-            department_id,
             points,
             pass_points
         FROM rubrics
@@ -279,20 +275,16 @@ class RubricQueries:
         INSERT INTO rubrics (
             name,
             description,
-            department_id,
             active,
-            default_rubric,
             points,
             pass_points
         )
         VALUES (
             $1 || ' Copy',
             $2,
+            false,
             $3,
-            false,
-            false,
-            $4,
-            $5
+            $4
         )
         RETURNING id
         """

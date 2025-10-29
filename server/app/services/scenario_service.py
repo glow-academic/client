@@ -239,7 +239,6 @@ class ScenarioService(BaseService):
                     title=row["title"],
                     problem_statement=row["problem_statement"],
                     active=row["active"],
-                    default_scenario=row["default_scenario"],
                     generated=row["generated"],
                     parent_scenario_id=row["parent_scenario_id"],
                     objective_ids=objective_ids,
@@ -433,7 +432,7 @@ class ScenarioService(BaseService):
                             can_edit=doc.get("can_edit", True),
                             can_delete=doc.get("can_delete", True),
                             active=doc.get("active", True),
-                            department_id=doc.get("department_id", ""),
+                            department_ids=[str(d) for d in doc.get("department_ids", [])] if doc.get("department_ids") else None,
                             file_path=doc.get("file_path", ""),
                             mime_type=doc.get("mime_type", ""),
                             parameter_item_ids=doc.get("parameter_item_ids", []),
@@ -449,16 +448,20 @@ class ScenarioService(BaseService):
         can_duplicate = True  # Always allowed
         can_delete = not in_use_by_active and is_superadmin
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = scenario.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return ScenarioDetailResponse(
             # Basic fields
             name=scenario["name"],
             problem_statement=scenario["problem_statement"],
             active=scenario["active"],
-            default_scenario=scenario["default_scenario"],
             generated=is_generated,
             parent_scenario_id=scenario["parent_scenario_id"],
             # Department
-            department_id=scenario["department_id"],
+            department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=dept_ids,
             # IDs
             persona_id=persona_id,
@@ -627,7 +630,7 @@ class ScenarioService(BaseService):
                             can_edit=doc.get("can_edit", True),
                             can_delete=doc.get("can_delete", True),
                             active=doc.get("active", True),
-                            department_id=doc.get("department_id", ""),
+                            department_ids=[str(d) for d in doc.get("department_ids", [])] if doc.get("department_ids") else None,
                             file_path=doc.get("file_path", ""),
                             mime_type=doc.get("mime_type", ""),
                             parameter_item_ids=doc.get("parameter_item_ids", []),
@@ -635,16 +638,18 @@ class ScenarioService(BaseService):
                     )
 
         # Return empty scenario with all valid options
+        # Default to first department or None (cross-department if superadmin)
+        default_department_ids = [default_dept_id] if default_dept_id else None
+
         return ScenarioDetailResponse(
             # Basic fields (empty defaults)
             name="",
             problem_statement="",
             active=True,
-            default_scenario=False,
             generated=False,
             parent_scenario_id=None,
             # Department
-            department_id=default_dept_id,
+            department_ids=default_department_ids,
             valid_department_ids=dept_ids,
             # IDs (empty defaults)
             persona_id=None,
@@ -685,9 +690,8 @@ class ScenarioService(BaseService):
             result = await self.conn.fetchrow(
                 create_query,
                 request.name,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
                 request.active,
-                request.default_scenario,
             )
 
             if not result:
@@ -791,9 +795,8 @@ class ScenarioService(BaseService):
                 update_query,
                 request.name,
                 request.problem_statement,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
                 request.active,
-                request.default_scenario,
                 request.scenarioId,
             )
 
@@ -878,12 +881,12 @@ class ScenarioService(BaseService):
             if not original:
                 raise ValueError(f"Scenario not found: {request.scenarioId}")
 
-            # Create duplicate with positional params
+            # Create duplicate - query handles department links
             insert_query = self.queries.insert_duplicate_scenario()
             new_scenario = await self.conn.fetchrow(
                 insert_query,
+                request.scenarioId,  # Original scenario ID to copy from
                 original["name"],
-                original["department_id"],
             )
 
             if not new_scenario:
@@ -1435,10 +1438,8 @@ class ScenarioService(BaseService):
         new_scenario_row = await self.conn.fetchrow(
             self.queries.insert_scenario_variant(),
             scenario.get("name"),
-            department_id,
             True,
             scenario.get("active", True),
-            scenario.get("default_scenario", False),
         )
 
         new_scenario_id = new_scenario_row["id"]
@@ -1682,12 +1683,15 @@ class ScenarioService(BaseService):
                     items = [dict(item) for item in items]
                     if not items:
                         continue
-                    # If parameter.default_parameter is True => completely random item
-                    param_is_default = param.get("default_parameter", False)
-                    if param_is_default:
+                    # Check if parameter is cross-department (no department links = default behavior)
+                    # Cross-department parameters use random selection, department-specific use similarity
+                    param_is_cross_dept = not param.get("department_ids") or len(param.get("department_ids", [])) == 0
+                    
+                    if param_is_cross_dept:
+                        # Cross-department parameter: completely random selection
                         chosen.append(random.choice(items)["id"])
                     else:
-                        # non-default: similarity-based with randomness
+                        # Department-specific parameter: similarity-based with randomness
                         def score_item(it: dict[str, Any]) -> float:
                             score = 0.0
                             name_norm = normalize_text(it.get("name"))
@@ -1795,7 +1799,6 @@ class ScenarioService(BaseService):
                     "name": sc["name"],
                     "problem_statement": sc["problem_statement"],
                     "persona_id": str(sc["persona_id"]) if sc["persona_id"] else None,
-                    "default_scenario": sc["default_scenario"],
                     "score": score,
                 }
             )
@@ -1903,7 +1906,6 @@ class ScenarioService(BaseService):
                 "id": str(result["id"]),
                 "name": result["name"],
                 "problem_statement": result["problem_statement"],
-                "default_scenario": result["default_scenario"],
                 "persona_id": str(result["persona_id"])
                 if result["persona_id"]
                 else None,

@@ -112,7 +112,6 @@ class SimulationService(BaseService):
                     description=row["description"],
                     time_limit=row["time_limit"],
                     active=row["active"],
-                    default_simulation=row["default_simulation"],
                     practice_simulation=row["practice_simulation"],
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
@@ -163,9 +162,7 @@ class SimulationService(BaseService):
 
         # Compute permissions
         is_admin = user_role in ("admin", "superadmin")
-        can_edit = is_admin and (
-            not result["default_simulation"] or user_role == "superadmin"
-        )
+        can_edit = is_admin
         can_duplicate = is_admin
         can_delete = is_admin and not in_use
 
@@ -183,7 +180,6 @@ class SimulationService(BaseService):
                             title=s_data.get("title", ""),
                             description=s_data.get("description", ""),
                             active=s_data.get("active", False),
-                            default_scenario=s_data.get("default_scenario", False),
                             position=s_data.get("position", 0),
                             parameter_item_ids=s_data.get("parameter_item_ids", []),
                             usage_count=s_data.get("usage_count", 0),
@@ -344,11 +340,16 @@ class SimulationService(BaseService):
                         )
                     )
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = result.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return SimulationDetailResponse(
             # Basic fields
             name=result["title"],
             description=result["description"],
-            department_id=result["department_id"],
+            department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=valid_department_ids,
             time_limit=result["time_limit"],
             rubric_id=result["rubric_id"],
@@ -357,7 +358,6 @@ class SimulationService(BaseService):
             valid_scenario_ids=valid_scenario_ids,
             # Boolean parameters
             active=result["active"],
-            default_simulation=result["default_simulation"],
             practice_simulation=result["practice_simulation"],
             hints_enabled=result["hints_enabled"],
             objectives_enabled=result["objectives_enabled"],
@@ -404,9 +404,7 @@ class SimulationService(BaseService):
 
         # Compute permissions
         is_admin = user_role in ("admin", "superadmin")
-        can_edit = is_admin and (
-            not result["default_simulation"] or user_role == "superadmin"
-        )
+        can_edit = is_admin
         can_duplicate = is_admin
         can_delete = is_admin and not in_use
 
@@ -424,7 +422,6 @@ class SimulationService(BaseService):
                             title=s_data.get("title", ""),
                             description=s_data.get("description", ""),
                             active=s_data.get("active", True),
-                            default_scenario=s_data.get("default_scenario", False),
                             position=s_data.get("position", 0),
                             parameter_item_ids=s_data.get("parameter_item_ids", []),
                             usage_count=s_data.get("usage_count", 0),
@@ -576,14 +573,18 @@ class SimulationService(BaseService):
                         )
                     )
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = result.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return SimulationDetailResponse(
             name=result["title"],  # Schema uses 'name' but DB has 'title'
             description=result["description"],
-            department_id=result["department_id"],
+            department_ids=department_ids,  # None or list of department IDs
             time_limit=result.get("time_limit"),
             rubric_id=result.get("rubric_id"),
             active=result["active"],
-            default_simulation=result["default_simulation"],
             practice_simulation=result["practice_simulation"],
             hints_enabled=result["hints_enabled"],
             objectives_enabled=result["objectives_enabled"],
@@ -621,9 +622,8 @@ class SimulationService(BaseService):
                 query,
                 request.title,
                 request.description,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
                 request.active,
-                request.default_simulation,
                 request.practice_simulation,
                 request.hints_enabled,
                 request.objectives_enabled,
@@ -715,9 +715,8 @@ class SimulationService(BaseService):
                 query,
                 request.title,
                 request.description,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
                 request.active,
-                request.default_simulation,
                 request.practice_simulation,
                 request.hints_enabled,
                 request.objectives_enabled,
@@ -973,7 +972,6 @@ class SimulationService(BaseService):
             "name": scenario_name,
             "problem_statement": problem_statement,
             "active": scenario_metadata["active"],
-            "default_scenario": scenario_metadata["default_scenario"],
             "generated": scenario_metadata["generated"],
             "department_id": scenario_metadata["department_id"],
         }
@@ -1014,10 +1012,8 @@ class SimulationService(BaseService):
             new_scenario = await self.conn.fetchrow(
                 query,
                 name,  # scenario name
-                department_id,  # department_id
                 True,  # generated = True
                 True,  # active = True
-                False,  # default_scenario = False
             )
             
             # Insert problem statement
@@ -1053,7 +1049,6 @@ class SimulationService(BaseService):
                     "id": str(new_scenario["id"]),
                     "name": name,
                     "active": True,
-                    "default_scenario": False,
                     "generated": True,
                 },
                 department_id=uuid_module.UUID(department_id),
@@ -1070,7 +1065,6 @@ class SimulationService(BaseService):
             scenario["name"] = name
             scenario["problem_statement"] = description
             scenario["generated"] = True
-            scenario["default_scenario"] = False
             
             chat_title = name
             

@@ -52,7 +52,6 @@ class SimulationQueries:
                 s.description,
                 stl.time_limit_seconds as time_limit,
                 s.active,
-                s.default_simulation,
                 s.practice_simulation,
                 s.rubric_id,
                 s.updated_at,
@@ -63,12 +62,19 @@ class SimulationQueries:
                 COALESCE(salcl.total_cohort_links, 0) as total_cohort_links,
                 COALESCE(salcl.num_cohorts, 0) as num_cohorts
             FROM simulations s
+            LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
             LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id
             LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
             LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
-            WHERE s.department_id = ANY($1)
+            GROUP BY s.id, s.title, s.description, stl.time_limit_seconds, s.active, s.practice_simulation, 
+                     s.rubric_id, s.updated_at, ss.scenario_ids, ss.num_scenarios, sa.attempt_count, 
+                     sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY($1)) > 0
+                OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
@@ -129,14 +135,12 @@ class SimulationQueries:
             sd.*,
             CASE 
                 WHEN sd.active_cohort_count > 0 THEN false
-                WHEN sd.default_simulation = true AND up.role != 'superadmin' THEN false
                 WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             CASE 
-                WHEN sd.default_simulation = true AND sd.practice_simulation = true THEN false
+                WHEN sd.practice_simulation = true THEN false
                 WHEN sd.total_cohort_links > 0 THEN false
-                WHEN sd.default_simulation = true AND up.role != 'superadmin' THEN false
                 WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_delete,
@@ -159,9 +163,7 @@ class SimulationQueries:
             id,
             title,
             description,
-            department_id,
             active,
-            default_simulation,
             practice_simulation,
             hints_enabled,
             input_guardrail_active,
@@ -184,10 +186,10 @@ class SimulationQueries:
     def get_valid_scenarios(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for valid scenarios - only returns root/parent scenarios."""
         query = """
-        SELECT s.id 
+        SELECT DISTINCT s.id 
         FROM scenarios s
-        WHERE s.department_id = ANY($1) 
-          AND s.active = true
+        LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+        WHERE s.active = true
           AND (
             -- Either not in tree at all (standalone)
             NOT EXISTS (
@@ -200,6 +202,11 @@ class SimulationQueries:
               WHERE st.child_id = s.id AND st.parent_id = st.child_id
             )
           )
+        GROUP BY s.id, s.name
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY($1)) > 0
+            OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
         ORDER BY s.name
         """
         return (query, [dept_ids])
@@ -207,9 +214,16 @@ class SimulationQueries:
     def get_valid_rubrics(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for valid rubrics."""
         query = """
-        SELECT id, name, COALESCE(description, '') as description FROM rubrics 
-        WHERE department_id = ANY($1) AND active = true
-        ORDER BY name
+        SELECT DISTINCT r.id, r.name, COALESCE(r.description, '') as description 
+        FROM rubrics r
+        LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+        WHERE r.active = true
+        GROUP BY r.id, r.name, r.description
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(rd.rubric_id) FILTER (WHERE rd.department_id = ANY($1)) > 0
+            OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+        ORDER BY r.name
         """
         return (query, [dept_ids])
 
@@ -230,37 +244,35 @@ class SimulationQueries:
         """Build query for default simulation."""
         query = """
         WITH user_departments AS (
-            SELECT DISTINCT pd.department_id
+            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
             FROM profile_departments pd
             WHERE pd.profile_id = $1
-        ),
-        user_simulations AS (
-            SELECT s.*
-            FROM simulations s
-            JOIN user_departments ud ON ud.department_id = s.department_id
-            WHERE s.active = true
-            ORDER BY s.default_simulation ASC, s.created_at DESC
-            LIMIT 1
         )
-        SELECT id
-        FROM user_simulations
+        SELECT s.id
+        FROM simulations s
+        LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
+        WHERE s.active = true
+        GROUP BY s.id
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+            OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
+        ORDER BY s.created_at DESC
+        LIMIT 1
         """
         return (query, [profile_id])
 
     def create_simulation(self) -> str:
         """Build query to create simulation.
 
-        Params order: title, description, department_id, active, default_simulation,
-        practice_simulation, hints_enabled, objectives_enabled, input_guardrail_active,
-        output_guardrail_active, image_input_active, rubric_id
+        Params order: title, description, active, practice_simulation, hints_enabled, 
+        objectives_enabled, input_guardrail_active, output_guardrail_active, image_input_active, rubric_id
         """
         return """
         INSERT INTO simulations (
             title,
             description,
-            department_id,
             active,
-            default_simulation,
             practice_simulation,
             hints_enabled,
             objectives_enabled,
@@ -269,7 +281,7 @@ class SimulationQueries:
             image_input_active,
             rubric_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING id
         """
 
@@ -291,26 +303,23 @@ class SimulationQueries:
     def update_simulation(self) -> str:
         """Build query to update simulation.
 
-        Params order: title, description, department_id, active, default_simulation,
-        practice_simulation, hints_enabled, objectives_enabled, input_guardrail_active,
-        output_guardrail_active, image_input_active, rubric_id, simulation_id
+        Params order: title, description, active, practice_simulation, hints_enabled, 
+        objectives_enabled, input_guardrail_active, output_guardrail_active, image_input_active, rubric_id, simulation_id
         """
         return """
         UPDATE simulations SET
             title = $1,
             description = $2,
-            department_id = $3,
-            active = $4,
-            default_simulation = $5,
-            practice_simulation = $6,
-            hints_enabled = $7,
-            objectives_enabled = $8,
-            input_guardrail_active = $9,
-            output_guardrail_active = $10,
-            image_input_active = $11,
-            rubric_id = $12,
+            active = $3,
+            practice_simulation = $4,
+            hints_enabled = $5,
+            objectives_enabled = $6,
+            input_guardrail_active = $7,
+            output_guardrail_active = $8,
+            image_input_active = $9,
+            rubric_id = $10,
             updated_at = NOW()
-        WHERE id = $13
+        WHERE id = $11
         """
 
     def delete_simulation_scenarios(self, simulation_id: str) -> tuple[str, list[Any]]:

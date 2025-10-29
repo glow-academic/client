@@ -67,7 +67,6 @@ class ScenarioQueries:
                 s.name as title,
                 COALESCE(sps.problem_statement, '') as problem_statement,
                 s.active,
-                s.default_scenario,
                 s.generated,
                 s.updated_at,
                 st.parent_id::text as parent_scenario_id,
@@ -77,16 +76,15 @@ class ScenarioQueries:
                 COALESCE(ss.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
                 COALESCE(ss.num_simulations, 0) as num_simulations,
                 COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
+                CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
                 CASE 
                     WHEN up.role IN ('admin', 'instructional', 'superadmin') 
-                         AND (s.default_scenario = false OR up.role = 'superadmin')
                          AND COALESCE(ss.num_simulations, 0) = 0 
                     THEN true
                     ELSE false
                 END as can_edit,
                 CASE 
                     WHEN up.role IN ('admin', 'instructional', 'superadmin') 
-                         AND (s.default_scenario = false OR up.role = 'superadmin')
                          AND COALESCE(sal.total_links, 0) = 0 
                     THEN true
                     ELSE false
@@ -95,6 +93,7 @@ class ScenarioQueries:
             FROM scenarios s
             -- Only include root scenarios (parent_id = child_id in scenario_tree)
             JOIN scenario_tree root_check ON root_check.parent_id = s.id AND root_check.child_id = s.id
+            LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
             LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
@@ -104,7 +103,13 @@ class ScenarioQueries:
             LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id
             CROSS JOIN user_profile up
-            WHERE s.department_id = ANY($1)
+            GROUP BY s.id, s.name, sps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
+                     so.objective_ids, sp.persona_id, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
+                     sc.cohort_ids, sal.total_links, up.role
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY($1)) > 0
+                OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
         ),
         objective_mapping_data AS (
             SELECT '{}'::jsonb as mapping
@@ -182,7 +187,12 @@ class ScenarioQueries:
                         'name', s.title,
                         'description', COALESCE(s.description, ''),
                         'time_limit', stl.time_limit_seconds,
-                        'department_id', s.department_id::text
+                        'department_ids', COALESCE(
+                            (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
+                             FROM simulation_departments sd
+                             WHERE sd.simulation_id = s.id AND sd.active = true),
+                            NULL
+                        )
                     )
                 ) FILTER (WHERE s.id IS NOT NULL),
                 '{}'::jsonb
@@ -238,9 +248,7 @@ class ScenarioQueries:
         SELECT 
             s.name,
             sps.problem_statement,
-            s.active,
-            s.default_scenario,
-            s.department_id
+            s.active
         FROM scenarios s
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         WHERE s.id = $1
@@ -268,19 +276,27 @@ class ScenarioQueries:
             FROM profile_departments pd
             WHERE pd.profile_id = $2
         ),
+        scenario_departments_data AS (
+            SELECT 
+                sd.scenario_id,
+                ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+            FROM scenario_departments sd
+            WHERE sd.scenario_id = $1 AND sd.active = true
+            GROUP BY sd.scenario_id
+        ),
         scenario_core AS (
             SELECT 
                 s.id,
                 s.name,
                 sps.problem_statement,
                 s.active,
-                s.default_scenario,
                 s.generated,
-                s.department_id,
-                st.parent_id::text as parent_scenario_id
+                st.parent_id::text as parent_scenario_id,
+                COALESCE(sdd.department_ids, NULL) as department_ids
             FROM scenarios s
             LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
             WHERE s.id = $1
         ),
         scenario_persona AS (
@@ -326,8 +342,15 @@ class ScenarioQueries:
                     FROM parameter_items pi3
                     WHERE pi3.parameter_id = p.id
                 ), '[]'::jsonb) as valid_items
-            FROM parameters p, user_departments ud
-            WHERE p.department_id = ANY(ud.dept_ids) AND p.active = true
+            FROM parameters p
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            CROSS JOIN user_departments ud
+            WHERE p.active = true
+            GROUP BY p.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ),
         merged_parameters_data AS (
             SELECT 
@@ -363,8 +386,15 @@ class ScenarioQueries:
                 ), '{}'::jsonb) as persona_mapping
             FROM (
                 SELECT DISTINCT ON (p.id) p.*
-                FROM personas p, user_departments ud
-                WHERE p.department_id = ANY(ud.dept_ids)
+                FROM personas p
+                LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+                CROSS JOIN user_departments ud
+                WHERE p.active = true
+                GROUP BY p.id, p.name, p.description, p.color, p.icon, p.active, p.model_id, p.reasoning, p.temperature, p.system_prompt, p.created_at, p.updated_at
+                HAVING 
+                    -- Include if has matching department link OR has no department links at all (cross-dept)
+                    COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
+                    OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
             ) p
         ),
         valid_documents_data AS (
@@ -376,8 +406,15 @@ class ScenarioQueries:
                 ), '{}'::jsonb) as document_mapping
             FROM (
                 SELECT DISTINCT ON (d.id) d.*
-                FROM documents d, user_departments ud
-                WHERE d.department_id = ANY(ud.dept_ids)
+                FROM documents d
+                LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+                CROSS JOIN user_departments ud
+                WHERE d.active = true
+                GROUP BY d.id, d.name, d.type, d.file_path, d.mime_type, d.active, d.created_at, d.updated_at
+                HAVING 
+                    -- Include if has matching department link OR has no department links at all (cross-dept)
+                    COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY(ud.dept_ids)) > 0
+                    OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
             ) d
         ),
         document_details_data AS (
@@ -397,7 +434,6 @@ class ScenarioQueries:
                         'can_edit', true,
                         'can_delete', true,
                         'active', d.active,
-                        'department_id', d.department_id::text,
                         'file_path', d.file_path,
                         'mime_type', d.mime_type,
                         'parameter_item_ids', COALESCE((
@@ -419,12 +455,17 @@ class ScenarioQueries:
         simulation_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
                 s.id::text,
-                jsonb_build_object(
-                    'name', s.title, 
-                    'description', COALESCE(s.description, ''),
-                    'time_limit', stl.time_limit_seconds,
-                    'department_id', s.department_id::text
-                )
+                    jsonb_build_object(
+                        'name', s.title, 
+                        'description', COALESCE(s.description, ''),
+                        'time_limit', stl.time_limit_seconds,
+                        'department_ids', COALESCE(
+                            (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
+                             FROM simulation_departments sd
+                             WHERE sd.simulation_id = s.id AND sd.active = true),
+                            NULL
+                        )
+                    )
             ), '{}'::jsonb) as simulation_mapping
             FROM simulations s
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
@@ -438,8 +479,15 @@ class ScenarioQueries:
                     p.id::text,
                     jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''), 'numerical', p.numerical)
                 ), '{}'::jsonb) as parameter_mapping
-            FROM parameters p, user_departments ud
-            WHERE p.department_id = ANY(ud.dept_ids) AND p.active = true
+            FROM parameters p
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            CROSS JOIN user_departments ud
+            WHERE p.active = true
+            GROUP BY p.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ),
         parameter_item_mapping_data AS (
             SELECT 
@@ -454,8 +502,14 @@ class ScenarioQueries:
                     )
                 ), '{}'::jsonb) as parameter_item_mapping
             FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id, user_departments ud
-            WHERE p.department_id = ANY(ud.dept_ids)
+            JOIN parameters p ON p.id = pi.parameter_id
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            CROSS JOIN user_departments ud
+            GROUP BY p.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ),
         department_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
@@ -470,9 +524,8 @@ class ScenarioQueries:
             sc.name,
             sc.problem_statement,
             sc.active,
-            sc.default_scenario,
             sc.generated,
-            sc.department_id::text,
+            sc.department_ids,
             sc.parent_scenario_id,
             sp.persona_id,
             COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
@@ -571,18 +624,32 @@ class ScenarioQueries:
     def get_valid_personas(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for valid personas."""
         query = """
-        SELECT id, name FROM personas 
-        WHERE department_id = ANY($1) AND active = true
-        ORDER BY name
+        SELECT DISTINCT p.id, p.name 
+        FROM personas p
+        LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+        WHERE p.active = true
+        GROUP BY p.id, p.name
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY($1)) > 0
+            OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        ORDER BY p.name
         """
         return (query, [dept_ids])
 
     def get_valid_documents(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for valid documents."""
         query = """
-        SELECT id, name FROM documents 
-        WHERE department_id = ANY($1) AND active = true
-        ORDER BY name
+        SELECT DISTINCT d.id, d.name 
+        FROM documents d
+        LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+        WHERE d.active = true
+        GROUP BY d.id, d.name
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1)) > 0
+            OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        ORDER BY d.name
         """
         return (query, [dept_ids])
 
@@ -622,36 +689,35 @@ class ScenarioQueries:
         """Build query for default scenario."""
         query = """
         WITH user_departments AS (
-            SELECT DISTINCT pd.department_id
+            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
             FROM profile_departments pd
             WHERE pd.profile_id = $1
-        ),
-        user_scenarios AS (
-            SELECT s.*
-            FROM scenarios s
-            JOIN user_departments ud ON ud.department_id = s.department_id
-            WHERE s.active = true
-            ORDER BY s.default_scenario ASC, s.created_at DESC
-            LIMIT 1
         )
-        SELECT id
-        FROM user_scenarios
+        SELECT s.id
+        FROM scenarios s
+        LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+        WHERE s.active = true
+        GROUP BY s.id
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+            OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
+        ORDER BY s.created_at DESC
+        LIMIT 1
         """
         return (query, [profile_id])
 
     def create_scenario(self) -> str:
         """Build query to create scenario.
 
-        Params order: name, department_id, active, default_scenario
+        Params order: name, active
         """
         return """
         INSERT INTO scenarios (
             name,
-            department_id,
-            active,
-            default_scenario
+            active
         )
-        VALUES ($1, $2, $3, $4)
+        VALUES ($1, $2)
         RETURNING id
         """
 
@@ -703,17 +769,15 @@ class ScenarioQueries:
     def update_scenario(self) -> str:
         """Build query to update scenario.
 
-        Params order: name, problem_statement, department_id, active, default_scenario, scenario_id
+        Params order: name, problem_statement, active, scenario_id
         """
         return """
         UPDATE scenarios SET
             name = $1,
             problem_statement = $2,
-            department_id = $3,
-            active = $4,
-            default_scenario = $5,
+            active = $3,
             updated_at = NOW()
-        WHERE id = $6
+        WHERE id = $4
         """
 
     def delete_scenario_personas(self, scenario_id: str) -> tuple[str, list[Any]]:
@@ -743,9 +807,7 @@ class ScenarioQueries:
         query = """
         SELECT 
             s.name,
-            s.department_id,
             s.active,
-            s.default_scenario,
             sps.problem_statement
         FROM scenarios s
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
@@ -756,19 +818,15 @@ class ScenarioQueries:
     def insert_duplicate_scenario(self) -> str:
         """Build query to insert duplicate scenario.
 
-        Params order: name, department_id
+        Params order: name
         """
         return """
         INSERT INTO scenarios (
             name,
-            department_id,
-            active,
-            default_scenario
+            active
         )
         VALUES (
             $1 || ' Copy',
-            $2,
-            false,
             false
         )
         RETURNING id
@@ -1058,11 +1116,11 @@ class ScenarioQueries:
     def insert_scenario_variant(self) -> str:
         """Build query to insert a scenario variant.
 
-        Params order: name, department_id, generated, active, default_scenario
+        Params order: name, generated, active
         """
         return """
-        INSERT INTO scenarios (name, department_id, generated, active, default_scenario)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO scenarios (name, generated, active)
+        VALUES ($1, $2, $3)
         RETURNING *
         """
 
@@ -1201,7 +1259,7 @@ class ScenarioQueries:
         """
         query = """
         SELECT 
-            s.id, s.name, sps.problem_statement, s.default_scenario, 
+            s.id, s.name, sps.problem_statement, 
             s.created_at, s.updated_at,
             -- Simulations array (json_agg with filtering)
             COALESCE(
@@ -1222,7 +1280,7 @@ class ScenarioQueries:
         LEFT JOIN simulation_scenarios ss ON ss.scenario_id = s.id
         LEFT JOIN simulations sim ON sim.id = ss.simulation_id
         WHERE s.id = $1
-        GROUP BY s.id, s.name, sps.problem_statement, s.default_scenario, 
+        GROUP BY s.id, s.name, sps.problem_statement, 
                  s.created_at, s.updated_at
         """
         return (query, [scenario_id])
@@ -1255,10 +1313,16 @@ class ScenarioQueries:
     ) -> tuple[str, list[Any]]:
         """Build query to get valid personas for departments."""
         query = """
-        SELECT id, name, COALESCE(description, '') as description, color, icon 
-        FROM personas 
-        WHERE department_id = ANY($1::uuid[]) AND active = true
-        ORDER BY name
+        SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description, p.color, p.icon 
+        FROM personas p
+        LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+        WHERE p.active = true
+        GROUP BY p.id, p.name, p.description, p.color, p.icon
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
+            OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        ORDER BY p.name
         """
         return (query, [department_ids])
 
@@ -1267,10 +1331,16 @@ class ScenarioQueries:
     ) -> tuple[str, list[Any]]:
         """Build query to get valid documents for departments."""
         query = """
-        SELECT id, name, type::text as description 
-        FROM documents 
-        WHERE department_id = ANY($1::uuid[]) AND active = true
-        ORDER BY name
+        SELECT DISTINCT d.id, d.name, d.type::text as description 
+        FROM documents d
+        LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+        WHERE d.active = true
+        GROUP BY d.id, d.name, d.type
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1::uuid[])) > 0
+            OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        ORDER BY d.name
         """
         return (query, [department_ids])
 
@@ -1331,8 +1401,6 @@ class ScenarioQueries:
             s.name,
             sps.problem_statement,
             s.active,
-            s.default_scenario,
-            s.department_id,
             COALESCE(s.generated, false) as generated,
             st.parent_id::text as parent_scenario_id
         FROM scenarios s
@@ -1394,7 +1462,13 @@ class ScenarioQueries:
         query = """
         SELECT DISTINCT p.id, p.name, p.description
         FROM parameters p
-        WHERE p.department_id = ANY($1::uuid[]) AND p.active = true
+        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+        WHERE p.active = true
+        GROUP BY p.id, p.name, p.description
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ORDER BY p.name
         """
         return (query, [department_ids])
@@ -1404,10 +1478,16 @@ class ScenarioQueries:
     ) -> tuple[str, list[Any]]:
         """Build query to get active parameter items with parameter name."""
         query = """
-        SELECT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
+        SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
         FROM parameter_items pi
         JOIN parameters p ON p.id = pi.parameter_id
-        WHERE p.department_id = ANY($1::uuid[]) AND pi.active = true
+        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+        WHERE pi.active = true
+        GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.name
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ORDER BY p.name, pi.name
         """
         return (query, [department_ids])
@@ -1445,8 +1525,13 @@ class ScenarioQueries:
                 p.color,
                 p.icon
             FROM personas p
-            WHERE p.department_id IN (SELECT id FROM user_departments) 
-            AND p.active = true
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+            WHERE p.active = true
+            GROUP BY p.id, p.name, p.description, p.color, p.icon
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
             ORDER BY p.name
         ),
         persona_mapping_data AS (
@@ -1470,8 +1555,13 @@ class ScenarioQueries:
                 d.name,
                 d.type::text as description
             FROM documents d
-            WHERE d.department_id IN (SELECT id FROM user_departments)
-            AND d.active = true
+            LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+            WHERE d.active = true
+            GROUP BY d.id, d.name, d.type
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
             ORDER BY d.name
         ),
         document_mapping_data AS (
@@ -1494,8 +1584,13 @@ class ScenarioQueries:
                 COALESCE(p.description, '') as description,
                 p.numerical
             FROM parameters p
-            WHERE p.department_id IN (SELECT id FROM user_departments)
-            AND p.active = true
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            WHERE p.active = true
+            GROUP BY p.id, p.name, p.description, p.numerical
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
             ORDER BY p.name
         ),
         parameter_mapping_data AS (
@@ -1522,8 +1617,13 @@ class ScenarioQueries:
                 pi.value
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id IN (SELECT id FROM user_departments)
-            AND p.active = true
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            WHERE p.active = true
+            GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.name, pi.value
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
             ORDER BY p.name, pi.name
         ),
         parameter_item_mapping_data AS (
@@ -1637,9 +1737,7 @@ class ScenarioQueries:
             s.name,
             sps.problem_statement,
             s.active,
-            s.default_scenario,
             s.generated,
-            s.department_id,
             s.created_at,
             s.updated_at,
             s.use_documents,
@@ -1651,8 +1749,8 @@ class ScenarioQueries:
         LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
         LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
         WHERE s.id = $1
-        GROUP BY s.id, s.name, sps.problem_statement, s.active, s.default_scenario, 
-                 s.generated, s.department_id, s.created_at, s.updated_at, s.use_documents
+        GROUP BY s.id, s.name, sps.problem_statement, s.active, 
+                 s.generated, s.created_at, s.updated_at, s.use_documents
         """
         return (query, [scenario_id])
 

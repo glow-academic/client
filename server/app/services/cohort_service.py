@@ -81,7 +81,6 @@ class CohortService(BaseService):
                     name=row["name"],
                     description=row["description"],
                     active=row["active"],
-                    default_cohort=row["default_cohort"],
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],
@@ -213,13 +212,17 @@ class CohortService(BaseService):
                         )
                     )
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = cohort.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return CohortDetailResponse(
             title=cohort["title"],
             description=cohort["description"],
-            department_id=cohort["department_id"],
+            department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=cohort["valid_department_ids"],
             active=cohort["active"],
-            default_cohort=cohort["default_cohort"],
             simulation_ids=cohort["simulation_ids"],
             valid_simulation_ids=cohort["valid_simulation_ids"],
             profile_ids=cohort["profile_ids"],
@@ -314,13 +317,17 @@ class CohortService(BaseService):
                         )
                     )
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = cohort.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return CohortDetailResponse(
             title=cohort["title"],
             description=cohort["description"],
-            department_id=cohort["department_id"],
+            department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=cohort["valid_department_ids"],
             active=cohort["active"],
-            default_cohort=cohort["default_cohort"],
             simulation_ids=cohort["simulation_ids"],
             valid_simulation_ids=cohort["valid_simulation_ids"],
             profile_ids=cohort["profile_ids"],
@@ -427,9 +434,8 @@ class CohortService(BaseService):
                 query,
                 request.title,
                 request.description,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
                 request.active,
-                request.default_cohort,
             )
 
             if not result:
@@ -494,9 +500,8 @@ class CohortService(BaseService):
                 request.cohortId,
                 request.title,
                 request.description,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
                 request.active,
-                request.default_cohort,
             )
 
             # Delete existing relationships
@@ -557,13 +562,13 @@ class CohortService(BaseService):
             raise ValueError(f"Cohort not found: {request.cohortId}")
 
         async with transaction(self.conn):
-            # Insert duplicate
+            # Insert duplicate - query handles department links
             query, _ = self.queries.insert_duplicate_cohort()
             new_cohort = await self.conn.fetchrow(
                 query,
+                request.cohortId,  # Original cohort ID to copy from
                 result["title"],
                 result["description"],
-                result["department_id"],
             )
 
             if not new_cohort:

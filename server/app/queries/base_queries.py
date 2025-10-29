@@ -359,8 +359,13 @@ class AnalyticsQueryBuilder:
         SELECT DISTINCT s.id, s.name, sps.problem_statement
         FROM scenarios s
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-        WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
-        AND s.active = true
+        LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+        WHERE s.active = true
+        AND (
+            $1::uuid[] IS NULL 
+            OR sd.department_id = ANY($1::uuid[])
+            OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
+        )
         """
         return (query, [department_ids])
 
@@ -371,9 +376,14 @@ class AnalyticsQueryBuilder:
         query = """
         SELECT DISTINCT s.id, s.title, s.description
         FROM simulations s
-        WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
-        AND s.active = true
+        LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
+        WHERE s.active = true
         AND s.practice_simulation = true
+        AND (
+            $1::uuid[] IS NULL 
+            OR sd.department_id = ANY($1::uuid[])
+            OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
+        )
         """
         return (query, [department_ids])
 
@@ -384,8 +394,13 @@ class AnalyticsQueryBuilder:
         query = """
         SELECT DISTINCT r.id, r.name, r.description
         FROM rubrics r
-        WHERE ($1::uuid[] IS NULL OR r.department_id = ANY($1::uuid[]))
-        AND r.active = true
+        LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+        WHERE r.active = true
+        AND (
+            $1::uuid[] IS NULL 
+            OR rd.department_id = ANY($1::uuid[])
+            OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+        )
         """
         return (query, [department_ids])
 
@@ -396,7 +411,12 @@ class AnalyticsQueryBuilder:
         query = """
         SELECT DISTINCT p.id, p.name, p.description, p.color, p.icon
         FROM personas p
-        WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
-        AND p.active = true
+        LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+        WHERE p.active = true
+        AND (
+            $1::uuid[] IS NULL 
+            OR pd.department_id = ANY($1::uuid[])
+            OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        )
         """
         return (query, [department_ids])

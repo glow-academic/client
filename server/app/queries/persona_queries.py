@@ -141,9 +141,7 @@ class PersonaQueries:
         SELECT 
             name,
             description,
-            department_id,
             active,
-            default_persona,
             color,
             icon,
             model_id,
@@ -172,32 +170,31 @@ class PersonaQueries:
         """Build query for default persona."""
         query = """
         WITH user_departments AS (
-            SELECT DISTINCT pd.department_id
+            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
             FROM profile_departments pd
             WHERE pd.profile_id = $1
-        ),
-        user_personas AS (
-            SELECT p.*
-            FROM personas p
-            JOIN user_departments ud ON ud.department_id = p.department_id
-            WHERE p.active = true
-            ORDER BY p.default_persona ASC, p.created_at DESC
-            LIMIT 1
         )
         SELECT 
-            id,
-            name,
-            description,
-            department_id,
-            active,
-            default_persona,
-            color,
-            icon,
-            model_id,
-            reasoning,
-            temperature,
-            system_prompt
-        FROM user_personas
+            p.id,
+            p.name,
+            p.description,
+            p.active,
+            p.color,
+            p.icon,
+            p.model_id,
+            p.reasoning,
+            p.temperature,
+            p.system_prompt
+        FROM personas p
+        LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+        WHERE p.active = true
+        GROUP BY p.id, p.name, p.description, p.active, p.color, p.icon, p.model_id, p.reasoning, p.temperature, p.system_prompt
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+            OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        ORDER BY p.created_at DESC
+        LIMIT 1
         """
         return (query, [profile_id])
 
@@ -211,7 +208,6 @@ class PersonaQueries:
             temperature,
             reasoning,
             model_id,
-            department_id,
             color,
             icon
         FROM personas
@@ -222,7 +218,7 @@ class PersonaQueries:
     def insert_duplicate_persona(self) -> str:
         """Build query to insert duplicate persona.
         Params order: name, description, system_prompt, temperature, reasoning,
-        model_id, department_id, color, icon
+        model_id, color, icon
         """
         return """
         INSERT INTO personas (
@@ -232,11 +228,9 @@ class PersonaQueries:
             temperature,
             reasoning,
             model_id,
-            department_id,
             color,
             icon,
-            active,
-            default_persona
+            active
         )
         VALUES (
             $1 || ' Copy',
@@ -247,8 +241,6 @@ class PersonaQueries:
             $6,
             $7,
             $8,
-            $9,
-            false,
             false
         )
         RETURNING id
@@ -275,16 +267,13 @@ class PersonaQueries:
 
     def create_persona(self) -> str:
         """Build query to create persona.
-        Params order: name, description, department_id, active, default_persona,
-        color, icon, model_id, reasoning, temperature, system_prompt
+        Params order: name, description, active, color, icon, model_id, reasoning, temperature, system_prompt
         """
         return """
         INSERT INTO personas (
             name,
             description,
-            department_id,
             active,
-            default_persona,
             color,
             icon,
             model_id,
@@ -301,31 +290,26 @@ class PersonaQueries:
             $6,
             $7,
             $8,
-            $9,
-            $10,
-            $11
+            $9
         )
         RETURNING id
         """
 
     def update_persona(self) -> str:
         """Build query to update persona.
-        Params order: persona_id, name, description, department_id, active, default_persona,
-        color, icon, model_id, reasoning, temperature, system_prompt
+        Params order: persona_id, name, description, active, color, icon, model_id, reasoning, temperature, system_prompt
         """
         return """
         UPDATE personas SET
             name = $2,
             description = $3,
-            department_id = $4,
-            active = $5,
-            default_persona = $6,
-            color = $7,
-            icon = $8,
-            model_id = $9,
-            reasoning = $10,
-            temperature = $11,
-            system_prompt = $12,
+            active = $4,
+            color = $5,
+            icon = $6,
+            model_id = $7,
+            reasoning = $8,
+            temperature = $9,
+            system_prompt = $10,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -450,21 +434,29 @@ class PersonaQueries:
             Tuple of (query string, params list)
         """
         query = """
-        WITH persona_data AS (
+        WITH persona_departments_data AS (
+            SELECT 
+                pd.persona_id,
+                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+            FROM persona_departments pd
+            WHERE pd.persona_id = $1 AND pd.active = true
+            GROUP BY pd.persona_id
+        ),
+        persona_data AS (
             SELECT 
                 name,
                 description,
-                department_id,
                 active,
-                default_persona,
                 color,
                 icon,
                 model_id,
                 reasoning,
                 temperature,
-                system_prompt
-            FROM personas 
-            WHERE id = $1
+                system_prompt,
+                COALESCE(pdd.department_ids, NULL) as department_ids
+            FROM personas p
+            LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
+            WHERE p.id = $1
         ),
         valid_depts AS (
             SELECT 
@@ -541,33 +533,47 @@ class PersonaQueries:
         """
         query = """
         WITH user_departments AS (
-            SELECT DISTINCT pd.department_id
+            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
             FROM profile_departments pd
             WHERE pd.profile_id = $1
         ),
         default_persona AS (
             SELECT p.id
             FROM personas p
-            JOIN user_departments ud ON ud.department_id = p.department_id
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
             WHERE p.active = true
-            ORDER BY p.default_persona DESC, p.created_at DESC
+            GROUP BY p.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+                OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+            ORDER BY p.created_at DESC
             LIMIT 1
+        ),
+        persona_departments_data AS (
+            SELECT 
+                pd.persona_id,
+                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+            FROM persona_departments pd
+            JOIN default_persona dp ON pd.persona_id = dp.id
+            WHERE pd.active = true
+            GROUP BY pd.persona_id
         ),
         persona_data AS (
             SELECT 
                 p.name,
                 p.description,
-                p.department_id,
                 p.active,
-                p.default_persona,
                 p.color,
                 p.icon,
                 p.model_id,
                 p.reasoning,
                 p.temperature,
-                p.system_prompt
+                p.system_prompt,
+                COALESCE(pdd.department_ids, NULL) as department_ids
             FROM personas p
             JOIN default_persona dp ON p.id = dp.id
+            LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
         ),
         valid_depts AS (
             SELECT 
@@ -643,7 +649,7 @@ class PersonaQueries:
         query = """
         SELECT 
             p.id, p.name, p.description, p.system_prompt, p.temperature, 
-            p.default_persona, p.created_at, p.updated_at,
+            p.created_at, p.updated_at,
             -- Scenarios array (json_agg with filtering)
             COALESCE(
                 jsonb_agg(DISTINCT jsonb_build_object(
@@ -661,7 +667,7 @@ class PersonaQueries:
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         WHERE p.id = $1
         GROUP BY p.id, p.name, p.description, p.system_prompt, p.temperature, 
-                 p.default_persona, p.created_at, p.updated_at
+                 p.created_at, p.updated_at
         """
         return (query, [persona_id])
 

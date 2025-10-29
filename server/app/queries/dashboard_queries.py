@@ -1259,9 +1259,14 @@ class DashboardQueries:
                 ), '{}'::jsonb) AS mapping
                 FROM simulations s
                 LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+                LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
                   AND s.active = true
-                  AND (cardinality($7::uuid[]) = 0 OR s.department_id = ANY($7::uuid[]))
+                  AND (
+                      cardinality($7::uuid[]) = 0 
+                      OR sd.department_id = ANY($7::uuid[])
+                      OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
+                  )
             ),
             
             rubric_ids AS (
@@ -1283,8 +1288,13 @@ class DashboardQueries:
                     jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''))
                 ), '{}'::jsonb) AS mapping
                 FROM parameters p
+                LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
                 WHERE p.active = true
-                  AND (cardinality($7::uuid[]) = 0 OR p.department_id = ANY($7::uuid[]))
+                  AND (
+                      cardinality($7::uuid[]) = 0 
+                      OR pd.department_id = ANY($7::uuid[])
+                      OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                  )
             ),
             
             parameter_item_mapping AS (
@@ -1299,8 +1309,13 @@ class DashboardQueries:
                 ), '{}'::jsonb) AS mapping
                 FROM parameter_items pi
                 JOIN parameters p ON pi.parameter_id = p.id
+                LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
                 WHERE p.active = true
-                  AND (cardinality($7::uuid[]) = 0 OR p.department_id = ANY($7::uuid[]))
+                  AND (
+                      cardinality($7::uuid[]) = 0 
+                      OR pd.department_id = ANY($7::uuid[])
+                      OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                  )
             )
             
             -- =====================================================

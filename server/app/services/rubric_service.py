@@ -96,7 +96,6 @@ class RubricService(BaseService):
                     description=row["description"],
                     points=row["points"],
                     passPoints=row["passpoints"],
-                    default_rubric=row["default_rubric"],
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],
@@ -197,15 +196,19 @@ class RubricService(BaseService):
                         description=group_data.get("description", ""),
                     )
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = rubric.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return RubricDetailResponse(
             name=rubric["name"],
             description=rubric["description"],
-            department_id=str(rubric["department_id"]),
+            department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=valid_department_ids,
             points=rubric["points"],
             passPoints=rubric["passpoints"],
             active=rubric["active"],
-            default_rubric=rubric["default_rubric"],
             can_edit=can_edit,
             standard_group_ids=standard_group_ids,
             standard_groups_detail=standard_groups_detail,
@@ -288,15 +291,19 @@ class RubricService(BaseService):
                         description=group_data.get("description", ""),
                     )
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = result.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return RubricDetailResponse(
             name=result["name"],
             description=result["description"],
-            department_id=str(result["department_id"]),
+            department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=valid_department_ids,
             points=result["points"],
             passPoints=result["passpoints"],
             active=result["active"],
-            default_rubric=result["default_rubric"],
             can_edit=can_edit,
             standard_group_ids=standard_group_ids,
             standard_groups_detail=standard_groups_detail,
@@ -315,9 +322,8 @@ class RubricService(BaseService):
                 query,
                 request.name,
                 request.description,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
                 request.active,
-                request.default_rubric,
                 request.points,
                 request.passPoints,
             )
@@ -443,9 +449,8 @@ class RubricService(BaseService):
                 request.rubricId,
                 request.name,
                 request.description,
-                request.department_id,
+                request.department_ids,  # Now accepts list[str] | None
                 request.active,
-                request.default_rubric,
                 calculated_points["points"],
                 calculated_points["passPoints"],
             )

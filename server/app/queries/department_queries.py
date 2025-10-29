@@ -74,17 +74,14 @@ class DepartmentQueries:
             d.title,
             d.description,
             d.active,
-            d.default_department,
             d.updated_at,
             COALESCE(dps.total_price_spent, 0) as total_price_spent,
             COALESCE(dsc.staff_count, 0) as staff_count,
             CASE 
-                WHEN d.default_department = true AND up.role != 'superadmin' THEN false
                 WHEN up.role IN ('admin', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             CASE 
-                WHEN d.default_department = true THEN false
                 WHEN COALESCE(dacl_all.total_cohort_links, 0) > 0 THEN false
                 WHEN COALESCE(dpwo.profiles_with_only_this_dept, 0) > 0 THEN false
                 WHEN up.role IN ('admin', 'superadmin') THEN true
@@ -276,7 +273,6 @@ class DepartmentQueries:
             d.title,
             d.description,
             d.active,
-            d.default_department,
             COALESCE(dps.total_price_spent, 0) as total_price_spent,
             COALESCE(dsc.staff_count, 0) as staff_count,
             CASE WHEN du.total_usage > 0 THEN true ELSE false END as in_use,
@@ -357,7 +353,7 @@ class DepartmentQueries:
         return query, [profile_id]
 
     def create_department(
-        self, title: str, description: str, active: bool, default_department: bool
+        self, title: str, description: str, active: bool
     ) -> tuple[str, list[Any]]:
         """
         Create a new department.
@@ -366,12 +362,12 @@ class DepartmentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO departments (title, description, active, default_department, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, NOW(), NOW())
+        INSERT INTO departments (title, description, active, created_at, updated_at)
+        VALUES ($1, $2, $3, NOW(), NOW())
         RETURNING id::text as department_id
         """
 
-        return query, [title, description, active, default_department]
+        return query, [title, description, active]
 
     def create_department_agent(
         self, department_id: str, role: str, agent_id: str
@@ -394,7 +390,7 @@ class DepartmentQueries:
         return query, [department_id, role, agent_id]
 
     def update_department(
-        self, department_id: str, title: str, description: str, active: bool, default_department: bool
+        self, department_id: str, title: str, description: str, active: bool
     ) -> tuple[str, list[Any]]:
         """
         Update a department.
@@ -408,12 +404,11 @@ class DepartmentQueries:
             title = $2,
             description = $3,
             active = $4,
-            default_department = $5,
             updated_at = NOW()
         WHERE id = $1
         """
 
-        return query, [department_id, title, description, active, default_department]
+        return query, [department_id, title, description, active]
 
     def delete_department_agents(self, department_id: str) -> tuple[str, list[Any]]:
         """

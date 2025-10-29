@@ -52,18 +52,23 @@ class DocumentQueries:
                 d.updated_at,
                 d.mime_type,
                 d.active,
-                d.department_id,
                 d.file_path,
                 COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(dpic.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
                 COALESCE(dasl.active_scenario_count, 0) as active_scenario_count,
                 COALESCE(dasl_all.total_scenario_links, 0) as total_scenario_links
             FROM documents d
+            LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
             LEFT JOIN document_scenarios ds ON ds.document_id = d.id
             LEFT JOIN document_parameter_items_cte dpic ON dpic.document_id = d.id
             LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
             LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
-            WHERE d.department_id = ANY($1)
+            GROUP BY d.id, d.name, d.type, d.updated_at, d.mime_type, d.active, d.file_path, 
+                     ds.scenario_ids, dpic.parameter_item_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1)) > 0
+                OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
@@ -111,7 +116,12 @@ class DocumentQueries:
             ) as mapping
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY($1)
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            GROUP BY p.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ),
         department_mapping_data AS (
             SELECT COALESCE(
@@ -192,7 +202,13 @@ class DocumentQueries:
             pi.parameter_id
         FROM parameter_items pi
         JOIN parameters p ON p.id = pi.parameter_id
-        WHERE p.department_id = ANY($1) AND p.active = true
+        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+        WHERE p.active = true
+        GROUP BY pi.id, pi.name, pi.value, pi.parameter_id
+        HAVING 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1)) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ORDER BY pi.name
         """
         return (query, [dept_ids])
@@ -202,8 +218,7 @@ class DocumentQueries:
         query = """
         SELECT 
             d.id,
-            d.type,
-            d.department_id
+            d.type
         FROM documents d
         WHERE d.id = ANY($1)
         """
@@ -314,7 +329,13 @@ class DocumentQueries:
                 p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY($1) AND p.active = true
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            WHERE p.active = true
+            GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.name
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         """
         return (query, [department_ids])
 

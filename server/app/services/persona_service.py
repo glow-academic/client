@@ -86,7 +86,6 @@ class PersonaService(BaseService):
                     reasoning=row["reasoning"],
                     temperature=float(row["temperature"]),
                     active=row["active"],
-                    default_persona=row["default_persona"],
                     num_scenarios=row["num_scenarios"],
                     can_edit=row["can_edit"],
                     can_duplicate=row["can_duplicate"],
@@ -117,17 +116,17 @@ class PersonaService(BaseService):
         if not result:
             raise ValueError(f"Persona not found: {request.personaId}")
 
-        # Insert duplicate with positional params
+        # Duplicate persona - query handles department links automatically
         duplicate_query = self.queries.insert_duplicate_persona()
         new_persona = await self.conn.fetchrow(
             duplicate_query,
+            request.personaId,  # Original persona ID to copy from
             result["name"],
             result["description"],
             result["system_prompt"],
             result["temperature"],
             result["reasoning"] or "none",  # Default to "none" if None
             result["model_id"],
-            result["department_id"],
             result["color"],
             result["icon"],
         )
@@ -243,26 +242,17 @@ class PersonaService(BaseService):
                         description=ddata.get("description", ""),
                     )
 
-        # Get usage and role from query result
+        # Get usage and permissions from query result
+        # Query now handles permission logic based on cross-dept status
         scenario_count = (
             int(persona["usage_count"]) if persona.get("usage_count") else 0
         )
         in_use = scenario_count > 0
-        user_role = persona.get("user_role", "student")
 
-        # Calculate permissions
-        is_superadmin = user_role == "superadmin"
-        is_admin = user_role in ("admin", "superadmin")
-        is_default = persona["default_persona"]
-
-        # Edit permission: superadmin can edit everything, non-default can be edited by admins
-        can_edit = is_superadmin or (is_admin and not is_default)
-
-        # Duplicate permission: everyone can duplicate
-        can_duplicate = True
-
-        # Delete permission: can delete if not in use
-        can_delete = not in_use
+        # Permissions come from query (which checks role and cross-dept status)
+        can_edit = persona.get("can_edit", False)
+        can_duplicate = persona.get("can_duplicate", True)
+        can_delete = persona.get("can_delete", not in_use)
 
         # Get debug info (placeholder - adjust based on actual debug table)
         debug_info: list[DebugInfoItem] = []
@@ -357,13 +347,17 @@ class PersonaService(BaseService):
             ),
         }
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = persona.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return PersonaDetailResponse(
             # Basic fields
             name=persona["name"],
             description=persona["description"],
-            department_id=str(persona["department_id"]),
+            department_ids=department_ids,  # None or list of department IDs
             active=persona["active"],
-            default_persona=persona["default_persona"],
             color=persona["color"],
             icon=persona["icon"],
             model_id=str(persona["model_id"]),
@@ -413,21 +407,15 @@ class PersonaService(BaseService):
         if not result:
             raise ValueError("No personas found for user's departments")
 
-        # Compute permissions
-        user_role = result["user_role"] if result.get("user_role") else "trainee"
+        # Get usage and permissions from query result
         usage_count = result["usage_count"]
         scenario_count = usage_count
         in_use = usage_count > 0
-        is_admin = user_role in ("admin", "instructional", "superadmin")
-        can_edit = is_admin and (
-            not result["default_persona"] or user_role == "superadmin"
-        )
-        can_duplicate = is_admin
-        can_delete = (
-            is_admin
-            and not in_use
-            and (not result["default_persona"] or user_role == "superadmin")
-        )
+        
+        # Permissions come from query (which checks role and cross-dept status)
+        can_edit = result.get("can_edit", False)
+        can_duplicate = result.get("can_duplicate", True)
+        can_delete = result.get("can_delete", not in_use)
 
         # Parse department_mapping from JSONB
         department_mapping_json = json.loads(result["dept_mapping"])
@@ -515,13 +503,17 @@ class PersonaService(BaseService):
             ),
         }
 
+        # Parse department_ids from query (None = cross-department)
+        department_ids = result.get("department_ids")
+        if department_ids:
+            department_ids = [str(d) for d in department_ids]
+
         return PersonaDetailResponse(
             # Basic fields
             name=result["name"],
             description=result["description"],
-            department_id=str(result["department_id"]),
+            department_ids=department_ids,  # None or list of department IDs
             active=result["active"],
-            default_persona=result["default_persona"],
             color=result["color"],
             icon=result["icon"],
             model_id=str(result["model_id"]),
@@ -561,9 +553,8 @@ class PersonaService(BaseService):
             query,
             request.name,
             request.description,
-            request.department_id,
+            request.department_ids,  # Now accepts list[str] | None
             request.active,
-            request.default_persona,
             request.color,
             request.icon,
             request.model_id,
@@ -601,16 +592,15 @@ class PersonaService(BaseService):
         if not existing:
             raise ValueError(f"Persona not found: {request.personaId}")
 
-        # Update persona
+        # Update persona - query handles department junction table updates
         query = self.queries.update_persona()
         await self.conn.execute(
             query,
             request.personaId,
             request.name,
             request.description,
-            request.department_id,
+            request.department_ids,  # Now accepts list[str] | None
             request.active,
-            request.default_persona,
             request.color,
             request.icon,
             request.model_id,
@@ -898,7 +888,6 @@ class PersonaService(BaseService):
                         "id": str(scenario["id"]),
                         "name": scenario["name"],
                         "problem_statement": scenario["problem_statement"],
-                        "default_scenario": scenario["default_scenario"],
                         "created_at": scenario["created_at"]
                         if scenario.get("created_at")
                         else None,
@@ -913,7 +902,6 @@ class PersonaService(BaseService):
                 "temperature": float(result["temperature"])
                 if result["temperature"]
                 else None,
-                "default_persona": result["default_persona"],
                 "created_at": result["created_at"].isoformat()
                 if result["created_at"]
                 else None,

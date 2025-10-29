@@ -138,7 +138,7 @@ class DocumentService(BaseService):
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     active=row["active"],
-                    department_id=str(row["department_id"]),
+                    department_ids=[str(d) for d in row["department_ids"]] if row.get("department_ids") else None,
                     file_path=row["file_path"],
                     mime_type=row["mime_type"],
                     parameter_item_ids=parameter_item_ids,
@@ -217,7 +217,7 @@ class DocumentService(BaseService):
             active=document["active"],
             type=document["type"],
             document_type_options=document_type_options,
-            department_id=str(document["department_id"]),
+            department_ids=[str(d) for d in document["department_ids"]] if document.get("department_ids") else None,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
             parameter_item_ids=[],  # TODO: Query document_parameter_items
@@ -324,7 +324,7 @@ class DocumentService(BaseService):
             query,
             request.documentId,
             request.type,
-            request.department_id,
+            request.department_ids,
         )
 
         # Update parameter items - delete existing and insert new
@@ -356,7 +356,7 @@ class DocumentService(BaseService):
             query,
             request.documentIds,
             request.type,
-            request.department_id,
+            request.department_ids,
         )
 
         # Update parameter items for all documents - delete existing and insert new
@@ -551,12 +551,12 @@ class DocumentService(BaseService):
     ) -> FinalizeUploadResponse:
         """Finalize a TUS upload and process the file."""
         try:
-            # Validate department_id is provided
-            department_id = request.department_id
-            if not department_id:
+            # Validate department_ids is provided
+            department_ids = request.department_ids
+            if not department_ids:
                 return FinalizeUploadResponse(
                     success=False,
-                    message="department_id is required - must be provided from frontend",
+                    message="department_ids is required - must be provided from frontend",
                     status="error",
                 )
             
@@ -663,12 +663,12 @@ class DocumentService(BaseService):
                                 query,
                                 document_id,
                                 filename,
-                                final_file_path,
-                                content_type,
-                                department_id,
-                                str(document_id),  # file_id: use document_id for extracted files
-                            )
-                            extracted_documents.append(
+                            final_file_path,
+                            content_type,
+                            department_ids,
+                            str(document_id),  # file_id: use document_id for extracted files
+                        )
+                        extracted_documents.append(
                                 {
                                     "id": str(document_id),
                                     "name": filename,
@@ -720,7 +720,7 @@ class DocumentService(BaseService):
                 filename,
                 final_file_path,
                 content_type,
-                department_id,
+                department_ids,
                 request.fileId,  # file_id: TUS upload file ID
             )
 
