@@ -15,11 +15,23 @@ CREATE TABLE personas (
   description TEXT        NOT NULL,
   system_prompt     TEXT        NOT NULL,
   temperature  REAL     NOT NULL, -- 0.0-1.0
-  default_persona      BOOLEAN     NOT NULL DEFAULT FALSE,
   color TEXT        NOT NULL, -- hex color code
   icon TEXT        NOT NULL, -- icon name, in Lucide Icons
   model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
   reasoning reasoning_effort NOT NULL DEFAULT 'none',  -- NOT NULL with default 'none'
-  active BOOLEAN NOT NULL DEFAULT FALSE,
-  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
+  active BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+-- Persona → Departments junction table (BCNF normalization)
+-- No records = available to all departments (cross-department)
+CREATE TABLE persona_departments (
+  persona_id    UUID NOT NULL REFERENCES personas(id)     ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id)  ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (persona_id, department_id)
+);
+
+CREATE INDEX ON persona_departments (persona_id);
+CREATE INDEX ON persona_departments (department_id);

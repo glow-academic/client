@@ -110,6 +110,39 @@ effective_profile_department AS (
          ) AS department_id
   FROM (SELECT DISTINCT ap.profile_id FROM simulation_attempts sa
         JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE) pd
+),
+-- Get first department_id for each entity from junction tables
+simulation_first_dept AS (
+    SELECT DISTINCT ON (simulation_id) 
+        simulation_id, 
+        department_id
+    FROM simulation_departments
+    WHERE active = true
+    ORDER BY simulation_id, created_at
+),
+rubric_first_dept AS (
+    SELECT DISTINCT ON (rubric_id) 
+        rubric_id, 
+        department_id
+    FROM rubric_departments
+    WHERE active = true
+    ORDER BY rubric_id, created_at
+),
+scenario_first_dept AS (
+    SELECT DISTINCT ON (scenario_id) 
+        scenario_id, 
+        department_id
+    FROM scenario_departments
+    WHERE active = true
+    ORDER BY scenario_id, created_at
+),
+persona_first_dept AS (
+    SELECT DISTINCT ON (persona_id) 
+        persona_id, 
+        department_id
+    FROM persona_departments
+    WHERE active = true
+    ORDER BY persona_id, created_at
 )
 SELECT
   -- *** original columns kept in the same order as your "Old def" ***
@@ -160,8 +193,14 @@ SELECT
   (SELECT COUNT(*) FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id)::int AS sim_scenario_count, -- simulation's expected scenario count
   lg.created_at                 AS grade_created_at, -- grade creation time for stagnation metric
   
-  -- Department ID coalesced from all relevant tables (using profile_departments junction)
-  COALESCE(epd.department_id, sim.department_id, r.department_id, s.department_id, p.department_id) AS department_id
+  -- Department ID coalesced from all relevant tables (using junction tables)
+  COALESCE(
+    epd.department_id,
+    sfd.department_id,
+    rfd.department_id,
+    scfd.department_id,
+    pfd.department_id
+  ) AS department_id
 FROM simulation_chats sc
 JOIN simulation_attempts sa   ON sa.id = sc.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
@@ -178,6 +217,10 @@ LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id
 LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id
 LEFT JOIN effective_profile_department epd ON epd.profile_id = ap.profile_id
+LEFT JOIN simulation_first_dept sfd ON sfd.simulation_id = sim.id
+LEFT JOIN rubric_first_dept rfd ON rfd.rubric_id = r.id
+LEFT JOIN scenario_first_dept scfd ON scfd.scenario_id = s.id
+LEFT JOIN persona_first_dept pfd ON pfd.persona_id = p.id
 WITH NO DATA;
 
 -- Unique index required for CONCURRENT refresh

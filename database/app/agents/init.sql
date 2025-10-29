@@ -2,6 +2,21 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ============================================================================
+-- ENUM TYPES
+-- ============================================================================
+
+CREATE TYPE agent_role AS ENUM (
+  'assistant',
+  'classify', 
+  'grade',
+  'hint',
+  'input_guardrail',
+  'output_guardrail',
+  'scenario',
+  'title'
+);
+
+-- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
 
@@ -15,8 +30,8 @@ CREATE TABLE agents (
   temperature  REAL     NOT NULL, -- 0.0-1.0
   model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
   reasoning reasoning_effort NOT NULL DEFAULT 'medium',  -- NOT NULL with default 'medium'
-  active BOOLEAN NOT NULL DEFAULT TRUE,
-  default_agent BOOLEAN NOT NULL DEFAULT TRUE
+  role agent_role NOT NULL DEFAULT 'assistant',
+  active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE model_runs (
@@ -24,8 +39,7 @@ CREATE TABLE model_runs (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   input_tokens INTEGER     NOT NULL DEFAULT 0,
-  output_tokens INTEGER     NOT NULL DEFAULT 0,
-  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
+  output_tokens INTEGER     NOT NULL DEFAULT 0
 );
 
 -- Model run junction tables (BCNF normalization - replaces nullable FKs)
@@ -84,17 +98,17 @@ CREATE TABLE debug_info (
   content TEXT        NOT NULL
 );
 
--- Department agents pivot table (BCNF normalization)
--- Created here after agents table exists to satisfy foreign key dependency
-CREATE TABLE department_agents (
-  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
-  role          TEXT NOT NULL,
+-- Agent departments junction table (BCNF normalization)
+-- Links agents to departments for multi-department support
+-- No records = available to all departments (cross-department)
+CREATE TABLE agent_departments (
   agent_id      UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (department_id, role)
+  PRIMARY KEY (agent_id, department_id)
 );
 
-CREATE INDEX ON department_agents (agent_id);
-CREATE INDEX ON department_agents (department_id, role);
+CREATE INDEX ON agent_departments (agent_id);
+CREATE INDEX ON agent_departments (department_id);

@@ -11,9 +11,8 @@ CREATE TABLE departments (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  active BOOLEAN     NOT NULL DEFAULT TRUE,
-  default_department BOOLEAN NOT NULL DEFAULT FALSE
+  active BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
--- Note: department_agents junction table is created in app/agents/init.sql
+-- Note: agent_departments junction table is created in app/agents/init.sql
 -- after the agents table exists (to satisfy foreign key dependency)

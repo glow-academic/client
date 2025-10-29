@@ -13,10 +13,22 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     description TEXT        NOT NULL,
     points INTEGER     NOT NULL,
     pass_points INTEGER     NOT NULL,
-    default_rubric BOOLEAN     NOT NULL DEFAULT FALSE,
-    active BOOLEAN     NOT NULL DEFAULT TRUE,
-    department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
+    active BOOLEAN     NOT NULL DEFAULT TRUE
   );
+
+  -- Rubric → Departments junction table (BCNF normalization)
+  -- No records = available to all departments (cross-department)
+  CREATE TABLE rubric_departments (
+    rubric_id     UUID NOT NULL REFERENCES rubrics(id)      ON DELETE CASCADE,
+    department_id UUID NOT NULL REFERENCES departments(id)  ON DELETE CASCADE,
+    active        BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (rubric_id, department_id)
+  );
+
+  CREATE INDEX ON rubric_departments (rubric_id);
+  CREATE INDEX ON rubric_departments (department_id);
 
 
   CREATE TABLE standard_groups (

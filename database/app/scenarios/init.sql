@@ -13,10 +13,22 @@ CREATE TABLE parameters (
   description TEXT        NOT NULL,
   numerical BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT FALSE,
-  default_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
+  practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
+
+-- Parameter → Departments junction table (BCNF normalization)
+-- No records = available to all departments (cross-department)
+CREATE TABLE parameter_departments (
+  parameter_id  UUID NOT NULL REFERENCES parameters(id)    ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id)   ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (parameter_id, department_id)
+);
+
+CREATE INDEX ON parameter_departments (parameter_id);
+CREATE INDEX ON parameter_departments (department_id);
 
 CREATE TABLE parameter_items (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -38,11 +50,23 @@ CREATE TABLE scenarios (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   use_documents BOOLEAN NOT NULL DEFAULT FALSE,
-  default_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
-  active BOOLEAN     NOT NULL DEFAULT TRUE,
-  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
+  active BOOLEAN     NOT NULL DEFAULT TRUE
 );
+
+-- Scenario → Departments junction table (BCNF normalization)
+-- No records = available to all departments (cross-department)
+CREATE TABLE scenario_departments (
+  scenario_id   UUID NOT NULL REFERENCES scenarios(id)     ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id)   ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, department_id)
+);
+
+CREATE INDEX ON scenario_departments (scenario_id);
+CREATE INDEX ON scenario_departments (department_id);
 
 -- Scenario problem statements table (supports historical tracking)
 CREATE TABLE scenario_problem_statements (

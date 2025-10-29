@@ -16,9 +16,7 @@ CREATE TABLE simulations (
   -- time_limit moved to simulation_time_limits junction table (absence = infinite)
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
   rubric_id   UUID        NOT NULL REFERENCES rubrics(id) ON DELETE CASCADE,
-  default_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE,
   practice_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE,
-  department_id   UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
   -- New simulation flags (BCNF normalization - moved from persona level)
   output_guardrail_active BOOLEAN NOT NULL DEFAULT FALSE,
   input_guardrail_active  BOOLEAN NOT NULL DEFAULT FALSE,
@@ -26,6 +24,20 @@ CREATE TABLE simulations (
   hints_enabled           BOOLEAN NOT NULL DEFAULT FALSE,
   objectives_enabled      BOOLEAN NOT NULL DEFAULT TRUE
 );
+
+-- Simulation → Departments junction table (BCNF normalization)
+-- No records = available to all departments (cross-department)
+CREATE TABLE simulation_departments (
+  simulation_id UUID NOT NULL REFERENCES simulations(id)   ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id)   ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (simulation_id, department_id)
+);
+
+CREATE INDEX ON simulation_departments (simulation_id);
+CREATE INDEX ON simulation_departments (department_id);
 
 -- Simulation → Scenarios junction table with ordering
 CREATE TABLE simulation_scenarios (
