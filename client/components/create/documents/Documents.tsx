@@ -257,7 +257,7 @@ export default function Documents() {
                       can_edit: row.original.can_edit,
                       can_delete: row.original.can_delete,
                       active: row.original.active,
-                      department_id: row.original.department_id,
+                      department_ids: row.original.department_ids,
                       file_path: row.original.file_path,
                       mime_type: row.original.mime_type,
                       parameter_item_ids: row.original.parameter_item_ids,
@@ -577,7 +577,7 @@ export default function Documents() {
       await updateDocumentMutation.mutateAsync({
         documentId: editingDocument.document_id,
         type: documentDetail.type,
-        department_id: documentDetail.department_id,
+        department_ids: documentDetail.department_ids,
         parameter_item_ids: documentDetail.parameter_item_ids,
       });
 
@@ -613,13 +613,14 @@ export default function Documents() {
         bulkParameterItemIds.length > 0
           ? bulkParameterItemIds
           : bulkDocumentDetail.parameter_item_ids;
-      const department_id =
-        bulkDepartmentId || bulkDocumentDetail.department_ids[0] || "";
+      const department_ids = bulkDepartmentId
+        ? [bulkDepartmentId]
+        : bulkDocumentDetail.department_ids || null;
 
       await bulkUpdateDocumentsMutation.mutateAsync({
         documentIds: selectedDocuments,
         type,
-        department_id,
+        department_ids,
         parameter_item_ids,
       });
 
@@ -803,17 +804,13 @@ export default function Documents() {
                   <DepartmentPicker
                     mapping={documentDetail.department_mapping}
                     validIds={documentDetail.valid_department_ids}
-                    selectedIds={
-                      documentDetail.department_id
-                        ? [documentDetail.department_id]
-                        : []
-                    }
+                    selectedIds={documentDetail.department_ids || []}
                     onSelect={(ids) =>
                       setEditingDocument((prev) =>
-                        prev ? { ...prev, department_id: ids[0] || "" } : null
+                        prev ? { ...prev, department_ids: ids } : null
                       )
                     }
-                    multiSelect={false}
+                    multiSelect={true}
                   />
                 </div>
               )}
@@ -899,9 +896,7 @@ export default function Documents() {
                     selectedIds={
                       bulkDepartmentId
                         ? [bulkDepartmentId]
-                        : bulkDocumentDetail.department_ids[0]
-                          ? [bulkDocumentDetail.department_ids[0]]
-                          : []
+                        : bulkDocumentDetail.department_ids || []
                     }
                     onSelect={(ids) => setBulkDepartmentId(ids[0] || null)}
                     multiSelect={false}
@@ -1091,7 +1086,7 @@ export default function Documents() {
                   can_edit: previewDocument.can_edit,
                   can_delete: previewDocument.can_delete,
                   active: previewDocument.active,
-                  department_id: previewDocument.department_id,
+                  department_ids: previewDocument.department_ids,
                   file_path: previewDocument.file_path,
                   mime_type: previewDocument.mime_type,
                   parameter_item_ids: previewDocument.parameter_item_ids,

@@ -210,7 +210,6 @@ export default function Department({ departmentId }: DepartmentProps) {
         title: departmentData.title,
         description: departmentData.description || "",
         active: departmentData.active ?? true,
-        defaultDepartment: departmentData.default_department ?? false,
       });
       // Set agent roles directly from response
       setDepartmentAgents({
@@ -296,7 +295,6 @@ export default function Department({ departmentId }: DepartmentProps) {
             title: formData.title,
             description: formData.description,
             active: formData.active ?? true,
-            default_department: formData.defaultDepartment ?? false,
             agent_roles: departmentAgents, // Send all 8 roles at once
           },
           {
@@ -318,7 +316,6 @@ export default function Department({ departmentId }: DepartmentProps) {
             title: formData.title,
             description: formData.description,
             active: formData.active ?? true,
-            default_department: formData.defaultDepartment ?? false,
             agent_roles: departmentAgents, // Send all 8 roles at once
             profile_id: effectiveProfile?.id || "",
           },
@@ -373,7 +370,7 @@ export default function Department({ departmentId }: DepartmentProps) {
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
                 <p>
-                  {departmentData?.default_department
+                  {false // Departments don't have department_ids, they ARE departments
                     ? "This is a default department that cannot be edited. You can view the details but cannot make changes."
                     : departmentData?.in_use
                       ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."

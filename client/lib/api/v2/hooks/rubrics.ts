@@ -198,9 +198,8 @@ interface RubricUpdateParams {
   profileId: string;
   name: string;
   description: string;
-  departmentId: string;
+  department_ids: string[] | null;
   active: boolean;
-  defaultRubric: boolean;
   standardGroupUpdates: StandardGroupUpdate[];
 }
 
@@ -215,9 +214,8 @@ export function useRubricUnifiedUpdate() {
         profileId,
         name,
         description,
-        departmentId,
+        department_ids,
         active,
-        defaultRubric,
         standardGroupUpdates,
       } = params;
 
@@ -289,9 +287,8 @@ export function useRubricUnifiedUpdate() {
         rubricId,
         name,
         description,
-        department_id: departmentId,
+        department_ids,
         active,
-        default_rubric: defaultRubric,
         standard_groups: allGroups,
       };
 

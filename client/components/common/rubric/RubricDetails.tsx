@@ -47,7 +47,7 @@ export default function RubricDetails({
 }: RubricDetailsProps) {
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const log = useLogger();
   // V2 mutation hooks
   const createRubricMutation = useCreateRubric();
@@ -55,8 +55,7 @@ export default function RubricDetails({
   const [formData, setFormData] = useState({
     name: rubric.name || "",
     description: rubric.description || "",
-    departmentId:
-      effectiveProfile?.role === "superadmin" ? "" : departmentIds[0] || "",
+    departmentIds: rubric.department_ids || [],
     active: true,
   });
 
@@ -67,15 +66,22 @@ export default function RubricDetails({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDepartmentChange = (departmentId: string | null) => {
-    setFormData((prev) => ({ ...prev, departmentId: departmentId || "" }));
+  const handleDepartmentChange = (departmentIds: string[]) => {
+    setFormData((prev) => ({ ...prev, departmentIds }));
   };
 
   const handleSave = async () => {
     // Department validation for superadmin
-    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
-      toast.error("Department selection is required for superadmin users");
-      return;
+    if (effectiveProfile?.role === "superadmin") {
+      if (
+        formData.departmentIds !== null &&
+        (!formData.departmentIds || formData.departmentIds.length === 0)
+      ) {
+        toast.error(
+          "Please select at least one department or leave empty for all departments"
+        );
+        return;
+      }
     }
 
     try {
@@ -84,9 +90,8 @@ export default function RubricDetails({
         const data = await createRubricMutation.mutateAsync({
           name: formData.name,
           description: formData.description,
-          department_id: formData.departmentId,
+          department_ids: formData.departmentIds,
           active: formData.active,
-          default_rubric: false,
           points: 0, // Will be calculated when standard groups are added
           passPoints: 0,
           standard_groups: [], // Start with no standard groups
@@ -109,9 +114,8 @@ export default function RubricDetails({
           profileId,
           name: formData.name,
           description: formData.description,
-          departmentId: formData.departmentId,
+          department_ids: formData.departmentIds,
           active: formData.active,
-          defaultRubric: rubric.default_rubric ?? false,
           standardGroupUpdates: [], // No changes to standard groups, just metadata
         });
 
@@ -140,7 +144,7 @@ export default function RubricDetails({
       name: rubric.name,
       description: rubric.description,
       active: true,
-      departmentId: effectiveProfile?.primaryDepartmentId || "",
+      departmentIds: rubric.department_ids || [],
     });
   };
 
@@ -185,15 +189,13 @@ export default function RubricDetails({
                   <DepartmentPicker
                     mapping={departmentMapping}
                     validIds={validDepartmentIds}
-                    selectedIds={
-                      formData.departmentId ? [formData.departmentId] : []
-                    }
-                    onSelect={(ids) => handleDepartmentChange(ids[0] || null)}
-                    placeholder="Select department"
+                    selectedIds={formData.departmentIds || []}
+                    onSelect={handleDepartmentChange}
+                    placeholder="All Departments"
                     disabled={
                       createRubricMutation.isPending || isUpdating || isReadonly
                     }
-                    multiSelect={false}
+                    multiSelect={true}
                   />
                 </div>
               )}

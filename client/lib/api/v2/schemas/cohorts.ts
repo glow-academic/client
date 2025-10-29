@@ -32,7 +32,7 @@ export const CohortItemSchema = z.object({
   name: z.string(), // Maps to cohorts.title
   description: z.string().nullable(),
   active: z.boolean(),
-  default_cohort: z.boolean(),
+  department_ids: z.array(z.string()).nullable(), // None = cross-department (all departments)
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   can_duplicate: z.boolean(),
@@ -81,10 +81,9 @@ export const CohortDetailResponseSchema = z.object({
   // Basic fields
   title: z.string(), // cohorts.title
   description: z.string().nullable(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   valid_department_ids: z.array(z.string()),
   active: z.boolean(),
-  default_cohort: z.boolean(),
 
   // Relationships
   simulation_ids: z.array(z.string()),
@@ -128,9 +127,8 @@ export type SimulationInRequest = z.infer<typeof SimulationInRequestSchema>;
 export const CreateCohortRequestSchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  default_cohort: z.boolean(),
   simulation_ids: z.union([
     z.array(z.string()),
     z.array(SimulationInRequestSchema),
@@ -153,9 +151,8 @@ export const UpdateCohortRequestSchema = z.object({
   cohortId: z.string(),
   title: z.string(),
   description: z.string().nullable(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  default_cohort: z.boolean(),
   simulation_ids: z.union([
     z.array(z.string()),
     z.array(SimulationInRequestSchema),

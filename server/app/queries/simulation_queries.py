@@ -45,6 +45,14 @@ class SimulationQueries:
             FROM cohort_simulations cs
             GROUP BY cs.simulation_id
         ),
+        simulation_departments_data AS (
+            SELECT 
+                sd.simulation_id,
+                ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+            FROM simulation_departments sd
+            WHERE sd.active = true
+            GROUP BY sd.simulation_id
+        ),
         simulation_data AS (
             SELECT 
                 s.id as simulation_id,
@@ -55,6 +63,7 @@ class SimulationQueries:
                 s.practice_simulation,
                 s.rubric_id,
                 s.updated_at,
+                COALESCE(sdd.department_ids, NULL) as department_ids,
                 COALESCE(ss.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ss.num_scenarios, 0) as num_scenarios,
                 COALESCE(sa.attempt_count, 0) as attempt_count,
@@ -63,6 +72,7 @@ class SimulationQueries:
                 COALESCE(salcl.num_cohorts, 0) as num_cohorts
             FROM simulations s
             LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
+            LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
             LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id

@@ -54,6 +54,14 @@ class ParameterQueries:
             WHERE pi.rn <= 3
             GROUP BY pi.parameter_id
         ),
+        parameter_departments_data AS (
+            SELECT 
+                pd.parameter_id,
+                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+            FROM parameter_departments pd
+            WHERE pd.active = true
+            GROUP BY pd.parameter_id
+        ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
         )
@@ -64,6 +72,7 @@ class ParameterQueries:
             p.numerical,
             p.active,
             p.updated_at,
+            COALESCE(pdd.department_ids, NULL) as department_ids,
             COALESCE(pic.num_items, 0) as num_items,
             COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
             COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
@@ -84,6 +93,7 @@ class ParameterQueries:
             END as can_duplicate
         FROM parameters p
         LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+        LEFT JOIN parameter_departments_data pdd ON pdd.parameter_id = p.id
         LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
         LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
         LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id

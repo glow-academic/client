@@ -44,6 +44,14 @@ class DocumentQueries:
             WHERE dpi.active = true
             GROUP BY dpi.document_id
         ),
+        document_departments_data AS (
+            SELECT 
+                dd.document_id,
+                ARRAY_AGG(dd.department_id::text ORDER BY dd.created_at) as department_ids
+            FROM document_departments dd
+            WHERE dd.active = true
+            GROUP BY dd.document_id
+        ),
         document_data AS (
             SELECT 
                 d.id as document_id,
@@ -53,12 +61,14 @@ class DocumentQueries:
                 d.mime_type,
                 d.active,
                 d.file_path,
+                COALESCE(ddd.department_ids, NULL) as department_ids,
                 COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(dpic.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
                 COALESCE(dasl.active_scenario_count, 0) as active_scenario_count,
                 COALESCE(dasl_all.total_scenario_links, 0) as total_scenario_links
             FROM documents d
             LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+            LEFT JOIN document_departments_data ddd ON ddd.document_id = d.id
             LEFT JOIN document_scenarios ds ON ds.document_id = d.id
             LEFT JOIN document_parameter_items_cte dpic ON dpic.document_id = d.id
             LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id

@@ -26,6 +26,14 @@ class RubricQueries:
             FROM simulations
             GROUP BY rubric_id
         ),
+        rubric_departments_data AS (
+            SELECT 
+                rd.rubric_id,
+                ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) as department_ids
+            FROM rubric_departments rd
+            WHERE rd.active = true
+            GROUP BY rd.rubric_id
+        ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
         ),
@@ -36,6 +44,7 @@ class RubricQueries:
                 r.description,
                 r.points,
                 r.pass_points as passPoints,
+                COALESCE(rdd.department_ids, NULL) as department_ids,
                 COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
                 COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links,
                 CASE 
@@ -54,6 +63,7 @@ class RubricQueries:
                 END as can_duplicate
             FROM rubrics r
             LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+            LEFT JOIN rubric_departments_data rdd ON rdd.rubric_id = r.id
             LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
             LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
             CROSS JOIN user_profile up

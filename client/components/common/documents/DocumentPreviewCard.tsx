@@ -76,7 +76,7 @@ export function DocumentPreviewCard({
     active: documentItem.active,
     file_path: documentItem.file_path,
     mime_type: documentItem.mime_type,
-    department_id: documentItem.department_id,
+    department_ids: documentItem.department_ids,
     updatedAt: documentItem.updatedAt,
     extension: documentItem.extension,
     scenario_ids: documentItem.scenario_ids,

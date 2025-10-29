@@ -21,6 +21,7 @@ class PersonaItem(BaseModel):
     description: str | None
     color: str
     icon: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     scenario_ids: list[str]  # Array of scenario IDs
     model_id: str
     reasoning: str | None

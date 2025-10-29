@@ -36,6 +36,14 @@ class CohortQueries:
             WHERE cp.active = true
             GROUP BY cp.cohort_id
         ),
+        cohort_departments_data AS (
+            SELECT 
+                cd.cohort_id,
+                ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
+            FROM cohort_departments cd
+            WHERE cd.active = true
+            GROUP BY cd.cohort_id
+        ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
         ),
@@ -57,6 +65,7 @@ class CohortQueries:
             c.title as name,
             c.description,
             c.active,
+            COALESCE(cdd.department_ids, NULL) as department_ids,
             COALESCE(cp.profile_ids, ARRAY[]::uuid[]) as profile_ids,
             COALESCE(cs.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
             COALESCE(cu.usage_count, 0) as usage_count,
@@ -113,6 +122,7 @@ class CohortQueries:
             ) as simulation_mapping
         FROM cohorts c
         LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
+        LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
         LEFT JOIN cohort_profiles_agg cp ON cp.cohort_id = c.id
         LEFT JOIN cohort_simulations_agg cs ON cs.cohort_id = c.id
         LEFT JOIN cohort_usage cu ON cu.cohort_id = c.id

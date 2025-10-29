@@ -104,12 +104,16 @@ class SimulationService(BaseService):
         for row in result:
             # Convert UUID arrays to string arrays
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
 
             simulations.append(
                 SimulationItem(
                     simulation_id=str(row["simulation_id"]),
                     name=row["name"],
                     description=row["description"],
+                    department_ids=dept_ids,
                     time_limit=row["time_limit"],
                     active=row["active"],
                     practice_simulation=row["practice_simulation"],

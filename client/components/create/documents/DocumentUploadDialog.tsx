@@ -85,7 +85,7 @@ export function DocumentUploadDialog({
     classification?: {
       type: string;
       parameterItemIds: string[];
-      departmentId?: string;
+      departmentIds?: string[];
     }
   ) => {
     // Create a unique file ID for this upload
@@ -190,7 +190,7 @@ export function DocumentUploadDialog({
               zip: isZipFile,
               autoClassify: shouldAutoClassify,
               profile_id: effectiveProfile?.id,
-              department_id: classification?.departmentId,
+              department_ids: classification?.departmentIds || null,
               parameter_item_ids: classification?.parameterItemIds || [],
             });
 

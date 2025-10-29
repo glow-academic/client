@@ -313,7 +313,7 @@ export default function Parameters() {
                 <Badge variant="outline">
                   {count} {count === 1 ? "item" : "items"}
                 </Badge>
-                {parameter.default_parameter && (
+                {parameter.department_ids?.length === 0 && (
                   <Badge variant="secondary" className="text-xs">
                     Default
                   </Badge>

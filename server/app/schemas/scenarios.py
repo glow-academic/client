@@ -23,6 +23,7 @@ class ScenarioItem(BaseModel):
     active: bool
     generated: bool
     parent_scenario_id: str | None
+    department_ids: list[str] | None  # None = cross-department (all departments)
     objective_ids: list[str]  # "scenarioId_idx" composite keys
     persona_id: str | None
     parameter_item_ids: list[str]

@@ -61,9 +61,9 @@ export const RubricItemSchema = z.object({
   rubric_id: z.string(),
   name: z.string(),
   description: z.string(),
+  department_ids: z.array(z.string()).nullable(), // None = cross-department (all departments)
   points: z.number(),
   passPoints: z.number(),
-  default_rubric: z.boolean(),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   can_duplicate: z.boolean(),
@@ -103,12 +103,11 @@ export const RubricDetailResponseSchema = z.object({
   // Basic fields
   name: z.string(),
   description: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   valid_department_ids: z.array(z.string()),
   points: z.number(),
   passPoints: z.number(),
   active: z.boolean(),
-  default_rubric: z.boolean(),
   can_edit: z.boolean(), // Permission flag for editing
 
   // Standard groups structure
@@ -186,9 +185,8 @@ export type StandardGroupUpdate = z.infer<typeof StandardGroupUpdateSchema>;
 export const CreateRubricRequestSchema = z.object({
   name: z.string(),
   description: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  default_rubric: z.boolean(),
   points: z.number(),
   passPoints: z.number(),
   standard_groups: z.array(StandardGroupCreateSchema),
@@ -209,9 +207,8 @@ export const UpdateRubricRequestSchema = z.object({
   rubricId: z.string(),
   name: z.string(),
   description: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  default_rubric: z.boolean(),
   standard_groups: z.array(StandardGroupUpdateSchema),
   // points and passPoints are auto-calculated by server
 });

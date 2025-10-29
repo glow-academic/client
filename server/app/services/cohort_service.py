@@ -74,6 +74,9 @@ class CohortService(BaseService):
             # Convert UUID arrays to string arrays
             profile_ids = [str(pid) for pid in (row["profile_ids"] or [])]
             simulation_ids = [str(sid) for sid in (row["simulation_ids"] or [])]
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
 
             cohorts.append(
                 CohortItem(
@@ -81,6 +84,7 @@ class CohortService(BaseService):
                     name=row["name"],
                     description=row["description"],
                     active=row["active"],
+                    department_ids=dept_ids,
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],

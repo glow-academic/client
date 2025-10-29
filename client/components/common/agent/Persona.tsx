@@ -68,8 +68,7 @@ interface FormData {
   color?: string;
   icon?: string;
   active?: boolean;
-  defaultPersona?: boolean;
-  departmentId?: string | null;
+  departmentIds?: string[] | null;
 }
 
 export interface PersonaProps {
@@ -97,8 +96,9 @@ export default function Persona({
       color: "#000000",
       icon: "Zap",
       active: true,
-      defaultPersona: false,
-      departmentId: effectiveProfile?.primaryDepartmentId || "",
+      departmentIds: effectiveProfile?.primaryDepartmentId
+        ? [effectiveProfile.primaryDepartmentId]
+        : [],
     }),
     [effectiveProfile?.primaryDepartmentId]
   );
@@ -157,8 +157,7 @@ export default function Persona({
         color: personaData.color || "#000000",
         icon: personaData.icon || "Zap",
         active: personaData.active ?? true,
-        defaultPersona: personaData.default_persona ?? false,
-        departmentId: personaData.department_id,
+        departmentIds: personaData.department_ids,
       });
     } else if (!isEditMode && personaData) {
       // For create mode, use defaults from the API response
@@ -218,9 +217,16 @@ export default function Persona({
     }
 
     // Department validation for superadmins
-    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
-      toast.error("Department selection is required for superadmin users");
-      return;
+    if (effectiveProfile?.role === "superadmin") {
+      if (
+        formData.departmentIds !== null &&
+        (!formData.departmentIds || formData.departmentIds.length === 0)
+      ) {
+        toast.error(
+          "Please select at least one department or leave empty for all departments"
+        );
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -240,11 +246,7 @@ export default function Persona({
             color: formData.color || "#000000",
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
-            default_persona: formData.defaultPersona ?? false,
-            department_id:
-              formData.departmentId ||
-              effectiveProfile?.primaryDepartmentId ||
-              "",
+            department_ids: formData.departmentIds || null,
           },
           {
             onSuccess: () => {
@@ -270,11 +272,7 @@ export default function Persona({
             color: formData.color || "#000000",
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
-            default_persona: formData.defaultPersona ?? false,
-            department_id:
-              formData.departmentId ||
-              effectiveProfile?.primaryDepartmentId ||
-              "",
+            department_ids: formData.departmentIds || null,
           },
           {
             onSuccess: () => {
@@ -332,7 +330,7 @@ export default function Persona({
                 </h3>
                 <div className="mt-2 text-sm text-yellow-700">
                   <p>
-                    {personaData?.default_persona
+                    {personaData?.department_ids?.length === 0
                       ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
                       : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
                   </p>
@@ -388,22 +386,20 @@ export default function Persona({
             {effectiveProfile?.role === "superadmin" && (
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                {formData?.departmentId !== undefined && !isLoading ? (
+                {formData?.departmentIds !== undefined && !isLoading ? (
                   <DepartmentPicker
                     mapping={personaData?.department_mapping || {}}
                     validIds={personaData?.valid_department_ids || []}
-                    selectedIds={
-                      formData?.departmentId ? [formData.departmentId] : []
-                    }
+                    selectedIds={formData.departmentIds || []}
                     onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,
-                        departmentId: ids[0] || null,
+                        departmentIds: ids,
                       }))
                     }
-                    placeholder="Select department"
+                    placeholder="All Departments"
                     disabled={isReadonly}
-                    multiSelect={false}
+                    multiSelect={true}
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />
@@ -434,30 +430,6 @@ export default function Persona({
                   <Skeleton className="h-6 w-11" />
                 )}
               </div>
-
-              {/* Default Persona Switch - Only for superadmin */}
-              {effectiveProfile?.role === "superadmin" && (
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="defaultPersona" className="text-sm">
-                    Default Persona
-                  </Label>
-                  {formData?.defaultPersona !== undefined && !isLoading ? (
-                    <Switch
-                      id="defaultPersona"
-                      checked={formData.defaultPersona ?? false}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          defaultPersona: checked,
-                        }))
-                      }
-                      disabled={isReadonly}
-                    />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Color and Icon Selection Row */}

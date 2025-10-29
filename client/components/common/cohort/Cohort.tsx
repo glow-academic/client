@@ -67,8 +67,7 @@ interface FormData {
   title: string;
   description: string;
   active: boolean;
-  defaultCohort: boolean;
-  departmentId: string;
+  departmentIds: string[] | null;
 }
 export default function Cohort({ cohortId }: CohortProps) {
   const router = useRouter();
@@ -88,8 +87,9 @@ export default function Cohort({ cohortId }: CohortProps) {
     title: "",
     description: "",
     active: true,
-    defaultCohort: false,
-    departmentId: "",
+    departmentIds: effectiveProfile?.primaryDepartmentId
+      ? [effectiveProfile.primaryDepartmentId]
+      : [],
   };
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -171,7 +171,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     if (!isEditMode || !cohortData) return false;
     // V2 API doesn't return explicit can_edit flag in detail response
     // Infer from default_cohort and user role
-    const isDefaultCohort = cohortData.default_cohort;
+    const isDefaultCohort = cohortData?.department_ids?.length === 0;
     if (isDefaultCohort && effectiveProfile?.role !== "superadmin") {
       return true; // Only superadmins can edit default cohorts
     }
@@ -190,8 +190,7 @@ export default function Cohort({ cohortId }: CohortProps) {
         title: cohortData.title || "",
         description: cohortData.description || "",
         active: cohortData.active ?? true,
-        defaultCohort: cohortData.default_cohort ?? false,
-        departmentId: cohortData.department_id,
+        departmentIds: cohortData.department_ids,
       };
 
       // Only update if the data has actually changed to prevent infinite loops
@@ -200,8 +199,8 @@ export default function Cohort({ cohortId }: CohortProps) {
           prev.title !== cohortFormData.title ||
           prev.description !== cohortFormData.description ||
           prev.active !== cohortFormData.active ||
-          prev.defaultCohort !== cohortFormData.defaultCohort ||
-          prev.departmentId !== cohortFormData.departmentId;
+          JSON.stringify(prev.departmentIds?.sort()) !==
+            JSON.stringify(cohortFormData.departmentIds?.sort());
 
         return hasChanged ? cohortFormData : prev;
       });
@@ -211,8 +210,8 @@ export default function Cohort({ cohortId }: CohortProps) {
           prev.title !== cohortFormData.title ||
           prev.description !== cohortFormData.description ||
           prev.active !== cohortFormData.active ||
-          prev.defaultCohort !== cohortFormData.defaultCohort ||
-          prev.departmentId !== cohortFormData.departmentId;
+          JSON.stringify(prev.departmentIds?.sort()) !==
+            JSON.stringify(cohortFormData.departmentIds?.sort());
 
         return hasChanged ? cohortFormData : prev;
       });
@@ -307,8 +306,8 @@ export default function Cohort({ cohortId }: CohortProps) {
       current.title !== original.title ||
       current.description !== original.description ||
       current.active !== original.active ||
-      current.defaultCohort !== original.defaultCohort ||
-      current.departmentId !== original.departmentId ||
+      JSON.stringify(current.departmentIds?.sort()) !==
+        JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentSimulationIds].sort()) !==
         JSON.stringify(originalSimulationIds.sort()) ||
       staffProfiles.length !== originalProfileIds.length ||
@@ -386,8 +385,14 @@ export default function Cohort({ cohortId }: CohortProps) {
     }
 
     // Department validation for superadmins
-    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
-      newErrors.title = "Department selection is required for superadmin users";
+    if (effectiveProfile?.role === "superadmin") {
+      if (
+        formData.departmentIds !== null &&
+        (!formData.departmentIds || formData.departmentIds.length === 0)
+      ) {
+        newErrors.title =
+          "Please select at least one department or leave empty for all departments";
+      }
     }
 
     // For instructional users, ensure they are always in the cohort
@@ -432,12 +437,8 @@ export default function Cohort({ cohortId }: CohortProps) {
           cohortId: targetCohortId,
           title: formData.title || "",
           description: formData.description || "",
-          department_id:
-            formData.departmentId ||
-            effectiveProfile?.primaryDepartmentId ||
-            "",
+          department_ids: formData.departmentIds || null,
           active: formData.active ?? true,
-          default_cohort: formData.defaultCohort ?? false,
           simulation_ids: currentSimulationIds.map((simId) => ({
             simulation_id: simId,
             active: simulationActiveStates[simId] ?? true,
@@ -451,12 +452,8 @@ export default function Cohort({ cohortId }: CohortProps) {
         await createCohortMutation.mutateAsync({
           title: formData.title || "",
           description: formData.description || "",
-          department_id:
-            formData.departmentId ||
-            effectiveProfile?.primaryDepartmentId ||
-            "",
+          department_ids: formData.departmentIds || null,
           active: formData.active || true,
-          default_cohort: formData.defaultCohort ?? false,
           simulation_ids: currentSimulationIds.map((simId) => ({
             simulation_id: simId,
             active: simulationActiveStates[simId] ?? true,
@@ -517,24 +514,26 @@ export default function Cohort({ cohortId }: CohortProps) {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                {cohortData?.default_cohort &&
+                {cohortData?.department_ids?.length === 0 &&
                 effectiveProfile?.role !== "superadmin"
                   ? "Default cohort cannot be edited"
                   : "You don't have permission to edit this cohort"}
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
-                {cohortData?.default_cohort &&
-                effectiveProfile?.role !== "superadmin" ? (
-                  <p>
-                    This is a default cohort template restricted to superadmins.
-                    You can view details but cannot make changes.
-                  </p>
-                ) : (
-                  <p>
-                    You can view the details but cannot make changes due to your
-                    current permissions.
-                  </p>
-                )}
+                <p>
+                  {cohortData?.department_ids?.length === 0 &&
+                  effectiveProfile?.role !== "superadmin" ? (
+                    <>
+                      This is a default cohort template restricted to
+                      superadmins. You can view details but cannot make changes.
+                    </>
+                  ) : (
+                    <>
+                      You can view the details but cannot make changes due to
+                      your current permissions.
+                    </>
+                  )}
+                </p>
               </div>
             </div>
           </div>
@@ -581,19 +580,15 @@ export default function Cohort({ cohortId }: CohortProps) {
         {effectiveProfile?.role === "superadmin" && (
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
-            {formData?.departmentId !== undefined && !isLoading ? (
+            {formData?.departmentIds !== undefined && !isLoading ? (
               <DepartmentPicker
                 mapping={cohortData?.department_mapping || {}}
                 validIds={cohortData?.valid_department_ids || []}
-                selectedIds={
-                  formData.departmentId ? [formData.departmentId] : []
-                }
-                onSelect={(ids) =>
-                  handleInputChange("departmentId", ids[0] || null)
-                }
-                placeholder="Select department"
+                selectedIds={formData.departmentIds || []}
+                onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                placeholder="All Departments"
                 disabled={isReadonly}
-                multiSelect={false}
+                multiSelect={true}
               />
             ) : (
               <Skeleton className="h-10 w-full" />
@@ -621,27 +616,6 @@ export default function Cohort({ cohortId }: CohortProps) {
               <Skeleton className="h-6 w-11" />
             )}
           </div>
-
-          {/* Default Cohort Switch - Only for superadmin */}
-          {effectiveProfile?.role === "superadmin" && (
-            <div className="flex items-center gap-2">
-              <Label htmlFor="defaultCohort" className="text-sm">
-                Default Cohort
-              </Label>
-              {formData.defaultCohort !== undefined && !isLoading ? (
-                <Switch
-                  id="defaultCohort"
-                  checked={formData.defaultCohort ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("defaultCohort", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
-            </div>
-          )}
         </div>
 
         {/* Simulations */}

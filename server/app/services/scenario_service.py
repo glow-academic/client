@@ -232,6 +232,9 @@ class ScenarioService(BaseService):
             parameter_item_ids = [str(pid) for pid in (row["parameter_item_ids"] or [])]
             simulation_ids = [str(sid) for sid in (row["simulation_ids"] or [])]
             cohort_ids = [str(cid) for cid in (row["cohort_ids"] or [])]
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
 
             scenarios.append(
                 ScenarioItem(
@@ -241,6 +244,7 @@ class ScenarioService(BaseService):
                     active=row["active"],
                     generated=row["generated"],
                     parent_scenario_id=row["parent_scenario_id"],
+                        department_ids=dept_ids,
                     objective_ids=objective_ids,
                     persona_id=str(row["persona_id"]) if row["persona_id"] else None,
                     parameter_item_ids=parameter_item_ids,

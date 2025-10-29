@@ -46,8 +46,7 @@ interface FormData {
   description?: string;
   numerical?: boolean;
   active?: boolean;
-  defaultParameter?: boolean;
-  departmentId?: string | null;
+  departmentIds?: string[] | null;
 }
 
 interface ParameterItemFormData {
@@ -81,8 +80,9 @@ export default function Parameter({
       description: "",
       numerical: false,
       active: false,
-      defaultParameter: false,
-      departmentId: effectiveProfile?.primaryDepartmentId || "",
+      departmentIds: effectiveProfile?.primaryDepartmentId
+        ? [effectiveProfile.primaryDepartmentId]
+        : [],
     }),
     [effectiveProfile?.primaryDepartmentId]
   );
@@ -161,15 +161,14 @@ export default function Parameter({
         description: parameterData.description,
         numerical: parameterData.numerical,
         active: parameterData.active,
-        defaultParameter: parameterData.default_parameter ?? false,
-        departmentId: parameterData.department_id ?? null,
+        departmentIds: parameterData.department_ids,
       });
     } else if (!isEditMode && parameterData) {
       // For create mode, use data from default detail endpoint
       setFormData({
         ...initialFormData,
-        departmentId:
-          parameterData.department_id ?? initialFormData.departmentId ?? null,
+        departmentIds:
+          parameterData.department_ids ?? initialFormData.departmentIds ?? null,
       });
     }
   }, [parameterData, isEditMode, initialFormData]);
@@ -253,11 +252,7 @@ export default function Parameter({
           description: formData.description!,
           numerical: formData.numerical || false,
           active: formData.active || false,
-          default_parameter: formData.defaultParameter || false,
-          department_id:
-            formData.departmentId ||
-            effectiveProfile?.primaryDepartmentId ||
-            "",
+          department_ids: formData.departmentIds || null,
           parameter_items,
         });
 
@@ -269,11 +264,7 @@ export default function Parameter({
           description: formData.description!,
           numerical: formData.numerical || false,
           active: formData.active || false,
-          default_parameter: formData.defaultParameter || false,
-          department_id:
-            formData.departmentId ||
-            effectiveProfile?.primaryDepartmentId ||
-            "",
+          department_ids: formData.departmentIds || null,
           parameter_items,
         });
 
@@ -342,8 +333,15 @@ export default function Parameter({
     }
 
     // Department validation for superadmin
-    if (effectiveProfile?.role === "superadmin" && !formData?.departmentId) {
-      errors.push("Department selection is required for superadmin users");
+    if (effectiveProfile?.role === "superadmin") {
+      if (
+        formData?.departmentIds !== null &&
+        (!formData?.departmentIds || formData?.departmentIds.length === 0)
+      ) {
+        errors.push(
+          "Please select at least one department or leave empty for all departments"
+        );
+      }
     }
 
     // Validate parameter items
@@ -425,21 +423,19 @@ export default function Parameter({
             {effectiveProfile?.role === "superadmin" && (
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                {formData?.departmentId !== undefined && !isLoading ? (
+                {formData?.departmentIds !== undefined && !isLoading ? (
                   <DepartmentPicker
                     mapping={departmentMapping}
                     validIds={validDepartmentIds}
-                    selectedIds={
-                      formData?.departmentId ? [formData.departmentId] : []
-                    }
+                    selectedIds={formData.departmentIds || []}
                     onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,
-                        departmentId: ids[0] || "",
+                        departmentIds: ids,
                       }))
                     }
-                    placeholder="Select department"
-                    multiSelect={false}
+                    placeholder="All Departments"
+                    multiSelect={true}
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />
@@ -480,28 +476,6 @@ export default function Parameter({
                 <Skeleton className="h-6 w-32" />
               )}
             </div>
-
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="flex items-center space-x-2">
-                {formData?.defaultParameter !== undefined && !isLoading ? (
-                  <>
-                    <Switch
-                      id="default-parameter"
-                      checked={formData.defaultParameter}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          defaultParameter: checked,
-                        }))
-                      }
-                    />
-                    <Label htmlFor="default-parameter">Default Parameter</Label>
-                  </>
-                ) : (
-                  <Skeleton className="h-6 w-40" />
-                )}
-              </div>
-            )}
           </div>
 
           {/* Parameter Items Section */}
@@ -663,9 +637,7 @@ export default function Parameter({
                       description: parameterData?.description,
                       numerical: parameterData?.numerical,
                       active: parameterData?.active,
-                      defaultParameter:
-                        parameterData?.default_parameter ?? false,
-                      departmentId: parameterData?.department_id,
+                      departmentIds: parameterData?.department_ids,
                     }) &&
                   JSON.stringify(parameterItemsFormData) ===
                     JSON.stringify(

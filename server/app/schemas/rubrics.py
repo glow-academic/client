@@ -62,6 +62,7 @@ class RubricItem(BaseModel):
     rubric_id: str
     name: str
     description: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     points: int
     passPoints: int
     can_edit: bool

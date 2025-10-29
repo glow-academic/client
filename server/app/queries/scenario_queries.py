@@ -61,6 +61,14 @@ class ScenarioQueries:
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
         ),
+        scenario_departments_data AS (
+            SELECT 
+                sd.scenario_id,
+                ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+            FROM scenario_departments sd
+            WHERE sd.active = true
+            GROUP BY sd.scenario_id
+        ),
         scenario_data AS (
             SELECT 
                 s.id as scenario_id,
@@ -76,6 +84,7 @@ class ScenarioQueries:
                 COALESCE(ss.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
                 COALESCE(ss.num_simulations, 0) as num_simulations,
                 COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
+                COALESCE(sdd.department_ids, NULL) as department_ids,
                 CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
                 CASE 
                     WHEN up.role IN ('admin', 'instructional', 'superadmin') 
@@ -94,6 +103,7 @@ class ScenarioQueries:
             -- Only include root scenarios (parent_id = child_id in scenario_tree)
             JOIN scenario_tree root_check ON root_check.parent_id = s.id AND root_check.child_id = s.id
             LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+            LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
             LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN scenario_objectives so ON so.scenario_id = s.id

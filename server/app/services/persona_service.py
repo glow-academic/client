@@ -73,6 +73,9 @@ class PersonaService(BaseService):
         for row in result:
             # Convert UUID arrays to string arrays
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
 
             personas.append(
                 PersonaItem(
@@ -81,6 +84,7 @@ class PersonaService(BaseService):
                     description=row["description"],
                     color=row["color"],
                     icon=row["icon"],
+                    department_ids=dept_ids,
                     scenario_ids=scenario_ids,
                     model_id=str(row["model_id"]),
                     reasoning=row["reasoning"],

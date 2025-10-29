@@ -54,9 +54,8 @@ interface FormData {
   rubricId?: string;
   cohortIds?: string[];
   active?: boolean;
-  defaultSimulation?: boolean;
   practiceSimulation?: boolean;
-  departmentId?: string | null;
+  departmentIds?: string[] | null;
   outputGuardrailActive?: boolean;
   inputGuardrailActive?: boolean;
   imageInputActive?: boolean;
@@ -69,11 +68,11 @@ interface FormErrors {
   timeLimit?: string;
   rubricId?: string;
   cohortIds?: string[];
-  departmentId?: string;
+  departmentIds?: string[];
 }
 
 export default function Simulation({ simulationId }: SimulationProps) {
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   // Mutation hooks (v2)
@@ -136,16 +135,17 @@ export default function Simulation({ simulationId }: SimulationProps) {
       rubricId: "",
       cohortIds: [],
       active: true,
-      defaultSimulation: false,
       practiceSimulation: false,
-      departmentId: "",
+      departmentIds: effectiveProfile?.primaryDepartmentId
+        ? [effectiveProfile.primaryDepartmentId]
+        : [],
       outputGuardrailActive: false,
       inputGuardrailActive: false,
       imageInputActive: false,
       hintsEnabled: false,
       objectivesEnabled: false,
     }),
-    []
+    [effectiveProfile?.primaryDepartmentId]
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -168,9 +168,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
         timeLimit: simulationData.time_limit,
         rubricId: simulationData.rubric_id,
         active: simulationData.active,
-        defaultSimulation: simulationData.default_simulation ?? false,
         practiceSimulation: simulationData.practice_simulation ?? false,
-        departmentId: simulationData.department_id,
+        departmentIds: simulationData.department_ids,
         outputGuardrailActive: simulationData.output_guardrail_active ?? false,
         inputGuardrailActive: simulationData.input_guardrail_active ?? false,
         imageInputActive: simulationData.image_input_active ?? false,
@@ -266,9 +265,15 @@ export default function Simulation({ simulationId }: SimulationProps) {
     }
 
     // Department validation for superadmins
-    if (effectiveProfile?.role === "superadmin" && !formData?.departmentId) {
-      newErrors.departmentId =
-        "Department selection is required for superadmin users";
+    if (effectiveProfile?.role === "superadmin") {
+      if (
+        formData?.departmentIds !== null &&
+        (!formData?.departmentIds || formData?.departmentIds.length === 0)
+      ) {
+        newErrors.departmentIds = [
+          "Please select at least one department or leave empty for all departments",
+        ];
+      }
     }
 
     setErrors(newErrors);
@@ -299,9 +304,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
           simulationId: targetSimulationId,
           title: formData?.title || "",
           description: formData?.description ?? "",
-          department_id: formData?.departmentId || departmentIds[0] || "",
+          department_ids: formData?.departmentIds || null,
           active: formData?.active ?? true,
-          default_simulation: formData?.defaultSimulation || false,
           practice_simulation: formData?.practiceSimulation || false,
           hints_enabled: formData?.hintsEnabled || false,
           objectives_enabled: formData?.objectivesEnabled || false,
@@ -323,9 +327,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
         const createPayload = {
           title: formData?.title || "",
           description: formData?.description ?? "",
-          department_id: formData?.departmentId || departmentIds[0] || "",
+          department_ids: formData?.departmentIds || null,
           active: formData?.active || true,
-          default_simulation: formData?.defaultSimulation || false,
           practice_simulation: formData?.practiceSimulation || false,
           hints_enabled: formData?.hintsEnabled || false,
           objectives_enabled: formData?.objectivesEnabled || false,
@@ -396,9 +399,9 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.timeLimit !== original.timeLimit ||
       current.rubricId !== original.rubricId ||
       current.active !== original.active ||
-      current.defaultSimulation !== original.defaultSimulation ||
       current.practiceSimulation !== original.practiceSimulation ||
-      current.departmentId !== original.departmentId ||
+      JSON.stringify(current.departmentIds?.sort()) !==
+        JSON.stringify(original.departmentIds?.sort()) ||
       current.outputGuardrailActive !== original.outputGuardrailActive ||
       current.inputGuardrailActive !== original.inputGuardrailActive ||
       current.imageInputActive !== original.imageInputActive ||
@@ -487,25 +490,21 @@ export default function Simulation({ simulationId }: SimulationProps) {
         {effectiveProfile?.role === "superadmin" && (
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
-            {formData?.departmentId !== undefined && !isLoading ? (
+            {formData?.departmentIds !== undefined && !isLoading ? (
               <DepartmentPicker
                 mapping={simulationData?.department_mapping || {}}
                 validIds={simulationData?.valid_department_ids || []}
-                selectedIds={
-                  formData?.departmentId ? [formData.departmentId] : []
-                }
-                onSelect={(ids) =>
-                  handleInputChange("departmentId", ids[0] || "")
-                }
-                placeholder="Select department"
+                selectedIds={formData.departmentIds || []}
+                onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                placeholder="All Departments"
                 disabled={isReadonly}
-                multiSelect={false}
+                multiSelect={true}
               />
             ) : (
               <Skeleton className="h-10 w-full" />
             )}
-            {errors.departmentId && (
-              <p className="text-sm text-destructive">{errors.departmentId}</p>
+            {errors.departmentIds && (
+              <p className="text-sm text-destructive">{errors.departmentIds}</p>
             )}
           </div>
         )}
@@ -530,27 +529,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
               <Skeleton className="h-6 w-11" />
             )}
           </div>
-
-          {/* Default Simulation Switch - Only for superadmin */}
-          {effectiveProfile?.role === "superadmin" && (
-            <div className="flex items-center gap-2">
-              <Label htmlFor="defaultSimulation" className="text-sm">
-                Default Simulation
-              </Label>
-              {formData?.defaultSimulation !== undefined && !isLoading ? (
-                <Switch
-                  id="defaultSimulation"
-                  checked={formData.defaultSimulation ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("defaultSimulation", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
-            </div>
-          )}
 
           {/* Practice Simulation Switch - Only for superadmin */}
           {effectiveProfile?.role === "superadmin" && (

@@ -30,6 +30,7 @@ class CohortItem(BaseModel):
     name: str  # Maps to cohorts.title
     description: str | None
     active: bool
+    department_ids: list[str] | None  # None = cross-department (all departments)
     can_edit: bool
     can_delete: bool
     can_duplicate: bool

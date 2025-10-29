@@ -28,6 +28,7 @@ class SimulationItem(BaseModel):
     simulation_id: str
     name: str  # Maps to simulations.title
     description: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     time_limit: int | None
     active: bool
     practice_simulation: bool

@@ -89,11 +89,16 @@ class RubricService(BaseService):
                     else:
                         standard_groups_dict[group_id] = []
 
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
+
             rubrics.append(
                 RubricItem(
                     rubric_id=str(row["rubric_id"]),
                     name=row["name"],
                     description=row["description"],
+                    department_ids=dept_ids,
                     points=row["points"],
                     passPoints=row["passpoints"],
                     can_edit=row["can_edit"],

@@ -349,7 +349,7 @@ export function Scenarios() {
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
                 {!scenario.generated &&
-                  !scenario.default_scenario &&
+                  !(scenario.department_ids?.length === 0) &&
                   !scenario.active && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}

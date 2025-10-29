@@ -31,7 +31,7 @@ import { inferMimeFromName } from "@/utils/mime-map";
 export type FileClassification = {
   type: DocumentType;
   parameterItemIds: string[];
-  departmentId?: string;
+  departmentIds?: string[];
 };
 
 export interface UploadClassificationDialogProps {
@@ -86,9 +86,13 @@ export function UploadClassificationDialog({
   const [applyAllTempParameterItemIds, setApplyAllTempParameterItemIds] =
     React.useState<string[]>([]);
   // Department selection state - default to user's primary department
-  const [selectedDepartmentId, setSelectedDepartmentId] = React.useState<
-    string | null
-  >(effectiveProfile?.primaryDepartmentId || null);
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = React.useState<
+    string[]
+  >(
+    effectiveProfile?.primaryDepartmentId
+      ? [effectiveProfile.primaryDepartmentId]
+      : []
+  );
 
   React.useEffect(() => {
     // Initialize defaults for new files
@@ -242,10 +246,10 @@ export function UploadClassificationDialog({
             <DepartmentPicker
               mapping={departmentMapping}
               validIds={validDepartmentIds}
-              selectedIds={selectedDepartmentId ? [selectedDepartmentId] : []}
-              onSelect={(ids) => setSelectedDepartmentId(ids[0] || null)}
-              placeholder="Select department"
-              multiSelect={false}
+              selectedIds={selectedDepartmentIds}
+              onSelect={setSelectedDepartmentIds}
+              placeholder="All Departments"
+              multiSelect={true}
             />
           </div>
         )}
@@ -454,18 +458,14 @@ export function UploadClassificationDialog({
                         fileName,
                         {
                           ...classification,
-                          ...(selectedDepartmentId && {
-                            departmentId: selectedDepartmentId,
-                          }),
+                          departmentIds: selectedDepartmentIds,
                         },
                       ]
                     )
                   );
                   const zipDefaultsWithDepartment = {
                     ...zipDefaults,
-                    ...(selectedDepartmentId && {
-                      departmentId: selectedDepartmentId,
-                    }),
+                    departmentIds: selectedDepartmentIds,
                   };
                   onConfirm(perFileWithDepartment, zipDefaultsWithDepartment);
                 }}

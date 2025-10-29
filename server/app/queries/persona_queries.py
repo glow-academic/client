@@ -37,6 +37,14 @@ class PersonaQueries:
             WHERE sp.active = true AND st.parent_id = st.child_id
             GROUP BY sp.persona_id
         ),
+        persona_departments_data AS (
+            SELECT 
+                pd.persona_id,
+                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+            FROM persona_departments pd
+            WHERE pd.active = true
+            GROUP BY pd.persona_id
+        ),
         persona_data AS (
             SELECT 
                 p.id as persona_id,
@@ -49,6 +57,7 @@ class PersonaQueries:
                 p.temperature,
                 p.active,
                 p.updated_at,
+                COALESCE(pdd.department_ids, NULL) as department_ids,
                 COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ps.num_scenarios, 0) as num_scenarios,
                 m.name as model_name,
@@ -61,6 +70,7 @@ class PersonaQueries:
             LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
             LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
             LEFT JOIN models m ON m.id = p.model_id
+            LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
             LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id = ANY($1)
             GROUP BY p.id, ps.scenario_ids, ps.num_scenarios, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
             HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (

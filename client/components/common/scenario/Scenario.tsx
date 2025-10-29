@@ -41,7 +41,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
@@ -144,8 +143,9 @@ export default function Scenario({
     () => ({
       name: "",
       problemStatement: "",
-      defaultScenario: false,
-      departmentId: effectiveProfile?.primaryDepartmentId || "",
+      departmentIds: effectiveProfile?.primaryDepartmentId
+        ? [effectiveProfile.primaryDepartmentId]
+        : [],
     }),
     [effectiveProfile?.primaryDepartmentId]
   );
@@ -228,8 +228,7 @@ export default function Scenario({
       setFormData({
         name: scenarioData.name,
         problemStatement: scenarioData.problem_statement,
-        defaultScenario: scenarioData.default_scenario,
-        departmentId: scenarioData.department_id,
+        departmentIds: scenarioData.department_ids || [],
       });
       setSelectedPersonaId(scenarioData.persona_id);
       setCurrentDocumentIds(scenarioData.document_ids);
@@ -246,8 +245,7 @@ export default function Scenario({
       setOriginalFormData({
         name: scenarioData.name,
         problemStatement: scenarioData.problem_statement,
-        defaultScenario: scenarioData.default_scenario,
-        departmentId: scenarioData.department_id,
+        departmentIds: scenarioData.department_ids || [],
       });
       setOriginalDocumentIds(scenarioData.document_ids);
       setOriginalParameterItemIds(
@@ -264,8 +262,7 @@ export default function Scenario({
       setFormData({
         name: "",
         problemStatement: "",
-        defaultScenario: false,
-        departmentId: scenarioData.department_id,
+        departmentIds: scenarioData.department_ids || [],
       });
     }
   }, [scenarioData, isEditMode]);
@@ -282,7 +279,8 @@ export default function Scenario({
       selectedPersonaId !== originalPersonaId ||
       current.name !== original.name ||
       current.problemStatement !== original.problemStatement ||
-      current.defaultScenario !== original.defaultScenario ||
+      JSON.stringify(current.departmentIds?.sort()) !==
+        JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
         JSON.stringify([...(originalDocumentIds || [])].sort()) ||
       JSON.stringify([...currentParameterItemIds].sort()) !==
@@ -631,9 +629,16 @@ export default function Scenario({
 
   const handleSubmit = async () => {
     // Department validation for superadmins
-    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
-      toast.error("Department selection is required for superadmin users");
-      return;
+    if (effectiveProfile?.role === "superadmin") {
+      if (
+        formData.departmentIds !== null &&
+        (!formData.departmentIds || formData.departmentIds.length === 0)
+      ) {
+        toast.error(
+          "Please select at least one department or leave empty for all departments"
+        );
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -643,10 +648,8 @@ export default function Scenario({
       const payload = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
-        department_id:
-          formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
+        department_ids: formData.departmentIds || null,
         active: true,
-        default_scenario: formData.defaultScenario || false,
         persona_id: selectedPersonaId,
         document_ids: currentDocumentIds,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
@@ -1290,34 +1293,14 @@ export default function Scenario({
                 <DepartmentPicker
                   mapping={departmentMapping}
                   validIds={scenarioData?.valid_department_ids || []}
-                  selectedIds={
-                    formData?.departmentId ? [formData.departmentId] : []
-                  }
-                  onSelect={(ids) =>
-                    handleInputChange("departmentId", ids[0] || "")
-                  }
-                  placeholder="Select department"
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                  placeholder="All Departments"
                   disabled={isReadonly}
-                  multiSelect={false}
+                  multiSelect={true}
                 />
               </div>
             )}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Default Scenario</Label>
-                <p className="text-sm text-muted-foreground">
-                  Mark this as a default scenario that can be used as a
-                  template.
-                </p>
-              </div>
-              <Switch
-                checked={formData.defaultScenario ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("defaultScenario", checked)
-                }
-                disabled={isReadonly}
-              />
-            </div>
             {/* Practice Scenario feature removed - was not in final schema */}
             {/* <div className="flex items-center justify-between">
               <div className="space-y-0.5">

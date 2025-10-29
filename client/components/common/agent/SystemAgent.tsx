@@ -138,7 +138,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             | "high"
             | undefined) || "none",
         active: agentDetail.active ?? true,
-        defaultAgent: agentDetail.default_agent ?? false,
       });
     } else if (!isEditMode && agentDetail) {
       // For create mode, use defaults from API response
@@ -219,7 +218,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 ? formData.reasoning
                 : null,
             active: formData.active ?? true,
-            default_agent: formData.defaultAgent ?? false,
           },
           {
             onSuccess: () => {
@@ -254,7 +252,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 ? formData.reasoning
                 : null,
             active: formData.active ?? true,
-            default_agent: formData.defaultAgent ?? false,
           },
           {
             onSuccess: (response) => {

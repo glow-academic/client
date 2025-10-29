@@ -76,14 +76,13 @@ export default function Rubric({ rubricId }: RubricProps) {
       points: 0,
       passPoints: 0,
       active: true,
-      default_rubric: true,
+      department_ids: [], // Default rubric has empty department_ids
       can_edit: true,
       can_delete: true,
       can_duplicate: true,
       standard_groups: {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      departmentId: "",
     }),
     []
   );
@@ -99,14 +98,13 @@ export default function Rubric({ rubricId }: RubricProps) {
       points: rubricData.points,
       passPoints: rubricData.passPoints,
       active: rubricData.active,
-      default_rubric: rubricData.default_rubric,
       can_edit: rubricData.can_edit,
       can_delete: true,
       can_duplicate: true,
       standard_groups: {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      departmentId: rubricData.department_id,
+      department_ids: rubricData.department_ids,
     };
   }, [isEditMode, rubricData, rubricId, defaultRubric]);
 
@@ -268,9 +266,8 @@ export default function Rubric({ rubricId }: RubricProps) {
               mode="edit"
               rubricName={currentRubric.name}
               rubricDescription={currentRubric.description}
-              rubricDepartmentId={currentRubric.departmentId}
+              rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
               rubricActive={currentRubric.active}
-              rubricDefaultRubric={currentRubric.default_rubric}
               profileId={effectiveProfile?.id || ""}
             />
           ))}
@@ -285,9 +282,8 @@ export default function Rubric({ rubricId }: RubricProps) {
             standards={[]} // Pass empty array for create mode
             rubricName={currentRubric.name}
             rubricDescription={currentRubric.description}
-            rubricDepartmentId={currentRubric.departmentId}
+            rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
             rubricActive={currentRubric.active}
-            rubricDefaultRubric={currentRubric.default_rubric}
             profileId={effectiveProfile?.id || ""}
           />
         </div>

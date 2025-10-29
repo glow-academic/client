@@ -41,9 +41,9 @@ export const ScenarioItemSchema = z.object({
   title: z.string(), // Maps to scenarios.name
   problem_statement: z.string(),
   active: z.boolean(),
-  default_scenario: z.boolean(),
   generated: z.boolean(),
   parent_scenario_id: z.string().nullable(),
+  department_ids: z.array(z.string()).nullable(), // None = cross-department (all departments)
   objective_ids: z.array(z.string()), // "scenarioId_idx" composite keys
   persona_id: z.string().nullable(),
   parameter_item_ids: z.array(z.string()),
@@ -89,12 +89,11 @@ export const ScenarioDetailResponseSchema = z.object({
   name: z.string(),
   problem_statement: z.string(),
   active: z.boolean(),
-  default_scenario: z.boolean(),
   generated: z.boolean(),
   parent_scenario_id: z.string().nullable(),
 
   // Department
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   valid_department_ids: z.array(z.string()),
 
   // IDs
@@ -153,9 +152,8 @@ export type ScenarioDetailDefaultRequest = z.infer<
 export const CreateScenarioRequestSchema = z.object({
   name: z.string(),
   problem_statement: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  default_scenario: z.boolean(),
   persona_id: z.string().nullable(),
   document_ids: z.array(z.string()),
   objective_ids: z.array(z.string()), // Can be composite IDs or raw text
@@ -179,9 +177,8 @@ export const UpdateScenarioRequestSchema = z.object({
   scenarioId: z.string(),
   name: z.string(),
   problem_statement: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  default_scenario: z.boolean(),
   persona_id: z.string().nullable(),
   document_ids: z.array(z.string()),
   objective_ids: z.array(z.string()),

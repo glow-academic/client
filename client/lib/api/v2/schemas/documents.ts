@@ -31,7 +31,7 @@ export const DocumentItemSchema = z.object({
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   active: z.boolean(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   file_path: z.string(),
   mime_type: z.string(),
   parameter_item_ids: z.array(z.string()),
@@ -63,7 +63,7 @@ export const DocumentDetailResponseSchema = z.object({
   active: z.boolean(),
   type: z.string(),
   document_type_options: z.array(z.string()),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   valid_department_ids: z.array(z.string()),
   department_mapping: DepartmentMappingSchema,
   parameter_item_ids: z.array(z.string()),
@@ -110,7 +110,7 @@ export type DocumentDetailBulkResponse = z.infer<
 export const UpdateDocumentRequestSchema = z.object({
   documentId: z.string(),
   type: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   parameter_item_ids: z.array(z.string()),
 });
 
@@ -119,7 +119,7 @@ export type UpdateDocumentRequest = z.infer<typeof UpdateDocumentRequestSchema>;
 export const BulkUpdateDocumentsRequestSchema = z.object({
   documentIds: z.array(z.string()),
   type: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   parameter_item_ids: z.array(z.string()),
 });
 
@@ -174,7 +174,7 @@ export const FinalizeUploadRequestSchema = z.object({
   csv: z.boolean().optional(),
   test: z.boolean().optional(),
   profile_id: z.string().optional(),
-  department_id: z.string().optional(),
+  department_ids: z.array(z.string()).optional().nullable(),
   parameter_item_ids: z.array(z.string()).optional(),
 });
 

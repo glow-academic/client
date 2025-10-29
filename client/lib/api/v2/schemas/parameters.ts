@@ -38,7 +38,7 @@ export const ParameterItemSchema = z.object({
   description: z.string(),
   numerical: z.boolean(),
   active: z.boolean(),
-  default_parameter: z.boolean(),
+  department_ids: z.array(z.string()).nullable(), // None = cross-department (all departments)
   num_items: z.number(),
   sample_items: z.array(ParameterSampleItemSchema).default([]),
   can_edit: z.boolean(),
@@ -86,8 +86,7 @@ export const ParameterDetailResponseSchema = z.object({
   description: z.string(),
   numerical: z.boolean(),
   active: z.boolean(),
-  default_parameter: z.boolean(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   valid_department_ids: z.array(z.string()),
 
   // Nested parameter items
@@ -130,8 +129,7 @@ export const CreateParameterRequestSchema = z.object({
   description: z.string(),
   numerical: z.boolean(),
   active: z.boolean(),
-  default_parameter: z.boolean(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   parameter_items: z.array(ParameterItemCreateSchema),
 });
 
@@ -156,8 +154,7 @@ export const UpdateParameterRequestSchema = z.object({
   description: z.string(),
   numerical: z.boolean(),
   active: z.boolean(),
-  default_parameter: z.boolean(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   parameter_items: z.array(ParameterItemCreateSchema),
 });
 

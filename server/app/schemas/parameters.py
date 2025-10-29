@@ -38,6 +38,7 @@ class ParameterItem(BaseModel):
     description: str
     numerical: bool
     active: bool
+    department_ids: list[str] | None  # None = cross-department (all departments)
     num_items: int
     sample_items: list[ParameterSampleItem] = []
     can_edit: bool

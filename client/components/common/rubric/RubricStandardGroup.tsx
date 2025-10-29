@@ -254,7 +254,6 @@ export interface RubricStandardGroupProps {
   rubricDescription: string;
   rubricDepartmentId: string;
   rubricActive: boolean;
-  rubricDefaultRubric: boolean;
   profileId: string;
 }
 
@@ -286,7 +285,6 @@ export default function RubricStandardGroup({
   rubricDescription,
   rubricDepartmentId,
   rubricActive,
-  rubricDefaultRubric,
   profileId,
 }: RubricStandardGroupProps) {
   const [isEditing, setIsEditing] = useState(mode === "create");
@@ -488,9 +486,8 @@ export default function RubricStandardGroup({
         profileId,
         name: rubricName,
         description: rubricDescription,
-        departmentId: rubricDepartmentId,
+        department_ids: rubricDepartmentId ? [rubricDepartmentId] : null,
         active: rubricActive,
-        defaultRubric: rubricDefaultRubric,
         standardGroupUpdates: [groupUpdate],
       });
 
@@ -580,9 +577,8 @@ export default function RubricStandardGroup({
         profileId,
         name: rubricName,
         description: rubricDescription,
-        departmentId: rubricDepartmentId,
+        department_ids: rubricDepartmentId ? [rubricDepartmentId] : null,
         active: rubricActive,
-        defaultRubric: rubricDefaultRubric,
         standardGroupUpdates: [groupUpdate],
       });
 

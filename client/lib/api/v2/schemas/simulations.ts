@@ -32,9 +32,9 @@ export const SimulationItemSchema = z.object({
   simulation_id: z.string(),
   name: z.string(), // Maps to simulations.title
   description: z.string(),
+  department_ids: z.array(z.string()).nullable(), // None = cross-department (all departments)
   time_limit: z.number().nullable(),
   active: z.boolean(),
-  default_simulation: z.boolean(),
   practice_simulation: z.boolean(),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
@@ -74,7 +74,6 @@ export const ScenarioInSimulationSchema = z.object({
   title: z.string(),
   description: z.string(),
   active: z.boolean(),
-  default_scenario: z.boolean(),
   position: z.number(),
   parameter_item_ids: z.array(z.string()),
 
@@ -106,7 +105,7 @@ export const SimulationDetailResponseSchema = z.object({
   // Basic fields
   name: z.string(), // Maps to simulations.title
   description: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   valid_department_ids: z.array(z.string()),
   time_limit: z.number().nullable(),
   rubric_id: z.string(),
@@ -116,7 +115,6 @@ export const SimulationDetailResponseSchema = z.object({
 
   // Boolean parameters
   active: z.boolean(),
-  default_simulation: z.boolean(),
   practice_simulation: z.boolean(),
   hints_enabled: z.boolean(),
   objectives_enabled: z.boolean(),
@@ -177,9 +175,8 @@ export type ScenarioInRequest = z.infer<typeof ScenarioInRequestSchema>;
 export const CreateSimulationRequestSchema = z.object({
   title: z.string(),
   description: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  default_simulation: z.boolean(),
   practice_simulation: z.boolean(),
   hints_enabled: z.boolean(),
   objectives_enabled: z.boolean(),
@@ -213,9 +210,8 @@ export const UpdateSimulationRequestSchema = z.object({
   simulationId: z.string(),
   title: z.string(),
   description: z.string(),
-  department_id: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  default_simulation: z.boolean(),
   practice_simulation: z.boolean(),
   hints_enabled: z.boolean(),
   objectives_enabled: z.boolean(),

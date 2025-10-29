@@ -69,6 +69,10 @@ class ParameterService(BaseService):
                                 )
                             )
 
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
+
             parameters.append(
                 ParameterItem(
                     parameter_id=str(row["parameter_id"]),
@@ -76,6 +80,7 @@ class ParameterService(BaseService):
                     description=row["description"],
                     numerical=row["numerical"],
                     active=row["active"],
+                    department_ids=dept_ids,
                     num_items=row["num_items"],
                     sample_items=sample_items,
                     can_edit=row["can_edit"],
