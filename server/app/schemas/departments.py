@@ -28,7 +28,6 @@ class DepartmentItem(BaseModel):
     title: str
     description: str
     active: bool
-    default_department: bool
     updated_at: str
     total_price_spent: float
     staff_count: int
@@ -75,7 +74,6 @@ class DepartmentDetailResponse(BaseModel):
     title: str
     description: str
     active: bool
-    default_department: bool
 
     # Agent role assignments (8 required roles)
     agent_roles: AgentRoles
@@ -115,7 +113,6 @@ class CreateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
-    default_department: bool
     agent_roles: AgentRoles
     profile_id: str  # Creator's profile ID
 
@@ -135,7 +132,6 @@ class UpdateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
-    default_department: bool
     agent_roles: AgentRoles
 
 

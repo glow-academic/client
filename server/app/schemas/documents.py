@@ -26,7 +26,7 @@ class DocumentItem(BaseModel):
     can_edit: bool
     can_delete: bool
     active: bool
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department
     file_path: str
     mime_type: str
     parameter_item_ids: list[str]
@@ -55,7 +55,7 @@ class DocumentDetailResponse(BaseModel):
     active: bool
     type: str
     document_type_options: list[str]
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     valid_department_ids: list[str]
     department_mapping: DepartmentMapping
     parameter_item_ids: list[str]
@@ -88,7 +88,7 @@ class UpdateDocumentRequest(BaseModel):
 
     documentId: str
     type: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_item_ids: list[str]
 
     # TODO: Update document_parameter_items table when this endpoint is called
@@ -100,7 +100,7 @@ class BulkUpdateDocumentsRequest(BaseModel):
 
     documentIds: list[str]
     type: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_item_ids: list[str]
 
     # TODO: Update document_parameter_items table for each document
@@ -143,7 +143,7 @@ class FinalizeUploadRequest(BaseModel):
     csv: bool | None = False
     test: bool | None = False
     profile_id: str | None = None
-    department_id: str | None = None
+    department_ids: list[str] | None = None  # None = cross-department
     parameter_item_ids: list[str] | None = None
 
 

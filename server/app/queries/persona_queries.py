@@ -48,20 +48,24 @@ class PersonaQueries:
                 p.reasoning,
                 p.temperature,
                 p.active,
-                p.default_persona,
                 p.updated_at,
                 COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ps.num_scenarios, 0) as num_scenarios,
                 m.name as model_name,
                 COALESCE(m.description, '') as model_description,
                 COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
-                COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links
+                COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
+                CASE WHEN COUNT(pd.persona_id) > 0 THEN true ELSE false END as has_dept_links
             FROM personas p
             LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
             LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
             LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
             LEFT JOIN models m ON m.id = p.model_id
-            WHERE p.department_id = ANY($1)
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id = ANY($1)
+            GROUP BY p.id, ps.scenario_ids, ps.num_scenarios, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
+            HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
+                SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true
+            )
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
@@ -105,21 +109,20 @@ class PersonaQueries:
             pd.reasoning,
             pd.temperature,
             pd.active,
-            pd.default_persona,
             pd.scenario_ids,
             pd.num_scenarios,
             pd.model_name,
             pd.model_description,
             CASE 
                 WHEN pd.active_scenario_count > 0 THEN false
-                WHEN pd.default_persona = true AND up.role != 'superadmin' THEN false
+                WHEN NOT pd.has_dept_links AND up.role != 'superadmin' THEN false
                 WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             true as can_duplicate,
             CASE 
                 WHEN pd.total_scenario_links > 0 THEN false
-                WHEN pd.default_persona = true AND up.role != 'superadmin' THEN false
+                WHEN NOT pd.has_dept_links AND up.role != 'superadmin' THEN false
                 WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_delete,

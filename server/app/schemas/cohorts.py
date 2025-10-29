@@ -30,7 +30,6 @@ class CohortItem(BaseModel):
     name: str  # Maps to cohorts.title
     description: str | None
     active: bool
-    default_cohort: bool
     can_edit: bool
     can_delete: bool
     can_duplicate: bool
@@ -82,10 +81,9 @@ class CohortDetailResponse(BaseModel):
     # Basic fields
     title: str  # cohorts.title
     description: str | None
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     valid_department_ids: list[str]
     active: bool
-    default_cohort: bool
 
     # Relationships
     simulation_ids: list[str]
@@ -125,9 +123,8 @@ class CreateCohortRequest(BaseModel):
 
     title: str
     description: str | None
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_cohort: bool
     simulation_ids: list[str] | list[SimulationInRequest]  # Support both formats
     profile_ids: list[str]
 
@@ -146,9 +143,8 @@ class UpdateCohortRequest(BaseModel):
     cohortId: str
     title: str
     description: str | None
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_cohort: bool
     simulation_ids: list[str] | list[SimulationInRequest]  # Support both formats
     profile_ids: list[str]
 

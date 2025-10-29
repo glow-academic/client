@@ -2,7 +2,8 @@
 
 from pydantic import BaseModel
 
-from .base import DepartmentMapping, ModelMapping, ReasoningMapping, ScenarioMapping
+from .base import (DepartmentMapping, ModelMapping, ReasoningMapping,
+                   ScenarioMapping)
 
 
 class PersonasFilters(BaseModel):
@@ -25,7 +26,6 @@ class PersonaItem(BaseModel):
     reasoning: str | None
     temperature: float
     active: bool
-    default_persona: bool
     num_scenarios: int
     can_edit: bool
     can_duplicate: bool
@@ -88,9 +88,8 @@ class PersonaDetailResponse(BaseModel):
     # Basic persona fields
     name: str
     description: str | None
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     active: bool
-    default_persona: bool
     color: str
     icon: str
     model_id: str
@@ -138,9 +137,8 @@ class CreatePersonaRequest(BaseModel):
 
     name: str
     description: str | None
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_persona: bool
     color: str
     icon: str
     model_id: str
@@ -163,9 +161,8 @@ class UpdatePersonaRequest(BaseModel):
     personaId: str
     name: str
     description: str | None
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_persona: bool
     color: str
     icon: str
     model_id: str

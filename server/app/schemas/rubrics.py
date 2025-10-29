@@ -64,7 +64,6 @@ class RubricItem(BaseModel):
     description: str
     points: int
     passPoints: int
-    default_rubric: bool
     can_edit: bool
     can_delete: bool
     can_duplicate: bool
@@ -106,12 +105,11 @@ class RubricDetailResponse(BaseModel):
     # Basic fields
     name: str
     description: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     valid_department_ids: list[str]
     points: int
     passPoints: int
     active: bool
-    default_rubric: bool
     can_edit: bool  # Permission flag for editing
 
     # Standard groups structure
@@ -182,9 +180,8 @@ class CreateRubricRequest(BaseModel):
 
     name: str
     description: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_rubric: bool
     points: int
     passPoints: int
     standard_groups: list[StandardGroupCreate]
@@ -204,9 +201,8 @@ class UpdateRubricRequest(BaseModel):
     rubricId: str
     name: str
     description: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_rubric: bool
     standard_groups: list[StandardGroupUpdate]
     # points and passPoints are auto-calculated by server
 

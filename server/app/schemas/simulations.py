@@ -30,7 +30,6 @@ class SimulationItem(BaseModel):
     description: str
     time_limit: int | None
     active: bool
-    default_simulation: bool
     practice_simulation: bool
     can_edit: bool
     can_delete: bool
@@ -60,7 +59,6 @@ class ScenarioInSimulation(BaseModel):
     title: str
     description: str
     active: bool
-    default_scenario: bool
     position: int  # From simulation_scenarios junction table
     parameter_item_ids: list[str]  # For displaying badges
 
@@ -102,7 +100,7 @@ class SimulationDetailResponse(BaseModel):
     # Basic fields
     name: str  # Maps to simulations.title
     description: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     valid_department_ids: list[str]
     time_limit: int | None
     rubric_id: str
@@ -112,7 +110,6 @@ class SimulationDetailResponse(BaseModel):
 
     # Boolean parameters
     active: bool
-    default_simulation: bool
     practice_simulation: bool
     hints_enabled: bool
     objectives_enabled: bool
@@ -167,9 +164,8 @@ class CreateSimulationRequest(BaseModel):
 
     title: str
     description: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_simulation: bool
     practice_simulation: bool
     hints_enabled: bool
     objectives_enabled: bool
@@ -197,9 +193,8 @@ class UpdateSimulationRequest(BaseModel):
     simulationId: str
     title: str
     description: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_simulation: bool
     practice_simulation: bool
     hints_enabled: bool
     objectives_enabled: bool

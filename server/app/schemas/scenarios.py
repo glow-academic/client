@@ -21,7 +21,6 @@ class ScenarioItem(BaseModel):
     title: str  # Maps to scenarios.name
     problem_statement: str
     active: bool
-    default_scenario: bool
     generated: bool
     parent_scenario_id: str | None
     objective_ids: list[str]  # "scenarioId_idx" composite keys
@@ -72,7 +71,7 @@ class DocumentDetailItem(BaseModel):
     can_edit: bool
     can_delete: bool
     active: bool
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department
     file_path: str
     mime_type: str
     parameter_item_ids: list[str]
@@ -85,12 +84,11 @@ class ScenarioDetailResponse(BaseModel):
     name: str
     problem_statement: str
     active: bool
-    default_scenario: bool
     generated: bool
     parent_scenario_id: str | None
 
     # Department
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     valid_department_ids: list[str]
 
     # IDs
@@ -138,9 +136,8 @@ class CreateScenarioRequest(BaseModel):
 
     name: str
     problem_statement: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_scenario: bool
     persona_id: str | None
     document_ids: list[str]
     objective_ids: list[str]  # Can be composite IDs or raw text
@@ -161,9 +158,8 @@ class UpdateScenarioRequest(BaseModel):
     scenarioId: str
     name: str
     problem_statement: str
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    default_scenario: bool
     persona_id: str | None
     document_ids: list[str]
     objective_ids: list[str]

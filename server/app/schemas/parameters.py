@@ -38,7 +38,6 @@ class ParameterItem(BaseModel):
     description: str
     numerical: bool
     active: bool
-    default_parameter: bool
     num_items: int
     sample_items: list[ParameterSampleItem] = []
     can_edit: bool
@@ -83,8 +82,7 @@ class ParameterDetailResponse(BaseModel):
     description: str
     numerical: bool
     active: bool
-    default_parameter: bool
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (all departments)
     valid_department_ids: list[str]
 
     # Nested parameter items
@@ -121,8 +119,7 @@ class CreateParameterRequest(BaseModel):
     description: str
     numerical: bool
     active: bool
-    default_parameter: bool
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_items: list[ParameterItemCreate]
 
 
@@ -142,8 +139,7 @@ class UpdateParameterRequest(BaseModel):
     description: str
     numerical: bool
     active: bool
-    default_parameter: bool
-    department_id: str
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_items: list[ParameterItemCreate]
 
 
