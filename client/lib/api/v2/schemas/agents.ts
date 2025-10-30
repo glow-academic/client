@@ -4,7 +4,11 @@
  */
 
 import { z } from "zod";
-import { ModelMappingSchema, ReasoningMappingSchema } from "./base";
+import {
+  DepartmentMappingSchema,
+  ModelMappingSchema,
+  ReasoningMappingSchema,
+} from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -79,6 +83,12 @@ export const AgentDetailResponseSchema = z.object({
   model_id: z.string(),
   reasoning: z.string().nullable(),
   active: z.boolean(),
+  role: z.string(), // agent_role enum value
+
+  // Department associations
+  department_ids: z.array(z.string()),
+  valid_department_ids: z.array(z.string()),
+  department_mapping: DepartmentMappingSchema,
 
   // Metadata
   valid_model_ids: z.array(z.string()),
@@ -109,6 +119,8 @@ export const CreateAgentRequestSchema = z.object({
   model_id: z.string(),
   reasoning: z.string().nullable(),
   active: z.boolean(),
+  role: z.string(), // agent_role enum value
+  department_ids: z.array(z.string()).nullable(), // None = cross-department (superadmin only)
 });
 
 export type CreateAgentRequest = z.infer<typeof CreateAgentRequestSchema>;
@@ -131,6 +143,8 @@ export const UpdateAgentRequestSchema = z.object({
   model_id: z.string(),
   reasoning: z.string().nullable(),
   active: z.boolean(),
+  role: z.string(), // agent_role enum value
+  department_ids: z.array(z.string()).nullable(), // None = cross-department (superadmin only)
 });
 
 export type UpdateAgentRequest = z.infer<typeof UpdateAgentRequestSchema>;

@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,78 +32,14 @@ export interface DepartmentProps {
 interface FormErrors {
   title?: string;
   description?: string;
-  agents?: string;
 }
 
 interface FormData {
   title?: string;
   description?: string;
   active?: boolean;
-  defaultDepartment?: boolean;
 }
 
-// Agent role definitions
-type AgentRole =
-  | "title"
-  | "scenario"
-  | "classify"
-  | "assistant"
-  | "grade"
-  | "input_guardrail"
-  | "output_guardrail"
-  | "hint";
-
-// Define the 8 required agent types
-const REQUIRED_AGENT_TYPES = [
-  {
-    type: "title",
-    field: "titleAgentId",
-    label: "Title Agent",
-    description: "Generates titles for simulations",
-  },
-  {
-    type: "scenario",
-    field: "scenarioAgentId",
-    label: "Scenario Agent",
-    description: "Creates simulation scenarios",
-  },
-  {
-    type: "classify",
-    field: "classifyAgentId",
-    label: "Classify Agent",
-    description: "Classifies and categorizes content",
-  },
-  {
-    type: "assistant",
-    field: "assistantAgentId",
-    label: "Assistant Agent",
-    description: "Provides general assistance",
-  },
-  {
-    type: "grade",
-    field: "gradeAgentId",
-    label: "Grade Agent",
-    description: "Grades and evaluates submissions",
-  },
-  {
-    type: "input_guardrail",
-    field: "inputGuardrailAgentId",
-    label: "Input Guardrail Agent",
-    description: "Validates student input for safety and compliance",
-  },
-  {
-    type: "output_guardrail",
-    field: "outputGuardrailAgentId",
-    label: "Output Guardrail Agent",
-    description: "Validates simulation output for safety and compliance",
-  },
-  {
-    type: "hint",
-    field: "hintAgentId",
-    label: "Hint Agent",
-    description: "Provides hints and guidance to students",
-  },
-] as const;
 
 export default function Department({ departmentId }: DepartmentProps) {
   const router = useRouter();
@@ -119,27 +54,12 @@ export default function Department({ departmentId }: DepartmentProps) {
       title: "",
       description: "",
       active: true,
-      defaultDepartment: false,
     }),
     []
   );
 
   const [formData, setFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
-
-  // State for department agents (role -> agentId mapping)
-  const [departmentAgents, setDepartmentAgents] = useState<
-    Record<AgentRole, string>
-  >({
-    title: "",
-    scenario: "",
-    classify: "",
-    assistant: "",
-    grade: "",
-    input_guardrail: "",
-    output_guardrail: "",
-    hint: "",
-  });
 
   // V2 API hooks
   const { data: departmentDetail, isLoading: isLoadingDepartmentDetail } =
@@ -186,17 +106,6 @@ export default function Department({ departmentId }: DepartmentProps) {
 
   const isLoading = isLoadingData;
 
-  // Extract agent options from v2 response
-  const agentOptions = useMemo(() => {
-    if (!departmentData?.agent_mapping) return [];
-    return Object.entries(departmentData.agent_mapping).map(
-      ([id, agentData]) => ({
-        id,
-        name: agentData.name,
-      })
-    );
-  }, [departmentData?.agent_mapping]);
-
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
     if (!isEditMode || !departmentData) return false;
@@ -210,17 +119,6 @@ export default function Department({ departmentId }: DepartmentProps) {
         title: departmentData.title,
         description: departmentData.description || "",
         active: departmentData.active ?? true,
-      });
-      // Set agent roles directly from response
-      setDepartmentAgents({
-        title: departmentData.agent_roles.title,
-        scenario: departmentData.agent_roles.scenario,
-        classify: departmentData.agent_roles.classify,
-        assistant: departmentData.agent_roles.assistant,
-        grade: departmentData.agent_roles.grade,
-        input_guardrail: departmentData.agent_roles.input_guardrail,
-        output_guardrail: departmentData.agent_roles.output_guardrail,
-        hint: departmentData.agent_roles.hint,
       });
     } else if (!isEditMode && departmentData) {
       // For create mode, use defaults
@@ -236,11 +134,6 @@ export default function Department({ departmentId }: DepartmentProps) {
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
-  };
-
-  // Handle agent assignment changes
-  const handleAgentChange = (role: AgentRole, agentId: string) => {
-    setDepartmentAgents((prev) => ({ ...prev, [role]: agentId }));
   };
 
   const resetFormAndState = () => {
@@ -267,23 +160,6 @@ export default function Department({ departmentId }: DepartmentProps) {
       return;
     }
 
-    // Validate that all 8 agent types are selected
-    const missingAgents = REQUIRED_AGENT_TYPES.filter(
-      (agentType) => !departmentAgents[agentType.type as AgentRole]
-    );
-
-    if (missingAgents.length > 0) {
-      const firstMissing = missingAgents[0];
-      if (firstMissing) {
-        setErrors((prev) => ({
-          ...prev,
-          agents: `Please select a ${firstMissing.label.toLowerCase()}`,
-        }));
-      }
-      toast.error("Please select all required agents");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -295,7 +171,6 @@ export default function Department({ departmentId }: DepartmentProps) {
             title: formData.title,
             description: formData.description,
             active: formData.active ?? true,
-            agent_roles: departmentAgents, // Send all 8 roles at once
           },
           {
             onSuccess: () => {
@@ -316,7 +191,6 @@ export default function Department({ departmentId }: DepartmentProps) {
             title: formData.title,
             description: formData.description,
             active: formData.active ?? true,
-            agent_roles: departmentAgents, // Send all 8 roles at once
             profile_id: effectiveProfile?.id || "",
           },
           {
@@ -370,11 +244,9 @@ export default function Department({ departmentId }: DepartmentProps) {
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
                 <p>
-                  {false // Departments don't have department_ids, they ARE departments
-                    ? "This is a default department that cannot be edited. You can view the details but cannot make changes."
-                    : departmentData?.in_use
-                      ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."
-                      : "You do not have permission to edit this department. You can view the details but cannot make changes."}
+                  {departmentData?.in_use
+                    ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."
+                    : "You do not have permission to edit this department. You can view the details but cannot make changes."}
                 </p>
               </div>
             </div>
@@ -445,95 +317,6 @@ export default function Department({ departmentId }: DepartmentProps) {
               <Skeleton className="h-6 w-11" />
             )}
           </div>
-
-          {/* Default Department Switch - Only for superadmin */}
-          {effectiveProfile?.role === "superadmin" && (
-            <div className="flex items-center gap-2">
-              <Label htmlFor="defaultDepartment" className="text-sm">
-                Default Department
-              </Label>
-              {formData?.defaultDepartment !== undefined && !isLoading ? (
-                <Switch
-                  id="defaultDepartment"
-                  checked={formData.defaultDepartment ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("defaultDepartment", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Agents Field */}
-        <div className="space-y-4">
-          {!isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {REQUIRED_AGENT_TYPES.map((agentType) => {
-                const role = agentType.type as AgentRole;
-                const fieldValue = departmentAgents[role] || "";
-                const validAgentIdsForRole =
-                  departmentData?.valid_agent_ids_by_role?.[role] || [];
-
-                return (
-                  <div key={agentType.type} className="space-y-2">
-                    <Label
-                      htmlFor={`agent-${agentType.type}`}
-                      className="text-sm font-medium"
-                    >
-                      {agentType.label}
-                    </Label>
-                    {agentOptions.length > 0 ? (
-                      <AgentPicker
-                        mapping={departmentData?.agent_mapping || {}}
-                        validIds={validAgentIdsForRole}
-                        selectedIds={fieldValue ? [fieldValue] : []}
-                        onSelect={(ids) =>
-                          handleAgentChange(role, ids[0] || "")
-                        }
-                        placeholder={`Select ${agentType.label.toLowerCase()}...`}
-                        hideSelectedChips={true}
-                        buttonClassName={`${errors.agents ? "border-destructive" : ""}`}
-                        disabled={isReadonly}
-                        multiSelect={false}
-                      />
-                    ) : (
-                      <div className="w-full p-3 text-sm text-muted-foreground bg-muted rounded-md border">
-                        <div className="flex items-center gap-2">
-                          <span>⚠️</span>
-                          <span>
-                            No agents available. You'll need to create agents
-                            first.
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {errors.agents && (
-                      <p className="text-sm text-destructive">
-                        {errors.agents}
-                      </p>
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                      {agentType.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {REQUIRED_AGENT_TYPES.map((agentType) => (
-                <div key={agentType.type} className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-32" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Submit Button */}

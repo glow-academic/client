@@ -7,8 +7,7 @@ import asyncpg  # type: ignore
 from app.cache import keys
 from app.db import transaction
 from app.queries.department_queries import DepartmentQueries
-from app.schemas.base import AgentMapping, AgentMappingItem
-from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
+from app.schemas.departments import (CreateDepartmentRequest,
                                      CreateDepartmentResponse,
                                      DeleteDepartmentRequest,
                                      DeleteDepartmentResponse,
@@ -75,7 +74,7 @@ class DepartmentService(BaseService):
         self, request: DepartmentDetailRequest
     ) -> DepartmentDetailResponse:
         """
-        Get department detail with agent role assignments, permissions, and stats.
+        Get department detail with permissions and stats.
 
         Args:
             request: Detail request
@@ -83,7 +82,7 @@ class DepartmentService(BaseService):
         Returns:
             DepartmentDetailResponse
         """
-        # Get complete department data with JSONB mappings (consolidated query)
+        # Get complete department data (consolidated query)
         query, params = self.queries.get_department_detail_complete(
             request.departmentId, request.profileId
         )
@@ -92,64 +91,10 @@ class DepartmentService(BaseService):
         if not dept_row:
             raise ValueError(f"Department {request.departmentId} not found")
 
-        # Parse JSONB agent_roles
-        agent_roles_dict: dict[str, str] = {
-            "title": "",
-            "scenario": "",
-            "classify": "",
-            "assistant": "",
-            "grade": "",
-            "input_guardrail": "",
-            "output_guardrail": "",
-            "hint": "",
-        }
-
-        agent_roles_data = dept_row.get("agent_roles_json")
-        if agent_roles_data and isinstance(agent_roles_data, dict):
-            for role, agent_id in agent_roles_data.items():
-                if role in agent_roles_dict:
-                    agent_roles_dict[role] = agent_id
-
-        # Parse JSONB agent_mapping
-        valid_agent_ids: list[str] = []
-        agent_mapping: AgentMapping = {}
-        valid_agent_ids_by_role: dict[str, list[str]] = {
-            "title": [],
-            "scenario": [],
-            "classify": [],
-            "assistant": [],
-            "grade": [],
-            "input_guardrail": [],
-            "output_guardrail": [],
-            "hint": [],
-        }
-
-        agent_mapping_data = dept_row.get("agent_mapping")
-        if isinstance(agent_mapping_data, str):
-            agent_mapping_data = json.loads(agent_mapping_data)
-        if agent_mapping_data and isinstance(agent_mapping_data, dict):
-            for agent_id, agent_info in agent_mapping_data.items():
-                if isinstance(agent_info, dict):
-                    valid_agent_ids.append(agent_id)
-                    roles = agent_info.get("roles", [])
-                    agent_mapping[agent_id] = AgentMappingItem(
-                        name=agent_info.get("name", ""),
-                        description=agent_info.get("description", ""),
-                        roles=roles if isinstance(roles, list) else [],
-                    )
-                    # Build role-based valid agent IDs
-                    for role in roles:
-                        if role in valid_agent_ids_by_role:
-                            valid_agent_ids_by_role[role].append(agent_id)
-
         return DepartmentDetailResponse(
             title=dept_row["title"],
             description=dept_row["description"],
             active=dept_row["active"],
-            agent_roles=AgentRoles(**agent_roles_dict),
-            valid_agent_ids=valid_agent_ids,
-            valid_agent_ids_by_role=valid_agent_ids_by_role,
-            agent_mapping=agent_mapping,
             # Permissions
             can_edit=dept_row["can_edit"],
             can_duplicate=dept_row["can_duplicate"],
@@ -182,55 +127,11 @@ class DepartmentService(BaseService):
 
         is_superadmin = result["profile_role"] == "superadmin"
 
-        # Parse agent mapping from JSONB
-        valid_agent_ids: list[str] = result["valid_agent_ids"] or []
-        agent_mapping: AgentMapping = {}
-        valid_agent_ids_by_role: dict[str, list[str]] = {
-            "title": [],
-            "scenario": [],
-            "classify": [],
-            "assistant": [],
-            "grade": [],
-            "input_guardrail": [],
-            "output_guardrail": [],
-            "hint": [],
-        }
-
-        agent_mapping_data = result.get("agent_mapping")
-        if isinstance(agent_mapping_data, str):
-            agent_mapping_data = json.loads(agent_mapping_data)
-        if agent_mapping_data and isinstance(agent_mapping_data, dict):
-            for agent_id, agent_info in agent_mapping_data.items():
-                if isinstance(agent_info, dict):
-                    roles = agent_info.get("roles", [])
-                    agent_mapping[agent_id] = AgentMappingItem(
-                        name=agent_info.get("name", ""),
-                        description=agent_info.get("description", ""),
-                        roles=roles if isinstance(roles, list) else [],
-                    )
-                    # Build role-based valid agent IDs
-                    for role in roles:
-                        if role in valid_agent_ids_by_role:
-                            valid_agent_ids_by_role[role].append(agent_id)
-
         # Return defaults for creation
         return DepartmentDetailResponse(
             title="",
             description="",
             active=True,
-            agent_roles=AgentRoles(
-                title="",
-                scenario="",
-                classify="",
-                assistant="",
-                grade="",
-                input_guardrail="",
-                output_guardrail="",
-                hint="",
-            ),
-            valid_agent_ids=valid_agent_ids,
-            valid_agent_ids_by_role=valid_agent_ids_by_role,
-            agent_mapping=agent_mapping,
             # Permissions (only superadmin can create)
             can_edit=is_superadmin,
             can_duplicate=False,  # Can't duplicate when creating
@@ -245,7 +146,7 @@ class DepartmentService(BaseService):
         self, request: CreateDepartmentRequest
     ) -> CreateDepartmentResponse:
         """
-        Create a new department with agent role assignments.
+        Create a new department.
 
         Args:
             request: Create request
@@ -253,23 +154,6 @@ class DepartmentService(BaseService):
         Returns:
             CreateDepartmentResponse
         """
-        # Validate all 8 agent roles are provided
-        required_roles = [
-            "title",
-            "scenario",
-            "classify",
-            "assistant",
-            "grade",
-            "input_guardrail",
-            "output_guardrail",
-            "hint",
-        ]
-        agent_roles_dict = request.agent_roles.model_dump()
-
-        for role in required_roles:
-            if not agent_roles_dict.get(role):
-                raise ValueError(f"Agent role {role} is required")
-
         async with transaction(self.conn):
             # Create department
             query, params = self.queries.create_department(
@@ -281,14 +165,6 @@ class DepartmentService(BaseService):
                 raise ValueError("Failed to create department")
 
             department_id = dept_row["department_id"]
-
-            # Create all 8 agent role assignments
-            for role in required_roles:
-                agent_id = agent_roles_dict[role]
-                query, params = self.queries.create_department_agent(
-                    department_id, role, agent_id
-                )
-                await self.conn.execute(query, *params)
 
             # Automatically link all superadmins, default profiles, and the creator to this new department
             auto_link_query = """
@@ -327,7 +203,7 @@ class DepartmentService(BaseService):
         self, request: UpdateDepartmentRequest
     ) -> UpdateDepartmentResponse:
         """
-        Update a department with agent role assignments.
+        Update a department.
 
         Args:
             request: Update request
@@ -335,41 +211,12 @@ class DepartmentService(BaseService):
         Returns:
             UpdateDepartmentResponse
         """
-        # Validate all 8 agent roles are provided
-        required_roles = [
-            "title",
-            "scenario",
-            "classify",
-            "assistant",
-            "grade",
-            "input_guardrail",
-            "output_guardrail",
-            "hint",
-        ]
-        agent_roles_dict = request.agent_roles.model_dump()
-
-        for role in required_roles:
-            if not agent_roles_dict.get(role):
-                raise ValueError(f"Agent role {role} is required")
-
         async with transaction(self.conn):
             # Update department
             query, params = self.queries.update_department(
                 request.departmentId, request.title, request.description, request.active
             )
             await self.conn.execute(query, *params)
-
-            # Delete old agent role assignments
-            query, params = self.queries.delete_department_agents(request.departmentId)
-            await self.conn.execute(query, *params)
-
-            # Create new agent role assignments (upsert pattern)
-            for role in required_roles:
-                agent_id = agent_roles_dict[role]
-                query, params = self.queries.create_department_agent(
-                    request.departmentId, role, agent_id
-                )
-                await self.conn.execute(query, *params)
 
         # Invalidate caches
         await self._invalidate_cache(
@@ -388,7 +235,7 @@ class DepartmentService(BaseService):
         self, request: DuplicateDepartmentRequest
     ) -> DuplicateDepartmentResponse:
         """
-        Duplicate a department with all agent role assignments.
+        Duplicate a department.
 
         Args:
             request: Duplicate request
@@ -416,12 +263,6 @@ class DepartmentService(BaseService):
                 raise ValueError("Failed to duplicate department")
 
             new_department_id = new_dept_row["department_id"]
-
-            # Duplicate agent role assignments
-            query, params = self.queries.duplicate_department_agents(
-                request.departmentId, new_department_id
-            )
-            await self.conn.execute(query, *params)
 
         # Invalidate caches
         await self._invalidate_cache(

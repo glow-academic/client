@@ -18,7 +18,7 @@ class AgentQueries:
         """
         query = """
         WITH user_profile AS (
-            SELECT role FROM profiles WHERE id = $1
+            SELECT role FROM profiles WHERE id = $1::uuid
         )
         SELECT 
             a.id::text as agent_id,
@@ -50,7 +50,7 @@ class AgentQueries:
         """
         query = """
         WITH user_profile AS (
-            SELECT role FROM profiles WHERE id = $1
+            SELECT role FROM profiles WHERE id = $1::uuid
         ),
         agent_department_links AS (
             SELECT 
@@ -153,18 +153,18 @@ class AgentQueries:
 
         return query, params
 
-    def get_agent_detail_complete(self, agent_id: str) -> tuple[str, list[Any]]:
+    def get_agent_detail_complete(self, agent_id: str, profile_id: str) -> tuple[str, list[Any]]:
         """
-        Get agent detail with debug info and all models in ONE optimized query.
+        Get agent detail with debug info, departments, and all models in ONE optimized query.
 
-        Combines agent info, debug info, and model listings using CTEs and
+        Combines agent info, debug info, department mappings, and model listings using CTEs and
         JSONB aggregation to eliminate N+1 queries.
 
         Returns:
             Tuple of (query, params)
         """
         query = """
-        WITH agent_info AS (
+        WITH         agent_info AS (
             SELECT 
                 id::text as agent_id,
                 name,
@@ -173,9 +173,18 @@ class AgentQueries:
                 temperature,
                 model_id::text,
                 reasoning,
-                active
+                active,
+                role::text
             FROM agents
-            WHERE id = $1
+            WHERE id = $1::uuid
+        ),
+        agent_departments_data AS (
+            SELECT 
+                ad.agent_id::text as agent_id,
+                ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids
+            FROM agent_departments ad
+            WHERE ad.agent_id = $1::uuid AND ad.active = true
+            GROUP BY ad.agent_id
         ),
         debug_data AS (
             SELECT 
@@ -186,7 +195,7 @@ class AgentQueries:
             JOIN model_runs mr ON mr.id = mra.model_run_id
             JOIN debug_info di ON di.model_run_id = mr.id
             JOIN model_run_models mrm ON mrm.model_run_id = mr.id
-            WHERE mra.agent_id = $1
+            WHERE mra.agent_id = $1::uuid
             AND mra.active = true
             AND mrm.active = true
             ORDER BY di.created_at DESC
@@ -199,6 +208,35 @@ class AgentQueries:
                 COALESCE(description, '') as description,
                 active
             FROM models
+        ),
+        user_profile AS (
+            SELECT role FROM profiles WHERE id = $2::uuid
+        ),
+        valid_departments_data AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            WHERE d.active = true
+            AND (
+                -- Superadmin sees all departments
+                (SELECT role FROM user_profile) = 'superadmin'
+                OR
+                -- Others see only their departments
+                d.id IN (
+                    SELECT department_id FROM profile_departments 
+                    WHERE profile_id = $2::uuid
+                )
+            )
         )
         SELECT 
             ai.agent_id,
@@ -209,6 +247,10 @@ class AgentQueries:
             ai.model_id,
             ai.reasoning,
             ai.active,
+            ai.role,
+            COALESCE(add.department_ids, ARRAY[]::text[]) as department_ids,
+            COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
+            COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
             COALESCE(
                 (SELECT jsonb_agg(
                     jsonb_build_object(
@@ -235,9 +277,11 @@ class AgentQueries:
                 '[]'::jsonb
             ) as valid_model_ids
         FROM agent_info ai
+        LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id
+        CROSS JOIN valid_departments_data vdd
         """
 
-        params: list[Any] = [agent_id]
+        params: list[Any] = [agent_id, profile_id]
 
         return query, params
 
@@ -247,17 +291,20 @@ class AgentQueries:
         """
         Get default agent detail metadata (for creating new agents).
 
-        Returns valid models, reasoning options, temperature bounds, etc.
+        Returns valid models, reasoning options, temperature bounds, department mappings, etc.
         but no actual agent data since there's no "default agent" concept.
 
         Args:
-            profile_id: UUID of the profile (for future permission checks)
+            profile_id: UUID of the profile (for permission checks)
 
         Returns:
             Tuple of (query string, params list)
         """
         query = """
-        WITH valid_models AS (
+        WITH user_profile AS (
+            SELECT role FROM profiles WHERE id = $1::uuid
+        ),
+        valid_models AS (
             SELECT 
                 id::text as model_id,
                 name,
@@ -266,6 +313,32 @@ class AgentQueries:
             FROM models
             WHERE active = true
             ORDER BY name
+        ),
+        valid_departments_data AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            WHERE d.active = true
+            AND (
+                -- Superadmin sees all departments
+                (SELECT role FROM user_profile) = 'superadmin'
+                OR
+                -- Others see only their departments
+                d.id IN (
+                    SELECT department_id FROM profile_departments 
+                    WHERE profile_id = $1::uuid
+                )
+            )
         )
         SELECT 
             COALESCE(
@@ -280,11 +353,13 @@ class AgentQueries:
                 (SELECT jsonb_agg(vm.model_id ORDER BY vm.name)
                 FROM valid_models vm),
                 '[]'::jsonb
-            ) as valid_model_ids
+            ) as valid_model_ids,
+            COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
+            COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping
         FROM (SELECT 1) dummy
+        CROSS JOIN valid_departments_data vdd
         """
-        # Note: profile_id is not used in the query yet (reserved for future permission checks)
-        return (query, [])
+        return (query, [profile_id])
 
     def create_agent(
         self,
@@ -295,6 +370,7 @@ class AgentQueries:
         model_id: str,
         reasoning: str | None,
         active: bool,
+        role: str,
     ) -> tuple[str, list[Any]]:
         """
         Create a new agent.
@@ -303,8 +379,8 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, role, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         RETURNING id::text as agent_id
         """
 
@@ -316,8 +392,35 @@ class AgentQueries:
             model_id,
             reasoning,
             active,
+            role,
         ]
 
+        return query, params
+
+    def create_agent_departments(
+        self, agent_id: str, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """
+        Create agent-department junction table records.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        if not department_ids:
+            # Return empty query if no departments
+            return "SELECT 1 WHERE false", []
+
+        # Use UNNEST for efficient batch insert
+        query = """
+        INSERT INTO agent_departments (agent_id, department_id, active, created_at, updated_at)
+        SELECT $1, dept_id::uuid, true, NOW(), NOW()
+        FROM UNNEST($2::text[]) as dept_id
+        ON CONFLICT (agent_id, department_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+
+        params: list[Any] = [agent_id, department_ids]
         return query, params
 
     def update_agent(
@@ -330,6 +433,7 @@ class AgentQueries:
         model_id: str,
         reasoning: str | None,
         active: bool,
+        role: str,
     ) -> tuple[str, list[Any]]:
         """
         Update an existing agent.
@@ -347,8 +451,9 @@ class AgentQueries:
             model_id = $6,
             reasoning = $7,
             active = $8,
+            role = $9,
             updated_at = NOW()
-        WHERE id = $1
+        WHERE id = $1::uuid
         """
 
         params: list[Any] = [
@@ -360,8 +465,22 @@ class AgentQueries:
             model_id,
             reasoning,
             active,
+            role,
         ]
 
+        return query, params
+
+    def delete_agent_departments(self, agent_id: str) -> tuple[str, list[Any]]:
+        """
+        Delete all agent-department junction table records.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        DELETE FROM agent_departments WHERE agent_id = $1::uuid
+        """
+        params: list[Any] = [agent_id]
         return query, params
 
     def duplicate_agent(self, agent_id: str) -> tuple[str, list[Any]]:
@@ -372,7 +491,7 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, created_at, updated_at)
+        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, role, created_at, updated_at)
         SELECT 
             name || ' Copy',
             description,
@@ -381,10 +500,11 @@ class AgentQueries:
             model_id,
             reasoning,
             false,
+            role,
             NOW(),
             NOW()
         FROM agents
-        WHERE id = $1
+        WHERE id = $1::uuid
         RETURNING id::text as agent_id
         """
 
@@ -400,7 +520,7 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        DELETE FROM agents WHERE id = $1
+        DELETE FROM agents WHERE id = $1::uuid
         """
 
         params: list[Any] = [agent_id]

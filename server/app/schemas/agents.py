@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from .base import ModelMapping, ReasoningMapping
+from .base import DepartmentMapping, ModelMapping, ReasoningMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -79,12 +79,18 @@ class AgentDetailResponse(BaseModel):
     model_id: str
     reasoning: str | None
     active: bool
+    role: str  # agent_role enum value
 
     # Metadata
     valid_model_ids: list[str]
     reasoning_options: list[str]
     temperature_lower: float
     temperature_upper: float
+
+    # Department associations
+    department_ids: list[str]
+    valid_department_ids: list[str]
+    department_mapping: DepartmentMapping
 
     # Debug info
     debug_info: list[DebugInfoItem]
@@ -109,6 +115,8 @@ class CreateAgentRequest(BaseModel):
     model_id: str
     reasoning: str | None
     active: bool
+    role: str  # agent_role enum value
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
 
 
 class CreateAgentResponse(BaseModel):
@@ -130,6 +138,8 @@ class UpdateAgentRequest(BaseModel):
     model_id: str
     reasoning: str | None
     active: bool
+    role: str  # agent_role enum value
+    department_ids: list[str] | None  # None = cross-department (superadmin only)
 
 
 class UpdateAgentResponse(BaseModel):

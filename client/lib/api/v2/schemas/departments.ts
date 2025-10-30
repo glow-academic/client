@@ -1,10 +1,9 @@
 /**
  * Departments V2 API Schemas
- * Schema definitions for departments v2 endpoints with agent role assignments
+ * Schema definitions for departments v2 endpoints
  */
 
 import { z } from "zod";
-import { AgentMappingSchema } from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -57,35 +56,11 @@ export type DepartmentDetailRequest = z.infer<
   typeof DepartmentDetailRequestSchema
 >;
 
-// Agent roles object (8 required roles)
-export const AgentRolesSchema = z.object({
-  title: z.string(),
-  scenario: z.string(),
-  classify: z.string(),
-  assistant: z.string(),
-  grade: z.string(),
-  input_guardrail: z.string(),
-  output_guardrail: z.string(),
-  hint: z.string(),
-});
-
-export type AgentRoles = z.infer<typeof AgentRolesSchema>;
-
 export const DepartmentDetailResponseSchema = z.object({
   // Basic fields
   title: z.string(),
   description: z.string(),
   active: z.boolean(),
-
-  // Agent role assignments (8 required roles)
-  agent_roles: AgentRolesSchema,
-
-  // Valid agents for selection
-  valid_agent_ids: z.array(z.string()),
-  valid_agent_ids_by_role: z.record(z.string(), z.array(z.string())),
-
-  // Top-level mappings
-  agent_mapping: AgentMappingSchema,
 
   // Permissions
   can_edit: z.boolean(),
@@ -120,7 +95,6 @@ export const CreateDepartmentRequestSchema = z.object({
   title: z.string(),
   description: z.string(),
   active: z.boolean(),
-  agent_roles: AgentRolesSchema,
   profile_id: z.string(),
 });
 
@@ -144,7 +118,6 @@ export const UpdateDepartmentRequestSchema = z.object({
   title: z.string(),
   description: z.string(),
   active: z.boolean(),
-  agent_roles: AgentRolesSchema,
 });
 
 export type UpdateDepartmentRequest = z.infer<

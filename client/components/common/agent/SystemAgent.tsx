@@ -10,8 +10,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
+import { RolePicker } from "@/components/common/forms/RolePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +48,8 @@ interface SystemAgentFormData {
   modelId?: string;
   reasoning?: "none" | "minimal" | "low" | "medium" | "high";
   active?: boolean;
-  defaultAgent?: boolean;
+  role?: string; // agent_role enum value
+  departmentIds?: string[]; // None = cross-department (superadmin only)
 }
 
 export interface SystemAgentProps {
@@ -83,10 +86,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   );
 
   const { data: agentDetailDefault, isLoading: isLoadingAgentDefault } =
-    useAgentDetailDefault(
-      effectiveProfile?.id || "",
-      !isEditMode
-    );
+    useAgentDetailDefault(effectiveProfile?.id || "", !isEditMode);
 
   const { mutate: createAgent } = useCreateAgentV2();
   const { mutate: updateAgent } = useUpdateAgentV2();
@@ -108,7 +108,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       modelId: "",
       reasoning: "none",
       active: true,
-      defaultAgent: false,
+      role: "assistant", // Default role
+      departmentIds: [],
     }),
     []
   );
@@ -147,6 +148,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             | "high"
             | undefined) || "none",
         active: agentDetail.active ?? true,
+        role: agentDetail.role || "assistant",
+        departmentIds: agentDetail.department_ids || [],
       });
     } else if (!isEditMode && agentDetailDefault) {
       // For create mode, use defaults from API response
@@ -156,7 +159,11 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
           agentDetailDefault.temperature ?? initialFormData.temperature ?? 0.7,
         modelId: agentDetailDefault.model_id || initialFormData.modelId || "",
         systemPrompt:
-          agentDetailDefault.system_prompt || initialFormData.systemPrompt || "",
+          agentDetailDefault.system_prompt ||
+          initialFormData.systemPrompt ||
+          "",
+        role: agentDetailDefault.role || "assistant",
+        departmentIds: agentDetailDefault.department_ids || [],
       });
     }
   }, [isEditMode, agentDetail, agentDetailDefault, initialFormData]);
@@ -227,6 +234,13 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 ? formData.reasoning
                 : null,
             active: formData.active ?? true,
+            role: formData.role || "assistant",
+            department_ids:
+              effectiveProfile?.role === "superadmin"
+                ? formData.departmentIds && formData.departmentIds.length > 0
+                  ? formData.departmentIds
+                  : null
+                : null,
           },
           {
             onSuccess: () => {
@@ -261,6 +275,13 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 ? formData.reasoning
                 : null,
             active: formData.active ?? true,
+            role: formData.role || "assistant",
+            department_ids:
+              effectiveProfile?.role === "superadmin"
+                ? formData.departmentIds && formData.departmentIds.length > 0
+                  ? formData.departmentIds
+                  : null
+                : null,
           },
           {
             onSuccess: (response) => {
@@ -341,6 +362,50 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               )}
             </div>
 
+            {/* Role and Department Selection - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="space-y-4">
+                {/* Department Picker */}
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  {formData?.departmentIds !== undefined &&
+                  agentData?.department_mapping !== undefined &&
+                  !isLoading ? (
+                    <DepartmentPicker
+                      mapping={agentData.department_mapping || {}}
+                      validIds={agentData.valid_department_ids || []}
+                      selectedIds={formData.departmentIds || []}
+                      onSelect={(ids) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          departmentIds: ids,
+                        }))
+                      }
+                      placeholder="All Departments"
+                      disabled={isSubmitting}
+                      multiSelect={true}
+                    />
+                  ) : (
+                    <Skeleton className="h-10 w-full" />
+                  )}
+                </div>
+
+                {/* Role Picker */}
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role *</Label>
+                  {formData?.role !== undefined && !isLoading ? (
+                    <RolePicker
+                      selectedRole={formData.role || "assistant"}
+                      onSelect={(role) => handleInputChange("role", role)}
+                      placeholder="Select role"
+                    />
+                  ) : (
+                    <Skeleton className="h-10 w-full" />
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Switches - Horizontal Layout */}
             <div className="flex gap-8">
               {/* Agent Active Switch */}
@@ -360,26 +425,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   <Skeleton className="h-6 w-11" />
                 )}
               </div>
-
-              {/* Default Agent Switch - Only for superadmin */}
-              {effectiveProfile?.role === "superadmin" && (
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="defaultAgent" className="text-sm">
-                    Default Agent
-                  </Label>
-                  {formData?.defaultAgent !== undefined && !isLoading ? (
-                    <Switch
-                      id="defaultAgent"
-                      checked={formData.defaultAgent ?? false}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("defaultAgent", checked)
-                      }
-                    />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Text Model, Reasoning Effort, and Temperature - 3 Column Grid */}

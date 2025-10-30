@@ -183,11 +183,11 @@ class DepartmentQueries:
         model_run_departments_via_agents AS (
             SELECT DISTINCT
                 mrc.model_run_id,
-                da.department_id
+                ad.department_id
             FROM model_run_costs mrc
             JOIN model_run_agents mra ON mra.model_run_id = mrc.model_run_id AND mra.active = true
-            JOIN department_agents da ON da.agent_id = mra.agent_id AND da.active = true
-            WHERE da.department_id = $1
+            JOIN agent_departments ad ON ad.agent_id = mra.agent_id AND ad.active = true
+            WHERE ad.department_id = $1
         ),
         model_run_departments_via_personas AS (
             SELECT DISTINCT
@@ -226,7 +226,7 @@ class DepartmentQueries:
                 (SELECT COUNT(*) FROM scenario_departments WHERE department_id = $1 AND active = true) +
                 (SELECT COUNT(*) FROM persona_departments WHERE department_id = $1 AND active = true) +
                 (SELECT COUNT(*) FROM document_departments WHERE department_id = $1 AND active = true) +
-                (SELECT COUNT(*) FROM cohorts WHERE department_id = $1) as total_usage
+                (SELECT COUNT(*) FROM cohort_departments WHERE department_id = $1 AND active = true) as total_usage
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
@@ -256,12 +256,10 @@ class DepartmentQueries:
         self, department_id: str, profile_id: str
     ) -> tuple[str, list[Any]]:
         """
-        Get complete department detail with agent roles and mapping in single query.
+        Get complete department detail with permissions and stats in single query.
 
         Consolidates:
         - Department basic info + stats (from get_department_detail_with_stats)
-        - Agent role assignments as JSONB (from get_department_agent_roles)
-        - Agent mapping as JSONB (from get_valid_agents)
 
         Returns:
             Tuple of (query, params)
@@ -282,11 +280,11 @@ class DepartmentQueries:
         model_run_departments_via_agents AS (
             SELECT DISTINCT
                 mrc.model_run_id,
-                da.department_id
+                ad.department_id
             FROM model_run_costs mrc
             JOIN model_run_agents mra ON mra.model_run_id = mrc.model_run_id AND mra.active = true
-            JOIN department_agents da ON da.agent_id = mra.agent_id AND da.active = true
-            WHERE da.department_id = $1
+            JOIN agent_departments ad ON ad.agent_id = mra.agent_id AND ad.active = true
+            WHERE ad.department_id = $1
         ),
         model_run_departments_via_personas AS (
             SELECT DISTINCT
@@ -325,38 +323,10 @@ class DepartmentQueries:
                 (SELECT COUNT(*) FROM scenario_departments WHERE department_id = $1 AND active = true) +
                 (SELECT COUNT(*) FROM persona_departments WHERE department_id = $1 AND active = true) +
                 (SELECT COUNT(*) FROM document_departments WHERE department_id = $1 AND active = true) +
-                (SELECT COUNT(*) FROM cohorts WHERE department_id = $1) as total_usage
+                (SELECT COUNT(*) FROM cohort_departments WHERE department_id = $1 AND active = true) as total_usage
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
-        ),
-        agent_roles_data AS (
-            SELECT 
-                department_id,
-                COALESCE(jsonb_object_agg(role, agent_id::text), '{}'::jsonb) as agent_roles_json
-            FROM department_agents
-            WHERE department_id = $1 AND active = true
-            GROUP BY department_id
-        ),
-        agent_roles_agg AS (
-            SELECT 
-                agent_id,
-                array_agg(DISTINCT role ORDER BY role) as roles
-            FROM department_agents
-            WHERE active = true
-            GROUP BY agent_id
-        ),
-        valid_agents_data AS (
-            SELECT COALESCE(jsonb_object_agg(
-                a.id::text,
-                jsonb_build_object(
-                    'name', a.name,
-                    'description', COALESCE(a.description, ''),
-                    'roles', COALESCE(ara.roles, ARRAY[]::text[])
-                )
-            ), '{}'::jsonb) as agent_mapping
-            FROM agents a
-            LEFT JOIN agent_roles_agg ara ON ara.agent_id = a.id
         )
         SELECT 
             d.id::text as department_id,
@@ -368,16 +338,12 @@ class DepartmentQueries:
             CASE WHEN du.total_usage > 0 THEN true ELSE false END as in_use,
             CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_edit,
             CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_duplicate,
-            CASE WHEN up.role = 'superadmin' AND du.total_usage = 0 THEN true ELSE false END as can_delete,
-            COALESCE(ard.agent_roles_json, '{}'::jsonb) as agent_roles_json,
-            vad.agent_mapping
+            CASE WHEN up.role = 'superadmin' AND du.total_usage = 0 THEN true ELSE false END as can_delete
         FROM departments d
         LEFT JOIN department_price_spent dps ON dps.department_id = d.id
         LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id
-        LEFT JOIN agent_roles_data ard ON ard.department_id = d.id
         CROSS JOIN department_usage du
         CROSS JOIN user_profile up
-        CROSS JOIN valid_agents_data vad
         WHERE d.id = $1
         """
 
@@ -500,19 +466,6 @@ class DepartmentQueries:
 
         return query, [department_id, title, description, active]
 
-    def delete_department_agents(self, department_id: str) -> tuple[str, list[Any]]:
-        """
-        Delete all agent role assignments for a department.
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = """
-        DELETE FROM department_agents
-        WHERE department_id = $1
-        """
-
-        return query, [department_id]
 
     def duplicate_department(
         self, department_id: str, new_title: str
@@ -533,23 +486,6 @@ class DepartmentQueries:
 
         return query, [department_id, new_title]
 
-    def duplicate_department_agents(
-        self, old_department_id: str, new_department_id: str
-    ) -> tuple[str, list[Any]]:
-        """
-        Duplicate all agent role assignments from old department to new.
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = """
-        INSERT INTO department_agents (department_id, role, agent_id, active, created_at, updated_at)
-        SELECT $2, role, agent_id, active, NOW(), NOW()
-        FROM department_agents
-        WHERE department_id = $1
-        """
-
-        return query, [old_department_id, new_department_id]
 
     def delete_department(self, department_id: str) -> tuple[str, list[Any]]:
         """
@@ -604,11 +540,7 @@ class DepartmentQueries:
 
     def get_department_default_complete(self, profile_id: str) -> tuple[str, list[Any]]:
         """
-        Get department default creation data with profile role and valid agents in ONE query.
-
-        Consolidates:
-        - Profile role for permissions (from get_profile_role)
-        - Valid agents list and mapping (from get_valid_agents)
+        Get department default creation data with profile role in ONE query.
 
         Args:
             profile_id: Profile ID
@@ -617,39 +549,8 @@ class DepartmentQueries:
             Tuple of (query, params)
         """
         query = """
-        WITH profile_data AS (
-            SELECT role FROM profiles WHERE id = $1
-        ),
-        agent_roles_agg AS (
-            SELECT 
-                agent_id,
-                array_agg(DISTINCT role ORDER BY role) as roles
-            FROM department_agents
-            WHERE active = true
-            GROUP BY agent_id
-        ),
-        valid_agents_data AS (
-            SELECT 
-                COALESCE(array_agg(a.id::text ORDER BY a.name), ARRAY[]::text[]) as valid_agent_ids,
-                COALESCE(
-                    jsonb_object_agg(
-                        a.id::text,
-                        jsonb_build_object(
-                            'name', a.name,
-                            'description', COALESCE(a.description, ''),
-                            'roles', COALESCE(ara.roles, ARRAY[]::text[])
-                        )
-                    ),
-                    '{}'::jsonb
-                ) as agent_mapping
-            FROM agents a
-            LEFT JOIN agent_roles_agg ara ON ara.agent_id = a.id
-        )
-        SELECT 
-            pd.role as profile_role,
-            vad.valid_agent_ids,
-            vad.agent_mapping
-        FROM profile_data pd
-        CROSS JOIN valid_agents_data vad
+        SELECT role as profile_role
+        FROM profiles
+        WHERE id = $1
         """
         return query, [profile_id]

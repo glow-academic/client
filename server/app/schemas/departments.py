@@ -1,8 +1,6 @@
-"""Departments V2 API schemas with agent role assignments."""
+"""Departments V2 API schemas."""
 
 from pydantic import BaseModel
-
-from .base import AgentMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -54,19 +52,6 @@ class DepartmentDetailRequest(BaseModel):
     profileId: str
 
 
-class AgentRoles(BaseModel):
-    """Agent role assignments (8 required roles)."""
-
-    title: str
-    scenario: str
-    classify: str
-    assistant: str
-    grade: str
-    input_guardrail: str
-    output_guardrail: str
-    hint: str
-
-
 class DepartmentDetailResponse(BaseModel):
     """Response for department detail."""
 
@@ -74,16 +59,6 @@ class DepartmentDetailResponse(BaseModel):
     title: str
     description: str
     active: bool
-
-    # Agent role assignments (8 required roles)
-    agent_roles: AgentRoles
-
-    # Valid agents for selection
-    valid_agent_ids: list[str]
-    valid_agent_ids_by_role: dict[str, list[str]]  # Maps role to valid agent IDs
-
-    # Top-level mappings
-    agent_mapping: AgentMapping
 
     # Permissions
     can_edit: bool
@@ -113,7 +88,6 @@ class CreateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
-    agent_roles: AgentRoles
     profile_id: str  # Creator's profile ID
 
 
@@ -132,7 +106,6 @@ class UpdateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
-    agent_roles: AgentRoles
 
 
 class UpdateDepartmentResponse(BaseModel):

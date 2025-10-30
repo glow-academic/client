@@ -16,7 +16,8 @@ from app.schemas.agents import (AgentDetailDefaultRequest, AgentDetailRequest,
                                 DeleteAgentResponse, DuplicateAgentRequest,
                                 DuplicateAgentResponse, UpdateAgentRequest,
                                 UpdateAgentResponse)
-from app.schemas.base import (ModelMapping, ModelMappingItem,
+from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
+                              ModelMapping, ModelMappingItem,
                               ReasoningMappingItem)
 from app.services.base_service import BaseService, with_cache
 
@@ -108,8 +109,10 @@ class AgentService(BaseService):
         self, request: AgentDetailRequest
     ) -> AgentDetailResponse:
         """Direct execution without cache."""
-        # Get agent detail with debug info and all models in ONE optimized query
-        query, params = self.queries.get_agent_detail_complete(request.agentId)
+        # Get agent detail with debug info, departments, and all models in ONE optimized query
+        query, params = self.queries.get_agent_detail_complete(
+            request.agentId, request.profileId
+        )
         result = await self.conn.fetchrow(query, *params)
 
         if not result:
@@ -155,6 +158,31 @@ class AgentService(BaseService):
         if valid_model_ids_data and isinstance(valid_model_ids_data, list):
             valid_model_ids = [str(mid) for mid in valid_model_ids_data if mid]
 
+        # Parse department_ids from array (PostgreSQL arrays come as lists)
+        department_ids_raw = result.get("department_ids")
+        department_ids: list[str] = []
+        if department_ids_raw and isinstance(department_ids_raw, (list, tuple)):  # type: ignore
+            department_ids = [str(did) for did in department_ids_raw if did]
+
+        # Parse valid_department_ids from array (PostgreSQL arrays come as lists)
+        valid_department_ids_raw = result.get("valid_department_ids")
+        valid_department_ids: list[str] = []
+        if valid_department_ids_raw and isinstance(valid_department_ids_raw, (list, tuple)):  # type: ignore
+            valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
+
+        # Parse department_mapping from JSONB (may be string or dict)
+        department_mapping: DepartmentMapping = {}
+        department_mapping_data = result.get("department_mapping")
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
+        if department_mapping_data and isinstance(department_mapping_data, dict):
+            for dept_id, dept_data in department_mapping_data.items():
+                if isinstance(dept_data, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=dept_data.get("name", ""),
+                        description=dept_data.get("description", ""),
+                    )
+
         # Build reasoning_mapping following the reasoning_effort enum
         # Matches database enum: ('none', 'minimal', 'low', 'medium', 'high')
         reasoning_mapping = {
@@ -184,6 +212,10 @@ class AgentService(BaseService):
             model_id=result["model_id"],
             reasoning=result["reasoning"],
             active=result["active"],
+            role=result.get("role", "assistant"),
+            department_ids=department_ids,
+            valid_department_ids=valid_department_ids,
+            department_mapping=department_mapping,
             valid_model_ids=valid_model_ids,
             reasoning_options=["none", "minimal", "low", "medium", "high"],
             temperature_lower=0.0,
@@ -215,19 +247,20 @@ class AgentService(BaseService):
         self, request: AgentDetailDefaultRequest
     ) -> AgentDetailResponse:
         """Direct execution without cache."""
-        # Get valid models in ONE optimized query
+        # Get valid models and departments in ONE optimized query
         query, params = self.queries.get_agent_detail_default_complete(
             request.profileId
         )
         result = await self.conn.fetchrow(query, *params)
 
-        if not result:
-            # Return defaults if query fails
-            model_mapping: ModelMapping = {}
-            valid_model_ids: list[str] = []
-        else:
+        # Initialize defaults
+        model_mapping: ModelMapping = {}
+        valid_model_ids: list[str] = []
+        department_mapping: DepartmentMapping = {}
+        valid_department_ids: list[str] = []
+
+        if result:
             # Parse model_mapping from JSONB (may be string or dict)
-            model_mapping: ModelMapping = {}
             model_mapping_data = result["model_mapping"]
             if isinstance(model_mapping_data, str):
                 model_mapping_data = json.loads(model_mapping_data)
@@ -240,12 +273,32 @@ class AgentService(BaseService):
                         )
 
             # Parse valid_model_ids from JSONB (may be string or list)
-            valid_model_ids: list[str] = []
             valid_model_ids_data = result["valid_model_ids"]
             if isinstance(valid_model_ids_data, str):
                 valid_model_ids_data = json.loads(valid_model_ids_data)
             if valid_model_ids_data and isinstance(valid_model_ids_data, list):
                 valid_model_ids = [str(mid) for mid in valid_model_ids_data if mid]
+
+            # Parse valid_department_ids from array
+            valid_department_ids_raw = result.get("valid_department_ids") or []
+            if isinstance(valid_department_ids_raw, str):
+                valid_department_ids_raw = (
+                    json.loads(valid_department_ids_raw) if valid_department_ids_raw else []
+                )
+            if isinstance(valid_department_ids_raw, list):
+                valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
+
+            # Parse department_mapping from JSONB (may be string or dict)
+            department_mapping_data = result.get("department_mapping")
+            if isinstance(department_mapping_data, str):
+                department_mapping_data = json.loads(department_mapping_data)
+            if department_mapping_data and isinstance(department_mapping_data, dict):
+                for dept_id, dept_data in department_mapping_data.items():
+                    if isinstance(dept_data, dict):
+                        department_mapping[dept_id] = DepartmentMappingItem(
+                            name=dept_data.get("name", ""),
+                            description=dept_data.get("description", ""),
+                        )
 
         # Build reasoning_mapping following the reasoning_effort enum
         reasoning_mapping = {
@@ -275,6 +328,10 @@ class AgentService(BaseService):
             model_id="",
             reasoning=None,
             active=True,
+            role="assistant",
+            department_ids=[],
+            valid_department_ids=valid_department_ids,
+            department_mapping=department_mapping,
             valid_model_ids=valid_model_ids,
             reasoning_options=["none", "minimal", "low", "medium", "high"],
             temperature_lower=0.0,
@@ -294,26 +351,37 @@ class AgentService(BaseService):
         Returns:
             CreateAgentResponse
         """
-        query, params = self.queries.create_agent(
-            request.name,
-            request.description,
-            request.system_prompt,
-            request.temperature,
-            request.model_id,
-            request.reasoning,
-            request.active,
-        )
-        agent_row = await self.conn.fetchrow(query, *params)
+        async with self.conn.transaction():
+            query, params = self.queries.create_agent(
+                request.name,
+                request.description,
+                request.system_prompt,
+                request.temperature,
+                request.model_id,
+                request.reasoning,
+                request.active,
+                request.role,
+            )
+            agent_row = await self.conn.fetchrow(query, *params)
 
-        if not agent_row:
-            raise ValueError("Failed to create agent")
+            if not agent_row:
+                raise ValueError("Failed to create agent")
+
+            agent_id = agent_row["agent_id"]
+
+            # Create agent-department links if department_ids provided
+            if request.department_ids:
+                dept_query, dept_params = self.queries.create_agent_departments(
+                    agent_id, request.department_ids
+                )
+                await self.conn.execute(dept_query, *dept_params)
 
         # Invalidate caches
         await self._invalidate_cache([keys.tag_agent_all()])
 
         return CreateAgentResponse(
             success=True,
-            agentId=agent_row["agent_id"],
+            agentId=agent_id,
             message="Agent created successfully",
         )
 
@@ -327,17 +395,32 @@ class AgentService(BaseService):
         Returns:
             UpdateAgentResponse
         """
-        query, params = self.queries.update_agent(
-            request.agentId,
-            request.name,
-            request.description,
-            request.system_prompt,
-            request.temperature,
-            request.model_id,
-            request.reasoning,
-            request.active,
-        )
-        await self.conn.execute(query, *params)
+        async with self.conn.transaction():
+            query, params = self.queries.update_agent(
+                request.agentId,
+                request.name,
+                request.description,
+                request.system_prompt,
+                request.temperature,
+                request.model_id,
+                request.reasoning,
+                request.active,
+                request.role,
+            )
+            await self.conn.execute(query, *params)
+
+            # Replace agent-department links (DELETE + INSERT pattern)
+            delete_query, delete_params = self.queries.delete_agent_departments(
+                request.agentId
+            )
+            await self.conn.execute(delete_query, *delete_params)
+
+            # Insert new links if department_ids provided
+            if request.department_ids:
+                insert_query, insert_params = self.queries.create_agent_departments(
+                    request.agentId, request.department_ids
+                )
+                await self.conn.execute(insert_query, *insert_params)
 
         # Invalidate caches
         await self._invalidate_cache(
