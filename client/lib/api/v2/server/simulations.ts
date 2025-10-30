@@ -17,7 +17,10 @@ export const fetchSimulationDetail = cache(
     });
 
     if (!res.ok) {
-      throw new Error("Failed to fetch simulation detail");
+      const errorText = await res.text();
+      throw new Error(
+        `Failed to fetch simulation detail: ${res.status} ${errorText}`
+      );
     }
 
     const data = await res.json();

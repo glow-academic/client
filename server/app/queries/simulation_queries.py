@@ -788,7 +788,7 @@ class SimulationQueries:
             s.name,
             sps.problem_statement,
             s.active,
-            s.default_scenario,
+            (ss.position = 1) as default_scenario,
             ss.position
         FROM scenarios s
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
@@ -924,7 +924,8 @@ class SimulationQueries:
                 s.output_guardrail_active,
                 s.image_input_active,
                 s.rubric_id,
-                stl.time_limit_seconds as time_limit
+                stl.time_limit_seconds as time_limit,
+                (SELECT department_id FROM simulation_departments sd WHERE sd.simulation_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1) as department_id
             FROM simulations s
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             WHERE s.id = $1
@@ -953,7 +954,7 @@ class SimulationQueries:
                 s.name,
                 sps.problem_statement,
                 ss.active,
-                s.default_scenario,
+                (ss.position = 1) as default_scenario,
                 ss.position,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
@@ -1049,7 +1050,8 @@ class SimulationQueries:
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             CROSS JOIN user_department_ids udi
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
-            WHERE s.department_id = ANY(udi.ids) 
+            JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+            WHERE sd.department_id = ANY(udi.ids) 
               AND s.active = true
         ),
         valid_scenarios AS (
@@ -1285,7 +1287,7 @@ class SimulationQueries:
             sb.time_limit,
             sb.rubric_id::text,
             sb.active,
-            sb.default_simulation,
+            false as default_simulation,
             sb.practice_simulation,
             sb.hints_enabled,
             sb.objectives_enabled,
@@ -1416,6 +1418,7 @@ class SimulationQueries:
                 sps.problem_statement,
                 s.active,
                 s.generated,
+                false as default_scenario,
                 -- Persona data
                 p.id as persona_id,
                 p.name as persona_name,
@@ -2087,13 +2090,13 @@ class SimulationQueries:
                     'id', s.id::text,
                     'name', s.name,
                     'problemStatement', sps.problem_statement,
-                    'departmentId', s.department_id::text,
+                    'departmentId', COALESCE((SELECT department_id::text FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), NULL),
                     'active', s.active,
                     'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
                     'createdAt', s.created_at,
                     'updatedAt', s.updated_at,
                     'generated', s.generated,
-                    'defaultScenario', s.default_scenario,
+                    'defaultScenario', false,
                     'objectives', COALESCE(
                         (SELECT jsonb_agg(so.objective ORDER BY so.idx)
                          FROM scenario_objectives so
