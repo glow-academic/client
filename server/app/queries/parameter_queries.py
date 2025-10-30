@@ -99,7 +99,7 @@ class ParameterQueries:
         LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id
         LEFT JOIN parameter_sample_items psi ON psi.parameter_id = p.id
         CROSS JOIN user_profile up
-        GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pic.num_items, 
+        GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pdd.department_ids, pic.num_items, 
                  pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role
         HAVING 
             -- Include if has matching department link OR has no department links at all (cross-dept)

@@ -67,7 +67,7 @@ class RubricQueries:
             LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
             LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
             CROSS JOIN user_profile up
-            GROUP BY r.id, r.name, r.description, r.points, r.pass_points, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
+            GROUP BY r.id, r.name, r.description, r.points, r.pass_points, rdd.department_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
                 COUNT(rd.rubric_id) FILTER (WHERE rd.department_id = ANY($1)) > 0

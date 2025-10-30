@@ -24,18 +24,48 @@ class DepartmentQueries:
             Tuple of (query, params)
         """
         query = """
-        WITH department_price_spent AS (
+        WITH model_run_costs AS (
             SELECT 
-                mr.department_id,
-                SUM(
+                mr.id as model_run_id,
+                COALESCE(SUM(
                     (mr.input_tokens / 1000000.0) * COALESCE(m.input_ppm, 0) +
                     (mr.output_tokens / 1000000.0) * COALESCE(m.output_ppm, 0)
-                ) as total_price_spent
+                ), 0) as cost
             FROM model_runs mr
-            JOIN model_run_models mrm ON mrm.model_run_id = mr.id
-            JOIN models m ON m.id = mrm.model_id
-            WHERE mr.department_id = ANY($1)
-            GROUP BY mr.department_id
+            LEFT JOIN model_run_models mrm ON mrm.model_run_id = mr.id AND mrm.active = true
+            LEFT JOIN models m ON m.id = mrm.model_id
+            GROUP BY mr.id
+        ),
+        model_run_departments_via_agents AS (
+            SELECT DISTINCT
+                mrc.model_run_id,
+                ad.department_id
+            FROM model_run_costs mrc
+            JOIN model_run_agents mra ON mra.model_run_id = mrc.model_run_id AND mra.active = true
+            JOIN agent_departments ad ON ad.agent_id = mra.agent_id AND ad.active = true
+            WHERE ad.department_id = ANY($1)
+        ),
+        model_run_departments_via_personas AS (
+            SELECT DISTINCT
+                mrc.model_run_id,
+                pd.department_id
+            FROM model_run_costs mrc
+            JOIN model_run_personas mrp ON mrp.model_run_id = mrc.model_run_id AND mrp.active = true
+            JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
+            WHERE pd.department_id = ANY($1)
+        ),
+        model_run_departments AS (
+            SELECT model_run_id, department_id FROM model_run_departments_via_agents
+            UNION
+            SELECT model_run_id, department_id FROM model_run_departments_via_personas
+        ),
+        department_price_spent AS (
+            SELECT 
+                mrd.department_id,
+                SUM(mrc.cost) as total_price_spent
+            FROM model_run_costs mrc
+            JOIN model_run_departments mrd ON mrd.model_run_id = mrc.model_run_id
+            GROUP BY mrd.department_id
         ),
         department_staff_count AS (
             SELECT 
@@ -47,11 +77,11 @@ class DepartmentQueries:
         ),
         department_all_cohort_links AS (
             SELECT 
-                department_id,
+                cd.department_id,
                 COUNT(*) as total_cohort_links
-            FROM cohorts
-            WHERE department_id = ANY($1)
-            GROUP BY department_id
+            FROM cohort_departments cd
+            WHERE cd.department_id = ANY($1) AND cd.active = true
+            GROUP BY cd.department_id
         ),
         department_profiles_would_orphan AS (
             SELECT 
@@ -138,18 +168,48 @@ class DepartmentQueries:
             Tuple of (query, params)
         """
         query = """
-        WITH department_price_spent AS (
+        WITH model_run_costs AS (
             SELECT 
-                mr.department_id,
-                SUM(
+                mr.id as model_run_id,
+                COALESCE(SUM(
                     (mr.input_tokens / 1000000.0) * COALESCE(m.input_ppm, 0) +
                     (mr.output_tokens / 1000000.0) * COALESCE(m.output_ppm, 0)
-                ) as total_price_spent
+                ), 0) as cost
             FROM model_runs mr
-            JOIN model_run_models mrm ON mrm.model_run_id = mr.id
-            JOIN models m ON m.id = mrm.model_id
-            WHERE mr.department_id = $1
-            GROUP BY mr.department_id
+            LEFT JOIN model_run_models mrm ON mrm.model_run_id = mr.id AND mrm.active = true
+            LEFT JOIN models m ON m.id = mrm.model_id
+            GROUP BY mr.id
+        ),
+        model_run_departments_via_agents AS (
+            SELECT DISTINCT
+                mrc.model_run_id,
+                da.department_id
+            FROM model_run_costs mrc
+            JOIN model_run_agents mra ON mra.model_run_id = mrc.model_run_id AND mra.active = true
+            JOIN department_agents da ON da.agent_id = mra.agent_id AND da.active = true
+            WHERE da.department_id = $1
+        ),
+        model_run_departments_via_personas AS (
+            SELECT DISTINCT
+                mrc.model_run_id,
+                pd.department_id
+            FROM model_run_costs mrc
+            JOIN model_run_personas mrp ON mrp.model_run_id = mrc.model_run_id AND mrp.active = true
+            JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
+            WHERE pd.department_id = $1
+        ),
+        model_run_departments AS (
+            SELECT model_run_id, department_id FROM model_run_departments_via_agents
+            UNION
+            SELECT model_run_id, department_id FROM model_run_departments_via_personas
+        ),
+        department_price_spent AS (
+            SELECT 
+                mrd.department_id,
+                SUM(mrc.cost) as total_price_spent
+            FROM model_run_costs mrc
+            JOIN model_run_departments mrd ON mrd.model_run_id = mrc.model_run_id
+            GROUP BY mrd.department_id
         ),
         department_staff_count AS (
             SELECT 
@@ -162,10 +222,10 @@ class DepartmentQueries:
         department_usage AS (
             SELECT
                 (SELECT COUNT(*) FROM profile_departments WHERE department_id = $1) +
-                (SELECT COUNT(*) FROM simulations WHERE department_id = $1) +
-                (SELECT COUNT(*) FROM scenarios WHERE department_id = $1) +
-                (SELECT COUNT(*) FROM personas WHERE department_id = $1) +
-                (SELECT COUNT(*) FROM documents WHERE department_id = $1) +
+                (SELECT COUNT(*) FROM simulation_departments WHERE department_id = $1 AND active = true) +
+                (SELECT COUNT(*) FROM scenario_departments WHERE department_id = $1 AND active = true) +
+                (SELECT COUNT(*) FROM persona_departments WHERE department_id = $1 AND active = true) +
+                (SELECT COUNT(*) FROM document_departments WHERE department_id = $1 AND active = true) +
                 (SELECT COUNT(*) FROM cohorts WHERE department_id = $1) as total_usage
         ),
         user_profile AS (
@@ -207,18 +267,48 @@ class DepartmentQueries:
             Tuple of (query, params)
         """
         query = """
-        WITH department_price_spent AS (
+        WITH model_run_costs AS (
             SELECT 
-                mr.department_id,
-                SUM(
+                mr.id as model_run_id,
+                COALESCE(SUM(
                     (mr.input_tokens / 1000000.0) * COALESCE(m.input_ppm, 0) +
                     (mr.output_tokens / 1000000.0) * COALESCE(m.output_ppm, 0)
-                ) as total_price_spent
+                ), 0) as cost
             FROM model_runs mr
-            JOIN model_run_models mrm ON mrm.model_run_id = mr.id
-            JOIN models m ON m.id = mrm.model_id
-            WHERE mr.department_id = $1
-            GROUP BY mr.department_id
+            LEFT JOIN model_run_models mrm ON mrm.model_run_id = mr.id AND mrm.active = true
+            LEFT JOIN models m ON m.id = mrm.model_id
+            GROUP BY mr.id
+        ),
+        model_run_departments_via_agents AS (
+            SELECT DISTINCT
+                mrc.model_run_id,
+                da.department_id
+            FROM model_run_costs mrc
+            JOIN model_run_agents mra ON mra.model_run_id = mrc.model_run_id AND mra.active = true
+            JOIN department_agents da ON da.agent_id = mra.agent_id AND da.active = true
+            WHERE da.department_id = $1
+        ),
+        model_run_departments_via_personas AS (
+            SELECT DISTINCT
+                mrc.model_run_id,
+                pd.department_id
+            FROM model_run_costs mrc
+            JOIN model_run_personas mrp ON mrp.model_run_id = mrc.model_run_id AND mrp.active = true
+            JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
+            WHERE pd.department_id = $1
+        ),
+        model_run_departments AS (
+            SELECT model_run_id, department_id FROM model_run_departments_via_agents
+            UNION
+            SELECT model_run_id, department_id FROM model_run_departments_via_personas
+        ),
+        department_price_spent AS (
+            SELECT 
+                mrd.department_id,
+                SUM(mrc.cost) as total_price_spent
+            FROM model_run_costs mrc
+            JOIN model_run_departments mrd ON mrd.model_run_id = mrc.model_run_id
+            GROUP BY mrd.department_id
         ),
         department_staff_count AS (
             SELECT 
@@ -231,10 +321,10 @@ class DepartmentQueries:
         department_usage AS (
             SELECT
                 (SELECT COUNT(*) FROM profile_departments WHERE department_id = $1) +
-                (SELECT COUNT(*) FROM simulations WHERE department_id = $1) +
-                (SELECT COUNT(*) FROM scenarios WHERE department_id = $1) +
-                (SELECT COUNT(*) FROM personas WHERE department_id = $1) +
-                (SELECT COUNT(*) FROM documents WHERE department_id = $1) +
+                (SELECT COUNT(*) FROM simulation_departments WHERE department_id = $1 AND active = true) +
+                (SELECT COUNT(*) FROM scenario_departments WHERE department_id = $1 AND active = true) +
+                (SELECT COUNT(*) FROM persona_departments WHERE department_id = $1 AND active = true) +
+                (SELECT COUNT(*) FROM document_departments WHERE department_id = $1 AND active = true) +
                 (SELECT COUNT(*) FROM cohorts WHERE department_id = $1) as total_usage
         ),
         user_profile AS (
@@ -493,11 +583,11 @@ class DepartmentQueries:
         query = """
         SELECT
             (SELECT COUNT(*) FROM profile_departments WHERE department_id = $1) as profile_count,
-            (SELECT COUNT(*) FROM simulations WHERE department_id = $1) as simulation_count,
-            (SELECT COUNT(*) FROM scenarios WHERE department_id = $1) as scenario_count,
-            (SELECT COUNT(*) FROM personas WHERE department_id = $1) as persona_count,
-            (SELECT COUNT(*) FROM documents WHERE department_id = $1) as document_count,
-            (SELECT COUNT(*) FROM cohorts WHERE department_id = $1) as cohort_count
+            (SELECT COUNT(*) FROM simulation_departments WHERE department_id = $1 AND active = true) as simulation_count,
+            (SELECT COUNT(*) FROM scenario_departments WHERE department_id = $1 AND active = true) as scenario_count,
+            (SELECT COUNT(*) FROM persona_departments WHERE department_id = $1 AND active = true) as persona_count,
+            (SELECT COUNT(*) FROM document_departments WHERE department_id = $1 AND active = true) as document_count,
+            (SELECT COUNT(*) FROM cohort_departments WHERE department_id = $1 AND active = true) as cohort_count
         """
 
         return query, [department_id]

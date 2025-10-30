@@ -56,7 +56,8 @@ class AgentQueries:
             SELECT 
                 agent_id,
                 COUNT(*) as total_links
-            FROM department_agents
+            FROM agent_departments
+            WHERE active = true
             GROUP BY agent_id
         )
         SELECT 
