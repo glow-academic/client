@@ -20,14 +20,26 @@ class PricingQueries:
         """Build complete pricing analytics query with all mappings embedded."""
 
         # Build WHERE clause conditions
+        # Filter by department via profiles (model_runs -> model_run_profiles -> profiles -> profile_departments)
         where_conditions = [
-            "mr.department_id = ANY($1)",
             "mr.created_at >= $2",
             "mr.created_at <= $3",
         ]
+        
+        # Add department filter via profile_departments join
+        if department_ids and len(department_ids) > 0:
+            where_conditions.append(
+                """EXISTS (
+                    SELECT 1 FROM model_run_profiles mrp2
+                    JOIN profile_departments pd ON pd.profile_id = mrp2.profile_id
+                    WHERE mrp2.model_run_id = mr.id
+                      AND mrp2.active = true
+                      AND pd.department_id = ANY($1)
+                )"""
+            )
 
         params: list[Any] = [
-            department_ids,
+            department_ids if department_ids else [],
             datetime.fromisoformat(start_date.replace("Z", "+00:00")),
             datetime.fromisoformat(end_date.replace("Z", "+00:00")),
         ]
@@ -170,10 +182,10 @@ class PricingQueries:
                 ) FROM model_runs_with_debug),
                 '[]'::jsonb
             ),
-            'model_mapping', (SELECT mapping FROM model_mapping),
-            'profile_mapping', (SELECT mapping FROM profile_mapping),
-            'agent_mapping', (SELECT mapping FROM agent_mapping),
-            'persona_mapping', (SELECT mapping FROM persona_mapping)
+            'model_mapping', COALESCE((SELECT mapping FROM model_mapping LIMIT 1), '{{}}'::jsonb),
+            'profile_mapping', COALESCE((SELECT mapping FROM profile_mapping LIMIT 1), '{{}}'::jsonb),
+            'agent_mapping', COALESCE((SELECT mapping FROM agent_mapping LIMIT 1), '{{}}'::jsonb),
+            'persona_mapping', COALESCE((SELECT mapping FROM persona_mapping LIMIT 1), '{{}}'::jsonb)
         ) as result
         """
 

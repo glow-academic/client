@@ -56,8 +56,6 @@ class ScenarioService(BaseService):
         result = await self.conn.fetch(query, *params)
 
         # Parse the consolidated result with JSONB mappings
-        import json
-
         enhanced_mapping = {}
         for row in result:
             scenario_id = str(row["scenario_id"])
@@ -222,7 +220,6 @@ class ScenarioService(BaseService):
                         # Handle department_ids - may be array or null
                         dept_ids = sdata.get("department_ids")
                         if isinstance(dept_ids, str):
-                            import json
                             try:
                                 dept_ids = json.loads(dept_ids)
                             except (json.JSONDecodeError, ValueError):
@@ -535,8 +532,6 @@ class ScenarioService(BaseService):
         valid_document_ids = result["valid_document_ids"] or []
 
         # Parse JSONB mappings (may be string or dict)
-        import json
-
         persona_mapping_data = result.get("persona_mapping") or {}
         if isinstance(persona_mapping_data, str):
             persona_mapping_data = json.loads(persona_mapping_data)

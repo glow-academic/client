@@ -481,22 +481,29 @@ class ReportsQueries:
                     )
                     FROM scenarios s
                     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+                    LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
                     WHERE s.active = true
-                      AND s.department_id IN (SELECT DISTINCT department_id FROM filt)
+                      AND (
+                          sd.department_id IN (SELECT DISTINCT department_id FROM filt WHERE department_id IS NOT NULL)
+                          OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
+                      )
                 ), '{{}}'::jsonb),
                 'simulation_mapping', COALESCE((
                     SELECT jsonb_object_agg(
                         sim.id::text,
                         jsonb_build_object(
                             'name', sim.title,
-                            'description', sim.description,
-                            'department_id', sim.department_id::text
+                            'description', COALESCE(sim.description, '')
                         )
                     )
                     FROM simulations sim
+                    LEFT JOIN simulation_departments sd ON sd.simulation_id = sim.id AND sd.active = true
                     WHERE sim.active = true
                       AND sim.practice_simulation = true
-                      AND sim.department_id IN (SELECT DISTINCT department_id FROM filt)
+                      AND (
+                          sd.department_id IN (SELECT DISTINCT department_id FROM filt WHERE department_id IS NOT NULL)
+                          OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = sim.id AND sd2.active = true)
+                      )
                 ), '{{}}'::jsonb)
             ) AS result
         """

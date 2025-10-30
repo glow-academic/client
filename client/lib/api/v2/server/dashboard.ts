@@ -20,7 +20,10 @@ export const fetchDashboard = cache(async (filters: AnalyticsFilters) => {
   });
 
   if (!res.ok) {
-    throw new Error("Failed to fetch dashboard");
+    const errorText = await res.text();
+    throw new Error(
+      `Failed to fetch dashboard: ${res.status} ${errorText}`
+    );
   }
 
   const data = await res.json();

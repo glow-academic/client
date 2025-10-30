@@ -115,7 +115,7 @@ class ScenarioQueries:
             CROSS JOIN user_profile up
             GROUP BY s.id, s.name, sps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
                      so.objective_ids, sp.persona_id, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
-                     sc.cohort_ids, sal.total_links, up.role
+                     sc.cohort_ids, sdd.department_ids, sal.total_links, up.role
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
                 COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY($1)) > 0

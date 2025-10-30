@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    44  # Bumped: Added simulation_mapping to scenarios list query and fixed all JSON parsing
+    45  # Bumped: Fixed practice query SQL errors (multiple rows in subqueries, time_limit aggregation)
 )
 
 # Namespaces

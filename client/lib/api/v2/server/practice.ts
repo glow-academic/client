@@ -23,7 +23,10 @@ export const fetchPractice = cache(async (filters: PracticeFilters) => {
   });
 
   if (!res.ok) {
-    throw new Error("Failed to fetch practice overview");
+    const errorText = await res.text();
+    throw new Error(
+      `Failed to fetch practice overview: ${res.status} ${errorText}`
+    );
   }
 
   const data = await res.json();

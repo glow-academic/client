@@ -583,8 +583,8 @@ class DashboardQueries:
                     r.rubric_id,
                     COALESCE(m.matrix, '[]'::json) AS matrix,
                     COALESCE(sg.standard_groups, '[]'::json) AS standard_groups,
-                    (SELECT txt FROM rubric_insights i WHERE i.rubric_id = r.rubric_id) AS insights,
-                    COALESCE((SELECT h.has_data FROM rubric_has_data h WHERE h.rubric_id = r.rubric_id), FALSE) AS has_data
+                    (SELECT txt FROM rubric_insights i WHERE i.rubric_id = r.rubric_id LIMIT 1) AS insights,
+                    COALESCE((SELECT h.has_data FROM rubric_has_data h WHERE h.rubric_id = r.rubric_id LIMIT 1), FALSE) AS has_data
                 FROM valid_rubric_ids_list r
                 LEFT JOIN matrix_json m ON m.rubric_id = r.rubric_id
                 LEFT JOIN sg_json sg ON sg.rubric_id = r.rubric_id
@@ -1113,7 +1113,7 @@ class DashboardQueries:
                     a.attempt_id,
                     a.simulation_id,
                     MIN(a.attempt_created_at) AS attempt_date,
-                    s.department_id,
+                    a.department_id,
                     COALESCE(MAX(a.sim_scenario_count), 0) AS sim_scenario_count,
                     COUNT(*) FILTER (WHERE a.completed AND a.grade_percent IS NOT NULL) AS completed_with_grade,
                     SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
@@ -1121,7 +1121,7 @@ class DashboardQueries:
                     ARRAY_AGG(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct
                 FROM filt a
                 JOIN simulations s ON s.id = a.simulation_id
-                GROUP BY a.attempt_id, a.simulation_id, s.department_id
+                GROUP BY a.attempt_id, a.simulation_id, a.department_id
             ),
             history_attempt_joined AS (
                 SELECT
@@ -1222,7 +1222,7 @@ class DashboardQueries:
                        fr.num_scenarios,
                        fr.num_scenarios_completed,
                        fr.infinite_mode,
-                       (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = fr.simulation_id AND stl.active = true) AS time_limit,
+                       (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = fr.simulation_id AND stl.active = true LIMIT 1) AS time_limit,
                        COALESCE(pl.persona_names, ARRAY[]::text[]) AS persona_names,
                        COALESCE(pl.persona_colors, ARRAY[]::text[]) AS persona_colors,
                        fr.score_percent,
@@ -1722,10 +1722,10 @@ class DashboardQueries:
                     'passPct', pass_pct,
                     'cohortNames', cohort_names
                 ) ORDER BY date DESC) FROM history_data), '[]'::json),
-                'simulationMapping', COALESCE((SELECT mapping FROM simulation_mapping), '{}'::jsonb),
-                'rubricMapping', COALESCE((SELECT mapping FROM rubric_mapping), '{}'::jsonb),
-                'parameterMapping', COALESCE((SELECT mapping FROM parameter_mapping), '{}'::jsonb),
-                'parameterItemMapping', COALESCE((SELECT mapping FROM parameter_item_mapping), '{}'::jsonb)
+                'simulationMapping', COALESCE((SELECT mapping FROM simulation_mapping LIMIT 1), '{}'::jsonb),
+                'rubricMapping', COALESCE((SELECT mapping FROM rubric_mapping LIMIT 1), '{}'::jsonb),
+                'parameterMapping', COALESCE((SELECT mapping FROM parameter_mapping LIMIT 1), '{}'::jsonb),
+                'parameterItemMapping', COALESCE((SELECT mapping FROM parameter_item_mapping LIMIT 1), '{}'::jsonb)
             ) AS result
         """
         )

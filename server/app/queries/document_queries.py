@@ -74,7 +74,7 @@ class DocumentQueries:
             LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
             LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
             GROUP BY d.id, d.name, d.type, d.updated_at, d.mime_type, d.active, d.file_path, 
-                     ds.scenario_ids, dpic.parameter_item_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
+                     ddd.department_ids, ds.scenario_ids, dpic.parameter_item_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
                 COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1)) > 0

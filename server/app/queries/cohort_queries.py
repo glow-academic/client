@@ -151,7 +151,7 @@ class CohortQueries:
                 up.role NOT IN ('admin', 'superadmin', 'instructional')
             )
         GROUP BY c.id, c.title, c.description, c.active, 
-                 cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id
+                 cdd.department_ids, cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id
         HAVING 
             -- Include if has matching department link OR has no department links at all (cross-dept)
             COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY($1)) > 0

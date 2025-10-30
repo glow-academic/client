@@ -72,7 +72,8 @@ class PersonaQueries:
             LEFT JOIN models m ON m.id = p.model_id
             LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
             LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id = ANY($1)
-            GROUP BY p.id, ps.scenario_ids, ps.num_scenarios, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
+            GROUP BY p.id, p.name, p.description, p.color, p.icon, p.model_id, p.reasoning, p.temperature, p.active, p.updated_at, 
+                     pdd.department_ids, ps.scenario_ids, ps.num_scenarios, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
             HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
                 SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true
             )

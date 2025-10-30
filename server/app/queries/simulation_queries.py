@@ -79,7 +79,7 @@ class SimulationQueries:
             LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
             LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
             GROUP BY s.id, s.title, s.description, stl.time_limit_seconds, s.active, s.practice_simulation, 
-                     s.rubric_id, s.updated_at, ss.scenario_ids, ss.num_scenarios, sa.attempt_count, 
+                     s.rubric_id, s.updated_at, sdd.department_ids, ss.scenario_ids, ss.num_scenarios, sa.attempt_count, 
                      sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)

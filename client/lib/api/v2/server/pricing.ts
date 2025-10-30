@@ -20,7 +20,10 @@ export const fetchPricing = cache(async (filters: AnalyticsFilters) => {
   });
 
   if (!res.ok) {
-    throw new Error("Failed to fetch pricing analytics");
+    const errorText = await res.text();
+    throw new Error(
+      `Failed to fetch pricing analytics: ${res.status} ${errorText}`
+    );
   }
 
   const data = await res.json();

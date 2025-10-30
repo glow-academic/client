@@ -376,7 +376,6 @@ class DashboardService(BaseService):
             # Handle department_ids - may be array or null
             dept_ids = sim_data.get("department_ids")
             if isinstance(dept_ids, str):
-                import json
                 try:
                     dept_ids = json.loads(dept_ids)
                 except (json.JSONDecodeError, ValueError):

@@ -123,7 +123,8 @@ class PracticeQueries:
             ),
             -- 7) Pass threshold
             sim_pass_pct AS (
-                SELECT s.id AS simulation_id,
+                SELECT DISTINCT ON (s.id)
+                       s.id AS simulation_id,
                        CASE WHEN r.points > 0
                             THEN (r.pass_points::numeric / r.points::numeric) * 100.0
                             ELSE 70 END AS pass_pct
@@ -132,10 +133,11 @@ class PracticeQueries:
                 LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.practice_simulation = TRUE
                   AND s.active = TRUE
-                GROUP BY s.id, s.title, s.description, s.rubric_id, r.points, r.pass_points
-                HAVING 
-                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY({dept_param_placeholder})) > 0)
-                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
+                  AND (
+                      (cardinality({dept_param_placeholder}) = 0 OR sd.department_id = ANY({dept_param_placeholder}))
+                      OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
+                  )
+                ORDER BY s.id, s.title, s.description
             ),
             -- 8) Standard groups/standards for rubrics
             all_rubric_ids AS (
@@ -190,12 +192,12 @@ class PracticeQueries:
                         'color', spm.color,
                         'icon', spm.icon,
                         'hasPassed', COALESCE((
-                            SELECT MAX(ap.avg_score_completed) >= spp.pass_pct
+                            SELECT MAX(ap.avg_score_completed) >= (
+                                SELECT pass_pct FROM sim_pass_pct WHERE simulation_id = sm.simulation_id LIMIT 1
+                            )
                             FROM attempt_progress ap
-                            JOIN sim_pass_pct spp ON spp.simulation_id = ap.simulation_id
                             WHERE ap.profile_id = {profile_param_placeholder}
                               AND ap.simulation_id = sm.simulation_id
-                            GROUP BY spp.pass_pct
                         ), false),
                         'passRate', CASE
                                        WHEN sm.rubric_points > 0
@@ -204,12 +206,12 @@ class PracticeQueries:
                                      END,
                         'status', CASE
                                      WHEN COALESCE((
-                                            SELECT MAX(ap.avg_score_completed) >= spp.pass_pct
+                                            SELECT MAX(ap.avg_score_completed) >= (
+                                                SELECT pass_pct FROM sim_pass_pct WHERE simulation_id = sm.simulation_id LIMIT 1
+                                            )
                                             FROM attempt_progress ap
-                                            JOIN sim_pass_pct spp ON spp.simulation_id = ap.simulation_id
                                             WHERE ap.profile_id = {profile_param_placeholder}
                                               AND ap.simulation_id = sm.simulation_id
-                                            GROUP BY spp.pass_pct
                                           ), false) THEN 'passed'
                                      WHEN COALESCE(aps.chats, 0) > 0 THEN 'in-progress'
                                      ELSE 'not-started'
@@ -219,6 +221,7 @@ class PracticeQueries:
                             FROM latest_attempt_per_profile_sim lap
                             WHERE lap.profile_id = {profile_param_placeholder}
                               AND lap.simulation_id = sm.simulation_id
+                            LIMIT 1
                         ), 0),
                         'passedCount', NULL,
                         'inProgressCount', NULL,
@@ -233,7 +236,7 @@ class PracticeQueries:
                               AND ap.simulation_id = sm.simulation_id
                         ),
                         'hasActivity', (COALESCE(aps.chats, 0) > 0),
-                        'standard_groups', (
+                        'standard_groups', COALESCE((
                             SELECT jsonb_object_agg(
                                 sg.id::text,
                                 (
@@ -244,7 +247,7 @@ class PracticeQueries:
                             )
                             FROM standard_groups sg
                             WHERE sg.rubric_id = sm.rubric_id
-                        )
+                        ), '{{}}'::jsonb)
                     ) AS item,
                     sm.simulation_title AS sort_title,
                     (
@@ -472,7 +475,7 @@ class PracticeQueries:
                             'numScenarios', fr.num_scenarios,
                             'numScenariosCompleted', fr.num_scenarios_completed,
                             'infiniteMode', fr.infinite_mode,
-                            'timeLimit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = fr.simulation_id AND stl.active = true),
+                            'timeLimit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = fr.simulation_id AND stl.active = true LIMIT 1),
                             'personaNames', COALESCE(pl.persona_names, ARRAY[]::text[]),
                             'personaColors', COALESCE(pl.persona_colors, ARRAY[]::text[]),
                             'score', fr.score_percent,
@@ -502,7 +505,7 @@ class PracticeQueries:
                         jsonb_build_object(
                             'name', sim.title, 
                             'description', sim.description,
-                            'time_limit', stl.time_limit_seconds,
+                            'time_limit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = sim.id AND stl.active = true LIMIT 1),
                             'department_ids', CASE 
                                 WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
                                 ELSE NULL::jsonb
@@ -512,7 +515,6 @@ class PracticeQueries:
                     '{{}}'::jsonb
                 ) as mapping
                 FROM simulations sim
-                LEFT JOIN simulation_time_limits stl ON stl.simulation_id = sim.id AND stl.active = true
                 LEFT JOIN (
                     SELECT 
                         sd.simulation_id,
@@ -523,7 +525,7 @@ class PracticeQueries:
                 ) sdd ON sdd.simulation_id = sim.id
                 WHERE sim.active = true
                   AND sim.practice_simulation = true
-                GROUP BY sim.id, sim.title, sim.description, stl.time_limit_seconds, sdd.department_ids
+                GROUP BY sim.id, sim.title, sim.description, sdd.department_ids
                 HAVING 
                     (cardinality({dept_param_placeholder}) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && {dept_param_placeholder}::text[])
                     OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = sim.id AND sd2.active = true))
@@ -606,7 +608,7 @@ class PracticeQueries:
                 GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, par.name, pi.value
                 HAVING 
                     (cardinality({dept_param_placeholder}) = 0 OR COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY({dept_param_placeholder})) > 0)
-                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = par.id AND pd2.active = true))
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = pi.parameter_id AND pd2.active = true))
             )
             SELECT json_build_object(
                 'mode', 'practice',
@@ -620,14 +622,14 @@ class PracticeQueries:
                     )
                     FROM rows
                 ), '[]'::json),
-                'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping), '{{}}'::jsonb),
-                'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping), '{{}}'::jsonb),
-                'history', (SELECT history FROM attempt_history_data),
-                'simulation_mapping', (SELECT mapping FROM simulation_mapping_data),
-                'persona_mapping', (SELECT mapping FROM persona_mapping_data),
-                'scenario_mapping', (SELECT mapping FROM scenario_mapping_data),
-                'parameter_mapping', (SELECT mapping FROM parameter_mapping_data),
-                'parameter_item_mapping', (SELECT mapping FROM parameter_item_mapping_data)
+                'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping LIMIT 1), '{{}}'::jsonb),
+                'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping LIMIT 1), '{{}}'::jsonb),
+                'history', (SELECT history FROM attempt_history_data LIMIT 1),
+                'simulation_mapping', (SELECT mapping FROM simulation_mapping_data LIMIT 1),
+                'persona_mapping', (SELECT mapping FROM persona_mapping_data LIMIT 1),
+                'scenario_mapping', (SELECT mapping FROM scenario_mapping_data LIMIT 1),
+                'parameter_mapping', (SELECT mapping FROM parameter_mapping_data LIMIT 1),
+                'parameter_item_mapping', (SELECT mapping FROM parameter_item_mapping_data LIMIT 1)
             ) AS result
         """
 
