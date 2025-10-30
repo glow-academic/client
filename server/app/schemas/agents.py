@@ -54,6 +54,12 @@ class AgentDetailRequest(BaseModel):
     profileId: str
 
 
+class AgentDetailDefaultRequest(BaseModel):
+    """Request for default agent detail."""
+
+    profileId: str
+
+
 class DebugInfoItem(BaseModel):
     """Debug information item."""
 

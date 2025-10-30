@@ -29,6 +29,7 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useAgentDetail,
+  useAgentDetailDefault,
   useCreateAgent as useCreateAgentV2,
   useUpdateAgent as useUpdateAgentV2,
 } from "@/lib/api/v2/hooks/agents";
@@ -81,14 +82,22 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     isEditMode
   );
 
+  const { data: agentDetailDefault, isLoading: isLoadingAgentDefault } =
+    useAgentDetailDefault(
+      effectiveProfile?.id || "",
+      !isEditMode
+    );
+
   const { mutate: createAgent } = useCreateAgentV2();
   const { mutate: updateAgent } = useUpdateAgentV2();
 
-  const isLoading = isLoadingAgentDetail;
+  // Use edit detail when editing, default detail when creating
+  const agentData = isEditMode ? agentDetail : agentDetailDefault;
+  const isLoading = isEditMode ? isLoadingAgentDetail : isLoadingAgentDefault;
 
   // Temperature bounds from v2 response
-  const temperatureLower = agentDetail?.temperature_lower ?? 0.0;
-  const temperatureUpper = agentDetail?.temperature_upper ?? 1.0;
+  const temperatureLower = agentData?.temperature_lower ?? 0.0;
+  const temperatureUpper = agentData?.temperature_upper ?? 1.0;
 
   const initialFormData: SystemAgentFormData = useMemo(
     () => ({
@@ -139,18 +148,18 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             | undefined) || "none",
         active: agentDetail.active ?? true,
       });
-    } else if (!isEditMode && agentDetail) {
+    } else if (!isEditMode && agentDetailDefault) {
       // For create mode, use defaults from API response
       setFormData({
         ...initialFormData,
         temperature:
-          agentDetail.temperature ?? initialFormData.temperature ?? 0.7,
-        modelId: agentDetail.model_id || initialFormData.modelId || "",
+          agentDetailDefault.temperature ?? initialFormData.temperature ?? 0.7,
+        modelId: agentDetailDefault.model_id || initialFormData.modelId || "",
         systemPrompt:
-          agentDetail.system_prompt || initialFormData.systemPrompt || "",
+          agentDetailDefault.system_prompt || initialFormData.systemPrompt || "",
       });
     }
-  }, [isEditMode, agentDetail, initialFormData]);
+  }, [isEditMode, agentDetail, agentDetailDefault, initialFormData]);
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,

@@ -1057,12 +1057,18 @@ class SimulationQueries:
             FROM valid_scenarios_list
         ),
         valid_rubrics_data AS (
-            SELECT 
+            SELECT DISTINCT
                 r.id,
                 r.name,
                 COALESCE(r.description, '') as description
-            FROM rubrics r, user_department_ids udi
-            WHERE r.department_id = ANY(udi.ids) AND r.active = true
+            FROM rubrics r
+            LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+            CROSS JOIN user_department_ids udi
+            WHERE r.active = true
+              AND (
+                  rd.department_id = ANY(udi.ids)
+                  OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+              )
         ),
         rubric_mapping_data AS (
             SELECT COALESCE(
@@ -1079,13 +1085,18 @@ class SimulationQueries:
             FROM valid_rubrics_data vr
         ),
         parameters_data AS (
-            SELECT 
+            SELECT DISTINCT
                 p.id,
                 p.name,
                 COALESCE(p.description, '') as description,
                 p.numerical
-            FROM parameters p, user_department_ids udi
-            WHERE p.department_id = ANY(udi.ids)
+            FROM parameters p
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            CROSS JOIN user_department_ids udi
+            WHERE (
+                pd.department_id = ANY(udi.ids)
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+            )
         ),
         parameter_mapping_data AS (
             SELECT COALESCE(
@@ -1627,7 +1638,7 @@ class SimulationQueries:
                 s.name,
                 sps.problem_statement,
                 ss.active,
-                s.default_scenario,
+                (ss.position = 1) as default_scenario,
                 ss.position,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
@@ -1714,22 +1725,32 @@ class SimulationQueries:
                 sps.problem_statement
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
             CROSS JOIN user_department_ids udi
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
-            WHERE s.department_id = ANY(udi.ids) 
-              AND s.active = true
+            WHERE s.active = true
+              AND (
+                  sd.department_id = ANY(udi.ids)
+                  OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
+              )
         ),
         valid_scenarios AS (
             SELECT ARRAY_AGG(id::text) as ids
             FROM valid_scenarios_list
         ),
         valid_rubrics_data AS (
-            SELECT 
+            SELECT DISTINCT
                 r.id,
                 r.name,
                 COALESCE(r.description, '') as description
-            FROM rubrics r, user_department_ids udi
-            WHERE r.department_id = ANY(udi.ids) AND r.active = true
+            FROM rubrics r
+            LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+            CROSS JOIN user_department_ids udi
+            WHERE r.active = true
+              AND (
+                  rd.department_id = ANY(udi.ids)
+                  OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+              )
         ),
         rubric_mapping_data AS (
             SELECT COALESCE(
@@ -1746,13 +1767,18 @@ class SimulationQueries:
             FROM valid_rubrics_data vr
         ),
         parameters_data AS (
-            SELECT 
+            SELECT DISTINCT
                 p.id,
                 p.name,
                 COALESCE(p.description, '') as description,
                 p.numerical
-            FROM parameters p, user_department_ids udi
-            WHERE p.department_id = ANY(udi.ids)
+            FROM parameters p
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            CROSS JOIN user_department_ids udi
+            WHERE (
+                pd.department_id = ANY(udi.ids)
+                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+            )
         ),
         parameter_mapping_data AS (
             SELECT COALESCE(
@@ -1938,11 +1964,11 @@ class SimulationQueries:
         SELECT 
             sb.title,
             sb.description,
-            sb.department_id::text,
+            COALESCE(dmd.department_ids, ARRAY[]::text[]) as department_ids,
             sb.time_limit,
             sb.rubric_id::text,
             sb.active,
-            sb.default_simulation,
+            false as default_simulation,
             sb.practice_simulation,
             sb.hints_enabled,
             sb.objectives_enabled,

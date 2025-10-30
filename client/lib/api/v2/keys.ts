@@ -468,6 +468,12 @@ export const agentsDetailKeys = {
     [...agentsDetailKeys.all, { agentId, profileId }] as const,
 };
 
+export const agentsDetailDefaultKeys = {
+  all: ["agents:v2:detail-default"] as const,
+  detail: (profileId: string) =>
+    [...agentsDetailDefaultKeys.all, { profileId }] as const,
+};
+
 // Feedback Keys (read-only)
 export const feedbackListKeys = {
   all: ["feedback:v2:list"] as const,

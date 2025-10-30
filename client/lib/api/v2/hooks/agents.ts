@@ -5,7 +5,11 @@
  */
 
 import { api } from "@/lib/api/fetcher";
-import { agentsDetailKeys, agentsListKeys } from "@/lib/api/v2/keys";
+import {
+  agentsDetailDefaultKeys,
+  agentsDetailKeys,
+  agentsListKeys,
+} from "@/lib/api/v2/keys";
 import {
   AgentDetailResponseSchema,
   AgentsListResponseSchema,
@@ -70,6 +74,29 @@ export function useAgentDetail(
       return AgentDetailResponseSchema.parse(res);
     },
     enabled: queryOptions.enabled && !!agentId && !!profileId,
+  });
+}
+
+export function useAgentDetailDefault(
+  profileId: string,
+  options: AgentsHookOptions | boolean = true
+) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
+  return useQuery({
+    queryKey: agentsDetailDefaultKeys.detail(profileId),
+    ...queryOptions,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v2/agents/detail-default", {
+        method: "POST",
+        body: JSON.stringify({ profileId }),
+      });
+      return AgentDetailResponseSchema.parse(res);
+    },
+    enabled: queryOptions.enabled && !!profileId,
   });
 }
 

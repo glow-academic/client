@@ -1632,7 +1632,7 @@ class ScenarioQueries:
             JOIN parameters p ON p.id = pi.parameter_id
             LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
             WHERE p.active = true
-            GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.name, pi.value
+            GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
                 COUNT(pd.parameter_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
@@ -1658,19 +1658,19 @@ class ScenarioQueries:
         parameters_structure AS (
             SELECT COALESCE(
                 jsonb_object_agg(
-                    p.id::text,
+                    pd.id::text,
                     jsonb_build_object(
                         'parameter_item_ids', '[]'::jsonb,
                         'valid_parameter_item_ids', COALESCE((
                             SELECT jsonb_agg(pi.id::text ORDER BY pi.id)
                             FROM parameter_items pi
-                            WHERE pi.parameter_id = p.id
+                            WHERE pi.parameter_id = pd.id
                         ), '[]'::jsonb)
                     )
                 ),
                 '{}'::jsonb
             ) as parameters_json
-            FROM parameter_data p
+            FROM parameter_data pd
         ),
         document_details_data AS (
             SELECT '[]'::jsonb as document_details

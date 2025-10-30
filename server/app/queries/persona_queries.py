@@ -544,7 +544,7 @@ class PersonaQueries:
         """
         query = """
         WITH user_departments AS (
-            SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
+            SELECT DISTINCT pd.department_id
             FROM profile_departments pd
             WHERE pd.profile_id = $1
         ),
@@ -556,7 +556,7 @@ class PersonaQueries:
             GROUP BY p.id
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+                COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT department_id FROM user_departments)) > 0
                 OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
             ORDER BY p.created_at DESC
             LIMIT 1

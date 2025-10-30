@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends
 
 from app.db import get_db
 from app.schemas.agents import (
+    AgentDetailDefaultRequest,
     AgentDetailRequest,
     AgentDetailResponse,
     AgentsListRequest,
@@ -43,6 +44,16 @@ async def get_agent_detail(
     """Get agent detail with debug info and metadata."""
     service = get_agent_service(conn)
     return await service.get_agent_detail(request)
+
+
+@router.post("/detail-default", response_model=AgentDetailResponse)
+async def get_agent_detail_default(
+    request: AgentDetailDefaultRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> AgentDetailResponse:
+    """Get default agent detail metadata for creating new agents."""
+    service = get_agent_service(conn)
+    return await service.get_agent_detail_default(request)
 
 
 @router.post("/create", response_model=CreateAgentResponse)

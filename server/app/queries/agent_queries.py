@@ -241,6 +241,51 @@ class AgentQueries:
 
         return query, params
 
+    def get_agent_detail_default_complete(
+        self, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get default agent detail metadata (for creating new agents).
+
+        Returns valid models, reasoning options, temperature bounds, etc.
+        but no actual agent data since there's no "default agent" concept.
+
+        Args:
+            profile_id: UUID of the profile (for future permission checks)
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH valid_models AS (
+            SELECT 
+                id::text as model_id,
+                name,
+                COALESCE(description, '') as description,
+                active
+            FROM models
+            WHERE active = true
+            ORDER BY name
+        )
+        SELECT 
+            COALESCE(
+                (SELECT jsonb_object_agg(
+                    vm.model_id,
+                    jsonb_build_object('name', vm.name, 'description', vm.description)
+                )
+                FROM valid_models vm),
+                '{}'::jsonb
+            ) as model_mapping,
+            COALESCE(
+                (SELECT jsonb_agg(vm.model_id ORDER BY vm.name)
+                FROM valid_models vm),
+                '[]'::jsonb
+            ) as valid_model_ids
+        FROM (SELECT 1) dummy
+        """
+        # Note: profile_id is not used in the query yet (reserved for future permission checks)
+        return (query, [])
+
     def create_agent(
         self,
         name: str,

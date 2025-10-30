@@ -53,6 +53,14 @@ export const AgentDetailRequestSchema = z.object({
 
 export type AgentDetailRequest = z.infer<typeof AgentDetailRequestSchema>;
 
+export const AgentDetailDefaultRequestSchema = z.object({
+  profileId: z.string(),
+});
+
+export type AgentDetailDefaultRequest = z.infer<
+  typeof AgentDetailDefaultRequestSchema
+>;
+
 // Debug info item
 export const DebugInfoItemSchema = z.object({
   created_at: z.string(),

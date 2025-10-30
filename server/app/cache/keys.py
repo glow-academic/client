@@ -821,6 +821,16 @@ def agent_by_id(agent_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     return Key(ns=NS_AGENT, name="by_id", params={"agent_id": agent_id}, v=v)
 
 
+def agent_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for default agent detail query."""
+    return Key(
+        ns=NS_AGENT,
+        name="default",
+        params={"profile_id": profile_id},
+        v=v,
+    )
+
+
 def agent_classification_context(
     document_ids: list[str], department_id: str, *, v: int = GLOBAL_CACHE_VERSION
 ) -> Key:

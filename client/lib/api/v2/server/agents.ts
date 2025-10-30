@@ -24,3 +24,22 @@ export const fetchAgentDetail = cache(
     return AgentDetailResponseSchema.parse(data);
   }
 );
+
+export const fetchAgentDetailDefault = cache(async (profileId: string) => {
+  const res = await fetch(`${getApiBase()}/api/v2/agents/detail-default`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ profileId }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(
+      `Failed to fetch default agent detail: ${res.status} ${errorText}`
+    );
+  }
+
+  const data = await res.json();
+  return AgentDetailResponseSchema.parse(data);
+});

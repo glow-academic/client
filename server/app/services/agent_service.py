@@ -8,13 +8,14 @@ import asyncpg  # type: ignore
 from app.cache import keys
 from app.queries.agent_queries import AgentQueries
 from app.queries.profile_queries import ProfileQueries
-from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
-                                AgentItem, AgentsListRequest,
-                                AgentsListResponse, CreateAgentRequest,
-                                CreateAgentResponse, DebugInfoItem,
-                                DeleteAgentRequest, DeleteAgentResponse,
-                                DuplicateAgentRequest, DuplicateAgentResponse,
-                                UpdateAgentRequest, UpdateAgentResponse)
+from app.schemas.agents import (AgentDetailDefaultRequest, AgentDetailRequest,
+                                AgentDetailResponse, AgentItem,
+                                AgentsListRequest, AgentsListResponse,
+                                CreateAgentRequest, CreateAgentResponse,
+                                DebugInfoItem, DeleteAgentRequest,
+                                DeleteAgentResponse, DuplicateAgentRequest,
+                                DuplicateAgentResponse, UpdateAgentRequest,
+                                UpdateAgentResponse)
 from app.schemas.base import (ModelMapping, ModelMappingItem,
                               ReasoningMappingItem)
 from app.services.base_service import BaseService, with_cache
@@ -188,6 +189,97 @@ class AgentService(BaseService):
             temperature_lower=0.0,
             temperature_upper=1.0,
             debug_info=debug_info,
+            model_mapping=model_mapping,
+            reasoning_mapping=reasoning_mapping,
+        )
+
+    @with_cache(lambda self, request: keys.agent_default(request.profileId))
+    async def get_agent_detail_default(
+        self, request: AgentDetailDefaultRequest
+    ) -> AgentDetailResponse:
+        """
+        Get default agent detail metadata for creating new agents.
+
+        Returns valid models, reasoning options, temperature bounds, etc.
+        but no actual agent data since there's no "default agent" concept.
+
+        Args:
+            request: Detail default request
+
+        Returns:
+            AgentDetailResponse with default/empty values
+        """
+        return await self._get_agent_detail_default_direct(request)
+
+    async def _get_agent_detail_default_direct(
+        self, request: AgentDetailDefaultRequest
+    ) -> AgentDetailResponse:
+        """Direct execution without cache."""
+        # Get valid models in ONE optimized query
+        query, params = self.queries.get_agent_detail_default_complete(
+            request.profileId
+        )
+        result = await self.conn.fetchrow(query, *params)
+
+        if not result:
+            # Return defaults if query fails
+            model_mapping: ModelMapping = {}
+            valid_model_ids: list[str] = []
+        else:
+            # Parse model_mapping from JSONB (may be string or dict)
+            model_mapping: ModelMapping = {}
+            model_mapping_data = result["model_mapping"]
+            if isinstance(model_mapping_data, str):
+                model_mapping_data = json.loads(model_mapping_data)
+            if model_mapping_data and isinstance(model_mapping_data, dict):
+                for model_id, model_data in model_mapping_data.items():
+                    if isinstance(model_data, dict):
+                        model_mapping[model_id] = ModelMappingItem(
+                            name=model_data.get("name", ""),
+                            description=model_data.get("description", ""),
+                        )
+
+            # Parse valid_model_ids from JSONB (may be string or list)
+            valid_model_ids: list[str] = []
+            valid_model_ids_data = result["valid_model_ids"]
+            if isinstance(valid_model_ids_data, str):
+                valid_model_ids_data = json.loads(valid_model_ids_data)
+            if valid_model_ids_data and isinstance(valid_model_ids_data, list):
+                valid_model_ids = [str(mid) for mid in valid_model_ids_data if mid]
+
+        # Build reasoning_mapping following the reasoning_effort enum
+        reasoning_mapping = {
+            "none": ReasoningMappingItem(
+                name="None", description="No extended reasoning"
+            ),
+            "minimal": ReasoningMappingItem(
+                name="Minimal", description="Basic reasoning for straightforward tasks"
+            ),
+            "low": ReasoningMappingItem(
+                name="Low", description="Light reasoning for simple problem-solving"
+            ),
+            "medium": ReasoningMappingItem(
+                name="Medium", description="Balanced reasoning for moderate complexity"
+            ),
+            "high": ReasoningMappingItem(
+                name="High",
+                description="Deep reasoning for complex, multi-step problems",
+            ),
+        }
+
+        return AgentDetailResponse(
+            name="",
+            description="",
+            system_prompt="",
+            temperature=0.7,
+            model_id="",
+            reasoning=None,
+            active=True,
+            valid_model_ids=valid_model_ids,
+            reasoning_options=["none", "minimal", "low", "medium", "high"],
+            temperature_lower=0.0,
+            temperature_upper=1.0,
+            debug_info=[],
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
         )
