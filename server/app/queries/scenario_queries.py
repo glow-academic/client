@@ -197,12 +197,15 @@ class ScenarioQueries:
                         'name', s.title,
                         'description', COALESCE(s.description, ''),
                         'time_limit', stl.time_limit_seconds,
-                        'department_ids', COALESCE(
-                            (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
-                             FROM simulation_departments sd
-                             WHERE sd.simulation_id = s.id AND sd.active = true),
-                            NULL
-                        )
+                        'department_ids', CASE 
+                            WHEN (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
+                                  FROM simulation_departments sd
+                                  WHERE sd.simulation_id = s.id AND sd.active = true) IS NOT NULL 
+                            THEN to_jsonb((SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
+                                           FROM simulation_departments sd
+                                           WHERE sd.simulation_id = s.id AND sd.active = true))
+                            ELSE NULL::jsonb
+                        END
                     )
                 ) FILTER (WHERE s.id IS NOT NULL),
                 '{}'::jsonb

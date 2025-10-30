@@ -59,13 +59,24 @@ class HomeService(BaseService):
         - If role is 'ta' → TA mode (personalized view with profileId filter for items + history)
         - Otherwise → Instructional mode (all cohort data for items, profileId filter for history only)
         """
+        # Resolve "guest-profile-id" to actual default guest profile
+        profile_id = filters.profileId
+        if profile_id == "guest-profile-id":
+            from app.services.profile_service import ProfileService
+            profile_service = ProfileService(self.conn)
+            guest_id = await profile_service.get_default_guest_profile_id()
+            if guest_id:
+                profile_id = str(guest_id)
+            else:
+                raise ValueError("No default guest profile found in database")
+
         # Execute single query - it looks up the role and determines view mode internally
         # Note: Home always shows general simulations only (hardcoded in query, no role filter)
         query, params = self.queries.home_overview(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
-            profile_id=filters.profileId,
+            profile_id=profile_id,
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
@@ -85,11 +96,25 @@ class HomeService(BaseService):
         if isinstance(parsed_result.get("simulation_mapping"), dict):
             for sim_id, sim_data in parsed_result["simulation_mapping"].items():
                 if isinstance(sim_data, dict):
+                    # Handle department_ids - may be array or null
+                    dept_ids = sim_data.get("department_ids")
+                    if isinstance(dept_ids, str):
+                        # Handle case where it's a JSON string
+                        import json
+                        try:
+                            dept_ids = json.loads(dept_ids)
+                        except (json.JSONDecodeError, ValueError):
+                            dept_ids = [dept_ids] if dept_ids else None
+                    elif dept_ids is None:
+                        dept_ids = None
+                    elif not isinstance(dept_ids, list):
+                        dept_ids = [dept_ids] if dept_ids else None
+                    
                     simulation_mapping[sim_id] = SimulationMappingItem(
                         name=sim_data.get("name", ""),
                         description=sim_data.get("description", ""),
                         time_limit=sim_data.get("time_limit"),
-                        department_id=sim_data.get("department_id", ""),
+                        department_ids=dept_ids,
                     )
 
         return HomeOverviewResponse(

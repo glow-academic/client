@@ -593,9 +593,17 @@ class ProfileQueries:
                 c.title,
                 c.description,
                 c.active,
-                c.department_id
+                COALESCE(cdd.department_ids, NULL) as department_ids
             FROM cohorts c
             JOIN cohort_profiles pc ON pc.cohort_id = c.id
+            LEFT JOIN (
+                SELECT 
+                    cd.cohort_id,
+                    ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
+                FROM cohort_departments cd
+                WHERE cd.active = true
+                GROUP BY cd.cohort_id
+            ) cdd ON cdd.cohort_id = c.id
             WHERE pc.profile_id = $2 
               AND pc.active = true
               AND c.active = true
@@ -606,15 +614,22 @@ class ProfileQueries:
                 s.id,
                 s.title,
                 s.description,
-                s.department_id,
+                COALESCE(sdd.department_ids, NULL) as department_ids,
                 COALESCE(stl.time_limit_seconds, 0) as time_limit,
                 s.active,
-                s.default_simulation,
                 s.practice_simulation
             FROM simulations s
             JOIN cohort_simulations cs ON cs.simulation_id = s.id
             JOIN cohort_data cd ON cd.id = cs.cohort_id
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+            LEFT JOIN (
+                SELECT 
+                    sd.simulation_id,
+                    ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+                FROM simulation_departments sd
+                WHERE sd.active = true
+                GROUP BY sd.simulation_id
+            ) sdd ON sdd.simulation_id = s.id
             WHERE s.active = true
         ),
         simulatable_data AS (
@@ -705,7 +720,7 @@ class ProfileQueries:
                     'title', c.title,
                     'description', c.description,
                     'active', c.active,
-                    'department_id', c.department_id::text
+                    'department_ids', c.department_ids
                 ) ORDER BY c.title)
                 FROM cohort_data c),
                 '[]'::jsonb
@@ -715,10 +730,9 @@ class ProfileQueries:
                     'id', s.id::text,
                     'title', s.title,
                     'description', s.description,
-                    'department_id', s.department_id::text,
+                    'department_ids', s.department_ids,
                     'time_limit', s.time_limit,
                     'active', s.active,
-                    'default_simulation', s.default_simulation,
                     'practice_simulation', s.practice_simulation
                 ) ORDER BY s.title)
                 FROM sim_data s),

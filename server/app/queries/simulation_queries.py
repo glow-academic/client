@@ -496,9 +496,7 @@ class SimulationQueries:
             s.name,
             sps.problem_statement,
             s.active,
-            s.default_scenario,
             s.generated,
-            s.department_id,
             s.created_at,
             s.updated_at,
             s.use_documents,
@@ -510,8 +508,8 @@ class SimulationQueries:
         LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
         LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
         WHERE s.id = $1
-        GROUP BY s.id, s.name, sps.problem_statement, s.active, s.default_scenario, 
-                 s.generated, s.department_id, s.created_at, s.updated_at, s.use_documents
+        GROUP BY s.id, s.name, sps.problem_statement, s.active, 
+                 s.generated, s.created_at, s.updated_at, s.use_documents
         """
         return (query, [scenario_id])
 
@@ -918,9 +916,7 @@ class SimulationQueries:
                 s.id,
                 s.title,
                 s.description,
-                s.department_id,
                 s.active,
-                s.default_simulation,
                 s.practice_simulation,
                 s.hints_enabled,
                 s.objectives_enabled,
@@ -1408,9 +1404,7 @@ class SimulationQueries:
                 s.name as scenario_name,
                 sps.problem_statement,
                 s.active,
-                s.default_scenario,
                 s.generated,
-                s.department_id,
                 -- Persona data
                 p.id as persona_id,
                 p.name as persona_name,
@@ -1472,8 +1466,8 @@ class SimulationQueries:
             LEFT JOIN parameter_items pi ON pi.id = spi.parameter_item_id
             LEFT JOIN parameters p_param ON p_param.id = pi.parameter_id
             WHERE s.id = csi.scenario_id
-            GROUP BY s.id, s.name, sps.problem_statement, s.active, s.default_scenario, 
-                     s.generated, s.department_id, p.id, p.name, p.system_prompt, 
+            GROUP BY s.id, s.name, sps.problem_statement, s.active, 
+                     s.generated, p.id, p.name, p.system_prompt, 
                      p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.custom_model,
                      pr.id, pr.name, pr.api_key, pe.base_url
         ),
@@ -1584,9 +1578,15 @@ class SimulationQueries:
         default_simulation AS (
             SELECT s.id
             FROM simulations s
-            JOIN user_departments ud ON ud.department_id = s.department_id
+            LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
+            LEFT JOIN user_departments ud ON sd.department_id = ud.department_id
             WHERE s.active = true
-            ORDER BY s.default_simulation DESC, s.created_at DESC
+              AND (
+                  -- Include if has matching department link OR has no department links at all (cross-dept)
+                  sd.department_id = ud.department_id
+                  OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
+              )
+            ORDER BY s.created_at DESC
             LIMIT 1
         ),
         simulation_base AS (
@@ -1594,9 +1594,7 @@ class SimulationQueries:
                 s.id,
                 s.title,
                 s.description,
-                s.department_id,
                 s.active,
-                s.default_simulation,
                 s.practice_simulation,
                 s.hints_enabled,
                 s.objectives_enabled,
@@ -1996,9 +1994,8 @@ class SimulationQueries:
             s.id as sim_id,
             s.title as sim_title,
             s.description as sim_description,
-            s.department_id as sim_department_id,
+            (SELECT department_id FROM simulation_departments sd WHERE sd.simulation_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1) as sim_department_id,
             s.active as sim_active,
-            s.default_simulation as sim_default_simulation,
             s.practice_simulation as sim_practice_simulation,
             s.hints_enabled as sim_hints_enabled,
             s.objectives_enabled as sim_objectives_enabled,
@@ -2528,9 +2525,8 @@ class SimulationQueries:
                 'id', ab.sim_id::text,
                 'title', ab.sim_title,
                 'description', ab.sim_description,
-                'departmentId', ab.sim_department_id::text,
+                'departmentId', CASE WHEN ab.sim_department_id IS NOT NULL THEN ab.sim_department_id::text ELSE NULL END,
                 'active', ab.sim_active,
-                'defaultSimulation', ab.sim_default_simulation,
                 'practiceSimulation', ab.sim_practice_simulation,
                 'hintsEnabled', ab.sim_hints_enabled,
                 'objectivesEnabled', ab.sim_objectives_enabled,

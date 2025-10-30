@@ -219,11 +219,24 @@ class ScenarioService(BaseService):
 
                 for sim_id, sdata in simulation_mapping_data.items():
                     if isinstance(sdata, dict):
+                        # Handle department_ids - may be array or null
+                        dept_ids = sdata.get("department_ids")
+                        if isinstance(dept_ids, str):
+                            import json
+                            try:
+                                dept_ids = json.loads(dept_ids)
+                            except (json.JSONDecodeError, ValueError):
+                                dept_ids = [dept_ids] if dept_ids else None
+                        elif dept_ids is None:
+                            dept_ids = None
+                        elif not isinstance(dept_ids, list):
+                            dept_ids = [dept_ids] if dept_ids else None
+                        
                         simulation_mapping[sim_id] = SimulationMappingItem(
                             name=sdata.get("name", ""),
                             description=sdata.get("description", ""),
                             time_limit=sdata.get("time_limit"),
-                            department_id=sdata.get("department_id", ""),
+                            department_ids=dept_ids,
                         )
 
         # Build scenario items
@@ -371,7 +384,7 @@ class ScenarioService(BaseService):
                         name=sdata.get("name", ""),
                         description=sdata.get("description", ""),
                         time_limit=sdata.get("time_limit"),
-                        department_id=sdata.get("department_id", ""),
+                        department_ids=sdata.get("department_ids"),
                     )
 
         # Parse JSONB parameter mapping (may be string or dict)

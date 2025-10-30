@@ -117,11 +117,24 @@ class CohortService(BaseService):
                 if isinstance(sm, dict):
                     for sid, sdata in sm.items():
                         if isinstance(sdata, dict):
+                            # Handle department_ids - may be array or null
+                            dept_ids = sdata.get("department_ids")
+                            if isinstance(dept_ids, str):
+                                import json
+                                try:
+                                    dept_ids = json.loads(dept_ids)
+                                except (json.JSONDecodeError, ValueError):
+                                    dept_ids = [dept_ids] if dept_ids else None
+                            elif dept_ids is None:
+                                dept_ids = None
+                            elif not isinstance(dept_ids, list):
+                                dept_ids = [dept_ids] if dept_ids else None
+                            
                             simulation_mapping[sid] = SimulationMappingItem(
                                 name=sdata["name"],
                                 description=sdata["description"],
                                 time_limit=sdata.get("time_limit"),
-                                department_id=sdata.get("department_id", ""),
+                                department_ids=dept_ids,
                             )
 
         return CohortsListResponse(
@@ -167,7 +180,7 @@ class CohortService(BaseService):
                         name=sdata["name"],
                         description=sdata["description"],
                         time_limit=sdata.get("time_limit"),
-                        department_id=sdata.get("department_id", ""),
+                        department_ids=sdata.get("department_ids"),
                     )
 
         # Parse profile mapping from JSONB (may be string or dict)
@@ -272,7 +285,7 @@ class CohortService(BaseService):
                         name=sdata["name"],
                         description=sdata["description"],
                         time_limit=sdata.get("time_limit"),
-                        department_id=sdata.get("department_id", ""),
+                        department_ids=sdata.get("department_ids"),
                     )
 
         # Parse profile mapping from JSONB (may be string or dict)

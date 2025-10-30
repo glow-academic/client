@@ -121,9 +121,13 @@ class HomeQueries:
             cohort_sim AS (
                 SELECT c.id AS cohort_id, c.title AS cohort_title, cs.simulation_id
                 FROM cohorts c
-                JOIN cohort_simulations cs ON cs.cohort_id = c.id
+                JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.active = true
+                LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
                 WHERE (cardinality({cohort_param_placeholder}) = 0 OR c.id = ANY({cohort_param_placeholder}))
-                  AND (cardinality({dept_param_placeholder}) = 0 OR c.department_id = ANY({dept_param_placeholder}))
+                GROUP BY c.id, c.title, cs.simulation_id
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
             ),
             -- Expected scenarios per simulation
             sim_expected AS (
@@ -181,9 +185,13 @@ class HomeQueries:
                 JOIN cohorts c ON c.id = cp.cohort_id
                 JOIN cohort_simulations cs ON cs.cohort_id = c.id
                 JOIN profiles p ON p.id = cp.profile_id
+                LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
                 WHERE (cardinality({cohort_param_placeholder}) = 0 OR c.id = ANY({cohort_param_placeholder}))
-                  AND (cardinality({dept_param_placeholder}) = 0 OR c.department_id = ANY({dept_param_placeholder}))
                   AND (cardinality({roles_param_placeholder}) = 0 OR p.role = ANY({roles_param_placeholder}))
+                GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, c.title, p.role, c.id
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
             ),
             -- Simulation metadata
             sim_meta AS (
@@ -234,8 +242,12 @@ class HomeQueries:
                 JOIN cohort_simulations cs ON cs.cohort_id = c.id
                 JOIN cohort_profiles cp ON cp.cohort_id = c.id
                     AND cp.profile_id = {profile_param_placeholder}
+                LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
                 WHERE (cardinality({cohort_param_placeholder}) = 0 OR c.id = ANY({cohort_param_placeholder}))
-                  AND (cardinality({dept_param_placeholder}) = 0 OR c.department_id = ANY({dept_param_placeholder}))
+                GROUP BY c.id, c.title, cs.simulation_id
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
             ),
             ta_sim_space AS (
                 SELECT DISTINCT simulation_id FROM ta_primary_cohort
@@ -472,15 +484,23 @@ class HomeQueries:
                     ap.profile_id,
                     sim.title AS simulation_name,
                     sim.practice_simulation,
-                    sim.department_id
+                    COALESCE(sdd.department_ids, NULL) as department_ids
                 FROM simulation_attempts sa
                 JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
                 JOIN simulations sim ON sim.id = sa.simulation_id
+                LEFT JOIN (
+                    SELECT 
+                        sd.simulation_id,
+                        ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+                    FROM simulation_departments sd
+                    WHERE sd.active = true
+                    GROUP BY sd.simulation_id
+                ) sdd ON sdd.simulation_id = sim.id
                 WHERE sa.created_at >= {history_start_date_param}
                   AND sa.created_at <= {history_end_date_param}
                   AND sim.practice_simulation = FALSE
-                  AND (cardinality({history_dept_param}) = 0 OR sim.department_id = ANY({history_dept_param}))
                   AND ({history_profile_param} IS NULL OR ap.profile_id = {history_profile_param})
+                  AND (cardinality({history_dept_param}) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && {history_dept_param}::text[])
             ),
             -- Get cohorts for each attempt's profile
             history_attempt_cohorts AS (
@@ -583,7 +603,7 @@ class HomeQueries:
                     haf.profile_id,
                     haf.simulation_name,
                     haf.practice_simulation,
-                    haf.department_id,
+                    haf.department_ids,
                     COALESCE(hcr.first_chat_at, haf.attempt_date) AS first_chat_at,
                     COALESCE(hcr.last_activity_at, haf.attempt_date) AS last_activity_at,
                     COALESCE(hgr.completed_with_grade, 0) AS completed_with_grade,
@@ -640,7 +660,7 @@ class HomeQueries:
                     aj.pass_pct,
                     aj.infinite_mode,
                     aj.attempt_date,
-                    aj.department_id,
+                    aj.department_ids,
                     CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
                     COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
                     CASE
@@ -715,7 +735,7 @@ class HomeQueries:
                             'showContinue', fr.show_continue,
                             'practiceSimulation', COALESCE(fr.practice_simulation, false),
                             'passPct', fr.pass_pct,
-                            'department_id', fr.department_id::text,
+                            'department_ids', fr.department_ids,
                             'cohortNames', COALESCE(acn.cohort_names, ARRAY[]::text[])
                         )
                         ORDER BY fr.attempt_date DESC, fr.attempt_id
@@ -733,16 +753,27 @@ class HomeQueries:
                         sim.id::text,
                         jsonb_build_object(
                             'name', sim.title, 
-                            'description', sim.description,
+                            'description', COALESCE(sim.description, ''),
                             'time_limit', stl.time_limit_seconds,
-                            'department_id', sim.department_id::text
+                            'department_ids', CASE 
+                                WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
+                                ELSE NULL::jsonb
+                            END
                         )
                     ),
                     '{{}}'::jsonb
                 ) as mapping
                 FROM simulations sim
                 LEFT JOIN simulation_time_limits stl ON stl.simulation_id = sim.id AND stl.active = true
-                WHERE sim.id IN (SELECT DISTINCT simulation_id FROM filt)
+                LEFT JOIN (
+                    SELECT 
+                        sd.simulation_id,
+                        ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+                    FROM simulation_departments sd
+                    WHERE sd.active = true
+                    GROUP BY sd.simulation_id
+                ) sdd ON sdd.simulation_id = sim.id
+                WHERE sim.id IN (SELECT DISTINCT simulation_id FROM cohort_sim)
             )
             SELECT json_build_object(
                 'mode', (SELECT mode FROM profile_role_lookup),

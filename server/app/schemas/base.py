@@ -44,7 +44,7 @@ class SimulationMappingItem(MappingItem):
     """Simulation mapping item - extends MappingItem with time_limit"""
 
     time_limit: int | None = None
-    department_id: str
+    department_ids: list[str] | None = None  # None = cross-department (all departments)
 
 
 class ParameterMappingItem(MappingItem):

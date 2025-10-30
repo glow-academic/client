@@ -126,7 +126,7 @@ class CohortItem(BaseModel):
     id: str
     title: str
     description: str | None = None
-    departmentId: str
+    departmentIds: list[str] | None = None
     active: bool
     createdAt: str
     updatedAt: str
@@ -156,11 +156,10 @@ class SimulationContextItem(BaseModel):
     id: str
     name: str
     description: str
-    departmentId: str
+    departmentIds: list[str] | None = None
     timeLimit: int | None
     active: bool
     practiceSimulation: bool
-    defaultSimulation: bool
 
 
 class SimulationsData(BaseModel):

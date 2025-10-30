@@ -45,7 +45,7 @@ const CohortItemSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().optional().nullable(),
-  departmentId: z.string(),
+  departmentIds: z.array(z.string()).nullable().optional(),
   active: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -60,11 +60,12 @@ const SimulationContextItemSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  departmentId: z.string(),
+  departmentIds: z.array(z.string()).nullable().optional(),
   timeLimit: z.number().nullable(),
   active: z.boolean(),
   practiceSimulation: z.boolean(),
-  defaultSimulation: z.boolean(),
+  // Note: defaultSimulation is not returned by the server in profile context
+  // It's only used in detailed simulation endpoints
 });
 
 const SimulationsDataSchema = z.object({

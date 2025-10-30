@@ -1,5 +1,8 @@
 import { getApiBase } from "@/lib/api-base";
-import { ProfileSimpleDetailRequestSchema } from "@/lib/api/v2/schemas/profile";
+import {
+  ProfileSimpleDetailRequestSchema,
+  ProfileSimpleDetailResponseSchema,
+} from "@/lib/api/v2/schemas/profile";
 import { NextRequest, NextResponse } from "next/server";
 import { log } from "@/lib/api/v2/server/logs";
 
@@ -26,7 +29,9 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await response.json();
-    return NextResponse.json(result);
+    // Validate response schema to ensure type safety
+    const validated = ProfileSimpleDetailResponseSchema.parse(result);
+    return NextResponse.json(validated);
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";

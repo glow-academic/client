@@ -171,13 +171,14 @@ export default function Practice() {
           return;
         }
 
-        // Get the simulation's department_id from simulation_mapping
-        const simulationDepartmentId = simulationMapping[simulationId]?.department_id;
+        // Get the simulation's department_id from simulation_mapping (use first from array)
+        const departmentIds = simulationMapping[simulationId]?.department_ids;
+        const simulationDepartmentId = departmentIds && departmentIds.length > 0 ? departmentIds[0] : null;
         
         if (!simulationDepartmentId) {
           toast.error("Simulation department not found. Please contact support.");
           error("simulation.start.precheck.failed", {
-            message: "Simulation department_id not found in simulation_mapping",
+            message: "Simulation department_ids not found in simulation_mapping",
             subject: { entityType: "simulation", entityId: simulationId },
             ...(effectiveProfile?.id
               ? { actor: { profileId: effectiveProfile.id } }
@@ -519,12 +520,13 @@ export default function Practice() {
                 );
                 return;
               }
-              // Get the simulation's department_id from simulation_mapping
-              const simulationDepartmentId = simulationMapping[params.simulationId]?.department_id;
+              // Get the simulation's department_id from simulation_mapping (use first from array)
+              const departmentIds = simulationMapping[params.simulationId]?.department_ids;
+              const simulationDepartmentId = departmentIds && departmentIds.length > 0 ? departmentIds[0] : null;
               if (!simulationDepartmentId) {
                 toast.error("Simulation department not found. Please contact support.");
                 error("simulation.start.precheck.failed", {
-                  message: "Simulation department_id not found in simulation_mapping",
+                  message: "Simulation department_ids not found in simulation_mapping",
                   subject: { entityType: "simulation", entityId: params.simulationId },
                   context: {
                     component: "Practice",

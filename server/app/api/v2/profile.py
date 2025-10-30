@@ -212,7 +212,19 @@ async def get_profile_detail_simple(
     """Get simple profile by ID (auth version without permissions)."""
     try:
         service = ProfileService(conn)
-        profile = await service.get_profile(request.profileId)
+        
+        # Resolve "guest-profile-id" to actual default guest profile
+        profile_id = request.profileId
+        if profile_id == "guest-profile-id":
+            guest_id = await service.get_default_guest_profile_id()
+            if guest_id:
+                profile_id = str(guest_id)
+            else:
+                raise HTTPException(
+                    status_code=404, detail="No default guest profile found in database"
+                )
+        
+        profile = await service.get_profile(profile_id)
 
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -233,10 +245,21 @@ async def update_profile_simple(
     try:
         service = ProfileService(conn)
 
+        # Resolve "guest-profile-id" to actual default guest profile
+        profile_id = request.profileId
+        if profile_id == "guest-profile-id":
+            guest_id = await service.get_default_guest_profile_id()
+            if guest_id:
+                profile_id = str(guest_id)
+            else:
+                raise HTTPException(
+                    status_code=404, detail="No default guest profile found in database"
+                )
+
         # Extract updates from request, excluding profileId and None values
         updates = request.model_dump(exclude={"profileId"}, exclude_none=True)
 
-        profile = await service.update_profile(request.profileId, updates)
+        profile = await service.update_profile(profile_id, updates)
 
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")

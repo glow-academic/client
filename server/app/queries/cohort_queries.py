@@ -113,11 +113,23 @@ class CohortQueries:
                     jsonb_build_object(
                         'name', s.title,
                         'description', COALESCE(s.description, ''),
-                        'time_limit', stl.time_limit_seconds
+                        'time_limit', stl.time_limit_seconds,
+                        'department_ids', CASE 
+                            WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
+                            ELSE NULL::jsonb
+                        END
                     )
                 ), '{}'::jsonb)
                 FROM simulations s
                 LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+                LEFT JOIN (
+                    SELECT 
+                        sd.simulation_id,
+                        ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+                    FROM simulation_departments sd
+                    WHERE sd.active = true
+                    GROUP BY sd.simulation_id
+                ) sdd ON sdd.simulation_id = s.id
                 WHERE s.id IN (SELECT simulation_id FROM all_simulation_ids)
             ) as simulation_mapping
         FROM cohorts c
@@ -279,11 +291,23 @@ class CohortQueries:
                 jsonb_build_object(
                     'name', s.title,
                     'description', COALESCE(s.description, ''),
-                    'time_limit', stl.time_limit_seconds
+                    'time_limit', stl.time_limit_seconds,
+                    'department_ids', CASE 
+                        WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
+                        ELSE NULL::jsonb
+                    END
                 )
              ), '{}'::jsonb)
              FROM simulations s
              LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+             LEFT JOIN (
+                 SELECT 
+                     sd.simulation_id,
+                     ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+                 FROM simulation_departments sd
+                 WHERE sd.active = true
+                 GROUP BY sd.simulation_id
+             ) sdd ON sdd.simulation_id = s.id
              WHERE s.id IN (SELECT id FROM valid_simulations)
             ) as simulation_mapping,
             -- Profile mapping

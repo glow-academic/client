@@ -49,9 +49,13 @@ class PracticeQueries:
                 FROM simulations s
                 LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
                 JOIN rubrics r ON r.id = s.rubric_id
+                LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.active = TRUE
                   AND s.practice_simulation = TRUE
-                  AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
+                GROUP BY s.id, s.title, s.description, stl.time_limit_seconds, s.rubric_id, r.points, r.pass_points, s.updated_at
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
             ),
             -- 2) Persona color/icon
             sim_persona_meta AS (
@@ -68,9 +72,12 @@ class PracticeQueries:
                     LEFT JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
                     LEFT JOIN scenarios sc ON sc.id = ss_link.scenario_id
                     LEFT JOIN scenario_personas sp ON sp.scenario_id = sc.id AND sp.active = TRUE
+                    LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                     WHERE s.practice_simulation = TRUE
-                      AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
                     GROUP BY s.id, sp.persona_id
+                    HAVING 
+                        (cardinality({dept_param_placeholder}) = 0 OR COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY({dept_param_placeholder})) > 0)
+                        OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
                 ) sm
                 LEFT JOIN personas p ON p.id = sm.persona_id
                 GROUP BY sm.simulation_id
@@ -122,9 +129,13 @@ class PracticeQueries:
                             ELSE 70 END AS pass_pct
                 FROM simulations s
                 JOIN rubrics r ON r.id = s.rubric_id
+                LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.practice_simulation = TRUE
                   AND s.active = TRUE
-                  AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
+                GROUP BY s.id, s.title, s.description, s.rubric_id, r.points, r.pass_points
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
             ),
             -- 8) Standard groups/standards for rubrics
             all_rubric_ids AS (
@@ -260,13 +271,21 @@ class PracticeQueries:
                     ap.profile_id,
                     sim.title AS simulation_name,
                     sim.practice_simulation,
-                    sim.department_id
+                    COALESCE(sdd.department_ids, NULL) as department_ids
                 FROM simulation_attempts sa
                 JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
                 JOIN simulations sim ON sim.id = sa.simulation_id
+                LEFT JOIN (
+                    SELECT 
+                        sd.simulation_id,
+                        ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+                    FROM simulation_departments sd
+                    WHERE sd.active = true
+                    GROUP BY sd.simulation_id
+                ) sdd ON sdd.simulation_id = sim.id
                 WHERE sim.practice_simulation = TRUE
                   AND ap.profile_id = {profile_param_placeholder}
-                  AND (cardinality({dept_param_placeholder}) = 0 OR sim.department_id = ANY({dept_param_placeholder}))
+                  AND (cardinality({dept_param_placeholder}) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && {dept_param_placeholder}::text[])
             ),
             -- Aggregate chats per attempt
             practice_history_chat_rollup AS (
@@ -349,7 +368,7 @@ class PracticeQueries:
                     pha.infinite_mode,
                     pha.simulation_name,
                     pha.practice_simulation,
-                    pha.department_id,
+                    pha.department_ids,
                     COALESCE(phgr.completed_with_grade, 0) AS completed_with_grade,
                     COALESCE(phssc.scenario_count, 0) AS sim_scenario_count,
                     COALESCE(phgr.sum_grade_percent, 0) AS sum_grade_percent_zero_fill,
@@ -390,7 +409,7 @@ class PracticeQueries:
                     aj.pass_pct,
                     aj.infinite_mode,
                     aj.attempt_date,
-                    aj.department_id,
+                    aj.department_ids,
                     CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
                     COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
                     CASE
@@ -465,7 +484,7 @@ class PracticeQueries:
                             'showContinue', fr.show_continue,
                             'practiceSimulation', COALESCE(fr.practice_simulation, false),
                             'passPct', fr.pass_pct,
-                            'department_id', fr.department_id::text,
+                            'department_ids', fr.department_ids,
                             'cohortNames', ARRAY[]::text[]
                         )
                         ORDER BY fr.attempt_date DESC, fr.attempt_id
@@ -484,16 +503,30 @@ class PracticeQueries:
                             'name', sim.title, 
                             'description', sim.description,
                             'time_limit', stl.time_limit_seconds,
-                            'department_id', sim.department_id::text
+                            'department_ids', CASE 
+                                WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
+                                ELSE NULL::jsonb
+                            END
                         )
                     ),
                     '{{}}'::jsonb
                 ) as mapping
                 FROM simulations sim
                 LEFT JOIN simulation_time_limits stl ON stl.simulation_id = sim.id AND stl.active = true
+                LEFT JOIN (
+                    SELECT 
+                        sd.simulation_id,
+                        ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+                    FROM simulation_departments sd
+                    WHERE sd.active = true
+                    GROUP BY sd.simulation_id
+                ) sdd ON sdd.simulation_id = sim.id
                 WHERE sim.active = true
                   AND sim.practice_simulation = true
-                  AND (cardinality({dept_param_placeholder}) = 0 OR sim.department_id = ANY({dept_param_placeholder}))
+                GROUP BY sim.id, sim.title, sim.description, stl.time_limit_seconds, sdd.department_ids
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && {dept_param_placeholder}::text[])
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = sim.id AND sd2.active = true))
             ),
             persona_mapping_data AS (
                 SELECT COALESCE(
@@ -509,8 +542,12 @@ class PracticeQueries:
                     '{{}}'::jsonb
                 ) as mapping
                 FROM personas p
+                LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
                 WHERE p.active = true
-                  AND (cardinality({dept_param_placeholder}) = 0 OR p.department_id = ANY({dept_param_placeholder}))
+                GROUP BY p.id, p.name, p.description, p.color, p.icon
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
             ),
             scenario_mapping_data AS (
                 SELECT COALESCE(
@@ -522,8 +559,12 @@ class PracticeQueries:
                 ) as mapping
                 FROM scenarios s
                 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+                LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
                 WHERE s.active = true
-                  AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
+                GROUP BY s.id, s.name, sps.problem_statement
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
             ),
             parameter_mapping_data AS (
                 SELECT COALESCE(
@@ -534,9 +575,13 @@ class PracticeQueries:
                     '{{}}'::jsonb
                 ) as mapping
                 FROM parameters par
+                LEFT JOIN parameter_departments pd ON pd.parameter_id = par.id AND pd.active = true
                 WHERE par.active = true
                   AND par.practice_parameter = true
-                  AND (cardinality({dept_param_placeholder}) = 0 OR par.department_id = ANY({dept_param_placeholder}))
+                GROUP BY par.id, par.name, par.description, par.numerical
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = par.id AND pd2.active = true))
             ),
             parameter_item_mapping_data AS (
                 SELECT COALESCE(
@@ -554,10 +599,14 @@ class PracticeQueries:
                 ) as mapping
                 FROM parameter_items pi
                 JOIN parameters par ON pi.parameter_id = par.id
+                LEFT JOIN parameter_departments pd ON pd.parameter_id = par.id AND pd.active = true
                 WHERE par.active = true
                   AND par.practice_parameter = true
                   AND pi.default_item = true
-                  AND (cardinality({dept_param_placeholder}) = 0 OR par.department_id = ANY({dept_param_placeholder}))
+                GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, par.name, pi.value
+                HAVING 
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = par.id AND pd2.active = true))
             )
             SELECT json_build_object(
                 'mode', 'practice',

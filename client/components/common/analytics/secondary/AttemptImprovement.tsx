@@ -40,7 +40,7 @@ export interface AttemptImprovementProps {
   chartData: AttemptRow[];
   facts: AttemptFact[];
   /** Simulation mapping object */
-  simulationMapping: Record<string, { name: string; description: string, department_id: string }>;
+  simulationMapping: Record<string, { name: string; description: string, department_ids: string[] | null }>;
   /** Valid simulation IDs */
   validSimulationIds: string[];
   isLoading: boolean;

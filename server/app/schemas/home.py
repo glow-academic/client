@@ -68,7 +68,7 @@ class AttemptHistoryRow(BaseModel):
     showContinue: bool
     practiceSimulation: bool
     passPct: int | None = None
-    department_id: str
+    department_ids: list[str] | None = None  # Simulation's department associations
     cohortNames: list[str]
 
 

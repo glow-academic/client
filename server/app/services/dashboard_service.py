@@ -373,11 +373,24 @@ class DashboardService(BaseService):
         simulation_mapping_raw = data.get("simulationMapping", {})
         simulation_mapping: SimulationMapping = {}
         for sim_id, sim_data in simulation_mapping_raw.items():
+            # Handle department_ids - may be array or null
+            dept_ids = sim_data.get("department_ids")
+            if isinstance(dept_ids, str):
+                import json
+                try:
+                    dept_ids = json.loads(dept_ids)
+                except (json.JSONDecodeError, ValueError):
+                    dept_ids = [dept_ids] if dept_ids else None
+            elif dept_ids is None:
+                dept_ids = None
+            elif not isinstance(dept_ids, list):
+                dept_ids = [dept_ids] if dept_ids else None
+            
             simulation_mapping[sim_id] = SimulationMappingItem(
                 name=sim_data.get("name", ""),
                 description=sim_data.get("description", ""),
                 time_limit=sim_data.get("time_limit"),
-                department_id=sim_data.get("department_id", ""),
+                department_ids=dept_ids,
             )
 
         rubric_mapping_raw = data.get("rubricMapping", {})

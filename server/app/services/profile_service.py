@@ -182,6 +182,15 @@ class ProfileService(BaseService):
         actual_profile_id = request.actualProfileId
         effective_profile_id = request.effectiveProfileId
 
+        # Resolve actual_profile_id if it's "guest-profile-id"
+        if actual_profile_id == "guest-profile-id":
+            guest_id = await self.get_default_guest_profile_id()
+            if guest_id:
+                actual_profile_id = str(guest_id)
+            else:
+                raise ValueError("No default guest profile found in database")
+
+        # Resolve effective_profile_id if it's "guest-profile-id"
         if effective_profile_id == "guest-profile-id":
             guest_id = await self.get_default_guest_profile_id()
             if guest_id:
@@ -295,7 +304,7 @@ class ProfileService(BaseService):
                             title=cohort["title"],
                             description=cohort["description"],
                             active=cohort["active"],
-                            departmentId=cohort["department_id"],
+                            departmentIds=cohort.get("department_ids"),
                             createdAt="",
                             updatedAt="",
                         )
@@ -314,10 +323,9 @@ class ProfileService(BaseService):
                             id=sim["id"],
                             name=sim["title"],
                             description=sim["description"],
-                            departmentId=sim["department_id"],
+                            departmentIds=sim.get("department_ids"),
                             timeLimit=sim["time_limit"],
                             active=sim["active"],
-                            defaultSimulation=sim["default_simulation"],
                             practiceSimulation=sim["practice_simulation"],
                         )
                     )

@@ -143,13 +143,14 @@ export default function Home() {
           return;
         }
 
-        // Get the simulation's department_id from simulation_mapping
-        const simulationDepartmentId = bundle?.simulation_mapping?.[simulationId]?.department_id;
+        // Get the simulation's department_id from simulation_mapping (use first from array)
+        const departmentIds = bundle?.simulation_mapping?.[simulationId]?.department_ids;
+        const simulationDepartmentId = departmentIds && departmentIds.length > 0 ? departmentIds[0] : null;
         
         if (!simulationDepartmentId) {
           toast.error("Simulation department not found. Please contact support.");
           log.error("simulation.start.precheck.failed", {
-            message: "Simulation department_id not found in simulation_mapping",
+            message: "Simulation department_ids not found in simulation_mapping",
             subject: { entityType: "simulation", entityId: simulationId },
             context: {
               component: "Home",
