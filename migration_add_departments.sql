@@ -51,12 +51,12 @@ CREATE TABLE IF NOT EXISTS agent_prompts (
   PRIMARY KEY (agent_id, prompt_id)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS agent_prompts_one_active_per_agent
-  ON agent_prompts(agent_id) WHERE active;
-
 CREATE INDEX IF NOT EXISTS agent_prompts_agent_id_idx ON agent_prompts (agent_id);
 CREATE INDEX IF NOT EXISTS agent_prompts_prompt_id_idx ON agent_prompts (prompt_id);
 CREATE INDEX IF NOT EXISTS agent_prompts_agent_active_idx ON agent_prompts (agent_id, active);
+
+-- Drop unique constraint if it exists (allow multiple active prompts per agent)
+DROP INDEX IF EXISTS agent_prompts_one_active_per_agent;
 
 CREATE TABLE IF NOT EXISTS persona_prompts (
   persona_id UUID NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
@@ -67,12 +67,12 @@ CREATE TABLE IF NOT EXISTS persona_prompts (
   PRIMARY KEY (persona_id, prompt_id)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS persona_prompts_one_active_per_persona
-  ON persona_prompts(persona_id) WHERE active;
-
 CREATE INDEX IF NOT EXISTS persona_prompts_persona_id_idx ON persona_prompts (persona_id);
 CREATE INDEX IF NOT EXISTS persona_prompts_prompt_id_idx ON persona_prompts (prompt_id);
 CREATE INDEX IF NOT EXISTS persona_prompts_persona_active_idx ON persona_prompts (persona_id, active);
+
+-- Drop unique constraint if it exists (allow multiple active prompts per persona)
+DROP INDEX IF EXISTS persona_prompts_one_active_per_persona;
 
 CREATE TABLE IF NOT EXISTS prompt_departments (
   prompt_id     UUID NOT NULL REFERENCES prompts(id)     ON DELETE CASCADE,
