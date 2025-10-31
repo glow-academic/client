@@ -339,6 +339,42 @@ class SimulationQueries:
         """
         return (query, [simulation_id])
 
+    def delete_simulation_departments(
+        self, simulation_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build query to deactivate all simulation departments."""
+        query = """
+        UPDATE simulation_departments 
+        SET active = false, updated_at = NOW()
+        WHERE simulation_id = $1 AND active = true
+        """
+        return (query, [simulation_id])
+
+    def create_simulation_departments(
+        self, simulation_id: str, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """Build query to create simulation-department junction table records.
+        
+        Returns:
+            Tuple of (query, params)
+        """
+        if not department_ids:
+            # Return empty query if no departments
+            return "SELECT 1 WHERE false", []
+
+        # Use UNNEST for efficient batch insert
+        query = """
+        INSERT INTO simulation_departments (simulation_id, department_id, active, created_at, updated_at)
+        SELECT $1, dept_id::uuid, true, NOW(), NOW()
+        FROM UNNEST($2::text[]) as dept_id
+        ON CONFLICT (simulation_id, department_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+
+        params: list[Any] = [simulation_id, department_ids]
+        return query, params
+
     def get_simulation_for_duplicate(self, simulation_id: str) -> tuple[str, list[Any]]:
         """Build query to get simulation data for duplication."""
         query = """
@@ -911,7 +947,15 @@ class SimulationQueries:
         Returns all data needed for SimulationDetailResponse.
         """
         query = """
-        WITH         simulation_base AS (
+        WITH         simulation_departments_data AS (
+            SELECT 
+                sd.simulation_id,
+                ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+            FROM simulation_departments sd
+            WHERE sd.simulation_id = $1 AND sd.active = true
+            GROUP BY sd.simulation_id
+        ),
+        simulation_base AS (
             SELECT 
                 s.id,
                 s.title,
@@ -925,9 +969,10 @@ class SimulationQueries:
                 s.image_input_active,
                 s.rubric_id,
                 stl.time_limit_seconds as time_limit,
-                (SELECT department_id FROM simulation_departments sd WHERE sd.simulation_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1) as department_id
+                COALESCE(sdd.department_ids, NULL) as department_ids
             FROM simulations s
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+            LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
             WHERE s.id = $1
         ),
         user_context AS (
@@ -1268,9 +1313,12 @@ class SimulationQueries:
         department_scenario_ids AS (
             SELECT 
                 ud.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT s.id::text ORDER BY s.id) FILTER (WHERE s.id IS NOT NULL), ARRAY[]::text[]) as scenario_ids
+                COALESCE(ARRAY_AGG(DISTINCT s.id::text ORDER BY s.id::text) FILTER (WHERE s.id IS NOT NULL), ARRAY[]::text[]) as scenario_ids
             FROM user_departments ud
             LEFT JOIN scenarios s ON s.active = true
+            -- Only include root scenarios (parent_id = child_id in scenario_tree)
+            -- Use INNER JOIN to ensure only root scenarios are included
+            INNER JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
             LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
             WHERE (sd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
             GROUP BY ud.id
@@ -1278,7 +1326,7 @@ class SimulationQueries:
         department_rubric_ids AS (
             SELECT 
                 ud.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT r.id::text ORDER BY r.id) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::text[]) as rubric_ids
+                COALESCE(ARRAY_AGG(DISTINCT r.id::text ORDER BY r.id::text) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::text[]) as rubric_ids
             FROM user_departments ud
             LEFT JOIN rubrics r ON r.active = true
             LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
@@ -1288,7 +1336,7 @@ class SimulationQueries:
         department_cohort_ids AS (
             SELECT 
                 ud.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT c.id::text ORDER BY c.id) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::text[]) as cohort_ids
+                COALESCE(ARRAY_AGG(DISTINCT c.id::text ORDER BY c.id::text) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::text[]) as cohort_ids
             FROM user_departments ud
             LEFT JOIN cohorts c ON c.active = true
             LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
@@ -1319,7 +1367,7 @@ class SimulationQueries:
             -- Basic simulation fields
             sb.title,
             sb.description,
-            sb.department_id::text,
+            sb.department_ids,
             sb.time_limit,
             sb.rubric_id::text,
             sb.active,
@@ -1984,21 +2032,51 @@ class SimulationQueries:
             LEFT JOIN scenario_documents_data sdd ON sdd.scenario_id = vsl.id
             LEFT JOIN scenario_parameter_items_data spid ON spid.scenario_id = vsl.id
         ),
+        user_departments_for_mapping AS (
+            SELECT DISTINCT d.id, d.title as name, d.description
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        department_scenario_ids_default AS (
+            SELECT 
+                ud.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT s.id::text ORDER BY s.id::text) FILTER (WHERE s.id IS NOT NULL), ARRAY[]::text[]) as scenario_ids
+            FROM user_departments_for_mapping ud
+            LEFT JOIN scenarios s ON s.active = true
+            -- Only include root scenarios (parent_id = child_id in scenario_tree)
+            INNER JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
+            LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+            WHERE (sd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
+            GROUP BY ud.id
+        ),
+        department_rubric_ids_default AS (
+            SELECT 
+                ud.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT r.id::text ORDER BY r.id::text) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::text[]) as rubric_ids
+            FROM user_departments_for_mapping ud
+            LEFT JOIN rubrics r ON r.active = true
+            LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+            WHERE (rd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true))
+            GROUP BY ud.id
+        ),
         department_mapping_data AS (
             SELECT COALESCE(
                 jsonb_object_agg(
-                    d.id::text,
+                    ud.id::text,
                     jsonb_build_object(
-                        'name', d.title,
-                        'description', COALESCE(d.description, '')
+                        'name', ud.name,
+                        'description', COALESCE(ud.description, ''),
+                        'scenario_ids', CASE WHEN dsci.scenario_ids IS NOT NULL AND array_length(dsci.scenario_ids, 1) > 0 THEN to_jsonb(dsci.scenario_ids) ELSE NULL END,
+                        'rubric_ids', CASE WHEN dri.rubric_ids IS NOT NULL AND array_length(dri.rubric_ids, 1) > 0 THEN to_jsonb(dri.rubric_ids) ELSE NULL END
                     )
                 ),
                 '{}'::jsonb
             ) as department_mapping,
-            COALESCE(ARRAY_AGG(d.id::text), ARRAY[]::text[]) as department_ids
-            FROM departments d
-            JOIN profile_departments pd ON d.id = pd.department_id
-            WHERE pd.profile_id = $1 AND d.active = true
+            COALESCE(ARRAY_AGG(ud.id::text), ARRAY[]::text[]) as department_ids
+            FROM user_departments_for_mapping ud
+            LEFT JOIN department_scenario_ids_default dsci ON dsci.department_id = ud.id
+            LEFT JOIN department_rubric_ids_default dri ON dri.department_id = ud.id
         )
         SELECT 
             sb.title,

@@ -874,6 +874,42 @@ class ScenarioQueries:
         WHERE id = $4
         """
 
+    def delete_scenario_departments(
+        self, scenario_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build query to deactivate all scenario departments."""
+        query = """
+        UPDATE scenario_departments 
+        SET active = false, updated_at = NOW()
+        WHERE scenario_id = $1 AND active = true
+        """
+        return (query, [scenario_id])
+
+    def create_scenario_departments(
+        self, scenario_id: str, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """Build query to create scenario-department junction table records.
+        
+        Returns:
+            Tuple of (query, params)
+        """
+        if not department_ids:
+            # Return empty query if no departments
+            return "SELECT 1 WHERE false", []
+
+        # Use UNNEST for efficient batch insert
+        query = """
+        INSERT INTO scenario_departments (scenario_id, department_id, active, created_at, updated_at)
+        SELECT $1, dept_id::uuid, true, NOW(), NOW()
+        FROM UNNEST($2::text[]) as dept_id
+        ON CONFLICT (scenario_id, department_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+
+        params: list[Any] = [scenario_id, department_ids]
+        return query, params
+
     def delete_scenario_personas(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to delete scenario personas."""
         query = "DELETE FROM scenario_personas WHERE scenario_id = $1"

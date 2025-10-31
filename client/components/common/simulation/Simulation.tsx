@@ -5,7 +5,7 @@
  * 05/20/2025
  */
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
@@ -314,6 +314,11 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
     []
   );
+  // Use ref to capture currentScenarioIds before they get filtered
+  const currentScenarioIdsRef = useRef<string[]>([]);
+  useEffect(() => {
+    currentScenarioIdsRef.current = currentScenarioIds;
+  }, [currentScenarioIds]);
 
   // Track department changes and manage staged selections
   useEffect(() => {
@@ -332,6 +337,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
       return;
     }
 
+    // CRITICAL: Use ref to capture currentScenarioIds BEFORE they get filtered by the clearing effect
+    // This ensures we save the full list before validScenarioIds changes filter them out
+    // The ref contains the value from the previous render, before department changes affected validScenarioIds
+    const scenariosToSave = [...currentScenarioIdsRef.current];
+    const rubricToSave = formData?.rubricId || undefined;
+
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
       (id) => !currentDeptIds.includes(id)
@@ -343,13 +354,14 @@ export default function Simulation({ simulationId }: SimulationProps) {
     );
 
     // Save selections for deselected departments
+    // Use the captured values to ensure we save before clearing happens
     if (deselectedDepts.length > 0) {
       setStagedSelections((prev) => {
         const updated = { ...prev };
         deselectedDepts.forEach((deptId) => {
           updated[deptId] = {
-            scenario_ids: [...currentScenarioIds],
-            rubric_id: formData?.rubricId || undefined,
+            scenario_ids: scenariosToSave,
+            rubric_id: rubricToSave,
           };
         });
         return updated;
@@ -399,7 +411,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
     formData?.departmentIds,
     formData?.rubricId,
     previousDepartmentIds,
-    currentScenarioIds,
+    // Note: We don't include currentScenarioIds in dependencies to avoid race conditions
+    // with the clearing effect. We capture the value at the start of the effect instead.
     validScenarioIds,
     validRubricIds,
   ]);

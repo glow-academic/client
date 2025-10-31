@@ -322,12 +322,12 @@ class RubricService(BaseService):
 
         async with transaction(self.conn):
             # Create rubric
+            # Note: create_rubric() query doesn't accept department_ids - handled separately
             query, _ = self.queries.create_rubric()
             rubric_result = await self.conn.fetchrow(
                 query,
                 request.name,
                 request.description,
-                request.department_ids,  # Now accepts list[str] | None
                 request.active,
                 request.points,
                 request.passPoints,
@@ -337,6 +337,15 @@ class RubricService(BaseService):
                 raise ValueError("Failed to create rubric")
 
             rubric_id = str(rubric_result["id"])
+
+            # Insert department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_rubric_departments(
+                        rubric_id, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Create standard groups and their standards
             for group in request.standard_groups:
@@ -447,18 +456,32 @@ class RubricService(BaseService):
             # Calculate and update rubric points from standard groups
             calculated_points = await self._calculate_rubric_points(request.rubricId)
 
-            # Update rubric with basic info and calculated points
+            # Update rubric basic fields with calculated points
             query, _ = self.queries.update_rubric()
             await self.conn.execute(
                 query,
                 request.rubricId,
                 request.name,
                 request.description,
-                request.department_ids,  # Now accepts list[str] | None
                 request.active,
                 calculated_points["points"],
                 calculated_points["passPoints"],
             )
+
+            # Update rubric-department links (DELETE + INSERT pattern)
+            delete_dept_query, delete_dept_params = (
+                self.queries.delete_rubric_departments(request.rubricId)
+            )
+            await self.conn.execute(delete_dept_query, *delete_dept_params)
+
+            # Insert new department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_rubric_departments(
+                        request.rubricId, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
         # Invalidate caches
         await self._invalidate_cache(

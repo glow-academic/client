@@ -477,12 +477,12 @@ class CohortService(BaseService):
 
         async with transaction(self.conn):
             # Create cohort
+            # Note: create_cohort() query doesn't accept department_ids - handled separately
             query, _ = self.queries.create_cohort()
             result = await self.conn.fetchrow(
                 query,
                 request.title,
                 request.description,
-                request.department_ids,  # Now accepts list[str] | None
                 request.active,
             )
 
@@ -490,6 +490,15 @@ class CohortService(BaseService):
                 raise ValueError("Failed to create cohort")
 
             cohort_id = str(result["id"])
+
+            # Insert department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_cohort_departments(
+                        cohort_id, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Insert profile relationships
             query, _ = self.queries.insert_cohort_profile()
@@ -541,16 +550,30 @@ class CohortService(BaseService):
             raise ValueError(f"Cohort not found: {request.cohortId}")
 
         async with transaction(self.conn):
-            # Update cohort
+            # Update cohort basic fields
             query, _ = self.queries.update_cohort()
             await self.conn.execute(
                 query,
                 request.cohortId,
                 request.title,
                 request.description,
-                request.department_ids,  # Now accepts list[str] | None
                 request.active,
             )
+
+            # Update cohort-department links (DELETE + INSERT pattern)
+            delete_dept_query, delete_dept_params = (
+                self.queries.delete_cohort_departments(request.cohortId)
+            )
+            await self.conn.execute(delete_dept_query, *delete_dept_params)
+
+            # Insert new department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_cohort_departments(
+                        request.cohortId, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Delete existing relationships
             query, params = self.queries.delete_cohort_profiles(request.cohortId)

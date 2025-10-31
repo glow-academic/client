@@ -655,12 +655,12 @@ class SimulationService(BaseService):
 
         async with transaction(self.conn):
             # Create simulation with positional params
+            # Note: create_simulation() query doesn't accept department_ids - handled separately
             query = self.queries.create_simulation()
             result = await self.conn.fetchrow(
                 query,
                 request.title,
                 request.description,
-                request.department_ids,  # Now accepts list[str] | None
                 request.active,
                 request.practice_simulation,
                 request.hints_enabled,
@@ -675,6 +675,15 @@ class SimulationService(BaseService):
                 raise ValueError("Failed to create simulation")
 
             simulation_id = str(result["id"])
+
+            # Insert department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_simulation_departments(
+                        simulation_id, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Insert time limit if provided (into junction table)
             if request.time_limit is not None:
@@ -753,7 +762,6 @@ class SimulationService(BaseService):
                 query,
                 request.title,
                 request.description,
-                request.department_ids,  # Now accepts list[str] | None
                 request.active,
                 request.practice_simulation,
                 request.hints_enabled,
@@ -777,6 +785,21 @@ class SimulationService(BaseService):
                 await self.conn.execute(
                     insert_query, request.simulationId, request.time_limit
                 )
+
+            # Update simulation-department links (DELETE + INSERT pattern)
+            delete_dept_query, delete_dept_params = (
+                self.queries.delete_simulation_departments(request.simulationId)
+            )
+            await self.conn.execute(delete_dept_query, *delete_dept_params)
+
+            # Insert new department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_simulation_departments(
+                        request.simulationId, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Delete existing scenarios
             query, params = self.queries.delete_simulation_scenarios(

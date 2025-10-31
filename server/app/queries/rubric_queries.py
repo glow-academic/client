@@ -261,6 +261,42 @@ class RubricQueries:
         """
         return (query, [])  # Will be filled at execution time
 
+    def delete_rubric_departments(
+        self, rubric_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build query to deactivate all rubric departments."""
+        query = """
+        UPDATE rubric_departments 
+        SET active = false, updated_at = NOW()
+        WHERE rubric_id = $1 AND active = true
+        """
+        return (query, [rubric_id])
+
+    def create_rubric_departments(
+        self, rubric_id: str, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """Build query to create rubric-department junction table records.
+        
+        Returns:
+            Tuple of (query, params)
+        """
+        if not department_ids:
+            # Return empty query if no departments
+            return "SELECT 1 WHERE false", []
+
+        # Use UNNEST for efficient batch insert
+        query = """
+        INSERT INTO rubric_departments (rubric_id, department_id, active, created_at, updated_at)
+        SELECT $1, dept_id::uuid, true, NOW(), NOW()
+        FROM UNNEST($2::text[]) as dept_id
+        ON CONFLICT (rubric_id, department_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+
+        params: list[Any] = [rubric_id, department_ids]
+        return query, params
+
     def delete_standard_groups(self, rubric_id: str) -> tuple[str, list[Any]]:
         """Build query to delete standard groups (cascade deletes standards)."""
         query = "DELETE FROM standard_groups WHERE rubric_id = $1"

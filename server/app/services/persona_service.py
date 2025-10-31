@@ -553,12 +553,12 @@ class PersonaService(BaseService):
     ) -> CreatePersonaResponse:
         """Create a new persona using dynamic SQL."""
 
+        # Note: create_persona() query doesn't accept department_ids - handled separately
         query = self.queries.create_persona()
         result = await self.conn.fetchrow(
             query,
             request.name,
             request.description,
-            request.department_ids,  # Now accepts list[str] | None
             request.active,
             request.color,
             request.icon,
@@ -570,6 +570,17 @@ class PersonaService(BaseService):
 
         if not result:
             raise ValueError("Failed to create persona")
+
+        persona_id = str(result["id"])
+
+        # Insert department links if department_ids provided
+        if request.department_ids:
+            insert_dept_query, insert_dept_params = (
+                self.queries.create_persona_departments(
+                    persona_id, request.department_ids
+                )
+            )
+            await self.conn.execute(insert_dept_query, *insert_dept_params)
 
         # Invalidate caches
         await self._invalidate_cache(
@@ -597,14 +608,13 @@ class PersonaService(BaseService):
         if not existing:
             raise ValueError(f"Persona not found: {request.personaId}")
 
-        # Update persona - query handles department junction table updates
+        # Update persona basic fields
         query = self.queries.update_persona()
         await self.conn.execute(
             query,
             request.personaId,
             request.name,
             request.description,
-            request.department_ids,  # Now accepts list[str] | None
             request.active,
             request.color,
             request.icon,
@@ -613,6 +623,21 @@ class PersonaService(BaseService):
             request.temperature,
             request.system_prompt,
         )
+
+        # Update persona-department links (DELETE + INSERT pattern)
+        delete_dept_query, delete_dept_params = (
+            self.queries.delete_persona_departments(request.personaId)
+        )
+        await self.conn.execute(delete_dept_query, *delete_dept_params)
+
+        # Insert new department links if department_ids provided
+        if request.department_ids:
+            insert_dept_query, insert_dept_params = (
+                self.queries.create_persona_departments(
+                    request.personaId, request.department_ids
+                )
+            )
+            await self.conn.execute(insert_dept_query, *insert_dept_params)
 
         # Invalidate caches
         await self._invalidate_cache(

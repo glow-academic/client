@@ -732,11 +732,11 @@ class ScenarioService(BaseService):
 
         async with transaction(self.conn):
             # Insert scenario with positional params
+            # Note: create_scenario() query doesn't accept department_ids - handled separately
             create_query = self.queries.create_scenario()
             result = await self.conn.fetchrow(
                 create_query,
                 request.name,
-                request.department_ids,  # Now accepts list[str] | None
                 request.active,
             )
 
@@ -744,6 +744,15 @@ class ScenarioService(BaseService):
                 raise ValueError("Failed to create scenario")
 
             scenario_id = str(result["id"])
+
+            # Insert department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_scenario_departments(
+                        scenario_id, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Insert self-referencing edge in scenario_tree to mark as parent/root
             tree_edge_query = self.queries.insert_scenario_tree_edge()
@@ -841,10 +850,24 @@ class ScenarioService(BaseService):
                 update_query,
                 request.name,
                 request.problem_statement,
-                request.department_ids,  # Now accepts list[str] | None
                 request.active,
                 request.scenarioId,
             )
+
+            # Update scenario-department links (DELETE + INSERT pattern)
+            delete_dept_query, delete_dept_params = (
+                self.queries.delete_scenario_departments(request.scenarioId)
+            )
+            await self.conn.execute(delete_dept_query, *delete_dept_params)
+
+            # Insert new department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_scenario_departments(
+                        request.scenarioId, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Update persona (delete old, insert new)
             query, params = self.queries.delete_scenario_personas(request.scenarioId)

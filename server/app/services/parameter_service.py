@@ -244,6 +244,7 @@ class ParameterService(BaseService):
 
         async with transaction(self.conn):
             # Create parameter
+            # Note: create_parameter() query doesn't accept department_ids - handled separately
             query, _ = self.queries.create_parameter()
             parameter_result = await self.conn.fetchrow(
                 query,
@@ -251,13 +252,21 @@ class ParameterService(BaseService):
                 request.description,
                 request.numerical,
                 request.active,
-                request.department_ids,  # Now accepts list[str] | None
             )
 
             if not parameter_result:
                 raise ValueError("Failed to create parameter")
 
             parameter_id = str(parameter_result["id"])
+
+            # Insert department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_parameter_departments(
+                        parameter_id, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Create parameter items
             item_query, _ = self.queries.create_parameter_item()
@@ -298,7 +307,7 @@ class ParameterService(BaseService):
             raise ValueError(f"Parameter not found: {request.parameterId}")
 
         async with transaction(self.conn):
-            # Update parameter
+            # Update parameter basic fields
             update_query, _ = self.queries.update_parameter()
             await self.conn.execute(
                 update_query,
@@ -307,8 +316,22 @@ class ParameterService(BaseService):
                 request.description,
                 request.numerical,
                 request.active,
-                request.department_ids,  # Now accepts list[str] | None
             )
+
+            # Update parameter-department links (DELETE + INSERT pattern)
+            delete_dept_query, delete_dept_params = (
+                self.queries.delete_parameter_departments(request.parameterId)
+            )
+            await self.conn.execute(delete_dept_query, *delete_dept_params)
+
+            # Insert new department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_parameter_departments(
+                        request.parameterId, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
             # Delete existing parameter items
             query, params = self.queries.delete_parameter_items(request.parameterId)

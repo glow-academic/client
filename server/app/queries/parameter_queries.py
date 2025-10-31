@@ -220,6 +220,42 @@ class ParameterQueries:
         """
         return (query, [])  # Will be filled at execution time
 
+    def delete_parameter_departments(
+        self, parameter_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build query to deactivate all parameter departments."""
+        query = """
+        UPDATE parameter_departments 
+        SET active = false, updated_at = NOW()
+        WHERE parameter_id = $1 AND active = true
+        """
+        return (query, [parameter_id])
+
+    def create_parameter_departments(
+        self, parameter_id: str, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """Build query to create parameter-department junction table records.
+        
+        Returns:
+            Tuple of (query, params)
+        """
+        if not department_ids:
+            # Return empty query if no departments
+            return "SELECT 1 WHERE false", []
+
+        # Use UNNEST for efficient batch insert
+        query = """
+        INSERT INTO parameter_departments (parameter_id, department_id, active, created_at, updated_at)
+        SELECT $1, dept_id::uuid, true, NOW(), NOW()
+        FROM UNNEST($2::text[]) as dept_id
+        ON CONFLICT (parameter_id, department_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+
+        params: list[Any] = [parameter_id, department_ids]
+        return query, params
+
     def delete_parameter_items(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to delete parameter items."""
         query = "DELETE FROM parameter_items WHERE parameter_id = $1"

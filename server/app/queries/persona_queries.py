@@ -325,6 +325,42 @@ class PersonaQueries:
         WHERE id = $1
         """
 
+    def delete_persona_departments(
+        self, persona_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build query to deactivate all persona departments."""
+        query = """
+        UPDATE persona_departments 
+        SET active = false, updated_at = NOW()
+        WHERE persona_id = $1 AND active = true
+        """
+        return (query, [persona_id])
+
+    def create_persona_departments(
+        self, persona_id: str, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """Build query to create persona-department junction table records.
+        
+        Returns:
+            Tuple of (query, params)
+        """
+        if not department_ids:
+            # Return empty query if no departments
+            return "SELECT 1 WHERE false", []
+
+        # Use UNNEST for efficient batch insert
+        query = """
+        INSERT INTO persona_departments (persona_id, department_id, active, created_at, updated_at)
+        SELECT $1, dept_id::uuid, true, NOW(), NOW()
+        FROM UNNEST($2::text[]) as dept_id
+        ON CONFLICT (persona_id, department_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+
+        params: list[Any] = [persona_id, department_ids]
+        return query, params
+
     def get_departments_mapping(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for departments mapping."""
         query = """
