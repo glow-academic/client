@@ -59,3 +59,15 @@ CREATE TABLE profile_request_limits (
 );
 
 CREATE INDEX ON profile_request_limits (profile_id);
+
+-- Profile activity junction table (tracks activity history)
+CREATE TABLE profile_activity (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  last_active TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX ON profile_activity (profile_id);
+CREATE INDEX ON profile_activity (profile_id, last_active);
+CREATE INDEX ON profile_activity (created_at);

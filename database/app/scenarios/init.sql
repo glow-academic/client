@@ -13,7 +13,8 @@ CREATE TABLE parameters (
   description TEXT        NOT NULL,
   numerical BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT FALSE,
-  practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE
+  practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  document_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 -- Parameter → Departments junction table (BCNF normalization)
@@ -51,7 +52,12 @@ CREATE TABLE scenarios (
   name       TEXT        NOT NULL,
   use_documents BOOLEAN NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
-  active BOOLEAN     NOT NULL DEFAULT TRUE
+  active BOOLEAN     NOT NULL DEFAULT TRUE,
+  hints_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  image_input_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  input_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  output_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Scenario → Departments junction table (BCNF normalization)

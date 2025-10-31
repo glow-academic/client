@@ -91,6 +91,11 @@ export const ScenarioDetailResponseSchema = z.object({
   active: z.boolean(),
   generated: z.boolean(),
   parent_scenario_id: z.string().nullable(),
+  hints_enabled: z.boolean(),
+  objectives_enabled: z.boolean(),
+  image_input_enabled: z.boolean(),
+  input_guardrail_enabled: z.boolean(),
+  output_guardrail_enabled: z.boolean(),
 
   // Department
   department_ids: z.array(z.string()).nullable(),
@@ -158,6 +163,11 @@ export const CreateScenarioRequestSchema = z.object({
   document_ids: z.array(z.string()),
   objective_ids: z.array(z.string()), // Can be composite IDs or raw text
   parameters: z.record(z.string(), z.array(z.string())), // { parameter_id: [parameter_item_ids] }
+  hints_enabled: z.boolean().default(false),
+  objectives_enabled: z.boolean().default(true),
+  image_input_enabled: z.boolean().default(false),
+  input_guardrail_enabled: z.boolean().default(false),
+  output_guardrail_enabled: z.boolean().default(false),
 });
 
 export type CreateScenarioRequest = z.infer<typeof CreateScenarioRequestSchema>;
@@ -183,6 +193,11 @@ export const UpdateScenarioRequestSchema = z.object({
   document_ids: z.array(z.string()),
   objective_ids: z.array(z.string()),
   parameters: z.record(z.string(), z.array(z.string())),
+  hints_enabled: z.boolean().default(false),
+  objectives_enabled: z.boolean().default(true),
+  image_input_enabled: z.boolean().default(false),
+  input_guardrail_enabled: z.boolean().default(false),
+  output_guardrail_enabled: z.boolean().default(false),
 });
 
 export type UpdateScenarioRequest = z.infer<typeof UpdateScenarioRequestSchema>;

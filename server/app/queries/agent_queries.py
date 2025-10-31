@@ -711,14 +711,14 @@ class AgentQueries:
             -- Default guest profile
             dg.guest_profile_id
         
-        FROM department_agents da
-        INNER JOIN agents a ON a.id = da.agent_id
+        FROM agent_departments ad
+        INNER JOIN agents a ON a.id = ad.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN personas p ON p.id = $2
         CROSS JOIN default_guest dg
-        WHERE da.department_id = $1 AND da.role = 'scenario'
+        WHERE ad.department_id = $1::uuid AND a.role = 'scenario' AND ad.active = true
         """
 
         # Convert None to empty arrays for proper SQL handling
@@ -897,9 +897,9 @@ class AgentQueries:
             COALESCE(pe.base_url, '') as base_url,
             pr.api_key,
             
-            -- Simulation settings
-            sim.image_input_active,
-            sim.output_guardrail_active,
+            -- Scenario settings (flags moved from simulations to scenarios)
+            s.image_input_enabled,
+            s.output_guardrail_enabled,
             
             -- Profile data (via attempt_profiles junction)
             ap.profile_id::text as profile_id,
@@ -938,7 +938,7 @@ class AgentQueries:
                  p.id, p.name, p.system_prompt, p.temperature, p.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url,
-                 sim.image_input_active, sim.output_guardrail_active,
+                 s.image_input_enabled, s.output_guardrail_enabled,
                  ap.profile_id
         """
 

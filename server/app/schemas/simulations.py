@@ -112,11 +112,6 @@ class SimulationDetailResponse(BaseModel):
     # Boolean parameters
     active: bool
     practice_simulation: bool
-    hints_enabled: bool
-    objectives_enabled: bool
-    input_guardrail_active: bool
-    output_guardrail_active: bool
-    image_input_active: bool
 
     # Permission flags
     can_edit: bool
@@ -168,11 +163,6 @@ class CreateSimulationRequest(BaseModel):
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
     practice_simulation: bool
-    hints_enabled: bool
-    objectives_enabled: bool
-    input_guardrail_active: bool
-    output_guardrail_active: bool
-    image_input_active: bool
     time_limit: int | None
     rubric_id: str
     scenario_ids: (
@@ -197,11 +187,6 @@ class UpdateSimulationRequest(BaseModel):
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
     practice_simulation: bool
-    hints_enabled: bool
-    objectives_enabled: bool
-    input_guardrail_active: bool
-    output_guardrail_active: bool
-    image_input_active: bool
     time_limit: int | None
     rubric_id: str
     scenario_ids: (

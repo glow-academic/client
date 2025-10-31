@@ -498,6 +498,16 @@ class ProfileQueries:
         WHERE role = 'guest' AND default_profile = true
         """
 
+    def insert_profile_activity(self) -> str:
+        """Build query to insert profile activity record.
+
+        Params order: profile_id, last_active
+        """
+        return """
+        INSERT INTO profile_activity (profile_id, last_active)
+        VALUES ($1, $2)
+        """
+
     # ===== Profile context queries =====
 
     def get_profile_context_complete(

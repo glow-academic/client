@@ -380,11 +380,6 @@ class SimulationService(BaseService):
             # Boolean parameters
             active=result["active"],
             practice_simulation=result["practice_simulation"],
-            hints_enabled=result["hints_enabled"],
-            objectives_enabled=result["objectives_enabled"],
-            input_guardrail_active=result["input_guardrail_active"],
-            output_guardrail_active=result["output_guardrail_active"],
-            image_input_active=result["image_input_active"],
             # Permission flags
             can_edit=can_edit,
             can_duplicate=can_duplicate,
@@ -624,11 +619,6 @@ class SimulationService(BaseService):
             rubric_id=result.get("rubric_id"),
             active=result["active"],
             practice_simulation=result["practice_simulation"],
-            hints_enabled=result["hints_enabled"],
-            objectives_enabled=result["objectives_enabled"],
-            input_guardrail_active=result["input_guardrail_active"],
-            output_guardrail_active=result["output_guardrail_active"],
-            image_input_active=result["image_input_active"],
             can_edit=can_edit,
             can_duplicate=can_duplicate,
             can_delete=can_delete,
@@ -663,11 +653,6 @@ class SimulationService(BaseService):
                 request.description,
                 request.active,
                 request.practice_simulation,
-                request.hints_enabled,
-                request.objectives_enabled,
-                request.input_guardrail_active,
-                request.output_guardrail_active,
-                request.image_input_active,
                 request.rubric_id,
             )
 
@@ -764,11 +749,6 @@ class SimulationService(BaseService):
                 request.description,
                 request.active,
                 request.practice_simulation,
-                request.hints_enabled,
-                request.objectives_enabled,
-                request.input_guardrail_active,
-                request.output_guardrail_active,
-                request.image_input_active,
                 request.rubric_id,
                 request.simulationId,
             )
@@ -880,11 +860,6 @@ class SimulationService(BaseService):
                 result["title"],
                 result["description"],
                 result["department_id"],
-                result["hints_enabled"],
-                result["objectives_enabled"],
-                result["input_guardrail_active"],
-                result["output_guardrail_active"],
-                result["image_input_active"],
                 result["rubric_id"],
             )
 

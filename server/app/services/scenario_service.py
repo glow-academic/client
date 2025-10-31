@@ -490,6 +490,11 @@ class ScenarioService(BaseService):
             problem_statement=scenario["problem_statement"],
             active=scenario["active"],
             generated=is_generated,
+            hints_enabled=scenario.get("hints_enabled", False),
+            objectives_enabled=scenario.get("objectives_enabled", True),
+            image_input_enabled=scenario.get("image_input_enabled", False),
+            input_guardrail_enabled=scenario.get("input_guardrail_enabled", False),
+            output_guardrail_enabled=scenario.get("output_guardrail_enabled", False),
             parent_scenario_id=scenario["parent_scenario_id"],
             # Department
             department_ids=department_ids,  # None or list of department IDs
@@ -693,6 +698,11 @@ class ScenarioService(BaseService):
             problem_statement="",
             active=True,
             generated=False,
+            hints_enabled=False,
+            objectives_enabled=True,
+            image_input_enabled=False,
+            input_guardrail_enabled=False,
+            output_guardrail_enabled=False,
             parent_scenario_id=None,
             # Department
             department_ids=default_department_ids,
@@ -738,6 +748,11 @@ class ScenarioService(BaseService):
                 create_query,
                 request.name,
                 request.active,
+                request.hints_enabled,
+                request.objectives_enabled,
+                request.image_input_enabled,
+                request.input_guardrail_enabled,
+                request.output_guardrail_enabled,
             )
 
             if not result:
@@ -851,6 +866,11 @@ class ScenarioService(BaseService):
                 request.name,
                 request.problem_statement,
                 request.active,
+                request.hints_enabled,
+                request.objectives_enabled,
+                request.image_input_enabled,
+                request.input_guardrail_enabled,
+                request.output_guardrail_enabled,
                 request.scenarioId,
             )
 
@@ -954,8 +974,12 @@ class ScenarioService(BaseService):
             insert_query = self.queries.insert_duplicate_scenario()
             new_scenario = await self.conn.fetchrow(
                 insert_query,
-                request.scenarioId,  # Original scenario ID to copy from
                 original["name"],
+                original.get("hints_enabled", False),
+                original.get("objectives_enabled", True),
+                original.get("image_input_enabled", False),
+                original.get("input_guardrail_enabled", False),
+                original.get("output_guardrail_enabled", False),
             )
 
             if not new_scenario:
@@ -1510,6 +1534,11 @@ class ScenarioService(BaseService):
             scenario.get("name"),
             True,
             scenario.get("active", True),
+            scenario.get("hints_enabled", False),
+            scenario.get("objectives_enabled", True),
+            scenario.get("image_input_enabled", False),
+            scenario.get("input_guardrail_enabled", False),
+            scenario.get("output_guardrail_enabled", False),
         )
 
         new_scenario_id = new_scenario_row["id"]

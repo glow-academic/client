@@ -56,11 +56,6 @@ interface FormData {
   active?: boolean;
   practiceSimulation?: boolean;
   departmentIds?: string[] | null;
-  outputGuardrailActive?: boolean;
-  inputGuardrailActive?: boolean;
-  imageInputActive?: boolean;
-  hintsEnabled?: boolean;
-  objectivesEnabled?: boolean;
 }
 
 interface FormErrors {
@@ -139,11 +134,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
       departmentIds: effectiveProfile?.primaryDepartmentId
         ? [effectiveProfile.primaryDepartmentId]
         : [],
-      outputGuardrailActive: false,
-      inputGuardrailActive: false,
-      imageInputActive: false,
-      hintsEnabled: false,
-      objectivesEnabled: false,
     }),
     [effectiveProfile?.primaryDepartmentId]
   );
@@ -254,11 +244,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
         active: simulationData.active,
         practiceSimulation: simulationData.practice_simulation ?? false,
         departmentIds: deptIds,
-        outputGuardrailActive: simulationData.output_guardrail_active ?? false,
-        inputGuardrailActive: simulationData.input_guardrail_active ?? false,
-        imageInputActive: simulationData.image_input_active ?? false,
-        hintsEnabled: simulationData.hints_enabled ?? false,
-        objectivesEnabled: simulationData.objectives_enabled ?? false,
       };
       setFormData(formDataFromServer);
       setOriginalFormData(formDataFromServer);
@@ -542,11 +527,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
           department_ids: formData?.departmentIds || null,
           active: formData?.active ?? true,
           practice_simulation: formData?.practiceSimulation || false,
-          hints_enabled: formData?.hintsEnabled || false,
-          objectives_enabled: formData?.objectivesEnabled || false,
-          input_guardrail_active: formData?.inputGuardrailActive || false,
-          output_guardrail_active: formData?.outputGuardrailActive || false,
-          image_input_active: formData?.imageInputActive || false,
           time_limit: formData?.timeLimit || null,
           rubric_id: formData?.rubricId || "",
           scenario_ids: currentScenarioIds.map((scenarioId) => ({
@@ -565,11 +545,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
           department_ids: formData?.departmentIds || null,
           active: formData?.active || true,
           practice_simulation: formData?.practiceSimulation || false,
-          hints_enabled: formData?.hintsEnabled || false,
-          objectives_enabled: formData?.objectivesEnabled || false,
-          input_guardrail_active: formData?.inputGuardrailActive || false,
-          output_guardrail_active: formData?.outputGuardrailActive || false,
-          image_input_active: formData?.imageInputActive || false,
           time_limit: formData?.timeLimit || null,
           rubric_id: formData?.rubricId || "",
           scenario_ids: currentScenarioIds.map((scenarioId) => ({
@@ -637,11 +612,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.practiceSimulation !== original.practiceSimulation ||
       JSON.stringify(current.departmentIds?.sort()) !==
         JSON.stringify(original.departmentIds?.sort()) ||
-      current.outputGuardrailActive !== original.outputGuardrailActive ||
-      current.inputGuardrailActive !== original.inputGuardrailActive ||
-      current.imageInputActive !== original.imageInputActive ||
-      current.hintsEnabled !== original.hintsEnabled ||
-      current.objectivesEnabled !== original.objectivesEnabled ||
       JSON.stringify(currentScenarioIds) !==
         JSON.stringify(originalScenarioIds) ||
       JSON.stringify(scenarioActiveStates) !==
@@ -785,102 +755,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
               )}
             </div>
           )}
-        </div>
-
-        {/* Second Row of Switches - Guardrails */}
-        <div className="flex gap-8">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="outputGuardrailActive" className="text-sm">
-              Output Guardrail Active
-            </Label>
-            {formData?.outputGuardrailActive !== undefined && !isLoading ? (
-              <Switch
-                id="outputGuardrailActive"
-                checked={formData.outputGuardrailActive ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("outputGuardrailActive", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label htmlFor="inputGuardrailActive" className="text-sm">
-              Input Guardrail Active
-            </Label>
-            {formData?.inputGuardrailActive !== undefined && !isLoading ? (
-              <Switch
-                id="inputGuardrailActive"
-                checked={formData.inputGuardrailActive ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("inputGuardrailActive", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label htmlFor="imageInputActive" className="text-sm">
-              Image Input Active
-            </Label>
-            {formData?.imageInputActive !== undefined && !isLoading ? (
-              <Switch
-                id="imageInputActive"
-                checked={formData.imageInputActive ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("imageInputActive", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-        </div>
-
-        {/* Third Row of Switches - Hints and Objectives */}
-        <div className="flex gap-8">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="hintsEnabled" className="text-sm">
-              Hints Enabled
-            </Label>
-            {formData?.hintsEnabled !== undefined && !isLoading ? (
-              <Switch
-                id="hintsEnabled"
-                checked={formData.hintsEnabled ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("hintsEnabled", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label htmlFor="objectivesEnabled" className="text-sm">
-              Objectives Enabled
-            </Label>
-            {formData?.objectivesEnabled !== undefined && !isLoading ? (
-              <Switch
-                id="objectivesEnabled"
-                checked={formData.objectivesEnabled ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("objectivesEnabled", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

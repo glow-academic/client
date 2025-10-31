@@ -787,9 +787,9 @@ class AgentService(BaseService):
             "provider_name": context_row["provider_name"],
             "base_url": context_row["base_url"],
             "api_key": context_row["api_key"],
-            # Simulation settings
-            "image_input_active": context_row["image_input_active"],
-            "output_guardrail_active": context_row["output_guardrail_active"],
+            # Scenario settings (flags moved from simulations to scenarios)
+            "image_input_active": context_row["image_input_enabled"],
+            "output_guardrail_active": context_row["output_guardrail_enabled"],
             # Profile data (resolved to guest if null)
             "profile_id": profile_id,
             # Documents (full document data, not just IDs)

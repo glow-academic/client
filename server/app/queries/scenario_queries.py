@@ -85,6 +85,11 @@ class ScenarioQueries:
                 COALESCE(ss.num_simulations, 0) as num_simulations,
                 COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
                 COALESCE(sdd.department_ids, NULL) as department_ids,
+                s.hints_enabled,
+                s.objectives_enabled,
+                s.image_input_enabled,
+                s.input_guardrail_enabled,
+                s.output_guardrail_enabled,
                 CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
                 CASE 
                     WHEN up.role IN ('admin', 'instructional', 'superadmin') 
@@ -305,7 +310,12 @@ class ScenarioQueries:
                 s.active,
                 s.generated,
                 st.parent_id::text as parent_scenario_id,
-                COALESCE(sdd.department_ids, NULL) as department_ids
+                COALESCE(sdd.department_ids, NULL) as department_ids,
+                s.hints_enabled,
+                s.objectives_enabled,
+                s.image_input_enabled,
+                s.input_guardrail_enabled,
+                s.output_guardrail_enabled
             FROM scenarios s
             LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
@@ -804,14 +814,20 @@ class ScenarioQueries:
     def create_scenario(self) -> str:
         """Build query to create scenario.
 
-        Params order: name, active
+        Params order: name, active, hints_enabled, objectives_enabled, 
+        image_input_enabled, input_guardrail_enabled, output_guardrail_enabled
         """
         return """
         INSERT INTO scenarios (
             name,
-            active
+            active,
+            hints_enabled,
+            objectives_enabled,
+            image_input_enabled,
+            input_guardrail_enabled,
+            output_guardrail_enabled
         )
-        VALUES ($1, $2)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
         """
 
@@ -863,15 +879,21 @@ class ScenarioQueries:
     def update_scenario(self) -> str:
         """Build query to update scenario.
 
-        Params order: name, problem_statement, active, scenario_id
+        Params order: name, problem_statement, active, hints_enabled, objectives_enabled, 
+        image_input_enabled, input_guardrail_enabled, output_guardrail_enabled, scenario_id
         """
         return """
         UPDATE scenarios SET
             name = $1,
             problem_statement = $2,
             active = $3,
+            hints_enabled = $4,
+            objectives_enabled = $5,
+            image_input_enabled = $6,
+            input_guardrail_enabled = $7,
+            output_guardrail_enabled = $8,
             updated_at = NOW()
-        WHERE id = $4
+        WHERE id = $9
         """
 
     def delete_scenario_departments(
@@ -938,7 +960,12 @@ class ScenarioQueries:
         SELECT 
             s.name,
             s.active,
-            sps.problem_statement
+            sps.problem_statement,
+            s.hints_enabled,
+            s.objectives_enabled,
+            s.image_input_enabled,
+            s.input_guardrail_enabled,
+            s.output_guardrail_enabled
         FROM scenarios s
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         WHERE s.id = $1
@@ -948,16 +975,27 @@ class ScenarioQueries:
     def insert_duplicate_scenario(self) -> str:
         """Build query to insert duplicate scenario.
 
-        Params order: name
+        Params order: name, hints_enabled, objectives_enabled, 
+        image_input_enabled, input_guardrail_enabled, output_guardrail_enabled
         """
         return """
         INSERT INTO scenarios (
             name,
-            active
+            active,
+            hints_enabled,
+            objectives_enabled,
+            image_input_enabled,
+            input_guardrail_enabled,
+            output_guardrail_enabled
         )
         VALUES (
             $1 || ' Copy',
-            false
+            false,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6
         )
         RETURNING id
         """
@@ -1249,8 +1287,9 @@ class ScenarioQueries:
         Params order: name, generated, active
         """
         return """
-        INSERT INTO scenarios (name, generated, active)
-        VALUES ($1, $2, $3)
+        INSERT INTO scenarios (name, generated, active, hints_enabled, objectives_enabled, 
+        image_input_enabled, input_guardrail_enabled, output_guardrail_enabled)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
         """
 

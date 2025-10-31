@@ -175,10 +175,6 @@ class SimulationQueries:
             description,
             active,
             practice_simulation,
-            hints_enabled,
-            input_guardrail_active,
-            output_guardrail_active,
-            image_input_active,
             rubric_id
         FROM simulations
         WHERE id = $1
@@ -275,8 +271,7 @@ class SimulationQueries:
     def create_simulation(self) -> str:
         """Build query to create simulation.
 
-        Params order: title, description, active, practice_simulation, hints_enabled, 
-        objectives_enabled, input_guardrail_active, output_guardrail_active, image_input_active, rubric_id
+        Params order: title, description, active, practice_simulation, rubric_id
         """
         return """
         INSERT INTO simulations (
@@ -284,14 +279,9 @@ class SimulationQueries:
             description,
             active,
             practice_simulation,
-            hints_enabled,
-            objectives_enabled,
-            input_guardrail_active,
-            output_guardrail_active,
-            image_input_active,
             rubric_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id
         """
 
@@ -313,8 +303,7 @@ class SimulationQueries:
     def update_simulation(self) -> str:
         """Build query to update simulation.
 
-        Params order: title, description, active, practice_simulation, hints_enabled, 
-        objectives_enabled, input_guardrail_active, output_guardrail_active, image_input_active, rubric_id, simulation_id
+        Params order: title, description, active, practice_simulation, rubric_id, simulation_id
         """
         return """
         UPDATE simulations SET
@@ -322,14 +311,9 @@ class SimulationQueries:
             description = $2,
             active = $3,
             practice_simulation = $4,
-            hints_enabled = $5,
-            objectives_enabled = $6,
-            input_guardrail_active = $7,
-            output_guardrail_active = $8,
-            image_input_active = $9,
-            rubric_id = $10,
+            rubric_id = $5,
             updated_at = NOW()
-        WHERE id = $11
+        WHERE id = $6
         """
 
     def delete_simulation_scenarios(self, simulation_id: str) -> tuple[str, list[Any]]:
@@ -382,11 +366,6 @@ class SimulationQueries:
             title,
             description,
             department_id,
-            hints_enabled,
-            objectives_enabled,
-            input_guardrail_active,
-            output_guardrail_active,
-            image_input_active,
             rubric_id
         FROM simulations
         WHERE id = $1
@@ -396,8 +375,7 @@ class SimulationQueries:
     def insert_duplicate_simulation(self) -> str:
         """Build query to insert duplicate simulation.
 
-        Params order: title, description, department_id, hints_enabled, objectives_enabled,
-        input_guardrail_active, output_guardrail_active, image_input_active, rubric_id
+        Params order: title, description, department_id, rubric_id
         """
         return """
         INSERT INTO simulations (
@@ -407,11 +385,6 @@ class SimulationQueries:
             active,
             default_simulation,
             practice_simulation,
-            hints_enabled,
-            objectives_enabled,
-            input_guardrail_active,
-            output_guardrail_active,
-            image_input_active,
             rubric_id
         )
         VALUES (
@@ -420,13 +393,8 @@ class SimulationQueries:
             $3,
             false,
             false,
-            false,
             $4,
-            $5,
-            $6,
-            $7,
-            $8,
-            $9
+            $5
         )
         RETURNING id
         """
@@ -962,11 +930,6 @@ class SimulationQueries:
                 s.description,
                 s.active,
                 s.practice_simulation,
-                s.hints_enabled,
-                s.objectives_enabled,
-                s.input_guardrail_active,
-                s.output_guardrail_active,
-                s.image_input_active,
                 s.rubric_id,
                 stl.time_limit_seconds as time_limit,
                 COALESCE(sdd.department_ids, NULL) as department_ids
@@ -1373,11 +1336,6 @@ class SimulationQueries:
             sb.active,
             false as default_simulation,
             sb.practice_simulation,
-            sb.hints_enabled,
-            sb.objectives_enabled,
-            sb.input_guardrail_active,
-            sb.output_guardrail_active,
-            sb.image_input_active,
             -- User context
             uc.role as user_role,
             COALESCE(cu.cohort_count, 0) as cohort_count,
@@ -1460,10 +1418,6 @@ class SimulationQueries:
                 s.active,
                 s.default_simulation,
                 s.practice_simulation,
-                s.hints_enabled,
-                s.input_guardrail_active,
-                s.output_guardrail_active,
-                s.image_input_active,
                 s.rubric_id
             FROM simulations s
             WHERE s.id = $1
@@ -1604,10 +1558,6 @@ class SimulationQueries:
                 'active', sd.active,
                 'default_simulation', sd.default_simulation,
                 'practice_simulation', sd.practice_simulation,
-                'hints_enabled', sd.hints_enabled,
-                'input_guardrail_active', sd.input_guardrail_active,
-                'output_guardrail_active', sd.output_guardrail_active,
-                'image_input_active', sd.image_input_active,
                 'rubric_id', sd.rubric_id::text
             ) as simulation_data,
             -- Scenario metadata as JSONB
@@ -1694,11 +1644,6 @@ class SimulationQueries:
                 s.description,
                 s.active,
                 s.practice_simulation,
-                s.hints_enabled,
-                s.objectives_enabled,
-                s.input_guardrail_active,
-                s.output_guardrail_active,
-                s.image_input_active,
                 s.rubric_id,
                 stl.time_limit_seconds as time_limit
             FROM simulations s
@@ -2087,11 +2032,6 @@ class SimulationQueries:
             sb.active,
             false as default_simulation,
             sb.practice_simulation,
-            sb.hints_enabled,
-            sb.objectives_enabled,
-            sb.input_guardrail_active,
-            sb.output_guardrail_active,
-            sb.image_input_active,
             uc.role as user_role,
             COALESCE(cu.cohort_count, 0) as cohort_count,
             sld.scenarios_list,
@@ -2140,11 +2080,6 @@ class SimulationQueries:
             (SELECT department_id FROM simulation_departments sd WHERE sd.simulation_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1) as sim_department_id,
             s.active as sim_active,
             s.practice_simulation as sim_practice_simulation,
-            s.hints_enabled as sim_hints_enabled,
-            s.objectives_enabled as sim_objectives_enabled,
-            s.input_guardrail_active as sim_input_guardrail_active,
-            s.output_guardrail_active as sim_output_guardrail_active,
-            s.image_input_active as sim_image_input_active,
             stl.time_limit_seconds as sim_time_limit,
             s.rubric_id as sim_rubric_id,
             s.created_at as sim_created_at,
@@ -2671,11 +2606,6 @@ class SimulationQueries:
                 'departmentId', CASE WHEN ab.sim_department_id IS NOT NULL THEN ab.sim_department_id::text ELSE NULL END,
                 'active', ab.sim_active,
                 'practiceSimulation', ab.sim_practice_simulation,
-                'hintsEnabled', ab.sim_hints_enabled,
-                'objectivesEnabled', ab.sim_objectives_enabled,
-                'inputGuardrailActive', ab.sim_input_guardrail_active,
-                'outputGuardrailActive', ab.sim_output_guardrail_active,
-                'imageInputActive', ab.sim_image_input_active,
                 'timeLimit', ab.sim_time_limit,
                 'rubricId', CASE WHEN ab.sim_rubric_id IS NOT NULL THEN ab.sim_rubric_id::text ELSE NULL END,
                 'createdAt', ab.sim_created_at,

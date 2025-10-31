@@ -87,6 +87,11 @@ class ScenarioDetailResponse(BaseModel):
     active: bool
     generated: bool
     parent_scenario_id: str | None
+    hints_enabled: bool
+    objectives_enabled: bool
+    image_input_enabled: bool
+    input_guardrail_enabled: bool
+    output_guardrail_enabled: bool
 
     # Department
     department_ids: list[str] | None  # None = cross-department (all departments)
@@ -143,6 +148,11 @@ class CreateScenarioRequest(BaseModel):
     document_ids: list[str]
     objective_ids: list[str]  # Can be composite IDs or raw text
     parameters: dict[str, list[str]]  # { parameter_id: [parameter_item_ids] }
+    hints_enabled: bool = False
+    objectives_enabled: bool = True
+    image_input_enabled: bool = False
+    input_guardrail_enabled: bool = False
+    output_guardrail_enabled: bool = False
 
 
 class CreateScenarioResponse(BaseModel):
@@ -165,6 +175,11 @@ class UpdateScenarioRequest(BaseModel):
     document_ids: list[str]
     objective_ids: list[str]
     parameters: dict[str, list[str]]
+    hints_enabled: bool = False
+    objectives_enabled: bool = True
+    image_input_enabled: bool = False
+    input_guardrail_enabled: bool = False
+    output_guardrail_enabled: bool = False
 
 
 class UpdateScenarioResponse(BaseModel):

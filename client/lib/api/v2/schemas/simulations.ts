@@ -116,11 +116,6 @@ export const SimulationDetailResponseSchema = z.object({
   // Boolean parameters
   active: z.boolean(),
   practice_simulation: z.boolean(),
-  hints_enabled: z.boolean(),
-  objectives_enabled: z.boolean(),
-  input_guardrail_active: z.boolean(),
-  output_guardrail_active: z.boolean(),
-  image_input_active: z.boolean(),
 
   // Permission flags
   can_edit: z.boolean(),
@@ -178,11 +173,6 @@ export const CreateSimulationRequestSchema = z.object({
   department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
   practice_simulation: z.boolean(),
-  hints_enabled: z.boolean(),
-  objectives_enabled: z.boolean(),
-  input_guardrail_active: z.boolean(),
-  output_guardrail_active: z.boolean(),
-  image_input_active: z.boolean(),
   time_limit: z.number().nullable(),
   rubric_id: z.string(),
   scenario_ids: z.union([
@@ -213,11 +203,6 @@ export const UpdateSimulationRequestSchema = z.object({
   department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
   practice_simulation: z.boolean(),
-  hints_enabled: z.boolean(),
-  objectives_enabled: z.boolean(),
-  input_guardrail_active: z.boolean(),
-  output_guardrail_active: z.boolean(),
-  image_input_active: z.boolean(),
   time_limit: z.number().nullable(),
   rubric_id: z.string(),
   scenario_ids: z.union([

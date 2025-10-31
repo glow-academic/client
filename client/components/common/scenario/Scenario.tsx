@@ -147,6 +147,11 @@ export default function Scenario({
         ? [effectiveProfile.primaryDepartmentId]
         : [],
       active: true,
+      hintsEnabled: false,
+      objectivesEnabled: true,
+      imageInputEnabled: false,
+      inputGuardrailEnabled: false,
+      outputGuardrailEnabled: false,
     }),
     [effectiveProfile?.primaryDepartmentId]
   );
@@ -468,6 +473,11 @@ export default function Scenario({
         problemStatement: scenarioData.problem_statement,
         departmentIds: deptIds,
         active: scenarioData.active ?? true,
+        hintsEnabled: scenarioData.hints_enabled ?? false,
+        objectivesEnabled: scenarioData.objectives_enabled ?? true,
+        imageInputEnabled: scenarioData.image_input_enabled ?? false,
+        inputGuardrailEnabled: scenarioData.input_guardrail_enabled ?? false,
+        outputGuardrailEnabled: scenarioData.output_guardrail_enabled ?? false,
       });
       // Initialize previousDepartmentIds when loading scenario data
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
@@ -490,6 +500,11 @@ export default function Scenario({
         problemStatement: scenarioData.problem_statement,
         departmentIds: scenarioData.department_ids || [],
         active: scenarioData.active ?? true,
+        hintsEnabled: scenarioData.hints_enabled ?? false,
+        objectivesEnabled: scenarioData.objectives_enabled ?? true,
+        imageInputEnabled: scenarioData.image_input_enabled ?? false,
+        inputGuardrailEnabled: scenarioData.input_guardrail_enabled ?? false,
+        outputGuardrailEnabled: scenarioData.output_guardrail_enabled ?? false,
       });
       setOriginalDocumentIds(scenarioData.document_ids);
       setOriginalParameterItemIds(
@@ -508,6 +523,11 @@ export default function Scenario({
         problemStatement: "",
         departmentIds: scenarioData.department_ids || [],
         active: true,
+        hintsEnabled: false,
+        objectivesEnabled: true,
+        imageInputEnabled: false,
+        inputGuardrailEnabled: false,
+        outputGuardrailEnabled: false,
       });
     }
   }, [scenarioData, isEditMode, previousDepartmentIds.length]);
@@ -525,6 +545,11 @@ export default function Scenario({
       current.name !== original.name ||
       current.problemStatement !== original.problemStatement ||
       current.active !== original.active ||
+      current.hintsEnabled !== original.hintsEnabled ||
+      current.objectivesEnabled !== original.objectivesEnabled ||
+      current.imageInputEnabled !== original.imageInputEnabled ||
+      current.inputGuardrailEnabled !== original.inputGuardrailEnabled ||
+      current.outputGuardrailEnabled !== original.outputGuardrailEnabled ||
       JSON.stringify(current.departmentIds?.sort()) !==
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
@@ -923,6 +948,11 @@ export default function Scenario({
           currentParameterItemIds,
           parameterItemMapping
         ),
+        hints_enabled: formData.hintsEnabled ?? false,
+        objectives_enabled: formData.objectivesEnabled ?? true,
+        image_input_enabled: formData.imageInputEnabled ?? false,
+        input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
+        output_guardrail_enabled: formData.outputGuardrailEnabled ?? false,
       };
 
       if (isEditMode) {
@@ -1140,6 +1170,79 @@ export default function Scenario({
                 }
                 disabled={isReadonly}
               />
+            </div>
+
+            {/* Scenario Flags */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="hintsEnabled" className="text-sm">
+                  Hints Enabled
+                </Label>
+                <Switch
+                  id="hintsEnabled"
+                  checked={formData.hintsEnabled ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("hintsEnabled", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label htmlFor="objectivesEnabled" className="text-sm">
+                  Objectives Enabled
+                </Label>
+                <Switch
+                  id="objectivesEnabled"
+                  checked={formData.objectivesEnabled ?? true}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("objectivesEnabled", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label htmlFor="imageInputEnabled" className="text-sm">
+                  Image Input Enabled
+                </Label>
+                <Switch
+                  id="imageInputEnabled"
+                  checked={formData.imageInputEnabled ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("imageInputEnabled", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label htmlFor="inputGuardrailEnabled" className="text-sm">
+                  Input Guardrail Enabled
+                </Label>
+                <Switch
+                  id="inputGuardrailEnabled"
+                  checked={formData.inputGuardrailEnabled ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("inputGuardrailEnabled", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label htmlFor="outputGuardrailEnabled" className="text-sm">
+                  Output Guardrail Enabled
+                </Label>
+                <Switch
+                  id="outputGuardrailEnabled"
+                  checked={formData.outputGuardrailEnabled ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("outputGuardrailEnabled", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
