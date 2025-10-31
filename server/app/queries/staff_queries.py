@@ -35,6 +35,15 @@ class StaffQueries:
             WHERE cp.active = true
             GROUP BY cp.profile_id
         ),
+        profile_departments_agg AS (
+            SELECT 
+                pd.profile_id,
+                ARRAY_AGG(pd.department_id ORDER BY d.title) as department_ids
+            FROM profile_departments pd
+            JOIN departments d ON d.id = pd.department_id
+            WHERE pd.active = true
+            GROUP BY pd.profile_id
+        ),
         recent_runs AS (
             SELECT 
                 mrp.profile_id,
@@ -44,12 +53,23 @@ class StaffQueries:
             WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
             GROUP BY mrp.profile_id
         ),
+        profile_total_runs AS (
+            SELECT 
+                mrp.profile_id,
+                COUNT(*) as total_requests
+            FROM model_run_profiles mrp
+            GROUP BY mrp.profile_id
+        ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
         ),
         all_cohort_ids AS (
-            SELECT DISTINCT unnest(cohort_ids) as cohort_id
+            SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
             FROM profile_cohorts
+        ),
+        all_department_ids AS (
+            SELECT DISTINCT unnest(department_ids)::uuid as department_id
+            FROM profile_departments_agg
         ),
         cohort_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
@@ -60,7 +80,7 @@ class StaffQueries:
                 )
             ), '{}'::jsonb) as cohort_mapping
             FROM cohorts c
-            WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
+            WHERE c.id IN (SELECT cohort_id::uuid FROM all_cohort_ids)
         ),
         department_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
@@ -71,7 +91,8 @@ class StaffQueries:
                 )
             ), '{}'::jsonb) as department_mapping
             FROM departments d
-            WHERE d.id = ANY($1)
+            WHERE (d.id = ANY($1::uuid[]) OR d.id IN (SELECT department_id FROM all_department_ids))
+            AND d.active = true
         )
         SELECT DISTINCT ON (p.id)
             p.id as profile_id,
@@ -88,6 +109,11 @@ class StaffQueries:
             p.default_profile,
             COALESCE(rr.run_count::int, 0) as requests_in_last_day,
             COALESCE(pc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
+            COALESCE(
+                ARRAY(SELECT unnest(pda.department_ids)::text),
+                ARRAY[]::text[]
+            ) as department_ids,
+            COALESCE(ptr.total_requests, 0) as total_requests,
             COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
             COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
             CASE 
@@ -111,6 +137,8 @@ class StaffQueries:
         FROM profiles p
         JOIN profile_departments pd ON pd.profile_id = p.id
         LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
+        LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
+        LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
         LEFT JOIN profile_active_cohort_links pacl ON pacl.profile_id = p.id
         LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
         LEFT JOIN recent_runs rr ON rr.profile_id = p.id

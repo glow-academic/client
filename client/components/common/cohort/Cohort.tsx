@@ -41,7 +41,12 @@ import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { BarChart3, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
-import CohortStaff from "./staff/CohortStaff";
+import { StaffDataTable } from "@/components/management/staff/StaffDataTable";
+import { ProfileListItem } from "@/lib/api/v2/schemas/profile";
+import {
+  useRemoveProfilesFromCohort,
+} from "@/lib/api/v2/hooks/cohorts";
+import { useRemoveProfilesFromDepartment } from "@/lib/api/v2/hooks/departments";
 
 export interface CohortProps {
   cohortId?: string;
@@ -97,9 +102,9 @@ export default function Cohort({ cohortId }: CohortProps) {
     useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Staff management state
-  const [staffProfiles, setStaffProfiles] = useState<EditableProfile[]>([]);
-  const [profilesToDelete, setProfilesToDelete] = useState<string[]>([]);
+  // Staff management state (for StaffDataTable)
+  const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Simulation active state management (staged changes)
   const [simulationActiveStates, setSimulationActiveStates] = useState<
@@ -109,24 +114,19 @@ export default function Cohort({ cohortId }: CohortProps) {
     useState<Record<string, boolean>>({});
 
   // Memoize callback functions to prevent unnecessary re-renders
-  const memoizedSetStaffProfiles = useCallback(
-    (profiles: EditableProfile[]) => {
-      setStaffProfiles(profiles);
-    },
-    []
-  );
-
-  const memoizedSetProfilesToDelete = useCallback((profileIds: string[]) => {
-    setProfilesToDelete(profileIds);
-  }, []);
+  // Mutation hooks for removing profiles
+  const removeProfilesFromCohortMutation = useRemoveProfilesFromCohort();
 
   // V2 API hooks
-  const { data: cohortDetail, isLoading: isLoadingCohortDetail } =
-    useCohortDetail(
-      cohortId || "",
-      effectiveProfile?.id || "",
-      !!cohortId && isEditMode
-    );
+  const {
+    data: cohortDetail,
+    isLoading: isLoadingCohortDetail,
+    refetch: refetchCohortDetail,
+  } = useCohortDetail(
+    cohortId || "",
+    effectiveProfile?.id || "",
+    !!cohortId && isEditMode
+  );
 
   const { data: cohortDetailDefault, isLoading: isLoadingCohortDefault } =
     useCohortDetailDefault(effectiveProfile?.id || "", !isEditMode);
@@ -279,7 +279,7 @@ export default function Cohort({ cohortId }: CohortProps) {
         deselectedDepts.forEach((deptId) => {
           updated[deptId] = {
             simulation_ids: [...currentSimulationIds],
-            profile_ids: staffProfiles.map((p) => p.id),
+            profile_ids: cohortData?.staff?.map((p) => p.profile_id) || [],
           };
         });
         return updated;
@@ -306,42 +306,7 @@ export default function Cohort({ cohortId }: CohortProps) {
               }
             }
 
-            // Restore profiles if valid
-            if (staged.profile_ids && staged.profile_ids.length > 0) {
-              const validProfileSet = new Set(validProfileIds);
-              const validProfiles = staged.profile_ids.filter((id) =>
-                validProfileSet.has(id)
-              );
-              if (validProfiles.length > 0) {
-                // Restore profiles that exist in cohortData.profile_mapping
-                const profilesToRestore = validProfiles
-                  .map((id) => {
-                    const profileInfo = cohortData?.profile_mapping[id];
-                    if (profileInfo) {
-                      const nameParts = profileInfo.name.split(" ");
-                      return {
-                        id,
-                        firstName: nameParts[0] || "",
-                        lastName: nameParts.slice(1).join(" ") || "",
-                        alias: profileInfo.description.split("@")[0] || "",
-                        role: "trainee" as const,
-                      };
-                    }
-                    return null;
-                  })
-                  .filter((p): p is NonNullable<typeof p> => p !== null);
-
-                if (profilesToRestore.length > 0) {
-                  setStaffProfiles((prevProfiles) => {
-                    const existingIds = new Set(prevProfiles.map((p) => p.id));
-                    const newProfiles = profilesToRestore.filter(
-                      (p) => !existingIds.has(p.id)
-                    );
-                    return [...prevProfiles, ...newProfiles];
-                  });
-                }
-              }
-            }
+            // Profile restoration is handled via StaffDataTable API calls - profiles are managed directly through the API
           }
         });
         return prev;
@@ -354,7 +319,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     formData?.departmentIds,
     previousDepartmentIds,
     currentSimulationIds,
-    staffProfiles,
+    cohortData?.staff,
     validSimulationIds,
     validProfileIds,
     cohortData?.profile_mapping,
@@ -388,18 +353,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     }
   }, [currentSimulationIds, validSimulationIds]);
 
-  useEffect(() => {
-    // Clear profiles that are no longer valid
-    if (staffProfiles.length > 0) {
-      const validSet = new Set(validProfileIds);
-      const filtered = staffProfiles.filter((profile) =>
-        validSet.has(profile.id)
-      );
-      if (filtered.length !== staffProfiles.length) {
-        setStaffProfiles(filtered);
-      }
-    }
-  }, [staffProfiles, validProfileIds]);
+  // Profile validation is handled via StaffDataTable and API calls
 
   // Handle simulation selection from picker (V2 uses IDs directly)
   const handleSimulationSelection = useCallback((simulationIds: string[]) => {
@@ -460,62 +414,9 @@ export default function Cohort({ cohortId }: CohortProps) {
         setOriginalSimulationActiveStates(activeStates);
       }
 
-      // Load staff profiles from profile_ids
-      // Build EditableProfile array from profile_mapping
-      const cohortProfiles: EditableProfile[] = cohortData.profile_ids.map(
-        (profileId) => {
-          const profileInfo = cohortData.profile_mapping[profileId];
-          return {
-            id: profileId,
-            firstName: profileInfo?.name || "",
-            lastName: "",
-            alias: profileInfo?.name || "",
-            role: "student" as ProfileRole,
-          } as ProfileItem;
-        }
-      );
-
-      setStaffProfiles((prev) => {
-        const hasChanged =
-          prev.length !== cohortProfiles.length ||
-          JSON.stringify(prev.map((p) => p.id).sort()) !==
-            JSON.stringify(cohortProfiles.map((p) => p.id).sort());
-
-        return hasChanged ? cohortProfiles : prev;
-      });
+      // Staff profiles are now loaded via cohortData.staff and managed by StaffDataTable
     }
   }, [cohortData, isEditMode]);
-
-  // Auto-fill current user for instructional users when creating a new cohort
-  useEffect(() => {
-    if (
-      !isEditMode &&
-      effectiveProfile?.role === "instructional" &&
-      effectiveProfile?.id &&
-      staffProfiles.length === 0 &&
-      cohortData?.valid_profile_ids
-    ) {
-      // Create profile from cohortData mapping if user is in valid list
-      if (cohortData.valid_profile_ids.includes(effectiveProfile.id)) {
-        const profileInfo = cohortData.profile_mapping[effectiveProfile.id];
-        const currentUserProfile: ProfileItem = {
-          id: effectiveProfile.id,
-          firstName: profileInfo?.name || "",
-          lastName: "",
-          alias: profileInfo?.name || "",
-          role: effectiveProfile.role,
-        } as ProfileItem;
-        setStaffProfiles([currentUserProfile]);
-      }
-    }
-  }, [
-    isEditMode,
-    effectiveProfile?.role,
-    effectiveProfile?.id,
-    cohortData?.valid_profile_ids,
-    cohortData?.profile_mapping,
-    staffProfiles.length,
-  ]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -524,9 +425,9 @@ export default function Cohort({ cohortId }: CohortProps) {
     const current = formData;
     const original = originalFormData;
 
-    // Get original simulation IDs from cohortData
+      // Get original simulation IDs from cohortData
     const originalSimulationIds = cohortData?.simulation_ids || [];
-    const originalProfileIds = cohortData?.profile_ids || [];
+    // Profile changes are handled via StaffDataTable API calls, not form submission
 
     return (
       current.title !== original.title ||
@@ -536,8 +437,6 @@ export default function Cohort({ cohortId }: CohortProps) {
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentSimulationIds].sort()) !==
         JSON.stringify(originalSimulationIds.sort()) ||
-      staffProfiles.length !== originalProfileIds.length ||
-      profilesToDelete.length > 0 ||
       JSON.stringify(simulationActiveStates) !==
         JSON.stringify(originalSimulationActiveStates)
     );
@@ -545,11 +444,8 @@ export default function Cohort({ cohortId }: CohortProps) {
     formData,
     originalFormData,
     isEditMode,
-    staffProfiles,
-    profilesToDelete,
     currentSimulationIds,
     cohortData?.simulation_ids,
-    cohortData?.profile_ids,
     simulationActiveStates,
     originalSimulationActiveStates,
   ]);
@@ -623,9 +519,10 @@ export default function Cohort({ cohortId }: CohortProps) {
 
     // For instructional users, ensure they are always in the cohort
     if (effectiveProfile?.role === "instructional" && !isEditMode) {
-      const isUserInCohort = staffProfiles.some(
-        (profile) => profile.id === effectiveProfile.id
-      );
+      const isUserInCohort =
+        cohortData?.staff?.some(
+          (profile) => profile.profile_id === effectiveProfile.id
+        ) || false;
       if (!isUserInCohort) {
         newErrors.title = "You must be included in the cohort to create it";
       }
@@ -640,8 +537,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     setOriginalFormData(initialFormData);
     setEditingCohortId(null);
     setErrors({});
-    setStaffProfiles([]);
-    setProfilesToDelete([]);
+    setSelectedStaffIds([]);
   };
 
   const handleSubmit = async () => {
@@ -653,8 +549,11 @@ export default function Cohort({ cohortId }: CohortProps) {
     setIsSubmitting(true);
 
     try {
-      // Prepare profile IDs from staff profiles
-      const profileIds = staffProfiles.map((profile) => profile.id);
+      // Prepare profile IDs from current cohort staff (or empty array for new cohort)
+      const profileIds =
+        cohortId && cohortData?.staff
+          ? cohortData.staff.map((s) => s.profile_id)
+          : [];
 
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
@@ -1034,18 +933,114 @@ export default function Cohort({ cohortId }: CohortProps) {
         </div>
 
         {/* Staff Management */}
-        {cohortId && (
-          <CohortStaff
-            profiles={staffProfiles}
-            setProfiles={memoizedSetStaffProfiles}
-            profilesToDelete={profilesToDelete}
-            setProfilesToDelete={memoizedSetProfilesToDelete}
-            isLoading={isLoading}
-            isSubmitting={isSubmitting}
-            effectiveProfile={effectiveProfile}
-            isReadonly={isReadonly}
-            cohortId={cohortId}
-          />
+        {cohortId && cohortData && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Staff Members</h3>
+            <StaffDataTable
+              data={cohortData.staff || []}
+              cohortMapping={cohortData.cohort_mapping || {}}
+              departmentMapping={cohortData.department_mapping_for_staff || {}}
+              roleOptions={[
+                { value: "superadmin", label: "Super Administrator" },
+                { value: "admin", label: "Administrator" },
+                { value: "instructional", label: "Instructional Staff" },
+                { value: "ta", label: "Teaching Assistant" },
+                { value: "guest", label: "Guest" },
+              ]}
+              cohortOptions={Object.entries(cohortData.cohort_mapping || {}).map(
+                ([id, item]) => ({
+                  value: id,
+                  label: item.name,
+                })
+              )}
+              activityOptions={[
+                { value: "true", label: "Active" },
+                { value: "false", label: "Inactive" },
+              ]}
+              lastActiveOptions={[
+                { value: "recent", label: "Recently Active (< 7 days)" },
+                { value: "moderate", label: "Moderately Active (7-30 days)" },
+                { value: "old", label: "Inactive (> 30 days)" },
+                { value: "never", label: "Never Active" },
+              ]}
+              isRefreshing={isRefreshing}
+              onRefresh={async () => {
+                setIsRefreshing(true);
+                await refetchCohortDetail();
+                setIsRefreshing(false);
+              }}
+              cohortId={cohortId}
+              selectedStaffIds={selectedStaffIds}
+              onStaffSelect={(id, checked) =>
+                setSelectedStaffIds((prev) =>
+                  checked ? [...prev, id] : prev.filter((x) => x !== id)
+                )
+              }
+              onSelectAll={(checked, visibleRowIds) => {
+                if (checked && visibleRowIds) {
+                  setSelectedStaffIds((prev) => {
+                    const newSelection = [...prev];
+                    visibleRowIds.forEach((id) => {
+                      if (!newSelection.includes(id)) {
+                        newSelection.push(id);
+                      }
+                    });
+                    return newSelection;
+                  });
+                } else {
+                  setSelectedStaffIds((prev) =>
+                    prev.filter((id) => !visibleRowIds?.includes(id))
+                  );
+                }
+              }}
+              onCreate={async () => {
+                // Refetch after create
+                setIsRefreshing(true);
+                await refetchCohortDetail();
+                setIsRefreshing(false);
+              }}
+              onPreview={(staff) => {
+                window.open(
+                  `/analytics/reports/p/${staff.profile_id}`,
+                  "_blank",
+                  "noopener,noreferrer"
+                );
+              }}
+              onEdit={() => {
+                // Edit handled via modal if needed
+              }}
+              onDelete={() => {
+                // Delete not available in scoped view
+              }}
+              onBulkEdit={() => {
+                // Bulk edit can be implemented if needed
+              }}
+              onBulkDelete={async () => {
+                if (selectedStaffIds.length === 0) return;
+                try {
+                  await removeProfilesFromCohortMutation.mutateAsync({
+                    cohortId: cohortId,
+                    profileIds: selectedStaffIds,
+                  });
+                  toast.success(
+                    `Removed ${selectedStaffIds.length} profile(s) from cohort`
+                  );
+                  setSelectedStaffIds([]);
+                  setIsRefreshing(true);
+                  await refetchCohortDetail();
+                  setIsRefreshing(false);
+                } catch (error) {
+                  toast.error(
+                    `Failed to remove profiles: ${error instanceof Error ? error.message : "Unknown error"}`
+                  );
+                }
+              }}
+              canDelete={() => true} // All profiles can be removed from cohort
+              deletableCount={selectedStaffIds.length}
+              canEdit={() => false} // Edit not available in scoped view
+              editableCount={0}
+            />
+          </div>
         )}
 
         {/* Submit Button */}
@@ -1109,8 +1104,8 @@ export default function Cohort({ cohortId }: CohortProps) {
                 })}
               </ul>
               <div className="mt-3 text-sm font-medium">
-                The cohort has {staffProfiles.length} member
-                {staffProfiles.length !== 1 ? "s" : ""} assigned. Updating this
+                The cohort has {cohortData?.staff?.length || 0} member
+                {(cohortData?.staff?.length || 0) !== 1 ? "s" : ""} assigned. Updating this
                 cohort will affect all simulations that use it. Are you sure you
                 want to proceed?
               </div>

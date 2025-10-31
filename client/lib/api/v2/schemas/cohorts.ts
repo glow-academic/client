@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import {
+  CohortMappingSchema,
   DepartmentMappingSchema,
   ProfileMappingSchema,
   SimulationMappingSchema,
@@ -94,10 +95,16 @@ export const CohortDetailResponseSchema = z.object({
   // Full simulation objects with cohort-specific statistics
   simulations: z.array(SimulationInCohortSchema),
 
+  // Staff list (full ProfileListItem format)
+  staff: z.array(z.any()), // ProfileListItemSchema - using z.any() to avoid circular import
+
   // Top-level mappings
   simulation_mapping: SimulationMappingSchema,
   profile_mapping: ProfileMappingSchema,
   department_mapping: DepartmentMappingSchema,
+  // Mappings for staff display (cohorts and departments)
+  cohort_mapping: CohortMappingSchema.nullable().optional(),
+  department_mapping_for_staff: DepartmentMappingSchema.nullable().optional(),
 });
 
 export type CohortDetailResponse = z.infer<typeof CohortDetailResponseSchema>;

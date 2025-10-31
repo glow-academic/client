@@ -108,12 +108,16 @@ const formatLastActive = (timestamp: string | null): string => {
 export interface StaffDataTableProps {
   data: ProfileListItem[];
   cohortMapping: Record<string, { name: string; description?: string | null }>;
+  departmentMapping: Record<string, { name: string; description?: string | null }>;
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   activityOptions: { value: string; label: string }[];
   lastActiveOptions: { value: string; label: string }[];
   isRefreshing: boolean;
   onRefresh: () => void;
+  // Scope props - when provided, delete becomes "remove from relationship"
+  cohortId?: string; // When provided, bulk delete removes from cohort (does NOT delete profile)
+  departmentId?: string; // When provided, bulk delete removes from department (does NOT delete profile)
   // New props for actions & selection
   selectedStaffIds: string[];
   onStaffSelect: (profileId: string, checked: boolean) => void;
@@ -133,12 +137,15 @@ export interface StaffDataTableProps {
 export function StaffDataTable({
   data,
   cohortMapping,
+  departmentMapping,
   roleOptions,
   cohortOptions,
   activityOptions,
   lastActiveOptions,
   isRefreshing,
   onRefresh,
+  cohortId,
+  departmentId,
   selectedStaffIds,
   onStaffSelect,
   onSelectAll,
@@ -290,6 +297,38 @@ export function StaffDataTable({
         },
       },
       {
+        id: "department_ids",
+        accessorFn: (row: ProfileListItem) => row.department_ids ?? [],
+        filterFn: (row, _, value: string[]) => {
+          const rowIds = (row.getValue("department_ids") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
+        },
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Departments" />
+        ),
+        cell: ({ row }) => {
+          const staff = row.original;
+          const departmentIds = staff.department_ids;
+
+          if (!departmentIds.length) {
+            return <span className="text-xs text-muted-foreground">None</span>;
+          }
+
+          return (
+            <div className="flex gap-1 overflow-x-auto max-w-[150px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {departmentIds.map((id) => (
+                <Badge
+                  key={id}
+                  className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-100 whitespace-nowrap flex-shrink-0"
+                >
+                  {departmentMapping[id]?.name || id}
+                </Badge>
+              ))}
+            </div>
+          );
+        },
+      },
+      {
         id: "lastActive",
         accessorFn: (row: ProfileListItem) => {
           const lastActive = row.last_active;
@@ -356,8 +395,26 @@ export function StaffDataTable({
         enableSorting: true,
         enableColumnFilter: false,
       },
+      {
+        id: "total_requests",
+        accessorFn: (row) => row.total_requests ?? 0,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Total Requests" />
+        ),
+        cell: ({ row }) => {
+          const staff = row.original;
+          const total = staff.total_requests ?? 0;
+          return (
+            <div className="flex items-center justify-center">
+              <span className="text-sm font-medium">{total}</span>
+            </div>
+          );
+        },
+        enableSorting: true,
+        enableColumnFilter: false,
+      },
     ],
-    [cohortMapping]
+    [cohortMapping, departmentMapping]
   );
 
   // Build columns with checkbox + actions, filtering out any pre-supplied actions/select
@@ -441,7 +498,8 @@ export function StaffDataTable({
                 </TooltipContent>
               </Tooltip>
             )}
-            {canDelete(staff.profile_id) && (
+            {/* Only show delete when NOT scoped (cohortId/departmentId) - scoped views use "remove" via bulk actions */}
+            {!cohortId && !departmentId && canDelete(staff.profile_id) && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -520,6 +578,8 @@ export function StaffDataTable({
           onCreate={onCreate}
           deletableCount={deletableCount}
           editableCount={editableCount}
+          cohortId={cohortId}
+          departmentId={departmentId}
         />
         <div className="rounded-md border overflow-x-auto">
           <Table>

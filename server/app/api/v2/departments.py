@@ -18,6 +18,8 @@ from app.schemas.departments import (
     DepartmentsListResponse,
     DuplicateDepartmentRequest,
     DuplicateDepartmentResponse,
+    RemoveProfilesFromDepartmentRequest,
+    RemoveProfilesFromDepartmentResponse,
     UpdateDepartmentRequest,
     UpdateDepartmentResponse,
 )
@@ -94,3 +96,18 @@ async def delete_department(
     """Delete a department (with usage check)."""
     service = get_department_service(conn)
     return await service.delete_department(request)
+
+
+@router.post("/remove-profiles", response_model=RemoveProfilesFromDepartmentResponse)
+async def remove_profiles_from_department(
+    request: RemoveProfilesFromDepartmentRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> RemoveProfilesFromDepartmentResponse:
+    """
+    Remove profiles from department (set active = false in junction table).
+    
+    NOTE: This does NOT delete profiles from the database, only removes the relationship.
+    Profiles remain in the system but are no longer associated with this department.
+    """
+    service = get_department_service(conn)
+    return await service.remove_profiles_from_department(request)

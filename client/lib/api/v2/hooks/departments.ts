@@ -20,6 +20,8 @@ import {
   DepartmentsListResponseSchema,
   DuplicateDepartmentRequest,
   DuplicateDepartmentResponseSchema,
+  RemoveProfilesFromDepartmentRequest,
+  RemoveProfilesFromDepartmentResponseSchema,
   UpdateDepartmentRequest,
   UpdateDepartmentResponseSchema,
 } from "@/lib/api/v2/schemas/departments";
@@ -225,6 +227,45 @@ export function useDeleteDepartment() {
       });
 
       // Invalidate profile queries since profile_departments links may be removed
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            typeof key === "string" &&
+            (key.startsWith("profile:v2:") ||
+              (key === "v2" && query.queryKey[1] === "layout") ||
+              (key === "v2" && query.queryKey[1] === "profile"))
+          );
+        },
+      });
+    },
+  });
+}
+
+export function useRemoveProfilesFromDepartment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: RemoveProfilesFromDepartmentRequest) => {
+      const res = await api<unknown>("/api/v2/departments/remove-profiles", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return RemoveProfilesFromDepartmentResponseSchema.parse(res);
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate department detail since staff list changed
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            typeof key === "string" &&
+            key.startsWith(`departments:v2:detail:${variables.departmentId}`)
+          );
+        },
+      });
+
+      // Invalidate staff/profile queries since profile_departments links changed
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey[0];

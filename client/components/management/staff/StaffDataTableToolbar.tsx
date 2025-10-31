@@ -24,6 +24,9 @@ export interface StaffDataTableToolbarProps {
   onCreate: () => void;
   deletableCount?: number;
   editableCount?: number;
+  // Scope props - when provided, delete becomes "remove from relationship"
+  cohortId?: string; // When provided, bulk delete removes from cohort (does NOT delete profile)
+  departmentId?: string; // When provided, bulk delete removes from department (does NOT delete profile)
 }
 
 export function StaffDataTableToolbar({
@@ -37,8 +40,11 @@ export function StaffDataTableToolbar({
   selectedCount,
   onBulkEdit,
   onBulkDelete,
+  onCreate,
   deletableCount = 0,
   editableCount = 0,
+  cohortId,
+  departmentId,
 }: StaffDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -113,7 +119,7 @@ export function StaffDataTableToolbar({
 
       <div className="flex items-center space-x-2 mb-2">
         {/* Create Staff Button */}
-        <CreateStaffButton onDone={onCreate} />
+        {onCreate && <CreateStaffButton onDone={onCreate} />}
 
         {/* Bulk edit/delete if any selected */}
         {selectedCount > 0 && (
@@ -132,7 +138,11 @@ export function StaffDataTableToolbar({
               onClick={onBulkDelete}
               className="h-8"
             >
-              Delete {deletableCount} of {selectedCount}
+              {cohortId
+                ? `Remove ${deletableCount} of ${selectedCount} from Cohort`
+                : departmentId
+                  ? `Remove ${deletableCount} of ${selectedCount} from Department`
+                  : `Delete ${deletableCount} of ${selectedCount}`}
             </Button>
           </div>
         )}

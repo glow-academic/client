@@ -95,10 +95,16 @@ class CohortDetailResponse(BaseModel):
     # Full simulation objects with cohort-specific statistics
     simulations: list[SimulationInCohort]
 
+    # Staff list (full ProfileListItem format)
+    staff: list[StaffItem]
+
     # Top-level mappings
     simulation_mapping: SimulationMapping
     profile_mapping: ProfileMapping
     department_mapping: DepartmentMapping
+    # Mappings for staff display (cohorts and departments)
+    cohort_mapping: CohortMapping | None = None
+    department_mapping_for_staff: DepartmentMapping | None = None
 
 
 class CohortDetailDefaultRequest(BaseModel):

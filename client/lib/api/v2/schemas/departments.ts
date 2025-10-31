@@ -71,6 +71,23 @@ export const DepartmentDetailResponseSchema = z.object({
   in_use: z.boolean(),
   staff_count: z.number(),
   total_price_spent: z.number(),
+
+  // Staff list and mappings (for table display)
+  staff: z.array(z.any()), // ProfileListItemSchema - using z.any() to avoid circular import
+  cohort_mapping: z.record(
+    z.string(),
+    z.object({
+      name: z.string(),
+      description: z.string(),
+    })
+  ),
+  department_mapping: z.record(
+    z.string(),
+    z.object({
+      name: z.string(),
+      description: z.string(),
+    })
+  ),
 });
 
 export type DepartmentDetailResponse = z.infer<
@@ -168,4 +185,23 @@ export const DeleteDepartmentResponseSchema = z.object({
 
 export type DeleteDepartmentResponse = z.infer<
   typeof DeleteDepartmentResponseSchema
+>;
+
+// Remove profiles from department request
+export const RemoveProfilesFromDepartmentRequestSchema = z.object({
+  departmentId: z.string(),
+  profileIds: z.array(z.string()),
+});
+
+export type RemoveProfilesFromDepartmentRequest = z.infer<
+  typeof RemoveProfilesFromDepartmentRequestSchema
+>;
+
+export const RemoveProfilesFromDepartmentResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type RemoveProfilesFromDepartmentResponse = z.infer<
+  typeof RemoveProfilesFromDepartmentResponseSchema
 >;

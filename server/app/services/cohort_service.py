@@ -249,6 +249,75 @@ class CohortService(BaseService):
         if department_ids:
             department_ids = [str(d) for d in department_ids]
 
+        # Parse staff list from JSONB (may be string or list)
+        staff_list: list[StaffItem] = []
+        staff_data = cohort.get("staff")
+        if isinstance(staff_data, str):
+            staff_data = json.loads(staff_data)
+        if staff_data and isinstance(staff_data, list):
+            for staff_row in staff_data:
+                if isinstance(staff_row, dict):
+                    # Convert cohort_ids from array
+                    cohort_ids_staff = staff_row.get("cohort_ids") or []
+                    cohort_ids_staff = [str(cid) for cid in cohort_ids_staff]
+                    # department_ids is already text[]
+                    department_ids_staff = staff_row.get("department_ids") or []
+                    # Convert lastActive timestamp
+                    last_active = None
+                    if staff_row.get("lastActive"):
+                        last_active = staff_row["lastActive"].isoformat()
+
+                    staff_list.append(
+                        StaffItem(
+                            profile_id=str(staff_row["profile_id"]),
+                            first_name=staff_row["first_name"],
+                            last_name=staff_row["last_name"],
+                            alias=staff_row["alias"],
+                            name=staff_row["name"],
+                            role=staff_row["role"],
+                            email=staff_row["email"],
+                            initials=staff_row["initials"],
+                            active=staff_row["active"],
+                            last_active=last_active,
+                            cohort_ids=cohort_ids_staff,
+                            department_ids=department_ids_staff,
+                            requests_per_day=staff_row.get("requests_per_day"),
+                            total_requests=staff_row.get("total_requests", 0),
+                            default_profile=staff_row["default_profile"],
+                            requests_in_last_day=staff_row.get("requests_in_last_day", 0),
+                            can_edit=staff_row["can_edit"],
+                            can_delete=staff_row["can_delete"],
+                        )
+                    )
+
+        # Parse cohort mapping for staff (may be string or dict)
+        cohort_mapping_for_staff: CohortMapping | None = None
+        cohort_mapping_data = cohort.get("cohort_mapping_for_staff")
+        if isinstance(cohort_mapping_data, str):
+            cohort_mapping_data = json.loads(cohort_mapping_data)
+        if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
+            cohort_mapping_for_staff = {}
+            for cid, cdata in cohort_mapping_data.items():
+                if isinstance(cdata, dict):
+                    cohort_mapping_for_staff[cid] = CohortMappingItem(
+                        name=cdata.get("name", ""),
+                        description=cdata.get("description", ""),
+                    )
+
+        # Parse department mapping for staff (may be string or dict)
+        department_mapping_for_staff: DepartmentMapping | None = None
+        dept_mapping_staff_data = cohort.get("department_mapping_for_staff")
+        if isinstance(dept_mapping_staff_data, str):
+            dept_mapping_staff_data = json.loads(dept_mapping_staff_data)
+        if dept_mapping_staff_data and isinstance(dept_mapping_staff_data, dict):
+            department_mapping_for_staff = {}
+            for did, ddata in dept_mapping_staff_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping_for_staff[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
+
         return CohortDetailResponse(
             title=cohort["title"],
             description=cohort["description"],
@@ -260,9 +329,12 @@ class CohortService(BaseService):
             profile_ids=cohort["profile_ids"],
             valid_profile_ids=cohort["valid_profile_ids"],
             simulations=simulations_list,
+            staff=staff_list,
             simulation_mapping=simulation_mapping,
             profile_mapping=profile_mapping,
             department_mapping=department_mapping,
+            cohort_mapping=cohort_mapping_for_staff,
+            department_mapping_for_staff=department_mapping_for_staff,
         )
 
     @with_cache(lambda self, request: keys.cohort_default(request.profileId))

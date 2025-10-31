@@ -35,7 +35,9 @@ class StaffItem(BaseModel):
     active: bool
     last_active: str | None
     cohort_ids: list[str]
+    department_ids: list[str]
     requests_per_day: int | None
+    total_requests: int
     default_profile: bool
     requests_in_last_day: int
     can_edit: bool

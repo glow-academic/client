@@ -17,8 +17,11 @@ from app.schemas.departments import (CreateDepartmentRequest,
                                      DepartmentsListResponse,
                                      DuplicateDepartmentRequest,
                                      DuplicateDepartmentResponse,
+                                     RemoveProfilesFromDepartmentRequest,
+                                     RemoveProfilesFromDepartmentResponse,
                                      UpdateDepartmentRequest,
                                      UpdateDepartmentResponse)
+from app.schemas.staff import StaffItem
 from app.services.base_service import BaseService, with_cache
 
 
@@ -74,22 +77,99 @@ class DepartmentService(BaseService):
         self, request: DepartmentDetailRequest
     ) -> DepartmentDetailResponse:
         """
-        Get department detail with permissions and stats.
+        Get department detail with permissions, stats, and staff list.
 
         Args:
             request: Detail request
 
         Returns:
-            DepartmentDetailResponse
+            DepartmentDetailResponse with staff list and mappings
         """
-        # Get complete department data (consolidated query)
-        query, params = self.queries.get_department_detail_complete(
-            request.departmentId, request.profileId
+        import json
+        import os
+
+        # Get campus email domain from environment
+        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
+
+        # Get complete department data with staff (consolidated query)
+        query, params = self.queries.get_department_detail_with_staff(
+            request.departmentId, request.profileId, campus_domain
         )
         dept_row = await self.conn.fetchrow(query, *params)
 
         if not dept_row:
             raise ValueError(f"Department {request.departmentId} not found")
+
+        # Parse staff list from JSONB (may be string or list)
+        staff_list: list[StaffItem] = []
+        staff_data = dept_row.get("staff")
+        if isinstance(staff_data, str):
+            staff_data = json.loads(staff_data)
+        if staff_data and isinstance(staff_data, list):
+            for staff_row in staff_data:
+                if isinstance(staff_row, dict):
+                    # Convert cohort_ids from array
+                    cohort_ids = staff_row.get("cohort_ids") or []
+                    cohort_ids = [str(cid) for cid in cohort_ids]
+                    # department_ids is already text[]
+                    department_ids = staff_row.get("department_ids") or []
+                    # Convert lastActive timestamp
+                    last_active = None
+                    if staff_row.get("lastActive"):
+                        last_active = staff_row["lastActive"].isoformat()
+
+                    staff_list.append(
+                        StaffItem(
+                            profile_id=str(staff_row["profile_id"]),
+                            first_name=staff_row["first_name"],
+                            last_name=staff_row["last_name"],
+                            alias=staff_row["alias"],
+                            name=staff_row["name"],
+                            role=staff_row["role"],
+                            email=staff_row["email"],
+                            initials=staff_row["initials"],
+                            active=staff_row["active"],
+                            last_active=last_active,
+                            cohort_ids=cohort_ids,
+                            department_ids=department_ids,
+                            requests_per_day=staff_row.get("requests_per_day"),
+                            total_requests=staff_row.get("total_requests", 0),
+                            default_profile=staff_row["default_profile"],
+                            requests_in_last_day=staff_row.get("requests_in_last_day", 0),
+                            can_edit=staff_row["can_edit"],
+                            can_delete=staff_row["can_delete"],
+                        )
+                    )
+
+        # Parse cohort mapping from JSONB (may be string or dict)
+        cohort_mapping = {}
+        cohort_mapping_data = dept_row.get("cohort_mapping")
+        if isinstance(cohort_mapping_data, str):
+            cohort_mapping_data = json.loads(cohort_mapping_data)
+        if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
+            from app.schemas.base import CohortMappingItem
+
+            for cid, cdata in cohort_mapping_data.items():
+                if isinstance(cdata, dict):
+                    cohort_mapping[cid] = CohortMappingItem(
+                        name=cdata.get("name", ""),
+                        description=cdata.get("description", ""),
+                    )
+
+        # Parse department mapping from JSONB (may be string or dict)
+        department_mapping = {}
+        dept_mapping_data = dept_row.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            from app.schemas.base import DepartmentMappingItem
+
+            for did, ddata in dept_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
 
         return DepartmentDetailResponse(
             title=dept_row["title"],
@@ -103,6 +183,10 @@ class DepartmentService(BaseService):
             in_use=dept_row["in_use"],
             staff_count=int(dept_row["staff_count"]),
             total_price_spent=float(dept_row["total_price_spent"]),
+            # Staff list and mappings
+            staff=staff_list,
+            cohort_mapping=cohort_mapping,
+            department_mapping=department_mapping,
         )
 
     @with_cache(lambda self, profile_id: keys.department_default(profile_id))
@@ -326,6 +410,48 @@ class DepartmentService(BaseService):
 
         return DeleteDepartmentResponse(
             success=True, message="Department deleted successfully"
+        )
+
+    async def remove_profiles_from_department(
+        self, request: RemoveProfilesFromDepartmentRequest
+    ) -> RemoveProfilesFromDepartmentResponse:
+        """
+        Remove profiles from department by setting active = false in junction table.
+        
+        NOTE: This does NOT delete profiles from the database, only removes the relationship.
+        Profiles remain in the system but are no longer associated with this department.
+        
+        Args:
+            request: Remove request with departmentId and profileIds
+            
+        Returns:
+            RemoveProfilesFromDepartmentResponse
+        """
+        # Get department title for message
+        query, params = self.queries.get_department_basic(request.departmentId)
+        dept = await self.conn.fetchrow(query, *params)
+
+        if not dept:
+            raise ValueError(f"Department {request.departmentId} not found")
+
+        async with transaction(self.conn):
+            # Remove profiles from department by setting active = false
+            query, params = self.queries.remove_department_profiles()
+            await self.conn.execute(query, request.departmentId, request.profileIds)
+
+        # Invalidate caches
+        await self._invalidate_cache(
+            [
+                keys.tag_department_by_id(request.departmentId),
+                keys.tag_department_all(),
+                keys.tag_staff_all(),
+                keys.tag_profile_all(),
+            ]
+        )
+
+        return RemoveProfilesFromDepartmentResponse(
+            success=True,
+            message=f"Removed {len(request.profileIds)} profile(s) from department '{dept['title']}' successfully",
         )
 
 

@@ -22,8 +22,13 @@ import {
   useDepartmentDetail,
   useDepartmentDetailDefault,
   useUpdateDepartment,
+  useRemoveProfilesFromDepartment,
 } from "@/lib/api/v2/hooks/departments";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { StaffDataTable } from "@/components/management/staff/StaffDataTable";
+import { ProfileListItem } from "@/lib/api/v2/schemas/profile";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export interface DepartmentProps {
   departmentId?: string;
@@ -62,12 +67,15 @@ export default function Department({ departmentId }: DepartmentProps) {
   const [errors, setErrors] = useState<FormErrors>({});
 
   // V2 API hooks
-  const { data: departmentDetail, isLoading: isLoadingDepartmentDetail } =
-    useDepartmentDetail(
-      departmentId || "",
-      effectiveProfile?.id || "",
-      !!departmentId && isEditMode
-    );
+  const {
+    data: departmentDetail,
+    isLoading: isLoadingDepartmentDetail,
+    refetch: refetchDepartmentDetail,
+  } = useDepartmentDetail(
+    departmentId || "",
+    effectiveProfile?.id || "",
+    !!departmentId && isEditMode
+  );
 
   const {
     data: departmentDetailDefault,
@@ -103,6 +111,7 @@ export default function Department({ departmentId }: DepartmentProps) {
   // Mutations
   const { mutate: createDepartment } = useCreateDepartment();
   const { mutate: updateDepartment } = useUpdateDepartment();
+  const removeProfilesFromDepartmentMutation = useRemoveProfilesFromDepartment();
 
   const isLoading = isLoadingData;
 
@@ -318,6 +327,117 @@ export default function Department({ departmentId }: DepartmentProps) {
             )}
           </div>
         </div>
+
+        {/* Staff Management */}
+        {departmentId && departmentData && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Staff Members</h3>
+            <StaffDataTable
+              data={(departmentData.staff as ProfileListItem[]) || []}
+              cohortMapping={departmentData.cohort_mapping || {}}
+              departmentMapping={departmentData.department_mapping || {}}
+              roleOptions={[
+                { value: "superadmin", label: "Super Administrator" },
+                { value: "admin", label: "Administrator" },
+                { value: "instructional", label: "Instructional Staff" },
+                { value: "ta", label: "Teaching Assistant" },
+                { value: "guest", label: "Guest" },
+              ]}
+              cohortOptions={Object.entries(
+                departmentData.cohort_mapping || {}
+              ).map(([id, item]) => ({
+                value: id,
+                label: item.name,
+              }))}
+              activityOptions={[
+                { value: "true", label: "Active" },
+                { value: "false", label: "Inactive" },
+              ]}
+              lastActiveOptions={[
+                { value: "recent", label: "Recently Active (< 7 days)" },
+                { value: "moderate", label: "Moderately Active (7-30 days)" },
+                { value: "old", label: "Inactive (> 30 days)" },
+                { value: "never", label: "Never Active" },
+              ]}
+              isRefreshing={isRefreshing}
+              onRefresh={async () => {
+                setIsRefreshing(true);
+                await refetchDepartmentDetail();
+                setIsRefreshing(false);
+              }}
+              departmentId={departmentId}
+              selectedStaffIds={selectedStaffIds}
+              onStaffSelect={(id, checked) =>
+                setSelectedStaffIds((prev) =>
+                  checked ? [...prev, id] : prev.filter((x) => x !== id)
+                )
+              }
+              onSelectAll={(checked, visibleRowIds) => {
+                if (checked && visibleRowIds) {
+                  setSelectedStaffIds((prev) => {
+                    const newSelection = [...prev];
+                    visibleRowIds.forEach((id) => {
+                      if (!newSelection.includes(id)) {
+                        newSelection.push(id);
+                      }
+                    });
+                    return newSelection;
+                  });
+                } else {
+                  setSelectedStaffIds((prev) =>
+                    prev.filter((id) => !visibleRowIds?.includes(id))
+                  );
+                }
+              }}
+              onCreate={async () => {
+                // Refetch after create
+                setIsRefreshing(true);
+                await refetchDepartmentDetail();
+                setIsRefreshing(false);
+              }}
+              onPreview={(staff) => {
+                window.open(
+                  `/analytics/reports/p/${staff.profile_id}`,
+                  "_blank",
+                  "noopener,noreferrer"
+                );
+              }}
+              onEdit={() => {
+                // Edit handled via modal if needed
+              }}
+              onDelete={() => {
+                // Delete not available in scoped view
+              }}
+              onBulkEdit={() => {
+                // Bulk edit can be implemented if needed
+              }}
+              onBulkDelete={async () => {
+                if (selectedStaffIds.length === 0) return;
+                try {
+                  await removeProfilesFromDepartmentMutation.mutateAsync({
+                    departmentId: departmentId,
+                    profileIds: selectedStaffIds,
+                  });
+                  toast.success(
+                    `Removed ${selectedStaffIds.length} profile(s) from department`
+                  );
+                  setSelectedStaffIds([]);
+                  setIsRefreshing(true);
+                  await refetchDepartmentDetail();
+                  setIsRefreshing(false);
+                } catch (error) {
+                  toast.error(
+                    `Failed to remove profiles: ${error instanceof Error ? error.message : "Unknown error"}`
+                  );
+                }
+              }}
+              canDelete={() => true} // All profiles can be removed from department
+              deletableCount={selectedStaffIds.length}
+              canEdit={() => false} // Edit not available in scoped view
+              editableCount={0}
+            />
+          </div>
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">

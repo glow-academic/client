@@ -118,6 +118,10 @@ export default function Staff() {
     () => staffData?.cohort_mapping || {},
     [staffData?.cohort_mapping]
   );
+  const departmentMapping = React.useMemo(
+    () => staffData?.department_mapping || {},
+    [staffData?.department_mapping]
+  );
 
   // Filter staff users based on current user's role (done server-side now)
 
@@ -323,6 +327,7 @@ export default function Staff() {
       <StaffDataTable
         data={staff}
         cohortMapping={cohortMapping}
+        departmentMapping={departmentMapping}
         roleOptions={roleOptions}
         cohortOptions={cohortOptions}
         activityOptions={activityOptions}

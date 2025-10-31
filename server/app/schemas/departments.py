@@ -2,6 +2,9 @@
 
 from pydantic import BaseModel
 
+from app.schemas.base import CohortMapping, DepartmentMapping
+from app.schemas.staff import StaffItem
+
 # ============================================================================
 # REQUEST SCHEMAS
 # ============================================================================
@@ -70,6 +73,11 @@ class DepartmentDetailResponse(BaseModel):
     staff_count: int
     total_price_spent: float
 
+    # Staff list and mappings (for table display)
+    staff: list[StaffItem]
+    cohort_mapping: CohortMapping
+    department_mapping: DepartmentMapping
+
 
 class DepartmentDetailDefaultRequest(BaseModel):
     """Request for default department detail."""
@@ -137,6 +145,20 @@ class DeleteDepartmentRequest(BaseModel):
 
 class DeleteDepartmentResponse(BaseModel):
     """Response for deleting a department."""
+
+    success: bool
+    message: str
+
+
+class RemoveProfilesFromDepartmentRequest(BaseModel):
+    """Request to remove profiles from department (set active = false in junction table, NOT delete profiles)."""
+
+    departmentId: str
+    profileIds: list[str]
+
+
+class RemoveProfilesFromDepartmentResponse(BaseModel):
+    """Response from remove profiles from department."""
 
     success: bool
     message: str

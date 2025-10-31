@@ -61,6 +61,8 @@ class StaffService(BaseService):
         for row in result:
             # Convert UUID arrays to string arrays
             cohort_ids = [str(cid) for cid in (row["cohort_ids"] or [])]
+            # Convert UUID arrays to string arrays (department_ids comes as text[] from query)
+            department_ids = row["department_ids"] or []
 
             staff.append(
                 StaffItem(
@@ -77,7 +79,9 @@ class StaffService(BaseService):
                     if row["lastactive"]
                     else None,
                     cohort_ids=cohort_ids,
+                    department_ids=department_ids,
                     requests_per_day=row["requests_per_day"],
+                    total_requests=row["total_requests"] or 0,
                     default_profile=row["default_profile"],
                     requests_in_last_day=row["requests_in_last_day"],
                     can_edit=row["can_edit"],
