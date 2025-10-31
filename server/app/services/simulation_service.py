@@ -285,9 +285,26 @@ class SimulationService(BaseService):
         if department_mapping_data and isinstance(department_mapping_data, dict):
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
+                    # Parse optional ID arrays (handle None, empty arrays, or missing keys)
+                    # Simulation form only needs: scenario_ids, rubric_ids, cohort_ids
+                    dept_scenario_ids = ddata.get("scenario_ids")
+                    dept_rubric_ids = ddata.get("rubric_ids")
+                    dept_cohort_ids = ddata.get("cohort_ids")
+                    
+                    # Convert to list[str] if present, otherwise None
+                    def to_str_list(value: Any) -> list[str] | None:
+                        if value is None:
+                            return None
+                        if isinstance(value, list):
+                            return [str(v) for v in value if v]
+                        return None
+                    
                     department_mapping[did] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
+                        scenario_ids=to_str_list(dept_scenario_ids),
+                        rubric_ids=to_str_list(dept_rubric_ids),
+                        cohort_ids=to_str_list(dept_cohort_ids),
                     )
 
         # Parse parameter mapping from JSONB with type safety (may be string or dict)
@@ -526,9 +543,26 @@ class SimulationService(BaseService):
         if department_mapping_data and isinstance(department_mapping_data, dict):
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
+                    # Parse optional ID arrays (handle None, empty arrays, or missing keys)
+                    # Simulation form only needs: scenario_ids, rubric_ids, cohort_ids
+                    dept_scenario_ids = ddata.get("scenario_ids")
+                    dept_rubric_ids = ddata.get("rubric_ids")
+                    dept_cohort_ids = ddata.get("cohort_ids")
+                    
+                    # Convert to list[str] if present, otherwise None
+                    def to_str_list(value: Any) -> list[str] | None:
+                        if value is None:
+                            return None
+                        if isinstance(value, list):
+                            return [str(v) for v in value if v]
+                        return None
+                    
                     department_mapping[did] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
+                        scenario_ids=to_str_list(dept_scenario_ids),
+                        rubric_ids=to_str_list(dept_rubric_ids),
+                        cohort_ids=to_str_list(dept_cohort_ids),
                     )
 
         # Parse parameter mapping from JSONB with type safety (may be string or dict)

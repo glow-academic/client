@@ -524,12 +524,93 @@ class ScenarioQueries:
                 COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
                 OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
         ),
+        department_persona_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as persona_ids
+            FROM departments d
+            CROSS JOIN user_departments ud
+            LEFT JOIN personas p ON p.active = true
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+            WHERE d.id = ANY(ud.dept_ids)
+            AND (pd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
+            GROUP BY d.id
+        ),
+        department_document_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT doc.id::text ORDER BY doc.id) FILTER (WHERE doc.id IS NOT NULL), ARRAY[]::text[]) as document_ids
+            FROM departments d
+            CROSS JOIN user_departments ud
+            LEFT JOIN documents doc ON doc.active = true
+            LEFT JOIN document_departments dd ON dd.document_id = doc.id AND dd.active = true
+            WHERE d.id = ANY(ud.dept_ids)
+            AND (dd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = doc.id AND dd2.active = true))
+            GROUP BY d.id
+        ),
+        department_parameter_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+            FROM departments d
+            CROSS JOIN user_departments ud
+            LEFT JOIN parameters p ON p.active = true
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            WHERE d.id = ANY(ud.dept_ids)
+            AND (pd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true))
+            GROUP BY d.id
+        ),
+        department_agent_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT a.id::text ORDER BY a.id) FILTER (WHERE a.id IS NOT NULL), ARRAY[]::text[]) as agent_ids
+            FROM departments d
+            CROSS JOIN user_departments ud
+            LEFT JOIN agents a ON a.active = true
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE d.id = ANY(ud.dept_ids)
+            AND (ad.department_id = d.id OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true))
+            GROUP BY d.id
+        ),
+        department_staff_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as staff_ids
+            FROM departments d
+            CROSS JOIN user_departments ud
+            LEFT JOIN profile_departments pd ON pd.department_id = d.id
+            LEFT JOIN profiles p ON p.id = pd.profile_id
+            WHERE d.id = ANY(ud.dept_ids)
+            GROUP BY d.id
+        ),
+        department_cohort_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT c.id::text ORDER BY c.id) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::text[]) as cohort_ids
+            FROM departments d
+            CROSS JOIN user_departments ud
+            LEFT JOIN cohorts c ON c.active = true
+            LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
+            WHERE d.id = ANY(ud.dept_ids)
+            AND (cd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
+            GROUP BY d.id
+        ),
         department_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
                 d.id::text,
-                jsonb_build_object('name', d.title, 'description', COALESCE(d.description, ''))
+                jsonb_build_object(
+                    'name', d.title,
+                    'description', COALESCE(d.description, ''),
+                    'persona_ids', CASE WHEN dpi.persona_ids IS NOT NULL AND array_length(dpi.persona_ids, 1) > 0 THEN to_jsonb(dpi.persona_ids) ELSE NULL END,
+                    'document_ids', CASE WHEN ddi.document_ids IS NOT NULL AND array_length(ddi.document_ids, 1) > 0 THEN to_jsonb(ddi.document_ids) ELSE NULL END,
+                    'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END
+                )
             ), '{}'::jsonb) as department_mapping
-            FROM departments d, user_departments ud
+            FROM departments d
+            CROSS JOIN user_departments ud
+            LEFT JOIN department_persona_ids dpi ON dpi.department_id = d.id
+            LEFT JOIN department_document_ids ddi ON ddi.department_id = d.id
+            LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
             WHERE d.id = ANY(ud.dept_ids)
         )
         SELECT 

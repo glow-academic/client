@@ -247,6 +247,53 @@ class CohortQueries:
             JOIN profile_departments pd ON pd.profile_id = p.id
             WHERE pd.department_id IN (SELECT id FROM valid_dept_ids)
                 AND p.active = true
+        ),
+        cross_dept_simulations AS (
+            SELECT DISTINCT s.id::text as simulation_id
+            FROM simulations s
+            WHERE s.active = true
+                AND NOT EXISTS (
+                    SELECT 1 FROM simulation_departments sd2 
+                    WHERE sd2.simulation_id = s.id AND sd2.active = true
+                )
+        ),
+        department_simulation_ids AS (
+            SELECT 
+                d.id as department_id,
+                ARRAY_AGG(DISTINCT s.id::text) FILTER (WHERE s.id IS NOT NULL) as simulation_ids
+            FROM valid_departments d
+            LEFT JOIN simulation_departments sd ON sd.department_id = d.id AND sd.active = true
+            LEFT JOIN simulations s ON s.id = sd.simulation_id AND s.active = true
+            GROUP BY d.id
+        ),
+        department_simulation_ids_with_cross AS (
+            SELECT 
+                dsi.department_id,
+                COALESCE(dsi.simulation_ids, ARRAY[]::text[]) || 
+                COALESCE(ARRAY(SELECT simulation_id FROM cross_dept_simulations), ARRAY[]::text[]) as simulation_ids
+            FROM department_simulation_ids dsi
+        ),
+        department_profile_ids AS (
+            SELECT 
+                d.id as department_id,
+                ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL) as staff_ids
+            FROM valid_departments d
+            LEFT JOIN profile_departments pd ON pd.department_id = d.id
+            LEFT JOIN profiles p ON p.id = pd.profile_id AND p.active = true
+            GROUP BY d.id
+        ),
+        department_mapping_data AS (
+            SELECT 
+                vd.id::text as department_id,
+                jsonb_build_object(
+                    'name', vd.name,
+                    'description', COALESCE(vd.description, ''),
+                    'simulation_ids', COALESCE(dsic.simulation_ids, ARRAY[]::text[]),
+                    'staff_ids', COALESCE(dpi.staff_ids, ARRAY[]::text[])
+                ) as dept_data
+            FROM valid_departments vd
+            LEFT JOIN department_simulation_ids_with_cross dsic ON dsic.department_id = vd.id
+            LEFT JOIN department_profile_ids dpi ON dpi.department_id = vd.id
         )
         SELECT 
             cd.title,
@@ -321,15 +368,12 @@ class CohortQueries:
              FROM profiles p
              WHERE p.id IN (SELECT profile_id FROM cohort_profile_ids)
             ) as profile_mapping,
-            -- Department mapping
+            -- Department mapping with simulation_ids and staff_ids
             (SELECT COALESCE(jsonb_object_agg(
-                vd.id::text,
-                jsonb_build_object(
-                    'name', vd.name,
-                    'description', COALESCE(vd.description, '')
-                )
+                dmd.department_id,
+                dmd.dept_data
              ), '{}'::jsonb)
-             FROM valid_departments vd
+             FROM department_mapping_data dmd
             ) as department_mapping
         FROM cohort_data cd
         """
@@ -439,6 +483,53 @@ class CohortQueries:
             JOIN profile_departments pd ON pd.profile_id = p.id
             WHERE pd.department_id IN (SELECT id FROM valid_dept_ids)
                 AND p.active = true
+        ),
+        cross_dept_simulations AS (
+            SELECT DISTINCT s.id::text as simulation_id
+            FROM simulations s
+            WHERE s.active = true
+                AND NOT EXISTS (
+                    SELECT 1 FROM simulation_departments sd2 
+                    WHERE sd2.simulation_id = s.id AND sd2.active = true
+                )
+        ),
+        department_simulation_ids AS (
+            SELECT 
+                d.id as department_id,
+                ARRAY_AGG(DISTINCT s.id::text) FILTER (WHERE s.id IS NOT NULL) as simulation_ids
+            FROM valid_departments d
+            LEFT JOIN simulation_departments sd ON sd.department_id = d.id AND sd.active = true
+            LEFT JOIN simulations s ON s.id = sd.simulation_id AND s.active = true
+            GROUP BY d.id
+        ),
+        department_simulation_ids_with_cross AS (
+            SELECT 
+                dsi.department_id,
+                COALESCE(dsi.simulation_ids, ARRAY[]::text[]) || 
+                COALESCE(ARRAY(SELECT simulation_id FROM cross_dept_simulations), ARRAY[]::text[]) as simulation_ids
+            FROM department_simulation_ids dsi
+        ),
+        department_profile_ids AS (
+            SELECT 
+                d.id as department_id,
+                ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL) as staff_ids
+            FROM valid_departments d
+            LEFT JOIN profile_departments pd ON pd.department_id = d.id
+            LEFT JOIN profiles p ON p.id = pd.profile_id AND p.active = true
+            GROUP BY d.id
+        ),
+        department_mapping_data AS (
+            SELECT 
+                vd.id::text as department_id,
+                jsonb_build_object(
+                    'name', vd.name,
+                    'description', COALESCE(vd.description, ''),
+                    'simulation_ids', COALESCE(dsic.simulation_ids, ARRAY[]::text[]),
+                    'staff_ids', COALESCE(dpi.staff_ids, ARRAY[]::text[])
+                ) as dept_data
+            FROM valid_departments vd
+            LEFT JOIN department_simulation_ids_with_cross dsic ON dsic.department_id = vd.id
+            LEFT JOIN department_profile_ids dpi ON dpi.department_id = vd.id
         )
         SELECT 
             cd.title,
@@ -493,14 +584,12 @@ class CohortQueries:
              FROM profiles p
              WHERE p.id IN (SELECT profile_id FROM cohort_profile_ids)
             ) as profile_mapping,
+            -- Department mapping with simulation_ids and staff_ids
             (SELECT COALESCE(jsonb_object_agg(
-                vd.id::text,
-                jsonb_build_object(
-                    'name', vd.name,
-                    'description', COALESCE(vd.description, '')
-                )
+                dmd.department_id,
+                dmd.dept_data
              ), '{}'::jsonb)
-             FROM valid_departments vd
+             FROM department_mapping_data dmd
             ) as department_mapping
         FROM cohort_data cd
         """

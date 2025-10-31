@@ -143,6 +143,23 @@ export const MappingItemSchema = z.object({
 export type MappingItem = z.infer<typeof MappingItemSchema>;
 
 /**
+ * Department mapping item with optional entity ID arrays
+ */
+export const DepartmentMappingItemSchema = MappingItemSchema.extend({
+  scenario_ids: z.array(z.string()).nullable().optional(),
+  simulation_ids: z.array(z.string()).nullable().optional(),
+  persona_ids: z.array(z.string()).nullable().optional(),
+  document_ids: z.array(z.string()).nullable().optional(),
+  rubric_ids: z.array(z.string()).nullable().optional(),
+  parameter_ids: z.array(z.string()).nullable().optional(),
+  agent_ids: z.array(z.string()).nullable().optional(),
+  staff_ids: z.array(z.string()).nullable().optional(),
+  cohort_ids: z.array(z.string()).nullable().optional(),
+});
+
+export type DepartmentMappingItem = z.infer<typeof DepartmentMappingItemSchema>;
+
+/**
  * Parameter mapping item with numerical field
  */
 export const ParameterMappingItemSchema = z.object({
@@ -230,7 +247,10 @@ export const ScenarioMappingItemSchema = z.object({
 
 export type ScenarioMappingItem = z.infer<typeof ScenarioMappingItemSchema>;
 
-export const DepartmentMappingSchema = MappingSchema;
+export const DepartmentMappingSchema = z.record(
+  z.string(),
+  DepartmentMappingItemSchema
+);
 export const PersonaMappingSchema = z.record(
   z.string(),
   PersonaMappingItemSchema

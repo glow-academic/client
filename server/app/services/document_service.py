@@ -11,6 +11,8 @@ import uuid
 import zipfile
 
 import asyncpg  # type: ignore
+from typing import Any
+
 from app.cache import keys
 from app.extensions import UPLOAD_FOLDER
 from app.queries.document_queries import DocumentQueries
@@ -114,9 +116,22 @@ class DocumentService(BaseService):
             if dept_mapping_data and isinstance(dept_mapping_data, dict):
                 for did, ddata in dept_mapping_data.items():
                     if isinstance(ddata, dict):
+                        # Parse optional ID arrays (handle None, empty arrays, or missing keys)
+                        # Document form only needs: parameter_ids
+                        parameter_ids = ddata.get("parameter_ids")
+                        
+                        # Convert to list[str] if present, otherwise None
+                        def to_str_list(value: Any) -> list[str] | None:
+                            if value is None:
+                                return None
+                            if isinstance(value, list):
+                                return [str(v) for v in value if v]
+                            return None
+                        
                         department_mapping[did] = DepartmentMappingItem(
                             name=ddata.get("name", ""),
                             description=ddata.get("description", ""),
+                            parameter_ids=to_str_list(parameter_ids),
                         )
 
         # Build document items

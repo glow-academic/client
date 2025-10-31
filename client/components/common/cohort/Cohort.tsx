@@ -178,6 +178,229 @@ export default function Cohort({ cohortId }: CohortProps) {
     return false; // Otherwise editable (permissions handled server-side)
   }, [isEditMode, cohortData, effectiveProfile?.role]);
 
+  // Filter valid IDs based on selected departments
+  const departmentMapping = cohortData?.department_mapping || {};
+
+  // Staged selections per department (preserved when departments are deselected)
+  type StagedSelections = {
+    simulation_ids?: string[];
+    profile_ids?: string[];
+  };
+  const [stagedSelections, setStagedSelections] = useState<
+    Record<string, StagedSelections>
+  >({});
+  const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
+    []
+  );
+
+  const validSimulationIds = useMemo(() => {
+    const baseIds = cohortData?.valid_simulation_ids || [];
+    const selectedDeptIds = formData?.departmentIds || [];
+
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+
+    // Get union of simulation_ids from selected departments
+    const deptSimulationIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.simulation_ids && Array.isArray(deptData.simulation_ids)) {
+        deptData.simulation_ids.forEach((id) => deptSimulationIds.add(id));
+      }
+    });
+
+    // Filter base IDs to only include those in department simulation IDs
+    return baseIds.filter((id) => deptSimulationIds.has(id));
+  }, [
+    cohortData?.valid_simulation_ids,
+    formData?.departmentIds,
+    departmentMapping,
+  ]);
+
+  const validProfileIds = useMemo(() => {
+    const baseIds = cohortData?.valid_profile_ids || [];
+    const selectedDeptIds = formData?.departmentIds || [];
+
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+
+    // Get union of staff_ids from selected departments
+    const deptStaffIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.staff_ids && Array.isArray(deptData.staff_ids)) {
+        deptData.staff_ids.forEach((id) => deptStaffIds.add(id));
+      }
+    });
+
+    // Filter base IDs to only include those in department staff IDs
+    return baseIds.filter((id) => deptStaffIds.has(id));
+  }, [
+    cohortData?.valid_profile_ids,
+    formData?.departmentIds,
+    departmentMapping,
+  ]);
+
+  // Track department changes and manage staged selections
+  useEffect(() => {
+    const currentDeptIds = formData?.departmentIds || [];
+    const prevDeptIds = previousDepartmentIds || [];
+
+    // Skip if no change (initial load or same selection)
+    if (
+      currentDeptIds.length === prevDeptIds.length &&
+      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
+    ) {
+      // Initialize on first load
+      if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
+        setPreviousDepartmentIds(currentDeptIds);
+      }
+      return;
+    }
+
+    // Find departments that were deselected
+    const deselectedDepts = prevDeptIds.filter(
+      (id) => !currentDeptIds.includes(id)
+    );
+
+    // Find departments that were newly selected
+    const newlySelectedDepts = currentDeptIds.filter(
+      (id) => !prevDeptIds.includes(id)
+    );
+
+    // Save selections for deselected departments
+    if (deselectedDepts.length > 0) {
+      setStagedSelections((prev) => {
+        const updated = { ...prev };
+        deselectedDepts.forEach((deptId) => {
+          updated[deptId] = {
+            simulation_ids: [...currentSimulationIds],
+            profile_ids: staffProfiles.map((p) => p.id),
+          };
+        });
+        return updated;
+      });
+    }
+
+    // Restore selections for newly selected departments
+    if (newlySelectedDepts.length > 0) {
+      setStagedSelections((prev) => {
+        newlySelectedDepts.forEach((deptId) => {
+          const staged = prev[deptId];
+          if (staged) {
+            // Restore simulations if valid
+            if (staged.simulation_ids && staged.simulation_ids.length > 0) {
+              const validSimSet = new Set(validSimulationIds);
+              const validSims = staged.simulation_ids.filter((id) =>
+                validSimSet.has(id)
+              );
+              if (validSims.length > 0) {
+                setCurrentSimulationIds((prevSims) => {
+                  const combined = new Set([...prevSims, ...validSims]);
+                  return Array.from(combined);
+                });
+              }
+            }
+
+            // Restore profiles if valid
+            if (staged.profile_ids && staged.profile_ids.length > 0) {
+              const validProfileSet = new Set(validProfileIds);
+              const validProfiles = staged.profile_ids.filter((id) =>
+                validProfileSet.has(id)
+              );
+              if (validProfiles.length > 0) {
+                // Restore profiles that exist in cohortData.profile_mapping
+                const profilesToRestore = validProfiles
+                  .map((id) => {
+                    const profileInfo = cohortData?.profile_mapping[id];
+                    if (profileInfo) {
+                      const nameParts = profileInfo.name.split(" ");
+                      return {
+                        id,
+                        firstName: nameParts[0] || "",
+                        lastName: nameParts.slice(1).join(" ") || "",
+                        alias: profileInfo.description.split("@")[0] || "",
+                        role: "trainee" as const,
+                      };
+                    }
+                    return null;
+                  })
+                  .filter((p): p is NonNullable<typeof p> => p !== null);
+
+                if (profilesToRestore.length > 0) {
+                  setStaffProfiles((prevProfiles) => {
+                    const existingIds = new Set(prevProfiles.map((p) => p.id));
+                    const newProfiles = profilesToRestore.filter(
+                      (p) => !existingIds.has(p.id)
+                    );
+                    return [...prevProfiles, ...newProfiles];
+                  });
+                }
+              }
+            }
+          }
+        });
+        return prev;
+      });
+    }
+
+    // Update previous department IDs
+    setPreviousDepartmentIds(currentDeptIds);
+  }, [
+    formData?.departmentIds,
+    previousDepartmentIds,
+    currentSimulationIds,
+    staffProfiles,
+    validSimulationIds,
+    validProfileIds,
+    cohortData?.profile_mapping,
+  ]);
+
+  // Clean up staged selections for departments that are no longer valid
+  useEffect(() => {
+    const validDeptIds = new Set(cohortData?.valid_department_ids || []);
+    setStagedSelections((prev) => {
+      const cleaned: Record<string, StagedSelections> = {};
+      Object.keys(prev).forEach((deptId) => {
+        const staged = prev[deptId];
+        if (validDeptIds.has(deptId) && staged) {
+          cleaned[deptId] = staged;
+        }
+      });
+      return cleaned;
+    });
+  }, [cohortData?.valid_department_ids]);
+
+  // Clear selections when they become invalid after department changes
+  // (but preserve cross-department entities and staged selections)
+  useEffect(() => {
+    // Clear simulations that are no longer valid
+    if (currentSimulationIds.length > 0) {
+      const validSet = new Set(validSimulationIds);
+      const filtered = currentSimulationIds.filter((id) => validSet.has(id));
+      if (filtered.length !== currentSimulationIds.length) {
+        setCurrentSimulationIds(filtered);
+      }
+    }
+  }, [currentSimulationIds, validSimulationIds]);
+
+  useEffect(() => {
+    // Clear profiles that are no longer valid
+    if (staffProfiles.length > 0) {
+      const validSet = new Set(validProfileIds);
+      const filtered = staffProfiles.filter((profile) =>
+        validSet.has(profile.id)
+      );
+      if (filtered.length !== staffProfiles.length) {
+        setStaffProfiles(filtered);
+      }
+    }
+  }, [staffProfiles, validProfileIds]);
+
   // Handle simulation selection from picker (V2 uses IDs directly)
   const handleSimulationSelection = useCallback((simulationIds: string[]) => {
     setCurrentSimulationIds(simulationIds);
@@ -186,11 +409,12 @@ export default function Cohort({ cohortId }: CohortProps) {
   // Load cohort data from V2 API response
   useEffect(() => {
     if (cohortData && isEditMode) {
+      const deptIds = cohortData.department_ids || [];
       const cohortFormData = {
         title: cohortData.title || "",
         description: cohortData.description || "",
         active: cohortData.active ?? true,
-        departmentIds: cohortData.department_ids,
+        departmentIds: deptIds,
       };
 
       // Only update if the data has actually changed to prevent infinite loops
@@ -215,6 +439,8 @@ export default function Cohort({ cohortId }: CohortProps) {
 
         return hasChanged ? cohortFormData : prev;
       });
+      // Initialize previousDepartmentIds when loading cohort data
+      setPreviousDepartmentIds((prev) => (prev.length === 0 ? deptIds : prev));
 
       // Load simulation IDs
       setCurrentSimulationIds((prev) => {
@@ -629,7 +855,7 @@ export default function Cohort({ cohortId }: CohortProps) {
                 {!isLoading ? (
                   <SimulationPicker
                     simulationMapping={cohortData?.simulation_mapping || {}}
-                    validSimulationIds={cohortData?.valid_simulation_ids || []}
+                    validSimulationIds={validSimulationIds}
                     selectedSimulationIds={currentSimulationIds}
                     onSelect={handleSimulationSelection}
                     placeholder="Add simulation"

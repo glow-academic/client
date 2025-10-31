@@ -94,6 +94,207 @@ export function UploadClassificationDialog({
       : []
   );
 
+  // Staged selections per department (preserved when departments are deselected)
+  type StagedSelections = {
+    apply_all_parameter_item_ids?: string[];
+    per_file_parameter_item_ids?: Record<string, string[]>;
+  };
+  const [stagedSelections, setStagedSelections] = React.useState<
+    Record<string, StagedSelections>
+  >({});
+  const [previousDepartmentIds, setPreviousDepartmentIds] = React.useState<
+    string[]
+  >([]);
+
+  // Filter valid parameter item IDs based on selected departments
+  const filteredValidParameterItemIds = React.useMemo(() => {
+    const selectedDeptIds = selectedDepartmentIds || [];
+    
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return validParameterItemIds;
+    }
+    
+    // Get union of parameter_ids from selected departments
+    const deptParameterIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData && "parameter_ids" in deptData && Array.isArray(deptData.parameter_ids)) {
+        deptData.parameter_ids.forEach((id: string) => deptParameterIds.add(id));
+      }
+    });
+    
+    // Filter parameter items: include if their parameter_id is in department parameter IDs
+    return validParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      return item && deptParameterIds.has(item.parameter_id);
+    });
+  }, [validParameterItemIds, selectedDepartmentIds, departmentMapping, parameterItemMapping]);
+
+  // Track department changes and manage staged selections
+  React.useEffect(() => {
+    const currentDeptIds = selectedDepartmentIds || [];
+    const prevDeptIds = previousDepartmentIds || [];
+
+    // Skip if no change (initial load or same selection)
+    if (
+      currentDeptIds.length === prevDeptIds.length &&
+      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
+    ) {
+      // Initialize on first load
+      if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
+        setPreviousDepartmentIds(currentDeptIds);
+      }
+      return;
+    }
+
+    // Find departments that were deselected
+    const deselectedDepts = prevDeptIds.filter(
+      (id) => !currentDeptIds.includes(id)
+    );
+
+    // Find departments that were newly selected
+    const newlySelectedDepts = currentDeptIds.filter(
+      (id) => !prevDeptIds.includes(id)
+    );
+
+    // Save selections for deselected departments
+    if (deselectedDepts.length > 0) {
+      setStagedSelections((prev) => {
+        const updated = { ...prev };
+        deselectedDepts.forEach((deptId) => {
+          // Save per-file parameter item IDs
+          const perFileParams: Record<string, string[]> = {};
+          Object.keys(perFile).forEach((fileName) => {
+            perFileParams[fileName] = [
+              ...(perFile[fileName].parameterItemIds || []),
+            ];
+          });
+
+          updated[deptId] = {
+            apply_all_parameter_item_ids: [...applyAllTempParameterItemIds],
+            per_file_parameter_item_ids: perFileParams,
+          };
+        });
+        return updated;
+      });
+    }
+
+    // Restore selections for newly selected departments
+    if (newlySelectedDepts.length > 0) {
+      setStagedSelections((prev) => {
+        newlySelectedDepts.forEach((deptId) => {
+          const staged = prev[deptId];
+          if (staged) {
+            // Restore apply-all parameter items if valid
+            if (
+              staged.apply_all_parameter_item_ids &&
+              staged.apply_all_parameter_item_ids.length > 0
+            ) {
+              const validParamSet = new Set(filteredValidParameterItemIds);
+              const validParams = staged.apply_all_parameter_item_ids.filter(
+                (id) => validParamSet.has(id)
+              );
+              if (validParams.length > 0) {
+                setApplyAllTempParameterItemIds((prevParams) => {
+                  const combined = new Set([...prevParams, ...validParams]);
+                  return Array.from(combined);
+                });
+              }
+            }
+
+            // Restore per-file parameter items if valid
+            if (
+              staged.per_file_parameter_item_ids &&
+              Object.keys(staged.per_file_parameter_item_ids).length > 0
+            ) {
+              const validParamSet = new Set(filteredValidParameterItemIds);
+              setPerFile((prevPerFile) => {
+                const updated: Record<string, FileClassification> = {
+                  ...prevPerFile,
+                };
+                Object.keys(staged.per_file_parameter_item_ids!).forEach(
+                  (fileName) => {
+                    const stagedParams =
+                      staged.per_file_parameter_item_ids![fileName] || [];
+                    const validParams = stagedParams.filter((id) =>
+                      validParamSet.has(id)
+                    );
+                    if (validParams.length > 0 && updated[fileName]) {
+                      const combined = new Set([
+                        ...(updated[fileName].parameterItemIds || []),
+                        ...validParams,
+                      ]);
+                      updated[fileName] = {
+                        ...updated[fileName],
+                        parameterItemIds: Array.from(combined),
+                      };
+                    }
+                  }
+                );
+                return updated;
+              });
+            }
+          }
+        });
+        return prev;
+      });
+    }
+
+    // Update previous department IDs
+    setPreviousDepartmentIds(currentDeptIds);
+  }, [
+    selectedDepartmentIds,
+    previousDepartmentIds,
+    applyAllTempParameterItemIds,
+    perFile,
+    filteredValidParameterItemIds,
+  ]);
+
+  // Clean up staged selections for departments that are no longer valid
+  React.useEffect(() => {
+    const validDeptIds = new Set(validDepartmentIds || []);
+    setStagedSelections((prev) => {
+      const cleaned: Record<string, StagedSelections> = {};
+      Object.keys(prev).forEach((deptId) => {
+        const staged = prev[deptId];
+        if (validDeptIds.has(deptId) && staged) {
+          cleaned[deptId] = staged;
+        }
+      });
+      return cleaned;
+    });
+  }, [validDepartmentIds]);
+
+  // Clear invalid parameter item selections when departments change
+  React.useEffect(() => {
+    // Clear apply-all selections that are no longer valid
+    if (applyAllTempParameterItemIds.length > 0) {
+      const validSet = new Set(filteredValidParameterItemIds);
+      const filtered = applyAllTempParameterItemIds.filter((id) => validSet.has(id));
+      if (filtered.length !== applyAllTempParameterItemIds.length) {
+        setApplyAllTempParameterItemIds(filtered);
+      }
+    }
+
+    // Clear per-file selections that are no longer valid
+    setPerFile((prev) => {
+      const updated: Record<string, FileClassification> = {};
+      let hasChanges = false;
+      Object.entries(prev).forEach(([fileName, fc]) => {
+        const validSet = new Set(filteredValidParameterItemIds);
+        const filtered = (fc.parameterItemIds || []).filter((id) => validSet.has(id));
+        if (filtered.length !== (fc.parameterItemIds || []).length) {
+          hasChanges = true;
+          updated[fileName] = { ...fc, parameterItemIds: filtered };
+        } else {
+          updated[fileName] = fc;
+        }
+      });
+      return hasChanges ? updated : prev;
+    });
+  }, [filteredValidParameterItemIds, applyAllTempParameterItemIds]);
+
   React.useEffect(() => {
     // Initialize defaults for new files
     const next: Record<string, FileClassification> = {};
@@ -215,7 +416,7 @@ export function UploadClassificationDialog({
               <div>
                 <ParameterItemPicker
                   mapping={parameterItemMapping}
-                  validIds={validParameterItemIds}
+                  validIds={filteredValidParameterItemIds}
                   selectedIds={applyAllTempParameterItemIds}
                   onSelect={(next) => {
                     setApplyAllTempParameterItemIds((prev) => {
@@ -372,7 +573,7 @@ export function UploadClassificationDialog({
                     <div>
                       <ParameterItemPicker
                         mapping={parameterItemMapping}
-                        validIds={validParameterItemIds}
+                        validIds={filteredValidParameterItemIds}
                         selectedIds={fc.parameterItemIds}
                         onSelect={(parameterItemIds) =>
                           setPerFile((prev) => {

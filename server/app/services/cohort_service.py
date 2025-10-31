@@ -202,8 +202,24 @@ class CohortService(BaseService):
         if department_mapping_data and isinstance(department_mapping_data, dict):
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
+                    # Parse optional ID arrays (handle None, empty arrays, or missing keys)
+                    # Cohort form needs: simulation_ids, staff_ids
+                    dept_simulation_ids = ddata.get("simulation_ids")
+                    dept_staff_ids = ddata.get("staff_ids")
+                    
+                    # Convert to list[str] if present, otherwise None
+                    def to_str_list(value: Any) -> list[str] | None:
+                        if value is None:
+                            return None
+                        if isinstance(value, list):
+                            return [str(v) for v in value if v]
+                        return None
+                    
                     department_mapping[did] = DepartmentMappingItem(
-                        name=ddata["name"], description=ddata["description"]
+                        name=ddata["name"],
+                        description=ddata.get("description", ""),
+                        simulation_ids=to_str_list(dept_simulation_ids),
+                        staff_ids=to_str_list(dept_staff_ids),
                     )
 
         # Parse simulations list from JSONB (may be string or list)
@@ -307,8 +323,24 @@ class CohortService(BaseService):
         if department_mapping_data and isinstance(department_mapping_data, dict):
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
+                    # Parse optional ID arrays (handle None, empty arrays, or missing keys)
+                    # Cohort form needs: simulation_ids, staff_ids
+                    dept_simulation_ids = ddata.get("simulation_ids")
+                    dept_staff_ids = ddata.get("staff_ids")
+                    
+                    # Convert to list[str] if present, otherwise None
+                    def to_str_list(value: Any) -> list[str] | None:
+                        if value is None:
+                            return None
+                        if isinstance(value, list):
+                            return [str(v) for v in value if v]
+                        return None
+                    
                     department_mapping[did] = DepartmentMappingItem(
-                        name=ddata["name"], description=ddata["description"]
+                        name=ddata["name"],
+                        description=ddata.get("description", ""),
+                        simulation_ids=to_str_list(dept_simulation_ids),
+                        staff_ids=to_str_list(dept_staff_ids),
                     )
 
         # Parse simulations list from JSONB (may be string or list)

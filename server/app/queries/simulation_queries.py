@@ -1265,19 +1265,55 @@ class SimulationQueries:
             LEFT JOIN scenario_documents_data sdd ON sdd.scenario_id = vsl.id
             LEFT JOIN scenario_parameter_items_data spid ON spid.scenario_id = vsl.id
         ),
+        department_scenario_ids AS (
+            SELECT 
+                ud.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT s.id::text ORDER BY s.id) FILTER (WHERE s.id IS NOT NULL), ARRAY[]::text[]) as scenario_ids
+            FROM user_departments ud
+            LEFT JOIN scenarios s ON s.active = true
+            LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+            WHERE (sd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
+            GROUP BY ud.id
+        ),
+        department_rubric_ids AS (
+            SELECT 
+                ud.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT r.id::text ORDER BY r.id) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::text[]) as rubric_ids
+            FROM user_departments ud
+            LEFT JOIN rubrics r ON r.active = true
+            LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
+            WHERE (rd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true))
+            GROUP BY ud.id
+        ),
+        department_cohort_ids AS (
+            SELECT 
+                ud.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT c.id::text ORDER BY c.id) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::text[]) as cohort_ids
+            FROM user_departments ud
+            LEFT JOIN cohorts c ON c.active = true
+            LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
+            WHERE (cd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
+            GROUP BY ud.id
+        ),
         department_mapping_data AS (
             SELECT COALESCE(
                 jsonb_object_agg(
                     ud.id::text,
                     jsonb_build_object(
                         'name', ud.name,
-                        'description', COALESCE(ud.description, '')
+                        'description', COALESCE(ud.description, ''),
+                        'scenario_ids', CASE WHEN dsci.scenario_ids IS NOT NULL AND array_length(dsci.scenario_ids, 1) > 0 THEN to_jsonb(dsci.scenario_ids) ELSE NULL END,
+                        'rubric_ids', CASE WHEN dri.rubric_ids IS NOT NULL AND array_length(dri.rubric_ids, 1) > 0 THEN to_jsonb(dri.rubric_ids) ELSE NULL END,
+                        'cohort_ids', CASE WHEN dci.cohort_ids IS NOT NULL AND array_length(dci.cohort_ids, 1) > 0 THEN to_jsonb(dci.cohort_ids) ELSE NULL END
                     )
                 ),
                 '{}'::jsonb
             ) as department_mapping,
-            COALESCE(ARRAY_AGG(ud.id::text), ARRAY[]::text[]) as department_ids
+            COALESCE(ARRAY_AGG(DISTINCT ud.id::text), ARRAY[]::text[]) as department_ids
             FROM user_departments ud
+            LEFT JOIN department_scenario_ids dsci ON dsci.department_id = ud.id
+            LEFT JOIN department_rubric_ids dri ON dri.department_id = ud.id
+            LEFT JOIN department_cohort_ids dci ON dci.department_id = ud.id
         )
         SELECT 
             -- Basic simulation fields

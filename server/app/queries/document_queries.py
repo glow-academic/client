@@ -424,22 +424,38 @@ class DocumentQueries:
             FROM documents d
             WHERE d.id = $1
         ),
+        user_departments AS (
+            SELECT DISTINCT d.id, d.title as name, d.description
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        department_parameter_ids AS (
+            SELECT 
+                ud.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+            FROM user_departments ud
+            LEFT JOIN parameters p ON p.active = true
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            WHERE (pd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true))
+            GROUP BY ud.id
+        ),
         valid_depts AS (
             SELECT 
                 COALESCE(
                     jsonb_object_agg(
-                        d.id::text,
+                        ud.id::text,
                         jsonb_build_object(
-                            'name', d.title,
-                            'description', COALESCE(d.description, '')
+                            'name', ud.name,
+                            'description', COALESCE(ud.description, ''),
+                            'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END
                         )
                     ),
                     '{}'::jsonb
                 ) as dept_mapping,
-                array_agg(d.id::text ORDER BY d.title) as dept_ids
-            FROM departments d
-            JOIN profile_departments pd ON d.id = pd.department_id
-            WHERE pd.profile_id = $2 AND d.active = true
+                array_agg(ud.id::text ORDER BY ud.name) as dept_ids
+            FROM user_departments ud
+            LEFT JOIN department_parameter_ids dparami ON dparami.department_id = ud.id
         ),
         valid_param_items AS (
             SELECT 
@@ -502,22 +518,38 @@ class DocumentQueries:
                 array_agg(DISTINCT department_id::text) as department_ids
             FROM document_data
         ),
+        user_departments AS (
+            SELECT DISTINCT d.id, d.title as name, d.description
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        department_parameter_ids AS (
+            SELECT 
+                ud.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+            FROM user_departments ud
+            LEFT JOIN parameters p ON p.active = true
+            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            WHERE (pd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true))
+            GROUP BY ud.id
+        ),
         valid_depts AS (
             SELECT 
                 COALESCE(
                     jsonb_object_agg(
-                        d.id::text,
+                        ud.id::text,
                         jsonb_build_object(
-                            'name', d.title,
-                            'description', COALESCE(d.description, '')
+                            'name', ud.name,
+                            'description', COALESCE(ud.description, ''),
+                            'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END
                         )
                     ),
                     '{}'::jsonb
                 ) as dept_mapping,
-                array_agg(d.id::text ORDER BY d.title) as dept_ids
-            FROM departments d
-            JOIN profile_departments pd ON d.id = pd.department_id
-            WHERE pd.profile_id = $2 AND d.active = true
+                array_agg(ud.id::text ORDER BY ud.name) as dept_ids
+            FROM user_departments ud
+            LEFT JOIN department_parameter_ids dparami ON dparami.department_id = ud.id
         ),
         doc_dept_ids AS (
             SELECT UNNEST(department_ids) as dept_id FROM aggregated_data

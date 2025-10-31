@@ -107,6 +107,24 @@ export default function Documents() {
   );
   const [bulkDepartmentId, setBulkDepartmentId] = useState<string | null>(null);
 
+  // Staged selections per department (preserved when departments are deselected)
+  // Separate for single edit and bulk edit modes
+  type StagedSelections = {
+    parameter_item_ids?: string[];
+  };
+  const [stagedSelectionsEdit, setStagedSelectionsEdit] = useState<
+    Record<string, StagedSelections>
+  >({});
+  const [stagedSelectionsBulk, setStagedSelectionsBulk] = useState<
+    Record<string, StagedSelections>
+  >({});
+  const [previousDepartmentIdsEdit, setPreviousDepartmentIdsEdit] = useState<
+    string[]
+  >([]);
+  const [previousDepartmentIdBulk, setPreviousDepartmentIdBulk] = useState<
+    string | null
+  >(null);
+
   // Listen for upload button click from layout
   useEffect(() => {
     const handleOpenUpload = () => setUploadDialogOpen(true);
@@ -164,6 +182,254 @@ export default function Documents() {
     effectiveProfile?.id || "",
     showBulkEditDialog && selectedDocuments.length > 0 && !!effectiveProfile?.id
   );
+
+  // Filter valid parameter item IDs for edit dialog based on selected departments
+  const validParameterItemIdsForEdit = useMemo(() => {
+    if (!documentDetail) return [];
+    const baseIds = documentDetail.valid_parameter_item_ids || [];
+    const selectedDeptIds = documentDetail.department_ids || [];
+    
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+    
+    // Get union of parameter_ids from selected departments
+    const deptParameterIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = documentDetail.department_mapping[deptId];
+      if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
+        deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
+      }
+    });
+    
+    // Filter parameter items: include if their parameter_id is in department parameter IDs
+    return baseIds.filter((itemId) => {
+      const item = documentDetail["parameter_item_mapping"][itemId];
+      return item && deptParameterIds.has(item.parameter_id);
+    });
+  }, [documentDetail?.valid_parameter_item_ids, documentDetail?.department_ids, documentDetail?.department_mapping, documentDetail?.["parameter_item_mapping"]]);
+
+  // Filter valid parameter item IDs for bulk edit dialog based on selected departments
+  const validParameterItemIdsForBulk = useMemo(() => {
+    if (!bulkDocumentDetail) return [];
+    const baseIds = bulkDocumentDetail.valid_parameter_item_ids || [];
+    const selectedDeptIds = bulkDepartmentId
+      ? [bulkDepartmentId]
+      : bulkDocumentDetail.department_ids || [];
+    
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+    
+    // Get union of parameter_ids from selected departments
+    const deptParameterIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = bulkDocumentDetail.department_mapping[deptId];
+      if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
+        deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
+      }
+    });
+    
+    // Filter parameter items: include if their parameter_id is in department parameter IDs
+    return baseIds.filter((itemId) => {
+      const item = bulkDocumentDetail.parameter_item_mapping[itemId];
+      return item && deptParameterIds.has(item.parameter_id);
+    });
+  }, [bulkDocumentDetail?.valid_parameter_item_ids, bulkDepartmentId, bulkDocumentDetail?.department_ids, bulkDocumentDetail?.department_mapping, bulkDocumentDetail?.parameter_item_mapping]);
+
+  // Track department changes and manage staged selections for single edit mode
+  useEffect(() => {
+    if (!editingDocument || !documentDetail) return;
+
+    const currentDeptIds = editingDocument.department_ids || [];
+    const prevDeptIds = previousDepartmentIdsEdit || [];
+
+    // Skip if no change (initial load or same selection)
+    if (
+      currentDeptIds.length === prevDeptIds.length &&
+      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
+    ) {
+      // Initialize on first load
+      if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
+        setPreviousDepartmentIdsEdit(currentDeptIds);
+      }
+      return;
+    }
+
+    // Find departments that were deselected
+    const deselectedDepts = prevDeptIds.filter(
+      (id) => !currentDeptIds.includes(id)
+    );
+
+    // Find departments that were newly selected
+    const newlySelectedDepts = currentDeptIds.filter(
+      (id) => !prevDeptIds.includes(id)
+    );
+
+    // Save selections for deselected departments
+    if (deselectedDepts.length > 0) {
+      const currentParamIds = editingDocument.parameter_item_ids || [];
+      setStagedSelectionsEdit((prev) => {
+        const updated = { ...prev };
+        deselectedDepts.forEach((deptId) => {
+          updated[deptId] = {
+            parameter_item_ids: [...currentParamIds],
+          };
+        });
+        return updated;
+      });
+    }
+
+    // Restore selections for newly selected departments
+    if (newlySelectedDepts.length > 0) {
+      setStagedSelectionsEdit((prev) => {
+        newlySelectedDepts.forEach((deptId) => {
+          const staged = prev[deptId];
+          if (staged?.parameter_item_ids && staged.parameter_item_ids.length > 0) {
+            const validParamSet = new Set(validParameterItemIdsForEdit);
+            const validParams = staged.parameter_item_ids.filter((id) =>
+              validParamSet.has(id)
+            );
+            if (validParams.length > 0) {
+              setEditingDocument((prevDoc) => {
+                if (!prevDoc) return null;
+                const combined = new Set([
+                  ...(prevDoc.parameter_item_ids || []),
+                  ...validParams,
+                ]);
+                return {
+                  ...prevDoc,
+                  parameter_item_ids: Array.from(combined),
+                };
+              });
+            }
+          }
+        });
+        return prev;
+      });
+    }
+
+    // Update previous department IDs
+    setPreviousDepartmentIdsEdit(currentDeptIds);
+  }, [
+    editingDocument?.department_ids,
+    editingDocument?.parameter_item_ids,
+    previousDepartmentIdsEdit,
+    validParameterItemIdsForEdit,
+    documentDetail,
+  ]);
+
+  // Track department changes and manage staged selections for bulk edit mode
+  useEffect(() => {
+    const currentDeptId = bulkDepartmentId;
+    const prevDeptId = previousDepartmentIdBulk;
+
+    // Skip if no change (initial load or same selection)
+    if (currentDeptId === prevDeptId) {
+      // Initialize on first load
+      if (prevDeptId === null && currentDeptId !== null) {
+        setPreviousDepartmentIdBulk(currentDeptId);
+      }
+      return;
+    }
+
+    // Save selections for deselected department
+    if (prevDeptId !== null && currentDeptId !== prevDeptId) {
+      setStagedSelectionsBulk((prev) => {
+        const updated = { ...prev };
+        updated[prevDeptId] = {
+          parameter_item_ids: [...bulkParameterItemIds],
+        };
+        return updated;
+      });
+    }
+
+    // Restore selections for newly selected department
+    if (currentDeptId !== null && currentDeptId !== prevDeptId) {
+      setStagedSelectionsBulk((prev) => {
+        const staged = prev[currentDeptId];
+        if (staged?.parameter_item_ids && staged.parameter_item_ids.length > 0) {
+          const validParamSet = new Set(validParameterItemIdsForBulk);
+          const validParams = staged.parameter_item_ids.filter((id) =>
+            validParamSet.has(id)
+          );
+          if (validParams.length > 0) {
+            setBulkParameterItemIds((prevParams) => {
+              const combined = new Set([...prevParams, ...validParams]);
+              return Array.from(combined);
+            });
+          }
+        }
+        return prev;
+      });
+    }
+
+    // Update previous department ID
+    setPreviousDepartmentIdBulk(currentDeptId);
+  }, [
+    bulkDepartmentId,
+    previousDepartmentIdBulk,
+    bulkParameterItemIds,
+    validParameterItemIdsForBulk,
+  ]);
+
+  // Clean up staged selections for departments that are no longer valid (edit mode)
+  useEffect(() => {
+    if (!documentDetail) return;
+    const validDeptIds = new Set(documentDetail.valid_department_ids || []);
+    setStagedSelectionsEdit((prev) => {
+      const cleaned: Record<string, StagedSelections> = {};
+      Object.keys(prev).forEach((deptId) => {
+        const staged = prev[deptId];
+        if (validDeptIds.has(deptId) && staged) {
+          cleaned[deptId] = staged;
+        }
+      });
+      return cleaned;
+    });
+  }, [documentDetail?.valid_department_ids]);
+
+  // Clean up staged selections for departments that are no longer valid (bulk mode)
+  useEffect(() => {
+    if (!bulkDocumentDetail) return;
+    const validDeptIds = new Set(bulkDocumentDetail.valid_department_ids || []);
+    setStagedSelectionsBulk((prev) => {
+      const cleaned: Record<string, StagedSelections> = {};
+      Object.keys(prev).forEach((deptId) => {
+        const staged = prev[deptId];
+        if (validDeptIds.has(deptId) && staged) {
+          cleaned[deptId] = staged;
+        }
+      });
+      return cleaned;
+    });
+  }, [bulkDocumentDetail?.valid_department_ids]);
+
+  // Clear invalid parameter item selections when departments change in edit dialog
+  useEffect(() => {
+    if (documentDetail && documentDetail.parameter_item_ids) {
+      const validSet = new Set(validParameterItemIdsForEdit);
+      const filtered = documentDetail.parameter_item_ids.filter((id) => validSet.has(id));
+      if (filtered.length !== documentDetail.parameter_item_ids.length) {
+        setEditingDocument((prev) =>
+          prev ? { ...prev, parameter_item_ids: filtered } : null
+        );
+      }
+    }
+  }, [documentDetail?.parameter_item_ids, validParameterItemIdsForEdit]);
+
+  // Clear invalid parameter item selections when departments change in bulk edit dialog
+  useEffect(() => {
+    if (bulkParameterItemIds.length > 0) {
+      const validSet = new Set(validParameterItemIdsForBulk);
+      const filtered = bulkParameterItemIds.filter((id) => validSet.has(id));
+      if (filtered.length !== bulkParameterItemIds.length) {
+        setBulkParameterItemIds(filtered);
+      }
+    }
+  }, [bulkParameterItemIds, validParameterItemIdsForBulk]);
 
   // Filter options
   const typeOptions = useMemo(
@@ -439,6 +705,10 @@ export default function Documents() {
   // Handle document edit
   const handleEdit = (document: DocumentItem) => {
     setEditingDocument({ ...document });
+    // Initialize previousDepartmentIdsEdit when opening edit dialog
+    setPreviousDepartmentIdsEdit((prev) =>
+      prev.length === 0 ? document.department_ids || [] : prev
+    );
     setShowEditDialog(true);
   };
 
@@ -775,28 +1045,6 @@ export default function Documents() {
                 </Select>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Label>Parameter Items</Label>
-                <ParameterItemPicker
-                  mapping={documentDetail["parameter_item_mapping"]}
-                  selectedIds={documentDetail.parameter_item_ids}
-                  onSelect={(ids) =>
-                    setEditingDocument((prev) =>
-                      prev
-                        ? { ...prev, parameter_item_ids: ids as string[] }
-                        : null
-                    )
-                  }
-                  validIds={documentDetail.valid_parameter_item_ids}
-                  parameterId=""
-                  parameterName="Parameter Items"
-                  allowCreate={false}
-                  multiSelect={true}
-                  badgesPosition="below"
-                  showClearAll={true}
-                />
-              </div>
-
               {/* Department Selection - Only for superadmin */}
               {effectiveProfile?.role === "superadmin" && (
                 <div className="flex flex-col gap-2">
@@ -814,6 +1062,28 @@ export default function Documents() {
                   />
                 </div>
               )}
+
+              <div className="flex flex-col gap-2">
+                <Label>Parameter Items</Label>
+                <ParameterItemPicker
+                  mapping={documentDetail["parameter_item_mapping"]}
+                  selectedIds={documentDetail.parameter_item_ids}
+                  onSelect={(ids) =>
+                    setEditingDocument((prev) =>
+                      prev
+                        ? { ...prev, parameter_item_ids: ids as string[] }
+                        : null
+                    )
+                  }
+                  validIds={validParameterItemIdsForEdit}
+                  parameterId=""
+                  parameterName="Parameter Items"
+                  allowCreate={false}
+                  multiSelect={true}
+                  badgesPosition="below"
+                  showClearAll={true}
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -870,22 +1140,6 @@ export default function Documents() {
                 </Select>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Label>Parameter Items</Label>
-                <ParameterItemPicker
-                  mapping={bulkDocumentDetail.parameter_item_mapping}
-                  selectedIds={bulkParameterItemIds}
-                  validIds={bulkDocumentDetail.valid_parameter_item_ids}
-                  onSelect={setBulkParameterItemIds}
-                  parameterId=""
-                  parameterName="Parameter Items"
-                  allowCreate={false}
-                  multiSelect={true}
-                  badgesPosition="below"
-                  showClearAll={true}
-                />
-              </div>
-
               {/* Department Selection - Only for superadmin */}
               {effectiveProfile?.role === "superadmin" && (
                 <div className="flex flex-col gap-2">
@@ -903,6 +1157,22 @@ export default function Documents() {
                   />
                 </div>
               )}
+
+              <div className="flex flex-col gap-2">
+                <Label>Parameter Items</Label>
+                <ParameterItemPicker
+                  mapping={bulkDocumentDetail.parameter_item_mapping}
+                  selectedIds={bulkParameterItemIds}
+                  validIds={validParameterItemIdsForBulk}
+                  onSelect={setBulkParameterItemIds}
+                  parameterId=""
+                  parameterName="Parameter Items"
+                  allowCreate={false}
+                  multiSelect={true}
+                  badgesPosition="below"
+                  showClearAll={true}
+                />
+              </div>
             </div>
           )}
           <DialogFooter>

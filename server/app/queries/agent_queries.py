@@ -212,19 +212,8 @@ class AgentQueries:
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2::uuid
         ),
-        valid_departments_data AS (
-            SELECT 
-                COALESCE(
-                    jsonb_object_agg(
-                        d.id::text,
-                        jsonb_build_object(
-                            'name', d.title,
-                            'description', COALESCE(d.description, '')
-                        )
-                    ),
-                    '{}'::jsonb
-                ) as dept_mapping,
-                array_agg(d.id::text ORDER BY d.title) as dept_ids
+        user_departments AS (
+            SELECT DISTINCT d.id, d.title as name, d.description
             FROM departments d
             WHERE d.active = true
             AND (
@@ -237,6 +226,21 @@ class AgentQueries:
                     WHERE profile_id = $2::uuid
                 )
             )
+        ),
+        valid_departments_data AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        ud.id::text,
+                        jsonb_build_object(
+                            'name', ud.name,
+                            'description', COALESCE(ud.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(ud.id::text ORDER BY ud.name) as dept_ids
+            FROM user_departments ud
         )
         SELECT 
             ai.agent_id,
@@ -314,19 +318,8 @@ class AgentQueries:
             WHERE active = true
             ORDER BY name
         ),
-        valid_departments_data AS (
-            SELECT 
-                COALESCE(
-                    jsonb_object_agg(
-                        d.id::text,
-                        jsonb_build_object(
-                            'name', d.title,
-                            'description', COALESCE(d.description, '')
-                        )
-                    ),
-                    '{}'::jsonb
-                ) as dept_mapping,
-                array_agg(d.id::text ORDER BY d.title) as dept_ids
+        user_departments AS (
+            SELECT DISTINCT d.id, d.title as name, d.description
             FROM departments d
             WHERE d.active = true
             AND (
@@ -339,6 +332,21 @@ class AgentQueries:
                     WHERE profile_id = $1::uuid
                 )
             )
+        ),
+        valid_departments_data AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        ud.id::text,
+                        jsonb_build_object(
+                            'name', ud.name,
+                            'description', COALESCE(ud.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(ud.id::text ORDER BY ud.name) as dept_ids
+            FROM user_departments ud
         )
         SELECT 
             COALESCE(

@@ -160,8 +160,92 @@ export default function Simulation({ simulationId }: SimulationProps) {
     return !simulationData.can_edit;
   }, [isEditMode, simulationData]);
 
+  // Extract department mapping
+  const departmentMapping = useMemo(
+    () => simulationData?.department_mapping || {},
+    [simulationData]
+  );
+
+  // Filter valid IDs based on selected departments
+  const validScenarioIds = useMemo(() => {
+    const baseIds = simulationData?.valid_scenario_ids || [];
+    const selectedDeptIds = formData?.departmentIds || [];
+
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+
+    // Get union of scenario_ids from selected departments
+    const deptScenarioIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.scenario_ids && Array.isArray(deptData.scenario_ids)) {
+        deptData.scenario_ids.forEach((id) => deptScenarioIds.add(id));
+      }
+    });
+
+    // Filter base IDs to only include those in department scenario IDs
+    return baseIds.filter((id) => deptScenarioIds.has(id));
+  }, [
+    simulationData?.valid_scenario_ids,
+    formData?.departmentIds,
+    departmentMapping,
+  ]);
+
+  const validRubricIds = useMemo(() => {
+    const baseIds = simulationData?.valid_rubric_ids || [];
+    const selectedDeptIds = formData?.departmentIds || [];
+
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+
+    // Get union of rubric_ids from selected departments
+    const deptRubricIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.rubric_ids && Array.isArray(deptData.rubric_ids)) {
+        deptData.rubric_ids.forEach((id) => deptRubricIds.add(id));
+      }
+    });
+
+    // Filter base IDs to only include those in department rubric IDs
+    return baseIds.filter((id) => deptRubricIds.has(id));
+  }, [
+    simulationData?.valid_rubric_ids,
+    formData?.departmentIds,
+    departmentMapping,
+  ]);
+
+  // Note: Cohort filtering is not currently used in Simulation component
+  // but kept for future use if cohorts are added to simulation forms
+  // const validCohortIds = useMemo(() => {
+  //   const baseIds = simulationData?.valid_cohort_ids || [];
+  //   const selectedDeptIds = formData?.departmentIds || [];
+  //
+  //   // If no departments selected, return all valid IDs
+  //   if (selectedDeptIds.length === 0) {
+  //     return baseIds;
+  //   }
+  //
+  //   // Get union of cohort_ids from selected departments
+  //   const deptCohortIds = new Set<string>();
+  //   selectedDeptIds.forEach((deptId) => {
+  //     const deptData = departmentMapping[deptId];
+  //     if (deptData?.cohort_ids && Array.isArray(deptData.cohort_ids)) {
+  //       deptData.cohort_ids.forEach((id) => deptCohortIds.add(id));
+  //     }
+  //   });
+  //
+  //   // Filter base IDs to only include those in department cohort IDs
+  //   return baseIds.filter((id) => deptCohortIds.has(id));
+  // }, [simulationData?.valid_cohort_ids, formData?.departmentIds, departmentMapping]);
+
   useEffect(() => {
     if (simulationData && isEditMode) {
+      const deptIds = simulationData.department_ids || [];
       const formDataFromServer = {
         title: simulationData.name,
         description: simulationData.description,
@@ -169,7 +253,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
         rubricId: simulationData.rubric_id,
         active: simulationData.active,
         practiceSimulation: simulationData.practice_simulation ?? false,
-        departmentIds: simulationData.department_ids,
+        departmentIds: deptIds,
         outputGuardrailActive: simulationData.output_guardrail_active ?? false,
         inputGuardrailActive: simulationData.input_guardrail_active ?? false,
         imageInputActive: simulationData.image_input_active ?? false,
@@ -180,6 +264,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
       setOriginalFormData(formDataFromServer);
       // Set current scenario IDs from server (already ordered by position)
       setCurrentScenarioIds(simulationData.scenario_ids);
+      // Initialize previousDepartmentIds when loading simulation data
+      setPreviousDepartmentIds((prev) => (prev.length === 0 ? deptIds : prev));
 
       // Initialize scenario active states from server data
       const activeStates: Record<string, boolean> = {};
@@ -216,6 +302,142 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   // State for managing scenario IDs
   const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
+
+  // Staged selections per department (preserved when departments are deselected)
+  type StagedSelections = {
+    scenario_ids?: string[];
+    rubric_id?: string | undefined;
+  };
+  const [_stagedSelections, setStagedSelections] = useState<
+    Record<string, StagedSelections>
+  >({});
+  const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
+    []
+  );
+
+  // Track department changes and manage staged selections
+  useEffect(() => {
+    const currentDeptIds = formData?.departmentIds || [];
+    const prevDeptIds = previousDepartmentIds || [];
+
+    // Skip if no change (initial load or same selection)
+    if (
+      currentDeptIds.length === prevDeptIds.length &&
+      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
+    ) {
+      // Initialize on first load
+      if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
+        setPreviousDepartmentIds(currentDeptIds);
+      }
+      return;
+    }
+
+    // Find departments that were deselected
+    const deselectedDepts = prevDeptIds.filter(
+      (id) => !currentDeptIds.includes(id)
+    );
+
+    // Find departments that were newly selected
+    const newlySelectedDepts = currentDeptIds.filter(
+      (id) => !prevDeptIds.includes(id)
+    );
+
+    // Save selections for deselected departments
+    if (deselectedDepts.length > 0) {
+      setStagedSelections((prev) => {
+        const updated = { ...prev };
+        deselectedDepts.forEach((deptId) => {
+          updated[deptId] = {
+            scenario_ids: [...currentScenarioIds],
+            rubric_id: formData?.rubricId || undefined,
+          };
+        });
+        return updated;
+      });
+    }
+
+    // Restore selections for newly selected departments
+    if (newlySelectedDepts.length > 0) {
+      setStagedSelections((prev) => {
+        newlySelectedDepts.forEach((deptId) => {
+          const staged = prev[deptId];
+          if (staged) {
+            // Restore scenarios if valid
+            if (staged.scenario_ids && staged.scenario_ids.length > 0) {
+              const validScenarioSet = new Set(validScenarioIds);
+              const validScenarios = staged.scenario_ids.filter((id) =>
+                validScenarioSet.has(id)
+              );
+              if (validScenarios.length > 0) {
+                setCurrentScenarioIds((prevScenarios) => {
+                  const combined = new Set([
+                    ...prevScenarios,
+                    ...validScenarios,
+                  ]);
+                  return Array.from(combined);
+                });
+              }
+            }
+
+            // Restore rubric if valid
+            if (
+              staged.rubric_id &&
+              validRubricIds.includes(staged.rubric_id) &&
+              !formData?.rubricId
+            ) {
+              setFormData((prev) => ({ ...prev, rubricId: staged.rubric_id! }));
+            }
+          }
+        });
+        return prev; // Return unchanged since we're using separate setters
+      });
+    }
+
+    // Update previous department IDs
+    setPreviousDepartmentIds(currentDeptIds);
+  }, [
+    formData?.departmentIds,
+    formData?.rubricId,
+    previousDepartmentIds,
+    currentScenarioIds,
+    validScenarioIds,
+    validRubricIds,
+  ]);
+
+  // Clean up staged selections for departments that are no longer valid
+  useEffect(() => {
+    const validDeptIds = new Set(simulationData?.valid_department_ids || []);
+    setStagedSelections((prev) => {
+      const cleaned: Record<string, StagedSelections> = {};
+      Object.keys(prev).forEach((deptId) => {
+        const staged = prev[deptId];
+        if (validDeptIds.has(deptId) && staged) {
+          cleaned[deptId] = staged;
+        }
+      });
+      return cleaned;
+    });
+  }, [simulationData?.valid_department_ids]);
+
+  // Clear selections when they become invalid after department changes
+  // (but preserve cross-department entities and staged selections)
+  useEffect(() => {
+    // Clear scenarios that are no longer valid
+    if (currentScenarioIds.length > 0) {
+      const validSet = new Set(validScenarioIds);
+      const filtered = currentScenarioIds.filter((id) => validSet.has(id));
+      if (filtered.length !== currentScenarioIds.length) {
+        setCurrentScenarioIds(filtered);
+      }
+    }
+  }, [currentScenarioIds, validScenarioIds]);
+
+  useEffect(() => {
+    // Clear rubric if it's no longer valid
+    if (formData?.rubricId && !validRubricIds.includes(formData.rubricId)) {
+      setFormData((prev) => ({ ...prev, rubricId: "" }));
+    }
+  }, [formData?.rubricId, validRubricIds]);
 
   // State for managing scenario active toggles (staged changes)
   const [scenarioActiveStates, setScenarioActiveStates] = useState<
@@ -696,7 +918,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
               ) : (
                 <RubricPicker
                   mapping={simulationData?.rubric_mapping || {}}
-                  validIds={simulationData?.valid_rubric_ids || []}
+                  validIds={validRubricIds}
                   selectedIds={formData.rubricId ? [formData.rubricId] : []}
                   onSelect={(ids) =>
                     handleInputChange("rubricId", ids[0] || "")
@@ -726,7 +948,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
             ) : (
               <SimulationScenarioPicker
                 scenarioMapping={simulationData?.scenario_mapping || {}}
-                validScenarioIds={simulationData?.valid_scenario_ids || []}
+                validScenarioIds={validScenarioIds}
                 selectedScenarioIds={currentScenarioIds}
                 onSelect={handleScenarioSelection}
                 label=""

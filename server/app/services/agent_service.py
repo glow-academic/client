@@ -295,6 +295,7 @@ class AgentService(BaseService):
             if department_mapping_data and isinstance(department_mapping_data, dict):
                 for dept_id, dept_data in department_mapping_data.items():
                     if isinstance(dept_data, dict):
+                        # Agent form doesn't need any ID arrays, just name/description
                         department_mapping[dept_id] = DepartmentMappingItem(
                             name=dept_data.get("name", ""),
                             description=dept_data.get("description", ""),

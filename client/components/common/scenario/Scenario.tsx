@@ -181,6 +181,19 @@ export default function Scenario({
   >([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
 
+  // Staged selections per department (preserved when departments are deselected)
+  type StagedSelections = {
+    persona_id?: string | null;
+    document_ids?: string[];
+    parameter_item_ids?: string[];
+  };
+  const [stagedSelections, setStagedSelections] = useState<
+    Record<string, StagedSelections>
+  >({});
+  const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
+    []
+  );
+
   // Extract mappings from V2 response
   const personaMapping = useMemo(
     () => scenarioData?.persona_mapping || {},
@@ -207,29 +220,243 @@ export default function Scenario({
     [scenarioData]
   );
 
-  // Extract valid IDs from V2 response
-  const validPersonaIds = useMemo(
-    () => scenarioData?.valid_persona_ids || [],
-    [scenarioData]
-  );
-  const validDocumentIds = useMemo(
-    () => scenarioData?.valid_document_ids || [],
-    [scenarioData]
-  );
-  const validParameterItemIds = useMemo(
-    () => getAllValidParameterItemIds(scenarioData?.parameters || {}),
-    [scenarioData]
-  );
+  // Extract valid IDs from V2 response, filtered by selected departments
+  const validPersonaIds = useMemo(() => {
+    const baseIds = scenarioData?.valid_persona_ids || [];
+    const selectedDeptIds = formData.departmentIds || [];
+    
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+    
+    // Get union of persona_ids from selected departments
+    const deptPersonaIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.persona_ids && Array.isArray(deptData.persona_ids)) {
+        deptData.persona_ids.forEach((id) => deptPersonaIds.add(id));
+      }
+    });
+    
+    // Filter base IDs to only include those in department persona IDs
+    return baseIds.filter((id) => deptPersonaIds.has(id));
+  }, [scenarioData?.valid_persona_ids, formData.departmentIds, departmentMapping]);
+
+  const validDocumentIds = useMemo(() => {
+    const baseIds = scenarioData?.valid_document_ids || [];
+    const selectedDeptIds = formData.departmentIds || [];
+    
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+    
+    // Get union of document_ids from selected departments
+    const deptDocumentIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
+        deptData.document_ids.forEach((id) => deptDocumentIds.add(id));
+      }
+    });
+    
+    // Filter base IDs to only include those in department document IDs
+    return baseIds.filter((id) => deptDocumentIds.has(id));
+  }, [scenarioData?.valid_document_ids, formData.departmentIds, departmentMapping]);
+
+  const validParameterItemIds = useMemo(() => {
+    const baseIds = getAllValidParameterItemIds(scenarioData?.parameters || {});
+    const selectedDeptIds = formData.departmentIds || [];
+    
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+    
+    // Get union of parameter_ids from selected departments
+    // Note: We need to map parameter_ids to parameter_item_ids
+    const deptParameterIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
+        deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
+      }
+    });
+    
+    // Filter parameter items: include if their parameter_id is in department parameter IDs
+    return baseIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      return item && deptParameterIds.has(item.parameter_id);
+    });
+  }, [scenarioData?.parameters, formData.departmentIds, departmentMapping, parameterItemMapping]);
+
+  // Track department changes and manage staged selections
+  useEffect(() => {
+    const currentDeptIds = formData.departmentIds || [];
+    const prevDeptIds = previousDepartmentIds || [];
+
+    // Skip if no change (initial load or same selection)
+    if (
+      currentDeptIds.length === prevDeptIds.length &&
+      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
+    ) {
+      // Initialize on first load
+      if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
+        setPreviousDepartmentIds(currentDeptIds);
+      }
+      return;
+    }
+
+    // Find departments that were deselected
+    const deselectedDepts = prevDeptIds.filter(
+      (id) => !currentDeptIds.includes(id)
+    );
+
+    // Find departments that were newly selected
+    const newlySelectedDepts = currentDeptIds.filter(
+      (id) => !prevDeptIds.includes(id)
+    );
+
+    // Save selections for deselected departments
+    if (deselectedDepts.length > 0) {
+      setStagedSelections((prev) => {
+        const updated = { ...prev };
+        deselectedDepts.forEach((deptId) => {
+          updated[deptId] = {
+            persona_id: selectedPersonaId,
+            document_ids: [...currentDocumentIds],
+            parameter_item_ids: [...currentParameterItemIds],
+          };
+        });
+        return updated;
+      });
+    }
+
+    // Restore selections for newly selected departments
+    if (newlySelectedDepts.length > 0) {
+      setStagedSelections((prev) => {
+        newlySelectedDepts.forEach((deptId) => {
+          const staged = prev[deptId];
+          if (staged) {
+            // Restore persona if valid
+            if (
+              staged.persona_id &&
+              validPersonaIds.includes(staged.persona_id)
+            ) {
+              setSelectedPersonaId((prevPersona) =>
+                prevPersona || staged.persona_id || null
+              );
+            }
+
+            // Restore documents if valid
+            if (staged.document_ids && staged.document_ids.length > 0) {
+              const validDocSet = new Set(validDocumentIds);
+              const validDocs = staged.document_ids.filter((id) =>
+                validDocSet.has(id)
+              );
+              if (validDocs.length > 0) {
+                setCurrentDocumentIds((prevDocs) => {
+                  const combined = new Set([...prevDocs, ...validDocs]);
+                  return Array.from(combined);
+                });
+              }
+            }
+
+            // Restore parameter items if valid
+            if (
+              staged.parameter_item_ids &&
+              staged.parameter_item_ids.length > 0
+            ) {
+              const validParamSet = new Set(validParameterItemIds);
+              const validParams = staged.parameter_item_ids.filter((id) =>
+                validParamSet.has(id)
+              );
+              if (validParams.length > 0) {
+                setCurrentParameterItemIds((prevParams) => {
+                  const combined = new Set([...prevParams, ...validParams]);
+                  return Array.from(combined);
+                });
+              }
+            }
+          }
+        });
+        return prev; // Return unchanged since we're using separate setters
+      });
+    }
+
+    // Update previous department IDs
+    setPreviousDepartmentIds(currentDeptIds);
+  }, [
+    formData.departmentIds,
+    previousDepartmentIds,
+    selectedPersonaId,
+    currentDocumentIds,
+    currentParameterItemIds,
+    validPersonaIds,
+    validDocumentIds,
+    validParameterItemIds,
+  ]);
+
+  // Clean up staged selections for departments that are no longer valid
+  useEffect(() => {
+    const validDeptIds = new Set(scenarioData?.valid_department_ids || []);
+    setStagedSelections((prev) => {
+      const cleaned: Record<string, StagedSelections> = {};
+      Object.keys(prev).forEach((deptId) => {
+        if (validDeptIds.has(deptId)) {
+          cleaned[deptId] = prev[deptId];
+        }
+      });
+      return cleaned;
+    });
+  }, [scenarioData?.valid_department_ids]);
+
+  // Clear selections when they become invalid after department changes
+  // (but preserve cross-department entities and staged selections)
+  useEffect(() => {
+    // Clear persona if it's no longer valid
+    if (selectedPersonaId && !validPersonaIds.includes(selectedPersonaId)) {
+      setSelectedPersonaId(null);
+    }
+  }, [selectedPersonaId, validPersonaIds]);
+
+  useEffect(() => {
+    // Clear documents that are no longer valid
+    if (currentDocumentIds.length > 0) {
+      const validSet = new Set(validDocumentIds);
+      const filtered = currentDocumentIds.filter((id) => validSet.has(id));
+      if (filtered.length !== currentDocumentIds.length) {
+        setCurrentDocumentIds(filtered);
+      }
+    }
+  }, [currentDocumentIds, validDocumentIds]);
+
+  useEffect(() => {
+    // Clear parameter items that are no longer valid
+    if (currentParameterItemIds.length > 0) {
+      const validSet = new Set(validParameterItemIds);
+      const filtered = currentParameterItemIds.filter((id) => validSet.has(id));
+      if (filtered.length !== currentParameterItemIds.length) {
+        setCurrentParameterItemIds(filtered);
+      }
+    }
+  }, [currentParameterItemIds, validParameterItemIds]);
 
   // Load scenario data from V2 response
   useEffect(() => {
     if (scenarioData && isEditMode) {
       // Edit mode: load existing scenario data
+      const deptIds = scenarioData.department_ids || [];
       setFormData({
         name: scenarioData.name,
         problemStatement: scenarioData.problem_statement,
-        departmentIds: scenarioData.department_ids || [],
+        departmentIds: deptIds,
       });
+      // Initialize previousDepartmentIds when loading scenario data
+      if (previousDepartmentIds.length === 0) {
+        setPreviousDepartmentIds(deptIds);
+      }
       setSelectedPersonaId(scenarioData.persona_id);
       setCurrentDocumentIds(scenarioData.document_ids);
       setCurrentParameterItemIds(

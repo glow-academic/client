@@ -241,6 +241,7 @@ class PersonaService(BaseService):
         if dept_mapping_data and isinstance(dept_mapping_data, dict):
             for dept_id, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
+                    # Persona form doesn't need any ID arrays, just name/description
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),

@@ -22,9 +22,17 @@ class MappingItem(BaseModel):
 # Explicit mapping item classes for each resource
 # All inherit from MappingItem by default but can be extended in the future
 class DepartmentMappingItem(MappingItem):
-    """Department mapping item - extends MappingItem"""
+    """Department mapping item - extends MappingItem with optional entity ID arrays"""
 
-    pass
+    scenario_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    rubric_ids: list[str] | None = None
+    parameter_ids: list[str] | None = None
+    agent_ids: list[str] | None = None
+    staff_ids: list[str] | None = None
+    cohort_ids: list[str] | None = None
 
 
 class PersonaMappingItem(MappingItem):
