@@ -183,7 +183,7 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
     lastName: "",
     alias: "",
     role: "" as RoleValue | "",
-    departmentId: "",
+    departmentId: effectiveProfile?.primaryDepartmentId || "",
   });
   const [formErrors, setFormErrors] = useState<{
     firstName?: string;
@@ -374,12 +374,6 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
       errors.role = "Role is required";
     }
 
-    if (
-      effectiveProfile?.role === "superadmin" &&
-      !manualProfile.departmentId
-    ) {
-      errors.departmentId = "Department selection is required for superadmin";
-    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -634,38 +628,36 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
               </div>
             </div>
 
-            {/* Department Selection - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <DepartmentPicker
-                  mapping={departmentPickerMapping}
-                  validIds={validDepartmentIds}
-                  selectedIds={
-                    manualProfile.departmentId
-                      ? [manualProfile.departmentId]
-                      : []
-                  }
-                  onSelect={(ids) =>
-                    setManualProfile((p) => ({
-                      ...p,
-                      departmentId: ids[0] || "",
-                    }))
-                  }
-                  placeholder="Select department"
-                  multiSelect={false}
-                />
-                {formErrors.departmentId && (
-                  <p className="text-sm text-red-500">
-                    {formErrors.departmentId}
-                  </p>
-                )}
-                <p className="text-sm text-muted-foreground">
-                  Choose which department this staff member belongs to. Leave
-                  blank for global access.
+            {/* Department Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <DepartmentPicker
+                mapping={departmentPickerMapping}
+                validIds={validDepartmentIds}
+                selectedIds={
+                  manualProfile.departmentId
+                    ? [manualProfile.departmentId]
+                    : []
+                }
+                onSelect={(ids) =>
+                  setManualProfile((p) => ({
+                    ...p,
+                    departmentId: ids[0] || "",
+                  }))
+                }
+                placeholder="Select department"
+                multiSelect={false}
+              />
+              {formErrors.departmentId && (
+                <p className="text-sm text-red-500">
+                  {formErrors.departmentId}
                 </p>
-              </div>
-            )}
+              )}
+              <p className="text-sm text-muted-foreground">
+                Choose which department this staff member belongs to. Leave
+                blank for global access.
+              </p>
+            </div>
 
             {manualProfile.role && (
               <div className="p-4 bg-muted rounded-md">

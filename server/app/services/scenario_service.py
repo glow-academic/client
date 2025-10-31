@@ -79,6 +79,7 @@ class ScenarioService(BaseService):
                         description=pdata.get("description", ""),
                         color=pdata.get("color", ""),
                         icon=pdata.get("icon", ""),
+                        image_model=pdata.get("image_model"),
                     )
 
             # Parse JSONB document mapping (may be string or dict)
@@ -354,6 +355,7 @@ class ScenarioService(BaseService):
                         description=pdata.get("description", ""),
                         color=pdata.get("color", ""),
                         icon=pdata.get("icon", ""),
+                        image_model=pdata.get("image_model"),
                     )
 
         # Parse JSONB document mapping (may be string or dict)
@@ -415,34 +417,37 @@ class ScenarioService(BaseService):
                     )
 
         # Parse JSONB department mapping (may be string or dict)
-        department_mapping = {}
+        department_mapping: dict[str, DepartmentMappingItem] = {}
         dept_mapping_data = scenario.get("department_mapping")
         if isinstance(dept_mapping_data, str):
             dept_mapping_data = json.loads(dept_mapping_data)
         if dept_mapping_data and isinstance(dept_mapping_data, dict):
             for did, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
-                        # Parse optional ID arrays (handle None, empty arrays, or missing keys)
-                        # Scenario form only needs: persona_ids, document_ids, parameter_ids
-                        persona_ids = ddata.get("persona_ids")
-                        document_ids = ddata.get("document_ids")
-                        parameter_ids = ddata.get("parameter_ids")
-                        
-                        # Convert to list[str] if present, otherwise None
-                        def to_str_list(value: Any) -> list[str] | None:
-                            if value is None:
-                                return None
-                            if isinstance(value, list):
-                                return [str(v) for v in value if v]
+                    # Parse optional ID arrays (handle None, empty arrays, or missing keys)
+                    # Scenario form only needs: persona_ids, document_ids, parameter_ids
+                    persona_ids = ddata.get("persona_ids")
+                    document_ids = ddata.get("document_ids")
+                    parameter_ids = ddata.get("parameter_ids")
+                    
+                    # Convert to list[str] if present, otherwise None
+                    # Handle JSONB null values (which become Python None) and arrays
+                    def to_str_list(value: Any) -> list[str] | None:
+                        if value is None:
                             return None
-                        
-                        department_mapping[did] = DepartmentMappingItem(
-                            name=ddata.get("name", ""),
-                            description=ddata.get("description", ""),
-                            persona_ids=to_str_list(persona_ids),
-                            document_ids=to_str_list(document_ids),
-                            parameter_ids=to_str_list(parameter_ids),
-                        )
+                        if isinstance(value, list):
+                            # Filter out None/null values and convert to strings
+                            # Keep empty lists as [] since schema accepts both [] and None
+                            return [str(v) for v in value if v is not None]
+                        return None
+                    
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                        persona_ids=to_str_list(persona_ids),
+                        document_ids=to_str_list(document_ids),
+                        parameter_ids=to_str_list(parameter_ids),
+                    )
 
         # Parse document_details from JSONB (array of full document objects)
         document_details: list[DocumentDetailItem] = []
@@ -566,6 +571,7 @@ class ScenarioService(BaseService):
                         description=pdata.get("description", ""),
                         color=pdata.get("color", ""),
                         icon=pdata.get("icon", ""),
+                        image_model=pdata.get("image_model"),
                     )
 
         document_mapping_data = result.get("document_mapping") or {}
@@ -611,31 +617,34 @@ class ScenarioService(BaseService):
         department_mapping_data = result.get("department_mapping") or {}
         if isinstance(department_mapping_data, str):
             department_mapping_data = json.loads(department_mapping_data)
-        department_mapping = {}
+        department_mapping: dict[str, DepartmentMappingItem] = {}
         if isinstance(department_mapping_data, dict):
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
-                        # Parse optional ID arrays (handle None, empty arrays, or missing keys)
-                        # Scenario form only needs: persona_ids, document_ids, parameter_ids
-                        persona_ids = ddata.get("persona_ids")
-                        document_ids = ddata.get("document_ids")
-                        parameter_ids = ddata.get("parameter_ids")
-                        
-                        # Convert to list[str] if present, otherwise None
-                        def to_str_list(value: Any) -> list[str] | None:
-                            if value is None:
-                                return None
-                            if isinstance(value, list):
-                                return [str(v) for v in value if v]
+                    # Parse optional ID arrays (handle None, empty arrays, or missing keys)
+                    # Scenario form only needs: persona_ids, document_ids, parameter_ids
+                    persona_ids = ddata.get("persona_ids")
+                    document_ids = ddata.get("document_ids")
+                    parameter_ids = ddata.get("parameter_ids")
+                    
+                    # Convert to list[str] if present, otherwise None
+                    # Handle JSONB null values (which become Python None) and arrays
+                    def to_str_list(value: Any) -> list[str] | None:
+                        if value is None:
                             return None
-                        
-                        department_mapping[did] = DepartmentMappingItem(
-                            name=ddata.get("name", ""),
-                            description=ddata.get("description", ""),
-                            persona_ids=to_str_list(persona_ids),
-                            document_ids=to_str_list(document_ids),
-                            parameter_ids=to_str_list(parameter_ids),
-                        )
+                        if isinstance(value, list):
+                            # Filter out None/null values and convert to strings
+                            # Keep empty lists as [] since schema accepts both [] and None
+                            return [str(v) for v in value if v is not None]
+                        return None
+                    
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                        persona_ids=to_str_list(persona_ids),
+                        document_ids=to_str_list(document_ids),
+                        parameter_ids=to_str_list(parameter_ids),
+                    )
 
         # Parse JSONB parameters into ParameterDetail dict
         parameters_dict: dict[str, ParameterDetail] = {}

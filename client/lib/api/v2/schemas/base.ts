@@ -193,6 +193,7 @@ export const PersonaMappingItemSchema = z.object({
   description: z.string(),
   color: z.string(),
   icon: z.string(),
+  image_model: z.boolean().nullable().optional(), // Optional: indicates if persona's model supports images
 });
 
 export type PersonaMappingItem = z.infer<typeof PersonaMappingItemSchema>;

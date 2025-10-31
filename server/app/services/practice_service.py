@@ -113,6 +113,7 @@ class PracticeService(BaseService):
                         description=persona_data.get("description", ""),
                         color=persona_data.get("color") or "",
                         icon=persona_data.get("icon") or "",
+                        image_model=persona_data.get("image_model"),
                     )
 
         # Parse embedded scenario mapping

@@ -411,8 +411,8 @@ export default function Staff() {
               </div>
             </div>
 
-            {/* Department Selection - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && bulkStaffDetail && (
+            {/* Department Selection */}
+            {bulkStaffDetail && (
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <DepartmentPicker

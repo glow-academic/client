@@ -449,48 +449,94 @@ class PersonaService(BaseService):
         self, request: PersonaDetailDefaultRequest
     ) -> PersonaDetailResponse:
         """Internal method to fetch default persona detail from database."""
-        # Use consolidated query that finds default and fetches detail in one go
-        query, params = self.queries.get_persona_detail_default_complete(
-            request.profileId
+        # Get valid mappings and IDs only (for form population), return empty defaults for creation
+        query = """
+        WITH user_departments AS (
+            SELECT DISTINCT pd.department_id
+            FROM profile_departments pd
+            WHERE pd.profile_id = $1
+        ),
+        valid_depts AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $1 AND d.active = true
+        ),
+        valid_models AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        m.id::text,
+                        jsonb_build_object(
+                            'name', m.name,
+                            'description', COALESCE(m.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as model_mapping,
+                array_agg(m.id::text ORDER BY m.name) as model_ids
+            FROM models m 
+            WHERE m.active = true
         )
-        result = await self.conn.fetchrow(query, *params)
+        SELECT 
+            vd.dept_mapping,
+            vd.dept_ids as valid_department_ids,
+            vm.model_mapping,
+            vm.model_ids as valid_model_ids
+        FROM valid_depts vd
+        CROSS JOIN valid_models vm
+        """
+        result = await self.conn.fetchrow(query, request.profileId)
 
         if not result:
-            raise ValueError("No personas found for user's departments")
+            raise ValueError("Failed to fetch default persona data")
 
-        # Get usage and permissions from query result
-        usage_count = result["usage_count"]
-        scenario_count = usage_count
-        in_use = usage_count > 0
-        
-        # Permissions come from query (which checks role and cross-dept status)
-        can_edit = result.get("can_edit", False)
-        can_duplicate = result.get("can_duplicate", True)
-        can_delete = result.get("can_delete", not in_use)
+        valid_department_ids = result["valid_department_ids"] or []
+        valid_model_ids = result["valid_model_ids"] or []
+
+        if not valid_department_ids:
+            raise ValueError("No accessible departments found for user")
 
         # Parse department_mapping from JSONB
-        department_mapping_json = json.loads(result["dept_mapping"])
-        valid_department_ids = result["valid_department_ids"]
+        department_mapping_data = result.get("dept_mapping")
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
 
         department_mapping: dict[str, DepartmentMappingItem] = {}
-        for dept_id, ddata in department_mapping_json.items():
-            department_mapping[dept_id] = DepartmentMappingItem(
-                name=ddata.get("name", ""),
-                description=ddata.get("description", ""),
-            )
+        if department_mapping_data and isinstance(department_mapping_data, dict):
+            for dept_id, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
 
         # Parse model_mapping from JSONB
-        model_mapping_json = json.loads(result["model_mapping"])
-        valid_model_ids = result["valid_model_ids"]
+        model_mapping_data = result.get("model_mapping")
+        if isinstance(model_mapping_data, str):
+            model_mapping_data = json.loads(model_mapping_data)
 
         model_mapping: dict[str, ModelMappingItem] = {}
-        for model_id, mdata in model_mapping_json.items():
-            model_mapping[model_id] = ModelMappingItem(
-                name=mdata.get("name", ""),
-                description=mdata.get("description", ""),
-            )
+        if model_mapping_data and isinstance(model_mapping_data, dict):
+            for model_id, mdata in model_mapping_data.items():
+                if isinstance(mdata, dict):
+                    model_mapping[model_id] = ModelMappingItem(
+                        name=mdata.get("name", ""),
+                        description=mdata.get("description", ""),
+                    )
 
-        # Hardcoded metadata (same as regular detail method)
+        # Hardcoded metadata
         preset_colors = [
             "#EF4444",  # Red
             "#F97316",  # Orange
@@ -554,30 +600,30 @@ class PersonaService(BaseService):
             ),
         }
 
-        # Parse department_ids from query (None = cross-department)
-        department_ids = result.get("department_ids")
-        if department_ids:
-            department_ids = [str(d) for d in department_ids]
+        # Get default model ID (first valid model)
+        default_model_id = valid_model_ids[0] if valid_model_ids else None
+        if not default_model_id:
+            raise ValueError("No valid models found")
 
         return PersonaDetailResponse(
-            # Basic fields
-            name=result["name"],
-            description=result["description"],
-            department_ids=department_ids,  # None or list of department IDs
-            active=result["active"],
-            color=result["color"],
-            icon=result["icon"],
-            model_id=str(result["model_id"]),
-            reasoning=result["reasoning"],
-            temperature=float(result["temperature"]),
-            system_prompt=result.get("system_prompt", ""),
-            prompt_id=result.get("prompt_id"),
+            # Basic fields (empty defaults for creation)
+            name="",
+            description="",
+            department_ids=None,  # None = cross-department (user can select)
+            active=True,
+            color=preset_colors[0] if preset_colors else "#3B82F6",
+            icon=suggested_icons[0] if suggested_icons else "Sparkles",
+            model_id=default_model_id,
+            reasoning="none",
+            temperature=0.0,
+            system_prompt="",
+            prompt_id=None,
             # Usage and permissions
-            in_use=in_use,
-            scenario_count=scenario_count,
-            can_edit=can_edit,
-            can_duplicate=can_duplicate,
-            can_delete=can_delete,
+            in_use=False,
+            scenario_count=0,
+            can_edit=True,  # Can edit when creating
+            can_duplicate=False,  # Can't duplicate non-existent persona
+            can_delete=False,  # Can't delete non-existent persona
             # Metadata
             preset_colors=preset_colors,
             suggested_icons=suggested_icons,

@@ -484,18 +484,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
       newErrors.rubricId = "Rubric is required";
     }
 
-    // Department validation for superadmins
-    if (effectiveProfile?.role === "superadmin") {
-      if (
-        formData?.departmentIds !== null &&
-        (!formData?.departmentIds || formData?.departmentIds.length === 0)
-      ) {
-        newErrors.departmentIds = [
-          "Please select at least one department or leave empty for all departments",
-        ];
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -691,28 +679,26 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
         </div>
 
-        {/* Department Selection - Only for superadmin */}
-        {effectiveProfile?.role === "superadmin" && (
-          <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
-            {formData?.departmentIds !== undefined && !isLoading ? (
-              <DepartmentPicker
-                mapping={simulationData?.department_mapping || {}}
-                validIds={simulationData?.valid_department_ids || []}
-                selectedIds={formData.departmentIds || []}
-                onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                placeholder="All Departments"
-                disabled={isReadonly}
-                multiSelect={true}
-              />
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
-            {errors.departmentIds && (
-              <p className="text-sm text-destructive">{errors.departmentIds}</p>
-            )}
-          </div>
-        )}
+        {/* Department Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="department">Department</Label>
+          {formData?.departmentIds !== undefined && !isLoading ? (
+            <DepartmentPicker
+              mapping={simulationData?.department_mapping || {}}
+              validIds={simulationData?.valid_department_ids || []}
+              selectedIds={formData.departmentIds || []}
+              onSelect={(ids) => handleInputChange("departmentIds", ids)}
+              placeholder="All Departments"
+              disabled={isReadonly}
+              multiSelect={true}
+            />
+          ) : (
+            <Skeleton className="h-10 w-full" />
+          )}
+          {errors.departmentIds && (
+            <p className="text-sm text-destructive">{errors.departmentIds}</p>
+          )}
+        </div>
 
         {/* First Row of Switches - Simulation Active, Default Simulation, Practice Simulation */}
         <div className="flex gap-8">

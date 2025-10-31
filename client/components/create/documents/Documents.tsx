@@ -1045,23 +1045,21 @@ export default function Documents() {
                 </Select>
               </div>
 
-              {/* Department Selection - Only for superadmin */}
-              {effectiveProfile?.role === "superadmin" && (
-                <div className="flex flex-col gap-2">
-                  <Label>Department</Label>
-                  <DepartmentPicker
-                    mapping={documentDetail.department_mapping}
-                    validIds={documentDetail.valid_department_ids}
-                    selectedIds={documentDetail.department_ids || []}
-                    onSelect={(ids) =>
-                      setEditingDocument((prev) =>
-                        prev ? { ...prev, department_ids: ids } : null
-                      )
-                    }
-                    multiSelect={true}
-                  />
-                </div>
-              )}
+              {/* Department Selection */}
+              <div className="flex flex-col gap-2">
+                <Label>Department</Label>
+                <DepartmentPicker
+                  mapping={documentDetail.department_mapping}
+                  validIds={documentDetail.valid_department_ids}
+                  selectedIds={documentDetail.department_ids || []}
+                  onSelect={(ids) =>
+                    setEditingDocument((prev) =>
+                      prev ? { ...prev, department_ids: ids } : null
+                    )
+                  }
+                  multiSelect={true}
+                />
+              </div>
 
               <div className="flex flex-col gap-2">
                 <Label>Parameter Items</Label>
@@ -1140,23 +1138,21 @@ export default function Documents() {
                 </Select>
               </div>
 
-              {/* Department Selection - Only for superadmin */}
-              {effectiveProfile?.role === "superadmin" && (
-                <div className="flex flex-col gap-2">
-                  <Label>Department</Label>
-                  <DepartmentPicker
-                    mapping={bulkDocumentDetail.department_mapping}
-                    validIds={bulkDocumentDetail.valid_department_ids}
-                    selectedIds={
-                      bulkDepartmentId
-                        ? [bulkDepartmentId]
-                        : bulkDocumentDetail.department_ids || []
-                    }
-                    onSelect={(ids) => setBulkDepartmentId(ids[0] || null)}
-                    multiSelect={false}
-                  />
-                </div>
-              )}
+              {/* Department Selection */}
+              <div className="flex flex-col gap-2">
+                <Label>Department</Label>
+                <DepartmentPicker
+                  mapping={bulkDocumentDetail.department_mapping}
+                  validIds={bulkDocumentDetail.valid_department_ids}
+                  selectedIds={
+                    bulkDepartmentId
+                      ? [bulkDepartmentId]
+                      : bulkDocumentDetail.department_ids || []
+                  }
+                  onSelect={(ids) => setBulkDepartmentId(ids[0] || null)}
+                  multiSelect={false}
+                />
+              </div>
 
               <div className="flex flex-col gap-2">
                 <Label>Parameter Items</Label>

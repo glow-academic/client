@@ -71,18 +71,6 @@ export default function RubricDetails({
   };
 
   const handleSave = async () => {
-    // Department validation for superadmin
-    if (effectiveProfile?.role === "superadmin") {
-      if (
-        formData.departmentIds !== null &&
-        (!formData.departmentIds || formData.departmentIds.length === 0)
-      ) {
-        toast.error(
-          "Please select at least one department or leave empty for all departments"
-        );
-        return;
-      }
-    }
 
     try {
       if (isCreateMode) {
@@ -182,23 +170,21 @@ export default function RubricDetails({
                 />
               </div>
 
-              {/* Department Selection - Only for superadmin */}
-              {effectiveProfile?.role === "superadmin" && (
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <DepartmentPicker
-                    mapping={departmentMapping}
-                    validIds={validDepartmentIds}
-                    selectedIds={formData.departmentIds || []}
-                    onSelect={handleDepartmentChange}
-                    placeholder="All Departments"
-                    disabled={
-                      createRubricMutation.isPending || isUpdating || isReadonly
-                    }
-                    multiSelect={true}
-                  />
-                </div>
-              )}
+              {/* Department Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={validDepartmentIds}
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={handleDepartmentChange}
+                  placeholder="All Departments"
+                  disabled={
+                    createRubricMutation.isPending || isUpdating || isReadonly
+                  }
+                  multiSelect={true}
+                />
+              </div>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="active"

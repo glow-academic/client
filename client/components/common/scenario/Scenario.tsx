@@ -919,19 +919,6 @@ export default function Scenario({
   };
 
   const handleSubmit = async () => {
-    // Department validation for superadmins
-    if (effectiveProfile?.role === "superadmin") {
-      if (
-        formData.departmentIds !== null &&
-        (!formData.departmentIds || formData.departmentIds.length === 0)
-      ) {
-        toast.error(
-          "Please select at least one department or leave empty for all departments"
-        );
-        return;
-      }
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -1141,21 +1128,19 @@ export default function Scenario({
             </div>
           </CardContent>
           <CardContent className="pt-0 space-y-4">
-            {/* Department Selection - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={scenarioData?.valid_department_ids || []}
-                  selectedIds={formData.departmentIds || []}
-                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                  placeholder="All Departments"
-                  disabled={isReadonly}
-                  multiSelect={true}
-                />
-              </div>
-            )}
+            {/* Department Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <DepartmentPicker
+                mapping={departmentMapping}
+                validIds={scenarioData?.valid_department_ids || []}
+                selectedIds={formData.departmentIds || []}
+                onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                placeholder="All Departments"
+                disabled={isReadonly}
+                multiSelect={true}
+              />
+            </div>
 
             {/* Active Switch */}
             <div className="flex items-center gap-2">
@@ -1172,78 +1157,7 @@ export default function Scenario({
               />
             </div>
 
-            {/* Scenario Flags */}
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="hintsEnabled" className="text-sm">
-                  Hints Enabled
-                </Label>
-                <Switch
-                  id="hintsEnabled"
-                  checked={formData.hintsEnabled ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("hintsEnabled", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Label htmlFor="objectivesEnabled" className="text-sm">
-                  Objectives Enabled
-                </Label>
-                <Switch
-                  id="objectivesEnabled"
-                  checked={formData.objectivesEnabled ?? true}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("objectivesEnabled", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Label htmlFor="imageInputEnabled" className="text-sm">
-                  Image Input Enabled
-                </Label>
-                <Switch
-                  id="imageInputEnabled"
-                  checked={formData.imageInputEnabled ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("imageInputEnabled", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Label htmlFor="inputGuardrailEnabled" className="text-sm">
-                  Input Guardrail Enabled
-                </Label>
-                <Switch
-                  id="inputGuardrailEnabled"
-                  checked={formData.inputGuardrailEnabled ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("inputGuardrailEnabled", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Label htmlFor="outputGuardrailEnabled" className="text-sm">
-                  Output Guardrail Enabled
-                </Label>
-                <Switch
-                  id="outputGuardrailEnabled"
-                  checked={formData.outputGuardrailEnabled ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("outputGuardrailEnabled", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              </div>
-            </div>
+            {/* Scenario Flags - Removed guardrails, moved to persona section */}
           </CardContent>
         </Card>
         {/* Step 2: Persona Selection */}
@@ -1311,7 +1225,7 @@ export default function Scenario({
               </Tooltip>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <PersonaPicker
               mapping={personaMapping}
               validIds={validPersonaIds}
@@ -1323,6 +1237,37 @@ export default function Scenario({
               description="Choose the persona that will interact with students in this scenario."
               disabled={isReadonly}
             />
+
+            {/* Guardrail Switches */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="inputGuardrailEnabled" className="text-sm">
+                  Input Guardrail Enabled
+                </Label>
+                <Switch
+                  id="inputGuardrailEnabled"
+                  checked={formData.inputGuardrailEnabled ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("inputGuardrailEnabled", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label htmlFor="outputGuardrailEnabled" className="text-sm">
+                  Output Guardrail Enabled
+                </Label>
+                <Switch
+                  id="outputGuardrailEnabled"
+                  checked={formData.outputGuardrailEnabled ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("outputGuardrailEnabled", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -1364,6 +1309,21 @@ export default function Scenario({
               </div>
             </div>
             <div className="ml-auto flex items-center gap-3">
+              {useDocuments && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="imageInputEnabled"
+                    checked={formData.imageInputEnabled ?? false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("imageInputEnabled", checked)
+                    }
+                    disabled={isReadonly}
+                  />
+                  <Label htmlFor="imageInputEnabled" className="text-sm">
+                    Image Input Enabled
+                  </Label>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Switch
                   id="use-documents"
@@ -1603,50 +1563,83 @@ export default function Scenario({
               />
             </div>
 
-            {/* Objectives Section */}
-            <div className="space-y-2">
+            {/* Hints Enabled Switch */}
+            <div className="space-y-2 pt-2">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium">Objectives</Label>
+                <Label htmlFor="hintsEnabled" className="text-sm">
+                  Hints Enabled
+                </Label>
+                <Switch
+                  id="hintsEnabled"
+                  checked={formData.hintsEnabled ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("hintsEnabled", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+            </div>
+
+            {/* Objectives Section */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="objectivesEnabled" className="text-sm">
+                  Objectives Enabled
+                </Label>
+                <Switch
+                  id="objectivesEnabled"
+                  checked={formData.objectivesEnabled ?? true}
+                  onCheckedChange={(checked) => {
+                    handleInputChange("objectivesEnabled", checked);
+                    // Auto-create first objective when enabling
+                    if (checked && currentObjectives.length === 0) {
+                      setCurrentObjectives([""]);
+                    }
+                  }}
+                  disabled={isReadonly}
+                />
                 <Badge variant="secondary" className="text-xs">
                   Optional
                 </Badge>
               </div>
 
-              <div className="space-y-2">
-                {currentObjectives.map((objective, index) => (
-                  <div
-                    key={`objective-${index}`}
-                    className={`flex items-center gap-2 ${
-                      draggedObjectiveIndex === index ? "opacity-50" : ""
-                    }`}
-                    draggable={!isReadonly}
-                    onDragStart={(e) => handleDragStartObjective(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDropObjective(e, index)}
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
-                    <Input
-                      value={objective || ""}
-                      onChange={(e) => updateObjective(index, e.target.value)}
-                      placeholder={`Learning objective ${index + 1}`}
-                      className="flex-1"
-                      disabled={isReadonly}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeObjective(index)}
-                      className="h-8 w-8 shrink-0"
-                      disabled={isReadonly}
+              {formData.objectivesEnabled && (
+                <div className="space-y-2">
+                  {currentObjectives.map((objective, index) => (
+                    <div
+                      key={`objective-${index}`}
+                      className={`flex items-center gap-2 ${
+                        draggedObjectiveIndex === index ? "opacity-50" : ""
+                      }`}
+                      draggable={!isReadonly}
+                      onDragStart={(e) => handleDragStartObjective(e, index)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDropObjective(e, index)}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
+                      <Input
+                        value={objective || ""}
+                        onChange={(e) => updateObjective(index, e.target.value)}
+                        placeholder={`Learning objective ${index + 1}`}
+                        className="flex-1"
+                        disabled={isReadonly}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeObjective(index)}
+                        className="h-8 w-8 shrink-0"
+                        disabled={isReadonly}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {currentObjectives.length < 3 && (
+              {formData.objectivesEnabled && currentObjectives.length < 3 && (
                 <div>
                   <Button
                     type="button"

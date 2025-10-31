@@ -182,12 +182,14 @@ class ScenarioQueries:
                         'name', p.name,
                         'description', COALESCE(p.description, ''),
                         'color', p.color,
-                        'icon', p.icon
+                        'icon', p.icon,
+                        'image_model', COALESCE(m.image_model, false)
                     )
                 ) FILTER (WHERE p.id IS NOT NULL),
                 '{}'::jsonb
             ) as mapping
             FROM personas p
+            LEFT JOIN models m ON m.id = p.model_id
             WHERE p.id IN (SELECT persona_id FROM all_persona_ids)
         ),
         all_simulation_ids AS (
@@ -407,16 +409,30 @@ class ScenarioQueries:
                         'name', p.name,
                         'description', COALESCE(p.description, ''),
                         'color', p.color,
-                        'icon', p.icon
+                        'icon', p.icon,
+                        'image_model', COALESCE(p.image_model, false)
                     )
                 ), '{}'::jsonb) as persona_mapping
             FROM (
-                SELECT DISTINCT ON (p.id) p.*
+                SELECT 
+                    p.id,
+                    p.name,
+                    p.description,
+                    p.color,
+                    p.icon,
+                    p.active,
+                    p.model_id,
+                    p.reasoning,
+                    p.temperature,
+                    p.created_at,
+                    p.updated_at,
+                    m.image_model
                 FROM personas p
+                LEFT JOIN models m ON m.id = p.model_id
                 LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
                 CROSS JOIN user_departments ud
                 WHERE p.active = true
-                GROUP BY p.id, p.name, p.description, p.color, p.icon, p.active, p.model_id, p.reasoning, p.temperature, p.system_prompt, p.created_at, p.updated_at
+                GROUP BY p.id, p.name, p.description, p.color, p.icon, p.active, p.model_id, p.reasoning, p.temperature, p.created_at, p.updated_at, m.image_model
                 HAVING 
                     -- Include if has matching department link OR has no department links at all (cross-dept)
                     COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
@@ -431,7 +447,15 @@ class ScenarioQueries:
                     jsonb_build_object('name', d.name, 'description', COALESCE(d.type::text, ''))
                 ), '{}'::jsonb) as document_mapping
             FROM (
-                SELECT DISTINCT ON (d.id) d.*
+                SELECT 
+                    d.id,
+                    d.name,
+                    d.type,
+                    d.file_path,
+                    d.mime_type,
+                    d.active,
+                    d.created_at,
+                    d.updated_at
                 FROM documents d
                 LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
                 CROSS JOIN user_departments ud
@@ -534,7 +558,8 @@ class ScenarioQueries:
             JOIN parameters p ON p.id = pi.parameter_id
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_departments ud
-            GROUP BY p.id
+            WHERE p.active = true
+            GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, pi.value, p.id, p.name
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
                 COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
@@ -543,7 +568,7 @@ class ScenarioQueries:
         department_persona_ids AS (
             SELECT 
                 d.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as persona_ids
+                COALESCE(ARRAY_AGG(p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as persona_ids
             FROM departments d
             CROSS JOIN user_departments ud
             LEFT JOIN personas p ON p.active = true
@@ -555,7 +580,7 @@ class ScenarioQueries:
         department_document_ids AS (
             SELECT 
                 d.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT doc.id::text ORDER BY doc.id) FILTER (WHERE doc.id IS NOT NULL), ARRAY[]::text[]) as document_ids
+                COALESCE(ARRAY_AGG(doc.id::text ORDER BY doc.id) FILTER (WHERE doc.id IS NOT NULL), ARRAY[]::text[]) as document_ids
             FROM departments d
             CROSS JOIN user_departments ud
             LEFT JOIN documents doc ON doc.active = true
@@ -567,7 +592,7 @@ class ScenarioQueries:
         department_parameter_ids AS (
             SELECT 
                 d.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+                COALESCE(ARRAY_AGG(p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
             FROM departments d
             CROSS JOIN user_departments ud
             LEFT JOIN parameters p ON p.active = true
@@ -582,7 +607,7 @@ class ScenarioQueries:
         department_agent_ids AS (
             SELECT 
                 d.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT a.id::text ORDER BY a.id) FILTER (WHERE a.id IS NOT NULL), ARRAY[]::text[]) as agent_ids
+                COALESCE(ARRAY_AGG(a.id::text ORDER BY a.id) FILTER (WHERE a.id IS NOT NULL), ARRAY[]::text[]) as agent_ids
             FROM departments d
             CROSS JOIN user_departments ud
             LEFT JOIN agents a ON a.active = true
@@ -594,7 +619,7 @@ class ScenarioQueries:
         department_staff_ids AS (
             SELECT 
                 d.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as staff_ids
+                COALESCE(ARRAY_AGG(p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as staff_ids
             FROM departments d
             CROSS JOIN user_departments ud
             LEFT JOIN profile_departments pd ON pd.department_id = d.id
@@ -605,7 +630,7 @@ class ScenarioQueries:
         department_cohort_ids AS (
             SELECT 
                 d.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT c.id::text ORDER BY c.id) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::text[]) as cohort_ids
+                COALESCE(ARRAY_AGG(c.id::text ORDER BY c.id) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::text[]) as cohort_ids
             FROM departments d
             CROSS JOIN user_departments ud
             LEFT JOIN cohorts c ON c.active = true
@@ -1173,12 +1198,14 @@ class ScenarioQueries:
                         'name', p.name,
                         'description', COALESCE(p.description, ''),
                         'color', p.color,
-                        'icon', p.icon
+                        'icon', p.icon,
+                        'image_model', COALESCE(m.image_model, false)
                     )
                 ) FILTER (WHERE p.id IS NOT NULL),
                 '{}'::jsonb
             ) as persona_mapping
             FROM personas p
+            LEFT JOIN models m ON m.id = p.model_id
             WHERE p.id IN (SELECT persona_id FROM all_persona_ids)
         ),
         document_mapping_data AS (
@@ -1704,11 +1731,13 @@ class ScenarioQueries:
                 p.name,
                 COALESCE(p.description, '') as description,
                 p.color,
-                p.icon
+                p.icon,
+                m.image_model
             FROM personas p
+            LEFT JOIN models m ON m.id = p.model_id
             LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
             WHERE p.active = true
-            GROUP BY p.id, p.name, p.description, p.color, p.icon
+            GROUP BY p.id, p.name, p.description, p.color, p.icon, m.image_model
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
                 COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
@@ -1723,7 +1752,8 @@ class ScenarioQueries:
                         'name', p.name,
                         'description', p.description,
                         'color', p.color,
-                        'icon', p.icon
+                        'icon', p.icon,
+                        'image_model', COALESCE(p.image_model, false)
                     )
                 ),
                 '{}'::jsonb

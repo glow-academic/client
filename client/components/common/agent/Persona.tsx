@@ -221,18 +221,6 @@ export default function Persona({
       return;
     }
 
-    // Department validation for superadmins
-    if (effectiveProfile?.role === "superadmin") {
-      if (
-        formData.departmentIds !== null &&
-        (!formData.departmentIds || formData.departmentIds.length === 0)
-      ) {
-        toast.error(
-          "Please select at least one department or leave empty for all departments"
-        );
-        return;
-      }
-    }
 
     setIsSubmitting(true);
 
@@ -389,30 +377,28 @@ export default function Persona({
               )}
             </div>
 
-            {/* Department Selection - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                {formData?.departmentIds !== undefined && !isLoading ? (
-                  <DepartmentPicker
-                    mapping={personaData?.department_mapping || {}}
-                    validIds={personaData?.valid_department_ids || []}
-                    selectedIds={formData.departmentIds || []}
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        departmentIds: ids,
-                      }))
-                    }
-                    placeholder="All Departments"
-                    disabled={isReadonly}
-                    multiSelect={true}
-                  />
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
-              </div>
-            )}
+            {/* Department Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              {formData?.departmentIds !== undefined && !isLoading ? (
+                <DepartmentPicker
+                  mapping={personaData?.department_mapping || {}}
+                  validIds={personaData?.valid_department_ids || []}
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      departmentIds: ids,
+                    }))
+                  }
+                  placeholder="All Departments"
+                  disabled={isReadonly}
+                  multiSelect={true}
+                />
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
 
             {/* Switches - Horizontal Layout */}
             <div className="flex gap-8">

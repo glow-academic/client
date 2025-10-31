@@ -440,20 +440,18 @@ export function UploadClassificationDialog({
           </div>
         )}
 
-        {/* Department Selection - Only for superadmin */}
-        {effectiveProfile?.role === "superadmin" && (
-          <div className="space-y-2 mb-4">
-            <Label htmlFor="department">Department</Label>
-            <DepartmentPicker
-              mapping={departmentMapping}
-              validIds={validDepartmentIds}
-              selectedIds={selectedDepartmentIds}
-              onSelect={setSelectedDepartmentIds}
-              placeholder="All Departments"
-              multiSelect={true}
-            />
-          </div>
-        )}
+        {/* Department Selection */}
+        <div className="space-y-2 mb-4">
+          <Label htmlFor="department">Department</Label>
+          <DepartmentPicker
+            mapping={departmentMapping}
+            validIds={validDepartmentIds}
+            selectedIds={selectedDepartmentIds}
+            onSelect={setSelectedDepartmentIds}
+            placeholder="All Departments"
+            multiSelect={true}
+          />
+        </div>
 
         <div className="space-y-4 max-h-[50vh] overflow-auto pr-1">
           {files.map((file) => {

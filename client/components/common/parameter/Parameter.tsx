@@ -339,21 +339,6 @@ export default function Parameter({
       (item) => !item.isDeleted
     );
 
-    // Department validation for superadmin - validate per item
-    if (effectiveProfile?.role === "superadmin") {
-      activeItems.forEach((item, index) => {
-        // Items can have null (all departments) or at least one department
-        if (
-          item.departmentIds !== null &&
-          item.departmentIds !== undefined &&
-          item.departmentIds.length === 0
-        ) {
-          errors.push(
-            `Parameter item ${index + 1}: Please select at least one department or leave empty for all departments`
-          );
-        }
-      });
-    }
 
     activeItems.forEach((item, index) => {
       if (!item.name.trim()) {
@@ -484,9 +469,7 @@ export default function Parameter({
                     {formData?.numerical && (
                       <TableHead className="w-32">Value (Number)</TableHead>
                     )}
-                    {effectiveProfile?.role === "superadmin" && (
-                      <TableHead className="w-64">Departments</TableHead>
-                    )}
+                    <TableHead className="w-64">Departments</TableHead>
                     <TableHead className="w-20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -540,24 +523,22 @@ export default function Parameter({
                             />
                           </TableCell>
                         )}
-                        {effectiveProfile?.role === "superadmin" && (
-                          <TableCell className="w-64">
-                            <DepartmentPicker
-                              mapping={departmentMapping}
-                              validIds={validDepartmentIds}
-                              selectedIds={item.departmentIds || []}
-                              onSelect={(ids) =>
-                                handleParameterItemInputChange(
-                                  itemIndex,
-                                  "departmentIds",
-                                  ids.length > 0 ? ids : null
-                                )
-                              }
-                              placeholder="All Departments"
-                              multiSelect={true}
-                            />
-                          </TableCell>
-                        )}
+                        <TableCell className="w-64">
+                          <DepartmentPicker
+                            mapping={departmentMapping}
+                            validIds={validDepartmentIds}
+                            selectedIds={item.departmentIds || []}
+                            onSelect={(ids) =>
+                              handleParameterItemInputChange(
+                                itemIndex,
+                                "departmentIds",
+                                ids.length > 0 ? ids : null
+                              )
+                            }
+                            placeholder="All Departments"
+                            multiSelect={true}
+                          />
+                        </TableCell>
                         <TableCell className="w-20">
                           <div className="flex items-center gap-1">
                             {effectiveProfile?.role === "superadmin" && (

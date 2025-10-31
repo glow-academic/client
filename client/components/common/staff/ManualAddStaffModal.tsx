@@ -192,9 +192,6 @@ export default function ManualAddStaffModal({
       errors.role = "Role is required";
     }
 
-    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
-      errors.departmentId = "Department selection is required for superadmin";
-    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;

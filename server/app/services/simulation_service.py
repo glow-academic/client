@@ -234,6 +234,7 @@ class SimulationService(BaseService):
                                     description=pdata.get("description", ""),
                                     color=pdata.get("color", ""),
                                     icon=pdata.get("icon", ""),
+                                    image_model=pdata.get("image_model"),
                                 )
 
                     # Parse nested document mapping
@@ -487,6 +488,7 @@ class SimulationService(BaseService):
                                     description=pdata.get("description", ""),
                                     color=pdata.get("color", ""),
                                     icon=pdata.get("icon", ""),
+                                    image_model=pdata.get("image_model"),
                                 )
 
                     # Parse nested document mapping

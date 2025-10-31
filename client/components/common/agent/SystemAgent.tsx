@@ -112,9 +112,11 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       reasoning: "none",
       active: true,
       role: "assistant", // Default role
-      departmentIds: [],
+      departmentIds: effectiveProfile?.primaryDepartmentId
+        ? [effectiveProfile.primaryDepartmentId]
+        : [],
     }),
-    []
+    [effectiveProfile?.primaryDepartmentId]
   );
 
   // Set breadcrumb context when agent data is loaded
@@ -241,12 +243,9 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 : null,
             active: formData.active ?? true,
             role: formData.role || "assistant",
-            department_ids:
-              effectiveProfile?.role === "superadmin"
-                ? formData.departmentIds && formData.departmentIds.length > 0
-                  ? formData.departmentIds
-                  : null
-                : null,
+            department_ids: formData.departmentIds && formData.departmentIds.length > 0
+              ? formData.departmentIds
+              : null,
           },
           {
             onSuccess: () => {
@@ -283,12 +282,9 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 : null,
             active: formData.active ?? true,
             role: formData.role || "assistant",
-            department_ids:
-              effectiveProfile?.role === "superadmin"
-                ? formData.departmentIds && formData.departmentIds.length > 0
-                  ? formData.departmentIds
-                  : null
-                : null,
+            department_ids: formData.departmentIds && formData.departmentIds.length > 0
+              ? formData.departmentIds
+              : null,
           },
           {
             onSuccess: (response) => {
@@ -369,49 +365,47 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               )}
             </div>
 
-            {/* Role and Department Selection - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="space-y-4">
-                {/* Department Picker */}
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  {formData?.departmentIds !== undefined &&
-                  agentData?.department_mapping !== undefined &&
-                  !isLoading ? (
-                    <DepartmentPicker
-                      mapping={agentData.department_mapping || {}}
-                      validIds={agentData.valid_department_ids || []}
-                      selectedIds={formData.departmentIds || []}
-                      onSelect={(ids) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          departmentIds: ids,
-                        }))
-                      }
-                      placeholder="All Departments"
-                      disabled={isSubmitting}
-                      multiSelect={true}
-                    />
-                  ) : (
-                    <Skeleton className="h-10 w-full" />
-                  )}
-                </div>
-
-                {/* Role Picker */}
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role *</Label>
-                  {formData?.role !== undefined && !isLoading ? (
-                    <RolePicker
-                      selectedRole={formData.role || "assistant"}
-                      onSelect={(role) => handleInputChange("role", role)}
-                      placeholder="Select role"
-                    />
-                  ) : (
-                    <Skeleton className="h-10 w-full" />
-                  )}
-                </div>
+            {/* Role and Department Selection */}
+            <div className="space-y-4">
+              {/* Department Picker */}
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                {formData?.departmentIds !== undefined &&
+                agentData?.department_mapping !== undefined &&
+                !isLoading ? (
+                  <DepartmentPicker
+                    mapping={agentData.department_mapping || {}}
+                    validIds={agentData.valid_department_ids || []}
+                    selectedIds={formData.departmentIds || []}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        departmentIds: ids,
+                      }))
+                    }
+                    placeholder="All Departments"
+                    disabled={isSubmitting}
+                    multiSelect={true}
+                  />
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
               </div>
-            )}
+
+              {/* Role Picker */}
+              <div className="space-y-2">
+                <Label htmlFor="role">Role *</Label>
+                {formData?.role !== undefined && !isLoading ? (
+                  <RolePicker
+                    selectedRole={formData.role || "assistant"}
+                    onSelect={(role) => handleInputChange("role", role)}
+                    placeholder="Select role"
+                  />
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+            </div>
 
             {/* Switches - Horizontal Layout */}
             <div className="flex gap-8">
