@@ -31,7 +31,11 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 \i app/agents/init.sql
 
--- 4. Seed base data for junction table dependencies
+-- 4. Tables that depend on agents (scenarios/parameters - must exist before seed data)
+-- Note: Parameters table is created here and needed by department seed data
+\i app/scenarios/init.sql
+
+-- 5. Seed base data for junction table dependencies
 -- Import shared models (generated at seed/ level)
 \i seed/models.sql
 
@@ -90,10 +94,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 \i seed/stat/parameters.sql
 \i seed/stat/agents.sql
 \i seed/stat/prompts.sql
-
--- 5. Tables that depend on agents (scenarios references agents, junction tables defined)
--- Note: All junction tables (scenario_objectives, scenario_parameter_items, etc.) are now defined here
-\i app/scenarios/init.sql
 
 -- 6. Tables that depend on multiple previous tables
 -- Note: simulation_scenarios, simulation_tags, and tag junction tables defined here

@@ -17,6 +17,17 @@ CREATE TABLE parameters (
   document_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
+CREATE TABLE parameter_items (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  description TEXT        NOT NULL,
+  value TEXT        NOT NULL,
+  parameter_id UUID        NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
+  default_item BOOLEAN     NOT NULL DEFAULT FALSE
+);
+
 -- Parameter Items → Departments junction table (BCNF normalization)
 -- Links parameter items to departments (moved from parameter_departments)
 -- No records = available to all departments (cross-department)
@@ -31,17 +42,6 @@ CREATE TABLE parameter_item_departments (
 
 CREATE INDEX ON parameter_item_departments (parameter_item_id);
 CREATE INDEX ON parameter_item_departments (department_id);
-
-CREATE TABLE parameter_items (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  name       TEXT        NOT NULL,
-  description TEXT        NOT NULL,
-  value TEXT        NOT NULL,
-  parameter_id UUID        NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
-  default_item BOOLEAN     NOT NULL DEFAULT FALSE
-);
 
 -- Note: Parameter item tags are now managed via simulation_tags → simulation_tag_parameter_items
 -- See simulations/init.sql for tag-related tables
