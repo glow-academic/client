@@ -1105,6 +1105,7 @@ class ScenarioService(BaseService):
             group_id=None,
             conn=self.conn,
             profile_id=profile_id,
+            user_instructions=request.userInstructions,
         )
 
         return GenerateScenarioAIResponse(

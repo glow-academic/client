@@ -241,6 +241,7 @@ export const GenerateScenarioAIRequestSchema = z.object({
   documentIds: z.array(z.string()).optional(),
   parameterItemIds: z.array(z.string()).optional(),
   profileId: z.string().optional(),
+  userInstructions: z.string().optional(),
 });
 
 export type GenerateScenarioAIRequest = z.infer<

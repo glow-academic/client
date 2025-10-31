@@ -214,6 +214,7 @@ class GenerateScenarioAIRequest(BaseModel):
     documentIds: list[str] | None = None
     parameterItemIds: list[str] | None = None
     profileId: str | None = None
+    userInstructions: str | None = None
 
 
 class GenerateScenarioAIResponse(BaseModel):

@@ -11,7 +11,6 @@ import {
   Loader2,
   PlusCircle,
   RotateCcw,
-  Settings,
   Shuffle,
   Trash2,
 } from "lucide-react";
@@ -41,6 +40,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
@@ -141,11 +141,12 @@ export default function Scenario({
   // Form data state
   const initialFormData = useMemo(
     () => ({
-      name: "",
+      name: "New Scenario",
       problemStatement: "",
       departmentIds: effectiveProfile?.primaryDepartmentId
         ? [effectiveProfile.primaryDepartmentId]
         : [],
+      active: true,
     }),
     [effectiveProfile?.primaryDepartmentId]
   );
@@ -167,9 +168,10 @@ export default function Scenario({
   const [isRandomizingDocuments, setIsRandomizingDocuments] = useState(false);
   const [isRandomizingParameters, setIsRandomizingParameters] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showRegenerationDialog, setShowRegenerationDialog] = useState(false);
+  const [regenerationInstructions, setRegenerationInstructions] = useState("");
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
-  const [noDocuments, setNoDocuments] = useState(false);
+  const [useDocuments, setUseDocuments] = useState(true);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
@@ -187,7 +189,7 @@ export default function Scenario({
     document_ids?: string[];
     parameter_item_ids?: string[];
   };
-  const [stagedSelections, setStagedSelections] = useState<
+  const [_stagedSelections, setStagedSelections] = useState<
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
@@ -224,12 +226,12 @@ export default function Scenario({
   const validPersonaIds = useMemo(() => {
     const baseIds = scenarioData?.valid_persona_ids || [];
     const selectedDeptIds = formData.departmentIds || [];
-    
+
     // If no departments selected, return all valid IDs
     if (selectedDeptIds.length === 0) {
       return baseIds;
     }
-    
+
     // Get union of persona_ids from selected departments
     const deptPersonaIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
@@ -238,20 +240,24 @@ export default function Scenario({
         deptData.persona_ids.forEach((id) => deptPersonaIds.add(id));
       }
     });
-    
+
     // Filter base IDs to only include those in department persona IDs
     return baseIds.filter((id) => deptPersonaIds.has(id));
-  }, [scenarioData?.valid_persona_ids, formData.departmentIds, departmentMapping]);
+  }, [
+    scenarioData?.valid_persona_ids,
+    formData.departmentIds,
+    departmentMapping,
+  ]);
 
   const validDocumentIds = useMemo(() => {
     const baseIds = scenarioData?.valid_document_ids || [];
     const selectedDeptIds = formData.departmentIds || [];
-    
+
     // If no departments selected, return all valid IDs
     if (selectedDeptIds.length === 0) {
       return baseIds;
     }
-    
+
     // Get union of document_ids from selected departments
     const deptDocumentIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
@@ -260,20 +266,24 @@ export default function Scenario({
         deptData.document_ids.forEach((id) => deptDocumentIds.add(id));
       }
     });
-    
+
     // Filter base IDs to only include those in department document IDs
     return baseIds.filter((id) => deptDocumentIds.has(id));
-  }, [scenarioData?.valid_document_ids, formData.departmentIds, departmentMapping]);
+  }, [
+    scenarioData?.valid_document_ids,
+    formData.departmentIds,
+    departmentMapping,
+  ]);
 
   const validParameterItemIds = useMemo(() => {
     const baseIds = getAllValidParameterItemIds(scenarioData?.parameters || {});
     const selectedDeptIds = formData.departmentIds || [];
-    
+
     // If no departments selected, return all valid IDs
     if (selectedDeptIds.length === 0) {
       return baseIds;
     }
-    
+
     // Get union of parameter_ids from selected departments
     // Note: We need to map parameter_ids to parameter_item_ids
     const deptParameterIds = new Set<string>();
@@ -283,13 +293,18 @@ export default function Scenario({
         deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
       }
     });
-    
+
     // Filter parameter items: include if their parameter_id is in department parameter IDs
     return baseIds.filter((itemId) => {
       const item = parameterItemMapping[itemId];
       return item && deptParameterIds.has(item.parameter_id);
     });
-  }, [scenarioData?.parameters, formData.departmentIds, departmentMapping, parameterItemMapping]);
+  }, [
+    scenarioData?.parameters,
+    formData.departmentIds,
+    departmentMapping,
+    parameterItemMapping,
+  ]);
 
   // Track department changes and manage staged selections
   useEffect(() => {
@@ -344,8 +359,8 @@ export default function Scenario({
               staged.persona_id &&
               validPersonaIds.includes(staged.persona_id)
             ) {
-              setSelectedPersonaId((prevPersona) =>
-                prevPersona || staged.persona_id || null
+              setSelectedPersonaId(
+                (prevPersona) => prevPersona || staged.persona_id || null
               );
             }
 
@@ -404,7 +419,7 @@ export default function Scenario({
     setStagedSelections((prev) => {
       const cleaned: Record<string, StagedSelections> = {};
       Object.keys(prev).forEach((deptId) => {
-        if (validDeptIds.has(deptId)) {
+        if (validDeptIds.has(deptId) && prev[deptId]) {
           cleaned[deptId] = prev[deptId];
         }
       });
@@ -452,9 +467,10 @@ export default function Scenario({
         name: scenarioData.name,
         problemStatement: scenarioData.problem_statement,
         departmentIds: deptIds,
+        active: scenarioData.active ?? true,
       });
       // Initialize previousDepartmentIds when loading scenario data
-      if (previousDepartmentIds.length === 0) {
+      if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
         setPreviousDepartmentIds(deptIds);
       }
       setSelectedPersonaId(scenarioData.persona_id);
@@ -473,6 +489,7 @@ export default function Scenario({
         name: scenarioData.name,
         problemStatement: scenarioData.problem_statement,
         departmentIds: scenarioData.department_ids || [],
+        active: scenarioData.active ?? true,
       });
       setOriginalDocumentIds(scenarioData.document_ids);
       setOriginalParameterItemIds(
@@ -487,12 +504,13 @@ export default function Scenario({
     } else if (!isEditMode && scenarioData) {
       // Create mode: use defaults from API
       setFormData({
-        name: "",
+        name: "New Scenario",
         problemStatement: "",
         departmentIds: scenarioData.department_ids || [],
+        active: true,
       });
     }
-  }, [scenarioData, isEditMode]);
+  }, [scenarioData, isEditMode, previousDepartmentIds.length]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -506,6 +524,7 @@ export default function Scenario({
       selectedPersonaId !== originalPersonaId ||
       current.name !== original.name ||
       current.problemStatement !== original.problemStatement ||
+      current.active !== original.active ||
       JSON.stringify(current.departmentIds?.sort()) !==
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
@@ -553,10 +572,18 @@ export default function Scenario({
     }
 
     switch (stepId) {
+      case "basic":
+        // Always completed - name defaults to "New Scenario"
+        return "completed";
       case "persona":
+        // Can start immediately, doesn't depend on name
         return selectedPersonaId ? "completed" : "active";
       case "documents":
-        return currentDocumentIds.length > 0 ? "completed" : "active";
+        return !selectedPersonaId
+          ? "pending"
+          : currentDocumentIds.length > 0 || !useDocuments
+            ? "completed"
+            : "active";
       case "parameters":
         return !selectedPersonaId
           ? "pending"
@@ -572,6 +599,12 @@ export default function Scenario({
 
   const steps: Step[] = [
     {
+      id: "basic",
+      title: "",
+      description: "",
+      status: getStepStatus("basic"),
+    },
+    {
       id: "persona",
       title: "Select Persona Type",
       description: "Choose the type of persona for this scenario",
@@ -580,7 +613,7 @@ export default function Scenario({
     {
       id: "documents",
       title: "Choose Documents",
-      description: "Select relevant documents for this scenario",
+      description: "Select 1-2 relevant documents for this scenario",
       status: getStepStatus("documents"),
       optional: true,
     },
@@ -589,7 +622,6 @@ export default function Scenario({
       title: "Set Parameters",
       description: "Configure scenario parameters and environment",
       status: getStepStatus("parameters"),
-      optional: true,
     },
     {
       id: "content",
@@ -694,8 +726,8 @@ export default function Scenario({
   const handleRandomizeDocuments = async () => {
     try {
       setIsRandomizingDocuments(true);
-      if (noDocuments) {
-        toast("No documents selected by choice");
+      if (!useDocuments) {
+        toast("Documents disabled by choice");
         return;
       }
       const resp = await randomizeMutation.mutateAsync({
@@ -804,7 +836,7 @@ export default function Scenario({
     setDraggedObjectiveIndex(null);
   };
 
-  const handleGenerateScenario = async () => {
+  const handleGenerateScenario = async (userInstructions?: string) => {
     setIsGeneratingScenario(true);
 
     try {
@@ -820,6 +852,7 @@ export default function Scenario({
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         profileId: effectiveProfile?.id || undefined,
+        userInstructions: userInstructions || undefined,
       });
 
       if (!result.success) {
@@ -829,7 +862,13 @@ export default function Scenario({
       if (result.title || result.description) {
         setFormData((prev) => ({
           ...prev,
-          name: result.title || prev.name || "",
+          // Only replace name if it's still the default "New Scenario"
+          name:
+            prev.name === "New Scenario" ||
+            !prev.name ||
+            prev.name.trim() === ""
+              ? result.title || prev.name || "New Scenario"
+              : prev.name,
           problemStatement: result.description || prev.problemStatement || "",
         }));
         // Update objectives if returned
@@ -876,7 +915,7 @@ export default function Scenario({
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
         department_ids: formData.departmentIds || null,
-        active: true,
+        active: formData.active ?? true,
         persona_id: selectedPersonaId,
         document_ids: currentDocumentIds,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
@@ -1035,34 +1074,76 @@ export default function Scenario({
         </div>
       )}
 
-      {/* Scenario Title Input */}
-      <div className="flex justify-center mb-6 relative">
-        <div className="w-full max-w-2xl">
-          <input
-            type="text"
-            value={formData.name || ""}
-            onChange={(e) => handleInputChange("name", e.target.value)}
-            placeholder="New Scenario"
-            className="w-full text-3xl font-semibold text-center border-none outline-none bg-transparent px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isReadonly}
-          />
-        </div>
-        {/* Settings Icon - Only for superadmin */}
-        {effectiveProfile?.role === "superadmin" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSettingsDialog(true)}
-            className="absolute right-0 top-0"
-            disabled={isReadonly}
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-        )}
-      </div>
-
       <div className="space-y-6">
-        {/* Step 1: Persona Selection */}
+        {/* Step 1: Basic Information - Subtle inline name editor */}
+        <Card className="transition-all">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-green-500 text-white shrink-0">
+                <Check className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={formData.name || ""}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  onFocus={(e) => {
+                    if (e.target.value === "New Scenario") {
+                      e.target.select();
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // If empty on blur, revert to "New Scenario"
+                    if (!e.target.value || e.target.value.trim() === "") {
+                      handleInputChange("name", "New Scenario");
+                    }
+                  }}
+                  className="w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                  placeholder="New Scenario"
+                  disabled={isReadonly}
+                />
+                <p className="text-xs text-muted-foreground mt-1 px-2">
+                  {formData.name === "New Scenario" || !formData.name
+                    ? "Click to edit • Name will be auto-generated if unchanged"
+                    : "Click to edit"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+          <CardContent className="pt-0 space-y-4">
+            {/* Department Selection - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={scenarioData?.valid_department_ids || []}
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                  placeholder="All Departments"
+                  disabled={isReadonly}
+                  multiSelect={true}
+                />
+              </div>
+            )}
+
+            {/* Active Switch */}
+            <div className="flex items-center gap-2">
+              <Label htmlFor="active" className="text-sm">
+                Scenario Active
+              </Label>
+              <Switch
+                id="active"
+                checked={formData.active ?? true}
+                onCheckedChange={(checked) =>
+                  handleInputChange("active", checked)
+                }
+                disabled={isReadonly}
+              />
+            </div>
+          </CardContent>
+        </Card>
+        {/* Step 2: Persona Selection */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("persona") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("persona") === "pending"
@@ -1084,14 +1165,14 @@ export default function Scenario({
                 {getStepStatus("persona") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  "1"
+                  "2"
                 )}
               </div>
               <div>
                 <CardTitle className="text-lg">
-                  {steps[0]?.title || ""}
+                  {steps[1]?.title || ""}
                 </CardTitle>
-                <CardDescription>{steps[0]?.description || ""}</CardDescription>
+                <CardDescription>{steps[1]?.description || ""}</CardDescription>
               </div>
             </div>
             <div className="ml-auto flex items-center gap-2">
@@ -1142,7 +1223,7 @@ export default function Scenario({
           </CardContent>
         </Card>
 
-        {/* Step 2: Documents */}
+        {/* Step 3: Documents */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("documents") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("documents") === "pending"
@@ -1164,37 +1245,38 @@ export default function Scenario({
                 {getStepStatus("documents") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  "2"
+                  "3"
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-lg">
-                    {steps[1]?.title || ""}
+                    {steps[2]?.title || ""}
                   </CardTitle>
                   <Badge variant="secondary" className="text-xs">
                     Optional
                   </Badge>
                 </div>
-                <CardDescription>{steps[1]?.description || ""}</CardDescription>
+                <CardDescription>{steps[2]?.description || ""}</CardDescription>
               </div>
             </div>
             <div className="ml-auto flex items-center gap-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={noDocuments}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setNoDocuments(checked);
-                    if (checked) {
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="use-documents"
+                  checked={useDocuments}
+                  onCheckedChange={(checked) => {
+                    setUseDocuments(checked);
+                    if (!checked) {
                       setCurrentDocumentIds([]);
                     }
                   }}
                   disabled={isReadonly}
                 />
-                No documents
-              </label>
+                <Label htmlFor="use-documents" className="text-sm">
+                  Use documents
+                </Label>
+              </div>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1202,7 +1284,7 @@ export default function Scenario({
                     size="icon"
                     onClick={handleRandomizeDocuments}
                     disabled={
-                      isReadonly || isRandomizingDocuments || noDocuments
+                      isReadonly || isRandomizingDocuments || !useDocuments
                     }
                   >
                     {isRandomizingDocuments ? (
@@ -1234,18 +1316,22 @@ export default function Scenario({
               mapping={documentMapping}
               validIds={validDocumentIds}
               selectedIds={currentDocumentIds}
-              onSelect={setCurrentDocumentIds}
               documentDetails={scenarioData?.document_details || []}
               multiSelect={true}
               label=""
               placeholder="Select documents..."
               description="Choose documents that will be available during this scenario."
-              disabled={isReadonly || noDocuments}
+              disabled={isReadonly || !useDocuments}
+              onSelect={(ids) => {
+                // Enforce max 2 documents
+                const limitedIds = ids.slice(0, 2);
+                setCurrentDocumentIds(limitedIds);
+              }}
             />
           </CardContent>
         </Card>
 
-        {/* Step 3: Parameters */}
+        {/* Step 4: Parameters */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("parameters") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("parameters") === "pending"
@@ -1267,19 +1353,14 @@ export default function Scenario({
                 {getStepStatus("parameters") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  "3"
+                  "4"
                 )}
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">
-                    {steps[2]?.title || ""}
-                  </CardTitle>
-                  <Badge variant="secondary" className="text-xs">
-                    Optional
-                  </Badge>
-                </div>
-                <CardDescription>{steps[2]?.description || ""}</CardDescription>
+                <CardTitle className="text-lg">
+                  {steps[3]?.title || ""}
+                </CardTitle>
+                <CardDescription>{steps[3]?.description || ""}</CardDescription>
               </div>
             </div>
             <div className="ml-auto flex items-center gap-2">
@@ -1329,7 +1410,7 @@ export default function Scenario({
           </CardContent>
         </Card>
 
-        {/* Step 4: Content */}
+        {/* Step 5: Content */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""} ${
             !isEditMode && getStepStatus("content") === "pending"
@@ -1351,21 +1432,30 @@ export default function Scenario({
                 {getStepStatus("content") === "completed" ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  "4"
+                  "5"
                 )}
               </div>
               <div className="flex-1">
                 <CardTitle className="text-lg">
-                  {steps[3]?.title || ""}
+                  {steps[4]?.title || ""}
                 </CardTitle>
-                <CardDescription>{steps[3]?.description || ""}</CardDescription>
+                <CardDescription>{steps[4]?.description || ""}</CardDescription>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="default"
                 size="sm"
-                onClick={handleGenerateScenario}
+                onClick={() => {
+                  if (
+                    formData.problemStatement &&
+                    formData.problemStatement.trim()
+                  ) {
+                    setShowRegenerationDialog(true);
+                  } else {
+                    handleGenerateScenario();
+                  }
+                }}
                 disabled={isSubmitting || isGeneratingScenario || isReadonly}
               >
                 {isGeneratingScenario ? (
@@ -1412,9 +1502,12 @@ export default function Scenario({
 
             {/* Objectives Section */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Learning Objectives (Optional)
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Objectives</Label>
+                <Badge variant="secondary" className="text-xs">
+                  Optional
+                </Badge>
+              </div>
 
               <div className="space-y-2">
                 {currentObjectives.map((objective, index) => (
@@ -1500,51 +1593,57 @@ export default function Scenario({
         </Button>
       </div>
 
-      {/* Settings Dialog */}
+      {/* Regeneration Dialog */}
       <AlertDialog
-        open={showSettingsDialog}
-        onOpenChange={setShowSettingsDialog}
+        open={showRegenerationDialog}
+        onOpenChange={setShowRegenerationDialog}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Scenario Settings</AlertDialogTitle>
+            <AlertDialogTitle>Regenerate Scenario</AlertDialogTitle>
             <AlertDialogDescription>
-              Configure advanced settings for this scenario.
+              What would you like to change or emphasize in this scenario?
+              Provide any specific instructions for the AI generation.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4 py-4">
-            {/* Department Selection - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={scenarioData?.valid_department_ids || []}
-                  selectedIds={formData.departmentIds || []}
-                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                  placeholder="All Departments"
-                  disabled={isReadonly}
-                  multiSelect={true}
-                />
-              </div>
-            )}
-            {/* Practice Scenario feature removed - was not in final schema */}
-            {/* <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Practice Scenario</Label>
-                <p className="text-sm text-muted-foreground">
-                  Mark this as a practice scenario for training purposes.
-                </p>
-              </div>
-              <Switch
-                checked={false}
-                onCheckedChange={() => {}}
-                disabled={isReadonly}
+            <div className="space-y-2">
+              <Label htmlFor="regeneration-instructions">
+                Instructions (Optional)
+              </Label>
+              <Textarea
+                id="regeneration-instructions"
+                value={regenerationInstructions}
+                onChange={(e) => setRegenerationInstructions(e.target.value)}
+                placeholder="e.g., Make it more challenging, focus on time management, emphasize the student's frustration..."
+                className="min-h-[100px]"
+                disabled={isGeneratingScenario}
               />
-            </div> */}
+            </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Close</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isGeneratingScenario}
+              onClick={() => {
+                setRegenerationInstructions("");
+                setShowRegenerationDialog(false);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleGenerateScenario(
+                  regenerationInstructions.trim() || undefined
+                );
+                setShowRegenerationDialog(false);
+                setRegenerationInstructions("");
+              }}
+              disabled={isGeneratingScenario}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isGeneratingScenario ? "Regenerating..." : "Regenerate"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

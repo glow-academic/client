@@ -130,11 +130,13 @@ async def run_scenario_agent(
     conn: asyncpg.Connection = Depends(get_db),
     profile_id: uuid.UUID | None = None,
     sio_instance: Any = None,
+    user_instructions: str | None = None,
 ) -> tuple[str, str, list[str], str]:
     """
     This function is used to run the scenario agent.
 
     Args:
+        department_id: The ID of the department
         persona_id: The ID of the persona
         document_ids: The IDs of the documents
         parameter_item_ids: The IDs of the parameter items
@@ -142,6 +144,7 @@ async def run_scenario_agent(
         conn: The database connection (asyncpg.Connection)
         profile_id: The ID of the profile (optional)
         sio_instance: Optional Socket.IO instance for progress events
+        user_instructions: Optional user instructions for scenario generation
     Returns:
         A tuple of (title, description, objectives, trace_id).
     """
@@ -229,6 +232,16 @@ async def run_scenario_agent(
             document_info,
             parameter_item_info,
         ]
+        
+        # Add user instructions as first input item if provided
+        if user_instructions and user_instructions.strip():
+            user_instructions_item: TResponseInputItem = {
+                "role": "user",
+                "content": f"User instructions for scenario generation: {user_instructions.strip()}",
+            }
+            input_items.insert(0, user_instructions_item)
+            logger.info(f"Added user instructions: {user_instructions[:100]}...")
+        
         clean_input_items = [item for item in input_items if item is not None]
         logger.info(f"Input items: {clean_input_items}")
 

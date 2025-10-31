@@ -8,6 +8,7 @@ from tests.seed_helpers import (
 )
 
 from app.schemas.scenarios import (
+    GenerateScenarioAIRequest,  # type: ignore
     ScenarioDetailRequest,  # type: ignore
     ScenariosFilters,  # type: ignore
 )
@@ -588,3 +589,39 @@ async def test_build_enhanced_scenario_mapping_empty_list(
 
     assert isinstance(result, dict)
     assert len(result) == 0, "Empty scenario_ids should return empty mapping"
+
+
+# ============================================================================
+# AI GENERATION TESTS
+# ============================================================================
+
+
+async def test_generate_scenario_ai_request_accepts_user_instructions(
+    db: asyncpg.Connection,
+) -> None:
+    """Test that GenerateScenarioAIRequest accepts userInstructions parameter."""
+    dept_id = await get_cs_dept_id(db)
+    
+    # Test request creation with userInstructions
+    request = GenerateScenarioAIRequest(
+        departmentId=dept_id,
+        userInstructions="Make the scenario more challenging",
+    )
+    
+    assert request.userInstructions == "Make the scenario more challenging"
+    assert request.departmentId == dept_id
+
+
+async def test_generate_scenario_ai_request_user_instructions_optional(
+    db: asyncpg.Connection,
+) -> None:
+    """Test that userInstructions is optional in GenerateScenarioAIRequest."""
+    dept_id = await get_cs_dept_id(db)
+    
+    # Test request creation without userInstructions
+    request = GenerateScenarioAIRequest(
+        departmentId=dept_id,
+    )
+    
+    assert request.userInstructions is None
+    assert request.departmentId == dept_id
