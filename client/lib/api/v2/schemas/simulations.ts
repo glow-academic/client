@@ -17,7 +17,6 @@ import {
 // ============================================================================
 
 export const SimulationsFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 

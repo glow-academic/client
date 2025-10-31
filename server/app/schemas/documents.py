@@ -10,7 +10,6 @@ from .base import DepartmentMapping, ParameterItemMapping, ScenarioMapping
 class DocumentsFilters(BaseModel):
     """Filters for documents list request."""
 
-    departmentIds: list[str]
     profileId: str
 
 

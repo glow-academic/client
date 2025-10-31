@@ -7,11 +7,16 @@ class RubricQueries:
     """Query builders for rubric operations with hierarchical structure."""
 
     def list_rubrics(
-        self, department_ids: list[str], profile_id: str
+        self, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build query for rubrics list with permissions and embedded hierarchical structure."""
         query = """
-        WITH rubric_active_simulation_links AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        rubric_active_simulation_links AS (
             SELECT 
                 rubric_id,
                 COUNT(*) as active_simulation_count
@@ -35,7 +40,7 @@ class RubricQueries:
             GROUP BY rd.rubric_id
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         ),
         rubric_data AS (
             SELECT 
@@ -70,7 +75,7 @@ class RubricQueries:
             GROUP BY r.id, r.name, r.description, r.points, r.pass_points, rdd.department_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(rd.rubric_id) FILTER (WHERE rd.department_id = ANY($1)) > 0
+                COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
                 OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
         ),
         all_rubric_ids AS (
@@ -137,7 +142,7 @@ class RubricQueries:
         ORDER BY rd.name
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [profile_id])
 
     def get_valid_departments_for_profile(
         self, profile_id: str

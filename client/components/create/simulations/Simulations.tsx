@@ -43,15 +43,14 @@ export function Simulations() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const log = useLogger();
   // V2 API hooks - single fetch with all data
   const { data: simulationsData, isLoading } = useSimulationsList(
     {
-      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     },
-    { enabled: !!effectiveProfile?.id && effectiveDepartmentIds.length > 0 }
+    { enabled: !!effectiveProfile?.id }
   );
 
   // Mutation hooks

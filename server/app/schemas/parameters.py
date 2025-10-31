@@ -12,7 +12,6 @@ from .base import DepartmentMapping
 class ParametersFilters(BaseModel):
     """Filters for parameters list."""
 
-    departmentIds: list[str]
     profileId: str
 
 

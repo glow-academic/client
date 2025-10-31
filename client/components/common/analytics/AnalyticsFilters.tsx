@@ -11,6 +11,7 @@ import {
   CohortSelector,
   Cohort as CohortSelectorCohort,
 } from "@/components/common/analytics/CohortSelector";
+import { DepartmentSelector } from "@/components/common/analytics/DepartmentSelector";
 import { PracticePicker } from "@/components/common/analytics/PracticePicker";
 import { RolePicker } from "@/components/common/profile/RolePicker";
 import { Button } from "@/components/ui/button";
@@ -40,13 +41,15 @@ export function AnalyticsFilters({
     setDateRange,
     selectedCohortIds,
     setSelectedCohortIds,
+    selectedDepartmentIds,
+    setSelectedDepartmentIds,
     selectedRoles,
     setSelectedRoles,
     simulationFilters,
     setSimulationFilters,
   } = useAnalytics();
 
-  const { cohorts, cohortMemberCounts } = useProfile();
+  const { cohorts, cohortMemberCounts, departments } = useProfile();
   const log = useLogger();
   const getCohortMemberCount = (cohortId: string) =>
     cohortMemberCounts[cohortId] ?? 0;
@@ -211,6 +214,22 @@ export function AnalyticsFilters({
     setSelectedCohortIds(cohorts.map((c) => c.id));
   };
 
+  // Convert departments to the format expected by DepartmentSelector
+  const departmentOptions = departments.map((department) => ({
+    id: department.id,
+    title: department.title,
+    ...(department.description && { description: department.description }),
+  }));
+
+  // Get selected departments for the picker
+  const selectedDepartments = departmentOptions.filter((department) =>
+    selectedDepartmentIds.includes(department.id)
+  );
+
+  const handleDepartmentSelect = (departments: typeof departmentOptions) => {
+    setSelectedDepartmentIds(departments.map((d) => d.id));
+  };
+
   const handleRoleSelect = (roles: ProfileRole[]) => {
     setSelectedRoles(roles);
   };
@@ -256,6 +275,15 @@ export function AnalyticsFilters({
           selectedCohorts={selectedCohorts}
           onSelect={handleCohortSelect}
           placeholder="Cohorts"
+          hideSelectedChips={true}
+        />
+
+        {/* Department Picker */}
+        <DepartmentSelector
+          departments={departmentOptions}
+          selectedDepartments={selectedDepartments}
+          onSelect={handleDepartmentSelect}
+          placeholder="Departments"
           hideSelectedChips={true}
         />
 

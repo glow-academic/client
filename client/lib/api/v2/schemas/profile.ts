@@ -38,7 +38,6 @@ export type ProfileItem = z.infer<typeof ProfileItemSchema>;
 // ============================================================================
 
 export const ProfileFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(), // Current user's profile for permissions
 });
 

@@ -10,7 +10,6 @@ import { z } from "zod";
 // ============================================================================
 
 export const DepartmentsFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 

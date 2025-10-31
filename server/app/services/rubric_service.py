@@ -35,7 +35,7 @@ class RubricService(BaseService):
         """Get rubrics list with hierarchical structure and permissions."""
         # Get rubrics with embedded hierarchical data
         query, params = self.queries.list_rubrics(
-            filters.departmentIds, filters.profileId
+            filters.profileId
         )
         rubrics_result = await self.conn.fetch(query, *params)
 

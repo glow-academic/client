@@ -31,6 +31,14 @@ export interface AnalyticsContextType {
   selectedCohortIds: string[];
   setSelectedCohortIds: (cohortIds: string[]) => void;
 
+  // Department filtering state
+  selectedDepartmentIds: string[];
+  setSelectedDepartmentIds: (departmentIds: string[]) => void;
+
+  // Document filtering state
+  selectedDocumentIds: string[];
+  setSelectedDocumentIds: (documentIds: string[]) => void;
+
   // Role filtering state
   selectedRoles: ProfileRole[];
   setSelectedRoles: (roles: ProfileRole[]) => void;
@@ -41,6 +49,8 @@ export interface AnalyticsContextType {
 
   // Effective values (computed from user selections)
   effectiveCohortIds: string[];
+  effectiveDepartmentIds: string[];
+  effectiveDocumentIds: string[];
   effectiveRoles: ProfileRole[];
   effectiveSimulationFilters: SimulationFilter[];
 
@@ -59,7 +69,7 @@ interface AnalyticsProviderProps {
 
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Get profile context to check user role and ID
-  const { effectiveProfile, earliestAttemptDate, cohortIds } = useProfile();
+  const { effectiveProfile, earliestAttemptDate, cohortIds, departmentIds } = useProfile();
   const pathname = usePathname();
 
   // Calculate the earliest date to use as default start date
@@ -105,6 +115,10 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
   // Cohort filtering - empty array means all cohorts
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
+  // Department filtering - empty array means all departments
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
+  // Document filtering - empty array means all documents
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
   const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(["ta"]);
   // New dual flags for practice/assigned filtering
@@ -116,6 +130,20 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const effectiveCohortIds = useMemo(
     () => (selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds),
     [selectedCohortIds, cohortIds]
+  );
+
+  // Compute effective department IDs (all user departments if none selected)
+  const effectiveDepartmentIds = useMemo(
+    () => (selectedDepartmentIds.length > 0 ? selectedDepartmentIds : departmentIds),
+    [selectedDepartmentIds, departmentIds]
+  );
+
+  // Compute effective document IDs (all documents if none selected)
+  // Note: We'll need to get documentIds from profile context or fetch them separately
+  // For now, empty array means all documents (will be handled by analytics queries)
+  const effectiveDocumentIds = useMemo(
+    () => selectedDocumentIds,
+    [selectedDocumentIds]
   );
 
   // Route-aware flags
@@ -170,12 +198,14 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setStartDate(roundedEarliest);
     setEndDate(roundedNow);
     setSelectedCohortIds([]);
+    setSelectedDepartmentIds([]);
+    setSelectedDocumentIds([]);
     setSelectedRoles([]);
     setSimulationFilters(["general"]);
     setHasUserSetDateRange(false); // Reset user-set date range
   }, [earliestDate]);
 
-  const hasActiveFilters = selectedCohortIds.length > 0;
+  const hasActiveFilters = selectedCohortIds.length > 0 || selectedDepartmentIds.length > 0 || selectedDocumentIds.length > 0;
 
   const value: AnalyticsContextType = useMemo(
     () => ({
@@ -184,11 +214,17 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       setDateRange,
       selectedCohortIds,
       setSelectedCohortIds,
+      selectedDepartmentIds,
+      setSelectedDepartmentIds,
+      selectedDocumentIds,
+      setSelectedDocumentIds,
       selectedRoles,
       setSelectedRoles,
       simulationFilters,
       setSimulationFilters,
       effectiveCohortIds,
+      effectiveDepartmentIds,
+      effectiveDocumentIds,
       effectiveRoles,
       effectiveSimulationFilters,
       clearFilters,
@@ -200,11 +236,17 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       setDateRange,
       selectedCohortIds,
       setSelectedCohortIds,
+      selectedDepartmentIds,
+      setSelectedDepartmentIds,
+      selectedDocumentIds,
+      setSelectedDocumentIds,
       effectiveRoles,
       setSelectedRoles,
       effectiveSimulationFilters,
       setSimulationFilters,
       effectiveCohortIds,
+      effectiveDepartmentIds,
+      effectiveDocumentIds,
       clearFilters,
       hasActiveFilters,
       selectedRoles,

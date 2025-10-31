@@ -40,7 +40,7 @@ class ParameterService(BaseService):
         """Get parameters list with item counts and permissions."""
         # Get query from query builder
         query, params = self.queries.list_parameters(
-            filters.departmentIds, filters.profileId
+            filters.profileId
         )
 
         result = await self.conn.fetch(query, *params)

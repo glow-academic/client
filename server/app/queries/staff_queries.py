@@ -7,11 +7,16 @@ class StaffQueries:
     """Query builders for staff operations."""
 
     def list_staff(
-        self, department_ids: list[str], current_profile_id: str, campus_domain: str
+        self, current_profile_id: str, campus_domain: str
     ) -> tuple[str, list[Any]]:
         """Build query for staff list with permissions and JSONB mappings."""
         query = """
-        WITH profile_active_cohort_links AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        profile_active_cohort_links AS (
             SELECT 
                 profile_id,
                 COUNT(*) as active_cohort_count
@@ -61,7 +66,7 @@ class StaffQueries:
             GROUP BY mrp.profile_id
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         ),
         all_cohort_ids AS (
             SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
@@ -89,9 +94,9 @@ class StaffQueries:
                     'name', d.title,
                     'description', COALESCE(d.description, '')
                 )
-            ), '{}'::jsonb) as department_mapping
+            ), '{}'::jsonb            ) as department_mapping
             FROM departments d
-            WHERE (d.id = ANY($1::uuid[]) OR d.id IN (SELECT department_id FROM all_department_ids))
+            WHERE (d.id IN (SELECT department_id FROM user_departments) OR d.id IN (SELECT department_id FROM all_department_ids))
             AND d.active = true
         ),
         -- Trend data CTEs
@@ -99,7 +104,7 @@ class StaffQueries:
             SELECT COUNT(DISTINCT p.id) as count
             FROM profiles p
             JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
-            WHERE pd.department_id = ANY($1::uuid[])
+            WHERE pd.department_id IN (SELECT department_id FROM user_departments)
             AND p.active = true
         ),
         admin_users_by_date AS (
@@ -108,7 +113,7 @@ class StaffQueries:
                 COUNT(DISTINCT p.id) as count
             FROM profiles p
             JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
-            WHERE pd.department_id = ANY($1::uuid[])
+            WHERE pd.department_id IN (SELECT department_id FROM user_departments)
             AND p.role IN ('admin', 'superadmin')
             GROUP BY DATE(p.created_at)
         ),
@@ -135,7 +140,7 @@ class StaffQueries:
                 COUNT(DISTINCT p.id) as count
             FROM profiles p
             JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
-            WHERE pd.department_id = ANY($1::uuid[])
+            WHERE pd.department_id IN (SELECT department_id FROM user_departments)
             AND p.role = 'instructional'
             GROUP BY DATE(p.created_at)
         ),
@@ -162,7 +167,7 @@ class StaffQueries:
                 COUNT(DISTINCT p.id) as count
             FROM profiles p
             JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
-            WHERE pd.department_id = ANY($1::uuid[])
+            WHERE pd.department_id IN (SELECT department_id FROM user_departments)
             AND p.role = 'ta'
             GROUP BY DATE(p.created_at)
         ),
@@ -190,7 +195,7 @@ class StaffQueries:
             FROM model_runs mr
             JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
             JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
-            WHERE pd.department_id = ANY($1::uuid[])
+            WHERE pd.department_id IN (SELECT department_id FROM user_departments)
             GROUP BY DATE(mr.created_at)
         ),
         total_requests_cumulative AS (
@@ -215,7 +220,7 @@ class StaffQueries:
             SELECT MIN(DATE(p.created_at)) as date
             FROM profiles p
             JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
-            WHERE pd.department_id = ANY($1::uuid[])
+            WHERE pd.department_id IN (SELECT department_id FROM user_departments)
         ),
         active_users_trend AS (
             SELECT COALESCE(jsonb_agg(
@@ -249,7 +254,7 @@ class StaffQueries:
             p.alias,
             p.first_name || ' ' || p.last_name as name,
             p.role,
-            p.alias || '@' || $3 as email,
+            p.alias || '@' || $2 as email,
             SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1) as initials,
             p.active,
             pa.last_active as lastActive,
@@ -303,11 +308,11 @@ class StaffQueries:
         CROSS JOIN cohort_mapping_data cmd
         CROSS JOIN department_mapping_data dmd
         CROSS JOIN trend_data_combined tdc
-        WHERE pd.department_id = ANY($1)
+        WHERE pd.department_id IN (SELECT department_id FROM user_departments)
         ORDER BY p.id, p.last_name, p.first_name
         """
 
-        return (query, [department_ids, current_profile_id, campus_domain])
+        return (query, [current_profile_id, campus_domain])
 
     def get_cohort_mapping(self, cohort_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for cohort mapping."""

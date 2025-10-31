@@ -7,11 +7,16 @@ class CohortQueries:
     """Query builders for cohort operations."""
 
     def list_cohorts(
-        self, department_ids: list[str], profile_id: str, campus_domain: str
+        self, profile_id: str, campus_domain: str
     ) -> tuple[str, list[Any]]:
         """Build query for cohorts list with permissions, relationships, and mappings in one query."""
         query = """
-        WITH cohort_profiles_agg AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        cohort_profiles_agg AS (
             SELECT 
                 cp.cohort_id,
                 ARRAY_AGG(cp.profile_id ORDER BY p.last_name, p.first_name) as profile_ids
@@ -45,12 +50,12 @@ class CohortQueries:
             GROUP BY cd.cohort_id
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         ),
         user_in_cohort AS (
             SELECT cohort_id
             FROM cohort_profiles
-            WHERE profile_id = $2 AND active = true
+            WHERE profile_id = $1 AND active = true
         ),
         all_profile_ids AS (
             SELECT DISTINCT unnest(profile_ids) as profile_id
@@ -100,7 +105,7 @@ class CohortQueries:
                     p.id::text,
                     jsonb_build_object(
                         'name', p.first_name || ' ' || p.last_name,
-                        'description', p.alias || '@' || $3
+                        'description', p.alias || '@' || $2
                     )
                 ), '{}'::jsonb)
                 FROM profiles p
@@ -141,25 +146,22 @@ class CohortQueries:
         LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
         CROSS JOIN user_profile up
         WHERE (
-                -- Admin/superadmin see all
-                up.role IN ('admin', 'superadmin')
-                OR
                 -- Instructional users only see cohorts they're in
                 (up.role = 'instructional' AND uic.cohort_id IS NOT NULL)
                 OR
-                -- Other roles see all
-                up.role NOT IN ('admin', 'superadmin', 'instructional')
+                -- Other roles see cohorts linked to their departments
+                up.role != 'instructional'
             )
         GROUP BY c.id, c.title, c.description, c.active, 
                  cdd.department_ids, cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id
         HAVING 
             -- Include if has matching department link OR has no department links at all (cross-dept)
-            COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY($1)) > 0
+            COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0
             OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)
         ORDER BY c.title
         """
 
-        return (query, [department_ids, profile_id, campus_domain])
+        return (query, [profile_id, campus_domain])
 
     def get_cohort_detail_complete(
         self, cohort_id: str, profile_id: str, campus_domain: str

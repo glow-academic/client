@@ -11,7 +11,6 @@ import { DepartmentMappingSchema } from "./base";
 // ============================================================================
 
 export const ParametersFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 

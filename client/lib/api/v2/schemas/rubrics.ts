@@ -46,7 +46,6 @@ export type StandardsMapping = z.infer<typeof StandardsMappingSchema>;
 // ============================================================================
 
 export const RubricsFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 

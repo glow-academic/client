@@ -7,11 +7,16 @@ class PersonaQueries:
     """Query builders for persona operations."""
 
     def list_personas(
-        self, department_ids: list[str], profile_id: str
+        self, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build query for personas list with permissions and embedded scenario mapping."""
         query = """
-        WITH persona_active_scenario_links AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        persona_active_scenario_links AS (
             SELECT 
                 sp.persona_id,
                 COUNT(*) as active_scenario_count
@@ -71,7 +76,7 @@ class PersonaQueries:
             LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
             LEFT JOIN models m ON m.id = p.model_id
             LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
-            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id = ANY($1)
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id IN (SELECT department_id FROM user_departments)
             GROUP BY p.id, p.name, p.description, p.color, p.icon, p.model_id, p.reasoning, p.temperature, p.active, p.updated_at, 
                      pdd.department_ids, ps.scenario_ids, ps.num_scenarios, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
             HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
@@ -79,7 +84,7 @@ class PersonaQueries:
             )
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         ),
         all_scenario_ids AS (
             SELECT DISTINCT unnest(scenario_ids) as scenario_id
@@ -144,7 +149,7 @@ class PersonaQueries:
         ORDER BY pd.updated_at DESC NULLS LAST
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [profile_id])
 
     def get_persona_by_id(self, persona_id: str) -> tuple[str, list[Any]]:
         """Build query to get persona by ID."""

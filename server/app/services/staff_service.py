@@ -49,7 +49,7 @@ class StaffService(BaseService):
 
         # Get query from query builder (now includes JSONB mappings)
         query, params = self.queries.list_staff(
-            filters.departmentIds, filters.profileId, campus_domain
+            filters.profileId, campus_domain
         )
 
         result = await self.conn.fetch(query, *params)

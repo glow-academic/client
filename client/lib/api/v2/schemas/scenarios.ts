@@ -25,7 +25,6 @@ import { DocumentItemSchema } from "./documents";
 // ============================================================================
 
 export const ScenariosFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 

@@ -8,11 +8,16 @@ class SimulationQueries:
     """Query builders for simulation operations."""
 
     def list_simulations(
-        self, department_ids: list[str], profile_id: str
+        self, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build query for simulations list with permissions and embedded mappings."""
         query = """
-        WITH simulation_scenarios AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        simulation_scenarios AS (
             SELECT 
                 ss.simulation_id,
                 ARRAY_AGG(ss.scenario_id ORDER BY sc.name) as scenario_ids,
@@ -83,11 +88,11 @@ class SimulationQueries:
                      sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY($1)) > 0
+                COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
                 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         ),
         all_scenario_ids AS (
             SELECT DISTINCT unnest(scenario_ids) as scenario_id
@@ -164,7 +169,7 @@ class SimulationQueries:
         ORDER BY sd.updated_at DESC NULLS LAST
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [profile_id])
 
     def get_simulation_by_id(self, simulation_id: str) -> tuple[str, list[Any]]:
         """Build query to get simulation by ID."""

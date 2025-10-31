@@ -17,7 +17,6 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo } from "react";
 
 import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
-import { DepartmentsFilters } from "@/components/common/analytics/DepartmentsFilters";
 import { SimulationControls } from "@/components/common/chat/SimulationControls";
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
@@ -130,19 +129,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     isHomePage,
   ]);
 
-  const canShowDepartmentsFilters = useMemo(() => {
-    return (
-      effectiveProfile?.role === "superadmin" &&
-      !isSystemPage &&
-      !isChatPage &&
-      shouldShowChatComponents
-    );
-  }, [
-    effectiveProfile?.role,
-    isSystemPage,
-    isChatPage,
-    shouldShowChatComponents,
-  ]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 
@@ -287,9 +273,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 onSectionChange={handleSectionChange}
               />
             </div>
-
-            {/* Department Filters - Show for superadmin users */}
-            {canShowDepartmentsFilters && <DepartmentsFilters />}
 
             {/* Analytics Filters - Show in top right for analytics pages */}
             {canShowAnalyticsFilters && (

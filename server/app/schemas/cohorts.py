@@ -14,7 +14,6 @@ from .staff import StaffItem
 class CohortsFilters(BaseModel):
     """Filters for cohorts list."""
 
-    departmentIds: list[str]
     profileId: str
 
 

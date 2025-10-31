@@ -60,7 +60,7 @@ class CohortService(BaseService):
 
         # Get query from query builder (now includes mappings)
         query, params = self.queries.list_cohorts(
-            filters.departmentIds, filters.profileId, campus_domain
+            filters.profileId, campus_domain
         )
 
         result = await self.conn.fetch(query, *params)

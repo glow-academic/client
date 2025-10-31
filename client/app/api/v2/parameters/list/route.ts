@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { getApiBase } from "@/lib/api-base";
 import { ParametersFiltersSchema } from "@/lib/api/v2/schemas/parameters";
 import { NextRequest, NextResponse } from "next/server";
@@ -5,8 +6,18 @@ import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {
+    // Get session to derive the actual user's profile ID
+    const session = await auth();
+    if (!session?.user?.profileId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const filters = ParametersFiltersSchema.parse(body);
+    // Override profileId from session (security)
+    const filters = ParametersFiltersSchema.parse({
+      ...body,
+      profileId: session.user.profileId,
+    });
 
     const response = await fetch(`${getApiBase()}/api/v2/parameters/list`, {
       method: "POST",

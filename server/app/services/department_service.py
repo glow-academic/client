@@ -47,7 +47,7 @@ class DepartmentService(BaseService):
             DepartmentsListResponse
         """
         query, params = self.queries.get_departments_list(
-            filters.departmentIds, filters.profileId
+            filters.profileId
         )
         rows = await self.conn.fetch(query, *params)
         return self._build_departments_list(rows)

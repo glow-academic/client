@@ -13,7 +13,6 @@ from app.schemas.staff import StaffItem
 class DepartmentsFilters(BaseModel):
     """Filters for departments list."""
 
-    departmentIds: list[str]
     profileId: str
 
 

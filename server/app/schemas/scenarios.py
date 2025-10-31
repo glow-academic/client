@@ -10,7 +10,6 @@ from .base import (CohortMapping, DepartmentMapping, DocumentMapping,
 class ScenariosFilters(BaseModel):
     """Filters for scenarios list request."""
 
-    departmentIds: list[str]
     profileId: str
 
 

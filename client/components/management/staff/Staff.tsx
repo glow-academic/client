@@ -55,15 +55,14 @@ import TotalRequestsKPI from "./kpis/TotalRequestsKPI";
 
 export default function Staff() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
 
   // V2 API hooks
   const filters = React.useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [effectiveProfile?.id]
   );
 
   const {

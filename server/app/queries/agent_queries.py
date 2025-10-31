@@ -262,17 +262,10 @@ class AgentQueries:
         user_departments AS (
             SELECT DISTINCT d.id, d.title as name, d.description
             FROM departments d
+            JOIN profile_departments pd ON pd.department_id = d.id
             WHERE d.active = true
-            AND (
-                -- Superadmin sees all departments
-                (SELECT role FROM user_profile) = 'superadmin'
-                OR
-                -- Others see only their departments
-                d.id IN (
-                    SELECT department_id FROM profile_departments 
-                    WHERE profile_id = $2::uuid
-                )
-            )
+            AND pd.profile_id = $2::uuid
+            AND pd.active = true
         ),
         valid_departments_data AS (
             SELECT 
@@ -372,17 +365,10 @@ class AgentQueries:
         user_departments AS (
             SELECT DISTINCT d.id, d.title as name, d.description
             FROM departments d
+            JOIN profile_departments pd ON pd.department_id = d.id
             WHERE d.active = true
-            AND (
-                -- Superadmin sees all departments
-                (SELECT role FROM user_profile) = 'superadmin'
-                OR
-                -- Others see only their departments
-                d.id IN (
-                    SELECT department_id FROM profile_departments 
-                    WHERE profile_id = $1::uuid
-                )
-            )
+            AND pd.profile_id = $1::uuid
+            AND pd.active = true
         ),
         valid_departments_data AS (
             SELECT 

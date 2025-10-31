@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { getApiBase } from "@/lib/api-base";
 import { ProfileFiltersSchema } from "@/lib/api/v2/schemas/profile";
 import { NextRequest, NextResponse } from "next/server";
@@ -5,8 +6,18 @@ import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {
+    // Get session to derive the actual user's profile ID
+    const session = await auth();
+    if (!session?.user?.profileId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const filters = ProfileFiltersSchema.parse(body);
+    // Override profileId from session (security)
+    const filters = ProfileFiltersSchema.parse({
+      ...body,
+      profileId: session.user.profileId,
+    });
 
     const url = `${getApiBase()}/api/v2/profile/list`;
     const response = await fetch(url, {

@@ -7,7 +7,7 @@ class DepartmentQueries:
     """Query builders for department operations."""
 
     def get_departments_list(
-        self, department_ids: list[str], profile_id: str
+        self, profile_id: str
     ) -> tuple[str, list[Any]]:
         """
         Get departments list with computed fields.
@@ -24,7 +24,12 @@ class DepartmentQueries:
             Tuple of (query, params)
         """
         query = """
-        WITH model_run_costs AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        model_run_costs AS (
             SELECT 
                 mr.id as model_run_id,
                 COALESCE(SUM(
@@ -43,7 +48,7 @@ class DepartmentQueries:
             FROM model_run_costs mrc
             JOIN model_run_agents mra ON mra.model_run_id = mrc.model_run_id AND mra.active = true
             JOIN agent_departments ad ON ad.agent_id = mra.agent_id AND ad.active = true
-            WHERE ad.department_id = ANY($1)
+            WHERE ad.department_id IN (SELECT department_id FROM user_departments)
         ),
         model_run_departments_via_personas AS (
             SELECT DISTINCT
@@ -52,7 +57,7 @@ class DepartmentQueries:
             FROM model_run_costs mrc
             JOIN model_run_personas mrp ON mrp.model_run_id = mrc.model_run_id AND mrp.active = true
             JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
-            WHERE pd.department_id = ANY($1)
+            WHERE pd.department_id IN (SELECT department_id FROM user_departments)
         ),
         model_run_departments AS (
             SELECT model_run_id, department_id FROM model_run_departments_via_agents
@@ -72,7 +77,7 @@ class DepartmentQueries:
                 department_id, 
                 COUNT(DISTINCT profile_id) as staff_count
             FROM profile_departments
-            WHERE department_id = ANY($1)
+            WHERE department_id IN (SELECT department_id FROM user_departments)
             GROUP BY department_id
         ),
         department_all_cohort_links AS (
@@ -80,7 +85,7 @@ class DepartmentQueries:
                 cd.department_id,
                 COUNT(*) as total_cohort_links
             FROM cohort_departments cd
-            WHERE cd.department_id = ANY($1) AND cd.active = true
+            WHERE cd.department_id IN (SELECT department_id FROM user_departments) AND cd.active = true
             GROUP BY cd.department_id
         ),
         department_profiles_would_orphan AS (
@@ -88,7 +93,7 @@ class DepartmentQueries:
                 pd.department_id,
                 COUNT(*) as profiles_with_only_this_dept
             FROM profile_departments pd
-            WHERE pd.department_id = ANY($1)
+            WHERE pd.department_id IN (SELECT department_id FROM user_departments)
             AND NOT EXISTS (
                 SELECT 1 FROM profile_departments pd2 
                 WHERE pd2.profile_id = pd.profile_id 
@@ -97,7 +102,7 @@ class DepartmentQueries:
             GROUP BY pd.department_id
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         )
         SELECT 
             d.id::text as department_id,
@@ -122,16 +127,16 @@ class DepartmentQueries:
                 ELSE false
             END as can_duplicate
         FROM departments d
+        JOIN user_departments ud ON ud.department_id = d.id
         LEFT JOIN department_price_spent dps ON dps.department_id = d.id
         LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id
         LEFT JOIN department_all_cohort_links dacl_all ON dacl_all.department_id = d.id
         LEFT JOIN department_profiles_would_orphan dpwo ON dpwo.department_id = d.id
         CROSS JOIN user_profile up
-        WHERE d.id = ANY($1)
         ORDER BY d.title
         """
 
-        return query, [department_ids, profile_id]
+        return query, [profile_id]
 
     def get_department_basic(self, department_id: str) -> tuple[str, list[Any]]:
         """

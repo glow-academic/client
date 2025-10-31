@@ -15,7 +15,6 @@ import {
 // ============================================================================
 
 export const DocumentsFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 

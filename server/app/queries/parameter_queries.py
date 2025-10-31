@@ -7,11 +7,16 @@ class ParameterQueries:
     """Query builders for parameter operations with hierarchical structure."""
 
     def list_parameters(
-        self, department_ids: list[str], profile_id: str
+        self, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build query for parameters list with item counts and permissions."""
         query = """
-        WITH parameter_active_scenario_links AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        parameter_active_scenario_links AS (
             SELECT 
                 pi.parameter_id,
                 COUNT(DISTINCT spi.scenario_id) as active_scenario_count
@@ -57,7 +62,7 @@ class ParameterQueries:
         parameter_item_departments_data AS (
             SELECT 
                 pi.parameter_id,
-                ARRAY_AGG(DISTINCT pid.department_id::text ORDER BY pid.created_at) as department_ids
+                ARRAY_AGG(pid.department_id::text ORDER BY pid.created_at) as department_ids
             FROM parameter_items pi
             JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id
             WHERE pid.active = true
@@ -72,7 +77,7 @@ class ParameterQueries:
             WHERE pid.active = true
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         )
         SELECT 
             p.id as parameter_id,
@@ -112,14 +117,14 @@ class ParameterQueries:
                  pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role
         HAVING 
             -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
-            COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id = ANY($1)) > 0
+            COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0
             OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
                           JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
                           WHERE pi2.parameter_id = p.id AND pid2.active = true)
         ORDER BY p.updated_at DESC NULLS LAST
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [profile_id])
 
     def get_parameter_by_id(self, parameter_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter by ID.
@@ -363,7 +368,7 @@ class ParameterQueries:
         ),
         parameter_departments_aggregated AS (
             SELECT 
-                ARRAY_AGG(DISTINCT pid.department_id::text ORDER BY pid.department_id) as department_ids
+                ARRAY_AGG(pid.department_id::text ORDER BY pid.department_id) as department_ids
             FROM parameter_items pi
             JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             WHERE pi.parameter_id = $1

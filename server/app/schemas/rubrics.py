@@ -47,7 +47,6 @@ StandardGroupsMappingDetail = dict[str, StandardGroupMappingDetail]
 class RubricsFilters(BaseModel):
     """Filters for rubrics list."""
 
-    departmentIds: list[str]
     profileId: str
 
 

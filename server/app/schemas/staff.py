@@ -13,7 +13,6 @@ from .base import CohortMapping, DepartmentMapping
 class StaffFilters(BaseModel):
     """Filters for staff list."""
 
-    departmentIds: list[str]
     profileId: str  # Current user's profile for permissions
 
 

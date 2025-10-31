@@ -13,7 +13,6 @@ from .base import (DepartmentMapping, ParameterItemMapping, ParameterMapping,
 class SimulationsFilters(BaseModel):
     """Filters for simulations list."""
 
-    departmentIds: list[str]
     profileId: str
 
 

@@ -17,7 +17,6 @@ import { ProfileListItemSchema } from "./profile";
 // ============================================================================
 
 export const CohortsFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 

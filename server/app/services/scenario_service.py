@@ -137,7 +137,7 @@ class ScenarioService(BaseService):
         """Get scenarios list with all relationships using dynamic SQL."""
         # Get query from query builder
         query, params = self.queries.list_scenarios(
-            filters.departmentIds, filters.profileId
+            filters.profileId
         )
 
         result = await self.conn.fetch(query, *params)

@@ -52,7 +52,7 @@ class SimulationService(BaseService):
         """Execute simulations list query (extracted for caching)."""
         # Get query from query builder
         query, params = self.queries.list_simulations(
-            filters.departmentIds, filters.profileId
+            filters.profileId
         )
 
         result = await self.conn.fetch(query, *params)

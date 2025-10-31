@@ -136,10 +136,9 @@ export default function Documents() {
   // V2 API: Build filters
   const filters = useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [effectiveProfile?.id]
   );
 
   // V2 API: Fetch documents list

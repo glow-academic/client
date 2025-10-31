@@ -57,7 +57,7 @@ class DocumentService(BaseService):
         """Get documents list with tags and scenarios using dynamic SQL."""
         # Get query from query builder
         query, params = self.queries.list_documents(
-            filters.departmentIds, filters.profileId
+            filters.profileId
         )
 
         result = await self.conn.fetch(query, *params)

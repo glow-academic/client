@@ -55,7 +55,7 @@ import { ParametersDataTable } from "./ParametersDataTable";
 
 export default function Parameters() {
   const router = useRouter();
-  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -71,10 +71,9 @@ export default function Parameters() {
   // V2 API: Single fetch with pre-calculated counts and permissions
   const filters = useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [effectiveProfile?.id]
   );
 
   const { data: parametersData, isLoading } = useParametersList(filters);

@@ -35,7 +35,7 @@ class PersonaService(BaseService):
         """Get personas list with permissions and scenario details using dynamic SQL."""
         # Get query from query builder
         query, params = self.queries.list_personas(
-            filters.departmentIds, filters.profileId
+            filters.profileId
         )
 
         result = await self.conn.fetch(query, *params)

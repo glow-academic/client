@@ -16,7 +16,6 @@ import {
 // ============================================================================
 
 export const PersonasFiltersSchema = z.object({
-  departmentIds: z.array(z.string()),
   profileId: z.string(),
 });
 

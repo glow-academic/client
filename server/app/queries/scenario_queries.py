@@ -7,11 +7,16 @@ class ScenarioQueries:
     """Query builders for scenario operations."""
 
     def list_scenarios(
-        self, department_ids: list[str], profile_id: str
+        self, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build query for scenarios list with all relationships and embedded mappings."""
         query = """
-        WITH scenario_objectives AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        scenario_objectives AS (
             SELECT 
                 so.scenario_id,
                 ARRAY_AGG((so.scenario_id::text || '_' || so.idx::text) ORDER BY so.idx) as objective_ids
@@ -59,7 +64,7 @@ class ScenarioQueries:
             WHERE sp.active = true
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         ),
         scenario_departments_data AS (
             SELECT 
@@ -123,7 +128,7 @@ class ScenarioQueries:
                      sc.cohort_ids, sdd.department_ids, sal.total_links, up.role
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY($1)) > 0
+                COUNT(sd.scenario_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
                 OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
         ),
         objective_mapping_data AS (
@@ -237,7 +242,7 @@ class ScenarioQueries:
         ORDER BY sd.updated_at DESC NULLS LAST
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [profile_id])
 
     def get_parameter_item_mapping(
         self, parameter_item_ids: list[str]

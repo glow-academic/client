@@ -9,7 +9,6 @@ from .base import (DepartmentMapping, ModelMapping, ReasoningMapping,
 class PersonasFilters(BaseModel):
     """Filters for personas list request."""
 
-    departmentIds: list[str]
     profileId: str
 
 

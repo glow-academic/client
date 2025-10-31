@@ -50,7 +50,7 @@ export default function Rubrics() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const log = useLogger();
 
   // Mutation hooks
@@ -60,10 +60,9 @@ export default function Rubrics() {
   // V2 API: Single fetch with hierarchical data and permissions
   const filters = useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [effectiveProfile?.id]
   );
 
   const { data: rubricsData, isLoading } = useRubricsList(filters);

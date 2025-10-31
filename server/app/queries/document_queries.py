@@ -7,11 +7,16 @@ class DocumentQueries:
     """Query builders for document operations."""
 
     def list_documents(
-        self, department_ids: list[str], profile_id: str
+        self, profile_id: str
     ) -> tuple[str, list[Any]]:
         """Build query for documents list with permissions and embedded mappings."""
         query = """
-        WITH document_active_scenario_links AS (
+        WITH user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        document_active_scenario_links AS (
             SELECT 
                 sd.document_id,
                 COUNT(*) as active_scenario_count
@@ -77,11 +82,11 @@ class DocumentQueries:
                      ddd.department_ids, ds.scenario_ids, dpic.parameter_item_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1)) > 0
+                COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
                 OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
+            SELECT role FROM profiles WHERE id = $1
         ),
         all_scenario_ids AS (
             SELECT DISTINCT unnest(scenario_ids) as scenario_id
@@ -137,7 +142,7 @@ class DocumentQueries:
                 GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.name
                 HAVING 
                     -- Include if has matching department link OR has no department links at all (cross-dept)
-                    COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($1)) > 0
+                    COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
                     OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
             ) pi
         ),
@@ -153,7 +158,7 @@ class DocumentQueries:
                 '{}'::jsonb
             ) as mapping
             FROM departments d
-            WHERE d.id = ANY($1)
+            WHERE d.id IN (SELECT department_id FROM user_departments)
         )
         SELECT 
             dd.*,
@@ -179,7 +184,7 @@ class DocumentQueries:
         ORDER BY dd.updated_at DESC
         """
 
-        return (query, [department_ids, profile_id])
+        return (query, [profile_id])
 
     # get_tag_mapping removed - simulation_tags table dropped
     # Use get_parameter_item_mapping instead
