@@ -94,7 +94,7 @@ export default function Agents() {
   }, [departmentMapping]);
 
   const handleEdit = (id: string) => {
-    router.push(`/system/agents/a/${id}`);
+    router.push(`/management/agents/a/${id}`);
   };
 
   const handleDuplicate = async (id: string) => {

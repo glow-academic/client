@@ -187,7 +187,7 @@ export default function Department({ departmentId }: DepartmentProps) {
             onSuccess: () => {
               resetFormAndState();
               toast.success("Department updated successfully!");
-              router.push("/management/departments");
+              router.push("/system/departments");
             },
             onError: (error) => {
               toast.error(`Failed to update department: ${error.message}`);
@@ -208,7 +208,7 @@ export default function Department({ departmentId }: DepartmentProps) {
             onSuccess: () => {
               resetFormAndState();
               toast.success("Department created successfully!");
-              router.push("/management/departments");
+              router.push("/system/departments");
             },
             onError: (error) => {
               toast.error(`Failed to create department: ${error.message}`);

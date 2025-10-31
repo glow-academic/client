@@ -393,7 +393,7 @@ export function UnifiedSidebar({
       availableSections.includes("staff") ||
       availableSections.includes("parameters") ||
       availableSections.includes("rubrics") ||
-      availableSections.includes("departments")
+      availableSections.includes("agents")
     ) {
       const managementItems: MenuItem[] = [];
 
@@ -404,19 +404,19 @@ export function UnifiedSidebar({
         items: managementItems,
       });
 
-      if (availableSections.includes("departments")) {
-        managementItems.push({
-          title: "Departments",
-          url: "#",
-          section: "departments",
-        });
-      }
-
       if (availableSections.includes("staff")) {
         managementItems.push({
           title: "Staff",
           url: "#",
           section: "staff",
+        });
+      }
+
+      if (availableSections.includes("agents")) {
+        managementItems.push({
+          title: "Agents",
+          url: "#",
+          section: "agents",
         });
       }
 
@@ -440,7 +440,7 @@ export function UnifiedSidebar({
     // System  - Available from admin level and up
     if (
       availableSections.includes("providers") ||
-      availableSections.includes("agents") ||
+      availableSections.includes("departments") ||
       availableSections.includes("feedback") ||
       availableSections.includes("logs")
     ) {
@@ -453,11 +453,11 @@ export function UnifiedSidebar({
         items: systemItems,
       });
 
-      if (availableSections.includes("agents")) {
+      if (availableSections.includes("departments")) {
         systemItems.push({
-          title: "Agents",
+          title: "Departments",
           url: "#",
-          section: "agents",
+          section: "departments",
         });
       }
 

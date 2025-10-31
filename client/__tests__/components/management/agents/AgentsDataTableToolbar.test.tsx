@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   AgentsDataTableToolbar,
   AgentsDataTableToolbarProps,
-} from "@/components/system/agents/AgentsDataTableToolbar";
+} from "@/components/management/agents/AgentsDataTableToolbar";
 import { getMockTable } from "@/mocks/navigation";
 import { Agent } from "@/types";
 

@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import EditSystemAgent from "@/components/system/agents/EditAgent";
+import EditSystemAgent from "@/components/management/agents/EditAgent";
 
 import { auth } from "@/auth";
 import { agentsDetailKeys } from "@/lib/api/v2/keys";

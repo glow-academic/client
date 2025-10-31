@@ -251,7 +251,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             onSuccess: () => {
               toast.success("Agent updated successfully!");
               resetFormAndState();
-              router.push("/system/agents");
+              router.push("/management/agents");
               setIsSubmitting(false);
             },
             onError: (error) => {
@@ -290,7 +290,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             onSuccess: (response) => {
               toast.success("Agent created successfully!");
               resetFormAndState();
-              router.push(`/system/agents/a/${response.agentId}`);
+              router.push(`/management/agents/a/${response.agentId}`);
               setIsSubmitting(false);
             },
             onError: (error) => {

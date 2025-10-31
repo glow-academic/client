@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/agents/new/page.tsx
+ * app/(main)/management/agents/new/page.tsx
  * New provider page for the providers section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

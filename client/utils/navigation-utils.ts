@@ -96,8 +96,8 @@ export const getSectionRoute = (
     // Management routes
     case "management":
       return "/management";
-    case "departments":
-      return "/management/departments";
+    case "agents":
+      return "/management/agents";
     case "staff":
       return "/management/staff";
     case "rubrics":
@@ -108,8 +108,8 @@ export const getSectionRoute = (
     // System routes
     case "system":
       return "/system";
-    case "agents":
-      return "/system/agents";
+    case "departments":
+      return "/system/departments";
     case "providers":
       return "/system/providers";
     case "feedback":
@@ -201,17 +201,17 @@ export const getSectionRoute = (
       }
       if (section.startsWith("department-")) {
         const departmentId = section.replace("department-", "");
-        return `/management/departments/d/${departmentId}`;
+        return `/system/departments/d/${departmentId}`;
       }
       if (section.startsWith("persona-")) {
         const personaId = section.replace("persona-", "");
         return `/create/personas/p/${personaId}`;
       }
 
-      // System dynamic routes
+      // Management dynamic routes
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
-        return `/system/agents/a/${agentId}`;
+        return `/management/agents/a/${agentId}`;
       }
 
       return "/home"; // Default fallback to home

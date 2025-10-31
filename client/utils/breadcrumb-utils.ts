@@ -108,11 +108,11 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "rubrics";
       }
-      if (second === "departments") {
-        if (third === "d" && fourth) {
-          return `department-${fourth}`;
+      if (second === "agents") {
+        if (third === "a" && fourth) {
+          return `agent-${fourth}`;
         }
-        return "departments";
+        return "agents";
       }
       if (second) {
         return second; // staff, context, logs, models, rubrics
@@ -120,11 +120,11 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "management";
 
     case "system":
-      if (second === "agents") {
-        if (third === "a" && fourth) {
-          return `agent-${fourth}`;
+      if (second === "departments") {
+        if (third === "d" && fourth) {
+          return `department-${fourth}`;
         }
-        return "agents";
+        return "departments";
       }
       if (second === "providers") {
         if (third === "p" && fourth && fifth === "m" && sixth) {

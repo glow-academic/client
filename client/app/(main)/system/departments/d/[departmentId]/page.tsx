@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/departments/d/[departmentId]/page.tsx
+ * app/(main)/system/departments/d/[departmentId]/page.tsx
  * Department edit page
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

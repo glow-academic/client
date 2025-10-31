@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   AgentsDataTable,
   AgentsDataTableProps,
-} from "@/components/system/agents/AgentsDataTable";
+} from "@/components/management/agents/AgentsDataTable";
 import { Agent } from "@/types";
 
 // ------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/departments/new/page.tsx
+ * app/(main)/system/departments/new/page.tsx
  * New department page for the departments section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

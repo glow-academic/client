@@ -90,7 +90,7 @@ export default function Departments() {
   );
 
   const handleEdit = (id: string) => {
-    router.push(`/management/departments/d/${id}`);
+    router.push(`/system/departments/d/${id}`);
   };
 
   const handleDuplicate = async (department: DepartmentItem) => {

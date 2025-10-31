@@ -1,29 +1,27 @@
 import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
-import type {  } from '@tanstack/react-table';
+import { describe, it, expect } from 'vitest';
+import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import { DepartmentsDataTable, DepartmentsDataTableProps } from '@/components/management/departments/DepartmentsDataTable';
+import { DepartmentsDataTableToolbar, DepartmentsDataTableToolbarProps } from '@/components/system/departments/DepartmentsDataTableToolbar';
 
 
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-const mockProps: DepartmentsDataTableProps = {
-  data: [],
+const mockProps: DepartmentsDataTableToolbarProps = {
+  table: {} as unknown as Table<{ department_id: string; title: string; description: string; active: boolean; updated_at: string; total_price_spent: number; staff_count: number; can_edit: boolean; can_delete: boolean; }>,
   priceSpentOptions: [],
   staffCountOptions: [],
-  renderDepartmentCard: vi.fn(),
 };
 // ------------------------------------------------------------------
-describe('DepartmentsDataTable', () => {
+describe('DepartmentsDataTableToolbar', () => {
   
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      render(<DepartmentsDataTable {...mockProps} />);
+      render(<DepartmentsDataTableToolbar {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
@@ -31,7 +29,7 @@ describe('DepartmentsDataTable', () => {
 
     it.skip('should render with props', () => {
       // TODO: Test component with various props
-      // Props interface: DepartmentsDataTableProps
+      // Props interface: DepartmentsDataTableToolbarProps
       
       // TODO add props assertions
     });
@@ -44,23 +42,7 @@ describe('DepartmentsDataTable', () => {
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
-    });
-
-    it.skip('should handle user events', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
-
-    });
-  });
+  
 
   
 
@@ -83,20 +65,20 @@ describe('DepartmentsDataTable', () => {
 });
 
 /*
- * Component Analysis for DepartmentsDataTable:
- * Path: management/departments/DepartmentsDataTable.tsx
+ * Component Analysis for DepartmentsDataTableToolbar:
+ * Path: management/departments/DepartmentsDataTableToolbar.tsx
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: DepartmentsDataTable, DepartmentsDataTableProps
+ * - Named exports: DepartmentsDataTableToolbar, DepartmentsDataTableToolbarProps
  * - Has props: true
- * - Props interface: DepartmentsDataTableProps
+ * - Props interface: DepartmentsDataTableToolbarProps
  * - Client component: true
- * - Uses hooks: useReactTable, useState, useMemo
+ * - Uses hooks: None
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
- * - Uses state: true
+ * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -105,12 +87,12 @@ describe('DepartmentsDataTable', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<DepartmentsDataTable {...mockProps} />);
+ * render(<DepartmentsDataTableToolbar {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<DepartmentsDataTable {...props} />);
+ * render(<DepartmentsDataTableToolbar {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

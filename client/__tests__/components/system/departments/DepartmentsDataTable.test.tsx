@@ -1,48 +1,40 @@
 import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
+import type {  } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import Departments from '@/components/management/departments/Departments';
+import { DepartmentsDataTable, DepartmentsDataTableProps } from '@/components/system/departments/DepartmentsDataTable';
 
 
 
-// ✨ Import testing mocks
-import '@/mocks/auth';
-import '@/mocks/navigation';
-describe('Departments', () => {
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: DepartmentsDataTableProps = {
+  data: [],
+  priceSpentOptions: [],
+  staffCountOptions: [],
+  renderDepartmentCard: vi.fn(),
+};
+// ------------------------------------------------------------------
+describe('DepartmentsDataTable', () => {
   
-  /* ------------------------------------------------------------------ *
-   * 💡 Mock Data Usage Guide:
-   * 
-   * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   * 
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
-   * - mockSchema.profiles - Array of profile objects
-   * 
-   * To override specific mocks in individual tests:
-   * - vi.mocked(queryFunction).mockResolvedValue(customData)
-   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
-   * ------------------------------------------------------------------ */
-  
-  // ✨ Reset mocks after each test
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
 
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       
-      render(<Departments  />);
+      render(<DepartmentsDataTable {...mockProps} />);
       
       // TODO: Add meaningful assertions based on your component
       // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
     });
 
-    
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: DepartmentsDataTableProps
+      
+      // TODO add props assertions
+    });
 
     it.skip('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -55,7 +47,12 @@ describe('Departments', () => {
   describe('User Interactions', () => {
     
 
-    
+    it.skip('should handle state changes', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
+    });
 
     it.skip('should handle user events', async () => {
       const user = userEvent.setup();
@@ -67,13 +64,7 @@ describe('Departments', () => {
 
   
 
-  describe('Navigation', () => {
-    it.skip('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // TODO: navigation assertions
-    });
-  });
+  
 
   describe('Edge Cases', () => {
     it.skip('should handle edge cases gracefully', () => {
@@ -83,25 +74,29 @@ describe('Departments', () => {
 
     });
 
-    
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
   });
 });
 
 /*
- * Component Analysis for Departments:
- * Path: management/departments/Departments.tsx
+ * Component Analysis for DepartmentsDataTable:
+ * Path: management/departments/DepartmentsDataTable.tsx
  * 
  * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Default export: false
+ * - Named exports: DepartmentsDataTable, DepartmentsDataTableProps
+ * - Has props: true
+ * - Props interface: DepartmentsDataTableProps
  * - Client component: true
- * - Uses hooks: useRouter, useMemo, useDepartments, useProfile, useDepartmentsList
- * - Uses router: true
+ * - Uses hooks: useReactTable, useState, useMemo
+ * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
- * - Uses state: false
+ * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -110,12 +105,12 @@ describe('Departments', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Departments />);
+ * render(<DepartmentsDataTable {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<Departments {...props} />);
+ * render(<DepartmentsDataTable {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:
