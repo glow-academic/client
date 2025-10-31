@@ -244,6 +244,46 @@ class StaffQueries:
         """
         return (query, [profile_id])
 
+    def get_create_staff_data(
+        self, department_ids: list[str], current_profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build query to get all data needed for create staff UI in one query."""
+        query = """
+        WITH all_cohort_ids AS (
+            SELECT DISTINCT c.id as cohort_id
+            FROM cohorts c
+            WHERE c.active = true
+        ),
+        cohort_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                c.id::text,
+                jsonb_build_object(
+                    'name', c.title,
+                    'description', COALESCE(c.description, '')
+                )
+            ), '{}'::jsonb) as cohort_mapping
+            FROM cohorts c
+            WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object(
+                    'name', d.title,
+                    'description', COALESCE(d.description, '')
+                )
+            ), '{}'::jsonb) as department_mapping
+            FROM departments d
+            WHERE d.id = ANY($1) AND d.active = true
+        )
+        SELECT 
+            cmd.cohort_mapping,
+            dmd.department_mapping
+        FROM cohort_mapping_data cmd
+        CROSS JOIN department_mapping_data dmd
+        """
+        return (query, [department_ids])
+
     def get_valid_departments_for_profile(
         self, profile_id: str
     ) -> tuple[str, list[Any]]:

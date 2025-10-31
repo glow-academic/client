@@ -5,6 +5,7 @@ import { RefreshCw, X } from "lucide-react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import CreateStaffButton from "@/components/common/staff/CreateStaffButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
@@ -111,7 +112,9 @@ export function StaffDataTableToolbar({
       </div>
 
       <div className="flex items-center space-x-2 mb-2">
-        {/* Create Staff moved to layout; keep bulk controls only */}
+        {/* Create Staff Button */}
+        <CreateStaffButton onDone={onCreate} />
+
         {/* Bulk edit/delete if any selected */}
         {selectedCount > 0 && (
           <div className="flex items-center space-x-2">

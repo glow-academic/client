@@ -6,32 +6,28 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-
 from app.cache import keys
 from app.db import transaction
+from app.queries.cohort_queries import CohortQueries
 from app.queries.staff_queries import StaffQueries
 from app.schemas.base import CohortMappingItem, DepartmentMappingItem
-from app.schemas.staff import (
-    BulkCreateStaffRequest,
-    BulkCreateStaffResponse,
-    BulkDeleteStaffRequest,
-    BulkDeleteStaffResponse,
-    BulkUpdateStaffRequest,
-    BulkUpdateStaffResponse,
-    CreateStaffRequest,
-    CreateStaffResponse,
-    DeleteStaffRequest,
-    DeleteStaffResponse,
-    StaffDetailBulkRequest,
-    StaffDetailBulkResponse,
-    StaffDetailRequest,
-    StaffDetailResponse,
-    StaffFilters,
-    StaffItem,
-    StaffListResponse,
-    UpdateStaffRequest,
-    UpdateStaffResponse,
-)
+from app.schemas.staff import (BulkCreateOrUpdateStaffRequest,
+                               BulkCreateOrUpdateStaffResponse,
+                               BulkCreateStaffRequest, BulkCreateStaffResponse,
+                               BulkDeleteStaffRequest, BulkDeleteStaffResponse,
+                               BulkUpdateStaffRequest, BulkUpdateStaffResponse,
+                               CreateOrUpdateStaffRequest,
+                               CreateOrUpdateStaffResponse,
+                               CreateStaffDataRequest, CreateStaffDataResponse,
+                               CreateStaffRequest, CreateStaffResponse,
+                               CSVColumnMapping, CSVRowError,
+                               DeleteStaffRequest, DeleteStaffResponse,
+                               ProcessCSVRequest, ProcessCSVResponse,
+                               ProcessedCSVRow, StaffDetailBulkRequest,
+                               StaffDetailBulkResponse, StaffDetailRequest,
+                               StaffDetailResponse, StaffFilters, StaffItem,
+                               StaffListResponse, UpdateStaffRequest,
+                               UpdateStaffResponse)
 from app.services.base_service import BaseService, with_cache
 
 
@@ -42,6 +38,7 @@ class StaffService(BaseService):
         """Initialize service with database session."""
         super().__init__(conn)
         self.queries = StaffQueries()
+        self.cohort_queries = CohortQueries()
 
     @with_cache(lambda self, filters: keys.staff_list(filters))
     async def get_staff_list(self, filters: StaffFilters) -> StaffListResponse:
@@ -580,6 +577,377 @@ class StaffService(BaseService):
             message += f" ({len(default_ids)} default profiles skipped)"
 
         return BulkDeleteStaffResponse(success=True, message=message)
+
+    async def get_create_staff_data(
+        self, request: CreateStaffDataRequest
+    ) -> CreateStaffDataResponse:
+        """Get all data needed for create staff UI in one query."""
+        query, params = self.queries.get_create_staff_data(
+            request.departmentIds, request.profileId
+        )
+        result = await self.conn.fetchrow(query, *params)
+
+        if not result:
+            # Return empty mappings if no data
+            return CreateStaffDataResponse(
+                department_mapping={},
+                cohort_mapping={},
+                role_options=["superadmin", "admin", "instructional", "ta", "guest"],
+            )
+
+        # Parse JSONB mappings
+        department_mapping = {}
+        dept_mapping_data = result.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for did, ddata in dept_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
+
+        cohort_mapping = {}
+        cohort_mapping_data = result.get("cohort_mapping")
+        if isinstance(cohort_mapping_data, str):
+            cohort_mapping_data = json.loads(cohort_mapping_data)
+        if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
+            for cid, cdata in cohort_mapping_data.items():
+                if isinstance(cdata, dict):
+                    cohort_mapping[cid] = CohortMappingItem(
+                        name=cdata.get("name", ""),
+                        description=cdata.get("description", ""),
+                    )
+
+        return CreateStaffDataResponse(
+            department_mapping=department_mapping,
+            cohort_mapping=cohort_mapping,
+            role_options=["superadmin", "admin", "instructional", "ta", "guest"],
+        )
+
+    async def process_csv(self, request: ProcessCSVRequest) -> ProcessCSVResponse:
+        """Process CSV file and map columns to target fields."""
+        import csv
+        from io import StringIO
+
+        # Parse CSV content
+        csv_file = StringIO(request.csv_content)
+        reader = csv.DictReader(csv_file)
+        headers = reader.fieldnames or []
+
+        # Build mapping dict for quick lookup
+        column_to_field: dict[str, str | None] = {}
+        for mapping in request.column_mappings:
+            column_to_field[mapping.csv_column] = mapping.target_field
+
+        rows: list[ProcessedCSVRow] = []
+        row_index = 0
+
+        for csv_row in reader:
+            row_index += 1
+            errors: list[CSVRowError] = []
+
+            # Extract values based on mappings
+            firstName = None
+            lastName = None
+            alias = None
+            role = None
+            department_id = None
+            cohort_id = None
+
+            for header in headers:
+                field = column_to_field.get(header)
+                value = csv_row.get(header, "").strip() if header else ""
+
+                if field == "firstName":
+                    firstName = value if value else None
+                elif field == "lastName":
+                    lastName = value if value else None
+                elif field == "alias":
+                    alias = value if value else None
+                    # Extract alias from email if needed
+                    if alias and "@" in alias:
+                        alias = alias.split("@")[0].strip()
+                elif field == "role":
+                    role = value if value else None
+                elif field == "department":
+                    department_id = value if value else None
+                elif field == "cohort":
+                    cohort_id = value if value else None
+
+            # Validate required fields
+            if not firstName:
+                errors.append(
+                    CSVRowError(
+                        row_index=row_index, field="firstName", message="First name is required"
+                    )
+                )
+            if not lastName:
+                errors.append(
+                    CSVRowError(
+                        row_index=row_index, field="lastName", message="Last name is required"
+                    )
+                )
+            if not alias:
+                errors.append(
+                    CSVRowError(
+                        row_index=row_index, field="alias", message="Alias is required"
+                    )
+                )
+
+            rows.append(
+                ProcessedCSVRow(
+                    row_index=row_index,
+                    firstName=firstName,
+                    lastName=lastName,
+                    alias=alias,
+                    role=role,
+                    department_id=department_id,
+                    cohort_id=cohort_id,
+                    errors=errors,
+                )
+            )
+
+        return ProcessCSVResponse(success=True, rows=rows, headers=list(headers))
+
+    async def create_or_update_staff(
+        self, request: CreateOrUpdateStaffRequest
+    ) -> CreateOrUpdateStaffResponse:
+        """Create or update a staff member based on alias."""
+        # Check if alias exists
+        query, params = self.queries.check_alias_exists(request.alias)
+        existing = await self.conn.fetchrow(query, *params)
+
+        async with transaction(self.conn):
+            if existing:
+                # Update existing profile
+                profile_id = existing["id"]
+
+                # Update profile fields
+                query, _ = self.queries.update_profile()
+                await self.conn.execute(
+                    query,
+                    profile_id,
+                    request.role,
+                    True,  # active
+                )
+
+                # Update firstName and lastName (need a separate query)
+                update_name_query = """
+                UPDATE profiles 
+                SET first_name = $2, last_name = $3, updated_at = NOW()
+                WHERE id = $1
+                """
+                await self.conn.execute(
+                    update_name_query, profile_id, request.firstName, request.lastName
+                )
+
+                # Update department (use insert with ON CONFLICT to handle both cases)
+                if request.department_id:
+                    # First, delete any existing department relationships
+                    delete_dept_query = """
+                    DELETE FROM profile_departments WHERE profile_id = $1
+                    """
+                    await self.conn.execute(delete_dept_query, profile_id)
+                    # Then insert the new one as primary
+                    insert_dept_query = """
+                    INSERT INTO profile_departments (profile_id, department_id, is_primary)
+                    VALUES ($1, $2, true)
+                    ON CONFLICT (profile_id, department_id) DO UPDATE SET
+                        is_primary = true,
+                        active = true,
+                        updated_at = NOW()
+                    """
+                    await self.conn.execute(insert_dept_query, profile_id, request.department_id)
+
+                # Update cohort relationship
+                if request.cohort_id:
+                    # Remove from other cohorts? No, just add to this one
+                    # Check if already in cohort
+                    check_cohort_query = """
+                    SELECT 1 FROM cohort_profiles 
+                    WHERE profile_id = $1 AND cohort_id = $2 AND active = true
+                    """
+                    in_cohort = await self.conn.fetchrow(
+                        check_cohort_query, profile_id, request.cohort_id
+                    )
+                    if not in_cohort:
+                        query, _ = self.cohort_queries.insert_cohort_profile()
+                        await self.conn.execute(query, request.cohort_id, profile_id)
+
+                created = False
+                message = f"Staff '{request.firstName} {request.lastName}' updated successfully"
+            else:
+                # Create new profile
+                editing_profile_id = str(uuid.uuid4())
+
+                # Insert profile
+                query, _ = self.queries.create_profile()
+                await self.conn.execute(
+                    query,
+                    editing_profile_id,
+                    request.firstName,
+                    request.lastName,
+                    request.alias,
+                    request.role,
+                    True,
+                    False,
+                    False,
+                    False,
+                )
+
+                # Insert department relationship as primary
+                if request.department_id:
+                    insert_dept_query = """
+                    INSERT INTO profile_departments (profile_id, department_id, is_primary)
+                    VALUES ($1, $2, true)
+                    ON CONFLICT (profile_id, department_id) DO UPDATE SET
+                        is_primary = true,
+                        active = true,
+                        updated_at = NOW()
+                    """
+                    await self.conn.execute(insert_dept_query, editing_profile_id, request.department_id)
+
+                # Insert cohort relationship
+                if request.cohort_id:
+                    query, _ = self.cohort_queries.insert_cohort_profile()
+                    await self.conn.execute(query, request.cohort_id, editing_profile_id)
+
+                profile_id = editing_profile_id
+                created = True
+                message = f"Staff '{request.firstName} {request.lastName}' created successfully"
+
+        # Invalidate caches
+        await self._invalidate_cache(
+            [
+                keys.tag_staff_all(),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
+
+        return CreateOrUpdateStaffResponse(
+            success=True, profileId=profile_id, created=created, message=message
+        )
+
+    async def bulk_create_or_update_staff(
+        self, request: BulkCreateOrUpdateStaffRequest
+    ) -> BulkCreateOrUpdateStaffResponse:
+        """Bulk create or update staff members."""
+        profile_ids: list[str] = []
+        created_count = 0
+        updated_count = 0
+
+        async with transaction(self.conn):
+            for profile_req in request.profiles:
+                # Check if alias exists
+                query, params = self.queries.check_alias_exists(profile_req.alias)
+                existing = await self.conn.fetchrow(query, *params)
+
+                if existing:
+                    # Update existing
+                    profile_id = existing["id"]
+
+                    # Update profile
+                    query, _ = self.queries.update_profile()
+                    await self.conn.execute(query, profile_id, profile_req.role, True)
+
+                    # Update name
+                    update_name_query = """
+                    UPDATE profiles 
+                    SET first_name = $2, last_name = $3, updated_at = NOW()
+                    WHERE id = $1
+                    """
+                    await self.conn.execute(
+                        update_name_query, profile_id, profile_req.firstName, profile_req.lastName
+                    )
+
+                    # Update department (use insert with ON CONFLICT to handle both cases)
+                    if profile_req.department_id:
+                        # First, delete any existing department relationships
+                        delete_dept_query = """
+                        DELETE FROM profile_departments WHERE profile_id = $1
+                        """
+                        await self.conn.execute(delete_dept_query, profile_id)
+                        # Then insert the new one as primary
+                        insert_dept_query = """
+                        INSERT INTO profile_departments (profile_id, department_id, is_primary)
+                        VALUES ($1, $2, true)
+                        ON CONFLICT (profile_id, department_id) DO UPDATE SET
+                            is_primary = true,
+                            active = true,
+                            updated_at = NOW()
+                        """
+                        await self.conn.execute(insert_dept_query, profile_id, profile_req.department_id)
+
+                    # Update cohort
+                    if profile_req.cohort_id:
+                        check_cohort_query = """
+                        SELECT 1 FROM cohort_profiles 
+                        WHERE profile_id = $1 AND cohort_id = $2 AND active = true
+                        """
+                        in_cohort = await self.conn.fetchrow(
+                            check_cohort_query, profile_id, profile_req.cohort_id
+                        )
+                        if not in_cohort:
+                            query, _ = self.cohort_queries.insert_cohort_profile()
+                            await self.conn.execute(query, profile_req.cohort_id, profile_id)
+
+                    updated_count += 1
+                else:
+                    # Create new
+                    profile_id = str(uuid.uuid4())
+
+                    query, _ = self.queries.create_profile()
+                    await self.conn.execute(
+                        query,
+                        profile_id,
+                        profile_req.firstName,
+                        profile_req.lastName,
+                        profile_req.alias,
+                        profile_req.role,
+                        True,
+                        False,
+                        False,
+                        False,
+                    )
+
+                    if profile_req.department_id:
+                        insert_dept_query = """
+                        INSERT INTO profile_departments (profile_id, department_id, is_primary)
+                        VALUES ($1, $2, true)
+                        ON CONFLICT (profile_id, department_id) DO UPDATE SET
+                            is_primary = true,
+                            active = true,
+                            updated_at = NOW()
+                        """
+                        await self.conn.execute(insert_dept_query, profile_id, profile_req.department_id)
+
+                    if profile_req.cohort_id:
+                        query, _ = self.cohort_queries.insert_cohort_profile()
+                        await self.conn.execute(query, profile_req.cohort_id, profile_id)
+
+                    created_count += 1
+
+                profile_ids.append(profile_id)
+
+        # Invalidate caches
+        await self._invalidate_cache(
+            [
+                keys.tag_staff_all(),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
+
+        return BulkCreateOrUpdateStaffResponse(
+            success=True,
+            profileIds=profile_ids,
+            created_count=created_count,
+            updated_count=updated_count,
+            message=f"{created_count} created, {updated_count} updated successfully",
+        )
 
 
 def get_staff_service(conn: asyncpg.Connection) -> StaffService:

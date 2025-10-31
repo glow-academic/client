@@ -14,14 +14,22 @@ import {
 import {
   AuthorizeEmulationRequest,
   AuthorizeEmulationResponseSchema,
+  BulkCreateOrUpdateStaffRequest,
+  BulkCreateOrUpdateStaffResponseSchema,
   BulkCreateProfileRequest,
   BulkCreateProfileResponseSchema,
   BulkDeleteProfileRequest,
   BulkDeleteProfileResponseSchema,
   BulkUpdateProfileRequest,
   BulkUpdateProfileResponseSchema,
+  CreateOrUpdateStaffRequest,
+  CreateOrUpdateStaffResponseSchema,
   CreateProfileRequest,
   CreateProfileResponseSchema,
+  CreateStaffDataRequest,
+  CreateStaffDataResponseSchema,
+  ProcessCSVRequest,
+  ProcessCSVResponseSchema,
   DeleteProfileRequest,
   DeleteProfileResponseSchema,
   MarkChatCompleteRequest,
@@ -157,6 +165,100 @@ export function useBulkCreateProfile() {
         body: JSON.stringify(request),
       });
       return BulkCreateProfileResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("profile:v2:list");
+        },
+      });
+    },
+  });
+}
+
+// ============================================================================
+// CREATE STAFF DATA HOOKS
+// ============================================================================
+
+export function useCreateStaffData(
+  request: CreateStaffDataRequest,
+  options: ProfileHookOptions | boolean = true
+) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
+  return useQuery({
+    queryKey: ["profile:v2:create-staff-data", request],
+    ...queryOptions,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v2/profile/create-staff-data", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return CreateStaffDataResponseSchema.parse(res);
+    },
+    enabled: queryOptions.enabled && !!request.profileId,
+  });
+}
+
+// ============================================================================
+// CSV PROCESSING HOOKS
+// ============================================================================
+
+export function useProcessCSV() {
+  return useMutation({
+    mutationFn: async (request: ProcessCSVRequest) => {
+      const res = await api<unknown>("/api/v2/profile/process-csv", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return ProcessCSVResponseSchema.parse(res);
+    },
+  });
+}
+
+// ============================================================================
+// CREATE OR UPDATE STAFF HOOKS
+// ============================================================================
+
+export function useCreateOrUpdateStaff() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: CreateOrUpdateStaffRequest) => {
+      const res = await api<unknown>("/api/v2/profile/create-or-update-staff", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return CreateOrUpdateStaffResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("profile:v2:list");
+        },
+      });
+    },
+  });
+}
+
+export function useBulkCreateOrUpdateStaff() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: BulkCreateOrUpdateStaffRequest) => {
+      const res = await api<unknown>(
+        "/api/v2/profile/bulk-create-or-update-staff",
+        {
+          method: "POST",
+          body: JSON.stringify(request),
+        }
+      );
+      return BulkCreateOrUpdateStaffResponseSchema.parse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

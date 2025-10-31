@@ -13,21 +13,13 @@ import { DataTablePagination } from "@/components/common/history/DataTablePagina
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import StaffManager from "@/components/common/staff/StaffManager";
+import CreateStaffButton from "@/components/common/staff/CreateStaffButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,14 +38,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  FileText,
-  Grid3X3,
-  List,
-  Plus,
-  UploadCloud,
-  UserMinus,
-} from "lucide-react";
+import { FileText, Grid3X3, List, UploadCloud, UserMinus } from "lucide-react";
 
 // A new type to represent a profile that is either saved or new
 type EditableProfile =
@@ -91,8 +76,6 @@ export default function CohortStaff({
 }: CohortStaffProps) {
   // View mode state
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  // Dialog state
-  const [isAddStaffDialogOpen, setIsAddStaffDialogOpen] = useState(false);
 
   // Table state for filtering and pagination
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -289,32 +272,15 @@ export default function CohortStaff({
               </Button>
             </div>
 
-            {/* Add Staff Button (opens dialog) */}
+            {/* Add Staff Button */}
             {!isReadonly && cohortId && (
-              <Dialog
-                open={isAddStaffDialogOpen}
-                onOpenChange={setIsAddStaffDialogOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button type="button" className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Staff
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Add Staff to Cohort</DialogTitle>
-                    <DialogDescription hidden>
-                      Upload via CSV, search existing profiles, or add one
-                      manually.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <StaffManager
-                    cohortId={cohortId}
-                    onDone={() => setIsAddStaffDialogOpen(false)}
-                  />
-                </DialogContent>
-              </Dialog>
+              <CreateStaffButton
+                cohortId={cohortId}
+                onDone={() => {
+                  // Refresh profiles after adding staff
+                  // The parent component should handle refetching
+                }}
+              />
             )}
           </div>
         </div>

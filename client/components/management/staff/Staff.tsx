@@ -46,7 +46,6 @@ import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
-import NewStaff from "./NewStaff";
 import { StaffDataTable } from "./StaffDataTable";
 import StaffEdit from "./StaffEdit";
 import { StaffFilterDialog } from "./StaffFilterDialog";
@@ -69,10 +68,11 @@ export default function Staff() {
     [effectiveDepartmentIds, effectiveProfile?.id]
   );
 
-  const { data: staffData, isLoading } = useProfileList(
-    filters,
-    !!effectiveProfile?.id
-  );
+  const {
+    data: staffData,
+    isLoading,
+    refetch,
+  } = useProfileList(filters, !!effectiveProfile?.id);
 
   // Mutation hooks
   const deleteStaffMutation = useDeleteProfile();
@@ -83,7 +83,6 @@ export default function Staff() {
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
 
   // Create modal
-  const [showCreateModal, setShowCreateModal] = React.useState(false);
 
   // Edit modal
   const [editProfileId, setEditProfileId] = React.useState<string | null>(null);
@@ -119,13 +118,6 @@ export default function Staff() {
     () => staffData?.cohort_mapping || {},
     [staffData?.cohort_mapping]
   );
-
-  // Listen for layout "Create Staff" button broadcast
-  React.useEffect(() => {
-    const openModal = () => setShowCreateModal(true);
-    window.addEventListener("openCreateStaff", openModal);
-    return () => window.removeEventListener("openCreateStaff", openModal);
-  }, []);
 
   // Filter staff users based on current user's role (done server-side now)
 
@@ -362,7 +354,10 @@ export default function Staff() {
             );
           }
         }}
-        onCreate={() => setShowCreateModal(true)}
+        onCreate={() => {
+          // Refresh staff list after create
+          refetch();
+        }}
         onPreview={(staffMember) => {
           window.open(
             `/analytics/reports/p/${staffMember.profile_id}`,
@@ -407,23 +402,6 @@ export default function Staff() {
         staffMembers={dialogStaffMembers}
         onEditUser={handleEditUser}
       />
-
-      {/* Listen for layout create button */}
-      {/* Hook declared normally to satisfy Rules of Hooks */}
-
-      {/* Create Staff Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Create Staff</DialogTitle>
-          </DialogHeader>
-          <NewStaff
-            onDone={() => {
-              setShowCreateModal(false);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Staff Modal */}
       <Dialog

@@ -249,6 +249,124 @@ export type BulkCreateProfileResponse = z.infer<
 >;
 
 // ============================================================================
+// CREATE STAFF DATA OPERATIONS
+// ============================================================================
+
+export const CreateStaffDataRequestSchema = z.object({
+  departmentIds: z.array(z.string()),
+  profileId: z.string(),
+});
+
+export type CreateStaffDataRequest = z.infer<
+  typeof CreateStaffDataRequestSchema
+>;
+
+export const CreateStaffDataResponseSchema = z.object({
+  department_mapping: DepartmentMappingSchema,
+  cohort_mapping: CohortMappingSchema,
+  role_options: z.array(z.string()),
+});
+
+export type CreateStaffDataResponse = z.infer<
+  typeof CreateStaffDataResponseSchema
+>;
+
+// ============================================================================
+// CSV PROCESSING OPERATIONS
+// ============================================================================
+
+export const CSVColumnMappingSchema = z.object({
+  csv_column: z.string(),
+  target_field: z.string().nullable(),
+});
+
+export type CSVColumnMapping = z.infer<typeof CSVColumnMappingSchema>;
+
+export const CSVRowErrorSchema = z.object({
+  row_index: z.number(),
+  field: z.string(),
+  message: z.string(),
+});
+
+export type CSVRowError = z.infer<typeof CSVRowErrorSchema>;
+
+export const ProcessCSVRequestSchema = z.object({
+  csv_content: z.string(),
+  column_mappings: z.array(CSVColumnMappingSchema),
+});
+
+export type ProcessCSVRequest = z.infer<typeof ProcessCSVRequestSchema>;
+
+export const ProcessedCSVRowSchema = z.object({
+  row_index: z.number(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  alias: z.string().nullable(),
+  role: z.string().nullable(),
+  department_id: z.string().nullable(),
+  cohort_id: z.string().nullable(),
+  errors: z.array(CSVRowErrorSchema),
+});
+
+export type ProcessedCSVRow = z.infer<typeof ProcessedCSVRowSchema>;
+
+export const ProcessCSVResponseSchema = z.object({
+  success: z.boolean(),
+  rows: z.array(ProcessedCSVRowSchema),
+  headers: z.array(z.string()),
+});
+
+export type ProcessCSVResponse = z.infer<typeof ProcessCSVResponseSchema>;
+
+// ============================================================================
+// CREATE OR UPDATE STAFF OPERATIONS
+// ============================================================================
+
+export const CreateOrUpdateStaffRequestSchema = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  alias: z.string(),
+  role: z.string(),
+  department_id: z.string().nullable().optional(),
+  cohort_id: z.string().nullable().optional(),
+});
+
+export type CreateOrUpdateStaffRequest = z.infer<
+  typeof CreateOrUpdateStaffRequestSchema
+>;
+
+export const CreateOrUpdateStaffResponseSchema = z.object({
+  success: z.boolean(),
+  profileId: z.string(),
+  created: z.boolean(),
+  message: z.string(),
+});
+
+export type CreateOrUpdateStaffResponse = z.infer<
+  typeof CreateOrUpdateStaffResponseSchema
+>;
+
+export const BulkCreateOrUpdateStaffRequestSchema = z.object({
+  profiles: z.array(CreateOrUpdateStaffRequestSchema),
+});
+
+export type BulkCreateOrUpdateStaffRequest = z.infer<
+  typeof BulkCreateOrUpdateStaffRequestSchema
+>;
+
+export const BulkCreateOrUpdateStaffResponseSchema = z.object({
+  success: z.boolean(),
+  profileIds: z.array(z.string()),
+  created_count: z.number(),
+  updated_count: z.number(),
+  message: z.string(),
+});
+
+export type BulkCreateOrUpdateStaffResponse = z.infer<
+  typeof BulkCreateOrUpdateStaffResponseSchema
+>;
+
+// ============================================================================
 // SIMPLE PROFILE OPERATIONS (from auth)
 // ============================================================================
 

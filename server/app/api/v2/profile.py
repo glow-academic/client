@@ -21,16 +21,24 @@ from app.schemas.profile import (
     UpdateProfileResponse,
 )
 from app.schemas.staff import (
+    BulkCreateOrUpdateStaffRequest,
+    BulkCreateOrUpdateStaffResponse,
     BulkCreateStaffRequest,
     BulkCreateStaffResponse,
     BulkDeleteStaffRequest,
     BulkDeleteStaffResponse,
     BulkUpdateStaffRequest,
     BulkUpdateStaffResponse,
+    CreateOrUpdateStaffRequest,
+    CreateOrUpdateStaffResponse,
+    CreateStaffDataRequest,
+    CreateStaffDataResponse,
     CreateStaffRequest,
     CreateStaffResponse,
     DeleteStaffRequest,
     DeleteStaffResponse,
+    ProcessCSVRequest,
+    ProcessCSVResponse,
     StaffDetailBulkRequest,
     StaffDetailBulkResponse,
     StaffDetailRequest,
@@ -193,6 +201,81 @@ async def bulk_delete_profile(
     try:
         service = get_staff_service(conn)
         return await service.bulk_delete_staff(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# CREATE STAFF DATA OPERATIONS
+# ============================================================================
+
+
+@router.post("/create-staff-data", response_model=CreateStaffDataResponse)
+async def get_create_staff_data(
+    request: CreateStaffDataRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> CreateStaffDataResponse:
+    """Get all data needed for create staff UI (mappings, etc.)."""
+    try:
+        service = get_staff_service(conn)
+        return await service.get_create_staff_data(request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# CSV PROCESSING OPERATIONS
+# ============================================================================
+
+
+@router.post("/process-csv", response_model=ProcessCSVResponse)
+async def process_csv(
+    request: ProcessCSVRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> ProcessCSVResponse:
+    """Process CSV file and map columns to target fields."""
+    try:
+        service = get_staff_service(conn)
+        return await service.process_csv(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# CREATE OR UPDATE STAFF OPERATIONS
+# ============================================================================
+
+
+@router.post("/create-or-update-staff", response_model=CreateOrUpdateStaffResponse)
+async def create_or_update_staff(
+    request: CreateOrUpdateStaffRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> CreateOrUpdateStaffResponse:
+    """Create or update a staff member based on alias."""
+    try:
+        service = get_staff_service(conn)
+        return await service.create_or_update_staff(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
+    "/bulk-create-or-update-staff", response_model=BulkCreateOrUpdateStaffResponse
+)
+async def bulk_create_or_update_staff(
+    request: BulkCreateOrUpdateStaffRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> BulkCreateOrUpdateStaffResponse:
+    """Bulk create or update staff members."""
+    try:
+        service = get_staff_service(conn)
+        return await service.bulk_create_or_update_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

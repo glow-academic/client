@@ -204,17 +204,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     if (pathname === "/management/staff") {
-      return (
-        <Button
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("openCreateStaff"))
-          }
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Staff
-        </Button>
-      );
+      // CreateStaffButton is now handled directly in Staff.tsx component
+      return null;
     }
 
     if (pathname === "/system/providers") {
