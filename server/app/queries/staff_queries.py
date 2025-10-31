@@ -93,6 +93,154 @@ class StaffQueries:
             FROM departments d
             WHERE (d.id = ANY($1::uuid[]) OR d.id IN (SELECT department_id FROM all_department_ids))
             AND d.active = true
+        ),
+        -- Trend data CTEs
+        active_users_count AS (
+            SELECT COUNT(DISTINCT p.id) as count
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
+            WHERE pd.department_id = ANY($1::uuid[])
+            AND p.active = true
+        ),
+        admin_users_by_date AS (
+            SELECT 
+                DATE(p.created_at) as date,
+                COUNT(DISTINCT p.id) as count
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
+            WHERE pd.department_id = ANY($1::uuid[])
+            AND p.role IN ('admin', 'superadmin')
+            GROUP BY DATE(p.created_at)
+        ),
+        admin_users_cumulative AS (
+            SELECT 
+                date,
+                SUM(count) OVER (ORDER BY date) as cumulative_count,
+                count as daily_count
+            FROM admin_users_by_date
+        ),
+        admin_users_trend AS (
+            SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'date', date::text,
+                    'value', cumulative_count::float,
+                    'count', daily_count
+                ) ORDER BY date
+            ), '[]'::jsonb) as trend
+            FROM admin_users_cumulative
+        ),
+        instructional_users_by_date AS (
+            SELECT 
+                DATE(p.created_at) as date,
+                COUNT(DISTINCT p.id) as count
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
+            WHERE pd.department_id = ANY($1::uuid[])
+            AND p.role = 'instructional'
+            GROUP BY DATE(p.created_at)
+        ),
+        instructional_users_cumulative AS (
+            SELECT 
+                date,
+                SUM(count) OVER (ORDER BY date) as cumulative_count,
+                count as daily_count
+            FROM instructional_users_by_date
+        ),
+        instructional_users_trend AS (
+            SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'date', date::text,
+                    'value', cumulative_count::float,
+                    'count', daily_count
+                ) ORDER BY date
+            ), '[]'::jsonb) as trend
+            FROM instructional_users_cumulative
+        ),
+        ta_users_by_date AS (
+            SELECT 
+                DATE(p.created_at) as date,
+                COUNT(DISTINCT p.id) as count
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
+            WHERE pd.department_id = ANY($1::uuid[])
+            AND p.role = 'ta'
+            GROUP BY DATE(p.created_at)
+        ),
+        ta_users_cumulative AS (
+            SELECT 
+                date,
+                SUM(count) OVER (ORDER BY date) as cumulative_count,
+                count as daily_count
+            FROM ta_users_by_date
+        ),
+        ta_users_trend AS (
+            SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'date', date::text,
+                    'value', cumulative_count::float,
+                    'count', daily_count
+                ) ORDER BY date
+            ), '[]'::jsonb) as trend
+            FROM ta_users_cumulative
+        ),
+        total_requests_by_date AS (
+            SELECT 
+                DATE(mr.created_at) as date,
+                COUNT(*) as count
+            FROM model_runs mr
+            JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+            JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
+            WHERE pd.department_id = ANY($1::uuid[])
+            GROUP BY DATE(mr.created_at)
+        ),
+        total_requests_cumulative AS (
+            SELECT 
+                date,
+                SUM(count) OVER (ORDER BY date) as cumulative_count,
+                count as daily_count
+            FROM total_requests_by_date
+        ),
+        total_requests_trend AS (
+            SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'date', date::text,
+                    'value', cumulative_count::float,
+                    'count', daily_count
+                ) ORDER BY date
+            ), '[]'::jsonb) as trend
+            FROM total_requests_cumulative
+        ),
+        -- Active users trend: constant line (straight horizontal)
+        earliest_date AS (
+            SELECT MIN(DATE(p.created_at)) as date
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
+            WHERE pd.department_id = ANY($1::uuid[])
+        ),
+        active_users_trend AS (
+            SELECT COALESCE(jsonb_agg(
+                jsonb_build_object(
+                    'date', date::text,
+                    'value', auc.count::float,
+                    'count', 0
+                ) ORDER BY date
+            ), '[]'::jsonb) as trend
+            FROM (
+                SELECT 
+                    COALESCE((SELECT date FROM earliest_date), CURRENT_DATE) as date,
+                    (SELECT count FROM active_users_count) as count
+                UNION ALL
+                SELECT CURRENT_DATE as date, (SELECT count FROM active_users_count) as count
+            ) auc
+        ),
+        trend_data_combined AS (
+            SELECT jsonb_build_object(
+                'active', (SELECT trend FROM active_users_trend),
+                'admin', (SELECT trend FROM admin_users_trend),
+                'instructional', (SELECT trend FROM instructional_users_trend),
+                'ta', (SELECT trend FROM ta_users_trend),
+                'total_requests', (SELECT trend FROM total_requests_trend)
+            ) as trend_data
         )
         SELECT DISTINCT ON (p.id)
             p.id as profile_id,
@@ -133,7 +281,8 @@ class StaffQueries:
                 ELSE false
             END as can_delete,
             cmd.cohort_mapping,
-            dmd.department_mapping
+            dmd.department_mapping,
+            tdc.trend_data
         FROM profiles p
         JOIN profile_departments pd ON pd.profile_id = p.id
         LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
@@ -146,6 +295,7 @@ class StaffQueries:
         CROSS JOIN user_profile up
         CROSS JOIN cohort_mapping_data cmd
         CROSS JOIN department_mapping_data dmd
+        CROSS JOIN trend_data_combined tdc
         WHERE pd.department_id = ANY($1)
         ORDER BY p.id, p.last_name, p.first_name
         """

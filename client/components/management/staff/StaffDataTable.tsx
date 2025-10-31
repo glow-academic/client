@@ -108,7 +108,10 @@ const formatLastActive = (timestamp: string | null): string => {
 export interface StaffDataTableProps {
   data: ProfileListItem[];
   cohortMapping: Record<string, { name: string; description?: string | null }>;
-  departmentMapping: Record<string, { name: string; description?: string | null }>;
+  departmentMapping: Record<
+    string,
+    { name: string; description?: string | null }
+  >;
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   activityOptions: { value: string; label: string }[];
@@ -166,6 +169,8 @@ export function StaffDataTable({
       name: false,
       active: false,
       lastActive: false,
+      department_ids: false,
+      total_requests: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -538,6 +543,8 @@ export function StaffDataTable({
     onDelete,
     canDelete,
     canEdit,
+    cohortId,
+    departmentId,
   ]);
 
   const table = useReactTable({

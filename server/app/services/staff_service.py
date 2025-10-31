@@ -10,6 +10,7 @@ from app.cache import keys
 from app.db import transaction
 from app.queries.cohort_queries import CohortQueries
 from app.queries.staff_queries import StaffQueries
+from app.schemas.analytics import TrendData
 from app.schemas.base import CohortMappingItem, DepartmentMappingItem
 from app.schemas.staff import (BulkCreateOrUpdateStaffRequest,
                                BulkCreateOrUpdateStaffResponse,
@@ -57,6 +58,13 @@ class StaffService(BaseService):
         staff = []
         cohort_mapping = {}
         department_mapping = {}
+        trend_data: dict[str, list[TrendData]] = {
+            "active": [],
+            "admin": [],
+            "instructional": [],
+            "ta": [],
+            "total_requests": [],
+        }
 
         for row in result:
             # Convert UUID arrays to string arrays
@@ -115,10 +123,29 @@ class StaffService(BaseService):
                             description=ddata.get("description", ""),
                         )
 
+            # Trend data (JSONB from query - may be string or dict)
+            trend_data_raw = result[0].get("trend_data")
+            if isinstance(trend_data_raw, str):
+                trend_data_raw = json.loads(trend_data_raw)
+            if trend_data_raw and isinstance(trend_data_raw, dict):
+                for key in ["active", "admin", "instructional", "ta", "total_requests"]:
+                    trend_array = trend_data_raw.get(key, [])
+                    if isinstance(trend_array, list):
+                        trend_data[key] = [
+                            TrendData(
+                                date=str(item.get("date", "")),
+                                value=float(item.get("value", 0)),
+                                count=int(item.get("count", 0)),
+                            )
+                            for item in trend_array
+                            if isinstance(item, dict)
+                        ]
+
         return StaffListResponse(
             staff=staff,
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
+            trend_data=trend_data,
         )
 
     @with_cache(

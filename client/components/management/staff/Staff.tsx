@@ -43,20 +43,18 @@ import {
   useProfileList,
 } from "@/lib/api/v2/hooks/profile";
 import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
-import { Activity, Shield, User as UserIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
 import { StaffDataTable } from "./StaffDataTable";
 import StaffEdit from "./StaffEdit";
-import { StaffFilterDialog } from "./StaffFilterDialog";
+import ActiveUsersKPI from "./kpis/ActiveUsersKPI";
+import AdminUsersKPI from "./kpis/AdminUsersKPI";
+import InstructionalUsersKPI from "./kpis/InstructionalUsersKPI";
+import TAUsersKPI from "./kpis/TAUsersKPI";
+import TotalRequestsKPI from "./kpis/TotalRequestsKPI";
 
 export default function Staff() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [dialogTitle, setDialogTitle] = React.useState("");
-  const [dialogStaffMembers, setDialogStaffMembers] = React.useState<
-    ProfileListItem[]
-  >([]);
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
 
   // V2 API hooks
@@ -122,6 +120,17 @@ export default function Staff() {
     () => staffData?.department_mapping || {},
     [staffData?.department_mapping]
   );
+  const trendData = React.useMemo(
+    () =>
+      staffData?.trend_data || {
+        active: [],
+        admin: [],
+        instructional: [],
+        ta: [],
+        total_requests: [],
+      },
+    [staffData?.trend_data]
+  );
 
   // Filter staff users based on current user's role (done server-side now)
 
@@ -139,13 +148,9 @@ export default function Staff() {
       admin: staff.filter((s) => s.role === "admin").length,
       superadmin: staff.filter((s) => s.role === "superadmin").length,
       guest: staff.filter((s) => s.role === "guest").length,
+      totalRequests: staff.reduce((sum, s) => sum + (s.total_requests || 0), 0),
     };
   }, [staff]);
-
-  const handleEditUser = (profileId: string) => {
-    // Open modal for in-place edit
-    setEditProfileId(profileId);
-  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -155,46 +160,6 @@ export default function Staff() {
     } finally {
       setIsRefreshing(false);
     }
-  };
-
-  // Handle card clicks to show filtered staff
-  const handleCardClick = (filterType: string) => {
-    let filteredStaff: ProfileListItem[] = [];
-    let title = "";
-
-    switch (filterType) {
-      case "active":
-        filteredStaff = staff.filter((s) => s.active);
-        title = `Active Staff Members (${filteredStaff.length})`;
-        break;
-      case "admin":
-        if (effectiveProfile?.role === "superadmin") {
-          // For superadmins, show both superadmins and admins
-          filteredStaff = staff.filter(
-            (s) => s.role === "superadmin" || s.role === "admin"
-          );
-          title = `Superadmins/Admins (${filteredStaff.length})`;
-        } else {
-          // For admins, show only admins
-          filteredStaff = staff.filter((s) => s.role === "admin");
-          title = `Administrators (${filteredStaff.length})`;
-        }
-        break;
-      case "instructional":
-        filteredStaff = staff.filter((s) => s.role === "instructional");
-        title = `Instructional Staff (${filteredStaff.length})`;
-        break;
-      case "ta":
-        filteredStaff = staff.filter((s) => s.role === "ta");
-        title = `Teaching Assistants (${filteredStaff.length})`;
-        break;
-      default:
-        return;
-    }
-
-    setDialogTitle(title);
-    setDialogStaffMembers(filteredStaff);
-    setDialogOpen(true);
   };
 
   // Filter options (inline)
@@ -255,72 +220,42 @@ export default function Staff() {
 
   return (
     <div className="space-y-6">
-      {/* Header with summary stats - reduced to 4 cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleCardClick("active")}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-green-600" />
-              <div>
-                <p className="text-2xl font-bold">{counts.active}</p>
-                <p className="text-sm text-muted-foreground">Active Users</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleCardClick("admin")}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-red-600" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {effectiveProfile?.role === "superadmin"
-                    ? (counts.superadmin || 0) + (counts.admin || 0)
-                    : counts.admin}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {effectiveProfile?.role === "superadmin"
-                    ? "Superadmins/Admins"
-                    : "Admins"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleCardClick("instructional")}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-blue-600" />
-              <div>
-                <p className="text-2xl font-bold">{counts.instructional}</p>
-                <p className="text-sm text-muted-foreground">Instructional</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => handleCardClick("ta")}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4 text-purple-600" />
-              <div>
-                <p className="text-2xl font-bold">{counts.ta}</p>
-                <p className="text-sm text-muted-foreground">TAs</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Header with summary stats - 5 KPI cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <ActiveUsersKPI
+          currentValue={counts.active}
+          trendData={trendData.active}
+          isLoading={isLoading}
+          isError={false}
+        />
+        <AdminUsersKPI
+          currentValue={
+            effectiveProfile?.role === "superadmin"
+              ? (counts.superadmin || 0) + (counts.admin || 0)
+              : counts.admin
+          }
+          trendData={trendData.admin}
+          isLoading={isLoading}
+          isError={false}
+        />
+        <InstructionalUsersKPI
+          currentValue={counts.instructional}
+          trendData={trendData.instructional}
+          isLoading={isLoading}
+          isError={false}
+        />
+        <TAUsersKPI
+          currentValue={counts.ta}
+          trendData={trendData.ta}
+          isLoading={isLoading}
+          isError={false}
+        />
+        <TotalRequestsKPI
+          currentValue={counts.totalRequests}
+          trendData={trendData.total_requests}
+          isLoading={isLoading}
+          isError={false}
+        />
       </div>
 
       {/* Staff Data Table */}
@@ -397,15 +332,6 @@ export default function Staff() {
           const row = staff.find((s) => s.profile_id === profileId);
           return row?.can_edit ?? false;
         }}
-      />
-
-      {/* Staff Filter Dialog */}
-      <StaffFilterDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        title={dialogTitle}
-        staffMembers={dialogStaffMembers}
-        onEditUser={handleEditUser}
       />
 
       {/* Edit Staff Modal */}

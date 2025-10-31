@@ -3,7 +3,11 @@
  */
 
 import { z } from "zod";
-import { CohortMappingSchema, DepartmentMappingSchema } from "./base";
+import {
+  CohortMappingSchema,
+  DepartmentMappingSchema,
+  TrendDataSchema,
+} from "./base";
 
 // ============================================================================
 // PROFILE ITEM (BASE)
@@ -66,6 +70,13 @@ export const ProfileListResponseSchema = z.object({
   staff: z.array(ProfileListItemSchema),
   cohort_mapping: CohortMappingSchema,
   department_mapping: DepartmentMappingSchema,
+  trend_data: z.object({
+    active: z.array(TrendDataSchema),
+    admin: z.array(TrendDataSchema),
+    instructional: z.array(TrendDataSchema),
+    ta: z.array(TrendDataSchema),
+    total_requests: z.array(TrendDataSchema),
+  }),
 });
 
 export type ProfileListResponse = z.infer<typeof ProfileListResponseSchema>;

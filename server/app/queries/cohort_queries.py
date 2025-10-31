@@ -241,11 +241,11 @@ class CohortQueries:
             GROUP BY mrp.profile_id
         ),
         all_cohort_ids_for_staff AS (
-            SELECT DISTINCT unnest(cohort_ids) as cohort_id
+            SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
             FROM profile_cohorts
         ),
         all_department_ids_for_staff AS (
-            SELECT DISTINCT unnest(department_ids) as department_id
+            SELECT DISTINCT unnest(department_ids)::uuid as department_id
             FROM profile_departments_agg
         ),
         cohort_mapping_for_staff AS (

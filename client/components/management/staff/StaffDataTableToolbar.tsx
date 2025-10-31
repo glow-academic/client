@@ -25,8 +25,8 @@ export interface StaffDataTableToolbarProps {
   deletableCount?: number;
   editableCount?: number;
   // Scope props - when provided, delete becomes "remove from relationship"
-  cohortId?: string; // When provided, bulk delete removes from cohort (does NOT delete profile)
-  departmentId?: string; // When provided, bulk delete removes from department (does NOT delete profile)
+  cohortId: string | undefined; // When provided, bulk delete removes from cohort (does NOT delete profile)
+  departmentId: string | undefined; // When provided, bulk delete removes from department (does NOT delete profile)
 }
 
 export function StaffDataTableToolbar({

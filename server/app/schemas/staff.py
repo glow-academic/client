@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 
+from .analytics import TrendData
 from .base import CohortMapping, DepartmentMapping
 
 # ============================================================================
@@ -50,6 +51,7 @@ class StaffListResponse(BaseModel):
     staff: list[StaffItem]
     cohort_mapping: CohortMapping
     department_mapping: DepartmentMapping
+    trend_data: dict[str, list[TrendData]]  # Keys: active, admin, instructional, ta, total_requests
 
 
 # ============================================================================
