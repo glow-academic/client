@@ -15,6 +15,7 @@ import { useProfile } from "@/contexts/profile-context";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
+import { PromptPicker } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +63,7 @@ interface FormData {
   name?: string;
   description?: string;
   systemPrompt?: string;
+  promptId?: string | null;
   temperature?: number;
   modelId?: string;
   reasoning?: "none" | "minimal" | "low" | "medium" | "high";
@@ -90,6 +92,7 @@ export default function Persona({
       name: "",
       description: "",
       systemPrompt: "",
+      promptId: null,
       temperature: 0.0,
       modelId: "",
       reasoning: "none",
@@ -145,6 +148,7 @@ export default function Persona({
         name: personaData.name,
         description: personaData.description || "",
         systemPrompt: personaData.system_prompt,
+        promptId: personaData.prompt_id || null,
         temperature: personaData.temperature,
         modelId: personaData.model_id || "",
         reasoning:
@@ -170,6 +174,7 @@ export default function Persona({
         modelId: personaData.model_id || initialFormData.modelId || "",
         systemPrompt:
           personaData.system_prompt || initialFormData.systemPrompt || "",
+        promptId: null,
       });
     }
   }, [personaData, isEditMode, initialFormData]);
@@ -238,6 +243,7 @@ export default function Persona({
             personaId: personaId!,
             name: formData.name,
             description: formData.description || null,
+            prompt_id: formData.promptId || null,
             system_prompt: formData.systemPrompt,
             temperature: Number(formData.temperature),
             model_id: formData.modelId,
@@ -264,6 +270,7 @@ export default function Persona({
           {
             name: formData.name,
             description: formData.description || null,
+            prompt_id: formData.promptId || null,
             system_prompt: formData.systemPrompt,
             temperature: Number(formData.temperature),
             model_id: formData.modelId,
@@ -722,6 +729,36 @@ export default function Persona({
               <div className="flex items-center justify-between">
                 <Label htmlFor="systemPrompt">System Prompt *</Label>
                 <div className="flex gap-2">
+                  {isEditMode && personaData && personaData.prompt_mapping && Object.keys(personaData.prompt_mapping).length > 0 && (
+                    <PromptPicker
+                      promptMapping={personaData.prompt_mapping}
+                      selectedPromptId={formData?.promptId || null}
+                      onSelect={(promptId) => {
+                        if (promptId && personaData.prompt_mapping[promptId]) {
+                          const prompt = personaData.prompt_mapping[promptId];
+                          setFormData((prev) => ({
+                            ...prev,
+                            promptId: promptId,
+                            systemPrompt: prompt.system_prompt,
+                          }));
+                        } else {
+                          setFormData((prev) => ({
+                            ...prev,
+                            promptId: null,
+                          }));
+                        }
+                      }}
+                      onCreateNew={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          promptId: null,
+                        }));
+                      }}
+                      placeholder="Select prompt version..."
+                      disabled={isReadonly}
+                      buttonClassName="h-8"
+                    />
+                  )}
                   {formData?.systemPrompt !== undefined && !isLoading && (
                     <>
                       <Tooltip>
@@ -785,6 +822,7 @@ export default function Persona({
                       setFormData((prev) => ({
                         ...prev,
                         systemPrompt: value,
+                        promptId: null, // Clear promptId when editing, indicating new prompt
                       }))
                     }
                     placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."

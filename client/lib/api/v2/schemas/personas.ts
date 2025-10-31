@@ -128,6 +128,18 @@ export const PersonaDetailResponseSchema = z.object({
   reasoning: z.string().nullable(),
   temperature: z.number(),
   system_prompt: z.string(),
+  prompt_id: z.string().nullable(),
+
+  // Prompt version history
+  prompt_mapping: z.record(
+    z.string(),
+    z.object({
+      system_prompt: z.string(),
+      created_at: z.string(),
+      updated_at: z.string(),
+      department_ids: z.array(z.string()).nullable(),
+    })
+  ),
 
   // Usage and permissions
   in_use: z.boolean(),
@@ -183,7 +195,8 @@ export const CreatePersonaRequestSchema = z.object({
   model_id: z.string(),
   reasoning: z.string().nullable(),
   temperature: z.number(),
-  system_prompt: z.string(),
+  prompt_id: z.string().nullable().optional(), // If provided, use existing prompt
+  system_prompt: z.string(), // If prompt_id is None, create new prompt with this
 });
 
 export type CreatePersonaRequest = z.infer<typeof CreatePersonaRequestSchema>;
@@ -209,7 +222,8 @@ export const UpdatePersonaRequestSchema = z.object({
   model_id: z.string(),
   reasoning: z.string().nullable(),
   temperature: z.number(),
-  system_prompt: z.string(),
+  prompt_id: z.string().nullable().optional(), // If provided, use existing prompt
+  system_prompt: z.string(), // If prompt_id is None, create new prompt with this
 });
 
 export type UpdatePersonaRequest = z.infer<typeof UpdatePersonaRequestSchema>;

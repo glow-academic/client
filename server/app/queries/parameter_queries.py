@@ -54,13 +54,22 @@ class ParameterQueries:
             WHERE pi.rn <= 3
             GROUP BY pi.parameter_id
         ),
-        parameter_departments_data AS (
+        parameter_item_departments_data AS (
             SELECT 
-                pd.parameter_id,
-                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
-            FROM parameter_departments pd
-            WHERE pd.active = true
-            GROUP BY pd.parameter_id
+                pi.parameter_id,
+                ARRAY_AGG(DISTINCT pid.department_id::text ORDER BY pid.created_at) as department_ids
+            FROM parameter_items pi
+            JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id
+            WHERE pid.active = true
+            GROUP BY pi.parameter_id
+        ),
+        parameter_item_departments_for_filter AS (
+            SELECT DISTINCT
+                pi.parameter_id,
+                pid.department_id
+            FROM parameter_items pi
+            JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id
+            WHERE pid.active = true
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
@@ -72,7 +81,7 @@ class ParameterQueries:
             p.numerical,
             p.active,
             p.updated_at,
-            COALESCE(pdd.department_ids, NULL) as department_ids,
+            COALESCE(pidd.department_ids, NULL) as department_ids,
             COALESCE(pic.num_items, 0) as num_items,
             COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
             COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
@@ -92,19 +101,21 @@ class ParameterQueries:
                 ELSE false
             END as can_duplicate
         FROM parameters p
-        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
-        LEFT JOIN parameter_departments_data pdd ON pdd.parameter_id = p.id
+        LEFT JOIN parameter_item_departments_for_filter pidf ON pidf.parameter_id = p.id
+        LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_id = p.id
         LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
         LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
         LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id
         LEFT JOIN parameter_sample_items psi ON psi.parameter_id = p.id
         CROSS JOIN user_profile up
-        GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pdd.department_ids, pic.num_items, 
+        GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pidd.department_ids, pic.num_items, 
                  pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role
         HAVING 
-            -- Include if has matching department link OR has no department links at all (cross-dept)
-            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1)) > 0
-            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+            -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+            COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id = ANY($1)) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                          JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                          WHERE pi2.parameter_id = p.id AND pid2.active = true)
         ORDER BY p.updated_at DESC NULLS LAST
         """
 
@@ -150,13 +161,16 @@ class ParameterQueries:
         )
         SELECT p.id
         FROM parameters p
-        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+        LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
+        LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
         WHERE p.active = true
         GROUP BY p.id
         HAVING 
-            -- Include if has matching department link OR has no department links at all (cross-dept)
-            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
-            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+            -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+            COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                          JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                          WHERE pi2.parameter_id = p.id AND pid2.active = true)
         ORDER BY p.created_at DESC
         LIMIT 1
         """
@@ -220,21 +234,21 @@ class ParameterQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def delete_parameter_departments(
-        self, parameter_id: str
+    def delete_parameter_item_departments(
+        self, parameter_item_id: str
     ) -> tuple[str, list[Any]]:
-        """Build query to deactivate all parameter departments."""
+        """Build query to deactivate all parameter item departments."""
         query = """
-        UPDATE parameter_departments 
+        UPDATE parameter_item_departments 
         SET active = false, updated_at = NOW()
-        WHERE parameter_id = $1 AND active = true
+        WHERE parameter_item_id = $1::uuid AND active = true
         """
-        return (query, [parameter_id])
+        return (query, [parameter_item_id])
 
-    def create_parameter_departments(
-        self, parameter_id: str, department_ids: list[str]
+    def create_parameter_item_departments(
+        self, parameter_item_id: str, department_ids: list[str]
     ) -> tuple[str, list[Any]]:
-        """Build query to create parameter-department junction table records.
+        """Build query to create parameter_item-department junction table records.
         
         Returns:
             Tuple of (query, params)
@@ -245,15 +259,15 @@ class ParameterQueries:
 
         # Use UNNEST for efficient batch insert
         query = """
-        INSERT INTO parameter_departments (parameter_id, department_id, active, created_at, updated_at)
-        SELECT $1, dept_id::uuid, true, NOW(), NOW()
+        INSERT INTO parameter_item_departments (parameter_item_id, department_id, active, created_at, updated_at)
+        SELECT $1::uuid, dept_id::uuid, true, NOW(), NOW()
         FROM UNNEST($2::text[]) as dept_id
-        ON CONFLICT (parameter_id, department_id) DO UPDATE SET
+        ON CONFLICT (parameter_item_id, department_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
         """
 
-        params: list[Any] = [parameter_id, department_ids]
+        params: list[Any] = [parameter_item_id, department_ids]
         return query, params
 
     def delete_parameter_items(self, parameter_id: str) -> tuple[str, list[Any]]:
@@ -296,6 +310,7 @@ class ParameterQueries:
         """Build query to get parameter items for duplication."""
         query = """
         SELECT 
+            id,
             name,
             description,
             value,
@@ -337,13 +352,21 @@ class ParameterQueries:
             Tuple of (query string, params list)
         """
         query = """
-        WITH parameter_departments_data AS (
+        WITH parameter_item_departments_data AS (
             SELECT 
-                pd.parameter_id,
-                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
-            FROM parameter_departments pd
-            WHERE pd.parameter_id = $1 AND pd.active = true
-            GROUP BY pd.parameter_id
+                pi.id as parameter_item_id,
+                ARRAY_AGG(pid.department_id::text ORDER BY pid.created_at) as department_ids
+            FROM parameter_items pi
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE pi.parameter_id = $1
+            GROUP BY pi.id
+        ),
+        parameter_departments_aggregated AS (
+            SELECT 
+                ARRAY_AGG(DISTINCT pid.department_id::text ORDER BY pid.department_id) as department_ids
+            FROM parameter_items pi
+            JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE pi.parameter_id = $1
         ),
         parameter_data AS (
             SELECT 
@@ -351,9 +374,9 @@ class ParameterQueries:
                 p.description,
                 p.numerical,
                 p.active,
-                COALESCE(pdd.department_ids, NULL) as department_ids
+                COALESCE(pda.department_ids, NULL) as department_ids
             FROM parameters p
-            LEFT JOIN parameter_departments_data pdd ON pdd.parameter_id = p.id
+            LEFT JOIN parameter_departments_aggregated pda ON true
             WHERE p.id = $1
         ),
         parameter_items_with_usage AS (
@@ -363,11 +386,13 @@ class ParameterQueries:
                 pi.description,
                 pi.value,
                 pi.default_item,
-                COALESCE(COUNT(spi.scenario_id), 0) as usage_count
+                COALESCE(COUNT(spi.scenario_id), 0) as usage_count,
+                COALESCE(pidd.department_ids, NULL) as department_ids
             FROM parameter_items pi
             LEFT JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id AND spi.active = true
+            LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_item_id = pi.id
             WHERE pi.parameter_id = $1
-            GROUP BY pi.id, pi.name, pi.description, pi.value, pi.default_item
+            GROUP BY pi.id, pi.name, pi.description, pi.value, pi.default_item, pidd.department_ids
         ),
         items_json AS (
             SELECT COALESCE(

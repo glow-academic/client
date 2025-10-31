@@ -183,6 +183,34 @@ class AgentService(BaseService):
                         description=dept_data.get("description", ""),
                     )
 
+        # Parse prompt_mapping from JSONB (may be string or dict)
+        from app.schemas.agents import PromptInfo
+        prompt_mapping: dict[str, PromptInfo] = {}
+        prompt_mapping_data = result.get("prompt_mapping")
+        if isinstance(prompt_mapping_data, str):
+            prompt_mapping_data = json.loads(prompt_mapping_data)
+        if prompt_mapping_data and isinstance(prompt_mapping_data, dict):
+            for prompt_id, prompt_data in prompt_mapping_data.items():
+                if isinstance(prompt_data, dict):
+                    dept_ids = prompt_data.get("department_ids")
+                    if isinstance(dept_ids, list):
+                        dept_ids = [str(did) for did in dept_ids if did]
+                    elif dept_ids is None:
+                        dept_ids = None
+                    else:
+                        dept_ids = None
+                    prompt_mapping[prompt_id] = PromptInfo(
+                        system_prompt=prompt_data.get("system_prompt", ""),
+                        created_at=prompt_data.get("created_at", ""),
+                        updated_at=prompt_data.get("updated_at", ""),
+                        department_ids=dept_ids,
+                    )
+
+        # Parse prompt_id
+        prompt_id = result.get("prompt_id")
+        if prompt_id:
+            prompt_id = str(prompt_id)
+
         # Build reasoning_mapping following the reasoning_effort enum
         # Matches database enum: ('none', 'minimal', 'low', 'medium', 'high')
         reasoning_mapping = {
@@ -208,6 +236,7 @@ class AgentService(BaseService):
             name=result["name"],
             description=result["description"],
             system_prompt=result["system_prompt"],
+            prompt_id=prompt_id,
             temperature=float(result["temperature"]) if result["temperature"] is not None else 0.0,
             model_id=result["model_id"],
             reasoning=result["reasoning"],
@@ -216,6 +245,7 @@ class AgentService(BaseService):
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
+            prompt_mapping=prompt_mapping,
             valid_model_ids=valid_model_ids,
             reasoning_options=["none", "minimal", "low", "medium", "high"],
             temperature_lower=0.0,
@@ -325,6 +355,7 @@ class AgentService(BaseService):
             name="",
             description="",
             system_prompt="",
+            prompt_id=None,
             temperature=0.7,
             model_id="",
             reasoning=None,
@@ -333,6 +364,7 @@ class AgentService(BaseService):
             department_ids=[],
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
+            prompt_mapping={},
             valid_model_ids=valid_model_ids,
             reasoning_options=["none", "minimal", "low", "medium", "high"],
             temperature_lower=0.0,
@@ -353,10 +385,10 @@ class AgentService(BaseService):
             CreateAgentResponse
         """
         async with self.conn.transaction():
+            # Create agent (without system_prompt)
             query, params = self.queries.create_agent(
                 request.name,
                 request.description,
-                request.system_prompt,
                 request.temperature,
                 request.model_id,
                 request.reasoning,
@@ -369,6 +401,37 @@ class AgentService(BaseService):
                 raise ValueError("Failed to create agent")
 
             agent_id = agent_row["agent_id"]
+
+            # Handle prompt creation/linking
+            prompt_id = None
+            if request.prompt_id:
+                # Use existing prompt
+                prompt_id = request.prompt_id
+            elif request.system_prompt:
+                # Create new prompt
+                prompt_query, prompt_params = self.queries.create_prompt(
+                    request.system_prompt
+                )
+                prompt_row = await self.conn.fetchrow(prompt_query, *prompt_params)
+                if not prompt_row:
+                    raise ValueError("Failed to create prompt")
+                prompt_id = prompt_row["prompt_id"]
+
+                # Link prompt to departments if provided
+                if request.department_ids:
+                    prompt_dept_query, prompt_dept_params = (
+                        self.queries.create_prompt_departments(
+                            prompt_id, request.department_ids
+                        )
+                    )
+                    await self.conn.execute(prompt_dept_query, *prompt_dept_params)
+
+            # Link agent to prompt via agent_prompts junction
+            if prompt_id:
+                agent_prompt_query, agent_prompt_params = (
+                    self.queries.create_agent_prompt(agent_id, prompt_id)
+                )
+                await self.conn.execute(agent_prompt_query, *agent_prompt_params)
 
             # Create agent-department links if department_ids provided
             if request.department_ids:
@@ -397,11 +460,11 @@ class AgentService(BaseService):
             UpdateAgentResponse
         """
         async with self.conn.transaction():
+            # Update agent (without system_prompt)
             query, params = self.queries.update_agent(
                 request.agentId,
                 request.name,
                 request.description,
-                request.system_prompt,
                 request.temperature,
                 request.model_id,
                 request.reasoning,
@@ -409,6 +472,37 @@ class AgentService(BaseService):
                 request.role,
             )
             await self.conn.execute(query, *params)
+
+            # Handle prompt update
+            prompt_id = None
+            if request.prompt_id:
+                # Use existing prompt
+                prompt_id = request.prompt_id
+            elif request.system_prompt:
+                # Create new prompt (for version history)
+                prompt_query, prompt_params = self.queries.create_prompt(
+                    request.system_prompt
+                )
+                prompt_row = await self.conn.fetchrow(prompt_query, *prompt_params)
+                if not prompt_row:
+                    raise ValueError("Failed to create prompt")
+                prompt_id = prompt_row["prompt_id"]
+
+                # Link prompt to departments if provided
+                if request.department_ids:
+                    prompt_dept_query, prompt_dept_params = (
+                        self.queries.create_prompt_departments(
+                            prompt_id, request.department_ids
+                        )
+                    )
+                    await self.conn.execute(prompt_dept_query, *prompt_dept_params)
+
+            # Link agent to prompt via agent_prompts junction (deactivates old, activates new)
+            if prompt_id:
+                agent_prompt_query, agent_prompt_params = (
+                    self.queries.create_agent_prompt(request.agentId, prompt_id)
+                )
+                await self.conn.execute(agent_prompt_query, *agent_prompt_params)
 
             # Replace agent-department links (DELETE + INSERT pattern)
             delete_query, delete_params = self.queries.delete_agent_departments(

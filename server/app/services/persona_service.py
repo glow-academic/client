@@ -120,23 +120,38 @@ class PersonaService(BaseService):
         if not result:
             raise ValueError(f"Persona not found: {request.personaId}")
 
-        # Duplicate persona - query handles department links automatically
-        duplicate_query = self.queries.insert_duplicate_persona()
-        new_persona = await self.conn.fetchrow(
-            duplicate_query,
-            request.personaId,  # Original persona ID to copy from
-            result["name"],
-            result["description"],
-            result["system_prompt"],
-            result["temperature"],
-            result["reasoning"] or "none",  # Default to "none" if None
-            result["model_id"],
-            result["color"],
-            result["icon"],
-        )
+        async with self.conn.transaction():
+            # Duplicate persona (without system_prompt)
+            duplicate_query = self.queries.insert_duplicate_persona()
+            new_persona = await self.conn.fetchrow(
+                duplicate_query,
+                result["name"],
+                result["description"],
+                result["temperature"],
+                result["reasoning"] or "none",  # Default to "none" if None
+                result["model_id"],
+                result["color"],
+                result["icon"],
+            )
 
-        if not new_persona:
-            raise ValueError("Failed to create duplicate persona")
+            if not new_persona:
+                raise ValueError("Failed to create duplicate persona")
+
+            persona_id = str(new_persona["id"])
+
+            # Create new prompt from original persona's prompt
+            if result["system_prompt"]:
+                prompt_query, prompt_params = self.queries.create_prompt(
+                    result["system_prompt"]
+                )
+                prompt_row = await self.conn.fetchrow(prompt_query, *prompt_params)
+                if prompt_row:
+                    prompt_id = prompt_row["prompt_id"]
+                    # Link persona to prompt via persona_prompts junction
+                    persona_prompt_query, persona_prompt_params = (
+                        self.queries.create_persona_prompt(persona_id, prompt_id)
+                    )
+                    await self.conn.execute(persona_prompt_query, *persona_prompt_params)
 
         # Invalidate caches
         await self._invalidate_cache(
@@ -148,7 +163,7 @@ class PersonaService(BaseService):
 
         return DuplicatePersonaResponse(
             success=True,
-            personaId=str(new_persona["id"]),
+            personaId=persona_id,
             message=f"Persona '{result['name']}' duplicated successfully",
         )
 
@@ -357,6 +372,34 @@ class PersonaService(BaseService):
         if department_ids:
             department_ids = [str(d) for d in department_ids]
 
+        # Parse prompt_mapping from JSONB (may be string or dict)
+        from app.schemas.personas import PromptInfo
+        prompt_mapping: dict[str, PromptInfo] = {}
+        prompt_mapping_data = persona.get("prompt_mapping")
+        if isinstance(prompt_mapping_data, str):
+            prompt_mapping_data = json.loads(prompt_mapping_data)
+        if prompt_mapping_data and isinstance(prompt_mapping_data, dict):
+            for prompt_id, prompt_data in prompt_mapping_data.items():
+                if isinstance(prompt_data, dict):
+                    dept_ids = prompt_data.get("department_ids")
+                    if isinstance(dept_ids, list):
+                        dept_ids = [str(did) for did in dept_ids if did]
+                    elif dept_ids is None:
+                        dept_ids = None
+                    else:
+                        dept_ids = None
+                    prompt_mapping[prompt_id] = PromptInfo(
+                        system_prompt=prompt_data.get("system_prompt", ""),
+                        created_at=prompt_data.get("created_at", ""),
+                        updated_at=prompt_data.get("updated_at", ""),
+                        department_ids=dept_ids,
+                    )
+
+        # Parse prompt_id
+        prompt_id = persona.get("prompt_id")
+        if prompt_id:
+            prompt_id = str(prompt_id)
+
         return PersonaDetailResponse(
             # Basic fields
             name=persona["name"],
@@ -369,6 +412,7 @@ class PersonaService(BaseService):
             reasoning=persona["reasoning"],
             temperature=float(persona["temperature"]),
             system_prompt=persona["system_prompt"],
+            prompt_id=prompt_id,
             # Usage and permissions
             in_use=in_use,
             scenario_count=scenario_count,
@@ -384,6 +428,8 @@ class PersonaService(BaseService):
             valid_department_ids=valid_department_ids,
             temperature_lower=0.0,
             temperature_upper=2.0,
+            # Prompt version history
+            prompt_mapping=prompt_mapping,
             # Mappings
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
@@ -524,7 +570,8 @@ class PersonaService(BaseService):
             model_id=str(result["model_id"]),
             reasoning=result["reasoning"],
             temperature=float(result["temperature"]),
-            system_prompt=result["system_prompt"],
+            system_prompt=result.get("system_prompt", ""),
+            prompt_id=result.get("prompt_id"),
             # Usage and permissions
             in_use=in_use,
             scenario_count=scenario_count,
@@ -540,6 +587,8 @@ class PersonaService(BaseService):
             valid_department_ids=valid_department_ids,
             temperature_lower=0.0,
             temperature_upper=2.0,
+            # Prompt version history
+            prompt_mapping={},
             # Mappings
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
@@ -553,34 +602,65 @@ class PersonaService(BaseService):
     ) -> CreatePersonaResponse:
         """Create a new persona using dynamic SQL."""
 
-        # Note: create_persona() query doesn't accept department_ids - handled separately
-        query = self.queries.create_persona()
-        result = await self.conn.fetchrow(
-            query,
-            request.name,
-            request.description,
-            request.active,
-            request.color,
-            request.icon,
-            request.model_id,
-            request.reasoning or "none",  # Default to "none" if None
-            request.temperature,
-            request.system_prompt,
-        )
-
-        if not result:
-            raise ValueError("Failed to create persona")
-
-        persona_id = str(result["id"])
-
-        # Insert department links if department_ids provided
-        if request.department_ids:
-            insert_dept_query, insert_dept_params = (
-                self.queries.create_persona_departments(
-                    persona_id, request.department_ids
-                )
+        async with self.conn.transaction():
+            # Create persona (without system_prompt)
+            query = self.queries.create_persona()
+            result = await self.conn.fetchrow(
+                query,
+                request.name,
+                request.description,
+                request.active,
+                request.color,
+                request.icon,
+                request.model_id,
+                request.reasoning or "none",  # Default to "none" if None
+                request.temperature,
             )
-            await self.conn.execute(insert_dept_query, *insert_dept_params)
+
+            if not result:
+                raise ValueError("Failed to create persona")
+
+            persona_id = str(result["id"])
+
+            # Handle prompt creation/linking
+            prompt_id = None
+            if request.prompt_id:
+                # Use existing prompt
+                prompt_id = request.prompt_id
+            elif request.system_prompt:
+                # Create new prompt
+                prompt_query, prompt_params = self.queries.create_prompt(
+                    request.system_prompt
+                )
+                prompt_row = await self.conn.fetchrow(prompt_query, *prompt_params)
+                if not prompt_row:
+                    raise ValueError("Failed to create prompt")
+                prompt_id = prompt_row["prompt_id"]
+
+                # Link prompt to departments if provided
+                if request.department_ids:
+                    prompt_dept_query, prompt_dept_params = (
+                        self.queries.create_prompt_departments(
+                            prompt_id, request.department_ids
+                        )
+                    )
+                    await self.conn.execute(prompt_dept_query, *prompt_dept_params)
+
+            # Link persona to prompt via persona_prompts junction
+            if prompt_id:
+                persona_prompt_query, persona_prompt_params = (
+                    self.queries.create_persona_prompt(persona_id, prompt_id)
+                )
+                await self.conn.execute(persona_prompt_query, *persona_prompt_params)
+
+            # Insert department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_persona_departments(
+                        persona_id, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
         # Invalidate caches
         await self._invalidate_cache(
@@ -608,36 +688,67 @@ class PersonaService(BaseService):
         if not existing:
             raise ValueError(f"Persona not found: {request.personaId}")
 
-        # Update persona basic fields
-        query = self.queries.update_persona()
-        await self.conn.execute(
-            query,
-            request.personaId,
-            request.name,
-            request.description,
-            request.active,
-            request.color,
-            request.icon,
-            request.model_id,
-            request.reasoning or "none",  # Default to "none" if None
-            request.temperature,
-            request.system_prompt,
-        )
-
-        # Update persona-department links (DELETE + INSERT pattern)
-        delete_dept_query, delete_dept_params = (
-            self.queries.delete_persona_departments(request.personaId)
-        )
-        await self.conn.execute(delete_dept_query, *delete_dept_params)
-
-        # Insert new department links if department_ids provided
-        if request.department_ids:
-            insert_dept_query, insert_dept_params = (
-                self.queries.create_persona_departments(
-                    request.personaId, request.department_ids
-                )
+        async with self.conn.transaction():
+            # Update persona basic fields (without system_prompt)
+            query = self.queries.update_persona()
+            await self.conn.execute(
+                query,
+                request.personaId,
+                request.name,
+                request.description,
+                request.active,
+                request.color,
+                request.icon,
+                request.model_id,
+                request.reasoning or "none",  # Default to "none" if None
+                request.temperature,
             )
-            await self.conn.execute(insert_dept_query, *insert_dept_params)
+
+            # Handle prompt update
+            prompt_id = None
+            if request.prompt_id:
+                # Use existing prompt
+                prompt_id = request.prompt_id
+            elif request.system_prompt:
+                # Create new prompt (for version history)
+                prompt_query, prompt_params = self.queries.create_prompt(
+                    request.system_prompt
+                )
+                prompt_row = await self.conn.fetchrow(prompt_query, *prompt_params)
+                if not prompt_row:
+                    raise ValueError("Failed to create prompt")
+                prompt_id = prompt_row["prompt_id"]
+
+                # Link prompt to departments if provided
+                if request.department_ids:
+                    prompt_dept_query, prompt_dept_params = (
+                        self.queries.create_prompt_departments(
+                            prompt_id, request.department_ids
+                        )
+                    )
+                    await self.conn.execute(prompt_dept_query, *prompt_dept_params)
+
+            # Link persona to prompt via persona_prompts junction (deactivates old, activates new)
+            if prompt_id:
+                persona_prompt_query, persona_prompt_params = (
+                    self.queries.create_persona_prompt(request.personaId, prompt_id)
+                )
+                await self.conn.execute(persona_prompt_query, *persona_prompt_params)
+
+            # Update persona-department links (DELETE + INSERT pattern)
+            delete_dept_query, delete_dept_params = (
+                self.queries.delete_persona_departments(request.personaId)
+            )
+            await self.conn.execute(delete_dept_query, *delete_dept_params)
+
+            # Insert new department links if department_ids provided
+            if request.department_ids:
+                insert_dept_query, insert_dept_params = (
+                    self.queries.create_persona_departments(
+                        request.personaId, request.department_ids
+                    )
+                )
+                await self.conn.execute(insert_dept_query, *insert_dept_params)
 
         # Invalidate caches
         await self._invalidate_cache(

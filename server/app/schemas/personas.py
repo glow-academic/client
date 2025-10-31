@@ -83,6 +83,15 @@ class DebugInfoItem(BaseModel):
     content: str
 
 
+class PromptInfo(BaseModel):
+    """Prompt information for version history."""
+
+    system_prompt: str
+    created_at: str
+    updated_at: str
+    department_ids: list[str] | None
+
+
 class PersonaDetailResponse(BaseModel):
     """Detailed persona response with all fields and metadata."""
 
@@ -97,6 +106,7 @@ class PersonaDetailResponse(BaseModel):
     reasoning: str | None
     temperature: float
     system_prompt: str
+    prompt_id: str | None
 
     # Usage and permissions
     in_use: bool
@@ -114,6 +124,9 @@ class PersonaDetailResponse(BaseModel):
     valid_department_ids: list[str]
     temperature_lower: float
     temperature_upper: float
+
+    # Prompt version history
+    prompt_mapping: dict[str, PromptInfo]
 
     # Mappings
     model_mapping: ModelMapping
@@ -145,7 +158,8 @@ class CreatePersonaRequest(BaseModel):
     model_id: str
     reasoning: str | None
     temperature: float
-    system_prompt: str
+    prompt_id: str | None  # If provided, use existing prompt
+    system_prompt: str  # If prompt_id is None, create new prompt with this
 
 
 class CreatePersonaResponse(BaseModel):
@@ -169,7 +183,8 @@ class UpdatePersonaRequest(BaseModel):
     model_id: str
     reasoning: str | None
     temperature: float
-    system_prompt: str
+    prompt_id: str | None  # If provided, use existing prompt
+    system_prompt: str  # If prompt_id is None, create new prompt with this
 
 
 class UpdatePersonaResponse(BaseModel):

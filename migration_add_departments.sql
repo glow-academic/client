@@ -11,15 +11,15 @@ BEGIN;
 -- ============================================================================
 
 INSERT INTO departments (id, title, description, active) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'Biology', 'BIOL', true),
-  ('22222222-2222-2222-2222-222222222222', 'Chemistry', 'CHM', true),
-  ('44444444-4444-4444-4444-444444444444', 'Earth, Atmospheric, and Planetary Sciences', 'EAPS', true),
-  ('55555555-5555-5555-5555-555555555555', 'Mathematics', 'MA', true),
-  ('66666666-6666-6666-6666-666666666666', 'Physics', 'PHYS', true),
-  ('77777777-7777-7777-7777-777777777777', 'Statistics', 'STAT', true)
+  ('fc3d3994-6274-4b87-ae85-2b845282c194', 'Biology', 'BIOL', true),
+  ('5af0d09d-1661-4610-9e0c-f768d1e87e36', 'Chemistry', 'CHM', true),
+  ('001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb', 'Earth, Atmospheric, and Planetary Sciences', 'EAPS', true),
+  ('0258cdab-7cf4-4d2f-96ec-98fae38df1bc', 'Mathematics', 'MA', true),
+  ('a9cc891d-859f-4ef8-b09d-2f6beabb618d', 'Physics', 'PHYS', true),
+  ('083f55e9-08af-4b0a-8e1b-32f28d3afea3', 'Statistics', 'STAT', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Note: Computer Science ('33333333-3333-3333-3333-333333333333') already exists
+-- Note: Computer Science ('3f256cf4-cf5e-4eae-8804-8a204f867e58') already exists
 
 -- ============================================================================
 -- PART 2: Link superadmins to all departments
@@ -31,7 +31,7 @@ INSERT INTO profile_departments (profile_id, department_id, is_primary)
 SELECT 
   p.id,
   d.id,
-  CASE WHEN d.id = '33333333-3333-3333-3333-333333333333' THEN true ELSE false END
+  CASE WHEN d.id = '3f256cf4-cf5e-4eae-8804-8a204f867e58' THEN true ELSE false END
 FROM profiles p
 CROSS JOIN departments d
 WHERE p.role = 'superadmin'
@@ -47,11 +47,11 @@ WHERE p.role = 'superadmin'
 
 -- Create default guest profile for each role level
 INSERT INTO profiles (id, first_name, last_name, alias, role, default_profile, active) VALUES
-  ('00000000-0000-0000-0000-000000000001', 'Default', 'Guest', 'guest', 'guest', true, true),
-  ('00000000-0000-0000-0000-000000000002', 'Default', 'TA', 'default_ta', 'ta', true, true),
-  ('00000000-0000-0000-0000-000000000003', 'Default', 'Instructional', 'default_instructional', 'instructional', true, true),
-  ('00000000-0000-0000-0000-000000000004', 'Default', 'Admin', 'default_admin', 'admin', true, true),
-  ('00000000-0000-0000-0000-000000000005', 'Default', 'Superadmin', 'default_superadmin', 'superadmin', true, true)
+  ('fc4dff8a-e05b-405c-9f14-7db2569a8456', 'Default', 'Guest', 'guest', 'guest', true, true),
+  ('26a233a5-68f5-4efe-8037-661862b0e453', 'Default', 'TA', 'default_ta', 'ta', true, true),
+  ('2d69576c-e4dc-48c1-b245-cfca6ed1f7fc', 'Default', 'Instructional', 'default_instructional', 'instructional', true, true),
+  ('6e94eec6-a1e0-4a1a-a33b-5edc6bf88bbe', 'Default', 'Admin', 'default_admin', 'admin', true, true),
+  ('f5795bc0-4a98-4650-a1f3-7d321cf9038c', 'Default', 'Superadmin', 'default_superadmin', 'superadmin', true, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Link default profiles to all departments

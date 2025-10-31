@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
+import { PromptPicker } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { RolePicker } from "@/components/common/forms/RolePicker";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ interface SystemAgentFormData {
   name?: string;
   description?: string;
   systemPrompt?: string;
+  promptId?: string | null;
   temperature?: number;
   modelId?: string;
   reasoning?: "none" | "minimal" | "low" | "medium" | "high";
@@ -104,6 +106,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       name: "",
       description: "",
       systemPrompt: "",
+      promptId: null,
       temperature: 0.7,
       modelId: "",
       reasoning: "none",
@@ -138,6 +141,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         name: agentDetail.name,
         description: agentDetail.description,
         systemPrompt: agentDetail.system_prompt,
+        promptId: agentDetail.prompt_id || null,
         temperature: agentDetail.temperature,
         modelId: agentDetail.model_id || "",
         reasoning:
@@ -162,6 +166,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
           agentDetailDefault.system_prompt ||
           initialFormData.systemPrompt ||
           "",
+        promptId: null,
         role: agentDetailDefault.role || "assistant",
         departmentIds: agentDetailDefault.department_ids || [],
       });
@@ -226,6 +231,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             agentId,
             name: formData.name!,
             description: formData.description!,
+            prompt_id: formData.promptId || null,
             system_prompt: formData.systemPrompt!,
             temperature: Number(formData.temperature),
             model_id: formData.modelId!,
@@ -267,6 +273,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
           {
             name: formData.name!,
             description: formData.description!,
+            prompt_id: formData.promptId || null,
             system_prompt: formData.systemPrompt!,
             temperature: Number(formData.temperature),
             model_id: formData.modelId!,
@@ -524,6 +531,36 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               <div className="flex items-center justify-between">
                 <Label htmlFor="systemPrompt">System Prompt *</Label>
                 <div className="flex gap-2">
+                  {isEditMode && agentDetail && agentDetail.prompt_mapping && Object.keys(agentDetail.prompt_mapping).length > 0 && (
+                    <PromptPicker
+                      promptMapping={agentDetail.prompt_mapping}
+                      selectedPromptId={formData?.promptId || null}
+                      onSelect={(promptId) => {
+                        if (promptId && agentDetail.prompt_mapping[promptId]) {
+                          const prompt = agentDetail.prompt_mapping[promptId];
+                          setFormData((prev) => ({
+                            ...prev,
+                            promptId: promptId,
+                            systemPrompt: prompt.system_prompt,
+                          }));
+                        } else {
+                          setFormData((prev) => ({
+                            ...prev,
+                            promptId: null,
+                          }));
+                        }
+                      }}
+                      onCreateNew={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          promptId: null,
+                        }));
+                      }}
+                      placeholder="Select prompt version..."
+                      disabled={false}
+                      buttonClassName="h-8"
+                    />
+                  )}
                   {formData?.systemPrompt !== undefined && !isLoading && (
                     <>
                       <Tooltip>
@@ -580,9 +617,14 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 <div className="h-[500px]">
                   <UnifiedPromptEditor
                     value={formData?.systemPrompt || ""}
-                    onChange={(value) =>
-                      handleInputChange("systemPrompt", value)
-                    }
+                    onChange={(value) => {
+                      handleInputChange("systemPrompt", value);
+                      // Clear promptId when editing, indicating new prompt
+                      setFormData((prev) => ({
+                        ...prev,
+                        promptId: null,
+                      }));
+                    }}
                     placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
                     className="h-full"
                     debugContent={

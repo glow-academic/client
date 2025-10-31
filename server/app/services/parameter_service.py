@@ -135,6 +135,13 @@ class ParameterService(BaseService):
             for item_data in parameter_items_data:
                 if isinstance(item_data, dict):
                     usage_count = item_data.get("usage_count", 0)
+                    dept_ids = item_data.get("department_ids")
+                    if dept_ids and isinstance(dept_ids, list):
+                        dept_ids = [str(d) for d in dept_ids if d]
+                    elif dept_ids is None:
+                        dept_ids = None
+                    else:
+                        dept_ids = None
                     parameter_items.append(
                         ParameterItemDetail(
                             parameter_item_id=item_data.get("parameter_item_id", ""),
@@ -142,6 +149,7 @@ class ParameterService(BaseService):
                             description=item_data.get("description", ""),
                             value=item_data.get("value", ""),
                             default_item=item_data.get("default_item", False),
+                            department_ids=dept_ids,
                             can_delete=usage_count == 0,
                         )
                     )
@@ -259,19 +267,11 @@ class ParameterService(BaseService):
 
             parameter_id = str(parameter_result["id"])
 
-            # Insert department links if department_ids provided
-            if request.department_ids:
-                insert_dept_query, insert_dept_params = (
-                    self.queries.create_parameter_departments(
-                        parameter_id, request.department_ids
-                    )
-                )
-                await self.conn.execute(insert_dept_query, *insert_dept_params)
-
-            # Create parameter items
+            # Create parameter items first
             item_query, _ = self.queries.create_parameter_item()
+            item_ids = []
             for item in request.parameter_items:
-                await self.conn.execute(
+                item_result = await self.conn.fetchrow(
                     item_query,
                     parameter_id,
                     item.name,
@@ -279,6 +279,20 @@ class ParameterService(BaseService):
                     item.value,
                     item.default_item,
                 )
+                if item_result:
+                    item_id = str(item_result["id"])
+                    item_ids.append(item_id)
+
+                    # Link department_ids to this parameter item if provided
+                    # Use per-item department_ids if available, otherwise fall back to parameter-level
+                    dept_ids = item.department_ids if hasattr(item, 'department_ids') and item.department_ids is not None else (request.department_ids if request.department_ids else None)
+                    if dept_ids:
+                        insert_dept_query, insert_dept_params = (
+                            self.queries.create_parameter_item_departments(
+                                item_id, dept_ids
+                            )
+                        )
+                        await self.conn.execute(insert_dept_query, *insert_dept_params)
 
         # Invalidate caches
         await self._invalidate_cache(
@@ -318,29 +332,15 @@ class ParameterService(BaseService):
                 request.active,
             )
 
-            # Update parameter-department links (DELETE + INSERT pattern)
-            delete_dept_query, delete_dept_params = (
-                self.queries.delete_parameter_departments(request.parameterId)
-            )
-            await self.conn.execute(delete_dept_query, *delete_dept_params)
-
-            # Insert new department links if department_ids provided
-            if request.department_ids:
-                insert_dept_query, insert_dept_params = (
-                    self.queries.create_parameter_departments(
-                        request.parameterId, request.department_ids
-                    )
-                )
-                await self.conn.execute(insert_dept_query, *insert_dept_params)
-
-            # Delete existing parameter items
+            # Delete existing parameter items (this will cascade delete parameter_item_departments)
             query, params = self.queries.delete_parameter_items(request.parameterId)
             await self.conn.execute(query, *params)
 
             # Recreate parameter items
             item_query, _ = self.queries.create_parameter_item()
+            item_ids = []
             for item in request.parameter_items:
-                await self.conn.execute(
+                item_result = await self.conn.fetchrow(
                     item_query,
                     request.parameterId,
                     item.name,
@@ -348,6 +348,20 @@ class ParameterService(BaseService):
                     item.value,
                     item.default_item,
                 )
+                if item_result:
+                    item_id = str(item_result["id"])
+                    item_ids.append(item_id)
+
+                    # Link department_ids to this parameter item if provided
+                    # Use per-item department_ids if available, otherwise fall back to parameter-level
+                    dept_ids = item.department_ids if hasattr(item, 'department_ids') and item.department_ids is not None else (request.department_ids if request.department_ids else None)
+                    if dept_ids:
+                        insert_dept_query, insert_dept_params = (
+                            self.queries.create_parameter_item_departments(
+                                item_id, dept_ids
+                            )
+                        )
+                        await self.conn.execute(insert_dept_query, *insert_dept_params)
 
         # Invalidate caches
         await self._invalidate_cache(
@@ -382,7 +396,6 @@ class ParameterService(BaseService):
                 parameter["name"],
                 parameter["description"],
                 parameter["numerical"],
-                parameter["department_id"],
             )
 
             if not new_parameter:
@@ -390,14 +403,21 @@ class ParameterService(BaseService):
 
             new_parameter_id = str(new_parameter["id"])
 
-            # Get original items
+            # Get original items with their department associations
             query, params = self.queries.get_items_for_duplicate(request.parameterId)
             items = await self.conn.fetch(query, *params)
 
-            # Duplicate items
+            # Get department_ids for each item
+            item_dept_query = """
+            SELECT pid.department_id::text
+            FROM parameter_item_departments pid
+            WHERE pid.parameter_item_id = $1::uuid AND pid.active = true
+            """
+
+            # Duplicate items with their department associations
             item_query, _ = self.queries.create_parameter_item()
             for item in items:
-                await self.conn.execute(
+                item_result = await self.conn.fetchrow(
                     item_query,
                     new_parameter_id,
                     item["name"],
@@ -405,6 +425,20 @@ class ParameterService(BaseService):
                     item["value"],
                     item["default_item"],
                 )
+                if item_result:
+                    new_item_id = str(item_result["id"])
+                    # Get original item's department_ids
+                    original_item_id = str(item["id"])
+                    dept_results = await self.conn.fetch(item_dept_query, original_item_id)
+                    if dept_results:
+                        dept_ids = [str(d["department_id"]) for d in dept_results]
+                        if dept_ids:
+                            insert_dept_query, insert_dept_params = (
+                                self.queries.create_parameter_item_departments(
+                                    new_item_id, dept_ids
+                                )
+                            )
+                            await self.conn.execute(insert_dept_query, *insert_dept_params)
 
         # Invalidate caches
         await self._invalidate_cache(

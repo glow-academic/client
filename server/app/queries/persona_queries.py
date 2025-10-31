@@ -150,17 +150,19 @@ class PersonaQueries:
         """Build query to get persona by ID."""
         query = """
         SELECT 
-            name,
-            description,
-            active,
-            color,
-            icon,
-            model_id,
-            reasoning,
-            temperature,
-            system_prompt
-        FROM personas
-        WHERE id = $1
+            p.name,
+            p.description,
+            p.active,
+            p.color,
+            p.icon,
+            p.model_id,
+            p.reasoning,
+            p.temperature,
+            COALESCE(pr.system_prompt, '') as system_prompt
+        FROM personas p
+        LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
+        LEFT JOIN prompts pr ON pr.id = pp.prompt_id
+        WHERE p.id = $1
         """
         return (query, [persona_id])
 
@@ -195,11 +197,13 @@ class PersonaQueries:
             p.model_id,
             p.reasoning,
             p.temperature,
-            p.system_prompt
+            COALESCE(pr.system_prompt, '') as system_prompt
         FROM personas p
+        LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
+        LEFT JOIN prompts pr ON pr.id = pp.prompt_id
         LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
         WHERE p.active = true
-        GROUP BY p.id, p.name, p.description, p.active, p.color, p.icon, p.model_id, p.reasoning, p.temperature, p.system_prompt
+        GROUP BY p.id, p.name, p.description, p.active, p.color, p.icon, p.model_id, p.reasoning, p.temperature, pr.system_prompt
         HAVING 
             -- Include if has matching department link OR has no department links at all (cross-dept)
             COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY((SELECT dept_ids FROM user_departments))) > 0
@@ -213,29 +217,30 @@ class PersonaQueries:
         """Build query to get persona data for duplication."""
         query = """
         SELECT 
-            name,
-            description,
-            system_prompt,
-            temperature,
-            reasoning,
-            model_id,
-            color,
-            icon
-        FROM personas
-        WHERE id = $1
+            p.name,
+            p.description,
+            COALESCE(pr.system_prompt, '') as system_prompt,
+            p.temperature,
+            p.reasoning,
+            p.model_id,
+            p.color,
+            p.icon
+        FROM personas p
+        LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
+        LEFT JOIN prompts pr ON pr.id = pp.prompt_id
+        WHERE p.id = $1
         """
         return (query, [persona_id])
 
     def insert_duplicate_persona(self) -> str:
         """Build query to insert duplicate persona.
-        Params order: name, description, system_prompt, temperature, reasoning,
+        Params order: name, description, temperature, reasoning,
         model_id, color, icon
         """
         return """
         INSERT INTO personas (
             name,
             description,
-            system_prompt,
             temperature,
             reasoning,
             model_id,
@@ -251,7 +256,6 @@ class PersonaQueries:
             $5,
             $6,
             $7,
-            $8,
             false
         )
         RETURNING id
@@ -278,7 +282,7 @@ class PersonaQueries:
 
     def create_persona(self) -> str:
         """Build query to create persona.
-        Params order: name, description, active, color, icon, model_id, reasoning, temperature, system_prompt
+        Params order: name, description, active, color, icon, model_id, reasoning, temperature
         """
         return """
         INSERT INTO personas (
@@ -289,8 +293,7 @@ class PersonaQueries:
             icon,
             model_id,
             reasoning,
-            temperature,
-            system_prompt
+            temperature
         )
         VALUES (
             $1,
@@ -300,15 +303,14 @@ class PersonaQueries:
             $5,
             $6,
             $7,
-            $8,
-            $9
+            $8
         )
         RETURNING id
         """
 
     def update_persona(self) -> str:
         """Build query to update persona.
-        Params order: persona_id, name, description, active, color, icon, model_id, reasoning, temperature, system_prompt
+        Params order: persona_id, name, description, active, color, icon, model_id, reasoning, temperature
         """
         return """
         UPDATE personas SET
@@ -320,7 +322,6 @@ class PersonaQueries:
             model_id = $7,
             reasoning = $8,
             temperature = $9,
-            system_prompt = $10,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -359,6 +360,70 @@ class PersonaQueries:
         """
 
         params: list[Any] = [persona_id, department_ids]
+        return query, params
+
+    def create_prompt(self, system_prompt: str) -> tuple[str, list[Any]]:
+        """
+        Create a new prompt.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        INSERT INTO prompts (system_prompt, created_at, updated_at)
+        VALUES ($1, NOW(), NOW())
+        RETURNING id::text as prompt_id
+        """
+        params: list[Any] = [system_prompt]
+        return query, params
+
+    def create_persona_prompt(
+        self, persona_id: str, prompt_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Link a persona to a prompt via persona_prompts junction.
+        Deactivates any existing active prompt first.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH deactivate_existing AS (
+            UPDATE persona_prompts
+            SET active = false, updated_at = NOW()
+            WHERE persona_id = $1::uuid AND active = true
+        )
+        INSERT INTO persona_prompts (persona_id, prompt_id, active, created_at, updated_at)
+        VALUES ($1::uuid, $2::uuid, true, NOW(), NOW())
+        ON CONFLICT (persona_id, prompt_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+        params: list[Any] = [persona_id, prompt_id]
+        return query, params
+
+    def create_prompt_departments(
+        self, prompt_id: str, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """
+        Link a prompt to departments via prompt_departments junction.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        if not department_ids:
+            # Return empty query if no departments
+            return "SELECT 1 WHERE false", []
+
+        query = """
+        INSERT INTO prompt_departments (prompt_id, department_id, active, created_at, updated_at)
+        SELECT $1::uuid, dept_id::uuid, true, NOW(), NOW()
+        FROM UNNEST($2::text[]) as dept_id
+        ON CONFLICT (prompt_id, department_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+        params: list[Any] = [prompt_id, department_ids]
         return query, params
 
     def get_departments_mapping(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
@@ -489,6 +554,54 @@ class PersonaQueries:
             WHERE pd.persona_id = $1 AND pd.active = true
             GROUP BY pd.persona_id
         ),
+        persona_active_prompt AS (
+            SELECT 
+                pp.persona_id,
+                pp.prompt_id::text as prompt_id,
+                pr.system_prompt,
+                pr.created_at as prompt_created_at,
+                pr.updated_at as prompt_updated_at
+            FROM persona_prompts pp
+            JOIN prompts pr ON pr.id = pp.prompt_id
+            WHERE pp.persona_id = $1 AND pp.active = true
+            LIMIT 1
+        ),
+        persona_all_prompts AS (
+            SELECT 
+                pp.persona_id,
+                pp.prompt_id::text as prompt_id,
+                pr.system_prompt,
+                pr.created_at as prompt_created_at,
+                pr.updated_at as prompt_updated_at
+            FROM persona_prompts pp
+            JOIN prompts pr ON pr.id = pp.prompt_id
+            WHERE pp.persona_id = $1
+        ),
+        prompt_departments_data AS (
+            SELECT 
+                pd.prompt_id::text as prompt_id,
+                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+            FROM prompt_departments pd
+            WHERE pd.active = true
+            GROUP BY pd.prompt_id
+        ),
+        prompt_mapping_data AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        pp.prompt_id,
+                        jsonb_build_object(
+                            'system_prompt', pp.system_prompt,
+                            'created_at', pp.prompt_created_at::text,
+                            'updated_at', pp.prompt_updated_at::text,
+                            'department_ids', COALESCE(pdd.department_ids, NULL)
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as prompt_mapping
+            FROM persona_all_prompts pp
+            LEFT JOIN prompt_departments_data pdd ON pdd.prompt_id = pp.prompt_id
+        ),
         persona_data AS (
             SELECT 
                 name,
@@ -499,10 +612,12 @@ class PersonaQueries:
                 model_id,
                 reasoning,
                 temperature,
-                system_prompt,
+                COALESCE(pap.system_prompt, '') as system_prompt,
+                COALESCE(pap.prompt_id, NULL)::text as prompt_id,
                 COALESCE(pdd.department_ids, NULL) as department_ids
             FROM personas p
             LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
+            LEFT JOIN persona_active_prompt pap ON pap.persona_id = p.id
             WHERE p.id = $1
         ),
         valid_depts AS (
@@ -555,12 +670,14 @@ class PersonaQueries:
             vm.model_mapping,
             vm.model_ids as valid_model_ids,
             u.usage_count,
-            pr.user_role
+            pr.user_role,
+            COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping
         FROM persona_data p
         CROSS JOIN valid_depts vd
         CROSS JOIN valid_models vm
         CROSS JOIN usage_data u
         CROSS JOIN profile_data pr
+        CROSS JOIN prompt_mapping_data pmd
         """
         return (query, [persona_id, profile_id])
 
@@ -606,6 +723,19 @@ class PersonaQueries:
             WHERE pd.active = true
             GROUP BY pd.persona_id
         ),
+        persona_active_prompt AS (
+            SELECT 
+                pp.persona_id,
+                pp.prompt_id::text as prompt_id,
+                pr.system_prompt,
+                pr.created_at as prompt_created_at,
+                pr.updated_at as prompt_updated_at
+            FROM persona_prompts pp
+            JOIN prompts pr ON pr.id = pp.prompt_id
+            JOIN default_persona dp ON pp.persona_id = dp.id
+            WHERE pp.active = true
+            LIMIT 1
+        ),
         persona_data AS (
             SELECT 
                 p.name,
@@ -616,11 +746,13 @@ class PersonaQueries:
                 p.model_id,
                 p.reasoning,
                 p.temperature,
-                p.system_prompt,
+                COALESCE(pap.system_prompt, '') as system_prompt,
+                COALESCE(pap.prompt_id, NULL)::text as prompt_id,
                 COALESCE(pdd.department_ids, NULL) as department_ids
             FROM personas p
             JOIN default_persona dp ON p.id = dp.id
             LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
+            LEFT JOIN persona_active_prompt pap ON pap.persona_id = p.id
         ),
         valid_depts AS (
             SELECT 
@@ -695,7 +827,7 @@ class PersonaQueries:
         """
         query = """
         SELECT 
-            p.id, p.name, p.description, p.system_prompt, p.temperature, 
+            p.id, p.name, p.description, COALESCE(pr.system_prompt, '') as system_prompt, p.temperature, 
             p.created_at, p.updated_at,
             -- Scenarios array (json_agg with filtering)
             COALESCE(
@@ -709,11 +841,13 @@ class PersonaQueries:
                 '[]'::jsonb
             ) as scenarios
         FROM personas p
+        LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
+        LEFT JOIN prompts pr ON pr.id = pp.prompt_id
         LEFT JOIN scenario_personas sp ON sp.persona_id = p.id AND sp.active = true
         LEFT JOIN scenarios s ON s.id = sp.scenario_id
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         WHERE p.id = $1
-        GROUP BY p.id, p.name, p.description, p.system_prompt, p.temperature, 
+        GROUP BY p.id, p.name, p.description, pr.system_prompt, p.temperature, 
                  p.created_at, p.updated_at
         """
         return (query, [persona_id])

@@ -68,6 +68,15 @@ class DebugInfoItem(BaseModel):
     content: str
 
 
+class PromptInfo(BaseModel):
+    """Prompt information for version history."""
+
+    system_prompt: str
+    created_at: str
+    updated_at: str
+    department_ids: list[str] | None
+
+
 class AgentDetailResponse(BaseModel):
     """Response for agent detail."""
 
@@ -75,6 +84,7 @@ class AgentDetailResponse(BaseModel):
     name: str
     description: str
     system_prompt: str
+    prompt_id: str | None
     temperature: float
     model_id: str
     reasoning: str | None
@@ -91,6 +101,9 @@ class AgentDetailResponse(BaseModel):
     department_ids: list[str]
     valid_department_ids: list[str]
     department_mapping: DepartmentMapping
+
+    # Prompt version history
+    prompt_mapping: dict[str, PromptInfo]
 
     # Debug info
     debug_info: list[DebugInfoItem]
@@ -110,7 +123,8 @@ class CreateAgentRequest(BaseModel):
 
     name: str
     description: str
-    system_prompt: str
+    prompt_id: str | None  # If provided, use existing prompt
+    system_prompt: str  # If prompt_id is None, create new prompt with this
     temperature: float
     model_id: str
     reasoning: str | None
@@ -133,7 +147,8 @@ class UpdateAgentRequest(BaseModel):
     agentId: str
     name: str
     description: str
-    system_prompt: str
+    prompt_id: str | None  # If provided, use existing prompt
+    system_prompt: str  # If prompt_id is None, create new prompt with this
     temperature: float
     model_id: str
     reasoning: str | None

@@ -169,7 +169,6 @@ class AgentQueries:
                 id::text as agent_id,
                 name,
                 description,
-                system_prompt,
                 temperature,
                 model_id::text,
                 reasoning,
@@ -177,6 +176,54 @@ class AgentQueries:
                 role::text
             FROM agents
             WHERE id = $1::uuid
+        ),
+        agent_active_prompt AS (
+            SELECT 
+                ap.agent_id::text as agent_id,
+                ap.prompt_id::text as prompt_id,
+                pr.system_prompt,
+                pr.created_at as prompt_created_at,
+                pr.updated_at as prompt_updated_at
+            FROM agent_prompts ap
+            JOIN prompts pr ON pr.id = ap.prompt_id
+            WHERE ap.agent_id = $1::uuid AND ap.active = true
+            LIMIT 1
+        ),
+        agent_all_prompts AS (
+            SELECT 
+                ap.agent_id::text as agent_id,
+                ap.prompt_id::text as prompt_id,
+                pr.system_prompt,
+                pr.created_at as prompt_created_at,
+                pr.updated_at as prompt_updated_at
+            FROM agent_prompts ap
+            JOIN prompts pr ON pr.id = ap.prompt_id
+            WHERE ap.agent_id = $1::uuid
+        ),
+        prompt_departments_data AS (
+            SELECT 
+                pd.prompt_id::text as prompt_id,
+                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+            FROM prompt_departments pd
+            WHERE pd.active = true
+            GROUP BY pd.prompt_id
+        ),
+        prompt_mapping_data AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        ap.prompt_id,
+                        jsonb_build_object(
+                            'system_prompt', ap.system_prompt,
+                            'created_at', ap.prompt_created_at::text,
+                            'updated_at', ap.prompt_updated_at::text,
+                            'department_ids', COALESCE(pdd.department_ids, NULL)
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as prompt_mapping
+            FROM agent_all_prompts ap
+            LEFT JOIN prompt_departments_data pdd ON pdd.prompt_id = ap.prompt_id
         ),
         agent_departments_data AS (
             SELECT 
@@ -246,7 +293,8 @@ class AgentQueries:
             ai.agent_id,
             ai.name,
             ai.description,
-            ai.system_prompt,
+            COALESCE(aap.system_prompt, '') as system_prompt,
+            COALESCE(aap.prompt_id, NULL)::text as prompt_id,
             ai.temperature,
             ai.model_id,
             ai.reasoning,
@@ -255,6 +303,7 @@ class AgentQueries:
             COALESCE(add.department_ids, ARRAY[]::text[]) as department_ids,
             COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
             COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
+            COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping,
             COALESCE(
                 (SELECT jsonb_agg(
                     jsonb_build_object(
@@ -281,8 +330,10 @@ class AgentQueries:
                 '[]'::jsonb
             ) as valid_model_ids
         FROM agent_info ai
+        LEFT JOIN agent_active_prompt aap ON aap.agent_id = ai.agent_id
         LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id
         CROSS JOIN valid_departments_data vdd
+        CROSS JOIN prompt_mapping_data pmd
         """
 
         params: list[Any] = [agent_id, profile_id]
@@ -373,7 +424,6 @@ class AgentQueries:
         self,
         name: str,
         description: str,
-        system_prompt: str,
         temperature: float,
         model_id: str,
         reasoning: str | None,
@@ -387,15 +437,14 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, role, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        INSERT INTO agents (name, description, temperature, model_id, reasoning, active, role, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
         RETURNING id::text as agent_id
         """
 
         params: list[Any] = [
             name,
             description,
-            system_prompt,
             temperature,
             model_id,
             reasoning,
@@ -436,7 +485,6 @@ class AgentQueries:
         agent_id: str,
         name: str,
         description: str,
-        system_prompt: str,
         temperature: float,
         model_id: str,
         reasoning: str | None,
@@ -454,12 +502,11 @@ class AgentQueries:
         SET 
             name = $2,
             description = $3,
-            system_prompt = $4,
-            temperature = $5,
-            model_id = $6,
-            reasoning = $7,
-            active = $8,
-            role = $9,
+            temperature = $4,
+            model_id = $5,
+            reasoning = $6,
+            active = $7,
+            role = $8,
             updated_at = NOW()
         WHERE id = $1::uuid
         """
@@ -468,7 +515,6 @@ class AgentQueries:
             agent_id,
             name,
             description,
-            system_prompt,
             temperature,
             model_id,
             reasoning,
@@ -491,6 +537,70 @@ class AgentQueries:
         params: list[Any] = [agent_id]
         return query, params
 
+    def create_prompt(self, system_prompt: str) -> tuple[str, list[Any]]:
+        """
+        Create a new prompt.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        INSERT INTO prompts (system_prompt, created_at, updated_at)
+        VALUES ($1, NOW(), NOW())
+        RETURNING id::text as prompt_id
+        """
+        params: list[Any] = [system_prompt]
+        return query, params
+
+    def create_agent_prompt(
+        self, agent_id: str, prompt_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Link an agent to a prompt via agent_prompts junction.
+        Deactivates any existing active prompt first.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH deactivate_existing AS (
+            UPDATE agent_prompts
+            SET active = false, updated_at = NOW()
+            WHERE agent_id = $1::uuid AND active = true
+        )
+        INSERT INTO agent_prompts (agent_id, prompt_id, active, created_at, updated_at)
+        VALUES ($1::uuid, $2::uuid, true, NOW(), NOW())
+        ON CONFLICT (agent_id, prompt_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+        params: list[Any] = [agent_id, prompt_id]
+        return query, params
+
+    def create_prompt_departments(
+        self, prompt_id: str, department_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """
+        Link a prompt to departments via prompt_departments junction.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        if not department_ids:
+            # Return empty query if no departments
+            return "SELECT 1 WHERE false", []
+
+        query = """
+        INSERT INTO prompt_departments (prompt_id, department_id, active, created_at, updated_at)
+        SELECT $1::uuid, dept_id::uuid, true, NOW(), NOW()
+        FROM UNNEST($2::text[]) as dept_id
+        ON CONFLICT (prompt_id, department_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+        params: list[Any] = [prompt_id, department_ids]
+        return query, params
+
     def duplicate_agent(self, agent_id: str) -> tuple[str, list[Any]]:
         """
         Duplicate an agent (copy with 'Copy' suffix).
@@ -499,21 +609,46 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, active, role, created_at, updated_at)
-        SELECT 
-            name || ' Copy',
-            description,
-            system_prompt,
-            temperature,
-            model_id,
-            reasoning,
-            false,
-            role,
-            NOW(),
-            NOW()
-        FROM agents
-        WHERE id = $1::uuid
-        RETURNING id::text as agent_id
+        WITH source_agent AS (
+            SELECT 
+                a.name,
+                a.description,
+                a.temperature,
+                a.model_id,
+                a.reasoning,
+                a.role,
+                COALESCE(pr.system_prompt, '') as system_prompt
+            FROM agents a
+            LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+            LEFT JOIN prompts pr ON pr.id = ap.prompt_id
+            WHERE a.id = $1::uuid
+        ),
+        new_agent AS (
+            INSERT INTO agents (name, description, temperature, model_id, reasoning, active, role, created_at, updated_at)
+            SELECT 
+                name || ' Copy',
+                description,
+                temperature,
+                model_id,
+                reasoning,
+                false,
+                role,
+                NOW(),
+                NOW()
+            FROM source_agent
+            RETURNING id as agent_id
+        ),
+        new_prompt AS (
+            INSERT INTO prompts (system_prompt, created_at, updated_at)
+            SELECT system_prompt, NOW(), NOW()
+            FROM source_agent
+            RETURNING id as prompt_id
+        )
+        INSERT INTO agent_prompts (agent_id, prompt_id, active, created_at, updated_at)
+        SELECT na.agent_id, np.prompt_id, true, NOW(), NOW()
+        FROM new_agent na
+        CROSS JOIN new_prompt np
+        RETURNING agent_id::text as agent_id
         """
 
         params: list[Any] = [agent_id]
@@ -556,7 +691,7 @@ class AgentQueries:
             -- Agent data (via department_agents junction for 'classify' role)
             a.id::text as agent_id,
             a.name as agent_name,
-            a.system_prompt,
+            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
             a.temperature,
             a.reasoning,
             
@@ -586,12 +721,14 @@ class AgentQueries:
         
         FROM department_agents da
         INNER JOIN agents a ON a.id = da.agent_id
+        LEFT JOIN agent_prompts ap_classify ON ap_classify.agent_id = a.id AND ap_classify.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_classify.prompt_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN documents d ON d.id = ANY($1::uuid[])
         WHERE da.department_id = $2 AND da.role = 'classify'
-        GROUP BY a.id, a.name, a.system_prompt, a.temperature, a.reasoning,
+        GROUP BY a.id, a.name, pr_prompt.system_prompt, a.temperature, a.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url
         """
@@ -653,7 +790,7 @@ class AgentQueries:
             -- Agent data (via department_agents junction for 'scenario' role)
             a.id::text as agent_id,
             a.name as agent_name,
-            a.system_prompt,
+            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
             a.temperature,
             a.reasoning,
             
@@ -713,6 +850,8 @@ class AgentQueries:
         
         FROM agent_departments ad
         INNER JOIN agents a ON a.id = ad.agent_id
+        LEFT JOIN agent_prompts ap_scenario ON ap_scenario.agent_id = a.id AND ap_scenario.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_scenario.prompt_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -797,7 +936,7 @@ class AgentQueries:
             -- Agent data (via department_agents junction for 'hint' role)
             a.id::text as agent_id,
             a.name as agent_name,
-            a.system_prompt,
+            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
             a.temperature,
             a.reasoning,
             
@@ -841,6 +980,8 @@ class AgentQueries:
         LEFT JOIN profile_info pi ON true
         INNER JOIN department_agents da ON da.department_id = $3 AND da.role = 'hint'
         INNER JOIN agents a ON a.id = da.agent_id
+        LEFT JOIN agent_prompts ap_hint ON ap_hint.agent_id = a.id AND ap_hint.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_hint.prompt_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -882,7 +1023,7 @@ class AgentQueries:
             -- Persona data (via scenario_personas junction)
             p.id::text as persona_id,
             p.name as persona_name,
-            p.system_prompt,
+            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
             p.temperature,
             p.reasoning,
             
@@ -925,6 +1066,8 @@ class AgentQueries:
         INNER JOIN simulations sim ON sim.id = sa.simulation_id
         LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
         LEFT JOIN personas p ON p.id = sp.persona_id
+        LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = pp.prompt_id
         LEFT JOIN models m ON m.id = p.model_id
         LEFT JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -935,7 +1078,7 @@ class AgentQueries:
         GROUP BY sc.id, sc.title, sc.trace_id,
                  sa.id, sa.simulation_id,
                  s.id, s.department_id, sps.problem_statement,
-                 p.id, p.name, p.system_prompt, p.temperature, p.reasoning,
+                 p.id, p.name, pr_prompt.system_prompt, p.temperature, p.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url,
                  s.image_input_enabled, s.output_guardrail_enabled,
@@ -1073,7 +1216,7 @@ class AgentQueries:
             -- Agent data (via department_agents junction for 'grade' role)
             a.id::text as agent_id,
             a.name as agent_name,
-            a.system_prompt,
+            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
             a.temperature,
             a.reasoning,
             
@@ -1101,6 +1244,8 @@ class AgentQueries:
         LEFT JOIN standards std ON std.standard_group_id = sg.id
         INNER JOIN department_agents da ON da.department_id = $2 AND da.role = 'grade'
         INNER JOIN agents a ON a.id = da.agent_id
+        LEFT JOIN agent_prompts ap_grade ON ap_grade.agent_id = a.id AND ap_grade.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_grade.prompt_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -1110,7 +1255,7 @@ class AgentQueries:
                  ai.id, ai.simulation_id, ai.total_chats,
                  si.id, si.rubric_id, si.department_id, si.time_limit,
                  r.id, r.name, r.description, r.points, r.pass_points,
-                 a.id, a.name, a.system_prompt, a.temperature, a.reasoning,
+                 a.id, a.name, pr_prompt.system_prompt, a.temperature, a.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url,
                  ap.profile_id
@@ -1194,7 +1339,7 @@ class AgentQueries:
             -- Agent data (via department_agents junction)
             a.id::text as agent_id,
             a.name as agent_name,
-            a.system_prompt,
+            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
             a.temperature,
             a.reasoning,
             
@@ -1226,6 +1371,8 @@ class AgentQueries:
         INNER JOIN department_agents da ON da.department_id = $2 
             AND da.role = $3 || '_guardrail'
         INNER JOIN agents a ON a.id = da.agent_id
+        LEFT JOIN agent_prompts ap_guardrail ON ap_guardrail.agent_id = a.id AND ap_guardrail.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_guardrail.prompt_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -1257,7 +1404,7 @@ class AgentQueries:
             -- Agent data (via department_agents junction for 'title' role)
             a.id::text as agent_id,
             a.name as agent_name,
-            a.system_prompt,
+            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
             a.temperature,
             a.reasoning,
             
@@ -1280,6 +1427,8 @@ class AgentQueries:
         
         FROM department_agents da
         INNER JOIN agents a ON a.id = da.agent_id
+        LEFT JOIN agent_prompts ap_title ON ap_title.agent_id = a.id AND ap_title.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_title.prompt_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true

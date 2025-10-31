@@ -1460,7 +1460,7 @@ class SimulationQueries:
                 -- Persona data
                 p.id as persona_id,
                 p.name as persona_name,
-                p.system_prompt,
+                COALESCE(pr_prompt.system_prompt, '') as system_prompt,
                 p.temperature,
                 p.reasoning,
                 p.color as persona_color,
@@ -1509,6 +1509,8 @@ class SimulationQueries:
             CROSS JOIN chosen_scenario_id csi
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN personas p ON p.id = sp.persona_id
+            LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
+            LEFT JOIN prompts pr_prompt ON pr_prompt.id = pp.prompt_id
             LEFT JOIN models m ON m.id = p.model_id
             LEFT JOIN providers pr ON pr.id = m.provider_id
             LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -1519,7 +1521,7 @@ class SimulationQueries:
             LEFT JOIN parameters p_param ON p_param.id = pi.parameter_id
             WHERE s.id = csi.scenario_id
             GROUP BY s.id, s.name, sps.problem_statement, s.active, 
-                     s.generated, p.id, p.name, p.system_prompt, 
+                     s.generated, p.id, p.name, pr_prompt.system_prompt, 
                      p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.custom_model,
                      pr.id, pr.name, pr.api_key, pe.base_url
         ),

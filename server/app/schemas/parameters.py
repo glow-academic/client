@@ -72,6 +72,7 @@ class ParameterItemDetail(BaseModel):
     description: str
     value: str
     default_item: bool
+    department_ids: list[str] | None  # None = cross-department (all departments)
     can_delete: bool
 
 
@@ -111,6 +112,7 @@ class ParameterItemCreate(BaseModel):
     description: str
     value: str
     default_item: bool
+    department_ids: list[str] | None = None  # Optional for backward compatibility
 
 
 class CreateParameterRequest(BaseModel):

@@ -75,6 +75,7 @@ export const ParameterItemDetailSchema = z.object({
   description: z.string(),
   value: z.string(),
   default_item: z.boolean(),
+  department_ids: z.array(z.string()).nullable(), // None = cross-department (all departments)
   can_delete: z.boolean(), // Check if in use
 });
 
@@ -119,6 +120,7 @@ export const ParameterItemCreateSchema = z.object({
   description: z.string(),
   value: z.string(),
   default_item: z.boolean(),
+  department_ids: z.array(z.string()).nullable().optional(), // Optional for backward compatibility
 });
 
 export type ParameterItemCreate = z.infer<typeof ParameterItemCreateSchema>;
@@ -129,7 +131,7 @@ export const CreateParameterRequestSchema = z.object({
   description: z.string(),
   numerical: z.boolean(),
   active: z.boolean(),
-  department_ids: z.array(z.string()).nullable(),
+  department_ids: z.array(z.string()).nullable().optional(), // Deprecated - use per-item department_ids
   parameter_items: z.array(ParameterItemCreateSchema),
 });
 
@@ -154,7 +156,7 @@ export const UpdateParameterRequestSchema = z.object({
   description: z.string(),
   numerical: z.boolean(),
   active: z.boolean(),
-  department_ids: z.array(z.string()).nullable(),
+  department_ids: z.array(z.string()).nullable().optional(), // Deprecated - use per-item department_ids
   parameter_items: z.array(ParameterItemCreateSchema),
 });
 

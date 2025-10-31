@@ -366,14 +366,17 @@ class ScenarioQueries:
                     WHERE pi3.parameter_id = p.id
                 ), '[]'::jsonb) as valid_items
             FROM parameters p
-            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_departments ud
             WHERE p.active = true
             GROUP BY p.id
             HAVING 
-                -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
         ),
         merged_parameters_data AS (
             SELECT 
@@ -503,14 +506,17 @@ class ScenarioQueries:
                     jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''), 'numerical', p.numerical)
                 ), '{}'::jsonb) as parameter_mapping
             FROM parameters p
-            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_departments ud
             WHERE p.active = true
             GROUP BY p.id
             HAVING 
-                -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
         ),
         parameter_item_mapping_data AS (
             SELECT 
@@ -526,13 +532,13 @@ class ScenarioQueries:
                 ), '{}'::jsonb) as parameter_item_mapping
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_departments ud
             GROUP BY p.id
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
         ),
         department_persona_ids AS (
             SELECT 
@@ -565,9 +571,12 @@ class ScenarioQueries:
             FROM departments d
             CROSS JOIN user_departments ud
             LEFT JOIN parameters p ON p.active = true
-            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             WHERE d.id = ANY(ud.dept_ids)
-            AND (pd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true))
+            AND (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                                                         JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                                                         WHERE pi2.parameter_id = p.id AND pid2.active = true))
             GROUP BY d.id
         ),
         department_agent_ids AS (
@@ -1627,17 +1636,20 @@ class ScenarioQueries:
     def get_active_parameters_for_departments(
         self, department_ids: list[str]
     ) -> tuple[str, list[Any]]:
-        """Build query to get active parameters for departments."""
+        """Build query to get active parameters for departments (via parameter_items)."""
         query = """
         SELECT DISTINCT p.id, p.name, p.description
         FROM parameters p
-        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+        JOIN parameter_items pi ON pi.parameter_id = p.id
+        LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
         WHERE p.active = true
         GROUP BY p.id, p.name, p.description
         HAVING 
-            -- Include if has matching department link OR has no department links at all (cross-dept)
-            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
-            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+            -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+            COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($1::uuid[])) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                          JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                          WHERE pi2.parameter_id = p.id AND pid2.active = true)
         ORDER BY p.name
         """
         return (query, [department_ids])
@@ -1645,18 +1657,18 @@ class ScenarioQueries:
     def get_active_parameter_items_for_departments(
         self, department_ids: list[str]
     ) -> tuple[str, list[Any]]:
-        """Build query to get active parameter items with parameter name."""
+        """Build query to get active parameter items with parameter name (filtered by parameter_item_departments)."""
         query = """
         SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
         FROM parameter_items pi
         JOIN parameters p ON p.id = pi.parameter_id
-        LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+        LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
         WHERE pi.active = true
         GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.name
         HAVING 
             -- Include if has matching department link OR has no department links at all (cross-dept)
-            COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
-            OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+            COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($1::uuid[])) > 0
+            OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
         ORDER BY p.name, pi.name
         """
         return (query, [department_ids])
@@ -1753,13 +1765,16 @@ class ScenarioQueries:
                 COALESCE(p.description, '') as description,
                 p.numerical
             FROM parameters p
-            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             WHERE p.active = true
             GROUP BY p.id, p.name, p.description, p.numerical
             HAVING 
-                -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
             ORDER BY p.name
         ),
         parameter_mapping_data AS (
@@ -1786,13 +1801,13 @@ class ScenarioQueries:
                 pi.value
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             WHERE p.active = true
             GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(pd.parameter_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
             ORDER BY p.name, pi.name
         ),
         parameter_item_mapping_data AS (
