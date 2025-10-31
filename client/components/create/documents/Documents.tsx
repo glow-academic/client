@@ -112,10 +112,10 @@ export default function Documents() {
   type StagedSelections = {
     parameter_item_ids?: string[];
   };
-  const [stagedSelectionsEdit, setStagedSelectionsEdit] = useState<
+  const [_stagedSelectionsEdit, setStagedSelectionsEdit] = useState<
     Record<string, StagedSelections>
   >({});
-  const [stagedSelectionsBulk, setStagedSelectionsBulk] = useState<
+  const [_stagedSelectionsBulk, setStagedSelectionsBulk] = useState<
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIdsEdit, setPreviousDepartmentIdsEdit] = useState<
@@ -188,12 +188,12 @@ export default function Documents() {
     if (!documentDetail) return [];
     const baseIds = documentDetail.valid_parameter_item_ids || [];
     const selectedDeptIds = documentDetail.department_ids || [];
-    
+
     // If no departments selected, return all valid IDs
     if (selectedDeptIds.length === 0) {
       return baseIds;
     }
-    
+
     // Get union of parameter_ids from selected departments
     const deptParameterIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
@@ -202,13 +202,14 @@ export default function Documents() {
         deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
       }
     });
-    
+
     // Filter parameter items: include if their parameter_id is in department parameter IDs
+    const parameterItemMapping = documentDetail.parameter_item_mapping;
     return baseIds.filter((itemId) => {
-      const item = documentDetail["parameter_item_mapping"][itemId];
+      const item = parameterItemMapping[itemId];
       return item && deptParameterIds.has(item.parameter_id);
     });
-  }, [documentDetail?.valid_parameter_item_ids, documentDetail?.department_ids, documentDetail?.department_mapping, documentDetail?.["parameter_item_mapping"]]);
+  }, [documentDetail]);
 
   // Filter valid parameter item IDs for bulk edit dialog based on selected departments
   const validParameterItemIdsForBulk = useMemo(() => {
@@ -217,12 +218,12 @@ export default function Documents() {
     const selectedDeptIds = bulkDepartmentId
       ? [bulkDepartmentId]
       : bulkDocumentDetail.department_ids || [];
-    
+
     // If no departments selected, return all valid IDs
     if (selectedDeptIds.length === 0) {
       return baseIds;
     }
-    
+
     // Get union of parameter_ids from selected departments
     const deptParameterIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
@@ -231,13 +232,14 @@ export default function Documents() {
         deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
       }
     });
-    
+
     // Filter parameter items: include if their parameter_id is in department parameter IDs
+    const parameterItemMapping = bulkDocumentDetail.parameter_item_mapping;
     return baseIds.filter((itemId) => {
-      const item = bulkDocumentDetail.parameter_item_mapping[itemId];
+      const item = parameterItemMapping[itemId];
       return item && deptParameterIds.has(item.parameter_id);
     });
-  }, [bulkDocumentDetail?.valid_parameter_item_ids, bulkDepartmentId, bulkDocumentDetail?.department_ids, bulkDocumentDetail?.department_mapping, bulkDocumentDetail?.parameter_item_mapping]);
+  }, [bulkDocumentDetail, bulkDepartmentId]);
 
   // Track department changes and manage staged selections for single edit mode
   useEffect(() => {
@@ -287,7 +289,10 @@ export default function Documents() {
       setStagedSelectionsEdit((prev) => {
         newlySelectedDepts.forEach((deptId) => {
           const staged = prev[deptId];
-          if (staged?.parameter_item_ids && staged.parameter_item_ids.length > 0) {
+          if (
+            staged?.parameter_item_ids &&
+            staged.parameter_item_ids.length > 0
+          ) {
             const validParamSet = new Set(validParameterItemIdsForEdit);
             const validParams = staged.parameter_item_ids.filter((id) =>
               validParamSet.has(id)
@@ -314,8 +319,7 @@ export default function Documents() {
     // Update previous department IDs
     setPreviousDepartmentIdsEdit(currentDeptIds);
   }, [
-    editingDocument?.department_ids,
-    editingDocument?.parameter_item_ids,
+    editingDocument,
     previousDepartmentIdsEdit,
     validParameterItemIdsForEdit,
     documentDetail,
@@ -350,7 +354,10 @@ export default function Documents() {
     if (currentDeptId !== null && currentDeptId !== prevDeptId) {
       setStagedSelectionsBulk((prev) => {
         const staged = prev[currentDeptId];
-        if (staged?.parameter_item_ids && staged.parameter_item_ids.length > 0) {
+        if (
+          staged?.parameter_item_ids &&
+          staged.parameter_item_ids.length > 0
+        ) {
           const validParamSet = new Set(validParameterItemIdsForBulk);
           const validParams = staged.parameter_item_ids.filter((id) =>
             validParamSet.has(id)
@@ -389,7 +396,7 @@ export default function Documents() {
       });
       return cleaned;
     });
-  }, [documentDetail?.valid_department_ids]);
+  }, [documentDetail]);
 
   // Clean up staged selections for departments that are no longer valid (bulk mode)
   useEffect(() => {
@@ -405,20 +412,22 @@ export default function Documents() {
       });
       return cleaned;
     });
-  }, [bulkDocumentDetail?.valid_department_ids]);
+  }, [bulkDocumentDetail]);
 
   // Clear invalid parameter item selections when departments change in edit dialog
   useEffect(() => {
     if (documentDetail && documentDetail.parameter_item_ids) {
       const validSet = new Set(validParameterItemIdsForEdit);
-      const filtered = documentDetail.parameter_item_ids.filter((id) => validSet.has(id));
+      const filtered = documentDetail.parameter_item_ids.filter((id) =>
+        validSet.has(id)
+      );
       if (filtered.length !== documentDetail.parameter_item_ids.length) {
         setEditingDocument((prev) =>
           prev ? { ...prev, parameter_item_ids: filtered } : null
         );
       }
     }
-  }, [documentDetail?.parameter_item_ids, validParameterItemIdsForEdit]);
+  }, [documentDetail, validParameterItemIdsForEdit]);
 
   // Clear invalid parameter item selections when departments change in bulk edit dialog
   useEffect(() => {

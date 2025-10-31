@@ -1143,14 +1143,18 @@ class ScenarioService(BaseService):
             conn=self.conn,
             profile_id=profile_id,
             user_instructions=request.userInstructions,
+            objectives_enabled=request.objectivesEnabled,
         )
 
+        # Limit objectives to maximum 3
+        limited_objectives = objectives[:3] if objectives else []
+        
         return GenerateScenarioAIResponse(
             success=True,
             message="Scenario generated successfully",
             title=title,
             description=description,
-            objectives=objectives,
+            objectives=limited_objectives,
         )
 
     async def randomize_scenario_sections(

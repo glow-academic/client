@@ -257,6 +257,7 @@ export const GenerateScenarioAIRequestSchema = z.object({
   parameterItemIds: z.array(z.string()).optional(),
   profileId: z.string().optional(),
   userInstructions: z.string().optional(),
+  objectivesEnabled: z.boolean().optional(),
 });
 
 export type GenerateScenarioAIRequest = z.infer<

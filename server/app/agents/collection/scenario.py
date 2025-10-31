@@ -68,7 +68,7 @@ def create_objectives_function(group_id: uuid.UUID | None) -> Any:
 
     async def set_objectives(
         objectives: list[str] = Field(
-            description="List of 2-4 specific learning objectives that GTAs should achieve in this scenario"
+            description="List of 1-3 specific learning objectives that GTAs should achieve in this scenario"
         ),
     ) -> str:
         """Set the learning objectives for this scenario.
@@ -83,17 +83,19 @@ def create_objectives_function(group_id: uuid.UUID | None) -> Any:
         - "Demonstrate active listening by paraphrasing the student's concerns"
         - "Break down complex concepts into understandable chunks"
         - "Manage time effectively while addressing the student's emotional state"
-        - "Guide the student toward self-discovery rather than providing direct answers"
 
         Args:
-            objectives: List of 2-4 learning objectives
+            objectives: List of 1-3 learning objectives (maximum 3)
 
         Returns:
             Confirmation message
         """
-        if len(objectives) < 2 or len(objectives) > 4:
+        # Limit to maximum 3 objectives
+        objectives = objectives[:3]
+        
+        if len(objectives) < 1 or len(objectives) > 3:
             logger.warning(
-                f"Objectives count ({len(objectives)}) outside recommended range of 2-4"
+                f"Objectives count ({len(objectives)}) outside recommended range of 1-3"
             )
 
         scenario_results["objectives"] = objectives
@@ -105,7 +107,7 @@ def create_objectives_function(group_id: uuid.UUID | None) -> Any:
     return function_tool(set_objectives)
 
 
-def create_scenario_tools(group_id: uuid.UUID | None) -> list[Any]:
+def create_scenario_tools(group_id: uuid.UUID | None, objectives_enabled: bool = True) -> list[Any]:
     """Create all scenario generation function tools."""
     tools = []
 
@@ -113,9 +115,12 @@ def create_scenario_tools(group_id: uuid.UUID | None) -> list[Any]:
     tools.append(create_title_description_function(group_id))
     logger.info("Created title and description tool")
 
-    # Add objectives tool
-    tools.append(create_objectives_function(group_id))
-    logger.info("Created objectives tool")
+    # Add objectives tool only if enabled
+    if objectives_enabled:
+        tools.append(create_objectives_function(group_id))
+        logger.info("Created objectives tool")
+    else:
+        logger.info("Objectives tool skipped (objectives_enabled=False)")
 
     logger.info(f"Total scenario tools created: {len(tools)}")
     return tools
@@ -131,6 +136,7 @@ async def run_scenario_agent(
     profile_id: uuid.UUID | None = None,
     sio_instance: Any = None,
     user_instructions: str | None = None,
+    objectives_enabled: bool = True,
 ) -> tuple[str, str, list[str], str]:
     """
     This function is used to run the scenario agent.
@@ -186,7 +192,7 @@ async def run_scenario_agent(
             parameter_item_info = format_parameter_item_info(context["parameter_items"])
 
         # Create scenario generation tools
-        scenario_tools = create_scenario_tools(group_id)
+        scenario_tools = create_scenario_tools(group_id, objectives_enabled=objectives_enabled)
         # Add debug_info tool from utils
         scenario_tools.append(debug_info_tool)
         logger.info(
@@ -197,8 +203,10 @@ async def run_scenario_agent(
         def tool_use_behavior(
             context: Any, tool_results: list[Any]
         ) -> ToolsToFinalOutputResult:
-            # Required tools: title_description and objectives (debug_info is optional)
-            required_tools = ["title_description", "objectives"]
+            # Required tools: title_description and optionally objectives (debug_info is optional)
+            required_tools = ["title_description"]
+            if objectives_enabled:
+                required_tools.append("objectives")
 
             # Check if all required tools have been called
             completed_required = all(
@@ -288,7 +296,9 @@ async def run_scenario_agent(
         logger.info(
             f"Description: {scenario_result.get('description', 'N/A')[:100]}..."
         )
-        logger.info(f"Objectives: {scenario_result.get('objectives', [])}")
+        # Return empty objectives if disabled, otherwise get from results
+        objectives = [] if not objectives_enabled else scenario_result.get('objectives', [])
+        logger.info(f"Objectives: {objectives}")
 
         usage = result.context_wrapper.usage
 
@@ -302,7 +312,7 @@ async def run_scenario_agent(
         # Get result values
         title = scenario_result.get("title", "")
         description = scenario_result.get("description", "")
-        objectives = scenario_result.get("objectives", [])
+        # Objectives already set above based on objectives_enabled flag
 
         return title, description, objectives, trace_id
 

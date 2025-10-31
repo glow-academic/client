@@ -234,7 +234,35 @@ export function DocumentPicker<
                         </div>
                       );
                     }
-                    // Fallback to icon if no details
+                    // Fallback: create minimal DocumentItem from mapping so DocumentViewer can fetch it
+                    if (id) {
+                      const minimalDoc: DocumentItem = {
+                        document_id: id,
+                        name: document.name || "Document",
+                        type: document.type || "document",
+                        updatedAt: new Date().toISOString(),
+                        extension: "",
+                        scenario_ids: [],
+                        can_edit: false,
+                        can_delete: false,
+                        active: true,
+                        department_ids: [],
+                        file_path: document.filePath || "",
+                        mime_type: document.mimeType || "",
+                        parameter_item_ids: [],
+                      };
+                      return (
+                        <div className="w-full h-full">
+                          <DocumentViewer
+                            document={minimalDoc}
+                            bare={true}
+                            isFormDocument={false}
+                            compact={true}
+                          />
+                        </div>
+                      );
+                    }
+                    // Final fallback to icon if no ID
                     return (
                       <div className="flex items-center justify-center h-full">
                         <span className="text-4xl">
@@ -361,20 +389,37 @@ export function DocumentPicker<
                   </div>
                 );
               }
-              // Fallback if full document not available
+              // Fallback: try to use mapping with document_id to fetch document
               const mappedDoc = mapping[previewDocumentId];
-              return mappedDoc ? (
-                <div className="flex-1 min-h-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-8xl mb-4">
-                      {getDocumentTypeIcon(mappedDoc.type)}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Preview not available - document details missing
-                    </p>
+              if (mappedDoc && previewDocumentId) {
+                // Create minimal DocumentItem from mapping with document_id
+                // DocumentViewer can fetch the document using document_id
+                const minimalDoc: DocumentItem = {
+                  document_id: previewDocumentId,
+                  name: mappedDoc.name || "Document",
+                  type: mappedDoc.type || "document",
+                  updatedAt: new Date().toISOString(),
+                  extension: "",
+                  scenario_ids: [],
+                  can_edit: false,
+                  can_delete: false,
+                  active: true,
+                  department_ids: [],
+                  file_path: mappedDoc.filePath || "",
+                  mime_type: mappedDoc.mimeType || "",
+                  parameter_item_ids: [],
+                };
+                return (
+                  <div className="flex-1 min-h-0">
+                    <DocumentViewer
+                      document={minimalDoc}
+                      bare={true}
+                      isFormDocument={false}
+                    />
                   </div>
-                </div>
-              ) : null;
+                );
+              }
+              return null;
             })()}
           <DialogFooter>
             <Button

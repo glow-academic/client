@@ -230,6 +230,7 @@ class GenerateScenarioAIRequest(BaseModel):
     parameterItemIds: list[str] | None = None
     profileId: str | None = None
     userInstructions: str | None = None
+    objectivesEnabled: bool = True
 
 
 class GenerateScenarioAIResponse(BaseModel):

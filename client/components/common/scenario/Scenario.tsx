@@ -149,7 +149,7 @@ export default function Scenario({
         : [],
       active: true,
       hintsEnabled: false,
-      objectivesEnabled: true,
+      objectivesEnabled: false,
       imageInputEnabled: false,
       inputGuardrailEnabled: false,
       outputGuardrailEnabled: false,
@@ -471,7 +471,7 @@ export default function Scenario({
         departmentIds: deptIds,
         active: scenarioData.active ?? true,
         hintsEnabled: scenarioData.hints_enabled ?? false,
-        objectivesEnabled: scenarioData.objectives_enabled ?? true,
+        objectivesEnabled: scenarioData.objectives_enabled ?? false,
         imageInputEnabled: scenarioData.image_input_enabled ?? false,
         inputGuardrailEnabled: scenarioData.input_guardrail_enabled ?? false,
         outputGuardrailEnabled: scenarioData.output_guardrail_enabled ?? false,
@@ -498,7 +498,7 @@ export default function Scenario({
         departmentIds: scenarioData.department_ids || [],
         active: scenarioData.active ?? true,
         hintsEnabled: scenarioData.hints_enabled ?? false,
-        objectivesEnabled: scenarioData.objectives_enabled ?? true,
+        objectivesEnabled: scenarioData.objectives_enabled ?? false,
         imageInputEnabled: scenarioData.image_input_enabled ?? false,
         inputGuardrailEnabled: scenarioData.input_guardrail_enabled ?? false,
         outputGuardrailEnabled: scenarioData.output_guardrail_enabled ?? false,
@@ -514,36 +514,27 @@ export default function Scenario({
         )
       );
     } else if (!isEditMode && scenarioData) {
-      // Create mode: use defaults from API, but preserve primaryDepartmentId if set
-      const defaultDeptIds = scenarioData.department_ids || [];
-      const primaryDeptId = effectiveProfile?.primaryDepartmentId;
-
-      // Use primary department if available and valid, otherwise use first from API or empty
-      const initialDeptIds =
-        primaryDeptId &&
-        (defaultDeptIds.length === 0 || defaultDeptIds.includes(primaryDeptId))
-          ? [primaryDeptId]
-          : defaultDeptIds.length > 0
-            ? [defaultDeptIds[0]!]
-            : [];
-
-      setFormData({
-        name: "New Scenario",
-        problemStatement: "",
-        departmentIds: initialDeptIds,
-        active: true,
-        hintsEnabled: false,
-        objectivesEnabled: true,
-        imageInputEnabled: false,
-        inputGuardrailEnabled: false,
-        outputGuardrailEnabled: false,
-      });
+      // Create mode: use initialFormData (which already has primaryDepartmentId set correctly)
+      // Only set on initial load to prevent overwriting user selections when scenarioData updates
+      // Use a simple check: if formData is at default state, initialize it
+      const isUnchanged =
+        formData.name === initialFormData.name &&
+        formData.problemStatement === initialFormData.problemStatement &&
+        JSON.stringify(formData.departmentIds?.sort() || []) ===
+          JSON.stringify(initialFormData.departmentIds?.sort() || []);
+      if (isUnchanged) {
+        setFormData(initialFormData);
+      }
     }
   }, [
     scenarioData,
     isEditMode,
     previousDepartmentIds.length,
     effectiveProfile?.primaryDepartmentId,
+    formData.departmentIds,
+    formData.name,
+    formData.problemStatement,
+    initialFormData,
   ]);
 
   // Check if form has changes
@@ -892,6 +883,7 @@ export default function Scenario({
         parameterItemIds: currentParameterItemIds,
         profileId: effectiveProfile?.id || undefined,
         userInstructions: userInstructions || undefined,
+        objectivesEnabled: formData.objectivesEnabled,
       });
 
       if (!result.success) {
@@ -910,9 +902,16 @@ export default function Scenario({
               : prev.name,
           problemStatement: result.description || prev.problemStatement || "",
         }));
-        // Update objectives if returned
-        if (result.objectives) {
+        // Update objectives only if objectives are enabled and returned
+        if (
+          formData.objectivesEnabled &&
+          result.objectives &&
+          result.objectives.length > 0
+        ) {
           setCurrentObjectives(result.objectives);
+        } else if (!formData.objectivesEnabled) {
+          // Clear objectives if disabled
+          setCurrentObjectives([]);
         }
         toast.success("Scenario generated successfully!");
       } else {
@@ -950,7 +949,7 @@ export default function Scenario({
           parameterItemMapping
         ),
         hints_enabled: formData.hintsEnabled ?? false,
-        objectives_enabled: formData.objectivesEnabled ?? true,
+        objectives_enabled: formData.objectivesEnabled ?? false,
         image_input_enabled: formData.imageInputEnabled ?? false,
         input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
         output_guardrail_enabled: formData.outputGuardrailEnabled ?? false,
@@ -1108,7 +1107,7 @@ export default function Scenario({
       <div className="space-y-6">
         {/* Step 1: Basic Information - Subtle inline name editor */}
         <Card className="transition-all">
-          <CardContent className="pt-6">
+          <CardContent className="pt-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-green-500 text-white shrink-0">
                 <Check className="w-4 h-4" />
@@ -1606,7 +1605,7 @@ export default function Scenario({
                 </Label>
                 <Switch
                   id="objectivesEnabled"
-                  checked={formData.objectivesEnabled ?? true}
+                  checked={formData.objectivesEnabled ?? false}
                   onCheckedChange={(checked) => {
                     handleInputChange("objectivesEnabled", checked);
                     // Auto-create first objective when enabling
