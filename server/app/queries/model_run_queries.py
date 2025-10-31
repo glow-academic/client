@@ -10,18 +10,21 @@ class ModelRunQueries:
         """
         Build query to create model run with initial token counts.
 
+        Note: department_id parameter is kept for API compatibility but not stored.
+        Department can be derived from agent_departments or persona_departments junctions.
+
         Args:
-            department_id: UUID of the department
+            department_id: UUID of the department (not stored, kept for compatibility)
 
         Returns:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO model_runs (input_tokens, output_tokens, department_id)
-        VALUES ($1, $2, $3)
+        INSERT INTO model_runs (input_tokens, output_tokens)
+        VALUES ($1, $2)
         RETURNING id
         """
-        return query, [0, 0, department_id]
+        return query, [0, 0]
 
     def create_model_run_model(
         self, model_run_id: str, model_id: str

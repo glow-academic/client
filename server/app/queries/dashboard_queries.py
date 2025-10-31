@@ -1288,12 +1288,21 @@ class DashboardQueries:
                     jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''))
                 ), '{}'::jsonb) AS mapping
                 FROM parameters p
-                LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
                 WHERE p.active = true
                   AND (
                       cardinality($7::uuid[]) = 0 
-                      OR pd.department_id = ANY($7::uuid[])
-                      OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                      OR EXISTS (
+                          SELECT 1 
+                          FROM parameter_items pi
+                          JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+                          WHERE pi.parameter_id = p.id AND pid.department_id = ANY($7::uuid[])
+                      )
+                      OR NOT EXISTS (
+                          SELECT 1 
+                          FROM parameter_items pi2
+                          JOIN parameter_item_departments pid2 ON pid2.parameter_item_id = pi2.id AND pid2.active = true
+                          WHERE pi2.parameter_id = p.id
+                      )
                   )
             ),
             
@@ -1309,12 +1318,12 @@ class DashboardQueries:
                 ), '{}'::jsonb) AS mapping
                 FROM parameter_items pi
                 JOIN parameters p ON pi.parameter_id = p.id
-                LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+                LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
                 WHERE p.active = true
                   AND (
                       cardinality($7::uuid[]) = 0 
-                      OR pd.department_id = ANY($7::uuid[])
-                      OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
+                      OR pid.department_id = ANY($7::uuid[])
+                      OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
                   )
             )
             
