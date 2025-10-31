@@ -280,218 +280,309 @@ WHERE p.role = 'superadmin'
   );
 
 -- ============================================================================
--- PART 5: Insert parameter items for new departments
+-- PART 5: Insert parameter items and documents for new departments
+-- Note: Parameters (Location and Class) are shared across departments
+-- Location parameter ID: 2d82dfcc-7a67-5f57-98a5-74b1d138597e
+-- Class parameter ID: 2dc4672e-4999-5d5a-802c-8fc69e07f150
 -- ============================================================================
 
+-- Create shared location items (HAAS, MATH, WALC) used by multiple departments
+-- These match the shared items defined in database/seed/scenarios.sql
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'Felix Haas Hall', 'A quiet, focused study environment in the lower level of the HAAS building. Used by multiple departments.', 'HAAS', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'Mathematical Sciences Building', 'Houses Math and Statistics departments. Shared teaching and office space.', 'MATH', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('aaaaaaaa-0000-0000-0000-000000000003', 'Wilmeth Active Learning Center', 'Active learning spaces used by multiple departments for lectures and exams.', 'WALC', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
 -- Biology Department (fc3d3994-6274-4b87-ae85-2b845282c194)
--- Location parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('11111111-biol-loc-1111-111111111111', 'Location', 'Where the interaction is taking place', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Location parameter items
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('11111111-biol-loc-0001-111111111111', 'Lilly Hall of Life Sciences', 'Department main office and rooms.', 'LILY', '11111111-biol-loc-1111-111111111111', TRUE),
-  ('11111111-biol-loc-0002-111111111111', 'Hansen Life Sciences Research Building', 'Several BIO faculty offices and labs.', 'HANS', '11111111-biol-loc-1111-111111111111', TRUE),
-  ('11111111-biol-loc-0003-111111111111', 'Whistler Hall of Agricultural Research', 'Life sciences research space used across BIO-related units.', 'WSLR', '11111111-biol-loc-1111-111111111111', TRUE)
+  ('11111111-2222-3333-4444-aaaaaaaaaaaa', 'Lilly Hall of Life Sciences', 'Department main office and rooms.', 'LILY', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('11111111-2222-3333-4444-bbbbbbbbbbbb', 'Hansen Life Sciences Research Building', 'Several BIO faculty offices and labs.', 'HANS', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('11111111-2222-3333-4444-cccccccccccc', 'Whistler Hall of Agricultural Research', 'Life sciences research space used across BIO-related units.', 'WSLR', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Class parameter items
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('11111111-2222-3333-4444-dddddddddddd', 'BIOL 110', 'Fundamentals of Biology', 'BIOL110', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('11111111-2222-3333-4444-eeeeeeeeeeee', 'BIOL 204', 'Human Anatomy and Physiology', 'BIOL204', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('11111111-2222-3333-4444-ffffffffffff', 'BIOL 328', 'Principles of Physiology', 'BIOL328', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Link Location parameter items to Biology department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('11111111-biol-loc-0001-111111111111', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
-  ('11111111-biol-loc-0002-111111111111', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
-  ('11111111-biol-loc-0003-111111111111', 'fc3d3994-6274-4b87-ae85-2b845282c194')
+  ('11111111-2222-3333-4444-aaaaaaaaaaaa', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
+  ('11111111-2222-3333-4444-bbbbbbbbbbbb', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
+  ('11111111-2222-3333-4444-cccccccccccc', 'fc3d3994-6274-4b87-ae85-2b845282c194')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
 
--- Class parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('11111111-biol-cls-1111-111111111111', 'Class', 'Which course or subject the scenario is about', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('11111111-biol-cls-0001-111111111111', 'BIOL 110', 'Fundamentals of Biology', 'BIOL110', '11111111-biol-cls-1111-111111111111', TRUE),
-  ('11111111-biol-cls-0002-111111111111', 'BIOL 204', 'Human Anatomy and Physiology', 'BIOL204', '11111111-biol-cls-1111-111111111111', TRUE),
-  ('11111111-biol-cls-0003-111111111111', 'BIOL 328', 'Principles of Physiology', 'BIOL328', '11111111-biol-cls-1111-111111111111', TRUE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Link Class parameter items to Biology department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('11111111-biol-cls-0001-111111111111', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
-  ('11111111-biol-cls-0002-111111111111', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
-  ('11111111-biol-cls-0003-111111111111', 'fc3d3994-6274-4b87-ae85-2b845282c194')
+  ('11111111-2222-3333-4444-dddddddddddd', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
+  ('11111111-2222-3333-4444-eeeeeeeeeeee', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
+  ('11111111-2222-3333-4444-ffffffffffff', 'fc3d3994-6274-4b87-ae85-2b845282c194')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
+
+-- Documents for Biology department
+INSERT INTO documents (id, name, file_path, mime_type, type, classified, file_id) VALUES
+  ('d0c11111-2222-3333-4444-111111111111', 'BIOL110-Lab1', 'BIOL110-Lab1.pdf', 'application/pdf', 'lab', false, 'biol-doc-1'),
+  ('d0c11111-2222-3333-4444-222222222222', 'BIOL204-Exam1', 'BIOL204-Exam1.pdf', 'application/pdf', 'midterm', false, 'biol-doc-2'),
+  ('d0c11111-2222-3333-4444-333333333333', 'BIOL328-HW3', 'BIOL328-HW3.pdf', 'application/pdf', 'homework', false, 'biol-doc-3')
+ON CONFLICT (id) DO NOTHING;
+
+-- Link documents to Biology department
+INSERT INTO document_departments (document_id, department_id) VALUES
+  ('d0c11111-2222-3333-4444-111111111111', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
+  ('d0c11111-2222-3333-4444-222222222222', 'fc3d3994-6274-4b87-ae85-2b845282c194'),
+  ('d0c11111-2222-3333-4444-333333333333', 'fc3d3994-6274-4b87-ae85-2b845282c194')
+ON CONFLICT (document_id, department_id) DO NOTHING;
+
+-- Link documents to class parameter items (one per document)
+INSERT INTO document_parameter_items (document_id, parameter_item_id) VALUES
+  ('d0c11111-2222-3333-4444-111111111111', '11111111-2222-3333-4444-dddddddddddd'), -- BIOL110-Lab1 -> BIOL 110
+  ('d0c11111-2222-3333-4444-222222222222', '11111111-2222-3333-4444-eeeeeeeeeeee'), -- BIOL204-Exam1 -> BIOL 204
+  ('d0c11111-2222-3333-4444-333333333333', '11111111-2222-3333-4444-ffffffffffff') -- BIOL328-HW3 -> BIOL 328
+ON CONFLICT (document_id, parameter_item_id) DO NOTHING;
 
 -- Chemistry Department (5af0d09d-1661-4610-9e0c-f768d1e87e36)
--- Location parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('22222222-chem-loc-2222-222222222222', 'Location', 'Where the interaction is taking place', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Location parameter items
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('22222222-chem-loc-0001-222222222222', 'Wetherill Laboratory of Chemistry', 'Departmental space.', 'WTHR', '22222222-chem-loc-2222-222222222222', TRUE),
-  ('22222222-chem-loc-0002-222222222222', 'Herbert C. Brown Laboratory of Chemistry', 'Departmental space.', 'BRWN', '22222222-chem-loc-2222-222222222222', TRUE),
-  ('22222222-chem-loc-0003-222222222222', 'Hansen Life Sciences', 'NMR facility location (Chem resource).', 'HANS', '22222222-chem-loc-2222-222222222222', TRUE)
+  ('22222222-3333-4444-5555-aaaaaaaaaaaa', 'Wetherill Laboratory of Chemistry', 'Departmental space.', 'WTHR', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('22222222-3333-4444-5555-bbbbbbbbbbbb', 'Herbert C. Brown Laboratory of Chemistry', 'Departmental space.', 'BRWN', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('22222222-3333-4444-5555-cccccccccccc', 'Hansen Life Sciences', 'NMR facility location (Chem resource).', 'HANS', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Class parameter items
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('22222222-3333-4444-5555-dddddddddddd', 'CHM 112', 'General Chemistry', 'CHM112', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('22222222-3333-4444-5555-eeeeeeeeeeee', 'CHM 225', 'Organic Chemistry', 'CHM225', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('22222222-3333-4444-5555-ffffffffffff', 'CHM 342', 'Inorganic Chemistry', 'CHM342', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Link Location parameter items to Chemistry department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('22222222-chem-loc-0001-222222222222', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
-  ('22222222-chem-loc-0002-222222222222', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
-  ('22222222-chem-loc-0003-222222222222', '5af0d09d-1661-4610-9e0c-f768d1e87e36')
+  ('22222222-3333-4444-5555-aaaaaaaaaaaa', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
+  ('22222222-3333-4444-5555-bbbbbbbbbbbb', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
+  ('22222222-3333-4444-5555-cccccccccccc', '5af0d09d-1661-4610-9e0c-f768d1e87e36')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
 
--- Class parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('22222222-chem-cls-2222-222222222222', 'Class', 'Which course or subject the scenario is about', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('22222222-chem-cls-0001-222222222222', 'CHM 112', 'General Chemistry', 'CHM112', '22222222-chem-cls-2222-222222222222', TRUE),
-  ('22222222-chem-cls-0002-222222222222', 'CHM 225', 'Organic Chemistry', 'CHM225', '22222222-chem-cls-2222-222222222222', TRUE),
-  ('22222222-chem-cls-0003-222222222222', 'CHM 342', 'Inorganic Chemistry', 'CHM342', '22222222-chem-cls-2222-222222222222', TRUE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Link Class parameter items to Chemistry department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('22222222-chem-cls-0001-222222222222', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
-  ('22222222-chem-cls-0002-222222222222', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
-  ('22222222-chem-cls-0003-222222222222', '5af0d09d-1661-4610-9e0c-f768d1e87e36')
+  ('22222222-3333-4444-5555-dddddddddddd', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
+  ('22222222-3333-4444-5555-eeeeeeeeeeee', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
+  ('22222222-3333-4444-5555-ffffffffffff', '5af0d09d-1661-4610-9e0c-f768d1e87e36')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
+
+-- Documents for Chemistry department
+INSERT INTO documents (id, name, file_path, mime_type, type, classified, file_id) VALUES
+  ('d0c22222-3333-4444-5555-111111111111', 'CHM112-Lab2', 'CHM112-Lab2.pdf', 'application/pdf', 'lab', false, 'chem-doc-1'),
+  ('d0c22222-3333-4444-5555-222222222222', 'CHM225-HW4', 'CHM225-HW4.pdf', 'application/pdf', 'homework', false, 'chem-doc-2'),
+  ('d0c22222-3333-4444-5555-333333333333', 'CHM342-Project1', 'CHM342-Project1.pdf', 'application/pdf', 'project', false, 'chem-doc-3')
+ON CONFLICT (id) DO NOTHING;
+
+-- Link documents to Chemistry department
+INSERT INTO document_departments (document_id, department_id) VALUES
+  ('d0c22222-3333-4444-5555-111111111111', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
+  ('d0c22222-3333-4444-5555-222222222222', '5af0d09d-1661-4610-9e0c-f768d1e87e36'),
+  ('d0c22222-3333-4444-5555-333333333333', '5af0d09d-1661-4610-9e0c-f768d1e87e36')
+ON CONFLICT (document_id, department_id) DO NOTHING;
+
+-- Link documents to class parameter items (one per document)
+INSERT INTO document_parameter_items (document_id, parameter_item_id) VALUES
+  ('d0c22222-3333-4444-5555-111111111111', '22222222-3333-4444-5555-dddddddddddd'), -- CHM112-Lab2 -> CHM 112
+  ('d0c22222-3333-4444-5555-222222222222', '22222222-3333-4444-5555-eeeeeeeeeeee'), -- CHM225-HW4 -> CHM 225
+  ('d0c22222-3333-4444-5555-333333333333', '22222222-3333-4444-5555-ffffffffffff') -- CHM342-Project1 -> CHM 342
+ON CONFLICT (document_id, parameter_item_id) DO NOTHING;
 
 -- EAPS Department (001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb)
--- Location parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('44444444-eaps-loc-4444-444444444444', 'Location', 'Where the interaction is taking place', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Location parameter items
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('44444444-eaps-loc-0001-444444444444', 'Hampton Hall of Civil Engineering', 'Main EAPS home.', 'HAMP', '44444444-eaps-loc-4444-444444444444', TRUE),
-  ('44444444-eaps-loc-0002-444444444444', 'Neil Armstrong Hall of Engineering', 'EAPS petrology facilities.', 'ARMS', '44444444-eaps-loc-4444-444444444444', TRUE),
-  ('44444444-eaps-loc-0003-444444444444', 'Brown Lab of Chemistry', 'EAPS petrology facilities.', 'BRWN', '44444444-eaps-loc-4444-444444444444', TRUE)
+  ('44444444-5555-6666-7777-aaaaaaaaaaaa', 'Hampton Hall of Civil Engineering', 'Main EAPS home.', 'HAMP', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('44444444-5555-6666-7777-bbbbbbbbbbbb', 'Neil Armstrong Hall of Engineering', 'EAPS petrology facilities.', 'ARMS', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('44444444-5555-6666-7777-cccccccccccc', 'Brown Lab of Chemistry', 'EAPS petrology facilities.', 'BRWN', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Class parameter items
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('44444444-5555-6666-7777-dddddddddddd', 'EAPS 106', 'Geosciences in the Cinema', 'EAPS106', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('44444444-5555-6666-7777-eeeeeeeeeeee', 'EAPS 104', 'Oceanography', 'EAPS104', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('44444444-5555-6666-7777-ffffffffffff', 'EAPS 120', 'Geography', 'EAPS120', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Link Location parameter items to EAPS department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('44444444-eaps-loc-0001-444444444444', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
-  ('44444444-eaps-loc-0002-444444444444', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
-  ('44444444-eaps-loc-0003-444444444444', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb')
+  ('44444444-5555-6666-7777-aaaaaaaaaaaa', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
+  ('44444444-5555-6666-7777-bbbbbbbbbbbb', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
+  ('44444444-5555-6666-7777-cccccccccccc', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
 
--- Class parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('44444444-eaps-cls-4444-444444444444', 'Class', 'Which course or subject the scenario is about', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('44444444-eaps-cls-0001-444444444444', 'EAPS 106', 'Geosciences in the Cinema', 'EAPS106', '44444444-eaps-cls-4444-444444444444', TRUE),
-  ('44444444-eaps-cls-0002-444444444444', 'EAPS 104', 'Oceanography', 'EAPS104', '44444444-eaps-cls-4444-444444444444', TRUE),
-  ('44444444-eaps-cls-0003-444444444444', 'EAPS 120', 'Geography', 'EAPS120', '44444444-eaps-cls-4444-444444444444', TRUE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Link Class parameter items to EAPS department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('44444444-eaps-cls-0001-444444444444', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
-  ('44444444-eaps-cls-0002-444444444444', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
-  ('44444444-eaps-cls-0003-444444444444', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb')
+  ('44444444-5555-6666-7777-dddddddddddd', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
+  ('44444444-5555-6666-7777-eeeeeeeeeeee', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
+  ('44444444-5555-6666-7777-ffffffffffff', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
+
+-- Documents for EAPS department
+INSERT INTO documents (id, name, file_path, mime_type, type, classified, file_id) VALUES
+  ('d0c44444-5555-6666-7777-111111111111', 'EAPS106-Project1', 'EAPS106-Project1.pdf', 'application/pdf', 'project', false, 'eaps-doc-1'),
+  ('d0c44444-5555-6666-7777-222222222222', 'EAPS104-Lab3', 'EAPS104-Lab3.pdf', 'application/pdf', 'lab', false, 'eaps-doc-2'),
+  ('d0c44444-5555-6666-7777-333333333333', 'EAPS120-HW2', 'EAPS120-HW2.pdf', 'application/pdf', 'homework', false, 'eaps-doc-3')
+ON CONFLICT (id) DO NOTHING;
+
+-- Link documents to EAPS department
+INSERT INTO document_departments (document_id, department_id) VALUES
+  ('d0c44444-5555-6666-7777-111111111111', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
+  ('d0c44444-5555-6666-7777-222222222222', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb'),
+  ('d0c44444-5555-6666-7777-333333333333', '001c8926-9dd8-4eaa-8b7f-e8f1868c5aeb')
+ON CONFLICT (document_id, department_id) DO NOTHING;
+
+-- Link documents to class parameter items (one per document)
+INSERT INTO document_parameter_items (document_id, parameter_item_id) VALUES
+  ('d0c44444-5555-6666-7777-111111111111', '44444444-5555-6666-7777-dddddddddddd'), -- EAPS106-Project1 -> EAPS 106
+  ('d0c44444-5555-6666-7777-222222222222', '44444444-5555-6666-7777-eeeeeeeeeeee'), -- EAPS104-Lab3 -> EAPS 104
+  ('d0c44444-5555-6666-7777-333333333333', '44444444-5555-6666-7777-ffffffffffff') -- EAPS120-HW2 -> EAPS 120
+ON CONFLICT (document_id, parameter_item_id) DO NOTHING;
 
 -- Mathematics Department (0258cdab-7cf4-4d2f-96ec-98fae38df1bc)
--- Location parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('55555555-ma-loc-5555-555555555555', 'Location', 'Where the interaction is taking place', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
+-- Note: Shared location items (HAAS, MATH, WALC) are created above and linked below
 
+-- Class parameter items
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('55555555-ma-loc-0001-555555555555', 'Mathematical Sciences Building', 'Houses Math (and Statistics).', 'MATH', '55555555-ma-loc-5555-555555555555', TRUE),
-  ('55555555-ma-loc-0002-555555555555', 'Felix Haas Hall', 'Math heritage/teaching spaces referenced with the division''s namesake; used for classes.', 'HAAS', '55555555-ma-loc-5555-555555555555', TRUE),
-  ('55555555-ma-loc-0003-555555555555', 'Wilmeth Active Learning Center', 'Many Math lectures/exams scheduled here.', 'WALC', '55555555-ma-loc-5555-555555555555', TRUE)
+  ('55555555-6666-7777-8888-dddddddddddd', 'MA 421', 'Linear Programming', 'MA421', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('55555555-6666-7777-8888-eeeeeeeeeeee', 'MA 265', 'Linear Algebra', 'MA265', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('55555555-6666-7777-8888-ffffffffffff', 'MA 261', 'Multivariate Calculus', 'MA261', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Link shared Location parameter items to Mathematics department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('55555555-ma-loc-0001-555555555555', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'),
-  ('55555555-ma-loc-0002-555555555555', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'),
-  ('55555555-ma-loc-0003-555555555555', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc')
+  ('aaaaaaaa-0000-0000-0000-000000000001', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'), -- Felix Haas Hall
+  ('aaaaaaaa-0000-0000-0000-000000000002', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'), -- Mathematical Sciences Building
+  ('aaaaaaaa-0000-0000-0000-000000000003', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc') -- Wilmeth Active Learning Center
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
 
--- Class parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('55555555-ma-cls-5555-555555555555', 'Class', 'Which course or subject the scenario is about', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('55555555-ma-cls-0001-555555555555', 'MA 421', 'Linear Programming', 'MA421', '55555555-ma-cls-5555-555555555555', TRUE),
-  ('55555555-ma-cls-0002-555555555555', 'MA 265', 'Linear Algebra', 'MA265', '55555555-ma-cls-5555-555555555555', TRUE),
-  ('55555555-ma-cls-0003-555555555555', 'MA 261', 'Multivariate Calculus', 'MA261', '55555555-ma-cls-5555-555555555555', TRUE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Link Class parameter items to Mathematics department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('55555555-ma-cls-0001-555555555555', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'),
-  ('55555555-ma-cls-0002-555555555555', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'),
-  ('55555555-ma-cls-0003-555555555555', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc')
+  ('55555555-6666-7777-8888-dddddddddddd', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'),
+  ('55555555-6666-7777-8888-eeeeeeeeeeee', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'),
+  ('55555555-6666-7777-8888-ffffffffffff', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
+
+-- Documents for Mathematics department
+INSERT INTO documents (id, name, file_path, mime_type, type, classified, file_id) VALUES
+  ('d0c55555-6666-7777-8888-111111111111', 'MA421-HW5', 'MA421-HW5.pdf', 'application/pdf', 'homework', false, 'ma-doc-1'),
+  ('d0c55555-6666-7777-8888-222222222222', 'MA265-Exam2', 'MA265-Exam2.pdf', 'application/pdf', 'midterm', false, 'ma-doc-2'),
+  ('d0c55555-6666-7777-8888-333333333333', 'MA261-Quiz3', 'MA261-Quiz3.pdf', 'application/pdf', 'quiz', false, 'ma-doc-3')
+ON CONFLICT (id) DO NOTHING;
+
+-- Link documents to Mathematics department
+INSERT INTO document_departments (document_id, department_id) VALUES
+  ('d0c55555-6666-7777-8888-111111111111', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'),
+  ('d0c55555-6666-7777-8888-222222222222', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc'),
+  ('d0c55555-6666-7777-8888-333333333333', '0258cdab-7cf4-4d2f-96ec-98fae38df1bc')
+ON CONFLICT (document_id, department_id) DO NOTHING;
+
+-- Link documents to class parameter items (one per document)
+INSERT INTO document_parameter_items (document_id, parameter_item_id) VALUES
+  ('d0c55555-6666-7777-8888-111111111111', '55555555-6666-7777-8888-dddddddddddd'), -- MA421-HW5 -> MA 421
+  ('d0c55555-6666-7777-8888-222222222222', '55555555-6666-7777-8888-eeeeeeeeeeee'), -- MA265-Exam2 -> MA 265
+  ('d0c55555-6666-7777-8888-333333333333', '55555555-6666-7777-8888-ffffffffffff') -- MA261-Quiz3 -> MA 261
+ON CONFLICT (document_id, parameter_item_id) DO NOTHING;
 
 -- Physics Department (a9cc891d-859f-4ef8-b09d-2f6beabb618d)
--- Location parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('66666666-phys-loc-6666-666666666666', 'Location', 'Where the interaction is taking place', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Location parameter items
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('66666666-phys-loc-0001-666666666666', 'Physics Building', 'Department address and offices.', 'PHYS', '66666666-phys-loc-6666-666666666666', TRUE),
-  ('66666666-phys-loc-0002-666666666666', 'Birck Nanotechnology Center', 'Physics research labs/quantum and nano.', 'BRK', '66666666-phys-loc-6666-666666666666', TRUE),
-  ('66666666-phys-loc-0003-666666666666', 'Bindley Bioscience Center', 'Physics-affiliated facilities.', 'BIND', '66666666-phys-loc-6666-666666666666', TRUE)
+  ('66666666-7777-8888-9999-aaaaaaaaaaaa', 'Physics Building', 'Department address and offices.', 'PHYS', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('66666666-7777-8888-9999-bbbbbbbbbbbb', 'Birck Nanotechnology Center', 'Physics research labs/quantum and nano.', 'BRK', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE),
+  ('66666666-7777-8888-9999-cccccccccccc', 'Bindley Bioscience Center', 'Physics-affiliated facilities.', 'BIND', '2d82dfcc-7a67-5f57-98a5-74b1d138597e', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Class parameter items
+INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
+  ('66666666-7777-8888-9999-dddddddddddd', 'PHYS 172', 'Modern Mechanics', 'PHYS172', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('66666666-7777-8888-9999-eeeeeeeeeeee', 'PHYS 220', 'General Physics', 'PHYS220', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('66666666-7777-8888-9999-ffffffffffff', 'PHYS 545', 'Solid State Physics', 'PHYS545', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Link Location parameter items to Physics department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('66666666-phys-loc-0001-666666666666', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
-  ('66666666-phys-loc-0002-666666666666', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
-  ('66666666-phys-loc-0003-666666666666', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d')
+  ('66666666-7777-8888-9999-aaaaaaaaaaaa', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
+  ('66666666-7777-8888-9999-bbbbbbbbbbbb', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
+  ('66666666-7777-8888-9999-cccccccccccc', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
 
--- Class parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('66666666-phys-cls-6666-666666666666', 'Class', 'Which course or subject the scenario is about', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('66666666-phys-cls-0001-666666666666', 'PHYS 172', 'Modern Mechanics', 'PHYS172', '66666666-phys-cls-6666-666666666666', TRUE),
-  ('66666666-phys-cls-0002-666666666666', 'PHYS 220', 'General Physics', 'PHYS220', '66666666-phys-cls-6666-666666666666', TRUE),
-  ('66666666-phys-cls-0003-666666666666', 'PHYS 545', 'Solid State Physics', 'PHYS545', '66666666-phys-cls-6666-666666666666', TRUE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Link Class parameter items to Physics department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('66666666-phys-cls-0001-666666666666', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
-  ('66666666-phys-cls-0002-666666666666', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
-  ('66666666-phys-cls-0003-666666666666', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d')
+  ('66666666-7777-8888-9999-dddddddddddd', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
+  ('66666666-7777-8888-9999-eeeeeeeeeeee', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
+  ('66666666-7777-8888-9999-ffffffffffff', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
+
+-- Documents for Physics department
+INSERT INTO documents (id, name, file_path, mime_type, type, classified, file_id) VALUES
+  ('d0c66666-7777-8888-9999-111111111111', 'PHYS172-Lab4', 'PHYS172-Lab4.pdf', 'application/pdf', 'lab', false, 'phys-doc-1'),
+  ('d0c66666-7777-8888-9999-222222222222', 'PHYS220-HW6', 'PHYS220-HW6.pdf', 'application/pdf', 'homework', false, 'phys-doc-2'),
+  ('d0c66666-7777-8888-9999-333333333333', 'PHYS545-Project2', 'PHYS545-Project2.pdf', 'application/pdf', 'project', false, 'phys-doc-3')
+ON CONFLICT (id) DO NOTHING;
+
+-- Link documents to Physics department
+INSERT INTO document_departments (document_id, department_id) VALUES
+  ('d0c66666-7777-8888-9999-111111111111', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
+  ('d0c66666-7777-8888-9999-222222222222', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d'),
+  ('d0c66666-7777-8888-9999-333333333333', 'a9cc891d-859f-4ef8-b09d-2f6beabb618d')
+ON CONFLICT (document_id, department_id) DO NOTHING;
+
+-- Link documents to class parameter items (one per document)
+INSERT INTO document_parameter_items (document_id, parameter_item_id) VALUES
+  ('d0c66666-7777-8888-9999-111111111111', '66666666-7777-8888-9999-dddddddddddd'), -- PHYS172-Lab4 -> PHYS 172
+  ('d0c66666-7777-8888-9999-222222222222', '66666666-7777-8888-9999-eeeeeeeeeeee'), -- PHYS220-HW6 -> PHYS 220
+  ('d0c66666-7777-8888-9999-333333333333', '66666666-7777-8888-9999-ffffffffffff') -- PHYS545-Project2 -> PHYS 545
+ON CONFLICT (document_id, parameter_item_id) DO NOTHING;
 
 -- Statistics Department (083f55e9-08af-4b0a-8e1b-32f28d3afea3)
--- Location parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('77777777-stat-loc-7777-777777777777', 'Location', 'Where the interaction is taking place', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
+-- Note: Shared location items (HAAS, MATH, WALC) are created above and linked below
 
+-- Class parameter items
 INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('77777777-stat-loc-0001-777777777777', 'Mathematical Sciences Building', 'Department home.', 'MATH', '77777777-stat-loc-7777-777777777777', TRUE),
-  ('77777777-stat-loc-0002-777777777777', 'Felix Haas Hall', 'Listed as additional Statistics location.', 'HAAS', '77777777-stat-loc-7777-777777777777', TRUE),
-  ('77777777-stat-loc-0003-777777777777', 'Wilmeth Active Learning Center', 'Recurring STAT course rooms.', 'WALC', '77777777-stat-loc-7777-777777777777', TRUE)
+  ('77777777-8888-9999-aaaa-dddddddddddd', 'STAT 350', 'Introduction to Statistics', 'STAT350', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('77777777-8888-9999-aaaa-eeeeeeeeeeee', 'STAT 416', 'Probability', 'STAT416', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE),
+  ('77777777-8888-9999-aaaa-ffffffffffff', 'STAT 417', 'Statistical Theory', 'STAT417', '2dc4672e-4999-5d5a-802c-8fc69e07f150', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Link shared Location parameter items to Statistics department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('77777777-stat-loc-0001-777777777777', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'),
-  ('77777777-stat-loc-0002-777777777777', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'),
-  ('77777777-stat-loc-0003-777777777777', '083f55e9-08af-4b0a-8e1b-32f28d3afea3')
+  ('aaaaaaaa-0000-0000-0000-000000000001', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'), -- Felix Haas Hall
+  ('aaaaaaaa-0000-0000-0000-000000000002', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'), -- Mathematical Sciences Building
+  ('aaaaaaaa-0000-0000-0000-000000000003', '083f55e9-08af-4b0a-8e1b-32f28d3afea3') -- Wilmeth Active Learning Center
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
 
--- Class parameter
-INSERT INTO parameters (id, name, description, numerical, active, practice_parameter, document_parameter) VALUES
-  ('77777777-stat-cls-7777-777777777777', 'Class', 'Which course or subject the scenario is about', FALSE, TRUE, FALSE, FALSE)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO parameter_items (id, name, description, value, parameter_id, default_item) VALUES
-  ('77777777-stat-cls-0001-777777777777', 'STAT 350', 'Introduction to Statistics', 'STAT350', '77777777-stat-cls-7777-777777777777', TRUE),
-  ('77777777-stat-cls-0002-777777777777', 'STAT 416', 'Probability', 'STAT416', '77777777-stat-cls-7777-777777777777', TRUE),
-  ('77777777-stat-cls-0003-777777777777', 'STAT 417', 'Statistical Theory', 'STAT417', '77777777-stat-cls-7777-777777777777', TRUE)
-ON CONFLICT (id) DO NOTHING;
-
+-- Link Class parameter items to Statistics department
 INSERT INTO parameter_item_departments (parameter_item_id, department_id) VALUES
-  ('77777777-stat-cls-0001-777777777777', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'),
-  ('77777777-stat-cls-0002-777777777777', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'),
-  ('77777777-stat-cls-0003-777777777777', '083f55e9-08af-4b0a-8e1b-32f28d3afea3')
+  ('77777777-8888-9999-aaaa-dddddddddddd', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'),
+  ('77777777-8888-9999-aaaa-eeeeeeeeeeee', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'),
+  ('77777777-8888-9999-aaaa-ffffffffffff', '083f55e9-08af-4b0a-8e1b-32f28d3afea3')
 ON CONFLICT (parameter_item_id, department_id) DO NOTHING;
+
+-- Documents for Statistics department
+INSERT INTO documents (id, name, file_path, mime_type, type, classified, file_id) VALUES
+  ('d0c77777-8888-9999-aaaa-111111111111', 'STAT350-HW7', 'STAT350-HW7.pdf', 'application/pdf', 'homework', false, 'stat-doc-1'),
+  ('d0c77777-8888-9999-aaaa-222222222222', 'STAT416-Exam3', 'STAT416-Exam3.pdf', 'application/pdf', 'midterm', false, 'stat-doc-2'),
+  ('d0c77777-8888-9999-aaaa-333333333333', 'STAT417-Project3', 'STAT417-Project3.pdf', 'application/pdf', 'project', false, 'stat-doc-3')
+ON CONFLICT (id) DO NOTHING;
+
+-- Link documents to Statistics department
+INSERT INTO document_departments (document_id, department_id) VALUES
+  ('d0c77777-8888-9999-aaaa-111111111111', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'),
+  ('d0c77777-8888-9999-aaaa-222222222222', '083f55e9-08af-4b0a-8e1b-32f28d3afea3'),
+  ('d0c77777-8888-9999-aaaa-333333333333', '083f55e9-08af-4b0a-8e1b-32f28d3afea3')
+ON CONFLICT (document_id, department_id) DO NOTHING;
+
+-- Link documents to class parameter items (one per document)
+INSERT INTO document_parameter_items (document_id, parameter_item_id) VALUES
+  ('d0c77777-8888-9999-aaaa-111111111111', '77777777-8888-9999-aaaa-dddddddddddd'), -- STAT350-HW7 -> STAT 350
+  ('d0c77777-8888-9999-aaaa-222222222222', '77777777-8888-9999-aaaa-eeeeeeeeeeee'), -- STAT416-Exam3 -> STAT 416
+  ('d0c77777-8888-9999-aaaa-333333333333', '77777777-8888-9999-aaaa-ffffffffffff') -- STAT417-Project3 -> STAT 417
+ON CONFLICT (document_id, parameter_item_id) DO NOTHING;
 
 COMMIT;
 
