@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -289,27 +290,23 @@ export default function Scenario({
       return baseIds;
     }
 
-    // Get union of parameter_ids from selected departments
-    // Note: We need to map parameter_ids to parameter_item_ids
-    const deptParameterIds = new Set<string>();
+    // Get union of parameter_item_ids from selected departments
+    const deptParameterItemIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
       const deptData = departmentMapping[deptId];
-      if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
-        deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
+      if (
+        deptData?.parameter_item_ids &&
+        Array.isArray(deptData.parameter_item_ids)
+      ) {
+        deptData.parameter_item_ids.forEach((id: string) =>
+          deptParameterItemIds.add(id)
+        );
       }
     });
 
-    // Filter parameter items: include if their parameter_id is in department parameter IDs
-    return baseIds.filter((itemId) => {
-      const item = parameterItemMapping[itemId];
-      return item && deptParameterIds.has(item.parameter_id);
-    });
-  }, [
-    scenarioData?.parameters,
-    formData.departmentIds,
-    departmentMapping,
-    parameterItemMapping,
-  ]);
+    // Filter base IDs to only include those in department parameter item IDs
+    return baseIds.filter((itemId) => deptParameterItemIds.has(itemId));
+  }, [scenarioData?.parameters, formData.departmentIds, departmentMapping]);
 
   // Track department changes and manage staged selections
   useEffect(() => {
@@ -517,11 +514,23 @@ export default function Scenario({
         )
       );
     } else if (!isEditMode && scenarioData) {
-      // Create mode: use defaults from API
+      // Create mode: use defaults from API, but preserve primaryDepartmentId if set
+      const defaultDeptIds = scenarioData.department_ids || [];
+      const primaryDeptId = effectiveProfile?.primaryDepartmentId;
+
+      // Use primary department if available and valid, otherwise use first from API or empty
+      const initialDeptIds =
+        primaryDeptId &&
+        (defaultDeptIds.length === 0 || defaultDeptIds.includes(primaryDeptId))
+          ? [primaryDeptId]
+          : defaultDeptIds.length > 0
+            ? [defaultDeptIds[0]!]
+            : [];
+
       setFormData({
         name: "New Scenario",
         problemStatement: "",
-        departmentIds: scenarioData.department_ids || [],
+        departmentIds: initialDeptIds,
         active: true,
         hintsEnabled: false,
         objectivesEnabled: true,
@@ -530,7 +539,12 @@ export default function Scenario({
         outputGuardrailEnabled: false,
       });
     }
-  }, [scenarioData, isEditMode, previousDepartmentIds.length]);
+  }, [
+    scenarioData,
+    isEditMode,
+    previousDepartmentIds.length,
+    effectiveProfile?.primaryDepartmentId,
+  ]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -1131,15 +1145,19 @@ export default function Scenario({
             {/* Department Selection */}
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <DepartmentPicker
-                mapping={departmentMapping}
-                validIds={scenarioData?.valid_department_ids || []}
-                selectedIds={formData.departmentIds || []}
-                onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                placeholder="All Departments"
-                disabled={isReadonly}
-                multiSelect={true}
-              />
+              {formData?.departmentIds !== undefined && !isLoadingData ? (
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={scenarioData?.valid_department_ids || []}
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                  placeholder="All Departments"
+                  disabled={isReadonly}
+                  multiSelect={true}
+                />
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
             </div>
 
             {/* Active Switch */}

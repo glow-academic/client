@@ -152,6 +152,7 @@ export const DepartmentMappingItemSchema = MappingItemSchema.extend({
   document_ids: z.array(z.string()).nullable().optional(),
   rubric_ids: z.array(z.string()).nullable().optional(),
   parameter_ids: z.array(z.string()).nullable().optional(),
+  parameter_item_ids: z.array(z.string()).nullable().optional(),
   agent_ids: z.array(z.string()).nullable().optional(),
   staff_ids: z.array(z.string()).nullable().optional(),
   cohort_ids: z.array(z.string()).nullable().optional(),

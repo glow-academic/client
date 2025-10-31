@@ -13,12 +13,11 @@ from typing import Any
 from urllib.parse import parse_qs
 
 import socketio  # type: ignore
+from app.db import close_db_pool, init_db_pool
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
-from app.db import close_db_pool, init_db_pool
 
 # Redis is nice in production, but optional in dev
 try:
@@ -47,23 +46,12 @@ allowed_origins = [origin]
 
 # Import Redis functions from extensions
 from app.extensions import (  # New Redis functions for active connections and runs; Guest management functions
-    add_guest_socket,
-    cleanup_redis_client,
-    decrement_guest_count,
-    find_chats_by_socket,
-    find_profile_by_socket,
-    get_socket_owner,
-    increment_guest_count,
-    init_query_client,
-    init_redis_client,
-    is_guest_socket,
-    remove_active_connection,
-    remove_guest_socket,
-    remove_socket_owner,
-    set_active_connection,
-    set_active_run,
-    set_socket_owner,
-)
+    add_guest_socket, cleanup_redis_client, decrement_guest_count,
+    find_chats_by_socket, find_profile_by_socket, get_socket_owner,
+    increment_guest_count, init_query_client, init_redis_client,
+    is_guest_socket, remove_active_connection, remove_guest_socket,
+    remove_socket_owner, set_active_connection, set_active_run,
+    set_socket_owner)
 
 # Store active chat connections - now using Redis
 # active_connections: dict[str, str] = {}  # REMOVED - using Redis instead
@@ -94,10 +82,13 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
         pool = get_pool()
         if pool:
             async with pool.acquire() as conn:
-                queries = ProfileQueries()
-                query = queries.update_profile_to_inactive()
-                await conn.execute(query, datetime.now(UTC), profile_id)
-                logger.info(f"Updated profile {profile_id} to inactive in database")
+                async with conn.transaction():
+                    queries = ProfileQueries()
+                    update_query, insert_query = queries.update_profile_to_inactive()
+                    last_active = datetime.now(UTC)
+                    await conn.execute(update_query, profile_id, last_active)
+                    await conn.execute(insert_query, profile_id, last_active)
+            logger.info(f"Updated profile {profile_id} to inactive in database")
     except Exception as e:
         logger.error(f"Error updating profile {profile_id} in database: {e}")
 
@@ -142,7 +133,6 @@ sio = socketio.AsyncServer(
 )
 
 from app.web.assistants import register_assistant_events  # noqa: E402
-
 # Import and register WebSocket events after sio is created to avoid circular imports
 from app.web.simulations import register_simulation_events  # noqa: E402
 
@@ -203,7 +193,8 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                 if pool:
                     async with pool.acquire() as conn:
                         # Create an error message in the database
-                        from app.queries.simulation_queries import SimulationQueries
+                        from app.queries.simulation_queries import \
+                            SimulationQueries
 
                         queries = SimulationQueries()
                         query = queries.insert_error_message()
@@ -356,9 +347,12 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
-                    queries = ProfileQueries()
-                    query = queries.update_profile_to_active()
-                    await conn.execute(query, datetime.now(UTC), profile_id)
+                    async with conn.transaction():
+                        queries = ProfileQueries()
+                        update_query, insert_query = queries.update_profile_to_active()
+                        last_active = datetime.now(UTC)
+                        await conn.execute(update_query, profile_id, last_active)
+                        await conn.execute(insert_query, profile_id, last_active)
                     logger.info(f"Updated profile {profile_id} to active in database")
         except Exception as e:
             logger.error(f"Error updating profile {profile_id} in database: {e}")
@@ -379,10 +373,12 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                 pool = get_pool()
                 if pool:
                     async with pool.acquire() as conn:
-                        # Find and update default guest profile
-                        queries = ProfileQueries()
-                        query = queries.update_default_guest_profile_to_active()
-                        await conn.execute(query, datetime.now(UTC))
+                        async with conn.transaction():
+                            # Find and update default guest profile
+                            queries = ProfileQueries()
+                            update_query, insert_query = queries.update_default_guest_profile_to_active()
+                            await conn.execute(update_query, datetime.now(UTC))
+                            await conn.execute(insert_query, datetime.now(UTC))
                         logger.info(
                             "Marked default guest profile active (guest connection added)"
                         )
@@ -435,10 +431,12 @@ async def disconnect(sid: str) -> None:
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
-                    # Update default guest profile: refresh last_active, set active False only when all guests are gone
-                    queries = ProfileQueries()
-                    query = queries.update_default_guest_profile_activity()
-                    await conn.execute(query, datetime.now(UTC), remaining_guests > 0)
+                    async with conn.transaction():
+                        # Update default guest profile: refresh last_active, set active False only when all guests are gone
+                        queries = ProfileQueries()
+                        update_query, insert_query = queries.update_default_guest_profile_activity()
+                        await conn.execute(update_query, datetime.now(UTC), remaining_guests > 0)
+                        await conn.execute(insert_query, datetime.now(UTC))
                     logger.info(
                         f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
                     )

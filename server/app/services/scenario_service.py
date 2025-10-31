@@ -425,10 +425,11 @@ class ScenarioService(BaseService):
             for did, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
                     # Parse optional ID arrays (handle None, empty arrays, or missing keys)
-                    # Scenario form only needs: persona_ids, document_ids, parameter_ids
+                    # Scenario form needs: persona_ids, document_ids, parameter_ids, parameter_item_ids
                     persona_ids = ddata.get("persona_ids")
                     document_ids = ddata.get("document_ids")
                     parameter_ids = ddata.get("parameter_ids")
+                    parameter_item_ids = ddata.get("parameter_item_ids")
                     
                     # Convert to list[str] if present, otherwise None
                     # Handle JSONB null values (which become Python None) and arrays
@@ -447,6 +448,7 @@ class ScenarioService(BaseService):
                         persona_ids=to_str_list(persona_ids),
                         document_ids=to_str_list(document_ids),
                         parameter_ids=to_str_list(parameter_ids),
+                        parameter_item_ids=to_str_list(parameter_item_ids),
                     )
 
         # Parse document_details from JSONB (array of full document objects)
@@ -622,10 +624,11 @@ class ScenarioService(BaseService):
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
                     # Parse optional ID arrays (handle None, empty arrays, or missing keys)
-                    # Scenario form only needs: persona_ids, document_ids, parameter_ids
+                    # Scenario form needs: persona_ids, document_ids, parameter_ids, parameter_item_ids
                     persona_ids = ddata.get("persona_ids")
                     document_ids = ddata.get("document_ids")
                     parameter_ids = ddata.get("parameter_ids")
+                    parameter_item_ids = ddata.get("parameter_item_ids")
                     
                     # Convert to list[str] if present, otherwise None
                     # Handle JSONB null values (which become Python None) and arrays
@@ -644,6 +647,7 @@ class ScenarioService(BaseService):
                         persona_ids=to_str_list(persona_ids),
                         document_ids=to_str_list(document_ids),
                         parameter_ids=to_str_list(parameter_ids),
+                        parameter_item_ids=to_str_list(parameter_item_ids),
                     )
 
         # Parse JSONB parameters into ParameterDetail dict

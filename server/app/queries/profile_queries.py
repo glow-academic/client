@@ -498,61 +498,81 @@ class ProfileQueries:
 
     # ===== WebSocket Connection Management Queries =====
 
-    def update_profile_to_inactive(self) -> str:
-        """Build query to set profile inactive with last_active timestamp.
+    def update_profile_to_inactive(self) -> tuple[str, str]:
+        """Build queries to set profile inactive with last_active timestamp.
+        
+        Returns separate UPDATE and INSERT queries for transaction handling.
 
-        Params order: last_active, profile_id
+        Params order: profile_id, last_active
         """
-        return """
+        update_query = """
         UPDATE profiles 
         SET active = false
-        WHERE id = $2;
+        WHERE id = $1::uuid
+        """
+        insert_query = """
         INSERT INTO profile_activity (profile_id, last_active)
-        VALUES ($2, $1)
+        VALUES ($1::uuid, $2::timestamptz)
         """
+        return (update_query, insert_query)
 
-    def update_profile_to_active(self) -> str:
-        """Build query to set profile active with last_active timestamp.
+    def update_profile_to_active(self) -> tuple[str, str]:
+        """Build queries to set profile active with last_active timestamp.
+        
+        Returns separate UPDATE and INSERT queries for transaction handling.
 
-        Params order: last_active, profile_id
+        Params order: profile_id, last_active
         """
-        return """
+        update_query = """
         UPDATE profiles 
         SET active = true
-        WHERE id = $2;
-        INSERT INTO profile_activity (profile_id, last_active)
-        VALUES ($2, $1)
+        WHERE id = $1::uuid
         """
+        insert_query = """
+        INSERT INTO profile_activity (profile_id, last_active)
+        VALUES ($1::uuid, $2::timestamptz)
+        """
+        return (update_query, insert_query)
 
-    def update_default_guest_profile_to_active(self) -> str:
-        """Build query to set default guest profile active with last_active timestamp.
+    def update_default_guest_profile_to_active(self) -> tuple[str, str]:
+        """Build queries to set default guest profile active with last_active timestamp.
+        
+        Returns separate UPDATE and INSERT queries for transaction handling.
 
         Params order: last_active
         """
-        return """
+        update_query = """
         UPDATE profiles 
         SET active = true
-        WHERE role = 'guest' AND default_profile = true;
+        WHERE role = 'guest' AND default_profile = true
+        """
+        insert_query = """
         INSERT INTO profile_activity (profile_id, last_active)
-        SELECT id, $1
+        SELECT id, $1::timestamptz
         FROM profiles
         WHERE role = 'guest' AND default_profile = true
         """
+        return (update_query, insert_query)
 
-    def update_default_guest_profile_activity(self) -> str:
-        """Build query to update default guest profile activity status.
+    def update_default_guest_profile_activity(self) -> tuple[str, str]:
+        """Build queries to update default guest profile activity status.
+        
+        Returns separate UPDATE and INSERT queries for transaction handling.
 
         Params order: last_active, active
         """
-        return """
+        update_query = """
         UPDATE profiles 
         SET active = $2
-        WHERE role = 'guest' AND default_profile = true;
+        WHERE role = 'guest' AND default_profile = true
+        """
+        insert_query = """
         INSERT INTO profile_activity (profile_id, last_active)
-        SELECT id, $1
+        SELECT id, $1::timestamptz
         FROM profiles
         WHERE role = 'guest' AND default_profile = true
         """
+        return (update_query, insert_query)
 
     def insert_profile_activity(self) -> str:
         """Build query to insert profile activity record.

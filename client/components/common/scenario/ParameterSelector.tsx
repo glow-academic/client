@@ -97,8 +97,9 @@ export function ParameterSelector({
       (id) => parameterItemMapping[id]?.parameter_id !== parameterId
     );
 
+    // Accept all selected IDs (unlimited multi-select)
     if (newIds.length > 0) {
-      onParameterItemIdsChange([...currentItems, newIds[0]!]);
+      onParameterItemIdsChange([...currentItems, ...newIds]);
     } else {
       onParameterItemIdsChange(currentItems);
     }
@@ -112,8 +113,9 @@ export function ParameterSelector({
       (id) => parameterItemMapping[id]?.parameter_id !== parameterId
     );
 
+    // Accept all IDs (for range selection, multiple items within range)
     if (newIds.length > 0) {
-      onParameterItemIdsChange([...currentItems, newIds[0]!]);
+      onParameterItemIdsChange([...currentItems, ...newIds]);
     } else {
       onParameterItemIdsChange(currentItems);
     }
@@ -121,15 +123,29 @@ export function ParameterSelector({
 
   const getSelectedNumericalValue = (parameterId: string): number[] => {
     const selectedItemIds = selectedItemsByParameter[parameterId] || [];
-    const selectedItemId = selectedItemIds[0];
-    if (selectedItemId) {
-      const item = parameterItemMapping[selectedItemId];
-      if (item) {
-        const value = parseFloat(item.value);
-        return isNaN(value) ? [0] : [value];
-      }
+    
+    if (selectedItemIds.length === 0) {
+      // Return [min, max] as default range if nothing selected
+      const { min, max } = getNumericalParameterRange(parameterId);
+      return [min, max];
     }
-    return [0];
+
+    // Get all values from selected items and find min/max
+    const values = selectedItemIds
+      .map((itemId) => {
+        const item = parameterItemMapping[itemId];
+        return item ? parseFloat(item.value) : NaN;
+      })
+      .filter((v) => !isNaN(v));
+
+    if (values.length === 0) {
+      const { min, max } = getNumericalParameterRange(parameterId);
+      return [min, max];
+    }
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return [min, max];
   };
 
   const getNumericalParameterRange = (
@@ -157,31 +173,27 @@ export function ParameterSelector({
     value: number[]
   ) => {
     const itemIds = parameterItemsByParameter[parameterId] || [];
-    const targetValue = value[0];
 
-    if (itemIds.length === 0 || targetValue === undefined) return;
+    if (itemIds.length === 0 || value.length < 2) return;
 
-    // Find the closest parameter item value
-    let closestItemId = itemIds[0];
-    let minDistance = Infinity;
+    const [minRange, maxRange] = value;
+    if (minRange === undefined || maxRange === undefined) return;
+
+    // Find ALL parameter items whose values fall within the range (inclusive)
+    const matchingItemIds: string[] = [];
 
     for (const itemId of itemIds) {
       const item = parameterItemMapping[itemId];
       if (item) {
         const itemValue = parseFloat(item.value);
-        if (!isNaN(itemValue)) {
-          const distance = Math.abs(itemValue - targetValue);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestItemId = itemId;
+        if (!isNaN(itemValue) && itemValue >= minRange && itemValue <= maxRange) {
+          matchingItemIds.push(itemId);
           }
         }
       }
-    }
 
-    if (closestItemId) {
-      handleNumericalParameterChange(parameterId, [closestItemId]);
-    }
+    // Update selection with all matching items
+    handleNumericalParameterChange(parameterId, matchingItemIds);
   };
 
   const resetParameter = (parameterId: string) => {
@@ -216,7 +228,6 @@ export function ParameterSelector({
                 const itemIds = parameterItemsByParameter[parameterId] || [];
                 const selectedItemIds =
                   selectedItemsByParameter[parameterId] || [];
-                const selectedItemId = selectedItemIds[0];
 
                 return (
                   <div key={parameterId} className="space-y-2">
@@ -224,7 +235,7 @@ export function ParameterSelector({
                       <Label className="text-sm font-medium">
                         {parameter?.name || "Parameter"}
                       </Label>
-                      {selectedItemId && (
+                      {selectedItemIds.length > 0 && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -249,12 +260,20 @@ export function ParameterSelector({
                       parameterDescription={parameter?.description || ""}
                       isDefaultParameter={false}
                       disabled={disabled}
+                      multiSelect={true}
                     />
 
-                    {selectedItemId && parameterItemMapping[selectedItemId] && (
-                      <p className="text-xs text-muted-foreground">
-                        {parameterItemMapping[selectedItemId].description}
+                    {selectedItemIds.length > 0 && (
+                      <div className="space-y-1">
+                        {selectedItemIds.map((id) => {
+                          const item = parameterItemMapping[id];
+                          return item ? (
+                            <p key={id} className="text-xs text-muted-foreground">
+                              {item.description}
                       </p>
+                          ) : null;
+                        })}
+                      </div>
                     )}
                   </div>
                 );
@@ -272,10 +291,11 @@ export function ParameterSelector({
                 const itemIds = parameterItemsByParameter[parameterId] || [];
                 const selectedItemIds =
                   selectedItemsByParameter[parameterId] || [];
-                const selectedItemId = selectedItemIds[0];
                 const { min, max, step } =
                   getNumericalParameterRange(parameterId);
                 const currentValue = getSelectedNumericalValue(parameterId);
+                const [minValue, maxValue] = currentValue;
+                const hasSelection = selectedItemIds.length > 0;
 
                 return (
                   <div key={parameterId} className="space-y-3">
@@ -284,18 +304,19 @@ export function ParameterSelector({
                         <Label className="text-sm font-medium">
                           {parameter?.name || "Parameter"}
                         </Label>
-                        {selectedItemId &&
-                          parameterItemMapping[selectedItemId] && (
+                        {hasSelection && (
                             <p className="text-xs text-muted-foreground">
-                              {parameterItemMapping[selectedItemId].name}
+                            {selectedItemIds.length} item{selectedItemIds.length !== 1 ? "s" : ""} selected
                             </p>
                           )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">
-                          {currentValue[0]}
+                          {hasSelection && minValue !== undefined && maxValue !== undefined
+                            ? `${minValue} - ${maxValue}`
+                            : `${min} - ${max}`}
                         </span>
-                        {selectedItemId && (
+                        {hasSelection && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -326,10 +347,22 @@ export function ParameterSelector({
                       <span>{max}</span>
                     </div>
 
-                    {selectedItemId && parameterItemMapping[selectedItemId] && (
+                    {hasSelection && (
+                      <div className="space-y-1">
+                        {selectedItemIds.slice(0, 3).map((id) => {
+                          const item = parameterItemMapping[id];
+                          return item ? (
+                            <p key={id} className="text-xs text-muted-foreground">
+                              {item.name}: {item.description}
+                            </p>
+                          ) : null;
+                        })}
+                        {selectedItemIds.length > 3 && (
                       <p className="text-xs text-muted-foreground">
-                        {parameterItemMapping[selectedItemId].description}
+                            +{selectedItemIds.length - 3} more
                       </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 );

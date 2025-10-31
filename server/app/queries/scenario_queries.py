@@ -592,7 +592,7 @@ class ScenarioQueries:
         department_parameter_ids AS (
             SELECT 
                 d.id as department_id,
-                COALESCE(ARRAY_AGG(p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
             FROM departments d
             CROSS JOIN user_departments ud
             LEFT JOIN parameters p ON p.active = true
@@ -602,6 +602,18 @@ class ScenarioQueries:
             AND (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
                                                          JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
                                                          WHERE pi2.parameter_id = p.id AND pid2.active = true))
+            GROUP BY d.id
+        ),
+        department_parameter_item_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(pi.id::text ORDER BY pi.id) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
+            FROM departments d
+            CROSS JOIN user_departments ud
+            LEFT JOIN parameter_items pi ON true
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE d.id = ANY(ud.dept_ids)
+            AND (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true))
             GROUP BY d.id
         ),
         department_agent_ids AS (
@@ -647,7 +659,8 @@ class ScenarioQueries:
                     'description', COALESCE(d.description, ''),
                     'persona_ids', CASE WHEN dpi.persona_ids IS NOT NULL AND array_length(dpi.persona_ids, 1) > 0 THEN to_jsonb(dpi.persona_ids) ELSE NULL END,
                     'document_ids', CASE WHEN ddi.document_ids IS NOT NULL AND array_length(ddi.document_ids, 1) > 0 THEN to_jsonb(ddi.document_ids) ELSE NULL END,
-                    'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END
+                    'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END,
+                    'parameter_item_ids', CASE WHEN dparamitems.parameter_item_ids IS NOT NULL AND array_length(dparamitems.parameter_item_ids, 1) > 0 THEN to_jsonb(dparamitems.parameter_item_ids) ELSE NULL END
                 )
             ), '{}'::jsonb) as department_mapping
             FROM departments d
@@ -655,6 +668,7 @@ class ScenarioQueries:
             LEFT JOIN department_persona_ids dpi ON dpi.department_id = d.id
             LEFT JOIN department_document_ids ddi ON ddi.department_id = d.id
             LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
+            LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
             WHERE d.id = ANY(ud.dept_ids)
         )
         SELECT 
@@ -1711,19 +1725,74 @@ class ScenarioQueries:
             JOIN profile_departments pd ON pd.department_id = d.id
             WHERE pd.profile_id = $1 AND d.active = true
         ),
+        department_persona_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as persona_ids
+            FROM departments d
+            INNER JOIN user_departments ud ON d.id = ud.id
+            LEFT JOIN personas p ON p.active = true
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+            WHERE (pd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
+            GROUP BY d.id
+        ),
+        department_document_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(doc.id::text ORDER BY doc.id) FILTER (WHERE doc.id IS NOT NULL), ARRAY[]::text[]) as document_ids
+            FROM departments d
+            INNER JOIN user_departments ud ON d.id = ud.id
+            LEFT JOIN documents doc ON doc.active = true
+            LEFT JOIN document_departments dd ON dd.document_id = doc.id AND dd.active = true
+            WHERE (dd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = doc.id AND dd2.active = true))
+            GROUP BY d.id
+        ),
+        department_parameter_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+            FROM departments d
+            INNER JOIN user_departments ud ON d.id = ud.id
+            LEFT JOIN parameters p ON p.active = true
+            LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                                                         JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                                                         WHERE pi2.parameter_id = p.id AND pid2.active = true))
+            GROUP BY d.id
+        ),
+        department_parameter_item_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(pi.id::text ORDER BY pi.id) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
+            FROM departments d
+            INNER JOIN user_departments ud ON d.id = ud.id
+            LEFT JOIN parameter_items pi ON true
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true))
+            GROUP BY d.id
+        ),
         department_mapping_data AS (
             SELECT COALESCE(
                 jsonb_object_agg(
                     d.id::text,
                     jsonb_build_object(
                         'name', d.title,
-                        'description', COALESCE(d.description, '')
+                        'description', COALESCE(d.description, ''),
+                        'persona_ids', CASE WHEN dpi.persona_ids IS NOT NULL AND array_length(dpi.persona_ids, 1) > 0 THEN to_jsonb(dpi.persona_ids) ELSE NULL END,
+                        'document_ids', CASE WHEN ddi.document_ids IS NOT NULL AND array_length(ddi.document_ids, 1) > 0 THEN to_jsonb(ddi.document_ids) ELSE NULL END,
+                        'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END,
+                        'parameter_item_ids', CASE WHEN dparamitems.parameter_item_ids IS NOT NULL AND array_length(dparamitems.parameter_item_ids, 1) > 0 THEN to_jsonb(dparamitems.parameter_item_ids) ELSE NULL END
                     )
                 ),
                 '{}'::jsonb
             ) as mapping
             FROM departments d
-            WHERE d.id IN (SELECT id FROM user_departments)
+            INNER JOIN user_departments ud ON d.id = ud.id
+            LEFT JOIN department_persona_ids dpi ON dpi.department_id = d.id
+            LEFT JOIN department_document_ids ddi ON ddi.department_id = d.id
+            LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
+            LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
         ),
         persona_data AS (
             SELECT 

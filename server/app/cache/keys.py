@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    45  # Bumped: Fixed practice query SQL errors (multiple rows in subqueries, time_limit aggregation)
+    46  # Bumped: Fixed scenario detail-default query duplicate parameter_ids (added DISTINCT)
 )
 
 # Namespaces
