@@ -93,6 +93,7 @@ export const ModelDetailResponseSchema = z.object({
   description: z.string(),
   active: z.boolean(),
   custom_model: z.boolean(),
+  image_model: z.boolean(),
   input_ppm: z.number(),
   output_ppm: z.number(),
   provider_id: z.string(),

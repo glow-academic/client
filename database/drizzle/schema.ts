@@ -33,7 +33,6 @@ export const profiles = pgTable("profiles", {
 	role: profileRole().default('guest').notNull(),
 	defaultProfile: boolean("default_profile").default(false).notNull(),
 	active: boolean().default(false).notNull(),
-	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	uniqueIndex("profiles_alias_unique").using("btree", table.alias.asc().nullsLast().op("text_ops")),
 ]);
@@ -58,6 +57,7 @@ export const models = pgTable("models", {
 	inputPpm: doublePrecision("input_ppm").default(0).notNull(),
 	outputPpm: doublePrecision("output_ppm").default(0).notNull(),
 	customModel: boolean("custom_model").default(false).notNull(),
+	imageModel: boolean("image_model").default(false).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.providerId],
@@ -123,7 +123,6 @@ export const documents = pgTable("documents", {
 	mimeType: text("mime_type").notNull(),
 	type: documentType().default('homework').notNull(),
 	classified: boolean().default(false).notNull(),
-	fileId: text("file_id").notNull(),
 	active: boolean().default(true).notNull(),
 });
 

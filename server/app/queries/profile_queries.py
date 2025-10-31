@@ -21,13 +21,20 @@ class ProfileQueries:
             p.default_profile,
             prl.requests_per_day as req_per_day,
             p.last_login,
-            p.last_active,
+            pa.last_active,
             p.created_at,
             p.updated_at,
             pd.department_id as primary_department_id
         FROM profiles p
         LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
         LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+        LEFT JOIN LATERAL (
+            SELECT last_active 
+            FROM profile_activity 
+            WHERE profile_id = p.id 
+            ORDER BY created_at DESC 
+            LIMIT 1
+        ) pa ON true
         WHERE p.id = $1
         """
         return (query, [profile_id])
@@ -44,19 +51,24 @@ class ProfileQueries:
             "viewedIntro": "viewed_intro",
             "viewedChat": "viewed_chat",
             # reqPerDay moved to profile_request_limits junction table
-            "lastActive": "last_active",
+            # lastActive moved to profile_activity table - handled separately
             "defaultProfile": "default_profile",
             # These are already snake_case or match
             "role": "role",
             "active": "active",
         }
 
-        # Build SET clause dynamically from updates
+        # Build SET clause dynamically from updates (excluding lastActive)
         set_clauses = []
         params: list[Any] = []
         param_counter = 1
+        last_active_value = None
 
         for key, value in updates.items():
+            if key == "lastActive":
+                # Store for profile_activity insert
+                last_active_value = value
+                continue
             # Convert camelCase to snake_case using the map
             db_field = field_map.get(key, key)
             set_clauses.append(f"{db_field} = ${param_counter}")
@@ -69,27 +81,45 @@ class ProfileQueries:
         # Add profile_id as last parameter
         params.append(profile_id)
 
-        query = f"""
+        # Build query with optional profile_activity insert for lastActive
+        query_parts = []
+        if set_clauses:
+            query_parts.append(f"""
         UPDATE profiles SET
             {", ".join(set_clauses)}
         WHERE id = ${param_counter}
-        RETURNING 
-            id,
-            first_name,
-            last_name,
-            alias,
-            role,
-            active,
-            viewed_intro,
-            viewed_chat,
-            default_profile,
-            (SELECT requests_per_day FROM profile_request_limits WHERE profile_id = id AND active = true LIMIT 1) as req_per_day,
-            last_login,
-            last_active,
-            created_at,
-            updated_at,
-            (SELECT department_id FROM profile_departments WHERE profile_id = id AND is_primary = TRUE LIMIT 1) as primary_department_id
-        """
+        """)
+        
+        # Insert into profile_activity if lastActive was provided
+        if last_active_value is not None:
+            query_parts.append(f"""
+        INSERT INTO profile_activity (profile_id, last_active)
+        VALUES (${param_counter + 1}, ${param_counter + 2});
+        """)
+            params.append(last_active_value)
+        
+        query_parts.append(f"""
+        SELECT 
+            p.id,
+            p.first_name,
+            p.last_name,
+            p.alias,
+            p.role,
+            p.active,
+            p.viewed_intro,
+            p.viewed_chat,
+            p.default_profile,
+            (SELECT requests_per_day FROM profile_request_limits WHERE profile_id = p.id AND active = true LIMIT 1) as req_per_day,
+            p.last_login,
+            (SELECT last_active FROM profile_activity WHERE profile_id = p.id ORDER BY created_at DESC LIMIT 1) as last_active,
+            p.created_at,
+            p.updated_at,
+            (SELECT department_id FROM profile_departments WHERE profile_id = p.id AND is_primary = TRUE LIMIT 1) as primary_department_id
+        FROM profiles p
+        WHERE p.id = ${param_counter + (2 if last_active_value is not None else 0)}
+        """)
+        
+        query = "".join(query_parts)
         return (query, params)
 
     def get_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
@@ -133,7 +163,7 @@ class ProfileQueries:
             p.default_profile,
             COALESCE(prl.requests_per_day, 0) as req_per_day,
             p.last_login,
-            p.last_active,
+            pa.last_active,
             p.created_at,
             p.updated_at,
             pd.department_id as primary_department_id
@@ -141,6 +171,13 @@ class ProfileQueries:
         CROSS JOIN requester_role rr
         LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
         LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+        LEFT JOIN LATERAL (
+            SELECT last_active 
+            FROM profile_activity 
+            WHERE profile_id = p.id 
+            ORDER BY created_at DESC 
+            LIMIT 1
+        ) pa ON true
         WHERE p.id != $1
           AND CASE 
             WHEN rr.role = 'superadmin' THEN true
@@ -167,13 +204,20 @@ class ProfileQueries:
             p.default_profile,
             prl.requests_per_day as req_per_day,
             p.last_login,
-            p.last_active,
+            pa.last_active,
             p.created_at,
             p.updated_at,
             pd.department_id as primary_department_id
         FROM profiles p
         LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
         LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+        LEFT JOIN LATERAL (
+            SELECT last_active 
+            FROM profile_activity 
+            WHERE profile_id = p.id 
+            ORDER BY created_at DESC 
+            LIMIT 1
+        ) pa ON true
         WHERE p.alias = $1
         """
         return (query, [alias])
@@ -461,8 +505,10 @@ class ProfileQueries:
         """
         return """
         UPDATE profiles 
-        SET active = false, last_active = $1
-        WHERE id = $2
+        SET active = false
+        WHERE id = $2;
+        INSERT INTO profile_activity (profile_id, last_active)
+        VALUES ($2, $1)
         """
 
     def update_profile_to_active(self) -> str:
@@ -472,8 +518,10 @@ class ProfileQueries:
         """
         return """
         UPDATE profiles 
-        SET active = true, last_active = $1 
-        WHERE id = $2
+        SET active = true
+        WHERE id = $2;
+        INSERT INTO profile_activity (profile_id, last_active)
+        VALUES ($2, $1)
         """
 
     def update_default_guest_profile_to_active(self) -> str:
@@ -483,7 +531,11 @@ class ProfileQueries:
         """
         return """
         UPDATE profiles 
-        SET active = true, last_active = $1 
+        SET active = true
+        WHERE role = 'guest' AND default_profile = true;
+        INSERT INTO profile_activity (profile_id, last_active)
+        SELECT id, $1
+        FROM profiles
         WHERE role = 'guest' AND default_profile = true
         """
 
@@ -494,7 +546,11 @@ class ProfileQueries:
         """
         return """
         UPDATE profiles 
-        SET last_active = $1, active = $2
+        SET active = $2
+        WHERE role = 'guest' AND default_profile = true;
+        INSERT INTO profile_activity (profile_id, last_active)
+        SELECT id, $1
+        FROM profiles
         WHERE role = 'guest' AND default_profile = true
         """
 
@@ -552,13 +608,20 @@ class ProfileQueries:
                 p.default_profile,
                 COALESCE(prl.requests_per_day, 0) as req_per_day,
                 p.last_login,
-                p.last_active,
+                pa.last_active,
                 p.created_at,
                 p.updated_at,
                 pd.department_id as primary_department_id
             FROM profiles p
             LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+            LEFT JOIN LATERAL (
+                SELECT last_active 
+                FROM profile_activity 
+                WHERE profile_id = p.id 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            ) pa ON true
             WHERE p.id = $1
         ),
         effective_profile_data AS (
@@ -575,13 +638,20 @@ class ProfileQueries:
                 p.default_profile,
                 COALESCE(prl.requests_per_day, 0) as req_per_day,
                 p.last_login,
-                p.last_active,
+                pa.last_active,
                 p.created_at,
                 p.updated_at,
                 pd.department_id as primary_department_id
             FROM profiles p
             LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+            LEFT JOIN LATERAL (
+                SELECT last_active 
+                FROM profile_activity 
+                WHERE profile_id = p.id 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            ) pa ON true
             WHERE p.id = $2
         ),
         dept_data AS (
@@ -656,7 +726,7 @@ class ProfileQueries:
                 p.default_profile,
                 COALESCE(prl.requests_per_day, 0) as req_per_day,
                 p.last_login,
-                p.last_active,
+                pa.last_active,
                 p.created_at,
                 p.updated_at,
                 pd.department_id as primary_department_id
@@ -664,6 +734,13 @@ class ProfileQueries:
             CROSS JOIN actual_profile_role pr  -- ✅ Use actual user's role, not effective
             LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+            LEFT JOIN LATERAL (
+                SELECT last_active 
+                FROM profile_activity 
+                WHERE profile_id = p.id 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            ) pa ON true
             WHERE p.id != $1  -- Don't include actual user in emulation list
               AND CASE 
                 WHEN pr.role = 'superadmin' THEN true

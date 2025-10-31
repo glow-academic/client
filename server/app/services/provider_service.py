@@ -158,6 +158,7 @@ class ProviderService(BaseService):
             description=model["description"],
             active=model["active"],
             custom_model=model["custom_model"],
+            image_model=model["image_model"],
             input_ppm=model["input_ppm"],
             output_ppm=model["output_ppm"],
             provider_id=str(model["provider_id"]),
@@ -365,6 +366,7 @@ class ProviderService(BaseService):
                         model["description"],
                         model["active"],
                         model["custom_model"],
+                        model["image_model"],
                         model["input_ppm"],
                         model["output_ppm"],
                     )
@@ -393,6 +395,7 @@ class ProviderService(BaseService):
             request.description,
             request.active,
             request.custom_model,
+            request.image_model,
             request.input_ppm,
             request.output_ppm,
         )
@@ -432,6 +435,7 @@ class ProviderService(BaseService):
             request.description,
             request.active,
             request.custom_model,
+            request.image_model,
             request.input_ppm,
             request.output_ppm,
         )
@@ -509,6 +513,7 @@ class ProviderService(BaseService):
             model["description"],
             model["active"],
             model["custom_model"],
+            model["image_model"],
             model["input_ppm"],
             model["output_ppm"],
         )

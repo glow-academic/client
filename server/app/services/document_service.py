@@ -735,8 +735,6 @@ class DocumentService(BaseService):
                 filename,
                 final_file_path,
                 content_type,
-                department_ids,
-                request.fileId,  # file_id: TUS upload file ID
             )
 
             # Insert parameter item relationships if provided

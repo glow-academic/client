@@ -97,6 +97,7 @@ class ModelDetailResponse(BaseModel):
     description: str
     active: bool
     custom_model: bool
+    image_model: bool
     input_ppm: float
     output_ppm: float
     provider_id: str
@@ -193,6 +194,7 @@ class CreateModelRequest(BaseModel):
     description: str
     active: bool
     custom_model: bool
+    image_model: bool
     input_ppm: float
     output_ppm: float
 
@@ -213,6 +215,7 @@ class UpdateModelRequest(BaseModel):
     description: str
     active: bool
     custom_model: bool
+    image_model: bool
     input_ppm: float
     output_ppm: float
 

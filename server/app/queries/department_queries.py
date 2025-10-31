@@ -515,7 +515,7 @@ class DepartmentQueries:
                 p.alias || '@' || $3 as email,
                 SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1) as initials,
                 p.active,
-                p.last_active as lastActive,
+                pa.last_active as lastActive,
                 prl.requests_per_day as requests_per_day,
                 p.default_profile,
                 COALESCE(rr.run_count::int, 0) as requests_in_last_day,
@@ -547,6 +547,13 @@ class DepartmentQueries:
             LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
             LEFT JOIN profile_active_cohort_links pacl ON pacl.profile_id = p.id
             LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
+            LEFT JOIN LATERAL (
+                SELECT last_active 
+                FROM profile_activity 
+                WHERE profile_id = p.id 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            ) pa ON true
             LEFT JOIN recent_runs rr ON rr.profile_id = p.id
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
             CROSS JOIN user_profile up

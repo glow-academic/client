@@ -100,11 +100,11 @@ async def create_test_documents_with_parameter_links(
     for i, name in enumerate(doc_names):
         doc_id = await db.fetchval(
             """
-            INSERT INTO documents (name, type, file_path, mime_type, file_id, department_id, active)
-            VALUES ($1, 'homework', '/test/path.pdf', 'application/pdf', 'test_file_id', $2, true)
+            INSERT INTO documents (name, type, file_path, mime_type, active)
+            VALUES ($1, 'homework', '/test/path.pdf', 'application/pdf', true)
             RETURNING id
             """,
-            name, dept_id
+            name
         )
         doc_ids.append(str(doc_id))
         
@@ -693,11 +693,11 @@ async def test_scenario_already_has_documents_skip_selection(
     for i in range(2):
         doc_id = await db.fetchval(
             """
-            INSERT INTO documents (name, type, file_path, mime_type, file_id, department_id, active)
-            VALUES ($1, 'homework', '/test/path.pdf', 'application/pdf', 'test_file_id', $2, true)
+            INSERT INTO documents (name, type, file_path, mime_type, active)
+            VALUES ($1, 'homework', '/test/path.pdf', 'application/pdf', true)
             RETURNING id
             """,
-            f"Existing Doc {i+1}", dept_id
+            f"Existing Doc {i+1}"
         )
         existing_doc_ids.append(str(doc_id))
         

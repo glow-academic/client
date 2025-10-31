@@ -119,19 +119,27 @@ class DocumentQueries:
                         'name', pi.name,
                         'description', COALESCE(pi.description, ''),
                         'parameter_id', pi.parameter_id::text,
-                        'parameter_name', p.name
+                        'parameter_name', pi.parameter_name
                     )
                 ) FILTER (WHERE pi.id IS NOT NULL),
                 '{}'::jsonb
             ) as mapping
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-            GROUP BY p.id
-            HAVING 
-                -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($1)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            FROM (
+                SELECT DISTINCT
+                    pi.id,
+                    pi.name,
+                    pi.description,
+                    pi.parameter_id,
+                    p.name as parameter_name
+                FROM parameter_items pi
+                JOIN parameters p ON p.id = pi.parameter_id
+                LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+                GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.name
+                HAVING 
+                    -- Include if has matching department link OR has no department links at all (cross-dept)
+                    COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($1)) > 0
+                    OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            ) pi
         ),
         department_mapping_data AS (
             SELECT COALESCE(
@@ -385,11 +393,11 @@ class DocumentQueries:
     def insert_document(self) -> tuple[str, list[Any]]:
         """Build query to insert a new document.
         
-        Params order: id, name, file_path, mime_type, department_id, file_id
+        Params order: id, name, file_path, mime_type
         """
         query = """
-        INSERT INTO documents (id, name, file_path, mime_type, department_id, file_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO documents (id, name, file_path, mime_type)
+        VALUES ($1, $2, $3, $4)
         """
         return (query, [])  # Parameters filled at execution time
 

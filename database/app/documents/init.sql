@@ -16,7 +16,6 @@ CREATE TABLE documents (
     mime_type  TEXT        NOT NULL,
     type       document_type   NOT NULL           DEFAULT 'homework',
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
-    file_id    TEXT        NOT NULL,  -- NOT NULL, no default - must be provided
     active BOOLEAN     NOT NULL DEFAULT TRUE
 );
 

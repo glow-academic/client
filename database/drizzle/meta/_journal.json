@@ -225,6 +225,13 @@
       "when": 1761927705043,
       "tag": "0031_futuristic_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1761934385949,
+      "tag": "0032_short_invisible_woman",
+      "breakpoints": true
     }
   ]
 }

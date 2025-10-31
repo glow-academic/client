@@ -88,6 +88,7 @@ class ProviderQueries:
                         'description', m.description,
                         'active', m.active,
                         'custom_model', m.custom_model,
+                        'image_model', m.image_model,
                         'updated_at', m.updated_at,
                         'persona_usage_count', COALESCE(pu.usage_count, 0),
                         'agent_usage_count', COALESCE(au.usage_count, 0)
@@ -235,6 +236,7 @@ class ProviderQueries:
             description,
             active,
             custom_model,
+            image_model,
             input_ppm,
             output_ppm
         )
@@ -245,7 +247,8 @@ class ProviderQueries:
             $4,
             $5,
             $6,
-            $7
+            $7,
+            $8
         )
         RETURNING id
         """
@@ -264,8 +267,9 @@ class ProviderQueries:
             description = $3,
             active = $4,
             custom_model = $5,
-            input_ppm = $6,
-            output_ppm = $7,
+            image_model = $6,
+            input_ppm = $7,
+            output_ppm = $8,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -376,6 +380,7 @@ class ProviderQueries:
                 description,
                 active,
                 custom_model,
+                image_model,
                 input_ppm,
                 output_ppm,
                 provider_id
@@ -435,6 +440,7 @@ class ProviderQueries:
             description,
             active,
             custom_model,
+            image_model,
             input_ppm,
             output_ppm
         FROM models
@@ -473,6 +479,7 @@ class ProviderQueries:
             description,
             active,
             custom_model,
+            image_model,
             input_ppm,
             output_ppm,
             provider_id
@@ -493,6 +500,7 @@ class ProviderQueries:
             description,
             active,
             custom_model,
+            image_model,
             input_ppm,
             output_ppm
         )
@@ -503,7 +511,8 @@ class ProviderQueries:
             $4,
             $5,
             $6,
-            $7
+            $7,
+            $8
         )
         RETURNING id
         """

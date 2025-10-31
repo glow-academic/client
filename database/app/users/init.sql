@@ -20,9 +20,9 @@ CREATE TABLE profiles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   role       profile_role NOT NULL DEFAULT 'guest',
   default_profile BOOLEAN   NOT NULL DEFAULT FALSE,
-  active     BOOLEAN     NOT NULL DEFAULT FALSE,
-  last_active TIMESTAMPTZ NOT NULL DEFAULT NOW() -- NOT NULL, defaults to NOW()
+  active     BOOLEAN     NOT NULL DEFAULT FALSE
   -- req_per_day moved to profile_request_limits junction table
+  -- last_active moved to profile_activity junction table
 );
 
 -- Add unique constraint to alias (derived from email)
