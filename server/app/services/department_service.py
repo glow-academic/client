@@ -113,10 +113,16 @@ class DepartmentService(BaseService):
                     cohort_ids = [str(cid) for cid in cohort_ids]
                     # department_ids is already text[]
                     department_ids = staff_row.get("department_ids") or []
-                    # Convert lastActive timestamp
+                    # Convert lastActive timestamp (may be string from JSONB or datetime)
                     last_active = None
                     if staff_row.get("lastActive"):
-                        last_active = staff_row["lastActive"].isoformat()
+                        last_active_val = staff_row["lastActive"]
+                        if isinstance(last_active_val, str):
+                            last_active = last_active_val
+                        elif hasattr(last_active_val, "isoformat"):
+                            last_active = last_active_val.isoformat()
+                        else:
+                            last_active = str(last_active_val)
 
                     staff_list.append(
                         StaffItem(

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { StaffDataTable } from "@/components/management/staff/StaffDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,14 +22,11 @@ import {
   useCreateDepartment,
   useDepartmentDetail,
   useDepartmentDetailDefault,
-  useUpdateDepartment,
   useRemoveProfilesFromDepartment,
+  useUpdateDepartment,
 } from "@/lib/api/v2/hooks/departments";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
-import { StaffDataTable } from "@/components/management/staff/StaffDataTable";
 import { ProfileListItem } from "@/lib/api/v2/schemas/profile";
-import { useState } from "react";
-import { toast } from "sonner";
 
 export interface DepartmentProps {
   departmentId?: string;
@@ -44,7 +42,6 @@ interface FormData {
   description?: string;
   active?: boolean;
 }
-
 
 export default function Department({ departmentId }: DepartmentProps) {
   const router = useRouter();
@@ -65,6 +62,10 @@ export default function Department({ departmentId }: DepartmentProps) {
 
   const [formData, setFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Staff management state (for StaffDataTable)
+  const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // V2 API hooks
   const {
@@ -111,7 +112,8 @@ export default function Department({ departmentId }: DepartmentProps) {
   // Mutations
   const { mutate: createDepartment } = useCreateDepartment();
   const { mutate: updateDepartment } = useUpdateDepartment();
-  const removeProfilesFromDepartmentMutation = useRemoveProfilesFromDepartment();
+  const removeProfilesFromDepartmentMutation =
+    useRemoveProfilesFromDepartment();
 
   const isLoading = isLoadingData;
 
@@ -331,7 +333,6 @@ export default function Department({ departmentId }: DepartmentProps) {
         {/* Staff Management */}
         {departmentId && departmentData && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Staff Members</h3>
             <StaffDataTable
               data={(departmentData.staff as ProfileListItem[]) || []}
               cohortMapping={departmentData.cohort_mapping || {}}
@@ -367,16 +368,16 @@ export default function Department({ departmentId }: DepartmentProps) {
               }}
               departmentId={departmentId}
               selectedStaffIds={selectedStaffIds}
-              onStaffSelect={(id, checked) =>
-                setSelectedStaffIds((prev) =>
-                  checked ? [...prev, id] : prev.filter((x) => x !== id)
+              onStaffSelect={(id: string, checked: boolean) =>
+                setSelectedStaffIds((prev: string[]) =>
+                  checked ? [...prev, id] : prev.filter((x: string) => x !== id)
                 )
               }
-              onSelectAll={(checked, visibleRowIds) => {
+              onSelectAll={(checked: boolean, visibleRowIds?: string[]) => {
                 if (checked && visibleRowIds) {
-                  setSelectedStaffIds((prev) => {
+                  setSelectedStaffIds((prev: string[]) => {
                     const newSelection = [...prev];
-                    visibleRowIds.forEach((id) => {
+                    visibleRowIds.forEach((id: string) => {
                       if (!newSelection.includes(id)) {
                         newSelection.push(id);
                       }
@@ -384,8 +385,8 @@ export default function Department({ departmentId }: DepartmentProps) {
                     return newSelection;
                   });
                 } else {
-                  setSelectedStaffIds((prev) =>
-                    prev.filter((id) => !visibleRowIds?.includes(id))
+                  setSelectedStaffIds((prev: string[]) =>
+                    prev.filter((id: string) => !visibleRowIds?.includes(id))
                   );
                 }
               }}

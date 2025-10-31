@@ -106,6 +106,7 @@ export function StaffDataTableToolbar({
 
           {isFiltered && (
             <Button
+              type="button"
               variant="ghost"
               onClick={() => table.resetColumnFilters()}
               className="h-8 px-2 lg:px-3"
@@ -118,13 +119,16 @@ export function StaffDataTableToolbar({
       </div>
 
       <div className="flex items-center space-x-2 mb-2">
-        {/* Create Staff Button */}
-        {onCreate && <CreateStaffButton onDone={onCreate} />}
+        {/* Create Staff Button - only show when no rows are selected */}
+        {onCreate && selectedCount === 0 && (
+          <CreateStaffButton onDone={onCreate} />
+        )}
 
         {/* Bulk edit/delete if any selected */}
         {selectedCount > 0 && (
           <div className="flex items-center space-x-2">
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={onBulkEdit}
@@ -133,21 +137,23 @@ export function StaffDataTableToolbar({
               Bulk Edit {editableCount} of {selectedCount}
             </Button>
             <Button
+              type="button"
               variant="destructive"
               size="sm"
               onClick={onBulkDelete}
               className="h-8"
             >
               {cohortId
-                ? `Remove ${deletableCount} of ${selectedCount} from Cohort`
+                ? `Remove ${deletableCount} of ${selectedCount}`
                 : departmentId
-                  ? `Remove ${deletableCount} of ${selectedCount} from Department`
+                  ? `Remove ${deletableCount} of ${selectedCount}`
                   : `Delete ${deletableCount} of ${selectedCount}`}
             </Button>
           </div>
         )}
 
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={onRefresh}

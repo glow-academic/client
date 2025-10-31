@@ -98,7 +98,7 @@ export default function CreateStaffButton({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" disabled={isLoading}>
+          <Button type="button" size="sm" disabled={isLoading}>
             <Plus className="h-4 w-4 mr-2" />
             Create Staff
           </Button>

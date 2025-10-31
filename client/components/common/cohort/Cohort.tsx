@@ -28,25 +28,19 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { StaffDataTable } from "@/components/management/staff/StaffDataTable";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCohortDetail,
   useCohortDetailDefault,
   useCreateCohort,
+  useRemoveProfilesFromCohort,
   useUpdateCohort,
 } from "@/lib/api/v2/hooks/cohorts";
-import { ProfileRole } from "@/lib/api/v2/schemas/base";
-import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { BarChart3, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
-import { StaffDataTable } from "@/components/management/staff/StaffDataTable";
-import { ProfileListItem } from "@/lib/api/v2/schemas/profile";
-import {
-  useRemoveProfilesFromCohort,
-} from "@/lib/api/v2/hooks/cohorts";
-import { useRemoveProfilesFromDepartment } from "@/lib/api/v2/hooks/departments";
 
 export interface CohortProps {
   cohortId?: string;
@@ -55,19 +49,6 @@ export interface CohortProps {
 interface FormErrors {
   title?: string;
 }
-
-// A new type to represent a profile that is either saved or new
-type EditableProfile =
-  | ProfileItem
-  | {
-      isNew: true;
-      id: string; // A temporary client-side ID
-      firstName: string;
-      lastName: string;
-      alias: string;
-      role: ProfileRole;
-    };
-
 interface FormData {
   title: string;
   description: string;
@@ -179,14 +160,17 @@ export default function Cohort({ cohortId }: CohortProps) {
   }, [isEditMode, cohortData, effectiveProfile?.role]);
 
   // Filter valid IDs based on selected departments
-  const departmentMapping = cohortData?.department_mapping || {};
+  const departmentMapping = useMemo(
+    () => cohortData?.department_mapping || {},
+    [cohortData?.department_mapping]
+  );
 
   // Staged selections per department (preserved when departments are deselected)
   type StagedSelections = {
     simulation_ids?: string[];
     profile_ids?: string[];
   };
-  const [stagedSelections, setStagedSelections] = useState<
+  const [_stagedSelections, setStagedSelections] = useState<
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
@@ -425,7 +409,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     const current = formData;
     const original = originalFormData;
 
-      // Get original simulation IDs from cohortData
+    // Get original simulation IDs from cohortData
     const originalSimulationIds = cohortData?.simulation_ids || [];
     // Profile changes are handled via StaffDataTable API calls, not form submission
 
@@ -935,7 +919,6 @@ export default function Cohort({ cohortId }: CohortProps) {
         {/* Staff Management */}
         {cohortId && cohortData && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Staff Members</h3>
             <StaffDataTable
               data={cohortData.staff || []}
               cohortMapping={cohortData.cohort_mapping || {}}
@@ -947,12 +930,12 @@ export default function Cohort({ cohortId }: CohortProps) {
                 { value: "ta", label: "Teaching Assistant" },
                 { value: "guest", label: "Guest" },
               ]}
-              cohortOptions={Object.entries(cohortData.cohort_mapping || {}).map(
-                ([id, item]) => ({
-                  value: id,
-                  label: item.name,
-                })
-              )}
+              cohortOptions={Object.entries(
+                cohortData.cohort_mapping || {}
+              ).map(([id, item]) => ({
+                value: id,
+                label: item.name,
+              }))}
               activityOptions={[
                 { value: "true", label: "Active" },
                 { value: "false", label: "Inactive" },
@@ -1105,9 +1088,9 @@ export default function Cohort({ cohortId }: CohortProps) {
               </ul>
               <div className="mt-3 text-sm font-medium">
                 The cohort has {cohortData?.staff?.length || 0} member
-                {(cohortData?.staff?.length || 0) !== 1 ? "s" : ""} assigned. Updating this
-                cohort will affect all simulations that use it. Are you sure you
-                want to proceed?
+                {(cohortData?.staff?.length || 0) !== 1 ? "s" : ""} assigned.
+                Updating this cohort will affect all simulations that use it.
+                Are you sure you want to proceed?
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

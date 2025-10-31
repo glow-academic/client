@@ -473,11 +473,11 @@ class DepartmentQueries:
             GROUP BY mrp.profile_id
         ),
         all_cohort_ids AS (
-            SELECT DISTINCT unnest(cohort_ids) as cohort_id
+            SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
             FROM profile_cohorts
         ),
         all_department_ids AS (
-            SELECT DISTINCT unnest(department_ids) as department_id
+            SELECT DISTINCT unnest(department_ids)::uuid as department_id
             FROM profile_departments_agg
         ),
         cohort_mapping_data AS (
@@ -500,7 +500,7 @@ class DepartmentQueries:
                 )
             ), '{}'::jsonb) as department_mapping
             FROM departments d
-            WHERE d.id = $1 OR d.id IN (SELECT department_id FROM all_department_ids)
+            WHERE (d.id = $1::uuid OR d.id IN (SELECT department_id FROM all_department_ids))
             AND d.active = true
         ),
         -- Staff list for this department
