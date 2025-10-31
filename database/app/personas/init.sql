@@ -13,7 +13,7 @@ CREATE TABLE personas (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  system_prompt     TEXT        NOT NULL,
+  -- system_prompt moved to prompts table via persona_prompts junction
   temperature  REAL     NOT NULL, -- 0.0-1.0
   color TEXT        NOT NULL, -- hex color code
   icon TEXT        NOT NULL, -- icon name, in Lucide Icons
@@ -35,3 +35,22 @@ CREATE TABLE persona_departments (
 
 CREATE INDEX ON persona_departments (persona_id);
 CREATE INDEX ON persona_departments (department_id);
+
+-- Persona ↔ Prompts junction table (BCNF normalization)
+-- One active prompt per persona
+CREATE TABLE persona_prompts (
+  persona_id UUID NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+  prompt_id  UUID NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (persona_id, prompt_id)
+);
+
+-- Only one active prompt per persona
+CREATE UNIQUE INDEX persona_prompts_one_active_per_persona
+  ON persona_prompts(persona_id) WHERE active;
+
+CREATE INDEX ON persona_prompts (persona_id);
+CREATE INDEX ON persona_prompts (prompt_id);
+CREATE INDEX ON persona_prompts (persona_id, active);

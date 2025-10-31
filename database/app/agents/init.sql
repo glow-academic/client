@@ -26,7 +26,7 @@ CREATE TABLE agents (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  system_prompt     TEXT        NOT NULL,
+  -- system_prompt moved to prompts table via agent_prompts junction
   temperature  REAL     NOT NULL, -- 0.0-1.0
   model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
   reasoning reasoning_effort NOT NULL DEFAULT 'medium',  -- NOT NULL with default 'medium'
@@ -112,3 +112,22 @@ CREATE TABLE agent_departments (
 
 CREATE INDEX ON agent_departments (agent_id);
 CREATE INDEX ON agent_departments (department_id);
+
+-- Agent ↔ Prompts junction table (BCNF normalization)
+-- One active prompt per agent
+CREATE TABLE agent_prompts (
+  agent_id   UUID NOT NULL REFERENCES agents(id)   ON DELETE CASCADE,
+  prompt_id  UUID NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (agent_id, prompt_id)
+);
+
+-- Only one active prompt per agent
+CREATE UNIQUE INDEX agent_prompts_one_active_per_agent
+  ON agent_prompts(agent_id) WHERE active;
+
+CREATE INDEX ON agent_prompts (agent_id);
+CREATE INDEX ON agent_prompts (prompt_id);
+CREATE INDEX ON agent_prompts (agent_id, active);

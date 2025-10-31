@@ -17,19 +17,20 @@ CREATE TABLE parameters (
   document_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
--- Parameter → Departments junction table (BCNF normalization)
+-- Parameter Items → Departments junction table (BCNF normalization)
+-- Links parameter items to departments (moved from parameter_departments)
 -- No records = available to all departments (cross-department)
-CREATE TABLE parameter_departments (
-  parameter_id  UUID NOT NULL REFERENCES parameters(id)    ON DELETE CASCADE,
-  department_id UUID NOT NULL REFERENCES departments(id)   ON DELETE CASCADE,
-  active        BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (parameter_id, department_id)
+CREATE TABLE parameter_item_departments (
+  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  department_id     UUID NOT NULL REFERENCES departments(id)   ON DELETE CASCADE,
+  active            BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (parameter_item_id, department_id)
 );
 
-CREATE INDEX ON parameter_departments (parameter_id);
-CREATE INDEX ON parameter_departments (department_id);
+CREATE INDEX ON parameter_item_departments (parameter_item_id);
+CREATE INDEX ON parameter_item_departments (department_id);
 
 CREATE TABLE parameter_items (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

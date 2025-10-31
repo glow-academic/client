@@ -34,3 +34,31 @@ CREATE TABLE app_feedback_profiles (
 
 CREATE INDEX ON app_feedback_profiles (profile_id);
 CREATE INDEX ON app_feedback_profiles (app_feedback_id);
+
+-- ============================================================================
+-- PROMPTS INFRASTRUCTURE
+-- ============================================================================
+
+-- Prompts table (shared system resource for agents and personas)
+CREATE TABLE prompts (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  system_prompt TEXT     NOT NULL
+);
+
+CREATE INDEX ON prompts (created_at);
+
+-- Prompt ↔ Departments junction table (BCNF normalization)
+-- Links prompts to departments for department-specific prompts
+CREATE TABLE prompt_departments (
+  prompt_id     UUID NOT NULL REFERENCES prompts(id)     ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (prompt_id, department_id)
+);
+
+CREATE INDEX ON prompt_departments (prompt_id);
+CREATE INDEX ON prompt_departments (department_id);
