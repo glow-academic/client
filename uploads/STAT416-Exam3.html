@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAT416-Exam3</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .filename {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        .question {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #2c3e50;
+        }
+        .question-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        .answer-space {
+            margin-top: 10px;
+            min-height: 80px;
+            border-bottom: 1px dashed #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="filename">Filename: STAT416-Exam3</div>
+        <div>Statistics 416 - Midterm Examination 3</div>
+        <div>Date: Fall 2024 | Time Limit: 120 minutes</div>
+    </div>
+
+    <h1>Statistical Methods Midterm Examination</h1>
+
+    <div class="question">
+        <div class="question-number">Question 1 (20 points)</div>
+        <p>Define and explain the following concepts:</p>
+        <p>a) Maximum Likelihood Estimation (MLE)</p>
+        <p>b) Method of Moments</p>
+        <p>c) Asymptotic efficiency</p>
+        <p>d) Cramér-Rao Lower Bound</p>
+        <div class="answer-space"></div>
+    </div>
+
+    <div class="question">
+        <div class="question-number">Question 2 (25 points)</div>
+        <p>Let X₁, X₂, ..., Xₙ be a random sample from a distribution with probability density function:</p>
+        <p>f(x; θ) = θx^(θ-1), 0 < x < 1, θ > 0</p>
+        <p>a) Find the method of moments estimator for θ.</p>
+        <p>b) Find the maximum likelihood estimator for θ.</p>
+        <p>c) Show that the MLE is consistent.</p>
+        <div class="answer-space"></div>
+    </div>
+
+    <div class="question">
+        <div class="question-number">Question 3 (25 points)</div>
+        <p>Consider testing H₀: μ = μ₀ versus H₁: μ ≠ μ₀ for a normal distribution with unknown variance.</p>
+        <p>a) Derive the likelihood ratio test statistic.</p>
+        <p>b) Show that this test is equivalent to a two-tailed t-test.</p>
+        <p>c) Discuss the relationship between confidence intervals and hypothesis tests in this context.</p>
+        <div class="answer-space"></div>
+    </div>
+
+    <div class="question">
+        <div class="question-number">Question 4 (20 points)</div>
+        <p>Explain the concept of sufficiency and provide an example. State and use the Factorization Theorem to show that a statistic is sufficient for a parameter.</p>
+        <div class="answer-space"></div>
+    </div>
+
+    <div class="question">
+        <div class="question-number">Question 5 (10 points)</div>
+        <p>What is the difference between a consistent estimator and an unbiased estimator? Can an estimator be consistent but biased? Provide an example.</p>
+        <div class="answer-space"></div>
+    </div>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #333;">
+        <p><strong>Formula Sheet Reference:</strong></p>
+        <p>• Likelihood Function: L(θ) = ∏ᵢ f(xᵢ; θ)<br>
+        • MLE: θ̂ maximizes L(θ) or log L(θ)<br>
+        • Cramér-Rao Bound: Var(θ̂) ≥ 1/I(θ), where I(θ) is Fisher Information<br>
+        • Factorization Theorem: T is sufficient if f(x;θ) = g(T(x);θ)h(x)</p>
+    </div>
+</body>
+</html>
+

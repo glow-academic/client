@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHM112-Lab2</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .filename {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 25px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #2c3e50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="filename">Filename: CHM112-Lab2</div>
+        <div>Chemistry 112 - Laboratory Report 2</div>
+        <div>Date: Fall 2024</div>
+    </div>
+
+    <h1>Acid-Base Titration and pH Measurement</h1>
+
+    <div class="section">
+        <h2>Objective</h2>
+        <p>The objective of this laboratory exercise was to determine the concentration of an unknown hydrochloric acid solution using a standardized sodium hydroxide solution. Students performed acid-base titrations and used pH measurements to identify the equivalence point. This exercise also introduced students to the use of indicators and pH meters for determining the endpoint of titrations.</p>
+    </div>
+
+    <div class="section">
+        <h2>Background Theory</h2>
+        <p>Acid-base titration is a quantitative analytical technique used to determine the concentration of an acid or base by reacting it with a solution of known concentration. The point at which the reaction is complete is called the equivalence point.</p>
+        
+        <p>For the reaction: HCl(aq) + NaOH(aq) → NaCl(aq) + H₂O(l)</p>
+        
+        <p>The equivalence point occurs when moles of acid = moles of base, or:</p>
+        <p>MₐVₐ = MᵦVᵦ</p>
+        <p>where M is molarity and V is volume.</p>
+        
+        <p>pH indicators change color at specific pH values. Phenolphthalein changes from colorless to pink at pH ≈ 8-10, making it suitable for strong acid-strong base titrations.</p>
+    </div>
+
+    <div class="section">
+        <h2>Materials and Methods</h2>
+        <p><strong>Materials:</strong></p>
+        <ul>
+            <li>Unknown HCl solution (~0.1 M)</li>
+            <li>Standardized NaOH solution (0.1023 M)</li>
+            <li>Phenolphthalein indicator</li>
+            <li>pH meter (calibrated with buffer solutions)</li>
+            <li>Buret (50 mL)</li>
+            <li>Erlenmeyer flasks (250 mL)</li>
+            <li>Volumetric pipet (25.00 mL)</li>
+            <li>Distilled water</li>
+        </ul>
+        
+        <p><strong>Procedure:</strong></p>
+        <ol>
+            <li><strong>Preparation:</strong>
+                <ul>
+                    <li>Rinse buret with NaOH solution</li>
+                    <li>Fill buret with standardized NaOH solution</li>
+                    <li>Record initial buret reading</li>
+                </ul>
+            </li>
+            <li><strong>Titration 1 (with indicator):</strong>
+                <ul>
+                    <li>Pipet 25.00 mL of unknown HCl into Erlenmeyer flask</li>
+                    <li>Add 2-3 drops of phenolphthalein</li>
+                    <li>Titrate with NaOH, swirling constantly</li>
+                    <li>Record volume when solution turns pink (persists for 30 seconds)</li>
+                </ul>
+            </li>
+            <li><strong>Titrations 2-3 (with pH meter):</strong>
+                <ul>
+                    <li>Repeat titration using pH meter to monitor pH</li>
+                    <li>Record pH after each 1 mL addition</li>
+                    <li>Near equivalence point, add 0.1-0.2 mL increments</li>
+                    <li>Continue until pH stabilizes above 11</li>
+                </ul>
+            </li>
+            <li><strong>Data Analysis:</strong>
+                <ul>
+                    <li>Calculate HCl concentration from each titration</li>
+                    <li>Construct pH vs. volume curve</li>
+                    <li>Determine equivalence point from pH curve</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        
+        <h3>Raw Data</h3>
+        <table>
+            <tr>
+                <th>Titration</th>
+                <th>Initial Buret Reading (mL)</th>
+                <th>Final Buret Reading (mL)</th>
+                <th>Volume NaOH Used (mL)</th>
+                <th>Method</th>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>0.05</td>
+                <td>23.45</td>
+                <td>23.40</td>
+                <td>Indicator</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>0.02</td>
+                <td>23.52</td>
+                <td>23.50</td>
+                <td>pH meter</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>0.10</td>
+                <td>23.48</td>
+                <td>23.38</td>
+                <td>pH meter</td>
+            </tr>
+        </table>
+
+        <h3>Calculations</h3>
+        <p>Using the formula: M_HCl = (M_NaOH × V_NaOH) / V_HCL</p>
+        
+        <p><strong>Titration 1:</strong><br>
+        M_HCl = (0.1023 M × 23.40 mL) / 25.00 mL = 0.0957 M</p>
+        
+        <p><strong>Titration 2:</strong><br>
+        M_HCl = (0.1023 M × 23.50 mL) / 25.00 mL = 0.0962 M</p>
+        
+        <p><strong>Titration 3:</strong><br>
+        M_HCl = (0.1023 M × 23.38 mL) / 25.00 mL = 0.0956 M</p>
+        
+        <p><strong>Average concentration:</strong> (0.0957 + 0.0962 + 0.0956) / 3 = <strong>0.0958 M</strong></p>
+        
+        <p><strong>Standard deviation:</strong> 0.0003 M</p>
+        
+        <h3>pH Curve Analysis</h3>
+        <p>The pH vs. volume curve from Titration 2 showed:</p>
+        <ul>
+            <li>Initial pH: 1.2 (acidic solution)</li>
+            <li>Gradual increase to pH ≈ 4</li>
+            <li>Sharp rise at equivalence point (pH jumps from ~4 to ~10 over 1 mL)</li>
+            <li>Equivalence point (steepest slope): ~23.5 mL NaOH</li>
+            <li>Final pH: 11.5</li>
+        </ul>
+        
+        <p>The equivalence point determined from the pH curve matches closely with the indicator endpoint.</p>
+    </div>
+
+    <div class="section">
+        <h2>Discussion</h2>
+        <p>The three titrations showed good reproducibility, with volume measurements agreeing within 0.15 mL (0.6% relative error). The calculated HCl concentration was 0.0958 M with a standard deviation of 0.0003 M, indicating high precision.</p>
+        
+        <p><strong>Indicator vs. pH Meter:</strong></p>
+        <ul>
+            <li>The phenolphthalein endpoint (colorless to pink) occurred at pH ~9, slightly after the true equivalence point (pH ~7 for strong acid-strong base). This is acceptable since phenolphthalein's transition range (8-10) is close to neutral.</li>
+            <li>The pH meter method provided more precise results and allowed visualization of the entire titration curve, including the steep pH change at the equivalence point.</li>
+            <li>Both methods gave consistent results, confirming the reliability of the analysis.</li>
+        </ul>
+        
+        <p><strong>Sources of Error:</strong></p>
+        <ul>
+            <li><strong>Buret reading:</strong> ±0.02 mL uncertainty in each reading leads to ±0.04 mL total error (~0.2% relative error)</li>
+            <li><strong>Pipet accuracy:</strong> ±0.03 mL in 25.00 mL volume (~0.1% relative error)</li>
+            <li><strong>Indicator endpoint:</strong> Slight overshooting possible due to delayed color change</li>
+            <li><strong>pH meter calibration:</strong> Small drift between calibrations</li>
+        </ul>
+        
+        <p>The combined uncertainty is approximately ±0.001 M, giving a concentration range of 0.0958 ± 0.001 M.</p>
+    </div>
+
+    <div class="section">
+        <h2>Conclusion</h2>
+        <p>This experiment successfully determined the concentration of an unknown HCl solution to be 0.0958 M using acid-base titration. Both the indicator method (phenolphthalein) and pH meter method produced consistent and precise results. The pH titration curve clearly showed the equivalence point through the characteristic steep pH change, demonstrating the utility of pH monitoring for endpoint detection.</p>
+        
+        <p>The exercise reinforced key concepts in acid-base chemistry, including the stoichiometry of neutralization reactions, the use of indicators, and the interpretation of titration curves. The high precision of the results (standard deviation < 0.5%) demonstrates the reliability of volumetric analysis techniques.</p>
+    </div>
+</body>
+</html>
+

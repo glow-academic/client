@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHM225-HW4</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .filename {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        .problem {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #2c3e50;
+        }
+        .problem-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .solution {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #fff;
+        }
+        .equation {
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="filename">Filename: CHM225-HW4</div>
+        <div>Chemistry 225 - Homework Assignment 4</div>
+        <div>Student Name: ________________ | Due Date: Fall 2024</div>
+    </div>
+
+    <h1>Organic Chemistry Reaction Mechanisms</h1>
+
+    <div class="problem">
+        <div class="problem-number">Problem 1</div>
+        <p>Provide a complete mechanism for the following reaction, showing all intermediates and electron flow:</p>
+        <div class="equation">
+            CH₃CH₂Br + OH⁻ → CH₃CH₂OH + Br⁻
+        </div>
+        <p>a) Is this an SN1 or SN2 reaction? Justify your answer.</p>
+        <p>b) What would happen to the rate if the concentration of OH⁻ is doubled?</p>
+        <p>c) What would happen if the leaving group is changed from Br⁻ to F⁻?</p>
+        
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p><strong>Mechanism (SN2):</strong></p>
+            <ol>
+                <li>Nucleophile (OH⁻) attacks the electrophilic carbon from the backside, simultaneously breaking the C-Br bond</li>
+                <li>Transition state with pentacoordinate carbon (partial bonds to C, Br, and OH)</li>
+                <li>Br⁻ leaves, forming the product alcohol</li>
+            </ol>
+            
+            <p>a) This is an <strong>SN2 reaction</strong> because:</p>
+            <ul>
+                <li>The substrate is a primary alkyl halide (CH₃CH₂Br)</li>
+                <li>The reaction is bimolecular (rate depends on both [RX] and [Nu⁻])</li>
+                <li>The mechanism involves a single step with inversion of configuration</li>
+                <li>Strong nucleophile (OH⁻) and good leaving group (Br⁻)</li>
+            </ul>
+            
+            <p>b) Since this is SN2, the rate = k[CH₃CH₂Br][OH⁻]. If [OH⁻] is doubled, the rate will also double (linear relationship).</p>
+            
+            <p>c) If Br⁻ is changed to F⁻, the rate would <strong>decrease significantly</strong> because:</p>
+            <ul>
+                <li>F⁻ is a poor leaving group (strong C-F bond, high bond energy)</li>
+                <li>The rate of SN2 reactions is highly sensitive to leaving group ability</li>
+                <li>Br⁻ is a much better leaving group than F⁻ due to weaker C-Br bond and greater stability of Br⁻ ion</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-number">Problem 2</div>
+        <p>Predict the major product(s) for each of the following reactions and provide mechanisms:</p>
+        <p>a) (CH₃)₃CBr + CH₃OH →</p>
+        <p>b) CH₃CH=CH₂ + HBr →</p>
+        <p>c) Cyclohexene + Br₂ →</p>
+        
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p><strong>a) (CH₃)₃CBr + CH₃OH → (CH₃)₃COCH₃ + HBr</strong></p>
+            <p>Mechanism (SN1):</p>
+            <ol>
+                <li>Tertiary bromide undergoes heterolysis to form tert-butyl carbocation and Br⁻</li>
+                <li>CH₃OH (weak nucleophile) attacks the carbocation to form (CH₃)₃COCH₃</li>
+                <li>Proton transfer from protonated ether to Br⁻ gives final product</li>
+            </ol>
+            <p>This is SN1 because tertiary alkyl halide favors carbocation formation.</p>
+            
+            <p><strong>b) CH₃CH=CH₂ + HBr → CH₃CHBrCH₃</strong></p>
+            <p>Mechanism (Electrophilic Addition, Markovnikov):</p>
+            <ol>
+                <li>HBr protonates alkene to form secondary carbocation (CH₃CH⁺CH₃)</li>
+                <li>Br⁻ attacks carbocation to form 2-bromopropane</li>
+            </ol>
+            <p>Markovnikov's rule: H adds to carbon with more hydrogens.</p>
+            
+            <p><strong>c) Cyclohexene + Br₂ → trans-1,2-dibromocyclohexane</strong></p>
+            <p>Mechanism (Electrophilic Addition, Anti addition):</p>
+            <ol>
+                <li>Br₂ attacks alkene to form bromonium ion intermediate</li>
+                <li>Br⁻ attacks from opposite side (anti addition) to form trans-dibromide</li>
+            </ol>
+            <p>The product is racemic trans-1,2-dibromocyclohexane.</p>
+        </div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-number">Problem 3</div>
+        <p>For the following molecule, identify all chiral centers and determine the maximum number of stereoisomers possible:</p>
+        <div class="equation">
+            HOOC-CH(OH)-CH₂-CH(NH₂)-COOH
+        </div>
+        <p>Draw all stereoisomers and label each as enantiomer or diastereomer.</p>
+        
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p><strong>Structure analysis:</strong> HOOC-CH(OH)-CH₂-CH(NH₂)-COOH</p>
+            <p>This is HOOC-CH(OH)-CH₂-CH(NH₂)-COOH</p>
+            <p>Chiral centers: C₂ (CH(OH)) and C₄ (CH(NH₂))</p>
+            
+            <p><strong>Maximum stereoisomers:</strong> 2ⁿ where n = number of chiral centers</p>
+            <p>Maximum = 2² = 4 stereoisomers</p>
+            
+            <p><strong>Stereoisomers:</strong></p>
+            <ul>
+                <li><strong>(2R, 4R):</strong> Both chiral centers have R configuration</li>
+                <li><strong>(2S, 4S):</strong> Both chiral centers have S configuration (enantiomer of 2R,4R)</li>
+                <li><strong>(2R, 4S):</strong> Opposite configurations (diastereomer)</li>
+                <li><strong>(2S, 4R):</strong> Opposite configurations (diastereomer, enantiomer of 2R,4S)</li>
+            </ul>
+            
+            <p><strong>Relationships:</strong></p>
+            <ul>
+                <li>(2R,4R) and (2S,4S) are enantiomers</li>
+                <li>(2R,4S) and (2S,4R) are enantiomers</li>
+                <li>All other pairs are diastereomers</li>
+            </ul>
+            
+            <p>If the molecule has no internal plane of symmetry and no meso form, all 4 stereoisomers are distinct.</p>
+        </div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-number">Problem 4</div>
+        <p>Explain why 1,3-butadiene undergoes 1,4-addition with HBr at elevated temperatures, while 1,2-addition is favored at lower temperatures. Provide energy diagrams and discuss the thermodynamic vs. kinetic control.</p>
+        
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p><strong>Reaction:</strong> 1,3-butadiene + HBr</p>
+            
+            <p><strong>At low temperature (kinetic control):</strong></p>
+            <ul>
+                <li>1,2-addition product (3-bromo-1-butene) forms faster</li>
+                <li>This is the kinetically favored product (lower activation energy)</li>
+                <li>The transition state leading to 1,2-addition is more stable (more substituted allylic carbocation)</li>
+            </ul>
+            
+            <p><strong>At high temperature (thermodynamic control):</strong></p>
+            <ul>
+                <li>1,4-addition product (1-bromo-2-butene) is more stable</li>
+                <li>Higher temperature allows equilibrium to be established</li>
+                <li>1,4-product has more stable double bond (disubstituted vs. monosubstituted)</li>
+                <li>System reaches thermodynamic equilibrium</li>
+            </ul>
+            
+            <p><strong>Energy Diagram Explanation:</strong></p>
+            <ul>
+                <li>1,2-addition: Lower Eₐ (kinetic product), but higher ΔG (less stable)</li>
+                <li>1,4-addition: Higher Eₐ (slower formation), but lower ΔG (more stable)</li>
+                <li>At low T: Reaction doesn't have enough energy to reverse, so kinetic product accumulates</li>
+                <li>At high T: Reaction can reverse, allowing system to reach thermodynamic minimum (1,4-product)</li>
+            </ul>
+            
+            <p>This is a classic example of kinetic vs. thermodynamic control in organic reactions.</p>
+        </div>
+    </div>
+</body>
+</html>
+

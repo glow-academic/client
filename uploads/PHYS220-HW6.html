@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHYS220-HW6</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .filename {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        .problem {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #2c3e50;
+        }
+        .problem-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .solution {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="filename">Filename: PHYS220-HW6</div>
+        <div>Physics 220 - Homework Assignment 6</div>
+        <div>Student Name: ________________ | Due Date: Fall 2024</div>
+    </div>
+
+    <h1>Electromagnetic Waves and Optics Problems</h1>
+
+    <div class="problem">
+        <div class="problem-number">Problem 1</div>
+        <p>A plane electromagnetic wave travels in free space in the +z direction. The electric field is given by:</p>
+        <p>E(x,y,z,t) = E₀ sin(kz - ωt) î</p>
+        <p>where E₀ = 100 V/m, k = 2π/λ, and the frequency is 1.5 × 10¹⁵ Hz.</p>
+        <p>a) Find the wavelength λ and the angular frequency ω.</p>
+        <p>b) Write the expression for the magnetic field B.</p>
+        <p>c) Find the magnitude of the Poynting vector and determine the direction of energy flow.</p>
+        
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p>a) The frequency f = 1.5 × 10¹⁵ Hz</p>
+            <p>ω = 2πf = 2π × 1.5 × 10¹⁵ = 9.42 × 10¹⁵ rad/s</p>
+            <p>For electromagnetic waves in vacuum: c = λf, where c = 3.00 × 10⁸ m/s</p>
+            <p>λ = c/f = (3.00 × 10⁸)/(1.5 × 10¹⁵) = 2.00 × 10⁻⁷ m = 200 nm</p>
+            <p>k = 2π/λ = 2π/(2.00 × 10⁻⁷) = 3.14 × 10⁷ rad/m</p>
+            
+            <p>b) For a plane wave in vacuum, E and B are perpendicular and related by:</p>
+            <p>B = (1/c)(k̂ × E)</p>
+            <p>Since E is in the î direction and propagation is in +k̂ direction:</p>
+            <p>B = (E₀/c) sin(kz - ωt) ĵ</p>
+            <p>B₀ = E₀/c = 100/(3.00 × 10⁸) = 3.33 × 10⁻⁷ T</p>
+            <p>Therefore: B = (3.33 × 10⁻⁷ T) sin(kz - ωt) ĵ</p>
+            
+            <p>c) The Poynting vector S = (1/μ₀)(E × B)</p>
+            <p>Since E is in î direction and B is in ĵ direction, E × B is in k̂ direction</p>
+            <p>|S| = (1/μ₀)|E × B| = (1/μ₀)E₀B₀ = (E₀²)/(μ₀c)</p>
+            <p>Using μ₀ = 4π × 10⁻⁷ N/A²:</p>
+            <p>|S| = (100)²/((4π × 10⁻⁷)(3.00 × 10⁸)) = 26.5 W/m²</p>
+            <p>The Poynting vector points in the +z direction (direction of propagation).</p>
+        </div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-number">Problem 2</div>
+        <p>Light of wavelength 600 nm is incident normally on a diffraction grating with 500 lines per mm.</p>
+        <p>a) Calculate the angle of the first-order maximum.</p>
+        <p>b) What is the maximum number of orders that can be observed?</p>
+        <p>c) If the same grating is used with light of wavelength 400 nm, how does the angular separation between orders change?</p>
+        
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p>a) The grating equation is: d sin θ = mλ</p>
+            <p>where d is the spacing between lines, m is the order, and θ is the diffraction angle.</p>
+            <p>d = 1/(500 lines/mm) = 1/(500 × 10³ lines/m) = 2.00 × 10⁻⁶ m</p>
+            <p>For first order (m = 1): sin θ₁ = λ/d = (600 × 10⁻⁹)/(2.00 × 10⁻⁶) = 0.300</p>
+            <p>θ₁ = sin⁻¹(0.300) = 17.5°</p>
+            
+            <p>b) The maximum order occurs when sin θ = 1:</p>
+            <p>m_max = d/λ = (2.00 × 10⁻⁶)/(600 × 10⁻⁹) = 3.33</p>
+            <p>Since m must be an integer, the maximum observable order is m = 3.</p>
+            
+            <p>c) For λ = 400 nm:</p>
+            <p>sin θ₁ = (400 × 10⁻⁹)/(2.00 × 10⁻⁶) = 0.200</p>
+            <p>θ₁ = sin⁻¹(0.200) = 11.5°</p>
+            <p>The angular separation is smaller for shorter wavelengths. The angular separation between adjacent orders is proportional to λ, so it decreases when wavelength decreases.</p>
+        </div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-number">Problem 3</div>
+        <p>A double-slit interference pattern is observed on a screen 2.0 m away from the slits. The slits are separated by 0.10 mm, and the wavelength of light is 550 nm.</p>
+        <p>a) Calculate the distance between adjacent bright fringes on the screen.</p>
+        <p>b) If the entire setup is immersed in water (n = 1.33), what happens to the fringe spacing?</p>
+        <p>c) Determine the intensity at a point on the screen that is 5.0 cm from the central maximum, relative to the central maximum intensity.</p>
+        
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p>a) For double-slit interference, the position of bright fringes is:</p>
+            <p>y_m = mλL/d</p>
+            <p>where L is the distance to screen, d is slit separation, and m is the order.</p>
+            <p>The spacing between adjacent fringes is:</p>
+            <p>Δy = y_(m+1) - y_m = λL/d</p>
+            <p>Δy = (550 × 10⁻⁹)(2.0)/(0.10 × 10⁻³) = 0.011 m = 11 mm</p>
+            
+            <p>b) In water, the wavelength changes: λ_water = λ_air/n = 550/1.33 = 414 nm</p>
+            <p>Δy_water = λ_water L/d = (414 × 10⁻⁹)(2.0)/(0.10 × 10⁻³) = 8.3 mm</p>
+            <p>The fringe spacing decreases because the wavelength is shorter in water.</p>
+            
+            <p>c) The intensity in double-slit interference is:</p>
+            <p>I = I₀ cos²(πdy/(λL))</p>
+            <p>where I₀ is the intensity at the central maximum.</p>
+            <p>At y = 5.0 cm = 0.050 m:</p>
+            <p>I/I₀ = cos²(π(0.10 × 10⁻³)(0.050)/((550 × 10⁻⁹)(2.0)))</p>
+            <p>I/I₀ = cos²(14.3) = 0.94</p>
+            <p>The intensity is 94% of the central maximum intensity.</p>
+        </div>
+    </div>
+</body>
+</html>
+

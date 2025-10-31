@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STAT417-Project3</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .filename {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 25px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="filename">Filename: STAT417-Project3</div>
+        <div>Statistics 417 - Statistical Modeling Project 3</div>
+        <div>Student Name: ________________ | Date: Fall 2024</div>
+    </div>
+
+    <h1>Regression Analysis of Housing Prices</h1>
+
+    <div class="section">
+        <h2>Executive Summary</h2>
+        <p>This project analyzes the relationship between housing prices and various predictor variables including square footage, number of bedrooms, location, and age of property. Using multiple linear regression techniques, we developed a model to predict housing prices and identified the most significant factors influencing property values.</p>
+        
+        <p><strong>Key Findings:</strong></p>
+        <ul>
+            <li>Square footage is the strongest predictor of housing price (coefficient: 125.50, p < 0.001)</li>
+            <li>Location (coded as dummy variables) shows significant variation in prices across different neighborhoods</li>
+            <li>The model explains 78% of the variance in housing prices (R² = 0.78)</li>
+            <li>Number of bedrooms shows a non-linear relationship with price</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Introduction and Objectives</h2>
+        <p>The objective of this analysis was to develop a predictive model for housing prices based on available property characteristics. Understanding the factors that influence housing prices has important implications for buyers, sellers, and real estate professionals.</p>
+        
+        <p><strong>Research Questions:</strong></p>
+        <ol>
+            <li>Which property characteristics are most predictive of housing prices?</li>
+            <li>How do location factors affect property values?</li>
+            <li>Can we develop an accurate predictive model for housing prices?</li>
+            <li>Are there any interactions between predictor variables?</li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h2>Data Description</h2>
+        <p>The dataset consists of 450 residential property sales from the past two years. Variables included:</p>
+        
+        <p><strong>Response Variable:</strong></p>
+        <ul>
+            <li><strong>Price:</strong> Sale price in thousands of dollars (range: $150K - $850K)</li>
+        </ul>
+        
+        <p><strong>Predictor Variables:</strong></p>
+        <ul>
+            <li><strong>Square_Footage:</strong> Total living area in square feet (range: 800 - 4,200)</li>
+            <li><strong>Bedrooms:</strong> Number of bedrooms (range: 1 - 5)</li>
+            <li><strong>Bathrooms:</strong> Number of bathrooms (range: 1 - 4)</li>
+            <li><strong>Age:</strong> Age of property in years (range: 0 - 45)</li>
+            <li><strong>Location:</strong> Categorical variable with 5 neighborhoods (North, South, East, West, Central)</li>
+            <li><strong>Garage:</strong> Binary variable (0 = no garage, 1 = has garage)</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Methodology</h2>
+        <p><strong>Model Selection:</strong></p>
+        <p>We employed multiple linear regression with the following approach:</p>
+        <ol>
+            <li>Exploratory data analysis including correlation matrices and scatter plots</li>
+            <li>Initial model with all predictors</li>
+            <li>Stepwise selection using AIC to identify the best model</li>
+            <li>Diagnostic checking for assumptions (normality, homoscedasticity, independence)</li>
+            <li>Model validation using cross-validation</li>
+        </ol>
+        
+        <p><strong>Model Equation:</strong></p>
+        <p>Price = β₀ + β₁(Square_Footage) + β₂(Bedrooms) + β₃(Bathrooms) + β₄(Age) + β₅(Garage) + β₆₋₁₀(Location_Dummies) + ε</p>
+    </div>
+
+    <div class="section">
+        <h2>Results</h2>
+        <p><strong>Final Model Summary:</strong></p>
+        <p>After stepwise selection, the final model included square footage, bedrooms, bathrooms, age, garage, and location as significant predictors.</p>
+        
+        <p><strong>Coefficient Estimates:</strong></p>
+        <ul>
+            <li>Intercept: 45.32 (SE = 8.15, p < 0.001)</li>
+            <li>Square Footage: 0.125 (SE = 0.008, p < 0.001)</li>
+            <li>Bedrooms: 12.45 (SE = 3.22, p < 0.001)</li>
+            <li>Bathrooms: 18.67 (SE = 4.11, p < 0.001)</li>
+            <li>Age: -1.23 (SE = 0.15, p < 0.001)</li>
+            <li>Garage: 22.50 (SE = 5.33, p < 0.001)</li>
+        </ul>
+        
+        <p><strong>Model Performance:</strong></p>
+        <ul>
+            <li>R² = 0.78 (Adjusted R² = 0.76)</li>
+            <li>RMSE = 42.3 thousand dollars</li>
+            <li>F-statistic = 156.8 (p < 0.001)</li>
+        </ul>
+        
+        <p><strong>Diagnostic Checks:</strong></p>
+        <p>Residual analysis showed:</p>
+        <ul>
+            <li>Residuals are approximately normally distributed (Shapiro-Wilk test: p = 0.18)</li>
+            <li>No clear patterns in residual plots, suggesting homoscedasticity</li>
+            <li>No significant multicollinearity (VIF values all < 3.0)</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Discussion</h2>
+        <p>The analysis revealed that square footage is the most important predictor of housing price, with each additional square foot associated with a $125 increase in price. This makes intuitive sense as larger homes typically command higher prices.</p>
+        
+        <p>Location effects were significant, with properties in the North and West neighborhoods showing premiums of $35K and $28K respectively compared to the Central baseline. The South and East neighborhoods showed discounts, suggesting these areas may have lower desirability or different market conditions.</p>
+        
+        <p>The negative coefficient for age (-1.23) indicates that older properties sell for less, though the effect is relatively modest at about $1,230 per year of age.</p>
+        
+        <p><strong>Limitations:</strong></p>
+        <ul>
+            <li>The model is based on historical data and may not account for future market changes</li>
+            <li>Some potentially important factors (school quality, crime rates) were not available</li>
+            <li>The sample was limited to one metropolitan area</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Conclusion</h2>
+        <p>This analysis successfully identified key factors influencing housing prices and developed a predictive model with good explanatory power (R² = 0.78). The model can be used by real estate professionals to estimate property values, though it should be supplemented with local market knowledge and qualitative factors not captured in the quantitative model.</p>
+        
+        <p>Future work could include:</p>
+        <ul>
+            <li>Non-linear transformations for variables showing curvature</li>
+            <li>Interaction terms between predictors</li>
+            <li>Temporal analysis to account for market trends</li>
+            <li>Expansion to include additional geographic areas</li>
+        </ul>
+    </div>
+</body>
+</html>
+

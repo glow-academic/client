@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MA421-HW5</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .filename {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        .problem {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #2c3e50;
+        }
+        .problem-number {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .solution {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #fff;
+        }
+        .theorem {
+            font-style: italic;
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 3px solid #2c3e50;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="filename">Filename: MA421-HW5</div>
+        <div>Mathematics 421 - Homework Assignment 5</div>
+        <div>Student Name: ________________ | Due Date: Fall 2024</div>
+    </div>
+
+    <h1>Real Analysis Problem Set</h1>
+
+    <div class="problem">
+        <div class="problem-number">Problem 1</div>
+        <p>Let {aₙ} be a sequence of real numbers. Prove that if lim(n→∞) aₙ = L, then lim(n→∞) |aₙ| = |L|.</p>
+        
+        <div class="solution">
+            <p><strong>Proof:</strong></p>
+            <p>Given that lim(n→∞) aₙ = L, we know that for every ε > 0, there exists N ∈ ℕ such that for all n ≥ N, we have |aₙ - L| < ε.</p>
+            
+            <p>We want to show that lim(n→∞) |aₙ| = |L|, which means for every ε > 0, there exists M ∈ ℕ such that for all n ≥ M, we have ||aₙ| - |L|| < ε.</p>
+            
+            <p>Using the reverse triangle inequality: ||aₙ| - |L|| ≤ |aₙ - L|</p>
+            
+            <p>Since lim(n→∞) aₙ = L, for any ε > 0, there exists N such that |aₙ - L| < ε for all n ≥ N.</p>
+            
+            <p>Therefore, for all n ≥ N:</p>
+            <p>||aₙ| - |L|| ≤ |aₙ - L| < ε</p>
+            
+            <p>Hence, lim(n→∞) |aₙ| = |L|. □</p>
+        </div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-number">Problem 2</div>
+        <p>Let f: [0,1] → ℝ be defined by:</p>
+        <p>f(x) = { x² if x is rational<br>
+                   0 if x is irrational }</p>
+        <p>Determine whether f is Riemann integrable on [0,1].</p>
+        
+        <div class="solution">
+            <p><strong>Solution:</strong></p>
+            <p>We will show that f is Riemann integrable and ∫₀¹ f(x) dx = 0.</p>
+            
+            <p>Recall that a function is Riemann integrable if and only if the set of discontinuities has measure zero.</p>
+            
+            <p>Let's analyze the discontinuities of f:</p>
+            <ul>
+                <li>At any irrational point x₀: For any δ > 0, we can find a rational number r in (x₀ - δ, x₀ + δ). Since f(r) = r² > 0 (for r ≠ 0) and f(x₀) = 0, we have |f(r) - f(x₀)| = r². Since we can make r arbitrarily close to x₀, f is discontinuous at every irrational point.</li>
+                <li>At any rational point x₀: Similarly, we can find irrational numbers arbitrarily close, and f(irrational) = 0 while f(x₀) = x₀², so f is also discontinuous at every rational point.</li>
+            </ul>
+            
+            <p>However, the set of discontinuities is [0,1], which does NOT have measure zero in the usual sense.</p>
+            
+            <p>But wait—let's use a different approach. We'll show that the upper and lower Riemann sums converge to the same value.</p>
+            
+            <p>For any partition P of [0,1]:</p>
+            <ul>
+                <li>Lower sum L(f,P) = 0 (since every subinterval contains irrationals where f = 0)</li>
+                <li>Upper sum U(f,P) = Σ MᵢΔxᵢ, where Mᵢ is the sup of f on the i-th subinterval</li>
+            </ul>
+            
+            <p>Since rationals are dense, Mᵢ = (xᵢ)² where xᵢ is the right endpoint. As the partition mesh → 0, the upper sum approaches ∫₀¹ x² dx = 1/3.</p>
+            
+            <p>Since the lower sum is always 0 and the upper sum approaches 1/3, they don't converge to the same value. Therefore, f is NOT Riemann integrable.</p>
+            
+            <p>Actually, let me reconsider. The function is discontinuous everywhere, and the set of discontinuities is [0,1] which has positive measure. By Lebesgue's criterion, f is NOT Riemann integrable.</p>
+        </div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-number">Problem 3</div>
+        <p>Prove that if f is continuous on [a,b] and differentiable on (a,b), and f(a) = f(b), then there exists c ∈ (a,b) such that f'(c) = 0.</p>
+        
+        <div class="solution">
+            <p><strong>Proof:</strong></p>
+            <p>This is a statement of Rolle's Theorem. Here is the proof:</p>
+            
+            <p>Since f is continuous on the closed interval [a,b], by the Extreme Value Theorem, f attains both its maximum and minimum on [a,b].</p>
+            
+            <p><strong>Case 1:</strong> If the maximum or minimum occurs at an interior point c ∈ (a,b), then by Fermat's Theorem, f'(c) = 0 (since c is a local extremum in an open interval).</p>
+            
+            <p><strong>Case 2:</strong> If both the maximum and minimum occur at the endpoints a and b, then since f(a) = f(b), we have f(x) = f(a) = f(b) for all x ∈ [a,b]. This means f is constant, so f'(x) = 0 for all x ∈ (a,b), and we can choose any c ∈ (a,b).</p>
+            
+            <p>In either case, there exists c ∈ (a,b) such that f'(c) = 0. □</p>
+        </div>
+    </div>
+
+    <div class="problem">
+        <div class="problem-number">Problem 4</div>
+        <p>Let f: ℝ → ℝ be uniformly continuous. Prove that if {xₙ} is a Cauchy sequence, then {f(xₙ)} is also a Cauchy sequence.</p>
+        
+        <div class="solution">
+            <p><strong>Proof:</strong></p>
+            <p>Let {xₙ} be a Cauchy sequence. We want to show that {f(xₙ)} is a Cauchy sequence, i.e., for every ε > 0, there exists N ∈ ℕ such that for all m,n ≥ N, we have |f(xₘ) - f(xₙ)| < ε.</p>
+            
+            <p>Since f is uniformly continuous, for every ε > 0, there exists δ > 0 such that for all x,y ∈ ℝ with |x - y| < δ, we have |f(x) - f(y)| < ε.</p>
+            
+            <p>Since {xₙ} is Cauchy, for the δ found above, there exists N ∈ ℕ such that for all m,n ≥ N, we have |xₘ - xₙ| < δ.</p>
+            
+            <p>Therefore, for all m,n ≥ N:</p>
+            <p>|xₘ - xₙ| < δ ⟹ |f(xₘ) - f(xₙ)| < ε</p>
+            
+            <p>Hence, {f(xₙ)} is a Cauchy sequence. □</p>
+        </div>
+    </div>
+</body>
+</html>
+
