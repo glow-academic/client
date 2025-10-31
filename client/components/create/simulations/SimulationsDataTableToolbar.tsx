@@ -13,6 +13,7 @@ export interface SimulationsDataTableToolbarProps {
   scenarioOptions: { value: string; label: string }[];
   rubricOptions: { value: string; label: string }[];
   timeLimitOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
 }
 
 export function SimulationsDataTableToolbar({
@@ -20,6 +21,7 @@ export function SimulationsDataTableToolbar({
   scenarioOptions,
   rubricOptions,
   timeLimitOptions,
+  departmentOptions = [],
 }: SimulationsDataTableToolbarProps) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -27,6 +29,7 @@ export function SimulationsDataTableToolbar({
   const scenarioColumn = table.getColumn("scenario_ids");
   const rubricColumn = table.getColumn("rubric_id");
   const timeLimitColumn = table.getColumn("time_limit_category");
+  const departmentsColumn = table.getColumn("departments");
 
   return (
     <div className="flex items-center justify-between">
@@ -70,6 +73,15 @@ export function SimulationsDataTableToolbar({
               column={timeLimitColumn}
               title="Time Limit"
               options={timeLimitOptions}
+            />
+          )}
+
+          {/* Department Filter */}
+          {departmentsColumn && departmentOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={departmentsColumn}
+              title="Department"
+              options={departmentOptions}
             />
           )}
 

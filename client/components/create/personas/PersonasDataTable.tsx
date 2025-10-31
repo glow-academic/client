@@ -31,6 +31,7 @@ export interface PersonasDataTableProps {
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
   renderPersonaCard: (persona: PersonaItem) => React.ReactNode;
 }
 
@@ -41,6 +42,7 @@ export function PersonasDataTable({
   reasoningOptions,
   modelOptions,
   temperatureOptions,
+  departmentOptions = [],
   renderPersonaCard,
 }: PersonasDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -88,6 +90,7 @@ export function PersonasDataTable({
         reasoningOptions={reasoningOptions}
         modelOptions={modelOptions}
         temperatureOptions={temperatureOptions}
+        departmentOptions={departmentOptions}
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {table.getRowModel().rows.length ? (

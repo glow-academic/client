@@ -27,6 +27,7 @@ export interface SimulationsDataTableProps {
   scenarioOptions: { value: string; label: string }[];
   rubricOptions: { value: string; label: string }[];
   timeLimitOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
   renderSimulationCard: (simulation: SimulationItem) => React.ReactNode;
 }
 
@@ -35,6 +36,7 @@ export function SimulationsDataTable({
   scenarioOptions,
   rubricOptions,
   timeLimitOptions,
+  departmentOptions = [],
   renderSimulationCard,
 }: SimulationsDataTableProps) {
   // Minimal columns for filtering/sorting only (card view, no table)
@@ -85,6 +87,21 @@ export function SimulationsDataTable({
           return "120+"; // 120+ minutes
         },
       },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: SimulationItem) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
     ],
     []
   );
@@ -132,6 +149,7 @@ export function SimulationsDataTable({
         scenarioOptions={scenarioOptions}
         rubricOptions={rubricOptions}
         timeLimitOptions={timeLimitOptions}
+        departmentOptions={departmentOptions}
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {table.getRowModel().rows.map((row) => (

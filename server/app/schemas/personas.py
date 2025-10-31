@@ -38,6 +38,7 @@ class PersonasListResponse(BaseModel):
     personas: list[PersonaItem]
     scenario_mapping: ScenarioMapping
     model_mapping: ModelMapping
+    department_mapping: DepartmentMapping
 
 
 class DuplicatePersonaRequest(BaseModel):

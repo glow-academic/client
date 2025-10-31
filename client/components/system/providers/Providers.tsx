@@ -45,6 +45,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ColumnDef } from "@tanstack/react-table";
+
 import { useProfile } from "@/contexts/profile-context";
 
 import { useLogger } from "@/lib/api/v2/hooks/logs";
@@ -97,6 +99,96 @@ export default function Providers() {
   const providers = useMemo(
     () => providersData?.providers || [],
     [providersData]
+  );
+
+  // Build filter options
+  const providerOptions = useMemo(
+    () => providers.map((p) => ({ value: p.provider_id, label: p.name })),
+    [providers]
+  );
+
+  const customModelOptions = [
+    { value: "true", label: "Custom Models" },
+    { value: "false", label: "Standard Models" },
+  ];
+
+  const statusOptions = [
+    { value: "true", label: "Active" },
+    { value: "false", label: "Inactive" },
+  ];
+
+  // Column definitions for TanStack Table (flattened model rows)
+  type ProviderModelRow = {
+    model_id: string;
+    name: string;
+    description: string;
+    active: boolean;
+    custom_model: boolean;
+    updated_at: string;
+    can_edit: boolean;
+    can_delete: boolean;
+    provider_id: string;
+    provider_name: string;
+    provider_description: string;
+    provider_can_edit: boolean;
+    provider_can_delete: boolean;
+  };
+
+  const columns = useMemo<ColumnDef<ProviderModelRow>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => row.getValue("name"),
+        filterFn: (row, id, value) => {
+          const name = String(row.getValue(id)).toLowerCase();
+          const desc = String(row.original.description).toLowerCase();
+          const query = String(value).toLowerCase();
+          return name.includes(query) || desc.includes(query);
+        },
+      },
+      // Hidden faceting column for Provider
+      {
+        id: "provider_id",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ProviderModelRow) => row.provider_id,
+        filterFn: (row, _id, value: string[]) => {
+          const providerId = String(row.getValue("provider_id"));
+          return value.includes(providerId);
+        },
+      },
+      // Hidden faceting column for Custom Model
+      {
+        id: "custom_model",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ProviderModelRow) =>
+          row.custom_model ? "true" : "false",
+        filterFn: (row, _id, value: string[]) => {
+          const isCustom = String(row.getValue("custom_model"));
+          return value.includes(isCustom);
+        },
+      },
+      // Hidden faceting column for Active Status
+      {
+        id: "active",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ProviderModelRow) => (row.active ? "true" : "false"),
+        filterFn: (row, _id, value: string[]) => {
+          const status = String(row.getValue("active"));
+          return value.includes(status);
+        },
+      },
+    ],
+    []
   );
 
   const handleDelete = async () => {
@@ -389,7 +481,11 @@ export default function Providers() {
           renderEmptyState()
         ) : (
           <ProvidersDataTable
+            columns={columns}
             providers={providers}
+            providerOptions={providerOptions}
+            customModelOptions={customModelOptions}
+            statusOptions={statusOptions}
             renderProviderGroup={renderProviderGroup}
           />
         )}

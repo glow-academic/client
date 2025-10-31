@@ -162,6 +162,19 @@ export default function Personas() {
     []
   );
 
+  // Build department options from mapping
+  const departmentMapping = useMemo(
+    () => (personasData?.department_mapping as Record<string, { name: string; description: string }>) || {},
+    [personasData?.department_mapping]
+  );
+
+  const departmentOptions = useMemo(() => {
+    return Object.entries(departmentMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [departmentMapping]);
+
   // Helper function to get temperature range
   const getTemperatureRange = (temperature: number) => {
     if (temperature <= 0.33) return "low";
@@ -272,6 +285,21 @@ export default function Personas() {
               )}
             </div>
           );
+        },
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: PersonaItem) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
         },
       },
     ];
@@ -581,6 +609,7 @@ export default function Personas() {
           reasoningOptions={reasoningOptions}
           modelOptions={modelOptions}
           temperatureOptions={temperatureOptions}
+          departmentOptions={departmentOptions}
           renderPersonaCard={renderPersonaCard}
         />
 

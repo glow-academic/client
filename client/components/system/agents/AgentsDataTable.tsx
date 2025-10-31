@@ -25,6 +25,8 @@ export interface AgentsDataTableProps {
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
+  roleOptions: { value: string; label: string }[];
+  departmentOptions: { value: string; label: string }[];
   renderAgentCard: (agent: AgentItem) => React.ReactNode;
 }
 
@@ -34,6 +36,8 @@ export function AgentsDataTable({
   reasoningOptions,
   modelOptions,
   temperatureOptions,
+  roleOptions,
+  departmentOptions,
   renderAgentCard,
 }: AgentsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -68,6 +72,34 @@ export function AgentsDataTable({
       {
         accessorKey: "temperature",
         header: "Temperature",
+      },
+      // Hidden faceting column for Role
+      {
+        id: "role",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: AgentItem) => row.role || "",
+        filterFn: (row, _id, value: string[]) => {
+          const role = String(row.getValue("role"));
+          return value.includes(role);
+        },
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: AgentItem) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
+        },
       },
     ],
     [modelMapping]
@@ -107,6 +139,8 @@ export function AgentsDataTable({
         reasoningOptions={reasoningOptions}
         modelOptions={modelOptions}
         temperatureOptions={temperatureOptions}
+        roleOptions={roleOptions}
+        departmentOptions={departmentOptions}
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {table.getRowModel().rows.length ? (

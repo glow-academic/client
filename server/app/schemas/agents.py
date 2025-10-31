@@ -29,6 +29,8 @@ class AgentItem(BaseModel):
     reasoning: str | None
     temperature: float
     model_id: str
+    role: str
+    department_ids: list[str] | None
     updated_at: str
     can_edit: bool
     can_duplicate: bool
@@ -40,6 +42,7 @@ class AgentsListResponse(BaseModel):
 
     agents: list[AgentItem]
     model_mapping: ModelMapping
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================

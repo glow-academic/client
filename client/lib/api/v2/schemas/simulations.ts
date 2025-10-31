@@ -47,6 +47,7 @@ export const SimulationsListResponseSchema = z.object({
   simulations: z.array(SimulationItemSchema),
   scenario_mapping: ScenarioMappingSchema,
   rubric_mapping: RubricMappingSchema,
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type SimulationsListResponse = z.infer<

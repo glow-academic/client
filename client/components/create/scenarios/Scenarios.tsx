@@ -141,6 +141,19 @@ export function Scenarios() {
     }));
   }, [simulationMapping]);
 
+  // Build department options from mapping
+  const departmentMapping = useMemo(
+    () => (scenariosData?.department_mapping as Record<string, { name: string; description: string }>) || {},
+    [scenariosData?.department_mapping]
+  );
+
+  const departmentOptions = useMemo(() => {
+    return Object.entries(departmentMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [departmentMapping]);
+
   // Define table columns inline
   const columns: ColumnDef<ScenarioItem>[] = useMemo(() => {
     return [
@@ -198,6 +211,21 @@ export function Scenarios() {
         accessorFn: (row: ScenarioItem) => row.simulation_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("simulation_ids") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ScenarioItem) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
           return value.some((v) => rowIds.includes(v));
         },
       },
@@ -567,6 +595,7 @@ export function Scenarios() {
           personaOptions={personaOptions}
           cohortOptions={cohortOptions}
           simulationOptions={simulationOptions}
+          departmentOptions={departmentOptions}
           renderGroupedScenarios={renderGroupedScenarios}
         />
 

@@ -78,6 +78,27 @@ class ParameterQueries:
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $1
+        ),
+        all_department_ids AS (
+            SELECT DISTINCT unnest(department_ids)::uuid as department_id
+            FROM parameter_item_departments_data
+            WHERE department_ids IS NOT NULL
+            UNION
+            SELECT department_id FROM user_departments
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id IN (SELECT department_id FROM all_department_ids)
         )
         SELECT 
             p.id as parameter_id,
@@ -91,6 +112,7 @@ class ParameterQueries:
             COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
             COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
             COALESCE(psi.sample_items, '[]'::jsonb) as sample_items_json,
+            dmd.mapping as department_mapping,
             CASE 
                 WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
                 WHEN up.role IN ('admin', 'superadmin') THEN true
@@ -113,8 +135,9 @@ class ParameterQueries:
         LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id
         LEFT JOIN parameter_sample_items psi ON psi.parameter_id = p.id
         CROSS JOIN user_profile up
+        CROSS JOIN department_mapping_data dmd
         GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pidd.department_ids, pic.num_items, 
-                 pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role
+                 pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, dmd.mapping
         HAVING 
             -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
             COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0

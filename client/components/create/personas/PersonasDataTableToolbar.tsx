@@ -14,6 +14,7 @@ export interface PersonasDataTableToolbarProps {
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
 }
 
 export function PersonasDataTableToolbar({
@@ -22,6 +23,7 @@ export function PersonasDataTableToolbar({
   reasoningOptions,
   modelOptions,
   temperatureOptions,
+  departmentOptions = [],
 }: PersonasDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -33,6 +35,7 @@ export function PersonasDataTableToolbar({
 
   // Add a custom scenario filter column
   const scenarioColumn = table.getColumn("scenarios");
+  const departmentsColumn = table.getColumn("departments");
 
   return (
     <div className="flex items-center justify-between">
@@ -80,6 +83,15 @@ export function PersonasDataTableToolbar({
               column={temperatureColumn}
               title="Temperature"
               options={temperatureOptions}
+            />
+          )}
+
+          {/* Department Filter */}
+          {departmentsColumn && departmentOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={departmentsColumn}
+              title="Department"
+              options={departmentOptions}
             />
           )}
 

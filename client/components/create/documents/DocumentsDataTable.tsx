@@ -43,6 +43,7 @@ export interface DocumentsDataTableProps {
   typeOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   extensionOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
   renderDocumentCard: (document: DocumentItem) => React.ReactNode;
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
@@ -65,6 +66,7 @@ export function DocumentsDataTable({
   typeOptions,
   scenarioOptions,
   extensionOptions,
+  departmentOptions = [],
   renderDocumentCard,
   viewMode,
   onViewModeChange,
@@ -230,6 +232,7 @@ export function DocumentsDataTable({
         typeOptions={typeOptions}
         scenarioOptions={scenarioOptions}
         extensionOptions={extensionOptions}
+        departmentOptions={departmentOptions}
         viewMode={viewMode}
         onViewModeChange={onViewModeChange}
         selectedCount={selectedDocuments.length}

@@ -129,16 +129,38 @@ class RubricQueries:
             WHERE s.standard_group_id IN (
                 SELECT id FROM standard_groups WHERE rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
             )
+        ),
+        all_department_ids AS (
+            SELECT DISTINCT unnest(department_ids)::uuid as department_id
+            FROM rubric_departments_data
+            WHERE department_ids IS NOT NULL
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id IN (SELECT department_id FROM all_department_ids)
+                OR d.id IN (SELECT department_id FROM user_departments)
         )
         SELECT 
             rd.*,
             COALESCE(rgs.groups_structure, '{}'::jsonb) as standard_groups,
             sgm.mapping as standard_groups_mapping,
-            sm.mapping as standards_mapping
+            sm.mapping as standards_mapping,
+            dmd.mapping as department_mapping
         FROM rubric_data rd
         LEFT JOIN rubric_groups_structure rgs ON rgs.rubric_id = rd.rubric_id
         CROSS JOIN standard_groups_mapping_data sgm
         CROSS JOIN standards_mapping_data sm
+        CROSS JOIN department_mapping_data dmd
         ORDER BY rd.name
         """
 

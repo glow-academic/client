@@ -10,10 +10,12 @@ import { ParameterItem } from "@/lib/api/v2/schemas/parameters";
 
 export interface ParametersDataTableToolbarProps {
   table: Table<ParameterItem>;
+  departmentOptions?: { value: string; label: string }[];
 }
 
 export function ParametersDataTableToolbar({
   table,
+  departmentOptions = [],
 }: ParametersDataTableToolbarProps) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -21,6 +23,7 @@ export function ParametersDataTableToolbar({
   const typeColumn = table.getColumn("numerical");
   const itemCountColumn = table.getColumn("num_items");
   const statusColumn = table.getColumn("active");
+  const departmentsColumn = table.getColumn("departments");
 
   const typeOptions = [
     { value: "true", label: "Numerical" },
@@ -73,6 +76,14 @@ export function ParametersDataTableToolbar({
               column={statusColumn}
               title="Status"
               options={statusOptions}
+            />
+          )}
+
+          {departmentsColumn && departmentOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={departmentsColumn}
+              title="Department"
+              options={departmentOptions}
             />
           )}
 

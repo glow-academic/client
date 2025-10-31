@@ -32,6 +32,8 @@ export const AgentItemSchema = z.object({
   reasoning: z.string().nullable(),
   temperature: z.number(),
   model_id: z.string(),
+  role: z.string(),
+  department_ids: z.array(z.string()).nullable(),
   updated_at: z.string(),
   can_edit: z.boolean(),
   can_duplicate: z.boolean(),
@@ -41,6 +43,7 @@ export const AgentItemSchema = z.object({
 export const AgentsListResponseSchema = z.object({
   agents: z.array(AgentItemSchema),
   model_mapping: ModelMappingSchema,
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type AgentsListResponse = z.infer<typeof AgentsListResponseSchema>;

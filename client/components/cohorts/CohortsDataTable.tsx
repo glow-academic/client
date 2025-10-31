@@ -28,6 +28,7 @@ export interface CohortsDataTableProps {
   simulationMapping: SimulationMapping;
   profileOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
   renderCohortCard: (cohort: CohortItem) => React.ReactNode;
 }
 
@@ -37,6 +38,7 @@ export function CohortsDataTable({
   simulationMapping: _simulationMapping,
   profileOptions,
   simulationOptions,
+  departmentOptions = [],
   renderCohortCard,
 }: CohortsDataTableProps) {
   // Minimal columns for filtering/sorting only (card view, no table)
@@ -53,6 +55,21 @@ export function CohortsDataTable({
       {
         accessorKey: "simulation_ids",
         header: "Simulations",
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: CohortItem) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
+        },
       },
     ],
     []
@@ -100,6 +117,7 @@ export function CohortsDataTable({
         table={table}
         profileOptions={profileOptions}
         simulationOptions={simulationOptions}
+        departmentOptions={departmentOptions}
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {table.getRowModel().rows.length ? (

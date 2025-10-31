@@ -77,6 +77,7 @@ class RubricsListResponse(BaseModel):
     rubrics: list[RubricItem]
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================

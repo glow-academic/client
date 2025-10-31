@@ -64,6 +64,26 @@ class CohortQueries:
         all_simulation_ids AS (
             SELECT DISTINCT unnest(simulation_ids) as simulation_id
             FROM cohort_simulations_agg
+        ),
+        all_department_ids AS (
+            SELECT DISTINCT unnest(department_ids)::uuid as department_id
+            FROM cohort_departments_data
+            WHERE department_ids IS NOT NULL
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id IN (SELECT department_id FROM all_department_ids)
+                OR d.id IN (SELECT department_id FROM user_departments)
         )
         SELECT 
             c.id as cohort_id,
@@ -136,7 +156,9 @@ class CohortQueries:
                     GROUP BY sd.simulation_id
                 ) sdd ON sdd.simulation_id = s.id
                 WHERE s.id IN (SELECT simulation_id FROM all_simulation_ids)
-            ) as simulation_mapping
+            ) as simulation_mapping,
+            -- Department mapping
+            dmd.mapping as department_mapping
         FROM cohorts c
         LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
         LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
@@ -145,6 +167,7 @@ class CohortQueries:
         LEFT JOIN cohort_usage cu ON cu.cohort_id = c.id
         LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
         CROSS JOIN user_profile up
+        CROSS JOIN department_mapping_data dmd
         WHERE (
                 -- Instructional users only see cohorts they're in
                 (up.role = 'instructional' AND uic.cohort_id IS NOT NULL)
@@ -153,7 +176,7 @@ class CohortQueries:
                 up.role != 'instructional'
             )
         GROUP BY c.id, c.title, c.description, c.active, 
-                 cdd.department_ids, cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id
+                 cdd.department_ids, cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id, dmd.mapping
         HAVING 
             -- Include if has matching department link OR has no department links at all (cross-dept)
             COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0

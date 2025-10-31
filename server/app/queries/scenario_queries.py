@@ -225,6 +225,20 @@ class ScenarioQueries:
             FROM all_simulation_ids asi
             LEFT JOIN simulations s ON s.id = asi.simulation_id
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id IN (SELECT department_id FROM user_departments)
         )
         SELECT 
             sd.*,
@@ -232,13 +246,15 @@ class ScenarioQueries:
             pim.mapping as parameter_item_mapping,
             cm.mapping as cohort_mapping,
             pm.mapping as persona_mapping,
-            sm.mapping as simulation_mapping
+            sm.mapping as simulation_mapping,
+            dm.mapping as department_mapping
         FROM scenario_data sd
         CROSS JOIN objective_mapping_data om
         CROSS JOIN parameter_item_mapping_data pim
         CROSS JOIN cohort_mapping_data cm
         CROSS JOIN persona_mapping_data pm
         CROSS JOIN simulation_mapping_data sm
+        CROSS JOIN department_mapping_data dm
         ORDER BY sd.updated_at DESC NULLS LAST
         """
 

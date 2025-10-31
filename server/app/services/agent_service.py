@@ -60,8 +60,9 @@ class AgentService(BaseService):
         query, params = self.queries.get_agents_list_complete(request.profileId)
         rows = await self.conn.fetch(query, *params)
 
-        # Build model mapping from the single result set
+        # Build model mapping and department mapping from the single result set
         model_mapping: ModelMapping = {}
+        department_mapping: dict[str, DepartmentMappingItem] = {}
         agents: list[AgentItem] = []
 
         for row in rows:
@@ -73,6 +74,23 @@ class AgentService(BaseService):
                     description=row["model_description"] or "",
                 )
 
+            # Parse department_ids
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
+
+            # Parse department_mapping from first row (same for all agents)
+            if not department_mapping and row.get("department_mapping"):
+                dm = row["department_mapping"]
+                if isinstance(dm, str):
+                    dm = json.loads(dm)
+                if isinstance(dm, dict):
+                    for did, ddata in dm.items():
+                        if isinstance(ddata, dict):
+                            department_mapping[did] = DepartmentMappingItem(
+                                name=ddata["name"], description=ddata["description"]
+                            )
+
             agents.append(
                 AgentItem(
                     agent_id=row["agent_id"],
@@ -81,6 +99,8 @@ class AgentService(BaseService):
                     reasoning=row["reasoning"],
                     temperature=float(row["temperature"]) if row["temperature"] is not None else 0.0,
                     model_id=model_id,
+                    role=row["role"] or "",
+                    department_ids=dept_ids,
                     updated_at=row["updated_at"].isoformat(),
                     can_edit=row["can_edit"],
                     can_duplicate=row["can_duplicate"],
@@ -88,7 +108,11 @@ class AgentService(BaseService):
                 )
             )
 
-        return AgentsListResponse(agents=agents, model_mapping=model_mapping)
+        return AgentsListResponse(
+            agents=agents, 
+            model_mapping=model_mapping,
+            department_mapping=department_mapping,
+        )
 
     @with_cache(lambda self, request: keys.agent_by_id(request.agentId))
     async def get_agent_detail(

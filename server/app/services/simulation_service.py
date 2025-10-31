@@ -100,6 +100,21 @@ class SimulationService(BaseService):
                             description=rdata.get("description", ""),
                         )
 
+        # Parse department_mapping from first row
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        if result:
+            first_row = result[0]
+            department_mapping_data = first_row.get("department_mapping")
+            if isinstance(department_mapping_data, str):
+                department_mapping_data = json.loads(department_mapping_data)
+            if department_mapping_data and isinstance(department_mapping_data, dict):
+                for did, ddata in department_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
         # Build simulation items
         for row in result:
             # Convert UUID arrays to string arrays
@@ -130,6 +145,7 @@ class SimulationService(BaseService):
             simulations=simulations,
             scenario_mapping=scenario_mapping,
             rubric_mapping=rubric_mapping,
+            department_mapping=department_mapping,
         )
 
     @with_cache(

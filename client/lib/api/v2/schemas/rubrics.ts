@@ -74,6 +74,7 @@ export const RubricsListResponseSchema = z.object({
   rubrics: z.array(RubricItemSchema),
   standard_groups_mapping: StandardGroupsMappingSchema,
   standards_mapping: StandardsMappingSchema,
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type RubricsListResponse = z.infer<typeof RubricsListResponseSchema>;

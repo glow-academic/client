@@ -114,6 +114,20 @@ class PersonaQueries:
             -- Since persona_scenarios already resolved to root scenarios,
             -- all IDs here should be roots (parent_id = child_id)
             LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id IN (SELECT department_id FROM user_departments)
         )
         SELECT 
             pd.persona_id,
@@ -142,10 +156,12 @@ class PersonaQueries:
                 WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_delete,
-            sm.mapping as scenario_mapping
+            sm.mapping as scenario_mapping,
+            dm.mapping as department_mapping
         FROM persona_data pd
         CROSS JOIN user_profile up
         CROSS JOIN scenario_mapping_data sm
+        CROSS JOIN department_mapping_data dm
         ORDER BY pd.updated_at DESC NULLS LAST
         """
 

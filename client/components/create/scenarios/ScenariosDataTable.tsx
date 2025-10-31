@@ -35,6 +35,7 @@ export interface ScenariosDataTableProps {
   personaOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
   renderGroupedScenarios: (
     filteredGroups?: { parent: ScenarioItem; children: ScenarioItem[] }[]
   ) => React.ReactNode;
@@ -46,6 +47,7 @@ export function ScenariosDataTable({
   personaOptions,
   cohortOptions,
   simulationOptions,
+  departmentOptions = [],
   renderGroupedScenarios,
 }: ScenariosDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -123,6 +125,7 @@ export function ScenariosDataTable({
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}
         simulationOptions={simulationOptions}
+        departmentOptions={departmentOptions}
       />
       <div className="space-y-4">
         {table.getRowModel().rows.length ? (

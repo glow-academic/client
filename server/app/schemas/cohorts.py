@@ -45,6 +45,7 @@ class CohortsListResponse(BaseModel):
     cohorts: list[CohortItem]
     profile_mapping: ProfileMapping
     simulation_mapping: SimulationMapping
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================

@@ -24,12 +24,14 @@ export interface ParametersDataTableProps {
   columns: ColumnDef<ParameterItem>[];
   parameters: ParameterItem[];
   renderParameterCard: (parameter: ParameterItem) => React.ReactNode;
+  departmentOptions?: { value: string; label: string }[];
 }
 
 export function ParametersDataTable({
   columns,
   parameters,
   renderParameterCard,
+  departmentOptions = [],
 }: ParametersDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -70,7 +72,7 @@ export function ParametersDataTable({
 
   return (
     <div className="space-y-4">
-      <ParametersDataTableToolbar table={table} />
+      <ParametersDataTableToolbar table={table} departmentOptions={departmentOptions} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {table.getRowModel().rows.length ? (

@@ -82,6 +82,15 @@ export default function Parameters() {
     [parametersData]
   );
 
+  // Build department options from mapping
+  const departmentOptions = useMemo(() => {
+    const mapping = parametersData?.department_mapping || {};
+    return Object.entries(mapping).map(([id, obj]) => ({
+      value: id,
+      label: obj.name,
+    }));
+  }, [parametersData?.department_mapping]);
+
   // Column definitions for TanStack Table
   const columns = useMemo<ColumnDef<ParameterItem>[]>(
     () => [
@@ -131,6 +140,21 @@ export default function Parameters() {
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => row.getValue("updated_at"),
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ParameterItem) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
+        },
       },
     ],
     []
@@ -466,6 +490,7 @@ export default function Parameters() {
           columns={columns}
           parameters={parameters}
           renderParameterCard={renderParameterCard}
+          departmentOptions={departmentOptions}
         />
       )}
 

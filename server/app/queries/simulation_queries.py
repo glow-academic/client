@@ -145,6 +145,20 @@ class SimulationQueries:
             ) as mapping
             FROM all_rubric_ids ari
             LEFT JOIN rubrics r ON r.id = ari.rubric_id
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, '')
+                    )
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '{}'::jsonb
+            ) as mapping
+            FROM departments d
+            WHERE d.id IN (SELECT department_id FROM user_departments)
         )
         SELECT 
             sd.*,
@@ -161,11 +175,13 @@ class SimulationQueries:
             END as can_delete,
             true as can_duplicate,
             sm.mapping as scenario_mapping,
-            rm.mapping as rubric_mapping
+            rm.mapping as rubric_mapping,
+            dm.mapping as department_mapping
         FROM simulation_data sd
         CROSS JOIN user_profile up
         CROSS JOIN scenario_mapping_data sm
         CROSS JOIN rubric_mapping_data rm
+        CROSS JOIN department_mapping_data dm
         ORDER BY sd.updated_at DESC NULLS LAST
         """
 

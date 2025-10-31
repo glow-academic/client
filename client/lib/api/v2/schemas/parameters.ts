@@ -47,6 +47,7 @@ export const ParameterItemSchema = z.object({
 
 export const ParametersListResponseSchema = z.object({
   parameters: z.array(ParameterItemSchema),
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type ParametersListResponse = z.infer<

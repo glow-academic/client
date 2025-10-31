@@ -69,6 +69,7 @@ class CohortService(BaseService):
         cohorts = []
         profile_mapping: dict[str, ProfileMappingItem] = {}
         simulation_mapping: dict[str, SimulationMappingItem] = {}
+        department_mapping: dict[str, DepartmentMappingItem] = {}
 
         for row in result:
             # Convert UUID arrays to string arrays
@@ -136,10 +137,23 @@ class CohortService(BaseService):
                                 department_ids=dept_ids,
                             )
 
+            # Parse department mapping from first row (same for all cohorts)
+            if not department_mapping and row.get("department_mapping"):
+                dm = row["department_mapping"]
+                if isinstance(dm, str):
+                    dm = json.loads(dm)
+                if isinstance(dm, dict):
+                    for did, ddata in dm.items():
+                        if isinstance(ddata, dict):
+                            department_mapping[did] = DepartmentMappingItem(
+                                name=ddata["name"], description=ddata["description"]
+                            )
+
         return CohortsListResponse(
             cohorts=cohorts,
             profile_mapping=profile_mapping,
             simulation_mapping=simulation_mapping,
+            department_mapping=department_mapping,
         )
 
     @with_cache(

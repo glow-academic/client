@@ -42,6 +42,7 @@ class RubricService(BaseService):
         rubrics = []
         standard_groups_mapping = {}
         standards_mapping = {}
+        department_mapping = {}
 
         # Parse mappings from first row (same across all rows)
         if rubrics_result:
@@ -72,6 +73,18 @@ class RubricService(BaseService):
                             name=sdata.get("name", ""),
                             description=sdata.get("description", ""),
                             points=sdata.get("points", 0),
+                        )
+
+            # Parse department_mapping from JSONB with type safety (may be string or dict)
+            department_mapping_data = first_row.get("department_mapping")
+            if isinstance(department_mapping_data, str):
+                department_mapping_data = json.loads(department_mapping_data)
+            if department_mapping_data and isinstance(department_mapping_data, dict):
+                for dept_id, ddata in department_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[dept_id] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
                         )
 
         # Build rubric items with hierarchical structure
@@ -112,6 +125,7 @@ class RubricService(BaseService):
             rubrics=rubrics,
             standard_groups_mapping=standard_groups_mapping,
             standards_mapping=standards_mapping,
+            department_mapping=department_mapping,
         )
 
     @with_cache(

@@ -45,6 +45,7 @@ class SimulationsListResponse(BaseModel):
     simulations: list[SimulationItem]
     scenario_mapping: ScenarioMapping
     rubric_mapping: RubricMapping
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================

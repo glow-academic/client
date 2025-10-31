@@ -20,6 +20,7 @@ export interface DocumentsDataTableToolbarProps {
   typeOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   extensionOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
   selectedCount: number;
@@ -34,6 +35,7 @@ export function DocumentsDataTableToolbar({
   typeOptions,
   scenarioOptions,
   extensionOptions,
+  departmentOptions = [],
   viewMode,
   onViewModeChange,
   selectedCount,
@@ -49,6 +51,7 @@ export function DocumentsDataTableToolbar({
   const typeColumn = table.getColumn("type");
   const scenariosColumn = table.getColumn("scenario_ids");
   const extensionColumn = table.getColumn("extension");
+  const departmentsColumn = table.getColumn("departments");
 
   // Calculate deletable documents count
   const deletableCount = selectedDocuments.filter((documentId) =>
@@ -83,6 +86,13 @@ export function DocumentsDataTableToolbar({
             column={extensionColumn}
             title="Extension"
             options={extensionOptions}
+          />
+        )}
+        {departmentsColumn && departmentOptions.length > 0 && (
+          <DataTableFacetedFilter
+            column={departmentsColumn}
+            title="Department"
+            options={departmentOptions}
           />
         )}
         {isFiltered && (

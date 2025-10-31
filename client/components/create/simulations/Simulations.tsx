@@ -125,6 +125,19 @@ export function Simulations() {
     []
   );
 
+  // Build department options from mapping
+  const departmentMapping = useMemo(
+    () => (simulationsData?.department_mapping as Record<string, { name: string; description: string }>) || {},
+    [simulationsData?.department_mapping]
+  );
+
+  const departmentOptions = useMemo(() => {
+    return Object.entries(departmentMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [departmentMapping]);
+
   // Permissions now come from server-side in V2 API
   // No need for client-side permission logic
 
@@ -384,15 +397,16 @@ export function Simulations() {
 
   return (
     <div className="space-y-6">
-      <SimulationsDataTable
-        data={simulations}
-        scenarioMapping={scenarioMapping}
-        rubricMapping={rubricMapping}
-        scenarioOptions={scenarioOptions}
-        rubricOptions={rubricOptions}
-        timeLimitOptions={timeLimitOptions}
-        renderSimulationCard={renderSimulationCard}
-      />
+        <SimulationsDataTable
+          data={simulations}
+          scenarioMapping={scenarioMapping}
+          rubricMapping={rubricMapping}
+          scenarioOptions={scenarioOptions}
+          rubricOptions={rubricOptions}
+          timeLimitOptions={timeLimitOptions}
+          departmentOptions={departmentOptions}
+          renderSimulationCard={renderSimulationCard}
+        />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -108,6 +108,19 @@ export default function Cohorts() {
     }));
   }, [simulationMapping]);
 
+  // Build department options from mapping
+  const departmentMapping = useMemo(
+    () => (cohortsData?.department_mapping as Record<string, { name: string; description: string }>) || {},
+    [cohortsData?.department_mapping]
+  );
+
+  const departmentOptions = useMemo(() => {
+    return Object.entries(departmentMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [departmentMapping]);
+
   const isLoading = isProfileLoading || !effectiveProfile || loadingCohorts;
 
   if (isLoading) {
@@ -405,6 +418,7 @@ export default function Cohorts() {
           simulationMapping={simulationMapping}
           profileOptions={profileOptions}
           simulationOptions={simulationOptions}
+          departmentOptions={departmentOptions}
           renderCohortCard={renderCohortCard}
         />
       )}

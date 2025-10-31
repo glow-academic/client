@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { useAgentsList, useDuplicateAgent } from "@/lib/api/v2/hooks/agents";
-import { useMemo } from "react";
-import { AgentsDataTable } from "./AgentsDataTable";
-import { toast } from "sonner";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { AgentsDataTable } from "./AgentsDataTable";
 
 export default function Agents() {
   const router = useRouter();
@@ -65,6 +65,33 @@ export default function Agents() {
       label: temp.toFixed(2),
     }));
   }, [agents]);
+
+  // Build role options from unique agent roles
+  const roleOptions = useMemo(() => {
+    const roles = agents.map((a) => a.role).filter(Boolean);
+    const uniqueRoles = [...new Set(roles)].sort();
+    return uniqueRoles.map((role) => ({
+      value: role,
+      label: role,
+    }));
+  }, [agents]);
+
+  // Build department options from mapping
+  const departmentMapping = useMemo(
+    () =>
+      (agentsData?.department_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
+    [agentsData?.department_mapping]
+  );
+
+  const departmentOptions = useMemo(() => {
+    return Object.entries(departmentMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [departmentMapping]);
 
   const handleEdit = (id: string) => {
     router.push(`/system/agents/a/${id}`);
@@ -165,14 +192,16 @@ export default function Agents() {
 
   return (
     <div className="space-y-8">
-      <AgentsDataTable
-        data={agents}
-        modelMapping={modelMapping}
-        reasoningOptions={reasoningOptions}
-        modelOptions={modelOptions}
-        temperatureOptions={temperatureOptions}
-        renderAgentCard={renderAgentCard}
-      />
+        <AgentsDataTable
+          data={agents}
+          modelMapping={modelMapping}
+          reasoningOptions={reasoningOptions}
+          modelOptions={modelOptions}
+          temperatureOptions={temperatureOptions}
+          roleOptions={roleOptions}
+          departmentOptions={departmentOptions}
+          renderAgentCard={renderAgentCard}
+        />
     </div>
   );
 }

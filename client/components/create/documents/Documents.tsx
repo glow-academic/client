@@ -462,6 +462,23 @@ export default function Documents() {
     [scenarioMapping]
   );
 
+  // Build department options from mapping
+  const documentsDepartmentMapping = useMemo(
+    () =>
+      (documentsData?.department_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
+    [documentsData?.department_mapping]
+  );
+
+  const departmentOptions = useMemo(() => {
+    return Object.entries(documentsDepartmentMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [documentsDepartmentMapping]);
+
   const extensionOptions = useMemo(() => {
     const extensions = new Set(documents.map((d) => d.extension));
     return Array.from(extensions).map((ext) => ({
@@ -638,6 +655,21 @@ export default function Documents() {
             value.length === 0 ||
             scenarioIds.some((id: string) => value.includes(id))
           );
+        },
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: DocumentItem) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
         },
       },
       {
@@ -976,6 +1008,7 @@ export default function Documents() {
           typeOptions={typeOptions}
           scenarioOptions={scenarioOptions}
           extensionOptions={extensionOptions}
+          departmentOptions={departmentOptions}
           renderDocumentCard={renderDocumentCard}
           viewMode={viewMode}
           onViewModeChange={setViewMode}

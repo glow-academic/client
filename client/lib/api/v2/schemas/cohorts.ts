@@ -46,6 +46,7 @@ export const CohortsListResponseSchema = z.object({
   cohorts: z.array(CohortItemSchema),
   profile_mapping: ProfileMappingSchema,
   simulation_mapping: SimulationMappingSchema,
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type CohortsListResponse = z.infer<typeof CohortsListResponseSchema>;

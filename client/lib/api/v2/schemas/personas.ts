@@ -49,6 +49,7 @@ export const PersonasListResponseSchema = z.object({
   personas: z.array(PersonaItemSchema),
   scenario_mapping: ScenarioMappingSchema,
   model_mapping: ModelMappingSchema,
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type PersonasListResponse = z.infer<typeof PersonasListResponseSchema>;

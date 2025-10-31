@@ -49,6 +49,7 @@ class ParametersListResponse(BaseModel):
     """Response for parameters list endpoint."""
 
     parameters: list[ParameterItem]
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================

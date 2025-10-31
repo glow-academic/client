@@ -44,6 +44,7 @@ class PersonaService(BaseService):
         personas = []
         scenario_mapping = {}
         model_mapping = {}
+        department_mapping: dict[str, DepartmentMappingItem] = {}
 
         # Parse scenario_mapping from first row (same across all rows)
         if result:
@@ -67,6 +68,18 @@ class PersonaService(BaseService):
                             parameter_item_mapping={},
                             parameter_item_ids=[],
                             document_ids=[],
+                        )
+
+            # Parse department_mapping from JSONB with type safety (may be string or dict)
+            department_mapping_data = first_row.get("department_mapping")
+            if isinstance(department_mapping_data, str):
+                department_mapping_data = json.loads(department_mapping_data)
+            if department_mapping_data and isinstance(department_mapping_data, dict):
+                for did, ddata in department_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
                         )
 
         # Build persona items
@@ -106,6 +119,7 @@ class PersonaService(BaseService):
             personas=personas,
             scenario_mapping=scenario_mapping,
             model_mapping=model_mapping,
+            department_mapping=department_mapping,
         )
 
     async def duplicate_persona(

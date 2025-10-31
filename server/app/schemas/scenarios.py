@@ -43,6 +43,7 @@ class ScenariosListResponse(BaseModel):
     cohort_mapping: CohortMapping
     persona_mapping: PersonaMapping
     simulation_mapping: SimulationMapping
+    department_mapping: DepartmentMapping
 
 
 class ScenarioDetailRequest(BaseModel):

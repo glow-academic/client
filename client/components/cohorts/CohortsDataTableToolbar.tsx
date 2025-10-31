@@ -12,12 +12,14 @@ export interface CohortsDataTableToolbarProps {
   table: Table<CohortItem>;
   profileOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
+  departmentOptions?: { value: string; label: string }[];
 }
 
 export function CohortsDataTableToolbar({
   table,
   profileOptions,
   simulationOptions,
+  departmentOptions = [],
 }: CohortsDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -25,6 +27,7 @@ export function CohortsDataTableToolbar({
   const nameColumn = table.getColumn("name");
   const profileColumn = table.getColumn("profile_ids");
   const simulationColumn = table.getColumn("simulation_ids");
+  const departmentsColumn = table.getColumn("departments");
 
   return (
     <div className="flex items-center justify-between">
@@ -56,6 +59,15 @@ export function CohortsDataTableToolbar({
               column={simulationColumn}
               title="Simulation"
               options={simulationOptions}
+            />
+          )}
+
+          {/* Department Filter */}
+          {departmentsColumn && departmentOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={departmentsColumn}
+              title="Department"
+              options={departmentOptions}
             />
           )}
 

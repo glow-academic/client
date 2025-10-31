@@ -18,6 +18,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { ColumnDef } from "@tanstack/react-table";
+
 import TableRubric from "@/components/common/rubric/TableRubric";
 import {
   AlertDialog,
@@ -74,6 +76,152 @@ export default function Rubrics() {
   const standardsMapping = useMemo(
     () => rubricsData?.standards_mapping || {},
     [rubricsData]
+  );
+  const departmentMapping = useMemo(
+    () =>
+      (rubricsData?.department_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
+    [rubricsData]
+  );
+
+  // Build filter options
+  const departmentOptions = useMemo(() => {
+    return Object.entries(departmentMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [departmentMapping]);
+
+  const passPointsOptions = [
+    { value: "0-25", label: "0-25 points" },
+    { value: "26-50", label: "26-50 points" },
+    { value: "51-75", label: "51-75 points" },
+    { value: "76-100", label: "76-100 points" },
+    { value: "100+", label: "100+ points" },
+  ];
+
+  const totalPointsOptions = [
+    { value: "0-25", label: "0-25 points" },
+    { value: "26-50", label: "26-50 points" },
+    { value: "51-75", label: "51-75 points" },
+    { value: "76-100", label: "76-100 points" },
+    { value: "100+", label: "100+ points" },
+  ];
+
+  const passPercentageOptions = [
+    { value: "0-25", label: "0-25%" },
+    { value: "26-50", label: "26-50%" },
+    { value: "51-75", label: "51-75%" },
+    { value: "76-100", label: "76-100%" },
+  ];
+
+  // Column definitions for TanStack Table
+  const columns = useMemo<ColumnDef<RubricItem>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => row.getValue("name"),
+        filterFn: (row, id, value) => {
+          const name = String(row.getValue(id)).toLowerCase();
+          const desc = String(row.original.description).toLowerCase();
+          const query = String(value).toLowerCase();
+          return name.includes(query) || desc.includes(query);
+        },
+      },
+      // Hidden faceting column for Pass Points
+      {
+        id: "passPoints",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: RubricItem) => row.passPoints,
+        filterFn: (row, _id, value: string[]) => {
+          const passPoints = Number(row.getValue("passPoints"));
+          return value.some((range) => {
+            if (range === "100+") return passPoints >= 100;
+            const [min, max] = range.split("-").map(Number);
+            return (
+              min !== undefined &&
+              max !== undefined &&
+              passPoints >= min &&
+              passPoints <= max
+            );
+          });
+        },
+      },
+      // Hidden faceting column for Total Points
+      {
+        id: "points",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: RubricItem) => row.points,
+        filterFn: (row, _id, value: string[]) => {
+          const points = Number(row.getValue("points"));
+          return value.some((range) => {
+            if (range === "100+") return points >= 100;
+            const [min, max] = range.split("-").map(Number);
+            return (
+              min !== undefined &&
+              max !== undefined &&
+              points >= min &&
+              points <= max
+            );
+          });
+        },
+      },
+      // Hidden faceting column for Pass Percentage (computed)
+      {
+        id: "passPercentage",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: RubricItem) => {
+          const points = row.points;
+          if (!points || points === 0) return 0;
+          return Math.round((row.passPoints / points) * 100);
+        },
+        filterFn: (row, _id, value: string[]) => {
+          const percentage =
+            row.original.points > 0
+              ? Math.round(
+                  (row.original.passPoints / row.original.points) * 100
+                )
+              : 0;
+          return value.some((range) => {
+            const [min, max] = range.split("-").map(Number);
+            return (
+              min !== undefined &&
+              max !== undefined &&
+              percentage >= min &&
+              percentage <= max
+            );
+          });
+        },
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: RubricItem) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+    ],
+    []
   );
 
   const handleDelete = async () => {
@@ -255,9 +403,14 @@ export default function Rubrics() {
         </div>
       ) : (
         <RubricsDataTable
+          columns={columns}
           rubrics={rubrics}
           standardGroupsMapping={standardGroupsMapping}
           standardsMapping={standardsMapping}
+          departmentOptions={departmentOptions}
+          passPointsOptions={passPointsOptions}
+          totalPointsOptions={totalPointsOptions}
+          passPercentageOptions={passPercentageOptions}
           renderRubricCard={renderRubricCard}
         />
       )}
