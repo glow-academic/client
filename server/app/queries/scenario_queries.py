@@ -93,6 +93,7 @@ class ScenarioQueries:
                 s.hints_enabled,
                 s.objectives_enabled,
                 s.image_input_enabled,
+                s.copy_paste_allowed,
                 s.input_guardrail_enabled,
                 s.output_guardrail_enabled,
                 CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
@@ -337,6 +338,7 @@ class ScenarioQueries:
                 s.hints_enabled,
                 s.objectives_enabled,
                 s.image_input_enabled,
+                s.copy_paste_allowed,
                 s.input_guardrail_enabled,
                 s.output_guardrail_enabled
             FROM scenarios s
@@ -700,6 +702,12 @@ class ScenarioQueries:
             sc.generated,
             sc.department_ids,
             sc.parent_scenario_id,
+            sc.hints_enabled,
+            sc.objectives_enabled,
+            sc.image_input_enabled,
+            sc.copy_paste_allowed,
+            sc.input_guardrail_enabled,
+            sc.output_guardrail_enabled,
             sp.persona_id,
             COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
             COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,
@@ -884,7 +892,7 @@ class ScenarioQueries:
         """Build query to create scenario.
 
         Params order: name, active, hints_enabled, objectives_enabled, 
-        image_input_enabled, input_guardrail_enabled, output_guardrail_enabled
+        image_input_enabled, copy_paste_allowed, input_guardrail_enabled, output_guardrail_enabled
         """
         return """
         INSERT INTO scenarios (
@@ -893,10 +901,11 @@ class ScenarioQueries:
             hints_enabled,
             objectives_enabled,
             image_input_enabled,
+            copy_paste_allowed,
             input_guardrail_enabled,
             output_guardrail_enabled
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id
         """
 
@@ -959,10 +968,11 @@ class ScenarioQueries:
             hints_enabled = $4,
             objectives_enabled = $5,
             image_input_enabled = $6,
-            input_guardrail_enabled = $7,
-            output_guardrail_enabled = $8,
+            copy_paste_allowed = $7,
+            input_guardrail_enabled = $8,
+            output_guardrail_enabled = $9,
             updated_at = NOW()
-        WHERE id = $9
+        WHERE id = $10
         """
 
     def delete_scenario_departments(
@@ -1033,6 +1043,7 @@ class ScenarioQueries:
             s.hints_enabled,
             s.objectives_enabled,
             s.image_input_enabled,
+            s.copy_paste_allowed,
             s.input_guardrail_enabled,
             s.output_guardrail_enabled
         FROM scenarios s
@@ -1045,7 +1056,7 @@ class ScenarioQueries:
         """Build query to insert duplicate scenario.
 
         Params order: name, hints_enabled, objectives_enabled, 
-        image_input_enabled, input_guardrail_enabled, output_guardrail_enabled
+        image_input_enabled, copy_paste_allowed, input_guardrail_enabled, output_guardrail_enabled
         """
         return """
         INSERT INTO scenarios (
@@ -1054,6 +1065,7 @@ class ScenarioQueries:
             hints_enabled,
             objectives_enabled,
             image_input_enabled,
+            copy_paste_allowed,
             input_guardrail_enabled,
             output_guardrail_enabled
         )
@@ -1064,7 +1076,8 @@ class ScenarioQueries:
             $3,
             $4,
             $5,
-            $6
+            $6,
+            $7
         )
         RETURNING id
         """
@@ -1468,8 +1481,8 @@ class ScenarioQueries:
         """
         return """
         INSERT INTO scenarios (name, generated, active, hints_enabled, objectives_enabled, 
-        image_input_enabled, input_guardrail_enabled, output_guardrail_enabled)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        image_input_enabled, copy_paste_allowed, input_guardrail_enabled, output_guardrail_enabled)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *
         """
 

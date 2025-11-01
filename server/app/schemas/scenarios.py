@@ -90,6 +90,7 @@ class ScenarioDetailResponse(BaseModel):
     hints_enabled: bool
     objectives_enabled: bool
     image_input_enabled: bool
+    copy_paste_allowed: bool
     input_guardrail_enabled: bool
     output_guardrail_enabled: bool
 
@@ -151,6 +152,7 @@ class CreateScenarioRequest(BaseModel):
     hints_enabled: bool = False
     objectives_enabled: bool = True
     image_input_enabled: bool = False
+    copy_paste_allowed: bool = False
     input_guardrail_enabled: bool = False
     output_guardrail_enabled: bool = False
 
@@ -178,6 +180,7 @@ class UpdateScenarioRequest(BaseModel):
     hints_enabled: bool = False
     objectives_enabled: bool = True
     image_input_enabled: bool = False
+    copy_paste_allowed: bool = False
     input_guardrail_enabled: bool = False
     output_guardrail_enabled: bool = False
 

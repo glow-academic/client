@@ -514,6 +514,7 @@ class ScenarioService(BaseService):
             hints_enabled=scenario.get("hints_enabled", False),
             objectives_enabled=scenario.get("objectives_enabled", True),
             image_input_enabled=scenario.get("image_input_enabled", False),
+            copy_paste_allowed=scenario.get("copy_paste_allowed", False),
             input_guardrail_enabled=scenario.get("input_guardrail_enabled", False),
             output_guardrail_enabled=scenario.get("output_guardrail_enabled", False),
             parent_scenario_id=scenario["parent_scenario_id"],
@@ -778,6 +779,7 @@ class ScenarioService(BaseService):
                 request.hints_enabled,
                 request.objectives_enabled,
                 request.image_input_enabled,
+                request.copy_paste_allowed,
                 request.input_guardrail_enabled,
                 request.output_guardrail_enabled,
             )
@@ -896,6 +898,7 @@ class ScenarioService(BaseService):
                 request.hints_enabled,
                 request.objectives_enabled,
                 request.image_input_enabled,
+                request.copy_paste_allowed,
                 request.input_guardrail_enabled,
                 request.output_guardrail_enabled,
                 request.scenarioId,
@@ -1005,6 +1008,7 @@ class ScenarioService(BaseService):
                 original.get("hints_enabled", False),
                 original.get("objectives_enabled", True),
                 original.get("image_input_enabled", False),
+                original.get("copy_paste_allowed", False),
                 original.get("input_guardrail_enabled", False),
                 original.get("output_guardrail_enabled", False),
             )

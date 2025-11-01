@@ -58,7 +58,8 @@ CREATE TABLE scenarios (
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_input_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   input_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  output_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE
+  output_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  copy_paste_allowed BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Scenario → Departments junction table (BCNF normalization)

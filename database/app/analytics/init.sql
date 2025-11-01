@@ -147,7 +147,7 @@ persona_first_dept AS (
 SELECT
   -- *** original columns kept in the same order as your "Old def" ***
   sc.id                         AS chat_id,
-  sc.attempt_id                 AS attempt_id,
+  ac.attempt_id                 AS attempt_id,
   ap.profile_id                 AS profile_id,
   sa.simulation_id              AS simulation_id,
 
@@ -202,7 +202,8 @@ SELECT
     pfd.department_id
   ) AS department_id
 FROM simulation_chats sc
-JOIN simulation_attempts sa   ON sa.id = sc.attempt_id
+JOIN attempt_chats ac ON ac.chat_id = sc.id
+JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
 JOIN profiles pr              ON pr.id = ap.profile_id

@@ -1169,6 +1169,8 @@ export function WebSocketProvider({
       chat_id: string;
       attempt_id: string;
       end_all?: boolean;
+      previous_chat_id?: string;
+      department_id?: string;
     }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.continue.skip_not_connected", {

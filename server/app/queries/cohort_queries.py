@@ -382,7 +382,8 @@ class CohortQueries:
             LEFT JOIN simulation_attempts sa ON sa.simulation_id = cs.simulation_id 
             LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
             LEFT JOIN cohort_profile_ids cp ON cp.profile_id = ap.profile_id
-            LEFT JOIN simulation_chats sc ON sc.attempt_id = sa.id
+            LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
+            LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
             LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
             GROUP BY cs.simulation_id, cs.active, s.title, s.description, stl.time_limit_seconds
         ),
@@ -647,7 +648,8 @@ class CohortQueries:
             LEFT JOIN simulation_attempts sa ON sa.simulation_id = cs.simulation_id 
             LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
             LEFT JOIN cohort_profile_ids cp ON cp.profile_id = ap.profile_id
-            LEFT JOIN simulation_chats sc ON sc.attempt_id = sa.id
+            LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
+            LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
             LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
             GROUP BY cs.simulation_id, cs.active, s.title, s.description, stl.time_limit_seconds
         ),
@@ -1160,7 +1162,8 @@ class CohortQueries:
                             ORDER BY sc.created_at DESC
                         ) as rn
                     FROM student_attempts sa
-                    JOIN simulation_chats sc ON sc.attempt_id = sa.attempt_id
+                    JOIN attempt_chats ac ON ac.attempt_id = sa.attempt_id
+                    JOIN simulation_chats sc ON sc.id = ac.chat_id
                     JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
                 )
                 SELECT 

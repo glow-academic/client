@@ -94,6 +94,7 @@ export const ScenarioDetailResponseSchema = z.object({
   hints_enabled: z.boolean(),
   objectives_enabled: z.boolean(),
   image_input_enabled: z.boolean(),
+  copy_paste_allowed: z.boolean(),
   input_guardrail_enabled: z.boolean(),
   output_guardrail_enabled: z.boolean(),
 
@@ -166,6 +167,7 @@ export const CreateScenarioRequestSchema = z.object({
   hints_enabled: z.boolean().default(false),
   objectives_enabled: z.boolean().default(true),
   image_input_enabled: z.boolean().default(false),
+  copy_paste_allowed: z.boolean().default(false),
   input_guardrail_enabled: z.boolean().default(false),
   output_guardrail_enabled: z.boolean().default(false),
 });
@@ -196,6 +198,7 @@ export const UpdateScenarioRequestSchema = z.object({
   hints_enabled: z.boolean().default(false),
   objectives_enabled: z.boolean().default(true),
   image_input_enabled: z.boolean().default(false),
+  copy_paste_allowed: z.boolean().default(false),
   input_guardrail_enabled: z.boolean().default(false),
   output_guardrail_enabled: z.boolean().default(false),
 });

@@ -106,7 +106,7 @@ export interface SimulationContextType {
   // WebSocket operations
   sendMessage: (message: string, isRetry?: boolean) => void;
   stopMessage: () => void;
-  endChat: () => void;
+  endChat: (chatId?: string, previousChatId?: string) => void;
   endAllChats: () => void;
 
   // Loading states
@@ -539,7 +539,7 @@ export function SimulationProvider({
   }, [currentChat, isStoppingMessage, emitStopSimulation, readOnly]);
 
   const endChat = useCallback(
-    async (chatId?: string) => {
+    async (chatId?: string, previousChatId?: string) => {
       if (readOnly) return;
       const targetChatId = chatId || currentChat?.id;
       if (!targetChatId) return;
@@ -558,6 +558,7 @@ export function SimulationProvider({
           attempt_id: attemptId,
           end_all: false,
           department_id: simulation?.departmentId,
+          previous_chat_id: previousChatId,
         });
       } catch (error) {
         // Invalidate to refetch on error

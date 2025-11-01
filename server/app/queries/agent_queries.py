@@ -924,8 +924,9 @@ class AgentQueries:
             WHERE id = $1 AND chat_id = $2
         ),
         chat_info AS (
-            SELECT sc.id, sc.attempt_id, sc.scenario_id, sc.trace_id, sc.title
+            SELECT sc.id, ac.attempt_id, sc.scenario_id, sc.trace_id, sc.title
             FROM simulation_chats sc
+            JOIN attempt_chats ac ON ac.chat_id = sc.id
             JOIN target_message tm ON tm.chat_id = sc.id
         ),
         attempt_info AS (
@@ -1073,6 +1074,7 @@ class AgentQueries:
             
             -- Scenario settings (flags moved from simulations to scenarios)
             s.image_input_enabled,
+            s.copy_paste_allowed,
             s.output_guardrail_enabled,
             
             -- Profile data (via attempt_profiles junction)
@@ -1093,7 +1095,8 @@ class AgentQueries:
             ) as documents
         
         FROM simulation_chats sc
-        INNER JOIN simulation_attempts sa ON sa.id = sc.attempt_id
+        JOIN attempt_chats ac ON ac.chat_id = sc.id
+        INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
         INNER JOIN scenarios s ON s.id = sc.scenario_id
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         INNER JOIN simulations sim ON sim.id = sa.simulation_id
@@ -1114,7 +1117,7 @@ class AgentQueries:
                  p.id, p.name, pr_prompt.system_prompt, p.temperature, p.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url,
-                 s.image_input_enabled, s.output_guardrail_enabled,
+                 s.image_input_enabled, s.copy_paste_allowed, s.output_guardrail_enabled,
                  ap.profile_id
         """
 
@@ -1143,19 +1146,20 @@ class AgentQueries:
             SELECT 
                 sc.id,
                 sc.scenario_id,
-                sc.attempt_id,
+                ac.attempt_id,
                 sc.title,
                 sc.trace_id,
                 sc.created_at,
                 sc.completed
             FROM simulation_chats sc
+            JOIN attempt_chats ac ON ac.chat_id = sc.id
             WHERE sc.id = $1
         ),
         attempt_info AS (
             SELECT 
                 sa.id,
                 sa.simulation_id,
-                (SELECT COUNT(*) FROM simulation_chats WHERE attempt_id = sa.id) as total_chats
+                (SELECT COUNT(*) FROM attempt_chats WHERE attempt_id = sa.id) as total_chats
             FROM simulation_attempts sa
             WHERE sa.id = (SELECT attempt_id FROM chat_info)
         ),
@@ -1401,7 +1405,8 @@ class AgentQueries:
             ap.profile_id::text as profile_id
         
         FROM simulation_chats sc
-        INNER JOIN simulation_attempts sa ON sa.id = sc.attempt_id
+        JOIN attempt_chats ac ON ac.chat_id = sc.id
+        INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
         INNER JOIN department_agents da ON da.department_id = $2 
             AND da.role = $3 || '_guardrail'
         INNER JOIN agents a ON a.id = da.agent_id

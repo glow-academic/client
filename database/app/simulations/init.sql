@@ -103,10 +103,22 @@ CREATE TABLE simulation_chats (
   -- completed_at removed (use simulation_chat_grades.time_taken as source of truth)
   title      TEXT         NOT NULL,
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
-  attempt_id UUID         NOT NULL REFERENCES simulation_attempts(id)  ON DELETE CASCADE,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
   trace_id   TEXT         NOT NULL -- openai trace id (NOT NULL, no default)
 );
+
+-- Simulation attempts ↔ Chats junction table (BCNF normalization - replaces simulation_chats.attempt_id)
+CREATE TABLE attempt_chats (
+  attempt_id UUID NOT NULL REFERENCES simulation_attempts(id) ON DELETE CASCADE,
+  chat_id UUID NOT NULL REFERENCES simulation_chats(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (attempt_id, chat_id)
+);
+
+CREATE INDEX ON attempt_chats (attempt_id);
+CREATE INDEX ON attempt_chats (chat_id);
+CREATE INDEX ON attempt_chats (attempt_id, chat_id);
 
 CREATE TABLE simulation_messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

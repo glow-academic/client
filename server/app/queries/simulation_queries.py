@@ -562,20 +562,52 @@ class SimulationQueries:
         return (query, [attempt_id])
 
     def create_simulation_chat(self) -> str:
-        """Build query to create simulation chat.
+        """Build query to create simulation chat and link via junction table.
 
         Params order: created_at, title, scenario_id, attempt_id, completed, trace_id
+        Returns chat with attempt_id from junction table
         """
         return """
-        INSERT INTO simulation_chats (created_at, title, scenario_id, attempt_id, completed, trace_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
+        WITH inserted_chat AS (
+            INSERT INTO simulation_chats (created_at, title, scenario_id, completed, trace_id)
+            VALUES ($1, $2, $3, $5, $6)
+            RETURNING id, created_at, updated_at, title, scenario_id, completed, trace_id
+        ),
+        inserted_junction AS (
+            INSERT INTO attempt_chats (attempt_id, chat_id, created_at, updated_at)
+            SELECT $4, ic.id, ic.created_at, ic.updated_at
+            FROM inserted_chat ic
+            RETURNING chat_id, attempt_id
+        )
+        SELECT 
+            ic.id,
+            ic.created_at,
+            ic.updated_at,
+            ic.title,
+            ic.scenario_id,
+            ij.attempt_id,
+            ic.completed,
+            ic.trace_id
+        FROM inserted_chat ic
+        JOIN inserted_junction ij ON ij.chat_id = ic.id
         """
 
     def get_chat_by_id(self, chat_id: str) -> tuple[str, list[Any]]:
         """Build query to get chat by ID."""
         query = "SELECT * FROM simulation_chats WHERE id = $1"
         return (query, [chat_id])
+
+    def link_chat_to_attempt(self) -> str:
+        """Build query to link an existing chat to an attempt via junction table.
+        
+        Params order: attempt_id, chat_id
+        """
+        return """
+        INSERT INTO attempt_chats (attempt_id, chat_id, created_at, updated_at)
+        VALUES ($1, $2, NOW(), NOW())
+        ON CONFLICT (attempt_id, chat_id) DO NOTHING
+        RETURNING attempt_id, chat_id
+        """
 
     def get_chat_basic(self, chat_id: str) -> tuple[str, list[Any]]:
         """Build query to get basic chat info."""
@@ -590,10 +622,11 @@ class SimulationQueries:
     def get_existing_chats_for_attempt(self, attempt_id: str) -> tuple[str, list[Any]]:
         """Build query to get all chats for an attempt."""
         query = """
-        SELECT id, completed, scenario_id
-        FROM simulation_chats 
-        WHERE attempt_id = $1
-        ORDER BY created_at
+        SELECT sc.id, sc.completed, sc.scenario_id
+        FROM attempt_chats ac
+        JOIN simulation_chats sc ON sc.id = ac.chat_id
+        WHERE ac.attempt_id = $1
+        ORDER BY sc.created_at
         """
         return (query, [attempt_id])
 
@@ -608,7 +641,8 @@ class SimulationQueries:
             s.practice_simulation,
             sa.id as attempt_id
         FROM simulation_chats sc
-        JOIN simulation_attempts sa ON sa.id = sc.attempt_id
+        JOIN attempt_chats ac ON ac.chat_id = sc.id
+        JOIN simulation_attempts sa ON sa.id = ac.attempt_id
         JOIN simulations s ON s.id = sa.simulation_id
         WHERE sc.id = $1
         """
@@ -709,15 +743,16 @@ class SimulationQueries:
             LIMIT $2
         ),
         latest_grades AS (
-            SELECT DISTINCT ON (sc.attempt_id)
-                sc.attempt_id,
+            SELECT DISTINCT ON (ac.attempt_id)
+                ac.attempt_id,
                 scg.score,
                 scg.passed,
                 scg.time_taken
-            FROM simulation_chats sc
+            FROM attempt_chats ac
+            JOIN simulation_chats sc ON sc.id = ac.chat_id
             JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
-            WHERE sc.attempt_id IN (SELECT id FROM attempt_data)
-            ORDER BY sc.attempt_id, sc.created_at DESC
+            WHERE ac.attempt_id IN (SELECT id FROM attempt_data)
+            ORDER BY ac.attempt_id, sc.created_at DESC
         )
         SELECT 
             ad.id,
@@ -871,7 +906,8 @@ class SimulationQueries:
                 COUNT(DISTINCT scg.id) as total_graded,
                 SUM(CASE WHEN scg.passed = true THEN 1 ELSE 0 END) as total_passed
             FROM simulation_attempts sa
-            LEFT JOIN simulation_chats sc ON sc.attempt_id = sa.id
+            LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
+            LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
             LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
             WHERE sa.simulation_id = $1
         )
@@ -2130,7 +2166,7 @@ class SimulationQueries:
             sc.updated_at,
             sc.title,
             sc.scenario_id,
-            sc.attempt_id,
+            ac.attempt_id,
             sc.completed,
             sc.trace_id,
             -- Add document IDs for this chat's scenario
@@ -2140,9 +2176,60 @@ class SimulationQueries:
                  WHERE sd.scenario_id = sc.scenario_id AND sd.active = true),
                 ARRAY[]::text[]
             ) as document_ids
-        FROM simulation_chats sc
-        WHERE sc.attempt_id = $1
+        FROM attempt_chats ac
+        JOIN simulation_chats sc ON sc.id = ac.chat_id
+        WHERE ac.attempt_id = $1
         ORDER BY sc.created_at
+        ),
+        -- Get current attempt's profile_id for finding previous chats
+        current_attempt_profile AS (
+            SELECT ap.profile_id
+            FROM attempt_profiles ap
+            WHERE ap.attempt_id = $1 AND ap.active = true
+            LIMIT 1
+        ),
+        -- Find previous completed chats with same scenario_id from other attempts by same profile
+        -- Use latest grade per chat (DISTINCT ON)
+        previous_chats_with_grades AS (
+            SELECT DISTINCT ON (sc.id)
+                sc.id as chat_id,
+                sc.scenario_id,
+                ac2.attempt_id,
+                sc.title,
+                sc.created_at,
+                scg.score,
+                scg.passed
+            FROM simulation_chats sc
+            JOIN attempt_chats ac2 ON ac2.chat_id = sc.id
+            JOIN simulation_attempts sa2 ON sa2.id = ac2.attempt_id
+            JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
+            CROSS JOIN current_attempt_profile cap
+            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            WHERE ap2.profile_id = cap.profile_id
+              AND sc.completed = true
+              AND scg.id IS NOT NULL
+              AND sc.scenario_id IN (SELECT scenario_id FROM chats_base)
+              AND ac2.attempt_id != $1
+            ORDER BY sc.id, scg.created_at DESC
+        ),
+        previous_chats_for_scenarios AS (
+            SELECT 
+                pwg.scenario_id,
+                COALESCE(
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'chatId', pwg.chat_id::text,
+                            'attemptId', pwg.attempt_id::text,
+                            'score', pwg.score,
+                            'passed', pwg.passed,
+                            'createdAt', pwg.created_at,
+                            'title', pwg.title
+                        ) ORDER BY pwg.created_at DESC
+                    ),
+                    '[]'::jsonb
+                ) as previous_chats
+            FROM previous_chats_with_grades pwg
+            GROUP BY pwg.scenario_id
         ),
         chat_ids_list AS (
             SELECT array_agg(id) as chat_ids
@@ -2166,6 +2253,7 @@ class SimulationQueries:
                     'updatedAt', s.updated_at,
                     'generated', s.generated,
                     'defaultScenario', false,
+                    'copyPasteAllowed', s.copy_paste_allowed,
                     'objectives', COALESCE(
                         (SELECT jsonb_agg(so.objective ORDER BY so.idx)
                          FROM scenario_objectives so
@@ -2176,6 +2264,7 @@ class SimulationQueries:
                 s.hints_enabled,
                 s.objectives_enabled,
                 s.image_input_enabled,
+                s.copy_paste_allowed,
                 s.input_guardrail_enabled,
                 s.output_guardrail_enabled
             FROM scenarios s
@@ -2189,6 +2278,7 @@ class SimulationQueries:
                 COALESCE((SELECT s.hints_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as hints_enabled,
                 COALESCE((SELECT s.objectives_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), true) as objectives_enabled,
                 COALESCE((SELECT s.image_input_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as image_input_enabled,
+                COALESCE((SELECT s.copy_paste_allowed FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as copy_paste_allowed,
                 COALESCE((SELECT s.input_guardrail_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as input_guardrail_enabled,
                 COALESCE((SELECT s.output_guardrail_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as output_guardrail_enabled
         ),
@@ -2537,7 +2627,8 @@ class SimulationQueries:
                     'grade', gd.grade,
                     'feedbacks', COALESCE(fg.feedbacks, '[]'::jsonb),
                     'dynamicRubric', drpc.dynamic_rubric,
-                    'gradingState', gspc.grading_state
+                    'gradingState', gspc.grading_state,
+                    'previousChats', COALESCE(pcf.previous_chats, '[]'::jsonb)
                 ) as chat_data,
                 cb.completed,
                 cb.created_at,
@@ -2550,6 +2641,7 @@ class SimulationQueries:
             LEFT JOIN feedbacks_grouped fg ON fg.grade_id = (gd.grade->>'id')::uuid
             LEFT JOIN dynamic_rubric_per_chat drpc ON drpc.chat_id = cb.id
             LEFT JOIN grading_state_per_chat gspc ON gspc.chat_id = cb.id
+            LEFT JOIN previous_chats_for_scenarios pcf ON pcf.scenario_id = cb.scenario_id
         ),
         aggregated_results_data AS (
             SELECT 
@@ -2648,6 +2740,7 @@ class SimulationQueries:
                 'hintsEnabled', sf.hints_enabled,
                 'objectivesEnabled', sf.objectives_enabled,
                 'imageInputActive', sf.image_input_enabled,
+                'copyPasteAllowed', sf.copy_paste_allowed,
                 'inputGuardrailActive', sf.input_guardrail_enabled,
                 'outputGuardrailActive', sf.output_guardrail_enabled,
                 'timeLimit', ab.sim_time_limit,

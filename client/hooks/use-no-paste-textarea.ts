@@ -4,16 +4,18 @@ interface UseNoPasteTextareaOptions {
   onPasteAttempt?: () => void;
   enableBurstDetection?: boolean;
   maxBurstSize?: number;
+  enabled?: boolean; // If false, paste prevention is disabled
 }
 
 export function useNoPasteTextarea(
   textareaRef: React.RefObject<HTMLTextAreaElement | null>,
-  options: UseNoPasteTextareaOptions = {},
+  options: UseNoPasteTextareaOptions = {}
 ) {
   const {
     onPasteAttempt,
     enableBurstDetection = true,
     maxBurstSize = 1,
+    enabled = true, // Default to enabled (paste prevention on)
   } = options;
 
   const prevValueRef = useRef<string>("");
@@ -26,6 +28,7 @@ export function useNoPasteTextarea(
 
   // Global paste guard (capture phase) just for this textarea
   useEffect(() => {
+    if (!enabled) return;
     const onDocPaste = (e: ClipboardEvent) => {
       if (document.activeElement === textareaRef.current) {
         e.preventDefault();
@@ -34,10 +37,11 @@ export function useNoPasteTextarea(
     };
     document.addEventListener("paste", onDocPaste, true);
     return () => document.removeEventListener("paste", onDocPaste, true);
-  }, [textareaRef, onPasteAttempt]);
+  }, [textareaRef, onPasteAttempt, enabled]);
 
   // Block middle-click paste (Linux/X11 primary selection)
   const handleMouseDown = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    if (!enabled) return;
     if (e.button === 1) {
       e.preventDefault(); // middle button
       onPasteAttempt?.();
@@ -46,6 +50,7 @@ export function useNoPasteTextarea(
 
   // Block paste/drop at the earliest stage
   const handleBeforeInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    if (!enabled) return;
     const nativeEvent = e.nativeEvent as InputEvent;
     const inputType = nativeEvent?.inputType as string | undefined;
     // Covers desktop + mobile long-press
@@ -61,22 +66,26 @@ export function useNoPasteTextarea(
 
   // Kill context menu (mouse + long-press)
   const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    if (!enabled) return;
     e.preventDefault();
   };
 
   // Block paste events
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!enabled) return;
     e.preventDefault();
     onPasteAttempt?.();
   };
 
   const handlePasteCapture = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!enabled) return;
     e.preventDefault();
     onPasteAttempt?.();
   };
 
   // Block drop events
   const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    if (!enabled) return;
     e.preventDefault();
     onPasteAttempt?.();
   };
@@ -84,17 +93,19 @@ export function useNoPasteTextarea(
   // Enhanced keydown handler with burst detection
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
-    onSendMessage?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void,
+    onSendMessage?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   ) => {
-    const isModifier = e.metaKey || e.ctrlKey;
-    const key = e.key.toLowerCase();
-    const isPasteShortcut =
-      (isModifier && key === "v") || (e.shiftKey && e.key === "Insert");
+    if (enabled) {
+      const isModifier = e.metaKey || e.ctrlKey;
+      const key = e.key.toLowerCase();
+      const isPasteShortcut =
+        (isModifier && key === "v") || (e.shiftKey && e.key === "Insert");
 
-    if (isPasteShortcut) {
-      e.preventDefault();
-      onPasteAttempt?.();
-      return;
+      if (isPasteShortcut) {
+        e.preventDefault();
+        onPasteAttempt?.();
+        return;
+      }
     }
 
     // Let IME compose; let Enter submit
@@ -107,7 +118,7 @@ export function useNoPasteTextarea(
   const handleChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
     onValueChange: (value: string) => void,
-    sanitizeInput?: (value: string) => string,
+    sanitizeInput?: (value: string) => string
   ) => {
     const next = e.target.value;
     const prev = prevValueRef.current;
@@ -118,6 +129,7 @@ export function useNoPasteTextarea(
 
     // Fallback "burst" guard: if inserted > maxBurstSize chars and not during composition, revert
     if (
+      enabled &&
       enableBurstDetection &&
       !isComposingRef.current &&
       delta > maxBurstSize

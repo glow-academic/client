@@ -17,6 +17,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useEffect, useMemo, useState } from "react";
@@ -50,6 +52,10 @@ export function SimulationControls() {
   const [confirmEndAllOpen, setConfirmEndAllOpen] = useState(false);
   const [endAllRemainingSessions, setEndAllRemainingSessions] = useState(0);
   const [confirmEndChatOpen, setConfirmEndChatOpen] = useState(false);
+  const [showPreviousChatsDialog, setShowPreviousChatsDialog] = useState(false);
+  const [selectedPreviousChatId, setSelectedPreviousChatId] = useState<
+    string | null
+  >(null);
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
@@ -80,6 +86,7 @@ export function SimulationControls() {
     currentChat,
     attemptId,
     endAllChats,
+    attemptData,
   } = simulationContext;
 
   // Don't show if results are showing or user is not the owner
@@ -132,17 +139,31 @@ export function SimulationControls() {
               setConfirmEndChatOpen(true);
               return;
             }
-            // Dispatch endChatButtonPressed event for tour progression and navigating state management
-            window.dispatchEvent(
-              new CustomEvent("endChatButtonPressed", {
-                detail: {
-                  chatId: currentChat?.id,
-                  attemptId: attemptId,
-                },
-              })
+
+            // Check if current chat has previous chats for same scenario
+            const currentChatData = attemptData?.chats.find(
+              (c) => c.chat.id === currentChat?.id
             );
-            setEndingAction("endChat");
-            endChat();
+            const previousChats = currentChatData?.previousChats || [];
+
+            if (previousChats.length > 0) {
+              // Show dialog to select previous chat
+              setShowPreviousChatsDialog(true);
+              setSelectedPreviousChatId(""); // Default to "continue normally"
+            } else {
+              // No previous chats, proceed normally
+              // Dispatch endChatButtonPressed event for tour progression and navigating state management
+              window.dispatchEvent(
+                new CustomEvent("endChatButtonPressed", {
+                  detail: {
+                    chatId: currentChat?.id,
+                    attemptId: attemptId,
+                  },
+                })
+              );
+              setEndingAction("endChat");
+              endChat();
+            }
           }}
           disabled={
             endChatLoading || (simulation?.timeLimit ? !isActive : false)
@@ -241,6 +262,114 @@ export function SimulationControls() {
               }}
             >
               End Chat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Previous Chats Selection Dialog */}
+      <AlertDialog
+        open={showPreviousChatsDialog}
+        onOpenChange={setShowPreviousChatsDialog}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Reuse score from previous attempt?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You have completed this scenario before. Select a previous attempt
+              to reuse its score, or continue normally.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            {(() => {
+              const currentChatData = attemptData?.chats.find(
+                (c) => c.chat.id === currentChat?.id
+              );
+              const previousChats = currentChatData?.previousChats || [];
+
+              if (previousChats.length === 0) {
+                return null;
+              }
+
+              return (
+                <RadioGroup
+                  value={selectedPreviousChatId || ""}
+                  onValueChange={setSelectedPreviousChatId}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="" id="none" />
+                      <Label htmlFor="none" className="cursor-pointer">
+                        Continue normally (don't reuse score)
+                      </Label>
+                    </div>
+                    {previousChats.map((prevChat) => (
+                      <div
+                        key={prevChat.chatId}
+                        className="flex items-center space-x-2"
+                      >
+                        <RadioGroupItem
+                          value={prevChat.chatId}
+                          id={prevChat.chatId}
+                        />
+                        <Label
+                          htmlFor={prevChat.chatId}
+                          className="cursor-pointer flex-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">
+                              {prevChat.title}
+                            </span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                              {prevChat.score !== null &&
+                              prevChat.passed !== null
+                                ? `${prevChat.score} pts (${prevChat.passed ? "Passed" : "Failed"})`
+                                : "No score"}
+                            </span>
+                          </div>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
+              );
+            })()}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowPreviousChatsDialog(false);
+                setSelectedPreviousChatId(null);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                // Dispatch endChatButtonPressed event for tour progression
+                window.dispatchEvent(
+                  new CustomEvent("endChatButtonPressed", {
+                    detail: {
+                      chatId: currentChat?.id,
+                      attemptId: attemptId,
+                    },
+                  })
+                );
+                setShowPreviousChatsDialog(false);
+                setEndingAction("endChat");
+                endChat(
+                  undefined,
+                  selectedPreviousChatId && selectedPreviousChatId !== ""
+                    ? selectedPreviousChatId
+                    : undefined
+                );
+                setSelectedPreviousChatId(null);
+              }}
+              disabled={false}
+            >
+              End Session
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

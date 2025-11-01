@@ -323,7 +323,8 @@ class ProfileQueries:
             FROM simulation_attempts sa
             JOIN attempt_profiles ap ON sa.id = ap.attempt_id
             JOIN simulations s ON s.id = sa.simulation_id
-            LEFT JOIN simulation_chats sc ON sc.attempt_id = sa.id
+            LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
+            LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
             LEFT JOIN scenarios scn ON scn.id = sc.scenario_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = scn.id AND sps.active = true
             LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
@@ -472,7 +473,8 @@ class ProfileQueries:
                 ROW_NUMBER() OVER (PARTITION BY la.attempt_id ORDER BY sc.created_at DESC) as rn
             FROM latest_attempts la
             JOIN simulations s ON s.id = la.simulation_id
-            JOIN simulation_chats sc ON sc.attempt_id = la.attempt_id
+            JOIN attempt_chats ac ON ac.attempt_id = la.attempt_id
+            JOIN simulation_chats sc ON sc.id = ac.chat_id
             JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
         )
         SELECT 

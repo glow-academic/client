@@ -525,14 +525,15 @@ class HomeQueries:
             -- Aggregate chats per attempt
             history_chat_rollup AS (
                 SELECT
-                    sc.attempt_id,
+                    ac.attempt_id,
                     COUNT(*) FILTER (WHERE sc.completed) AS completed_chats,
                     MIN(sc.created_at) AS first_chat_at,
                     MAX(sc.created_at) AS last_activity_at,
                     array_agg(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids_seen
-                FROM simulation_chats sc
-                WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
-                GROUP BY sc.attempt_id
+                FROM attempt_chats ac
+                JOIN simulation_chats sc ON sc.id = ac.chat_id
+                WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+                GROUP BY ac.attempt_id
             ),
             -- Get latest grade per chat
             history_chat_grades AS (
@@ -542,35 +543,38 @@ class HomeQueries:
                     scg.rubric_id
                 FROM simulation_chat_grades scg
                 WHERE scg.simulation_chat_id IN (
-                    SELECT sc.id FROM simulation_chats sc
-                    WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+                    SELECT sc.id FROM attempt_chats ac
+                    JOIN simulation_chats sc ON sc.id = ac.chat_id
+                    WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
                 )
                 ORDER BY scg.simulation_chat_id, scg.created_at DESC
             ),
             -- Aggregate grades per attempt
             history_grade_rollup AS (
                 SELECT
-                    sc.attempt_id,
+                    ac.attempt_id,
                     COUNT(*) FILTER (WHERE hcg.score IS NOT NULL) AS completed_with_grade,
                     SUM(CASE WHEN hcg.score IS NOT NULL AND r.points > 0
                         THEN (hcg.score / r.points::numeric * 100.0)
                         ELSE 0 END) AS sum_grade_percent
-                FROM simulation_chats sc
+                FROM attempt_chats ac
+                JOIN simulation_chats sc ON sc.id = ac.chat_id
                 LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
                 LEFT JOIN rubrics r ON r.id = hcg.rubric_id
-                WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
-                GROUP BY sc.attempt_id
+                WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+                GROUP BY ac.attempt_id
             ),
             -- Get personas for each attempt
             history_personas AS (
                 SELECT
-                    sc.attempt_id,
+                    ac.attempt_id,
                     array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
-                FROM simulation_chats sc
+                FROM attempt_chats ac
+                JOIN simulation_chats sc ON sc.id = ac.chat_id
                 JOIN scenarios scn ON scn.id = sc.scenario_id
                 LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
-                WHERE sc.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
-                GROUP BY sc.attempt_id
+                WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+                GROUP BY ac.attempt_id
             ),
             -- Count scenarios per simulation
             history_sim_scenario_count AS (

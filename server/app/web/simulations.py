@@ -211,6 +211,7 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
         chat_id = data.get("chat_id")
         attempt_id = data.get("attempt_id")
         end_all = data.get("end_all", False)
+        previous_chat_id = data.get("previous_chat_id")
 
         if not chat_id or not attempt_id:
             await emit_error(sid, "Missing chat_id or attempt_id")
@@ -233,6 +234,7 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
                 chat_id=str(chat_id),
                 attempt_id=str(attempt_id),
                 end_all=end_all,
+                previous_chat_id=str(previous_chat_id) if previous_chat_id else None,
                 sio_instance=sio_instance,
             )
 

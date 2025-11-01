@@ -151,6 +151,7 @@ export default function Scenario({
       hintsEnabled: false,
       objectivesEnabled: false,
       imageInputEnabled: false,
+      copyPasteAllowed: false,
       inputGuardrailEnabled: false,
       outputGuardrailEnabled: false,
     }),
@@ -474,6 +475,7 @@ export default function Scenario({
         hintsEnabled: scenarioData.hints_enabled ?? false,
         objectivesEnabled: scenarioData.objectives_enabled ?? false,
         imageInputEnabled: scenarioData.image_input_enabled ?? false,
+        copyPasteAllowed: scenarioData.copy_paste_allowed ?? false,
         inputGuardrailEnabled: scenarioData.input_guardrail_enabled ?? false,
         outputGuardrailEnabled: scenarioData.output_guardrail_enabled ?? false,
       });
@@ -501,6 +503,7 @@ export default function Scenario({
         hintsEnabled: scenarioData.hints_enabled ?? false,
         objectivesEnabled: scenarioData.objectives_enabled ?? false,
         imageInputEnabled: scenarioData.image_input_enabled ?? false,
+        copyPasteAllowed: scenarioData.copy_paste_allowed ?? false,
         inputGuardrailEnabled: scenarioData.input_guardrail_enabled ?? false,
         outputGuardrailEnabled: scenarioData.output_guardrail_enabled ?? false,
       });
@@ -554,6 +557,7 @@ export default function Scenario({
       current.hintsEnabled !== original.hintsEnabled ||
       current.objectivesEnabled !== original.objectivesEnabled ||
       current.imageInputEnabled !== original.imageInputEnabled ||
+      current.copyPasteAllowed !== original.copyPasteAllowed ||
       current.inputGuardrailEnabled !== original.inputGuardrailEnabled ||
       current.outputGuardrailEnabled !== original.outputGuardrailEnabled ||
       JSON.stringify(current.departmentIds?.sort()) !==
@@ -960,6 +964,7 @@ export default function Scenario({
         hints_enabled: formData.hintsEnabled ?? false,
         objectives_enabled: formData.objectivesEnabled ?? false,
         image_input_enabled: formData.imageInputEnabled ?? false,
+        copy_paste_allowed: formData.copyPasteAllowed ?? false,
         input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
         output_guardrail_enabled: formData.outputGuardrailEnabled ?? false,
       };
@@ -1266,6 +1271,20 @@ export default function Scenario({
 
             {/* Guardrail Switches */}
             <div className="space-y-2 pt-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="copyPasteAllowed" className="text-sm">
+                  Copy Paste Allowed
+                </Label>
+                <Switch
+                  id="copyPasteAllowed"
+                  checked={formData.copyPasteAllowed ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("copyPasteAllowed", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+
               <div className="flex items-center gap-2">
                 <Label htmlFor="inputGuardrailEnabled" className="text-sm">
                   Input Guardrail Enabled

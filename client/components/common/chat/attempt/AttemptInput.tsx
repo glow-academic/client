@@ -134,8 +134,21 @@ export default function AttemptInput({
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
 
+  // Get copyPasteAllowed from scenario or simulation (scenario takes precedence)
+  const copyPasteAllowed = useMemo(() => {
+    return (
+      simulationContext?.scenario?.copyPasteAllowed ??
+      simulationContext?.simulation?.copyPasteAllowed ??
+      false
+    );
+  }, [
+    simulationContext?.scenario?.copyPasteAllowed,
+    simulationContext?.simulation?.copyPasteAllowed,
+  ]);
+
   // Initialize paste prevention hook
   const pastePrevention = useNoPasteTextarea(textareaRef, {
+    enabled: !copyPasteAllowed, // Disable paste prevention if copyPasteAllowed is true
     onPasteAttempt: () => {
       // Optional: Add toast notification here
       log.info("paste.attempt.blocked", {

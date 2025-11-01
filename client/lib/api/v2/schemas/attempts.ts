@@ -69,6 +69,7 @@ export const AttemptFullResponseSchema = z.object({
     inputGuardrailActive: z.boolean(),
     outputGuardrailActive: z.boolean(),
     imageInputActive: z.boolean(),
+    copyPasteAllowed: z.boolean(),
     timeLimit: z.number().nullable(),
     rubricId: z.string().nullable(),
     createdAt: z.string(),
@@ -107,6 +108,7 @@ export const AttemptFullResponseSchema = z.object({
           updatedAt: z.string(),
           generated: z.boolean(),
           defaultScenario: z.boolean(),
+          copyPasteAllowed: z.boolean(),
           objectives: z.array(z.string()).optional(),
         })
         .nullable(),
@@ -175,6 +177,16 @@ export const AttemptFullResponseSchema = z.object({
           feedbackByStandardId: z.record(z.string(), z.string()).optional(),
         })
         .nullable(),
+      previousChats: z.array(
+        z.object({
+          chatId: z.string(),
+          attemptId: z.string(),
+          score: z.number().nullable(),
+          passed: z.boolean().nullable(),
+          createdAt: z.string(),
+          title: z.string(),
+        })
+      ),
     })
   ),
   scenarioDocuments: z.array(DocumentItemSchema),
