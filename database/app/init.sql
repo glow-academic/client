@@ -39,6 +39,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- Import shared models (generated at seed/ level)
 \i seed/models.sql
 
+-- Import root prompts (default prompts for personas and agents)
+\i seed/prompts.sql
+
 -- Import shared personas (cross-department, prompts linked separately)
 \i seed/personas.sql
 
@@ -53,60 +56,56 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Import department-specific seed data (alphabetical order)
 -- Note: Each department has its own folder with seed files
+-- IMPORTANT: prompts.sql must come before personas.sql
+-- because persona_departments references prompt_ids
+-- Agents use root-level defaults (no department-specific linking needed)
 \i seed/cs/departments.sql
 \i seed/cs/users.sql
 \i seed/cs/documents.sql
-\i seed/cs/agents.sql
-\i seed/cs/personas.sql
 \i seed/cs/prompts.sql
+\i seed/cs/personas.sql
 
 \i seed/biol/departments.sql
 \i seed/biol/users.sql
 \i seed/biol/documents.sql
 \i seed/biol/parameters.sql
-\i seed/biol/agents.sql
-\i seed/biol/personas.sql
 \i seed/biol/prompts.sql
+\i seed/biol/personas.sql
 
 \i seed/chem/departments.sql
 \i seed/chem/users.sql
 \i seed/chem/documents.sql
 \i seed/chem/parameters.sql
-\i seed/chem/agents.sql
-\i seed/chem/personas.sql
 \i seed/chem/prompts.sql
+\i seed/chem/personas.sql
 
 \i seed/eaps/departments.sql
 \i seed/eaps/users.sql
 \i seed/eaps/documents.sql
 \i seed/eaps/parameters.sql
-\i seed/eaps/agents.sql
-\i seed/eaps/personas.sql
 \i seed/eaps/prompts.sql
+\i seed/eaps/personas.sql
 
 \i seed/ma/departments.sql
 \i seed/ma/users.sql
 \i seed/ma/documents.sql
 \i seed/ma/parameters.sql
-\i seed/ma/agents.sql
-\i seed/ma/personas.sql
 \i seed/ma/prompts.sql
+\i seed/ma/personas.sql
 
 \i seed/phys/departments.sql
 \i seed/phys/users.sql
 \i seed/phys/documents.sql
 \i seed/phys/parameters.sql
-\i seed/phys/agents.sql
-\i seed/phys/personas.sql
 \i seed/phys/prompts.sql
+\i seed/phys/personas.sql
 
 \i seed/stat/departments.sql
 \i seed/stat/users.sql
 \i seed/stat/documents.sql
 \i seed/stat/parameters.sql
-\i seed/stat/agents.sql
-\i seed/stat/personas.sql
 \i seed/stat/prompts.sql
+\i seed/stat/personas.sql
 
 -- 6. Tables that depend on multiple previous tables
 -- Note: simulation_scenarios, simulation_tags, and tag junction tables defined here

@@ -26,7 +26,8 @@ CREATE TABLE agents (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  -- system_prompt moved to prompts table via agent_prompts junction
+  -- system_prompt moved to prompts table via prompt_id (default prompt)
+  prompt_id  UUID        NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
   temperature  REAL     NOT NULL, -- 0.0-1.0
   model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
   reasoning reasoning_effort NOT NULL DEFAULT 'medium',  -- NOT NULL with default 'medium'
@@ -101,33 +102,21 @@ CREATE TABLE debug_info (
 -- Agent departments junction table (BCNF normalization)
 -- Links agents to departments for multi-department support
 -- No records = available to all departments (cross-department)
+-- Supports department-specific prompt overrides via prompt_id column
 CREATE TABLE agent_departments (
   agent_id      UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  prompt_id     UUID NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (agent_id, department_id)
+  PRIMARY KEY (agent_id, department_id, prompt_id)
 );
 
 CREATE INDEX ON agent_departments (agent_id);
 CREATE INDEX ON agent_departments (department_id);
+CREATE INDEX ON agent_departments (prompt_id);
 
--- Agent ↔ Prompts junction table (BCNF normalization)
--- Only one active prompt per agent allowed
-CREATE TABLE agent_prompts (
-  agent_id   UUID NOT NULL REFERENCES agents(id)   ON DELETE CASCADE,
-  prompt_id  UUID NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
-  active     BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (agent_id, prompt_id)
-);
-
-CREATE INDEX ON agent_prompts (agent_id);
-CREATE INDEX ON agent_prompts (prompt_id);
-CREATE INDEX ON agent_prompts (agent_id, active);
-
--- Only one active prompt per agent
-CREATE UNIQUE INDEX agent_prompts_one_active_per_agent
-  ON agent_prompts(agent_id) WHERE active;
+-- Only one active per (agent_id, prompt_id, department_id)
+CREATE UNIQUE INDEX agent_departments_one_active_per_agent_prompt_dept
+  ON agent_departments(agent_id, prompt_id, department_id) WHERE active = true;

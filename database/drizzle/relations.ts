@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { providers, models, profiles, profileRequestLimits, profileActivity, providerEndpoints, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, personas, agents, modelRuns, debugInfo, parameters, parameterItems, scenarios, scenarioProblemStatements, simulations, simulationTimeLimits, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, scenarioObjectives, attemptChats, simulationHints, documents, documentDepartments, departments, rubricDepartments, prompts, promptDepartments, personaDepartments, personaPrompts, modelRunModels, modelRunPersonas, modelRunAgents, modelRunProfiles, agentDepartments, agentPrompts, parameterItemDepartments, scenarioDepartments, scenarioPersonas, scenarioParameterItems, scenarioDocuments, documentParameterItems, scenarioTree, simulationDepartments, attemptProfiles, cohorts, cohortProfiles, cohortSimulations, cohortDepartments, profileDepartments, appFeedback, appFeedbackProfiles, simulationScenarios } from "./schema";
+import { providers, models, profiles, profileRequestLimits, profileActivity, providerEndpoints, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, prompts, personas, agents, modelRuns, debugInfo, parameters, parameterItems, scenarios, scenarioProblemStatements, simulations, simulationTimeLimits, simulationAttempts, simulationChats, simulationMessages, simulationChatFeedbacks, simulationChatGrades, scenarioObjectives, attemptChats, simulationHints, documents, documentDepartments, departments, rubricDepartments, modelRunModels, modelRunPersonas, modelRunAgents, modelRunProfiles, parameterItemDepartments, scenarioDepartments, scenarioPersonas, scenarioParameterItems, scenarioDocuments, documentParameterItems, scenarioTree, simulationDepartments, attemptProfiles, cohorts, cohortProfiles, cohortSimulations, cohortDepartments, profileDepartments, appFeedback, appFeedbackProfiles, personaDepartments, agentDepartments, simulationScenarios } from "./schema";
 
 export const modelsRelations = relations(models, ({one, many}) => ({
 	provider: one(providers, {
@@ -71,20 +71,20 @@ export const standardsRelations = relations(standards, ({one, many}) => ({
 	simulationChatFeedbacks: many(simulationChatFeedbacks),
 }));
 
-export const assistantChatsRelations = relations(assistantChats, ({one, many}) => ({
-	profile: one(profiles, {
-		fields: [assistantChats.profileId],
-		references: [profiles.id]
-	}),
-	assistantMessages: many(assistantMessages),
-	assistantToolCalls: many(assistantToolCalls),
-}));
-
 export const assistantMessagesRelations = relations(assistantMessages, ({one}) => ({
 	assistantChat: one(assistantChats, {
 		fields: [assistantMessages.chatId],
 		references: [assistantChats.id]
 	}),
+}));
+
+export const assistantChatsRelations = relations(assistantChats, ({one, many}) => ({
+	assistantMessages: many(assistantMessages),
+	profile: one(profiles, {
+		fields: [assistantChats.profileId],
+		references: [profiles.id]
+	}),
+	assistantToolCalls: many(assistantToolCalls),
 }));
 
 export const assistantToolCallsRelations = relations(assistantToolCalls, ({one}) => ({
@@ -95,24 +95,37 @@ export const assistantToolCallsRelations = relations(assistantToolCalls, ({one})
 }));
 
 export const personasRelations = relations(personas, ({one, many}) => ({
+	prompt: one(prompts, {
+		fields: [personas.promptId],
+		references: [prompts.id]
+	}),
 	model: one(models, {
 		fields: [personas.modelId],
 		references: [models.id]
 	}),
-	personaDepartments: many(personaDepartments),
-	personaPrompts: many(personaPrompts),
 	modelRunPersonas: many(modelRunPersonas),
 	scenarioPersonas: many(scenarioPersonas),
+	personaDepartments: many(personaDepartments),
+}));
+
+export const promptsRelations = relations(prompts, ({many}) => ({
+	personas: many(personas),
+	agents: many(agents),
+	personaDepartments: many(personaDepartments),
+	agentDepartments: many(agentDepartments),
 }));
 
 export const agentsRelations = relations(agents, ({one, many}) => ({
+	prompt: one(prompts, {
+		fields: [agents.promptId],
+		references: [prompts.id]
+	}),
 	model: one(models, {
 		fields: [agents.modelId],
 		references: [models.id]
 	}),
 	modelRunAgents: many(modelRunAgents),
 	agentDepartments: many(agentDepartments),
-	agentPrompts: many(agentPrompts),
 }));
 
 export const debugInfoRelations = relations(debugInfo, ({one}) => ({
@@ -214,18 +227,6 @@ export const simulationMessagesRelations = relations(simulationMessages, ({one, 
 	simulationHints: many(simulationHints),
 }));
 
-export const simulationChatGradesRelations = relations(simulationChatGrades, ({one, many}) => ({
-	rubric: one(rubrics, {
-		fields: [simulationChatGrades.rubricId],
-		references: [rubrics.id]
-	}),
-	simulationChat: one(simulationChats, {
-		fields: [simulationChatGrades.simulationChatId],
-		references: [simulationChats.id]
-	}),
-	simulationChatFeedbacks: many(simulationChatFeedbacks),
-}));
-
 export const simulationChatFeedbacksRelations = relations(simulationChatFeedbacks, ({one}) => ({
 	standard: one(standards, {
 		fields: [simulationChatFeedbacks.standardId],
@@ -234,6 +235,18 @@ export const simulationChatFeedbacksRelations = relations(simulationChatFeedback
 	simulationChatGrade: one(simulationChatGrades, {
 		fields: [simulationChatFeedbacks.simulationChatGradeId],
 		references: [simulationChatGrades.id]
+	}),
+}));
+
+export const simulationChatGradesRelations = relations(simulationChatGrades, ({one, many}) => ({
+	simulationChatFeedbacks: many(simulationChatFeedbacks),
+	rubric: one(rubrics, {
+		fields: [simulationChatGrades.rubricId],
+		references: [rubrics.id]
+	}),
+	simulationChat: one(simulationChats, {
+		fields: [simulationChatGrades.simulationChatId],
+		references: [simulationChats.id]
 	}),
 }));
 
@@ -282,14 +295,13 @@ export const documentsRelations = relations(documents, ({many}) => ({
 export const departmentsRelations = relations(departments, ({many}) => ({
 	documentDepartments: many(documentDepartments),
 	rubricDepartments: many(rubricDepartments),
-	promptDepartments: many(promptDepartments),
-	personaDepartments: many(personaDepartments),
-	agentDepartments: many(agentDepartments),
 	parameterItemDepartments: many(parameterItemDepartments),
 	scenarioDepartments: many(scenarioDepartments),
 	simulationDepartments: many(simulationDepartments),
 	cohortDepartments: many(cohortDepartments),
 	profileDepartments: many(profileDepartments),
+	personaDepartments: many(personaDepartments),
+	agentDepartments: many(agentDepartments),
 }));
 
 export const rubricDepartmentsRelations = relations(rubricDepartments, ({one}) => ({
@@ -300,45 +312,6 @@ export const rubricDepartmentsRelations = relations(rubricDepartments, ({one}) =
 	department: one(departments, {
 		fields: [rubricDepartments.departmentId],
 		references: [departments.id]
-	}),
-}));
-
-export const promptDepartmentsRelations = relations(promptDepartments, ({one}) => ({
-	prompt: one(prompts, {
-		fields: [promptDepartments.promptId],
-		references: [prompts.id]
-	}),
-	department: one(departments, {
-		fields: [promptDepartments.departmentId],
-		references: [departments.id]
-	}),
-}));
-
-export const promptsRelations = relations(prompts, ({many}) => ({
-	promptDepartments: many(promptDepartments),
-	personaPrompts: many(personaPrompts),
-	agentPrompts: many(agentPrompts),
-}));
-
-export const personaDepartmentsRelations = relations(personaDepartments, ({one}) => ({
-	persona: one(personas, {
-		fields: [personaDepartments.personaId],
-		references: [personas.id]
-	}),
-	department: one(departments, {
-		fields: [personaDepartments.departmentId],
-		references: [departments.id]
-	}),
-}));
-
-export const personaPromptsRelations = relations(personaPrompts, ({one}) => ({
-	persona: one(personas, {
-		fields: [personaPrompts.personaId],
-		references: [personas.id]
-	}),
-	prompt: one(prompts, {
-		fields: [personaPrompts.promptId],
-		references: [prompts.id]
 	}),
 }));
 
@@ -383,28 +356,6 @@ export const modelRunProfilesRelations = relations(modelRunProfiles, ({one}) => 
 	profile: one(profiles, {
 		fields: [modelRunProfiles.profileId],
 		references: [profiles.id]
-	}),
-}));
-
-export const agentDepartmentsRelations = relations(agentDepartments, ({one}) => ({
-	agent: one(agents, {
-		fields: [agentDepartments.agentId],
-		references: [agents.id]
-	}),
-	department: one(departments, {
-		fields: [agentDepartments.departmentId],
-		references: [departments.id]
-	}),
-}));
-
-export const agentPromptsRelations = relations(agentPrompts, ({one}) => ({
-	agent: one(agents, {
-		fields: [agentPrompts.agentId],
-		references: [agents.id]
-	}),
-	prompt: one(prompts, {
-		fields: [agentPrompts.promptId],
-		references: [prompts.id]
 	}),
 }));
 
@@ -572,6 +523,36 @@ export const appFeedbackProfilesRelations = relations(appFeedbackProfiles, ({one
 
 export const appFeedbackRelations = relations(appFeedback, ({many}) => ({
 	appFeedbackProfiles: many(appFeedbackProfiles),
+}));
+
+export const personaDepartmentsRelations = relations(personaDepartments, ({one}) => ({
+	persona: one(personas, {
+		fields: [personaDepartments.personaId],
+		references: [personas.id]
+	}),
+	department: one(departments, {
+		fields: [personaDepartments.departmentId],
+		references: [departments.id]
+	}),
+	prompt: one(prompts, {
+		fields: [personaDepartments.promptId],
+		references: [prompts.id]
+	}),
+}));
+
+export const agentDepartmentsRelations = relations(agentDepartments, ({one}) => ({
+	agent: one(agents, {
+		fields: [agentDepartments.agentId],
+		references: [agents.id]
+	}),
+	department: one(departments, {
+		fields: [agentDepartments.departmentId],
+		references: [departments.id]
+	}),
+	prompt: one(prompts, {
+		fields: [agentDepartments.promptId],
+		references: [prompts.id]
+	}),
 }));
 
 export const simulationScenariosRelations = relations(simulationScenarios, ({one}) => ({
