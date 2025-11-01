@@ -50,20 +50,7 @@ export function PersonaDebugInfo({
     }));
   }, [debugInfo, modelMapping]);
 
-  const modelOptions = useMemo(() => {
-    return Object.entries(modelMapping).map(([id, info]) => ({
-      value: id,
-      label: info.name,
-    }));
-  }, [modelMapping]);
-
-  return (
-    <PersonaDebugInfoDataTable
-      data={rows}
-      modelOptions={modelOptions}
-      isLoading={false}
-    />
-  );
+  return <PersonaDebugInfoDataTable data={rows} isLoading={false} />;
 }
 
 export default PersonaDebugInfo;

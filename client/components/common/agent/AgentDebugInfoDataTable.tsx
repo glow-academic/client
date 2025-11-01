@@ -20,17 +20,14 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AgentDebugInfoRow } from "./AgentDebugInfo";
-import AgentDebugInfoDataTableToolbar from "./AgentDebugInfoDataTableToolbar";
 
 export interface AgentDebugInfoDataTableProps {
   data: AgentDebugInfoRow[];
-  modelOptions: { value: string; label: string }[];
   isLoading?: boolean;
 }
 
 export function AgentDebugInfoDataTable({
   data,
-  modelOptions,
   isLoading = false,
 }: AgentDebugInfoDataTableProps) {
   const columns = React.useMemo<ColumnDef<AgentDebugInfoRow>[]>(
@@ -128,10 +125,6 @@ export function AgentDebugInfoDataTable({
 
   return (
     <div className="space-y-4">
-      <AgentDebugInfoDataTableToolbar
-        table={table}
-        modelOptions={modelOptions}
-      />
       <div className="rounded-md border">
         <div className="grid grid-cols-12 gap-3 p-3 font-medium text-sm bg-muted/50">
           <div className="col-span-3">

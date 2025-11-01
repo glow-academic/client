@@ -20,17 +20,14 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PersonaDebugInfoRow } from "./PersonaDebugInfo";
-import PersonaDebugInfoDataTableToolbar from "./PersonaDebugInfoDataTableToolbar";
 
 export interface PersonaDebugInfoDataTableProps {
   data: PersonaDebugInfoRow[];
-  modelOptions: { value: string; label: string }[];
   isLoading?: boolean;
 }
 
 export default function PersonaDebugInfoDataTable({
   data,
-  modelOptions,
   isLoading = false,
 }: PersonaDebugInfoDataTableProps) {
   const columns = React.useMemo<ColumnDef<PersonaDebugInfoRow>[]>(
@@ -128,10 +125,6 @@ export default function PersonaDebugInfoDataTable({
 
   return (
     <div className="space-y-4">
-      <PersonaDebugInfoDataTableToolbar
-        table={table}
-        modelOptions={modelOptions}
-      />
       <div className="rounded-md border">
         <div className="grid grid-cols-12 gap-3 p-3 font-medium text-sm bg-muted/50">
           <div className="col-span-3">

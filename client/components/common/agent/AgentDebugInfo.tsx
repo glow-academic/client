@@ -50,17 +50,9 @@ export function AgentDebugInfo({
     }));
   }, [debugInfo, modelMapping]);
 
-  const modelOptions = useMemo(() => {
-    return Object.entries(modelMapping).map(([id, info]) => ({
-      value: id,
-      label: info.name,
-    }));
-  }, [modelMapping]);
-
   return (
     <AgentDebugInfoDataTable
       data={rows}
-      modelOptions={modelOptions}
       isLoading={false}
     />
   );
