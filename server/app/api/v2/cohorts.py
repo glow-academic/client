@@ -3,33 +3,24 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-
 from app.db import get_db
-from app.schemas.cohorts import (
-    AddProfilesToCohortRequest,
-    AddProfilesToCohortResponse,
-    CohortDetailDefaultRequest,
-    CohortDetailRequest,
-    CohortDetailResponse,
-    CohortDetailWithProfilesRequest,
-    CohortDetailWithProfilesResponse,
-    CohortsFilters,
-    CohortsListResponse,
-    CreateCohortRequest,
-    CreateCohortResponse,
-    DeleteCohortRequest,
-    DeleteCohortResponse,
-    DuplicateCohortRequest,
-    DuplicateCohortResponse,
-    LeaveCohortRequest,
-    LeaveCohortResponse,
-    RemoveProfilesFromCohortRequest,
-    RemoveProfilesFromCohortResponse,
-    UpdateCohortRequest,
-    UpdateCohortResponse,
-)
+from app.schemas.cohorts import (AddProfilesToCohortRequest,
+                                 AddProfilesToCohortResponse,
+                                 CohortDetailDefaultRequest,
+                                 CohortDetailRequest, CohortDetailResponse,
+                                 CohortDetailWithProfilesRequest,
+                                 CohortDetailWithProfilesResponse,
+                                 CohortsFilters, CohortsListResponse,
+                                 CreateCohortRequest, CreateCohortResponse,
+                                 DeleteCohortRequest, DeleteCohortResponse,
+                                 DuplicateCohortRequest,
+                                 DuplicateCohortResponse, LeaveCohortRequest,
+                                 LeaveCohortResponse,
+                                 RemoveProfilesFromCohortRequest,
+                                 RemoveProfilesFromCohortResponse,
+                                 UpdateCohortRequest, UpdateCohortResponse)
 from app.services.cohort_service import get_cohort_service
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/cohorts", tags=["cohorts"])
 

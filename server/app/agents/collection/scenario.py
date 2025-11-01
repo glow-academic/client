@@ -251,7 +251,7 @@ async def run_scenario_agent(
             logger.info(f"Added user instructions: {user_instructions[:100]}...")
         
         clean_input_items = [item for item in input_items if item is not None]
-        logger.info(f"Input items: {clean_input_items}")
+        # logger.info(f"Input items: {clean_input_items}")
 
         # generate a trace id for the scenario
         trace_id = gen_trace_id()
