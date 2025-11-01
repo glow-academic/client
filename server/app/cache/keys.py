@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    46  # Bumped: Fixed scenario detail-default query duplicate parameter_ids (added DISTINCT)
+    47  # Bumped: Fixed persona/agent detail queries to include department-specific prompts in prompt_mapping
 )
 
 # Namespaces

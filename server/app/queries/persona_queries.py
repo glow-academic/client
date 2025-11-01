@@ -625,6 +625,7 @@ class PersonaQueries:
             LIMIT 1
         ),
         persona_all_prompts AS (
+            -- Get all prompts from persona_prompts (default prompts)
             SELECT 
                 pp.persona_id,
                 pp.prompt_id::text as prompt_id,
@@ -634,6 +635,17 @@ class PersonaQueries:
             FROM persona_prompts pp
             JOIN prompts pr ON pr.id = pp.prompt_id
             WHERE pp.persona_id = $1
+            UNION
+            -- Also get all prompts from persona_department_prompts (department-specific prompts)
+            SELECT DISTINCT
+                pdp.persona_id,
+                pdp.prompt_id::text as prompt_id,
+                pr.system_prompt,
+                pr.created_at as prompt_created_at,
+                pr.updated_at as prompt_updated_at
+            FROM persona_department_prompts pdp
+            JOIN prompts pr ON pr.id = pdp.prompt_id
+            WHERE pdp.persona_id = $1 AND pdp.active = true
         ),
         prompt_departments_data AS (
             SELECT 

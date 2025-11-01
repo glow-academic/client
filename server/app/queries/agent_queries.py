@@ -236,7 +236,7 @@ class AgentQueries:
             LIMIT 1
         ),
         agent_all_prompts AS (
-            -- Get all prompts that were ever linked to this agent (version history)
+            -- Get all prompts from agent_prompts (default prompts)
             SELECT 
                 ap.agent_id::text as agent_id,
                 ap.prompt_id::text as prompt_id,
@@ -246,6 +246,17 @@ class AgentQueries:
             FROM agent_prompts ap
             JOIN prompts pr ON pr.id = ap.prompt_id
             WHERE ap.agent_id = $1::uuid
+            UNION
+            -- Also get all prompts from agent_department_prompts (department-specific prompts)
+            SELECT DISTINCT
+                adp.agent_id::text as agent_id,
+                adp.prompt_id::text as prompt_id,
+                pr.system_prompt,
+                pr.created_at as prompt_created_at,
+                pr.updated_at as prompt_updated_at
+            FROM agent_department_prompts adp
+            JOIN prompts pr ON pr.id = adp.prompt_id
+            WHERE adp.agent_id = $1::uuid AND adp.active = true
         ),
         prompt_departments_data AS (
             SELECT 

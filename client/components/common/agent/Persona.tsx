@@ -151,29 +151,33 @@ export default function Persona({
   const isLoading = isLoadingData;
 
   // Filter prompt_mapping based on selected department
-  // When a department is selected, only show department-specific prompts (not default prompts)
+  // When "All Departments" is selected, only show default prompts (null department_ids)
+  // When a department is selected, only show department-specific prompts for that department
   const filteredPromptMapping = useMemo(() => {
     if (!isEditMode || !personaData?.prompt_mapping) {
       return personaData?.prompt_mapping || {};
     }
 
-    // If no department selected, show all prompts
-    if (!selectedDepartmentId) {
-      return personaData.prompt_mapping;
-    }
-
-    // When department is selected, ONLY show department-specific prompts for that department
-    // Do NOT include default prompts (null department_ids) in version history
     const filtered: Record<string, PromptInfo> = {};
     for (const [promptId, promptInfo] of Object.entries(
       personaData.prompt_mapping
     )) {
-      // Only include if it's a department-specific prompt for the selected department
-      if (
-        promptInfo.department_ids &&
-        promptInfo.department_ids.includes(selectedDepartmentId)
-      ) {
-        filtered[promptId] = promptInfo;
+      if (!selectedDepartmentId) {
+        // "All Departments" selected - only show default prompts (null/empty department_ids)
+        if (
+          !promptInfo.department_ids ||
+          promptInfo.department_ids.length === 0
+        ) {
+          filtered[promptId] = promptInfo;
+        }
+      } else {
+        // Department selected - only show department-specific prompts for that department
+        if (
+          promptInfo.department_ids &&
+          promptInfo.department_ids.includes(selectedDepartmentId)
+        ) {
+          filtered[promptId] = promptInfo;
+        }
       }
     }
     return filtered;
@@ -234,75 +238,63 @@ export default function Persona({
   useEffect(() => {
     if (!isEditMode || !personaData) return;
 
-    // Don't override state if user is actively creating a new prompt
-    if (isCreatingNewPrompt) return;
-
-    // Reset creating flag when department changes (but only if not already creating)
-    // This handles the case where department selection changes, not user-initiated creation
-    if (prevDepartmentIdRef.current !== selectedDepartmentId) {
+    // Track department changes FIRST and reset creating flag when department changes
+    const departmentChanged =
+      prevDepartmentIdRef.current !== selectedDepartmentId;
+    if (departmentChanged) {
       setIsCreatingNewPrompt(false);
       prevDepartmentIdRef.current = selectedDepartmentId;
     }
 
+    // Don't override state if user is actively creating a new prompt (unless department changed)
+    if (isCreatingNewPrompt && !departmentChanged) return;
+
+    // Determine which prompt should be selected for the current department
     const getCurrentPromptId = () => {
-      if (
-        selectedDepartmentId &&
-        personaData.department_prompt_links?.[selectedDepartmentId]
-      ) {
+      if (!selectedDepartmentId) {
+        // "All Departments" selected - use default prompt
+        return personaData.prompt_id || null;
+      }
+      // Specific department selected - use department-specific prompt if it exists
+      if (personaData.department_prompt_links?.[selectedDepartmentId]) {
         return personaData.department_prompt_links[selectedDepartmentId];
       }
-      // If department selected but no department-specific prompt, return null to indicate using default
-      if (selectedDepartmentId) {
-        return null;
-      }
-      return personaData.prompt_id || null;
+      // No department-specific prompt - return null to indicate using default
+      return null;
     };
 
     const currentPromptId = getCurrentPromptId();
     const promptInfo =
       currentPromptId && personaData.prompt_mapping?.[currentPromptId];
 
-    // Validate that current prompt is valid for selected department
-    if (
-      selectedDepartmentId &&
-      formData?.promptId &&
-      !filteredPromptMapping[formData.promptId]
-    ) {
-      // Current prompt is not valid for selected department - reset to default
-      setFormData((prev) => ({
-        ...prev,
-        promptId: null,
-        systemPrompt: "",
-      }));
-      return;
-    }
-
-    if (promptInfo) {
-      // Department-specific prompt exists
-      setFormData((prev) => ({
-        ...prev,
-        promptId: currentPromptId,
-        systemPrompt: promptInfo.system_prompt,
-      }));
-    } else if (selectedDepartmentId && !currentPromptId) {
-      // Using default prompt for selected department - clear form data to show default prompt UI
-      setFormData((prev) => ({
-        ...prev,
-        promptId: null,
-        systemPrompt: "", // Clear to show default prompt UI
-      }));
-    } else if (currentPromptId === null && !selectedDepartmentId) {
-      // All Departments selected and no prompt selected
-      setFormData((prev) => ({
-        ...prev,
-        promptId: null,
-      }));
+    // Always update to the correct prompt when department changes
+    if (departmentChanged || formData?.promptId !== currentPromptId) {
+      if (promptInfo) {
+        // Prompt exists (default or department-specific) - select it and update system prompt
+        setFormData((prev) => ({
+          ...prev,
+          promptId: currentPromptId,
+          systemPrompt: promptInfo.system_prompt,
+        }));
+      } else if (selectedDepartmentId && !currentPromptId) {
+        // Department selected but no department-specific prompt - using default
+        setFormData((prev) => ({
+          ...prev,
+          promptId: null,
+          systemPrompt: "", // Clear to show default prompt UI
+        }));
+      } else {
+        // "All Departments" selected but no default prompt, or other edge case
+        setFormData((prev) => ({
+          ...prev,
+          promptId: null,
+        }));
+      }
     }
   }, [
     selectedDepartmentId,
     personaData,
     isEditMode,
-    filteredPromptMapping,
     formData?.promptId,
     isCreatingNewPrompt,
   ]);
