@@ -718,11 +718,12 @@ class PersonaService(BaseService):
                 await self.conn.execute(persona_prompt_query, *persona_prompt_params)
 
             # Insert department links if department_ids provided
-            # Note: prompt_id is required for persona_departments
-            if request.department_ids and prompt_id:
+            # Note: persona_departments is now binary (no prompt_id)
+            # Department-specific prompts are handled separately via persona_department_prompts
+            if request.department_ids:
                 insert_dept_query, insert_dept_params = (
                     self.queries.create_persona_departments(
-                        persona_id, request.department_ids, prompt_id
+                        persona_id, request.department_ids, ""  # prompt_id no longer used
                     )
                 )
                 await self.conn.execute(insert_dept_query, *insert_dept_params)
@@ -803,29 +804,20 @@ class PersonaService(BaseService):
                 )
                 await self.conn.execute(persona_prompt_query, *persona_prompt_params)
 
-            # Get the persona's current prompt_id for persona_departments
-            # Use the updated prompt_id if set, otherwise get from persona_prompts junction table
-            persona_prompt_id = prompt_id
-            if not persona_prompt_id:
-                persona_prompt_row = await self.conn.fetchrow(
-                    "SELECT prompt_id FROM persona_prompts WHERE persona_id = $1::uuid AND active = true",
-                    request.personaId
-                )
-                if persona_prompt_row:
-                    persona_prompt_id = persona_prompt_row["prompt_id"]
-
             # Update persona-department links (DELETE + INSERT pattern)
+            # Binary table: just tracks department membership (no prompt_id)
             delete_dept_query, delete_dept_params = (
                 self.queries.delete_persona_departments(request.personaId)
             )
             await self.conn.execute(delete_dept_query, *delete_dept_params)
 
-            # Insert new department links if department_ids provided
-            # Note: prompt_id is required for persona_departments
-            if request.department_ids and persona_prompt_id:
+            # Insert new department membership links if department_ids provided
+            # Note: persona_departments is now binary (no prompt_id)
+            # Department-specific prompts are handled separately via persona_department_prompts
+            if request.department_ids:
                 insert_dept_query, insert_dept_params = (
                     self.queries.create_persona_departments(
-                        request.personaId, request.department_ids, persona_prompt_id
+                        request.personaId, request.department_ids, ""  # prompt_id no longer used
                     )
                 )
                 await self.conn.execute(insert_dept_query, *insert_dept_params)

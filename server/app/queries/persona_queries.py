@@ -362,21 +362,21 @@ class PersonaQueries:
         self, persona_id: str, department_id: str, prompt_id: str
     ) -> tuple[str, list[Any]]:
         """
-        Create or update persona-department-prompt link.
-        Deactivates any existing active records for (persona_id, department_id) first.
+        Create or update persona-department-prompt link in ternary table.
+        Deactivates any existing active records for (persona_id, department_id, prompt_id) first.
 
         Returns:
             Tuple of (query, params)
         """
         query = """
         WITH deactivate_existing AS (
-            UPDATE persona_departments
+            UPDATE persona_department_prompts
             SET active = false, updated_at = NOW()
             WHERE persona_id = $1::uuid 
             AND department_id = $2::uuid 
             AND active = true
         )
-        INSERT INTO persona_departments (persona_id, department_id, prompt_id, active, created_at, updated_at)
+        INSERT INTO persona_department_prompts (persona_id, department_id, prompt_id, active, created_at, updated_at)
         VALUES ($1::uuid, $2::uuid, $3::uuid, true, NOW(), NOW())
         ON CONFLICT (persona_id, department_id, prompt_id) DO UPDATE SET
             active = true,
@@ -387,7 +387,9 @@ class PersonaQueries:
     def create_persona_departments(
         self, persona_id: str, department_ids: list[str], prompt_id: str
     ) -> tuple[str, list[Any]]:
-        """Build query to create persona-department junction table records with prompt_id.
+        """Build query to create persona-department binary junction table records (department membership only).
+        The prompt_id parameter is kept for backward compatibility but is no longer used here.
+        Department-specific prompts are handled separately via persona_department_prompts.
         
         Returns:
             Tuple of (query, params)
@@ -396,17 +398,17 @@ class PersonaQueries:
             # Return empty query if no departments
             return "SELECT 1 WHERE false", []
 
-        # Use UNNEST for efficient batch insert
+        # Use UNNEST for efficient batch insert into binary table (no prompt_id)
         query = """
-        INSERT INTO persona_departments (persona_id, department_id, prompt_id, active, created_at, updated_at)
-        SELECT $1::uuid, dept_id::uuid, $3::uuid, true, NOW(), NOW()
+        INSERT INTO persona_departments (persona_id, department_id, active, created_at, updated_at)
+        SELECT $1::uuid, dept_id::uuid, true, NOW(), NOW()
         FROM UNNEST($2::text[]) as dept_id
-        ON CONFLICT (persona_id, department_id, prompt_id) DO UPDATE SET
+        ON CONFLICT (persona_id, department_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
         """
 
-        params: list[Any] = [persona_id, department_ids, prompt_id]
+        params: list[Any] = [persona_id, department_ids]
         return query, params
 
     def create_prompt(self, system_prompt: str) -> tuple[str, list[Any]]:
@@ -462,7 +464,7 @@ class PersonaQueries:
         """
         Legacy function - prompt_departments table was removed.
         This function is now a no-op as department-prompt links are handled
-        via persona_departments.prompt_id directly.
+        via persona_department_prompts ternary table.
 
         Returns:
             Tuple of (query, params) - returns a no-op query
@@ -602,11 +604,11 @@ class PersonaQueries:
             SELECT 
                 COALESCE(
                     (SELECT jsonb_object_agg(
-                        pd.department_id::text,
-                        pd.prompt_id::text
+                        pdp.department_id::text,
+                        pdp.prompt_id::text
                     )
-                    FROM persona_departments pd
-                    WHERE pd.persona_id = $1 AND pd.active = true),
+                    FROM persona_department_prompts pdp
+                    WHERE pdp.persona_id = $1 AND pdp.active = true),
                     '{}'::jsonb
                 ) as department_prompt_links
         ),
@@ -635,11 +637,11 @@ class PersonaQueries:
         ),
         prompt_departments_data AS (
             SELECT 
-                pd.prompt_id::text as prompt_id,
-                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
-            FROM persona_departments pd
-            WHERE pd.persona_id = $1 AND pd.active = true
-            GROUP BY pd.prompt_id
+                pdp.prompt_id::text as prompt_id,
+                ARRAY_AGG(pdp.department_id::text ORDER BY pdp.created_at) as department_ids
+            FROM persona_department_prompts pdp
+            WHERE pdp.persona_id = $1 AND pdp.active = true
+            GROUP BY pdp.prompt_id
         ),
         prompt_mapping_data AS (
             SELECT 

@@ -462,10 +462,11 @@ class AgentService(BaseService):
                 await self.conn.execute(agent_prompt_query, *agent_prompt_params)
 
             # Create agent-department links if department_ids provided
-            # Note: prompt_id is required for agent_departments, so we use the agent's prompt_id
-            if request.department_ids and prompt_id:
+            # Note: agent_departments is now binary (no prompt_id)
+            # Department-specific prompts are handled separately via agent_department_prompts
+            if request.department_ids:
                 dept_query, dept_params = self.queries.create_agent_departments(
-                    agent_id, request.department_ids, prompt_id
+                    agent_id, request.department_ids, ""  # prompt_id no longer used
                 )
                 await self.conn.execute(dept_query, *dept_params)
 
@@ -536,28 +537,19 @@ class AgentService(BaseService):
                 )
                 await self.conn.execute(agent_prompt_query, *agent_prompt_params)
 
-            # Get the agent's current prompt_id for agent_departments
-            # Use the updated prompt_id if set, otherwise get from agent_prompts junction table
-            agent_prompt_id = prompt_id
-            if not agent_prompt_id:
-                agent_prompt_row = await self.conn.fetchrow(
-                    "SELECT prompt_id FROM agent_prompts WHERE agent_id = $1::uuid AND active = true",
-                    request.agentId
-                )
-                if agent_prompt_row:
-                    agent_prompt_id = agent_prompt_row["prompt_id"]
-
             # Replace agent-department links (DELETE + INSERT pattern)
+            # Binary table: just tracks department membership (no prompt_id)
             delete_query, delete_params = self.queries.delete_agent_departments(
                 request.agentId
             )
             await self.conn.execute(delete_query, *delete_params)
 
-            # Insert new links if department_ids provided
-            # Note: prompt_id is required for agent_departments
-            if request.department_ids and agent_prompt_id:
+            # Insert new department membership links if department_ids provided
+            # Note: agent_departments is now binary (no prompt_id)
+            # Department-specific prompts are handled separately via agent_department_prompts
+            if request.department_ids:
                 insert_query, insert_params = self.queries.create_agent_departments(
-                    request.agentId, request.department_ids, agent_prompt_id
+                    request.agentId, request.department_ids, ""  # prompt_id no longer used
                 )
                 await self.conn.execute(insert_query, *insert_params)
 
