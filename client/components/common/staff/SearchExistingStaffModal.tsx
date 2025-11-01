@@ -24,10 +24,7 @@ import {
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
-import {
-  useCreateOrUpdateStaff,
-  useSearchProfiles,
-} from "@/lib/api/v2/hooks/profile";
+import { useSearchProfiles } from "@/lib/api/v2/hooks/profile";
 import { ProfileFilters, ProfileListItem } from "@/lib/api/v2/schemas/profile";
 
 export interface SearchExistingStaffModalProps {
@@ -56,7 +53,7 @@ export interface SearchExistingStaffModalProps {
 export default function SearchExistingStaffModal({
   open,
   onOpenChange,
-  departmentIds: scopedDepartmentIds,
+  departmentIds: _scopedDepartmentIds,
   cohortIds: scopedCohortIds,
   departmentMapping: _departmentMapping,
   validDepartmentIds: _validDepartmentIds,
@@ -75,9 +72,6 @@ export default function SearchExistingStaffModal({
     Map<string, ProfileListItem>
   >(new Map());
 
-  // Determine if we're in scoped mode (staging mode)
-  const isScoped = !!(scopedDepartmentIds?.length || scopedCohortIds?.length);
-
   // Search profiles
   const filters: ProfileFilters = {
     profileId: effectiveProfile?.id || "",
@@ -88,8 +82,6 @@ export default function SearchExistingStaffModal({
     filters,
     open && !!effectiveProfile?.id
   );
-
-  const createOrUpdateStaffMutation = useCreateOrUpdateStaff();
 
   // Filter out profiles already in cohort when scoped
   const searchResults = React.useMemo(() => {
@@ -156,42 +148,26 @@ export default function SearchExistingStaffModal({
     }
 
     try {
-      if (isScoped) {
-        // Scoped mode: stage all selected profiles
-        const profileData = selectedProfilesArray.map((profile) => ({
-          profileId: profile.profile_id,
-          firstName: profile.first_name,
-          lastName: profile.last_name,
-          alias: profile.alias,
-          role: profile.role,
-          requestsPerDay: profile.requests_per_day,
-          totalRequests: profile.total_requests,
-        }));
+      // Stage all selected profiles - this modal is only for searching and staging
+      const profileData = selectedProfilesArray.map((profile) => ({
+        profileId: profile.profile_id,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        alias: profile.alias,
+        role: profile.role,
+        requestsPerDay: profile.requests_per_day,
+        totalRequests: profile.total_requests,
+      }));
 
-        if (onStagedProfiles) {
-          onStagedProfiles(profileData);
-        }
-
+      if (onStagedProfiles) {
+        onStagedProfiles(profileData);
         toast.success(
-          `${selectedProfilesArray.length} profile(s) staged. They will be added to the cohort when you click Update.`
+          `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`
         );
       } else {
-        // Non-scoped mode: directly update all selected profiles
-        await Promise.all(
-          selectedProfilesArray.map((profile) =>
-            createOrUpdateStaffMutation.mutateAsync({
-              firstName: profile.first_name,
-              lastName: profile.last_name,
-              alias: profile.alias,
-              role: profile.role,
-              department_id: null,
-              cohort_id: null,
-            })
-          )
-        );
-
-        toast.success(
-          `Successfully updated ${selectedProfilesArray.length} profile(s).`
+        // If no onStagedProfiles callback, just notify user
+        toast.info(
+          `${selectedProfilesArray.length} profile(s) selected. No action handler provided.`
         );
       }
 
@@ -201,12 +177,10 @@ export default function SearchExistingStaffModal({
       }
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to add/update profiles.";
+        error instanceof Error ? error.message : "Failed to stage profiles.";
       toast.error(errorMessage);
-      log.error("staff.search_add.failed", {
-        message: "Error adding/updating profiles from search",
+      log.error("staff.search_stage.failed", {
+        message: "Error staging profiles from search",
         error,
         context: {
           component: "SearchExistingStaffModal",
@@ -217,9 +191,7 @@ export default function SearchExistingStaffModal({
   }, [
     selectedProfileIds,
     selectedProfiles,
-    isScoped,
     onStagedProfiles,
-    createOrUpdateStaffMutation,
     onOpenChange,
     onDone,
     log,
@@ -330,13 +302,8 @@ export default function SearchExistingStaffModal({
                 Cancel
               </Button>
               {selectedProfileIds.size > 0 && (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={createOrUpdateStaffMutation.isPending}
-                >
-                  {createOrUpdateStaffMutation.isPending
-                    ? "Processing..."
-                    : `Add ${selectedProfileIds.size} Staff`}
+                <Button onClick={handleSubmit}>
+                  Add {selectedProfileIds.size} Staff
                 </Button>
               )}
             </div>

@@ -315,8 +315,8 @@ export const ProcessedCSVRowSchema = z.object({
   lastName: z.string().nullable(),
   alias: z.string().nullable(),
   role: z.string().nullable(),
-  department_id: z.string().nullable(),
-  cohort_id: z.string().nullable(),
+  department_ids: z.array(z.string()),
+  cohort_ids: z.array(z.string()),
   errors: z.array(CSVRowErrorSchema),
 });
 
@@ -339,8 +339,8 @@ export const CreateOrUpdateStaffRequestSchema = z.object({
   lastName: z.string(),
   alias: z.string(),
   role: z.string(),
-  department_id: z.string().nullable().optional(),
-  cohort_id: z.string().nullable().optional(),
+  department_ids: z.array(z.string()),
+  cohort_ids: z.array(z.string()),
 });
 
 export type CreateOrUpdateStaffRequest = z.infer<
@@ -360,6 +360,7 @@ export type CreateOrUpdateStaffResponse = z.infer<
 
 export const BulkCreateOrUpdateStaffRequestSchema = z.object({
   profiles: z.array(CreateOrUpdateStaffRequestSchema),
+  currentProfileId: z.string(), // Current user's profile ID for role validation
 });
 
 export type BulkCreateOrUpdateStaffRequest = z.infer<

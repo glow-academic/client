@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useBulkCreateOrUpdateStaff } from "@/lib/api/v2/hooks/profile";
 
@@ -62,6 +63,7 @@ export default function ManualAddStaffModal({
   onDone,
   onStagedProfiles,
 }: ManualAddStaffModalProps) {
+  const { effectiveProfile } = useProfile();
   const log = useLogger();
   const bulkCreateOrUpdateMutation = useBulkCreateOrUpdateStaff();
 
@@ -272,25 +274,41 @@ export default function ManualAddStaffModal({
     setIsSubmitting(true);
 
     try {
-      const finalDepartmentId =
-        departmentIds && departmentIds.length > 0 ? departmentIds[0] : null;
-      const finalCohortId = isScoped
-        ? null // Don't add to cohort yet when scoped
-        : cohortIds && cohortIds.length > 0
-          ? cohortIds[0]
-          : null;
+      // Staging logic based on context (matches CSV import):
+      // - Cohort page (cohortIds): Don't attach departments or cohorts (staging mode)
+      // - Department page (departmentIds, no cohortIds): Allow cohorts, don't attach departments (staging for departments)
+      // - Staff page (no scoping): Use both department_ids and cohort_ids directly (no staging)
+      let finalDepartmentIds: string[] = [];
+      let finalCohortIds: string[] = [];
+
+      if (isCohortScoped) {
+        // Cohort page: staging mode - don't attach anything
+        finalDepartmentIds = [];
+        finalCohortIds = [];
+      } else if (isDepartmentScoped) {
+        // Department page: allow cohorts from input, but don't attach departments (staging)
+        finalDepartmentIds = [];
+        // Note: For manual add, we don't have cohort input, so cohort_ids stays empty
+        // If we had cohort input in manual add, we'd allow it here
+        finalCohortIds = [];
+      } else {
+        // Staff page: no staging - use both directly (use all provided IDs)
+        finalDepartmentIds = departmentIds || [];
+        finalCohortIds = cohortIds || [];
+      }
 
       const profiles = parsedEntries.map((entry) => ({
         firstName: entry.firstName,
         lastName: entry.lastName,
         alias: entry.alias,
         role: entry.role,
-        department_id: finalDepartmentId,
-        cohort_id: finalCohortId,
+        department_ids: finalDepartmentIds,
+        cohort_ids: finalCohortIds,
       }));
 
       const response = await bulkCreateOrUpdateMutation.mutateAsync({
         profiles,
+        currentProfileId: effectiveProfile?.id || "",
       });
 
       // When scoped, stage the profiles
@@ -335,6 +353,9 @@ export default function ManualAddStaffModal({
     departmentIds,
     cohortIds,
     isScoped,
+    isCohortScoped,
+    isDepartmentScoped,
+    effectiveProfile?.id,
     bulkCreateOrUpdateMutation,
     onOpenChange,
     onDone,

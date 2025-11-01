@@ -46,6 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useBulkCreateOrUpdateStaff,
@@ -297,6 +298,7 @@ export default function CSVImportStaffModal({
   onDone,
   onStagedProfiles,
 }: CSVImportStaffModalProps) {
+  const { effectiveProfile } = useProfile();
   const log = useLogger();
   const processCSVMutation = useProcessCSV();
   const bulkCreateOrUpdateMutation = useBulkCreateOrUpdateStaff();
@@ -316,6 +318,34 @@ export default function CSVImportStaffModal({
     Record<string, boolean>
   >({});
   const [showErrorRows, setShowErrorRows] = useState(true);
+
+  // Determine scoping context
+  const isScoped = !!(departmentIds?.length || cohortIds?.length);
+  const isCohortScoped = !!cohortIds?.length;
+  const isDepartmentScoped = !cohortIds?.length && !!departmentIds?.length;
+
+  // Valid role values based on scope (mirror ManualAddStaffModal logic)
+  const validRoles = React.useMemo(() => {
+    const roleOrder = ["ta", "instructional", "admin", "superadmin"];
+
+    // Apply scope restrictions
+    let allowedRoles: string[];
+    if (isCohortScoped) {
+      // Cohort scope: only ta and instructional
+      allowedRoles = ["ta", "instructional"];
+    } else if (isDepartmentScoped) {
+      // Department scope: ta, instructional, and admin
+      allowedRoles = ["ta", "instructional", "admin"];
+    } else {
+      // Staff scope: all roles allowed
+      allowedRoles = ["ta", "instructional", "admin", "superadmin"];
+    }
+
+    // Filter roleOptions to only include roles that are both in options and allowed by scope
+    return roleOrder.filter(
+      (role) => allowedRoles.includes(role) && roleOptions.includes(role)
+    );
+  }, [roleOptions, isCohortScoped, isDepartmentScoped]);
 
   // Get available target fields based on scoping
   const availableTargetFields = React.useMemo(() => {
@@ -586,16 +616,47 @@ export default function CSVImportStaffModal({
     }
   }, [csvContent, columnMappings, includedColumns, processCSVMutation, log]);
 
+  // Check for duplicate aliases in review stage
+  const duplicateAliasMap = React.useMemo(() => {
+    const aliasMap: Record<string, number[]> = {};
+    processedRows.forEach((row, idx) => {
+      const editableRow = editableRows[idx] || row;
+      const alias = extractAliasFromEmail(
+        editableRow.alias || ""
+      ).toLowerCase();
+      if (alias) {
+        if (!aliasMap[alias]) {
+          aliasMap[alias] = [];
+        }
+        aliasMap[alias]!.push(idx);
+      }
+    });
+    // Return set of row indices that have duplicate aliases
+    const duplicates = new Set<number>();
+    Object.values(aliasMap).forEach((indices) => {
+      if (indices.length > 1) {
+        indices.forEach((idx) => duplicates.add(idx));
+      }
+    });
+    return duplicates;
+  }, [processedRows, editableRows]);
+
   // Update editable row
   const updateEditableRow = useCallback(
-    (rowIndex: number, field: string, value: string | null) => {
+    (rowIndex: number, field: string, value: string | null | string[]) => {
       setEditableRows((prev) => {
         const current = prev[rowIndex] || processedRows[rowIndex];
         if (!current) return prev;
 
         const updated = { ...current } as ProcessedCSVRow &
-          Record<string, string | null>;
-        updated[field] = value;
+          Record<string, string | null | string[]>;
+
+        // Handle arrays for department_ids and cohort_ids
+        if (field === "department_ids" || field === "cohort_ids") {
+          updated[field] = Array.isArray(value) ? value : [];
+        } else {
+          updated[field] = value;
+        }
 
         // Revalidate errors
         const errors = [...updated.errors];
@@ -626,54 +687,129 @@ export default function CSVImportStaffModal({
       return;
     }
 
+    // Validate roles against scope restrictions
+    const invalidRoles = validRows
+      .map((row, idx) => {
+        const role = row.role || "ta";
+        if (!validRoles.includes(role)) {
+          return { index: idx, role };
+        }
+        return null;
+      })
+      .filter((r): r is { index: number; role: string } => r !== null);
+
+    if (invalidRoles.length > 0) {
+      toast.error(
+        `Invalid roles found: ${invalidRoles.map((r) => r.role).join(", ")}. ` +
+          `Allowed roles: ${validRoles.join(", ")}`
+      );
+      return;
+    }
+
+    // Validate alias uniqueness within the batch
+    const aliasCounts: Record<string, number[]> = {};
+    validRows.forEach((row, idx) => {
+      const alias = extractAliasFromEmail(row.alias || "").toLowerCase();
+      if (alias) {
+        if (!aliasCounts[alias]) {
+          aliasCounts[alias] = [];
+        }
+        aliasCounts[alias]!.push(idx);
+      }
+    });
+
+    const duplicateAliases = Object.entries(aliasCounts)
+      .filter(([, indices]) => indices.length > 1)
+      .map(([alias]) => alias);
+
+    if (duplicateAliases.length > 0) {
+      toast.error(
+        `Duplicate aliases found in CSV: ${duplicateAliases.join(", ")}`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Determine if scoped (staging mode)
-      const isScoped = !!(departmentIds?.length || cohortIds?.length);
-
       // Convert rows to profiles
       const profiles = validRows.map((row) => {
-        // Resolve department/cohort IDs from names if needed
-        let deptId: string | null = row.department_id || null;
-        if (deptId && !validDepartmentIds.includes(deptId)) {
-          // Try to find by name
-          const found = Object.entries(departmentMapping).find(
-            ([_, dept]) => dept.name.toLowerCase() === deptId!.toLowerCase()
-          );
-          deptId = found ? found[0] : null;
-        }
-        if (!deptId && departmentIds && departmentIds.length > 0) {
-          deptId = departmentIds[0] || null;
-        }
+        let deptIds: string[] = [];
+        let cohortIds: string[] = [];
 
-        // When scoped, don't add to cohort yet (staging mode)
-        let cohortIdValue: string | null = null;
-        if (!isScoped) {
-          // Not scoped: allow cohort assignment
-          cohortIdValue = row.cohort_id || null;
-          if (cohortIdValue && !validCohortIds.includes(cohortIdValue)) {
-            // Try to find by name
-            const found = Object.entries(cohortMapping).find(
-              ([_, cohort]) =>
-                cohort.name.toLowerCase() === cohortIdValue!.toLowerCase()
-            );
-            cohortIdValue = found ? found[0] : null;
-          }
+        // Staging logic based on context:
+        // - Cohort page (cohortIds): Don't attach departments or cohorts (staging mode)
+        // - Department page (departmentIds, no cohortIds): Allow cohorts, don't attach departments (staging for departments)
+        // - Staff page (no scoping): Use both department_ids and cohort_ids directly (no staging)
+
+        if (isCohortScoped) {
+          // Cohort page: staging mode - don't attach anything
+          deptIds = [];
+          cohortIds = [];
+        } else if (isDepartmentScoped) {
+          // Department page: allow cohorts from CSV, but don't attach departments (staging)
+          deptIds = [];
+          // Allow cohort assignment from CSV - resolve IDs from names if needed
+          const rowCohortIds = row.cohort_ids || [];
+          cohortIds = rowCohortIds
+            .map((cohortIdOrName) => {
+              if (validCohortIds.includes(cohortIdOrName)) {
+                return cohortIdOrName;
+              }
+              // Try to find by name
+              const found = Object.entries(cohortMapping).find(
+                ([_, cohort]) =>
+                  cohort.name.toLowerCase() === cohortIdOrName.toLowerCase()
+              );
+              return found ? found[0] : null;
+            })
+            .filter((id): id is string => id !== null);
+        } else {
+          // Staff page: no staging - use both directly
+          // Resolve department/cohort IDs from names if needed
+          const rowDeptIds = row.department_ids || [];
+          deptIds = rowDeptIds
+            .map((deptIdOrName) => {
+              if (validDepartmentIds.includes(deptIdOrName)) {
+                return deptIdOrName;
+              }
+              // Try to find by name
+              const found = Object.entries(departmentMapping).find(
+                ([_, dept]) =>
+                  dept.name.toLowerCase() === deptIdOrName.toLowerCase()
+              );
+              return found ? found[0] : null;
+            })
+            .filter((id): id is string => id !== null);
+
+          const rowCohortIds = row.cohort_ids || [];
+          cohortIds = rowCohortIds
+            .map((cohortIdOrName) => {
+              if (validCohortIds.includes(cohortIdOrName)) {
+                return cohortIdOrName;
+              }
+              // Try to find by name
+              const found = Object.entries(cohortMapping).find(
+                ([_, cohort]) =>
+                  cohort.name.toLowerCase() === cohortIdOrName.toLowerCase()
+              );
+              return found ? found[0] : null;
+            })
+            .filter((id): id is string => id !== null);
         }
-        // When scoped, cohort_id stays null (staging)
 
         return {
           firstName: row.firstName!,
           lastName: row.lastName!,
           alias: extractAliasFromEmail(row.alias || ""),
           role: row.role || "ta",
-          department_id: deptId,
-          cohort_id: cohortIdValue,
+          department_ids: deptIds,
+          cohort_ids: cohortIds,
         };
       });
 
       const response = await bulkCreateOrUpdateMutation.mutateAsync({
         profiles,
+        currentProfileId: effectiveProfile?.id || "",
       });
 
       // When scoped, stage the profiles
@@ -725,8 +861,11 @@ export default function CSVImportStaffModal({
     validDepartmentIds,
     cohortMapping,
     validCohortIds,
-    departmentIds,
-    cohortIds,
+    isCohortScoped,
+    isDepartmentScoped,
+    isScoped,
+    validRoles,
+    effectiveProfile?.id,
     bulkCreateOrUpdateMutation,
     onOpenChange,
     onDone,
@@ -840,18 +979,50 @@ export default function CSVImportStaffModal({
                       </p>
                     )}
                   </div>
+                  {/* Download Template Button - grouped with instructions */}
+                  <div className="pt-2 flex justify-center">
+                    <Button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        downloadTemplate();
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download CSV Template
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              {/* Download Template Button */}
-              <div className="flex justify-center">
-                <Button
-                  onClick={downloadTemplate}
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Download CSV Template
-                </Button>
+              {/* Footer with Cancel and Next buttons */}
+              <div
+                className={`flex items-center pt-4 border-t ${
+                  csvHeaders.length > 0 ? "justify-between" : "justify-end"
+                }`}
+              >
+                {csvHeaders.length > 0 ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setStage("mapping");
+                      }}
+                    >
+                      Next
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancel
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -1003,18 +1174,23 @@ export default function CSVImportStaffModal({
                         const hasAliasError = editableRow.errors.some(
                           (e) => e.field === "alias"
                         );
+                        const hasDuplicateAlias = duplicateAliasMap.has(index);
                         const hasRoleError = editableRow.errors.some(
                           (e) => e.field === "role"
                         );
                         const hasDepartmentError =
                           (!departmentIds || departmentIds.length === 0) &&
                           editableRow.errors.some(
-                            (e) => e.field === "department_id"
+                            (e) =>
+                              e.field === "department_ids" ||
+                              e.field === "department_id"
                           );
                         const hasCohortError =
                           (!cohortIds || cohortIds.length === 0) &&
                           editableRow.errors.some(
-                            (e) => e.field === "cohort_id"
+                            (e) =>
+                              e.field === "cohort_ids" ||
+                              e.field === "cohort_id"
                           );
 
                         return (
@@ -1056,7 +1232,9 @@ export default function CSVImportStaffModal({
                             </TableCell>
                             <TableCell
                               className={
-                                hasAliasError ? "bg-destructive/10" : ""
+                                hasAliasError || hasDuplicateAlias
+                                  ? "bg-destructive/10"
+                                  : ""
                               }
                             >
                               <Input
@@ -1085,7 +1263,7 @@ export default function CSVImportStaffModal({
                                     value || null
                                   )
                                 }
-                                roleOptions={roleOptions}
+                                roleOptions={validRoles}
                                 placeholder="Select role"
                                 buttonClassName="h-8"
                               />
@@ -1100,19 +1278,19 @@ export default function CSVImportStaffModal({
                                   mapping={departmentMapping}
                                   validIds={validDepartmentIds}
                                   selectedIds={
-                                    editableRow.department_id
-                                      ? [editableRow.department_id]
-                                      : []
+                                    (editableRow.department_ids ||
+                                      row.department_ids ||
+                                      []) as string[]
                                   }
                                   onSelect={(ids) =>
                                     updateEditableRow(
                                       index,
-                                      "department_id",
-                                      ids[0] || null
+                                      "department_ids",
+                                      ids
                                     )
                                   }
-                                  placeholder="Select department"
-                                  multiSelect={false}
+                                  placeholder="Select departments"
+                                  multiSelect={true}
                                   compact={true}
                                 />
                               </TableCell>
@@ -1127,19 +1305,15 @@ export default function CSVImportStaffModal({
                                   mapping={cohortMapping}
                                   validIds={validCohortIds}
                                   selectedIds={
-                                    editableRow.cohort_id
-                                      ? [editableRow.cohort_id]
-                                      : []
+                                    (editableRow.cohort_ids ||
+                                      row.cohort_ids ||
+                                      []) as string[]
                                   }
                                   onSelect={(ids) =>
-                                    updateEditableRow(
-                                      index,
-                                      "cohort_id",
-                                      ids[0] || null
-                                    )
+                                    updateEditableRow(index, "cohort_ids", ids)
                                   }
-                                  placeholder="Select cohort"
-                                  multiSelect={false}
+                                  placeholder="Select cohorts"
+                                  multiSelect={true}
                                 />
                               </TableCell>
                             )}

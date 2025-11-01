@@ -437,7 +437,8 @@ export default function Cohort({ cohortId }: CohortProps) {
       JSON.stringify([...currentSimulationIds].sort()) !==
         JSON.stringify(originalSimulationIds.sort()) ||
       JSON.stringify(simulationActiveStates) !==
-        JSON.stringify(originalSimulationActiveStates)
+        JSON.stringify(originalSimulationActiveStates) ||
+      stagedProfilesToAdd.length > 0  // Check for staged profiles
     );
   }, [
     formData,
@@ -447,6 +448,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     cohortData?.simulation_ids,
     simulationActiveStates,
     originalSimulationActiveStates,
+    stagedProfilesToAdd.length,
   ]);
 
   const handleInputChange = (
@@ -974,8 +976,8 @@ export default function Cohort({ cohortId }: CohortProps) {
               })
               .filter((p) => !existingStaffIds.has(p.profile_id));
 
-            // Combine existing staff with staged profiles
-            const mergedStaff = [...existingStaff, ...stagedWithDetails];
+            // Combine existing staff with staged profiles (staged profiles first)
+            const mergedStaff = [...stagedWithDetails, ...existingStaff];
 
             return (
               <div className="space-y-4">

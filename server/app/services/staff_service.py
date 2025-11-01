@@ -684,8 +684,8 @@ class StaffService(BaseService):
             lastName = None
             alias = None
             role = None
-            department_id = None
-            cohort_id = None
+            department_ids: list[str] = []
+            cohort_ids: list[str] = []
 
             for header in headers:
                 field = column_to_field.get(header)
@@ -703,9 +703,15 @@ class StaffService(BaseService):
                 elif field == "role":
                     role = value if value else None
                 elif field == "department":
-                    department_id = value if value else None
+                    # Support comma-separated values for multiple departments
+                    if value:
+                        dept_values = [d.strip() for d in value.split(",") if d.strip()]
+                        department_ids.extend(dept_values)
                 elif field == "cohort":
-                    cohort_id = value if value else None
+                    # Support comma-separated values for multiple cohorts
+                    if value:
+                        cohort_values = [c.strip() for c in value.split(",") if c.strip()]
+                        cohort_ids.extend(cohort_values)
 
             # Validate required fields
             if not firstName:
@@ -727,6 +733,10 @@ class StaffService(BaseService):
                     )
                 )
 
+            # Default role to 'ta' if not provided
+            if not role:
+                role = "ta"
+
             rows.append(
                 ProcessedCSVRow(
                     row_index=row_index,
@@ -734,8 +744,8 @@ class StaffService(BaseService):
                     lastName=lastName,
                     alias=alias,
                     role=role,
-                    department_id=department_id,
-                    cohort_id=cohort_id,
+                    department_ids=department_ids,
+                    cohort_ids=cohort_ids,
                     errors=errors,
                 )
             )
@@ -774,38 +784,49 @@ class StaffService(BaseService):
                     update_name_query, profile_id, request.firstName, request.lastName
                 )
 
-                # Update department (use insert with ON CONFLICT to handle both cases)
-                if request.department_id:
+                # Update departments (handle array)
+                if request.department_ids:
                     # First, delete any existing department relationships
                     delete_dept_query = """
                     DELETE FROM profile_departments WHERE profile_id = $1
                     """
                     await self.conn.execute(delete_dept_query, profile_id)
-                    # Then insert the new one as primary
+                    # Then insert all new ones (first one as primary)
                     insert_dept_query = """
                     INSERT INTO profile_departments (profile_id, department_id, is_primary)
-                    VALUES ($1, $2, true)
+                    VALUES ($1, $2, $3)
                     ON CONFLICT (profile_id, department_id) DO UPDATE SET
-                        is_primary = true,
+                        is_primary = EXCLUDED.is_primary,
                         active = true,
                         updated_at = NOW()
                     """
-                    await self.conn.execute(insert_dept_query, profile_id, request.department_id)
-
-                # Update cohort relationship
-                if request.cohort_id:
-                    # Remove from other cohorts? No, just add to this one
-                    # Check if already in cohort
-                    check_cohort_query = """
-                    SELECT 1 FROM cohort_profiles 
-                    WHERE profile_id = $1 AND cohort_id = $2 AND active = true
+                    for idx, dept_id in enumerate(request.department_ids):
+                        is_primary = idx == 0  # First department is primary
+                        await self.conn.execute(
+                            insert_dept_query, profile_id, dept_id, is_primary
+                        )
+                elif request.department_ids == []:
+                    # Empty array means remove all departments
+                    delete_dept_query = """
+                    DELETE FROM profile_departments WHERE profile_id = $1
                     """
-                    in_cohort = await self.conn.fetchrow(
-                        check_cohort_query, profile_id, request.cohort_id
-                    )
-                    if not in_cohort:
-                        query, _ = self.cohort_queries.insert_cohort_profile()
-                        await self.conn.execute(query, request.cohort_id, profile_id)
+                    await self.conn.execute(delete_dept_query, profile_id)
+
+                # Update cohorts (handle array - only add new ones, don't remove existing)
+                if request.cohort_ids:
+                    # Get existing active cohorts for this profile
+                    existing_cohorts_query = """
+                    SELECT cohort_id FROM cohort_profiles 
+                    WHERE profile_id = $1 AND active = true
+                    """
+                    existing = await self.conn.fetch(existing_cohorts_query, profile_id)
+                    existing_cohort_ids = {row["cohort_id"] for row in existing}
+                    
+                    # Insert only cohorts that don't already exist
+                    query, _ = self.cohort_queries.insert_cohort_profile()
+                    for cohort_id in request.cohort_ids:
+                        if cohort_id not in existing_cohort_ids:
+                            await self.conn.execute(query, cohort_id, profile_id)
 
                 created = False
                 message = f"Staff '{request.firstName} {request.lastName}' updated successfully"
@@ -828,22 +849,27 @@ class StaffService(BaseService):
                     False,
                 )
 
-                # Insert department relationship as primary
-                if request.department_id:
+                # Insert departments (first one as primary)
+                if request.department_ids:
                     insert_dept_query = """
                     INSERT INTO profile_departments (profile_id, department_id, is_primary)
-                    VALUES ($1, $2, true)
+                    VALUES ($1, $2, $3)
                     ON CONFLICT (profile_id, department_id) DO UPDATE SET
-                        is_primary = true,
+                        is_primary = EXCLUDED.is_primary,
                         active = true,
                         updated_at = NOW()
                     """
-                    await self.conn.execute(insert_dept_query, editing_profile_id, request.department_id)
+                    for idx, dept_id in enumerate(request.department_ids):
+                        is_primary = idx == 0  # First department is primary
+                        await self.conn.execute(
+                            insert_dept_query, editing_profile_id, dept_id, is_primary
+                        )
 
-                # Insert cohort relationship
-                if request.cohort_id:
+                # Insert cohorts
+                if request.cohort_ids:
                     query, _ = self.cohort_queries.insert_cohort_profile()
-                    await self.conn.execute(query, request.cohort_id, editing_profile_id)
+                    for cohort_id in request.cohort_ids:
+                        await self.conn.execute(query, cohort_id, editing_profile_id)
 
                 profile_id = editing_profile_id
                 created = True
@@ -870,15 +896,55 @@ class StaffService(BaseService):
         created_count = 0
         updated_count = 0
 
+        # Get current user's role for validation
+        current_profile_id = request.currentProfileId
+        query, params = self.queries.get_profile_role(current_profile_id)
+        current_user = await self.conn.fetchrow(query, *params)
+        
+        if not current_user:
+            raise ValueError(f"Current user profile not found: {current_profile_id}")
+        
+        current_user_role = current_user["role"]
+
+        # Role hierarchy validation helper
+        def can_assign_role(creator_role: str, target_role: str) -> bool:
+            """Check if creator_role can assign target_role."""
+            role_hierarchy = {
+                "superadmin": ["superadmin", "admin", "instructional", "ta", "guest"],
+                "admin": ["instructional", "ta", "guest"],
+                "instructional": ["ta", "guest"],
+                "ta": ["guest"],
+                "guest": [],
+            }
+            return target_role in role_hierarchy.get(creator_role, [])
+        
+        def get_assignable_roles(creator_role: str) -> list[str]:
+            """Get list of roles that creator_role can assign."""
+            role_hierarchy = {
+                "superadmin": ["superadmin", "admin", "instructional", "ta", "guest"],
+                "admin": ["instructional", "ta", "guest"],
+                "instructional": ["ta", "guest"],
+                "ta": ["guest"],
+                "guest": [],
+            }
+            return role_hierarchy.get(creator_role, [])
+
         async with transaction(self.conn):
             for profile_req in request.profiles:
+                # Validate role assignment
+                if not can_assign_role(current_user_role, profile_req.role):
+                    assignable = get_assignable_roles(current_user_role)
+                    raise ValueError(
+                        f"Cannot assign role '{profile_req.role}' with current role '{current_user_role}'. "
+                        f"Only roles: {', '.join(assignable)} can be assigned."
+                    )
                 # Check if alias exists
                 query, params = self.queries.check_alias_exists(profile_req.alias)
                 existing = await self.conn.fetchrow(query, *params)
 
                 if existing:
                     # Update existing
-                    profile_id = existing["id"]
+                    profile_id = str(existing["id"])
 
                     # Update profile
                     query, _ = self.queries.update_profile()
@@ -894,36 +960,49 @@ class StaffService(BaseService):
                         update_name_query, profile_id, profile_req.firstName, profile_req.lastName
                     )
 
-                    # Update department (use insert with ON CONFLICT to handle both cases)
-                    if profile_req.department_id:
+                    # Update departments (handle array)
+                    if profile_req.department_ids:
                         # First, delete any existing department relationships
                         delete_dept_query = """
                         DELETE FROM profile_departments WHERE profile_id = $1
                         """
                         await self.conn.execute(delete_dept_query, profile_id)
-                        # Then insert the new one as primary
+                        # Then insert all new ones (first one as primary)
                         insert_dept_query = """
                         INSERT INTO profile_departments (profile_id, department_id, is_primary)
-                        VALUES ($1, $2, true)
+                        VALUES ($1, $2, $3)
                         ON CONFLICT (profile_id, department_id) DO UPDATE SET
-                            is_primary = true,
+                            is_primary = EXCLUDED.is_primary,
                             active = true,
                             updated_at = NOW()
                         """
-                        await self.conn.execute(insert_dept_query, profile_id, profile_req.department_id)
-
-                    # Update cohort
-                    if profile_req.cohort_id:
-                        check_cohort_query = """
-                        SELECT 1 FROM cohort_profiles 
-                        WHERE profile_id = $1 AND cohort_id = $2 AND active = true
+                        for idx, dept_id in enumerate(profile_req.department_ids):
+                            is_primary = idx == 0  # First department is primary
+                            await self.conn.execute(
+                                insert_dept_query, profile_id, dept_id, is_primary
+                            )
+                    elif profile_req.department_ids == []:
+                        # Empty array means remove all departments
+                        delete_dept_query = """
+                        DELETE FROM profile_departments WHERE profile_id = $1
                         """
-                        in_cohort = await self.conn.fetchrow(
-                            check_cohort_query, profile_id, profile_req.cohort_id
-                        )
-                        if not in_cohort:
-                            query, _ = self.cohort_queries.insert_cohort_profile()
-                            await self.conn.execute(query, profile_req.cohort_id, profile_id)
+                        await self.conn.execute(delete_dept_query, profile_id)
+
+                    # Update cohorts (handle array - only add new ones, don't remove existing)
+                    if profile_req.cohort_ids:
+                        # Get existing active cohorts for this profile
+                        existing_cohorts_query = """
+                        SELECT cohort_id FROM cohort_profiles 
+                        WHERE profile_id = $1 AND active = true
+                        """
+                        existing = await self.conn.fetch(existing_cohorts_query, profile_id)
+                        existing_cohort_ids = {row["cohort_id"] for row in existing}
+                        
+                        # Insert only cohorts that don't already exist
+                        query, _ = self.cohort_queries.insert_cohort_profile()
+                        for cohort_id in profile_req.cohort_ids:
+                            if cohort_id not in existing_cohort_ids:
+                                await self.conn.execute(query, cohort_id, profile_id)
 
                     updated_count += 1
                 else:
@@ -944,24 +1023,31 @@ class StaffService(BaseService):
                         False,
                     )
 
-                    if profile_req.department_id:
+                    # Insert departments (first one as primary)
+                    if profile_req.department_ids:
                         insert_dept_query = """
                         INSERT INTO profile_departments (profile_id, department_id, is_primary)
-                        VALUES ($1, $2, true)
+                        VALUES ($1, $2, $3)
                         ON CONFLICT (profile_id, department_id) DO UPDATE SET
-                            is_primary = true,
+                            is_primary = EXCLUDED.is_primary,
                             active = true,
                             updated_at = NOW()
                         """
-                        await self.conn.execute(insert_dept_query, profile_id, profile_req.department_id)
+                        for idx, dept_id in enumerate(profile_req.department_ids):
+                            is_primary = idx == 0  # First department is primary
+                            await self.conn.execute(
+                                insert_dept_query, profile_id, dept_id, is_primary
+                            )
 
-                    if profile_req.cohort_id:
+                    # Insert cohorts
+                    if profile_req.cohort_ids:
                         query, _ = self.cohort_queries.insert_cohort_profile()
-                        await self.conn.execute(query, profile_req.cohort_id, profile_id)
+                        for cohort_id in profile_req.cohort_ids:
+                            await self.conn.execute(query, cohort_id, profile_id)
 
                     created_count += 1
 
-                profile_ids.append(profile_id)
+                profile_ids.append(str(profile_id))
 
         # Invalidate caches
         await self._invalidate_cache(

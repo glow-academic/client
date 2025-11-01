@@ -261,8 +261,8 @@ class ProcessedCSVRow(BaseModel):
     lastName: str | None
     alias: str | None
     role: str | None
-    department_id: str | None
-    cohort_id: str | None
+    department_ids: list[str] = []  # Array for multi-select support
+    cohort_ids: list[str] = []  # Array for multi-select support
     errors: list[CSVRowError]
 
 
@@ -286,8 +286,8 @@ class CreateOrUpdateStaffRequest(BaseModel):
     lastName: str
     alias: str
     role: str
-    department_id: str | None = None
-    cohort_id: str | None = None
+    department_ids: list[str] = []
+    cohort_ids: list[str] = []
 
 
 class CreateOrUpdateStaffResponse(BaseModel):
@@ -303,6 +303,7 @@ class BulkCreateOrUpdateStaffRequest(BaseModel):
     """Request to bulk create or update staff members."""
 
     profiles: list[CreateOrUpdateStaffRequest]
+    currentProfileId: str  # Current user's profile ID for role validation
 
 
 class BulkCreateOrUpdateStaffResponse(BaseModel):
