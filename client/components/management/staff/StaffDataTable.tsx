@@ -44,6 +44,7 @@ import {
   Shield,
   Trash2,
   User as UserIcon,
+  UserMinus,
 } from "lucide-react";
 import { StaffDataTableToolbar } from "./StaffDataTableToolbar";
 
@@ -130,10 +131,19 @@ export interface StaffDataTableProps {
   selectedStaffIds: string[];
   onStaffSelect: (profileId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean, visibleRowIds?: string[]) => void;
-  onCreate: () => void;
+  onCreate: (
+    stagedProfiles?: Array<{
+      profileId: string;
+      firstName?: string;
+      lastName?: string;
+      alias?: string;
+      role?: string;
+    }>
+  ) => void;
   onPreview: (staff: ProfileListItem) => void;
   onEdit: (staff: ProfileListItem) => void;
   onDelete: (staff: ProfileListItem) => void;
+  onRemoveFromCohort?: (staff: ProfileListItem) => void;
   onBulkEdit: () => void;
   onBulkDelete: () => void;
   canDelete: (profileId: string) => boolean;
@@ -163,6 +173,7 @@ export function StaffDataTable({
   onPreview,
   onEdit,
   onDelete,
+  onRemoveFromCohort,
   onBulkEdit,
   onBulkDelete,
   canDelete,
@@ -171,14 +182,44 @@ export function StaffDataTable({
   editableCount,
 }: StaffDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({
+
+  // Set column visibility based on page context
+  const initialColumnVisibility = React.useMemo<VisibilityState>(() => {
+    const base: VisibilityState = {
       name: false,
       active: false,
       lastActive: false,
-      department_ids: false,
-      total_requests: false,
-    });
+    };
+
+    if (cohortId) {
+      // Cohorts page: hide department_ids and cohort_ids, show total_requests
+      return {
+        ...base,
+        department_ids: false,
+        cohort_ids: false,
+        total_requests: true,
+      };
+    } else if (departmentId) {
+      // Departments page: hide department_ids, show cohort_ids and total_requests
+      return {
+        ...base,
+        department_ids: false,
+        cohort_ids: true,
+        total_requests: true,
+      };
+    } else {
+      // Staff page: hide cohort_ids, show department_ids and total_requests
+      return {
+        ...base,
+        department_ids: true,
+        cohort_ids: false,
+        total_requests: true,
+      };
+    }
+  }, [cohortId, departmentId]);
+
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>(initialColumnVisibility);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -206,9 +247,20 @@ export function StaffDataTable({
                   {getInitials(staff.first_name, staff.last_name)}
                 </div>
                 <div className="text-left">
-                  <p className="font-medium text-sm">
-                    {staff.first_name} {staff.last_name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm">
+                      {staff.first_name} {staff.last_name}
+                    </p>
+                    {(staff as ProfileListItem & { isStaged?: boolean })
+                      .isStaged && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                      >
+                        New
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {staff.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
                   </p>
@@ -510,6 +562,25 @@ export function StaffDataTable({
                 </TooltipContent>
               </Tooltip>
             )}
+            {/* Remove from Cohort - show when cohortId provided */}
+            {cohortId && onRemoveFromCohort && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                    onClick={() => onRemoveFromCohort(staff)}
+                  >
+                    <UserMinus className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Remove from Cohort</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
             {/* Only show delete when NOT scoped (cohortId/departmentId) - scoped views use "remove" via bulk actions */}
             {!cohortId && !departmentId && canDelete(staff.profile_id) && (
               <Tooltip>
@@ -543,6 +614,7 @@ export function StaffDataTable({
   }, [
     columns,
     onSelectAll,
+    onRemoveFromCohort,
     selectedStaffIds,
     onStaffSelect,
     onPreview,

@@ -68,6 +68,15 @@ export interface CSVImportStaffModalProps {
   validCohortIds: string[];
   roleOptions: string[];
   onDone?: () => void;
+  onStagedProfiles?: (
+    profiles: Array<{
+      profileId: string;
+      firstName?: string;
+      lastName?: string;
+      alias?: string;
+      role?: string;
+    }>
+  ) => void;
 }
 
 type Stage = "upload" | "mapping" | "review";
@@ -286,6 +295,7 @@ export default function CSVImportStaffModal({
   validCohortIds,
   roleOptions,
   onDone,
+  onStagedProfiles,
 }: CSVImportStaffModalProps) {
   const log = useLogger();
   const processCSVMutation = useProcessCSV();
@@ -580,6 +590,9 @@ export default function CSVImportStaffModal({
 
     setIsSubmitting(true);
     try {
+      // Determine if scoped (staging mode)
+      const isScoped = !!(departmentIds?.length || cohortIds?.length);
+
       // Convert rows to profiles
       const profiles = validRows.map((row) => {
         // Resolve department/cohort IDs from names if needed
@@ -595,18 +608,21 @@ export default function CSVImportStaffModal({
           deptId = departmentIds[0] || null;
         }
 
-        let cohortIdValue: string | null = row.cohort_id || null;
-        if (cohortIdValue && !validCohortIds.includes(cohortIdValue)) {
-          // Try to find by name
-          const found = Object.entries(cohortMapping).find(
-            ([_, cohort]) =>
-              cohort.name.toLowerCase() === cohortIdValue!.toLowerCase()
-          );
-          cohortIdValue = found ? found[0] : null;
+        // When scoped, don't add to cohort yet (staging mode)
+        let cohortIdValue: string | null = null;
+        if (!isScoped) {
+          // Not scoped: allow cohort assignment
+          cohortIdValue = row.cohort_id || null;
+          if (cohortIdValue && !validCohortIds.includes(cohortIdValue)) {
+            // Try to find by name
+            const found = Object.entries(cohortMapping).find(
+              ([_, cohort]) =>
+                cohort.name.toLowerCase() === cohortIdValue!.toLowerCase()
+            );
+            cohortIdValue = found ? found[0] : null;
+          }
         }
-        if (!cohortIdValue && cohortIds && cohortIds.length > 0) {
-          cohortIdValue = cohortIds[0] || null;
-        }
+        // When scoped, cohort_id stays null (staging)
 
         return {
           firstName: row.firstName!,
@@ -622,9 +638,29 @@ export default function CSVImportStaffModal({
         profiles,
       });
 
-      toast.success(
-        `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
-      );
+      // When scoped, stage the profiles
+      if (isScoped && onStagedProfiles && response.profileIds) {
+        // Map profile IDs to profile data from valid rows
+        // The profileIds array corresponds to the profiles array order
+        const stagedProfiles = response.profileIds.map((profileId, index) => {
+          const row = validRows[index];
+          return {
+            profileId,
+            firstName: row?.firstName ?? "",
+            lastName: row?.lastName ?? "",
+            alias: row?.alias ?? "",
+            role: row?.role ?? "ta",
+          };
+        });
+        onStagedProfiles(stagedProfiles);
+        toast.success(
+          `${response.created_count + response.updated_count} profile(s) staged. They will be added to the cohort when you click Update.`
+        );
+      } else {
+        toast.success(
+          `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
+        );
+      }
 
       onOpenChange(false);
       if (onDone) {
@@ -656,6 +692,7 @@ export default function CSVImportStaffModal({
     bulkCreateOrUpdateMutation,
     onOpenChange,
     onDone,
+    onStagedProfiles,
     log,
   ]);
 
@@ -851,12 +888,6 @@ export default function CSVImportStaffModal({
           {stage === "review" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <Label>Review Import Data</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {processedRows.length} total row(s), {validRowCount} valid
-                  </p>
-                </div>
                 {hasErrors && (
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">

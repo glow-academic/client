@@ -1,12 +1,10 @@
 "use client";
 
-import { UserPlus } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { CohortPicker } from "@/components/common/forms/CohortPicker";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,12 +12,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
-import { useCreateOrUpdateStaff } from "@/lib/api/v2/hooks/profile";
+import { useBulkCreateOrUpdateStaff } from "@/lib/api/v2/hooks/profile";
 
 type RoleValue = "superadmin" | "admin" | "instructional" | "ta" | "guest";
+
+interface ParsedStaffEntry {
+  firstName: string;
+  lastName: string;
+  alias: string;
+  role: RoleValue;
+  rawLine: string;
+  index: number;
+}
 
 export interface ManualAddStaffModalProps {
   open: boolean;
@@ -32,6 +38,15 @@ export interface ManualAddStaffModalProps {
   validCohortIds: string[];
   roleOptions: string[];
   onDone?: () => void;
+  onStagedProfiles?: (
+    profiles: Array<{
+      profileId: string;
+      firstName?: string;
+      lastName?: string;
+      alias?: string;
+      role?: string;
+    }>
+  ) => void;
 }
 
 export default function ManualAddStaffModal({
@@ -39,124 +54,262 @@ export default function ManualAddStaffModal({
   onOpenChange,
   departmentIds,
   cohortIds,
-  departmentMapping,
-  validDepartmentIds,
-  cohortMapping,
-  validCohortIds,
+  departmentMapping: _departmentMapping,
+  validDepartmentIds: _validDepartmentIds,
+  cohortMapping: _cohortMapping,
+  validCohortIds: _validCohortIds,
   roleOptions,
   onDone,
+  onStagedProfiles,
 }: ManualAddStaffModalProps) {
   const log = useLogger();
-  const createOrUpdateMutation = useCreateOrUpdateStaff();
+  const bulkCreateOrUpdateMutation = useBulkCreateOrUpdateStaff();
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    alias: "",
-    role: "" as RoleValue | "",
-    departmentId:
-      departmentIds && departmentIds.length > 0 ? departmentIds[0] : "",
-    cohortId: cohortIds && cohortIds.length > 0 ? cohortIds[0] : "",
-  });
-
-  const [formErrors, setFormErrors] = useState<{
-    firstName?: string;
-    lastName?: string;
-    alias?: string;
-    role?: string;
-    departmentId?: string;
-  }>({});
-
+  const [inputText, setInputText] = useState("");
+  const [parsedEntries, setParsedEntries] = useState<ParsedStaffEntry[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset form when modal opens/closes or props change
-  useEffect(() => {
-    if (open) {
-      setFormData({
-        firstName: "",
-        lastName: "",
-        alias: "",
-        role: "",
-        departmentId:
-          departmentIds && departmentIds.length > 0 ? departmentIds[0] : "",
-        cohortId: cohortIds && cohortIds.length > 0 ? cohortIds[0] : "",
+  const isScoped = !!(departmentIds?.length || cohortIds?.length);
+  const isCohortScoped = !!cohortIds?.length;
+  const isDepartmentScoped = !cohortIds?.length && !!departmentIds?.length;
+
+  // Valid role values based on scope (ordered for display)
+  const validRoles = useMemo(() => {
+    const roleOrder: RoleValue[] = [
+      "ta",
+      "instructional",
+      "admin",
+      "superadmin",
+    ];
+
+    // Apply scope restrictions
+    let allowedRoles: RoleValue[];
+    if (isCohortScoped) {
+      // Cohort scope: only ta and instructional
+      allowedRoles = ["ta", "instructional"];
+    } else if (isDepartmentScoped) {
+      // Department scope: ta, instructional, and admin
+      allowedRoles = ["ta", "instructional", "admin"];
+    } else {
+      // Staff scope: all roles allowed
+      allowedRoles = ["ta", "instructional", "admin", "superadmin"];
+    }
+
+    // Filter roleOptions to only include roles that are both in options and allowed by scope
+    return roleOrder.filter(
+      (role) => allowedRoles.includes(role) && roleOptions.includes(role)
+    );
+  }, [roleOptions, isCohortScoped, isDepartmentScoped]);
+
+  // Parse input text into staff entries
+  const parseInput = useCallback(
+    (text: string): ParsedStaffEntry[] => {
+      if (!text.trim()) return [];
+
+      // Split by newlines first, then by commas if needed
+      const lines = text
+        .split(/\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+
+      const entries: ParsedStaffEntry[] = [];
+
+      lines.forEach((line, lineIndex) => {
+        // Try different parsing strategies
+        let parts: string[] = [];
+
+        // Strategy 1: Comma-separated (preferred format)
+        if (line.includes(",")) {
+          parts = line
+            .split(",")
+            .map((p) => p.trim())
+            .filter((p) => p);
+
+          // Parse comma-separated: First Last, Alias, Role (Role optional)
+          if (parts.length >= 2 && parts[0]) {
+            // Split first part into First Last
+            const nameParts = parts[0].split(/\s+/).filter((p) => p);
+            if (nameParts.length >= 2 && nameParts[0]) {
+              const firstName = nameParts[0];
+              const lastName = nameParts.slice(1).join(" ") || "";
+              const alias = parts[1] || "";
+              const roleCandidate = parts[2]?.toLowerCase() || "ta";
+              let role: RoleValue = validRoles.includes(
+                roleCandidate as RoleValue
+              )
+                ? (roleCandidate as RoleValue)
+                : "ta";
+
+              // If role is not in valid roles for scope, default to first valid role
+              if (!validRoles.includes(role)) {
+                role = validRoles[0] || "ta";
+              }
+
+              // Validate required fields
+              if (firstName && lastName && alias) {
+                const cleanAlias = alias
+                  .toLowerCase()
+                  .replace(/[^a-z0-9._-]/g, "")
+                  .trim();
+
+                if (cleanAlias.length >= 2) {
+                  entries.push({
+                    firstName: firstName.trim(),
+                    lastName: lastName.trim(),
+                    alias: cleanAlias,
+                    role,
+                    rawLine: line,
+                    index: lineIndex,
+                  });
+                }
+              }
+            }
+          }
+          return; // Processed comma-separated format, continue to next line
+        }
+
+        // Strategy 2: Space-separated (fallback)
+        parts = line.split(/\s+/).filter((p) => p);
+
+        if (parts.length < 2) return; // Need at least first name + last name
+
+        // Extract components
+        let firstName = "";
+        let lastName = "";
+        let alias = "";
+        let role: RoleValue = "ta"; // Default role
+
+        if (parts.length === 2) {
+          // First Last (alias and role missing)
+          firstName = parts[0] || "";
+          lastName = parts[1] || "";
+          alias = parts[1]?.toLowerCase().replace(/\s+/g, "") || ""; // Generate from last name
+        } else if (parts.length === 3) {
+          // First Last Alias (role missing, defaults to ta)
+          firstName = parts[0] || "";
+          lastName = parts[1] || "";
+          alias = parts[2] || "";
+        } else if (parts.length >= 4) {
+          // First Last Alias Role
+          firstName = parts[0] || "";
+          lastName = parts[1] || "";
+          alias = parts[2] || "";
+          const roleCandidate = parts[3]?.toLowerCase() || "ta";
+          let candidateRole: RoleValue = validRoles.includes(
+            roleCandidate as RoleValue
+          )
+            ? (roleCandidate as RoleValue)
+            : "ta";
+
+          // If role is not in valid roles for scope, default to ta (or first valid role)
+          if (!validRoles.includes(candidateRole)) {
+            candidateRole = validRoles[0] || "ta";
+          }
+          role = candidateRole;
+        }
+
+        // Validate required fields
+        if (firstName && lastName && alias) {
+          // Clean alias (remove special chars, lowercase)
+          const cleanAlias = alias
+            .toLowerCase()
+            .replace(/[^a-z0-9._-]/g, "")
+            .trim();
+
+          if (cleanAlias.length >= 2) {
+            entries.push({
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
+              alias: cleanAlias,
+              role,
+              rawLine: line,
+              index: lineIndex,
+            });
+          }
+        }
       });
-      setFormErrors({});
+
+      return entries;
+    },
+    [validRoles]
+  );
+
+  // Update parsed entries when input changes
+  useEffect(() => {
+    const parsed = parseInput(inputText);
+    setParsedEntries(parsed);
+  }, [inputText, parseInput]);
+
+  // Reset when modal opens/closes
+  useEffect(() => {
+    if (!open) {
+      setInputText("");
+      setParsedEntries([]);
     }
-  }, [open, departmentIds, cohortIds]);
+  }, [open]);
 
-  // Form validation
-  const validateForm = useCallback(() => {
-    const errors: {
-      firstName?: string;
-      lastName?: string;
-      alias?: string;
-      role?: string;
-      departmentId?: string;
-    } = {};
-
-    if (!formData.firstName.trim()) {
-      errors.firstName = "First name is required";
-    } else if (formData.firstName.trim().length < 2) {
-      errors.firstName = "First name must be at least 2 characters";
-    }
-
-    if (!formData.lastName.trim()) {
-      errors.lastName = "Last name is required";
-    } else if (formData.lastName.trim().length < 2) {
-      errors.lastName = "Last name must be at least 2 characters";
-    }
-
-    if (!formData.alias.trim()) {
-      errors.alias = "Alias is required";
-    } else if (formData.alias.trim().length < 2) {
-      errors.alias = "Alias must be at least 2 characters";
-    } else if (!/^[a-zA-Z0-9._-]+$/.test(formData.alias.trim())) {
-      errors.alias =
-        "Alias can only contain letters, numbers, dots, underscores, and hyphens";
-    }
-
-    if (!formData.role) {
-      errors.role = "Role is required";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  }, [formData]);
+  // Remove parsed entry
+  const handleRemoveEntry = useCallback(
+    (index: number) => {
+      // Find the entry and remove its line from input
+      const entry = parsedEntries.find((e) => e.index === index);
+      if (entry) {
+        const lines = inputText.split(/\n/).map((l) => l.trim());
+        const newLines = lines.filter((_, i) => i !== entry.index);
+        setInputText(newLines.join("\n"));
+      }
+    },
+    [parsedEntries, inputText]
+  );
 
   // Submit handler
   const handleSubmit = useCallback(async () => {
-    if (!validateForm()) {
-      toast.error("Please fix the form errors.");
+    if (parsedEntries.length === 0) {
+      toast.error("Please enter at least one staff member.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Use scoped values if provided, otherwise use form values
       const finalDepartmentId =
-        departmentIds && departmentIds.length > 0
-          ? departmentIds[0]
-          : formData.departmentId || null;
-      const finalCohortId =
-        cohortIds && cohortIds.length > 0
+        departmentIds && departmentIds.length > 0 ? departmentIds[0] : null;
+      const finalCohortId = isScoped
+        ? null // Don't add to cohort yet when scoped
+        : cohortIds && cohortIds.length > 0
           ? cohortIds[0]
-          : formData.cohortId || null;
+          : null;
 
-      const response = await createOrUpdateMutation.mutateAsync({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        alias: formData.alias.trim(),
-        role: formData.role,
+      const profiles = parsedEntries.map((entry) => ({
+        firstName: entry.firstName,
+        lastName: entry.lastName,
+        alias: entry.alias,
+        role: entry.role,
         department_id: finalDepartmentId,
         cohort_id: finalCohortId,
+      }));
+
+      const response = await bulkCreateOrUpdateMutation.mutateAsync({
+        profiles,
       });
 
-      if (response.created) {
-        toast.success(`Staff member created successfully!`);
+      // When scoped, stage the profiles
+      if (isScoped && onStagedProfiles && response.profileIds) {
+        const stagedProfiles = response.profileIds.map((profileId, index) => ({
+          profileId,
+          firstName: parsedEntries[index]?.firstName ?? "",
+          lastName: parsedEntries[index]?.lastName ?? "",
+          alias: parsedEntries[index]?.alias ?? "",
+          role: parsedEntries[index]?.role ?? "ta",
+        }));
+        onStagedProfiles(stagedProfiles);
+        toast.success(
+          `${parsedEntries.length} profile(s) staged. They will be added to the cohort when you click Update.`
+        );
       } else {
-        toast.success(`Staff member updated successfully!`);
+        toast.success(
+          `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
+        );
       }
 
       onOpenChange(false);
@@ -167,10 +320,10 @@ export default function ManualAddStaffModal({
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to create or update staff member.";
+          : "Failed to create or update staff members.";
       toast.error(errorMessage);
-      log.error("staff.create_or_update.failed", {
-        message: "Error creating or updating staff member",
+      log.error("staff.bulk_create_or_update.failed", {
+        message: "Error creating or updating staff members",
         error,
         context: { component: "ManualAddStaffModal", function: "handleSubmit" },
       });
@@ -178,155 +331,86 @@ export default function ManualAddStaffModal({
       setIsSubmitting(false);
     }
   }, [
-    formData,
-    validateForm,
-    createOrUpdateMutation,
+    parsedEntries,
     departmentIds,
     cohortIds,
+    isScoped,
+    bulkCreateOrUpdateMutation,
     onOpenChange,
     onDone,
+    onStagedProfiles,
     log,
   ]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Staff Member</DialogTitle>
+          <DialogTitle>Manual Add Staff</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name *</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, firstName: e.target.value }))
-                }
-                placeholder="First name"
-                className={formErrors.firstName ? "border-red-500" : ""}
-              />
-              {formErrors.firstName && (
-                <p className="text-sm text-red-500">{formErrors.firstName}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name *</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, lastName: e.target.value }))
-                }
-                placeholder="Last name"
-                className={formErrors.lastName ? "border-red-500" : ""}
-              />
-              {formErrors.lastName && (
-                <p className="text-sm text-red-500">{formErrors.lastName}</p>
-              )}
-            </div>
+          {/* Input Textarea */}
+          <div className="space-y-2">
+            <Textarea
+              placeholder={`John Doe, jdoe, ta
+Jane Smith, jsmith
+Bob Wilson, bwilson, instructional`}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              className="min-h-[150px] font-mono text-sm"
+              autoFocus
+            />
+            <p className="text-sm text-muted-foreground">
+              Format: First Last, Alias, Role ({validRoles.join("/")}) —
+              optional
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="alias">Alias *</Label>
-              <Input
-                id="alias"
-                value={formData.alias}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, alias: e.target.value }))
-                }
-                placeholder="Alias"
-                className={formErrors.alias ? "border-red-500" : ""}
-              />
-              {formErrors.alias && (
-                <p className="text-sm text-red-500">{formErrors.alias}</p>
+          {/* Footer Actions */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center gap-2 flex-wrap">
+              {parsedEntries.map((entry, idx) => {
+                const isInstructional = entry.role === "instructional";
+                const isValidRole = validRoles.includes(entry.role);
+                return (
+                  <Badge
+                    key={`footer-${entry.index}-${idx}`}
+                    variant={isInstructional ? "default" : "secondary"}
+                    className={`flex items-center gap-1 pr-1 ${
+                      !isValidRole ? "opacity-50 line-through" : ""
+                    }`}
+                  >
+                    <span>
+                      {entry.firstName} {entry.lastName} ({entry.alias})
+                    </span>
+                    <button
+                      onClick={() => handleRemoveEntry(entry.index)}
+                      className="ml-1 rounded-full hover:bg-secondary-foreground/20 p-0.5 transition-colors"
+                      aria-label={`Remove ${entry.firstName} ${entry.lastName}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              {parsedEntries.length > 0 && (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || parsedEntries.length === 0}
+                  className="flex items-center gap-2"
+                >
+                  {isSubmitting
+                    ? "Processing..."
+                    : `Add ${parsedEntries.length} Staff`}
+                </Button>
               )}
             </div>
-            <div className="space-y-2 w-full">
-              <Label htmlFor="role">Role *</Label>
-              <StaffRolePicker
-                selectedRole={formData.role}
-                onSelect={(value) =>
-                  setFormData((p) => ({ ...p, role: value as RoleValue }))
-                }
-                roleOptions={roleOptions}
-                placeholder="Select a role"
-              />
-              {formErrors.role && (
-                <p className="text-sm text-red-500">{formErrors.role}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Department Selection - only show when not scoped */}
-          {!departmentIds && (
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              <DepartmentPicker
-                mapping={departmentMapping}
-                validIds={validDepartmentIds}
-                selectedIds={
-                  formData.departmentId ? [formData.departmentId] : []
-                }
-                onSelect={(ids) =>
-                  setFormData((p) => ({
-                    ...p,
-                    departmentId: ids[0] || "",
-                  }))
-                }
-                placeholder="Select department"
-                multiSelect={false}
-              />
-              {formErrors.departmentId && (
-                <p className="text-sm text-red-500">
-                  {formErrors.departmentId}
-                </p>
-              )}
-              <p className="text-sm text-muted-foreground">
-                Choose which department this staff member belongs to. Leave
-                blank for global access.
-              </p>
-            </div>
-          )}
-
-          {/* Cohort Selection - show when not scoped, or when departmentIds provided but cohortIds not (optional) */}
-          {(!cohortIds || cohortIds.length === 0) && (
-            <div className="space-y-2">
-              <Label htmlFor="cohort">Cohort (Optional)</Label>
-              <CohortPicker
-                mapping={cohortMapping}
-                validIds={validCohortIds}
-                selectedIds={formData.cohortId ? [formData.cohortId] : []}
-                onSelect={(ids) =>
-                  setFormData((p) => ({
-                    ...p,
-                    cohortId: ids[0] || "",
-                  }))
-                }
-                placeholder="Select cohort"
-                multiSelect={false}
-              />
-              <p className="text-sm text-muted-foreground">
-                Optionally assign this staff member to a cohort.
-              </p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="flex items-center gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              {isSubmitting ? "Saving..." : "Save Staff Member"}
-            </Button>
           </div>
         </div>
       </DialogContent>

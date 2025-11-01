@@ -100,8 +100,8 @@ export function StaffDataTableToolbar({
             />
           )}
 
-          {/* Cohort Filter */}
-          {cohortIdsColumn && cohortOptions.length > 0 && (
+          {/* Cohort Filter - hide when cohortId provided (cohorts page) */}
+          {!cohortId && cohortIdsColumn && cohortOptions.length > 0 && (
             <DataTableFacetedFilter
               column={cohortIdsColumn}
               title="Cohort"
@@ -129,7 +129,8 @@ export function StaffDataTableToolbar({
           <CreateStaffButton
             cohortIds={cohortIds}
             departmentIds={departmentIds}
-            onDone={onCreate}
+            onDone={() => onCreate()}
+            onStagedProfiles={(profiles) => onCreate(profiles)}
           />
         )}
 

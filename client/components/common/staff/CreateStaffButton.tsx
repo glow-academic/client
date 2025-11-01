@@ -20,12 +20,22 @@ export interface CreateStaffButtonProps {
   departmentIds?: string[];
   cohortIds?: string[];
   onDone?: () => void;
+  onStagedProfiles?: (
+    profiles: Array<{
+      profileId: string;
+      firstName?: string;
+      lastName?: string;
+      alias?: string;
+      role?: string;
+    }>
+  ) => void;
 }
 
 export default function CreateStaffButton({
   departmentIds: scopedDepartmentIds,
   cohortIds: scopedCohortIds,
   onDone,
+  onStagedProfiles,
 }: CreateStaffButtonProps) {
   const { effectiveProfile, departmentIds } = useProfile();
   const [showManualModal, setShowManualModal] = useState(false);
@@ -115,13 +125,13 @@ export default function CreateStaffButton({
             <UserPlus className="h-4 w-4 mr-2" />
             Manual Add
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleCSVImport}>
-            <Upload className="h-4 w-4 mr-2" />
-            CSV Import
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={handleSearchExisting}>
             <Search className="h-4 w-4 mr-2" />
             Search Existing
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleCSVImport}>
+            <Upload className="h-4 w-4 mr-2" />
+            CSV Import
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -142,6 +152,30 @@ export default function CreateStaffButton({
           validCohortIds={validCohortIds}
           roleOptions={roleOptions}
           onDone={handleModalDone}
+          {...(scopedDepartmentIds?.length || scopedCohortIds?.length
+            ? { onStagedProfiles }
+            : {})}
+        />
+      )}
+
+      {showSearchModal && (
+        <SearchExistingStaffModal
+          open={showSearchModal}
+          onOpenChange={setShowSearchModal}
+          {...(scopedDepartmentIds &&
+            scopedDepartmentIds.length > 0 && {
+              departmentIds: scopedDepartmentIds,
+            })}
+          {...(scopedCohortIds &&
+            scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
+          departmentMapping={departmentMapping}
+          validDepartmentIds={validDepartmentIds}
+          cohortMapping={cohortMapping}
+          validCohortIds={validCohortIds}
+          onDone={handleModalDone}
+          {...(scopedDepartmentIds?.length || scopedCohortIds?.length
+            ? { onStagedProfiles }
+            : {})}
         />
       )}
 
@@ -161,24 +195,9 @@ export default function CreateStaffButton({
           validCohortIds={validCohortIds}
           roleOptions={roleOptions}
           onDone={handleModalDone}
-        />
-      )}
-
-      {showSearchModal && (
-        <SearchExistingStaffModal
-          open={showSearchModal}
-          onOpenChange={setShowSearchModal}
-          {...(scopedDepartmentIds &&
-            scopedDepartmentIds.length > 0 && {
-              departmentIds: scopedDepartmentIds,
-            })}
-          {...(scopedCohortIds &&
-            scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
-          departmentMapping={departmentMapping}
-          validDepartmentIds={validDepartmentIds}
-          cohortMapping={cohortMapping}
-          validCohortIds={validCohortIds}
-          onDone={handleModalDone}
+          {...(scopedDepartmentIds?.length || scopedCohortIds?.length
+            ? { onStagedProfiles }
+            : {})}
         />
       )}
     </>

@@ -38,6 +38,7 @@ import {
   useRemoveProfilesFromCohort,
   useUpdateCohort,
 } from "@/lib/api/v2/hooks/cohorts";
+import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import { BarChart3, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
@@ -86,6 +87,20 @@ export default function Cohort({ cohortId }: CohortProps) {
   // Staff management state (for StaffDataTable)
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Staged profiles to be added when cohort is updated
+  // Store minimal profile data for immediate display
+  interface StagedProfile {
+    profileId: string;
+    firstName?: string;
+    lastName?: string;
+    alias?: string;
+    role?: string;
+    requestsPerDay?: number | null;
+    totalRequests?: number;
+  }
+  const [stagedProfilesToAdd, setStagedProfilesToAdd] = useState<
+    StagedProfile[]
+  >([]);
 
   // Simulation active state management (staged changes)
   const [simulationActiveStates, setSimulationActiveStates] = useState<
@@ -522,11 +537,13 @@ export default function Cohort({ cohortId }: CohortProps) {
     setIsSubmitting(true);
 
     try {
-      // Prepare profile IDs from current cohort staff (or empty array for new cohort)
-      const profileIds =
+      // Prepare profile IDs from current cohort staff + staged profiles to add
+      const existingProfileIds =
         cohortId && cohortData?.staff
           ? cohortData.staff.map((s) => s.profile_id)
           : [];
+      const stagedProfileIds = stagedProfilesToAdd.map((p) => p.profileId);
+      const profileIds = [...existingProfileIds, ...stagedProfileIds];
 
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
@@ -545,6 +562,8 @@ export default function Cohort({ cohortId }: CohortProps) {
         });
 
         toast.success("Cohort updated successfully!");
+        // Clear staged profiles after successful update
+        setStagedProfilesToAdd([]);
       } else {
         // CREATE mode - V2 API handles junction tables with active states
         await createCohortMutation.mutateAsync({
@@ -560,6 +579,8 @@ export default function Cohort({ cohortId }: CohortProps) {
         });
 
         toast.success("Cohort created successfully!");
+        // Clear staged profiles after successful create
+        setStagedProfilesToAdd([]);
       }
 
       resetFormAndState();
@@ -904,119 +925,230 @@ export default function Cohort({ cohortId }: CohortProps) {
         </div>
 
         {/* Staff Management */}
-        {cohortId && cohortData && (
-          <div className="space-y-4">
-            <StaffDataTable
-              data={cohortData.staff || []}
-              cohortMapping={cohortData.cohort_mapping || {}}
-              departmentMapping={cohortData.department_mapping_for_staff || {}}
-              roleOptions={[
-                { value: "superadmin", label: "Super Administrator" },
-                { value: "admin", label: "Administrator" },
-                { value: "instructional", label: "Instructional Staff" },
-                { value: "ta", label: "Teaching Assistant" },
-                { value: "guest", label: "Guest" },
-              ]}
-              cohortOptions={Object.entries(
-                cohortData.cohort_mapping || {}
-              ).map(([id, item]) => ({
-                value: id,
-                label: item.name,
-              }))}
-              activityOptions={[
-                { value: "true", label: "Active" },
-                { value: "false", label: "Inactive" },
-              ]}
-              lastActiveOptions={[
-                { value: "recent", label: "Recently Active (< 7 days)" },
-                { value: "moderate", label: "Moderately Active (7-30 days)" },
-                { value: "old", label: "Inactive (> 30 days)" },
-                { value: "never", label: "Never Active" },
-              ]}
-              isRefreshing={isRefreshing}
-              onRefresh={async () => {
-                setIsRefreshing(true);
-                await refetchCohortDetail();
-                setIsRefreshing(false);
-              }}
-              cohortId={cohortId}
-              {...(cohortId && { cohortIds: [cohortId] })}
-              {...(formData.departmentIds &&
-                formData.departmentIds.length > 0 && {
-                  departmentIds: formData.departmentIds,
-                })}
-              selectedStaffIds={selectedStaffIds}
-              onStaffSelect={(id, checked) =>
-                setSelectedStaffIds((prev) =>
-                  checked ? [...prev, id] : prev.filter((x) => x !== id)
-                )
-              }
-              onSelectAll={(checked, visibleRowIds) => {
-                if (checked && visibleRowIds) {
-                  setSelectedStaffIds((prev) => {
-                    const newSelection = [...prev];
-                    visibleRowIds.forEach((id) => {
-                      if (!newSelection.includes(id)) {
-                        newSelection.push(id);
+        {cohortId &&
+          cohortData &&
+          (() => {
+            // Merge existing staff with staged profiles
+            const existingStaff = cohortData.staff || [];
+            const existingStaffIds = new Set(
+              existingStaff.map((s) => s.profile_id)
+            );
+
+            // Get staged profiles with minimal details (we'll show them immediately)
+            const stagedWithDetails: (ProfileListItem & {
+              isStaged?: boolean;
+            })[] = stagedProfilesToAdd
+              .map((staged) => {
+                // Create minimal ProfileListItem from staged data
+                const firstName = staged.firstName || "";
+                const lastName = staged.lastName || "";
+                const alias = staged.alias || "";
+                return {
+                  profile_id: staged.profileId,
+                  first_name: firstName,
+                  last_name: lastName,
+                  alias: alias,
+                  name: `${firstName} ${lastName}`.trim() || alias,
+                  role: staged.role || "ta",
+                  email: alias
+                    ? `${alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`
+                    : "",
+                  initials:
+                    `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
+                    "??",
+                  active: true,
+                  last_active: null,
+                  cohort_ids: cohortId ? [cohortId] : [],
+                  department_ids:
+                    formData.departmentIds && formData.departmentIds.length > 0
+                      ? formData.departmentIds
+                      : [],
+                  requests_per_day: staged.requestsPerDay ?? null,
+                  total_requests: staged.totalRequests ?? 0,
+                  default_profile: false,
+                  requests_in_last_day: 0,
+                  can_edit: false,
+                  can_delete: false,
+                  isStaged: true,
+                };
+              })
+              .filter((p) => !existingStaffIds.has(p.profile_id));
+
+            // Combine existing staff with staged profiles
+            const mergedStaff = [...existingStaff, ...stagedWithDetails];
+
+            return (
+              <div className="space-y-4">
+                <StaffDataTable
+                  data={mergedStaff}
+                  cohortMapping={cohortData.cohort_mapping || {}}
+                  departmentMapping={
+                    cohortData.department_mapping_for_staff || {}
+                  }
+                  roleOptions={[
+                    { value: "superadmin", label: "Super Administrator" },
+                    { value: "admin", label: "Administrator" },
+                    { value: "instructional", label: "Instructional Staff" },
+                    { value: "ta", label: "Teaching Assistant" },
+                    { value: "guest", label: "Guest" },
+                  ]}
+                  cohortOptions={Object.entries(
+                    cohortData.cohort_mapping || {}
+                  ).map(([id, item]) => ({
+                    value: id,
+                    label: item.name,
+                  }))}
+                  activityOptions={[
+                    { value: "true", label: "Active" },
+                    { value: "false", label: "Inactive" },
+                  ]}
+                  lastActiveOptions={[
+                    { value: "recent", label: "Recently Active (< 7 days)" },
+                    {
+                      value: "moderate",
+                      label: "Moderately Active (7-30 days)",
+                    },
+                    { value: "old", label: "Inactive (> 30 days)" },
+                    { value: "never", label: "Never Active" },
+                  ]}
+                  isRefreshing={isRefreshing}
+                  onRefresh={async () => {
+                    setIsRefreshing(true);
+                    await refetchCohortDetail();
+                    setIsRefreshing(false);
+                  }}
+                  cohortId={cohortId}
+                  {...(cohortId && { cohortIds: [cohortId] })}
+                  {...(formData.departmentIds &&
+                    formData.departmentIds.length > 0 && {
+                      departmentIds: formData.departmentIds,
+                    })}
+                  selectedStaffIds={selectedStaffIds}
+                  onStaffSelect={(id, checked) =>
+                    setSelectedStaffIds((prev) =>
+                      checked ? [...prev, id] : prev.filter((x) => x !== id)
+                    )
+                  }
+                  onSelectAll={(checked, visibleRowIds) => {
+                    if (checked && visibleRowIds) {
+                      setSelectedStaffIds((prev) => {
+                        const newSelection = [...prev];
+                        visibleRowIds.forEach((id) => {
+                          if (!newSelection.includes(id)) {
+                            newSelection.push(id);
+                          }
+                        });
+                        return newSelection;
+                      });
+                    } else {
+                      setSelectedStaffIds((prev) =>
+                        prev.filter((id) => !visibleRowIds?.includes(id))
+                      );
+                    }
+                  }}
+                  onCreate={async (
+                    stagedProfiles?: Array<{
+                      profileId: string;
+                      firstName?: string;
+                      lastName?: string;
+                      alias?: string;
+                      role?: string;
+                      requestsPerDay?: number | null;
+                      totalRequests?: number;
+                    }>
+                  ) => {
+                    // Add staged profiles to staging list
+                    if (stagedProfiles && stagedProfiles.length > 0) {
+                      setStagedProfilesToAdd((prev) => {
+                        // Avoid duplicates by checking profileId
+                        const existingIds = new Set(
+                          prev.map((p) => p.profileId)
+                        );
+                        const newProfiles = stagedProfiles.filter(
+                          (p) => !existingIds.has(p.profileId)
+                        );
+                        return [...prev, ...newProfiles];
+                      });
+                    }
+                    // Refetch to show any changes
+                    setIsRefreshing(true);
+                    await refetchCohortDetail();
+                    setIsRefreshing(false);
+                  }}
+                  onPreview={(staff) => {
+                    window.open(
+                      `/analytics/reports/p/${staff.profile_id}`,
+                      "_blank",
+                      "noopener,noreferrer"
+                    );
+                  }}
+                  onEdit={() => {
+                    // Edit handled via modal if needed
+                  }}
+                  onDelete={() => {
+                    // Delete not available in scoped view
+                  }}
+                  onRemoveFromCohort={async (staff) => {
+                    // Check if this is a staged profile
+                    const isStaged = (
+                      staff as ProfileListItem & { isStaged?: boolean }
+                    ).isStaged;
+
+                    if (isStaged) {
+                      // Remove from staging list
+                      setStagedProfilesToAdd((prev) =>
+                        prev.filter((p) => p.profileId !== staff.profile_id)
+                      );
+                      toast.success("Removed staged profile");
+                    } else {
+                      // Remove from cohort (existing profile)
+                      try {
+                        await removeProfilesFromCohortMutation.mutateAsync({
+                          cohortId: cohortId,
+                          profileIds: [staff.profile_id],
+                        });
+                        toast.success("Removed profile from cohort");
+                        setIsRefreshing(true);
+                        await refetchCohortDetail();
+                        setIsRefreshing(false);
+                      } catch (error) {
+                        toast.error(
+                          `Failed to remove profile: ${error instanceof Error ? error.message : "Unknown error"}`
+                        );
                       }
-                    });
-                    return newSelection;
-                  });
-                } else {
-                  setSelectedStaffIds((prev) =>
-                    prev.filter((id) => !visibleRowIds?.includes(id))
-                  );
-                }
-              }}
-              onCreate={async () => {
-                // Refetch after create
-                setIsRefreshing(true);
-                await refetchCohortDetail();
-                setIsRefreshing(false);
-              }}
-              onPreview={(staff) => {
-                window.open(
-                  `/analytics/reports/p/${staff.profile_id}`,
-                  "_blank",
-                  "noopener,noreferrer"
-                );
-              }}
-              onEdit={() => {
-                // Edit handled via modal if needed
-              }}
-              onDelete={() => {
-                // Delete not available in scoped view
-              }}
-              onBulkEdit={() => {
-                // Bulk edit can be implemented if needed
-              }}
-              onBulkDelete={async () => {
-                if (selectedStaffIds.length === 0) return;
-                try {
-                  await removeProfilesFromCohortMutation.mutateAsync({
-                    cohortId: cohortId,
-                    profileIds: selectedStaffIds,
-                  });
-                  toast.success(
-                    `Removed ${selectedStaffIds.length} profile(s) from cohort`
-                  );
-                  setSelectedStaffIds([]);
-                  setIsRefreshing(true);
-                  await refetchCohortDetail();
-                  setIsRefreshing(false);
-                } catch (error) {
-                  toast.error(
-                    `Failed to remove profiles: ${error instanceof Error ? error.message : "Unknown error"}`
-                  );
-                }
-              }}
-              canDelete={() => true} // All profiles can be removed from cohort
-              deletableCount={selectedStaffIds.length}
-              canEdit={() => false} // Edit not available in scoped view
-              editableCount={0}
-            />
-          </div>
-        )}
+                    }
+                  }}
+                  onBulkEdit={() => {
+                    // Bulk edit can be implemented if needed
+                  }}
+                  onBulkDelete={async () => {
+                    if (selectedStaffIds.length === 0) return;
+                    try {
+                      await removeProfilesFromCohortMutation.mutateAsync({
+                        cohortId: cohortId,
+                        profileIds: selectedStaffIds,
+                      });
+                      toast.success(
+                        `Removed ${selectedStaffIds.length} profile(s) from cohort`
+                      );
+                      setSelectedStaffIds([]);
+                      setIsRefreshing(true);
+                      await refetchCohortDetail();
+                      setIsRefreshing(false);
+                    } catch (error) {
+                      toast.error(
+                        `Failed to remove profiles: ${error instanceof Error ? error.message : "Unknown error"}`
+                      );
+                    }
+                  }}
+                  canDelete={() => true} // All profiles can be removed from cohort
+                  deletableCount={selectedStaffIds.length}
+                  canEdit={() => false} // Edit not available in scoped view
+                  editableCount={0}
+                />
+              </div>
+            );
+          })()}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
