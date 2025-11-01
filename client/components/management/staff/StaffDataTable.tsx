@@ -121,6 +121,9 @@ export interface StaffDataTableProps {
   // Scope props - when provided, delete becomes "remove from relationship"
   cohortId?: string; // When provided, bulk delete removes from cohort (does NOT delete profile)
   departmentId?: string; // When provided, bulk delete removes from department (does NOT delete profile)
+  // Scoped arrays for staff creation
+  cohortIds?: string[];
+  departmentIds?: string[];
   // New props for actions & selection
   selectedStaffIds: string[];
   onStaffSelect: (profileId: string, checked: boolean) => void;
@@ -149,6 +152,8 @@ export function StaffDataTable({
   onRefresh,
   cohortId,
   departmentId,
+  cohortIds,
+  departmentIds,
   selectedStaffIds,
   onStaffSelect,
   onSelectAll,
@@ -587,6 +592,8 @@ export function StaffDataTable({
           editableCount={editableCount}
           cohortId={cohortId}
           departmentId={departmentId}
+          {...(cohortIds && cohortIds.length > 0 && { cohortIds })}
+          {...(departmentIds && departmentIds.length > 0 && { departmentIds })}
         />
         <div className="rounded-md border overflow-x-auto">
           <Table>

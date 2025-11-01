@@ -16,14 +16,14 @@ import CSVImportStaffModal from "./CSVImportStaffModal";
 import ManualAddStaffModal from "./ManualAddStaffModal";
 
 export interface CreateStaffButtonProps {
-  departmentId?: string;
-  cohortId?: string;
+  departmentIds?: string[];
+  cohortIds?: string[];
   onDone?: () => void;
 }
 
 export default function CreateStaffButton({
-  departmentId,
-  cohortId,
+  departmentIds: scopedDepartmentIds,
+  cohortIds: scopedCohortIds,
   onDone,
 }: CreateStaffButtonProps) {
   const { effectiveProfile, departmentIds } = useProfile();
@@ -119,8 +119,8 @@ export default function CreateStaffButton({
         <ManualAddStaffModal
           open={showManualModal}
           onOpenChange={setShowManualModal}
-          {...(departmentId && { departmentId })}
-          {...(cohortId && { cohortId })}
+          {...(scopedDepartmentIds && scopedDepartmentIds.length > 0 && { departmentIds: scopedDepartmentIds })}
+          {...(scopedCohortIds && scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
           cohortMapping={cohortMapping}
@@ -134,8 +134,8 @@ export default function CreateStaffButton({
         <CSVImportStaffModal
           open={showCSVModal}
           onOpenChange={setShowCSVModal}
-          {...(departmentId && { departmentId })}
-          {...(cohortId && { cohortId })}
+          {...(scopedDepartmentIds && scopedDepartmentIds.length > 0 && { departmentIds: scopedDepartmentIds })}
+          {...(scopedCohortIds && scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
           cohortMapping={cohortMapping}

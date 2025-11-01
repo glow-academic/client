@@ -490,7 +490,6 @@ export default function Cohort({ cohortId }: CohortProps) {
       newErrors.title = "Title is required";
     }
 
-
     // For instructional users, ensure they are always in the cohort
     if (effectiveProfile?.role === "instructional" && !isEditMode) {
       const isUserInCohort =
@@ -941,6 +940,11 @@ export default function Cohort({ cohortId }: CohortProps) {
                 setIsRefreshing(false);
               }}
               cohortId={cohortId}
+              {...(cohortId && { cohortIds: [cohortId] })}
+              {...(formData.departmentIds &&
+                formData.departmentIds.length > 0 && {
+                  departmentIds: formData.departmentIds,
+                })}
               selectedStaffIds={selectedStaffIds}
               onStaffSelect={(id, checked) =>
                 setSelectedStaffIds((prev) =>

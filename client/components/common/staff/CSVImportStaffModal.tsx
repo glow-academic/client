@@ -1,11 +1,19 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, FileUp, Map, Upload } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  FileUp,
+  Map,
+  Upload,
+} from "lucide-react";
 import React, { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -42,8 +50,8 @@ import {
 export interface CSVImportStaffModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  departmentId?: string;
-  cohortId?: string;
+  departmentIds?: string[];
+  cohortIds?: string[];
   departmentMapping: Record<string, { name: string; description: string }>;
   validDepartmentIds: string[];
   cohortMapping: Record<string, { name: string; description: string }>;
@@ -62,6 +70,32 @@ const TARGET_FIELDS = [
   { value: "department", label: "Department" },
   { value: "cohort", label: "Cohort" },
 ] as const;
+
+// Simple CSV generation function
+const unparseCSV = (data: Record<string, string>[]): string => {
+  if (data.length === 0) return "";
+  const headers = Object.keys(data[0] || {});
+  const csvContent = [
+    headers.join(","),
+    ...data.map((row) =>
+      headers
+        .map((header) => {
+          const value = row[header] || "";
+          // Escape commas and quotes in values
+          if (
+            value.includes(",") ||
+            value.includes('"') ||
+            value.includes("\n")
+          ) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        })
+        .join(",")
+    ),
+  ];
+  return csvContent.join("\n");
+};
 
 // Auto-mapping logic
 const autoMapColumn = (columnName: string): string | null => {
@@ -116,13 +150,13 @@ const extractAliasFromEmail = (email: string): string => {
 export default function CSVImportStaffModal({
   open,
   onOpenChange,
-  departmentId,
-  cohortId,
+  departmentIds,
+  cohortIds,
   departmentMapping,
   validDepartmentIds,
   cohortMapping,
   validCohortIds,
-  roleOptions,
+  roleOptions: _roleOptions,
   onDone,
 }: CSVImportStaffModalProps) {
   const log = useLogger();
@@ -140,8 +174,82 @@ export default function CSVImportStaffModal({
   const [editableRows, setEditableRows] = useState<
     Record<number, ProcessedCSVRow>
   >({});
+  const [includedColumns, setIncludedColumns] = useState<
+    Record<string, boolean>
+  >({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get available target fields based on scoping
+  const availableTargetFields = React.useMemo(() => {
+    return TARGET_FIELDS.filter((field) => {
+      // Hide department if scoped
+      if (
+        field.value === "department" &&
+        departmentIds &&
+        departmentIds.length > 0
+      ) {
+        return false;
+      }
+      // Hide cohort if scoped
+      if (field.value === "cohort" && cohortIds && cohortIds.length > 0) {
+        return false;
+      }
+      return true;
+    });
+  }, [departmentIds, cohortIds]);
+
+  // Download template function
+  const downloadTemplate = useCallback(() => {
+    // Determine columns based on scoping
+    const columns: string[] = ["firstName", "lastName", "alias", "role"];
+    if (!departmentIds || departmentIds.length === 0) {
+      columns.push("department");
+    }
+    if (!cohortIds || cohortIds.length === 0) {
+      columns.push("cohort");
+    }
+
+    // Generate template data
+    const template = [
+      {
+        firstName: "Sarah",
+        lastName: "Johnson",
+        alias: "sjohnson",
+        role: "instructional",
+        ...(columns.includes("department") ? { department: "" } : {}),
+        ...(columns.includes("cohort") ? { cohort: "" } : {}),
+      },
+      {
+        firstName: "Jane",
+        lastName: "Smith",
+        alias: "jsmith",
+        role: "instructional",
+        ...(columns.includes("department") ? { department: "" } : {}),
+        ...(columns.includes("cohort") ? { cohort: "" } : {}),
+      },
+      {
+        firstName: "John",
+        lastName: "Doe",
+        alias: "jdoe",
+        role: "ta",
+        ...(columns.includes("department") ? { department: "" } : {}),
+        ...(columns.includes("cohort") ? { cohort: "" } : {}),
+      },
+    ];
+
+    const csv = unparseCSV(template);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "staff_template.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [departmentIds, cohortIds]);
 
   // Reset state when modal opens/closes
   React.useEffect(() => {
@@ -153,6 +261,7 @@ export default function CSVImportStaffModal({
       setColumnMappings([]);
       setProcessedRows([]);
       setEditableRows({});
+      setIncludedColumns({});
     }
   }, [open]);
 
@@ -211,6 +320,17 @@ export default function CSVImportStaffModal({
           }));
           setColumnMappings(mappings);
 
+          // Initialize include state - default to true for required fields
+          const requiredFields = ["firstName", "lastName", "alias"];
+          const initialIncludes: Record<string, boolean> = {};
+          headers.forEach((header) => {
+            const mappedField = autoMapColumn(header);
+            initialIncludes[header] = mappedField
+              ? requiredFields.includes(mappedField)
+              : true;
+          });
+          setIncludedColumns(initialIncludes);
+
           setStage("mapping");
           toast.success(`CSV file loaded with ${rows.length} row(s).`);
         } catch (error) {
@@ -226,9 +346,14 @@ export default function CSVImportStaffModal({
 
   // Process CSV (mapping stage -> review stage)
   const handleProcessCSV = useCallback(async () => {
+    // Filter mappings to only include checked columns
+    const activeMappings = columnMappings.filter(
+      (m) => includedColumns[m.csv_column] !== false
+    );
+
     // Validate that required fields are mapped
     const requiredFields = ["firstName", "lastName", "alias"];
-    const mappedFields = columnMappings
+    const mappedFields = activeMappings
       .map((m) => m.target_field)
       .filter((f): f is string => f !== null);
 
@@ -244,9 +369,10 @@ export default function CSVImportStaffModal({
 
     setIsProcessing(true);
     try {
+      // Use filtered mappings (only included columns)
       const response = await processCSVMutation.mutateAsync({
         csv_content: csvContent,
-        column_mappings: columnMappings,
+        column_mappings: activeMappings,
       });
 
       setProcessedRows(response.rows);
@@ -267,7 +393,7 @@ export default function CSVImportStaffModal({
     } finally {
       setIsProcessing(false);
     }
-  }, [csvContent, columnMappings, processCSVMutation, log]);
+  }, [csvContent, columnMappings, includedColumns, processCSVMutation, log]);
 
   // Update editable row
   const updateEditableRow = useCallback(
@@ -276,8 +402,9 @@ export default function CSVImportStaffModal({
         const current = prev[rowIndex] || processedRows[rowIndex];
         if (!current) return prev;
 
-        const updated = { ...current };
-        (updated as any)[field] = value;
+        const updated = { ...current } as ProcessedCSVRow &
+          Record<string, string | null>;
+        updated[field] = value;
 
         // Revalidate errors
         const errors = [...updated.errors];
@@ -313,19 +440,19 @@ export default function CSVImportStaffModal({
       // Convert rows to profiles
       const profiles = validRows.map((row) => {
         // Resolve department/cohort IDs from names if needed
-        let deptId = row.department_id;
+        let deptId: string | null = row.department_id || null;
         if (deptId && !validDepartmentIds.includes(deptId)) {
           // Try to find by name
           const found = Object.entries(departmentMapping).find(
-            ([_, dept]) => dept.name.toLowerCase() === deptId.toLowerCase()
+            ([_, dept]) => dept.name.toLowerCase() === deptId!.toLowerCase()
           );
           deptId = found ? found[0] : null;
         }
-        if (!deptId && departmentId) {
-          deptId = departmentId;
+        if (!deptId && departmentIds && departmentIds.length > 0) {
+          deptId = departmentIds[0] || null;
         }
 
-        let cohortIdValue = row.cohort_id;
+        let cohortIdValue: string | null = row.cohort_id || null;
         if (cohortIdValue && !validCohortIds.includes(cohortIdValue)) {
           // Try to find by name
           const found = Object.entries(cohortMapping).find(
@@ -334,8 +461,8 @@ export default function CSVImportStaffModal({
           );
           cohortIdValue = found ? found[0] : null;
         }
-        if (!cohortIdValue && cohortId) {
-          cohortIdValue = cohortId;
+        if (!cohortIdValue && cohortIds && cohortIds.length > 0) {
+          cohortIdValue = cohortIds[0] || null;
         }
 
         return {
@@ -343,8 +470,8 @@ export default function CSVImportStaffModal({
           lastName: row.lastName!,
           alias: extractAliasFromEmail(row.alias || ""),
           role: row.role || "ta",
-          department_id: deptId || null,
-          cohort_id: cohortIdValue || null,
+          department_id: deptId,
+          cohort_id: cohortIdValue,
         };
       });
 
@@ -381,8 +508,8 @@ export default function CSVImportStaffModal({
     validDepartmentIds,
     cohortMapping,
     validCohortIds,
-    departmentId,
-    cohortId,
+    departmentIds,
+    cohortIds,
     bulkCreateOrUpdateMutation,
     onOpenChange,
     onDone,
@@ -475,10 +602,20 @@ export default function CSVImportStaffModal({
                   Upload a CSV file with staff information. Required columns:
                   First Name, Last Name, Alias/Email.
                 </p>
-                <Button onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Choose CSV File
-                </Button>
+                <div className="flex items-center justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={downloadTemplate}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Template
+                  </Button>
+                  <Button onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose CSV File
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -486,91 +623,98 @@ export default function CSVImportStaffModal({
           {/* Stage 2: Mapping */}
           {stage === "mapping" && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Map CSV Columns to Fields</Label>
-                <p className="text-sm text-muted-foreground">
-                  Select which CSV column maps to each required field. Required
-                  fields: First Name, Last Name, Alias.
-                </p>
-              </div>
+              {/* Mapping Table */}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[200px]">
+                        Your File Column
+                      </TableHead>
+                      <TableHead className="w-[200px]">
+                        Your Sample Data
+                      </TableHead>
+                      <TableHead>Destination Column</TableHead>
+                      <TableHead className="w-[100px] text-center">
+                        Include
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {csvHeaders.map((header) => {
+                      const mapping = columnMappings.find(
+                        (m) => m.csv_column === header
+                      );
+                      const targetField = mapping?.target_field || null;
+                      const sampleData = csvRows[0]?.[header] || "";
+                      const truncatedSample =
+                        sampleData.length > 30
+                          ? `${sampleData.substring(0, 30)}...`
+                          : sampleData;
+                      const isIncluded = includedColumns[header] !== false;
 
-              <div className="space-y-3">
-                {csvHeaders.map((header) => {
-                  const mapping = columnMappings.find(
-                    (m) => m.csv_column === header
-                  );
-                  const targetField = mapping?.target_field || null;
-
-                  return (
-                    <div key={header} className="flex items-center gap-4">
-                      <div className="w-48 text-sm font-medium">{header}</div>
-                      <div className="flex-1">
-                        <Select
-                          value={targetField || ""}
-                          onValueChange={(value) => {
-                            setColumnMappings((prev) =>
-                              prev.map((m) =>
-                                m.csv_column === header
-                                  ? { ...m, target_field: value || null }
-                                  : m
-                              )
-                            );
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select field..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">(Ignore)</SelectItem>
-                            {TARGET_FIELDS.map((field) => (
-                              <SelectItem key={field.value} value={field.value}>
-                                {field.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {targetField && (
-                        <Badge variant="secondary" className="text-xs">
-                          {
-                            TARGET_FIELDS.find((f) => f.value === targetField)
-                              ?.label
-                          }
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Preview */}
-              {csvRows.length > 0 && (
-                <div className="mt-6">
-                  <Label>Preview (first 3 rows)</Label>
-                  <div className="mt-2 rounded-md border max-h-48 overflow-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          {csvHeaders.map((header) => (
-                            <TableHead key={header}>{header}</TableHead>
-                          ))}
+                      return (
+                        <TableRow key={header}>
+                          <TableCell className="font-medium">
+                            {header}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {truncatedSample || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={targetField || "__ignore__"}
+                              onValueChange={(value) => {
+                                setColumnMappings((prev) =>
+                                  prev.map((m) =>
+                                    m.csv_column === header
+                                      ? {
+                                          ...m,
+                                          target_field:
+                                            value === "__ignore__"
+                                              ? null
+                                              : value,
+                                        }
+                                      : m
+                                  )
+                                );
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select field..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__ignore__">
+                                  (Ignore)
+                                </SelectItem>
+                                {availableTargetFields.map((field) => (
+                                  <SelectItem
+                                    key={field.value}
+                                    value={field.value}
+                                  >
+                                    {field.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={isIncluded}
+                              onCheckedChange={(checked) => {
+                                setIncludedColumns((prev) => ({
+                                  ...prev,
+                                  [header]: checked === true,
+                                }));
+                              }}
+                            />
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {csvRows.slice(0, 3).map((row, idx) => (
-                          <TableRow key={idx}>
-                            {csvHeaders.map((header) => (
-                              <TableCell key={header}>
-                                {row[header] || ""}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
 
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setStage("upload")}>

@@ -32,8 +32,8 @@ type RoleValue = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 export interface ManualAddStaffModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  departmentId?: string;
-  cohortId?: string;
+  departmentIds?: string[];
+  cohortIds?: string[];
   departmentMapping: Record<string, { name: string; description: string }>;
   validDepartmentIds: string[];
   cohortMapping: Record<string, { name: string; description: string }>;
@@ -89,8 +89,8 @@ const getRoleBadgeVariant = (role: string) => {
 export default function ManualAddStaffModal({
   open,
   onOpenChange,
-  departmentId,
-  cohortId,
+  departmentIds,
+  cohortIds,
   departmentMapping,
   validDepartmentIds,
   cohortMapping,
@@ -107,8 +107,8 @@ export default function ManualAddStaffModal({
     lastName: "",
     alias: "",
     role: "" as RoleValue | "",
-    departmentId: departmentId || "",
-    cohortId: cohortId || "",
+    departmentId: departmentIds && departmentIds.length > 0 ? departmentIds[0] : "",
+    cohortId: cohortIds && cohortIds.length > 0 ? cohortIds[0] : "",
   });
 
   const [formErrors, setFormErrors] = useState<{
@@ -129,12 +129,12 @@ export default function ManualAddStaffModal({
         lastName: "",
         alias: "",
         role: "",
-        departmentId: departmentId || "",
-        cohortId: cohortId || "",
+        departmentId: departmentIds && departmentIds.length > 0 ? departmentIds[0] : "",
+        cohortId: cohortIds && cohortIds.length > 0 ? cohortIds[0] : "",
       });
       setFormErrors({});
     }
-  }, [open, departmentId, cohortId]);
+  }, [open, departmentIds, cohortIds]);
 
   // Role availability based on user role
   const isCurrentUserSuperAdmin = effectiveProfile?.role === "superadmin";
@@ -207,13 +207,21 @@ export default function ManualAddStaffModal({
     setIsSubmitting(true);
 
     try {
+      // Use scoped values if provided, otherwise use form values
+      const finalDepartmentId = departmentIds && departmentIds.length > 0
+        ? departmentIds[0]
+        : formData.departmentId || null;
+      const finalCohortId = cohortIds && cohortIds.length > 0
+        ? cohortIds[0]
+        : formData.cohortId || null;
+
       const response = await createOrUpdateMutation.mutateAsync({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         alias: formData.alias.trim(),
         role: formData.role,
-        department_id: formData.departmentId || null,
-        cohort_id: formData.cohortId || null,
+        department_id: finalDepartmentId,
+        cohort_id: finalCohortId,
       });
 
       if (response.created) {
@@ -244,6 +252,8 @@ export default function ManualAddStaffModal({
     formData,
     validateForm,
     createOrUpdateMutation,
+    departmentIds,
+    cohortIds,
     onOpenChange,
     onDone,
     log,
@@ -339,8 +349,8 @@ export default function ManualAddStaffModal({
             </div>
           </div>
 
-          {/* Department Selection */}
-          {isCurrentUserSuperAdmin && (
+          {/* Department Selection - only show when not scoped */}
+          {isCurrentUserSuperAdmin && !departmentIds && (
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
               <DepartmentPicker
@@ -370,26 +380,52 @@ export default function ManualAddStaffModal({
             </div>
           )}
 
-          {/* Cohort Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="cohort">Cohort (Optional)</Label>
-            <CohortPicker
-              mapping={cohortMapping}
-              validIds={validCohortIds}
-              selectedIds={formData.cohortId ? [formData.cohortId] : []}
-              onSelect={(ids) =>
-                setFormData((p) => ({
-                  ...p,
-                  cohortId: ids[0] || "",
-                }))
-              }
-              placeholder="Select cohort"
-              multiSelect={false}
-            />
-            <p className="text-sm text-muted-foreground">
-              Optionally assign this staff member to a cohort.
-            </p>
-          </div>
+          {/* Show informational message when department is pre-filled */}
+          {departmentIds && departmentIds.length > 0 && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                Department will be automatically assigned:{" "}
+                <span className="font-medium">
+                  {departmentMapping[departmentIds[0]]?.name || departmentIds[0]}
+                </span>
+              </p>
+            </div>
+          )}
+
+          {/* Cohort Selection - show when not scoped, or when departmentIds provided but cohortIds not (optional) */}
+          {(!cohortIds || cohortIds.length === 0) && (
+            <div className="space-y-2">
+              <Label htmlFor="cohort">Cohort (Optional)</Label>
+              <CohortPicker
+                mapping={cohortMapping}
+                validIds={validCohortIds}
+                selectedIds={formData.cohortId ? [formData.cohortId] : []}
+                onSelect={(ids) =>
+                  setFormData((p) => ({
+                    ...p,
+                    cohortId: ids[0] || "",
+                  }))
+                }
+                placeholder="Select cohort"
+                multiSelect={false}
+              />
+              <p className="text-sm text-muted-foreground">
+                Optionally assign this staff member to a cohort.
+              </p>
+            </div>
+          )}
+
+          {/* Show informational message when cohort is pre-filled */}
+          {cohortIds && cohortIds.length > 0 && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                Cohort will be automatically assigned:{" "}
+                <span className="font-medium">
+                  {cohortMapping[cohortIds[0]]?.name || cohortIds[0]}
+                </span>
+              </p>
+            </div>
+          )}
 
           {/* Role description */}
           {formData.role && (
