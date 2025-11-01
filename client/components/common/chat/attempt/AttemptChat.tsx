@@ -14,6 +14,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ImperativePanelGroupHandle } from "react-resizable-panels";
 
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -370,333 +375,380 @@ export default function AttemptChat() {
             <Card className="h-full flex flex-col py-4">
               <div className="h-full flex flex-col">
                 {/* Timer and Controls Header - consistent with main chat layout */}
-                <div className="p-4 pt-0 border-b flex flex-col gap-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-4">
-                      {/* Show scenario information */}
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {selectedScenario?.problemStatement ||
-                            simulationContext?.scenario?.problemStatement ||
-                            "Session Results"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-start justify-end gap-2">
+                <Collapsible
+                  open={showObjectives}
+                  onOpenChange={setShowObjectives}
+                  className="border-b"
+                >
+                  <div className="p-4 pt-0 flex flex-col gap-2">
+                    <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
-                        {displayChat && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant={showGrades ? "default" : "outline"}
-                                  size="sm"
-                                  onClick={() => {
-                                    simulationContext?.setShowGrades(
-                                      !showGrades
-                                    );
-                                    simulationContext?.setUserHasManuallyToggledGrades(
-                                      true
-                                    );
-                                  }}
-                                  className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
-                                >
-                                  <Table className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {showGrades ? "Hide Rubric" : "Show Rubric"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
+                        {/* Show scenario information */}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {selectedScenario?.problemStatement ||
+                              simulationContext?.scenario?.problemStatement ||
+                              "Session Results"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {/* Documents Toggle - only show if current chat has documents */}
-                        {(() => {
-                          const currentChatDocIds =
-                            displayChat?.documentIds || [];
-                          const hasDocumentsForCurrentChat =
-                            simulationContext?.scenarioDocuments?.some((doc) =>
-                              currentChatDocIds.includes(doc.document_id)
-                            );
-                          return hasDocumentsForCurrentChat;
-                        })() && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant={
-                                    showDocuments ? "default" : "outline"
-                                  }
-                                  size="sm"
-                                  onClick={() =>
-                                    simulationContext?.setShowDocuments(
-                                      !showDocuments
-                                    )
-                                  }
-                                  className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {showDocuments
-                                    ? "Hide Documents"
-                                    : "Show Documents"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-
-                        {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
-                        {simulationContext?.simulation?.objectivesEnabled &&
-                          (() => {
-                            const currentScenario = displayChat?.id
-                              ? simulationContext?.scenariosByChatId[
-                                  displayChat.id
-                                ]
-                              : null;
-                            const hasObjectives =
-                              currentScenario?.objectives &&
-                              currentScenario.objectives.length > 0;
-                            return hasObjectives;
+                      <div className="flex items-start justify-end gap-2">
+                        <div className="flex items-center gap-4">
+                          {displayChat && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={showGrades ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => {
+                                      simulationContext?.setShowGrades(
+                                        !showGrades
+                                      );
+                                      simulationContext?.setUserHasManuallyToggledGrades(
+                                        true
+                                      );
+                                    }}
+                                    className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
+                                  >
+                                    <Table className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {showGrades ? "Hide Rubric" : "Show Rubric"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {/* Documents Toggle - only show if current chat has documents */}
+                          {(() => {
+                            const currentChatDocIds =
+                              displayChat?.documentIds || [];
+                            const hasDocumentsForCurrentChat =
+                              simulationContext?.scenarioDocuments?.some(
+                                (doc) =>
+                                  currentChatDocIds.includes(doc.document_id)
+                              );
+                            return hasDocumentsForCurrentChat;
                           })() && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     variant={
-                                      showObjectives ? "default" : "outline"
+                                      showDocuments ? "default" : "outline"
                                     }
                                     size="sm"
                                     onClick={() =>
-                                      setShowObjectives(!showObjectives)
+                                      simulationContext?.setShowDocuments(
+                                        !showDocuments
+                                      )
                                     }
-                                    className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
+                                    className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
                                   >
-                                    <ListChecks className="h-4 w-4" />
+                                    <FileText className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>
-                                    {showObjectives
-                                      ? "Hide Objectives"
-                                      : "Show Objectives"}
+                                    {showDocuments
+                                      ? "Hide Documents"
+                                      : "Show Documents"}
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                           )}
 
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div
-                                className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                  displayChat &&
-                                  simulationContext?.allDynamicRubrics.find(
-                                    (rubric) => rubric.chatId === displayChat.id
-                                  )
-                                    ? simulationContext?.allDynamicRubrics.find(
+                          {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
+                          {simulationContext?.simulation?.objectivesEnabled &&
+                            (() => {
+                              const currentScenario = displayChat?.id
+                                ? simulationContext?.scenariosByChatId[
+                                    displayChat.id
+                                  ]
+                                : null;
+                              const hasObjectives =
+                                currentScenario?.objectives &&
+                                currentScenario.objectives.length > 0;
+                              return hasObjectives;
+                            })() && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <CollapsibleTrigger asChild>
+                                      <Button
+                                        variant={
+                                          showObjectives ? "default" : "outline"
+                                        }
+                                        size="sm"
+                                        className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
+                                      >
+                                        <ListChecks className="h-4 w-4" />
+                                      </Button>
+                                    </CollapsibleTrigger>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {showObjectives
+                                        ? "Hide Objectives"
+                                        : "Show Objectives"}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                    displayChat &&
+                                    simulationContext?.allDynamicRubrics.find(
+                                      (rubric) =>
+                                        rubric.chatId === displayChat.id
+                                    )
+                                      ? simulationContext?.allDynamicRubrics.find(
+                                          (rubric) =>
+                                            rubric.chatId === displayChat.id
+                                        )?.passed
+                                        ? "bg-green-100 dark:bg-green-900/30"
+                                        : "bg-red-100 dark:bg-red-900/30"
+                                      : displayChat && !displayChat.completed
+                                        ? "bg-red-100 dark:bg-red-900/30"
+                                        : simulationContext?.aggregatedResults
+                                          ? simulationContext?.aggregatedResults
+                                              .overallPassed
+                                            ? "bg-green-100 dark:bg-green-900/30"
+                                            : "bg-red-100 dark:bg-red-900/30"
+                                          : "bg-muted"
+                                  }`}
+                                >
+                                  {isInfiniteMode ? (
+                                    <InfinityIcon className="h-4 w-4" />
+                                  ) : (
+                                    <Clock className="h-4 w-4" />
+                                  )}
+                                  <span
+                                    className={`text-sm font-medium ${
+                                      displayChat && displayChat.completed
+                                        ? calculateTimeExceeded(displayChat) >
+                                            0 &&
+                                          simulationContext?.simulation
+                                            ?.timeLimit
+                                          ? "text-red-500"
+                                          : ""
+                                        : ""
+                                    }`}
+                                    data-testid="timer"
+                                  >
+                                    {displayChat && displayChat.completed
+                                      ? formatTime(
+                                          calculateChatTimeTaken(displayChat)
+                                        )
+                                      : isInfiniteMode
+                                        ? infiniteLimitMinutes
+                                          ? formatTime(
+                                              infiniteLimitMinutes * 60
+                                            )
+                                          : formatTime(
+                                              simulationContext?.timer
+                                                .elapsed || 0
+                                            )
+                                        : simulationContext?.simulation
+                                              ?.timeLimit && displayChat
+                                          ? formatTime(
+                                              calculateAdjustedTimeLimit(
+                                                displayChat
+                                              )
+                                            )
+                                          : "No time limit"}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              {displayChat &&
+                              showGrades &&
+                              simulationContext?.allDynamicRubrics.find(
+                                (rubric) => rubric.chatId === displayChat.id
+                              ) ? (
+                                <TooltipContent>
+                                  <p className="flex items-center flex-wrap gap-x-0">
+                                    <span>
+                                      {simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
                                           rubric.chatId === displayChat.id
                                       )?.passed
-                                      ? "bg-green-100 dark:bg-green-900/30"
-                                      : "bg-red-100 dark:bg-red-900/30"
-                                    : displayChat && !displayChat.completed
-                                      ? "bg-red-100 dark:bg-red-900/30"
-                                      : simulationContext?.aggregatedResults
-                                        ? simulationContext?.aggregatedResults
-                                            .overallPassed
-                                          ? "bg-green-100 dark:bg-green-900/30"
-                                          : "bg-red-100 dark:bg-red-900/30"
-                                        : "bg-muted"
-                                }`}
-                              >
-                                {isInfiniteMode ? (
-                                  <InfinityIcon className="h-4 w-4" />
-                                ) : (
-                                  <Clock className="h-4 w-4" />
-                                )}
-                                <span
-                                  className={`text-sm font-medium ${
-                                    displayChat && displayChat.completed
-                                      ? calculateTimeExceeded(displayChat) >
-                                          0 &&
-                                        simulationContext?.simulation?.timeLimit
-                                        ? "text-red-500"
-                                        : ""
-                                      : ""
-                                  }`}
-                                  data-testid="timer"
-                                >
-                                  {displayChat && displayChat.completed
-                                    ? formatTime(
-                                        calculateChatTimeTaken(displayChat)
+                                        ? "Passed"
+                                        : "Failed"}
+                                      (
+                                      {
+                                        simulationContext?.allDynamicRubrics.find(
+                                          (rubric) =>
+                                            rubric.chatId === displayChat.id
+                                        )?.score
+                                      }
+                                      /
+                                      {
+                                        simulationContext?.allDynamicRubrics.find(
+                                          (rubric) =>
+                                            rubric.chatId === displayChat.id
+                                        )?.totalPossiblePoints
+                                      }
                                       )
-                                    : isInfiniteMode
-                                      ? infiniteLimitMinutes
-                                        ? formatTime(infiniteLimitMinutes * 60)
-                                        : formatTime(
-                                            simulationContext?.timer.elapsed ||
-                                              0
-                                          )
-                                      : simulationContext?.simulation
-                                            ?.timeLimit && displayChat
-                                        ? formatTime(
-                                            calculateAdjustedTimeLimit(
-                                              displayChat
-                                            )
-                                          )
-                                        : "No time limit"}
-                                </span>
-                              </div>
-                            </TooltipTrigger>
-                            {displayChat &&
-                            showGrades &&
-                            simulationContext?.allDynamicRubrics.find(
-                              (rubric) => rubric.chatId === displayChat.id
-                            ) ? (
-                              <TooltipContent>
-                                <p className="flex items-center flex-wrap gap-x-0">
-                                  <span>
-                                    {simulationContext?.allDynamicRubrics.find(
-                                      (rubric) =>
-                                        rubric.chatId === displayChat.id
-                                    )?.passed
+                                    </span>
+                                    {calculateTimeExceeded(displayChat) > 0 &&
+                                      simulationContext?.simulation
+                                        ?.timeLimit && (
+                                        <span className="text-xs text-muted-foreground ml-2">
+                                          +
+                                          {formatTime(
+                                            calculateTimeExceeded(displayChat)
+                                          )}
+                                        </span>
+                                      )}
+                                  </p>
+                                </TooltipContent>
+                              ) : displayChat && !displayChat.completed ? (
+                                <TooltipContent>
+                                  <p>Incomplete</p>
+                                </TooltipContent>
+                              ) : simulationContext?.aggregatedResults ? (
+                                <TooltipContent>
+                                  <p>
+                                    {simulationContext?.aggregatedResults
+                                      .overallPassed
                                       ? "Passed"
-                                      : "Failed"}
+                                      : "Failed"}{" "}
                                     (
-                                    {
-                                      simulationContext?.allDynamicRubrics.find(
-                                        (rubric) =>
-                                          rubric.chatId === displayChat.id
-                                      )?.score
-                                    }
-                                    /
-                                    {
-                                      simulationContext?.allDynamicRubrics.find(
-                                        (rubric) =>
-                                          rubric.chatId === displayChat.id
-                                      )?.totalPossiblePoints
-                                    }
-                                    )
-                                  </span>
-                                  {calculateTimeExceeded(displayChat) > 0 &&
-                                    simulationContext?.simulation
-                                      ?.timeLimit && (
-                                      <span className="text-xs text-muted-foreground ml-2">
-                                        +
-                                        {formatTime(
-                                          calculateTimeExceeded(displayChat)
-                                        )}
-                                      </span>
+                                    {Math.round(
+                                      simulationContext?.aggregatedResults
+                                        .averageScore
                                     )}
-                                </p>
-                              </TooltipContent>
-                            ) : displayChat && !displayChat.completed ? (
-                              <TooltipContent>
-                                <p>Incomplete</p>
-                              </TooltipContent>
-                            ) : simulationContext?.aggregatedResults ? (
-                              <TooltipContent>
-                                <p>
-                                  {simulationContext?.aggregatedResults
-                                    .overallPassed
-                                    ? "Passed"
-                                    : "Failed"}{" "}
-                                  (
-                                  {Math.round(
-                                    simulationContext?.aggregatedResults
-                                      .averageScore
-                                  )}
-                                  /
-                                  {simulationContext?.allDynamicRubrics?.[0]
-                                    ?.totalPossiblePoints || 100}{" "}
-                                  points)
-                                </p>
-                              </TooltipContent>
-                            ) : null}
-                          </Tooltip>
-                        </TooltipProvider>
+                                    /
+                                    {simulationContext?.allDynamicRubrics?.[0]
+                                      ?.totalPossiblePoints || 100}{" "}
+                                    points)
+                                  </p>
+                                </TooltipContent>
+                              ) : null}
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Objectives Collapsible Content */}
+                    {simulationContext?.simulation?.objectivesEnabled &&
+                      (() => {
+                        const currentScenario = displayChat?.id
+                          ? simulationContext?.scenariosByChatId[displayChat.id]
+                          : null;
+                        const objectives = currentScenario?.objectives || [];
+                        return objectives.length > 0;
+                      })() && (
+                        <CollapsibleContent className="pt-2">
+                          <div className="px-4 pb-2">
+                            <ul className="space-y-2 list-none">
+                              {(() => {
+                                const currentScenario = displayChat?.id
+                                  ? simulationContext?.scenariosByChatId[
+                                      displayChat.id
+                                    ]
+                                  : null;
+                                const objectives =
+                                  currentScenario?.objectives || [];
+                                return objectives.map((objective, index) => (
+                                  <li
+                                    key={index}
+                                    className="font-medium flex items-start gap-2"
+                                  >
+                                    <span className="text-primary mt-1.5 flex-shrink-0">
+                                      •
+                                    </span>
+                                    <span className="flex-1">{objective}</span>
+                                  </li>
+                                ));
+                              })()}
+                            </ul>
+                          </div>
+                        </CollapsibleContent>
+                      )}
                   </div>
+                </Collapsible>
 
-                  {/* Show completion status for completed attempts */}
-                  {!simulationContext?.isSingleChatAttempt && (
-                    <div className="flex justify-end">
-                      <Select
-                        value={
-                          simulationContext?.chats[
-                            simulationContext.currentChatIndex
-                          ]?.id || ""
+                {/* Show completion status for completed attempts */}
+                {!simulationContext?.isSingleChatAttempt && (
+                  <div className="flex justify-end">
+                    <Select
+                      value={
+                        simulationContext?.chats[
+                          simulationContext.currentChatIndex
+                        ]?.id || ""
+                      }
+                      onValueChange={(chatId) => {
+                        const chatIndex = simulationContext?.chats.findIndex(
+                          (chat) => chat.id === chatId
+                        );
+                        if (chatIndex !== undefined && chatIndex >= 0) {
+                          simulationContext?.setCurrentChatIndex(chatIndex);
                         }
-                        onValueChange={(chatId) => {
-                          const chatIndex = simulationContext?.chats.findIndex(
-                            (chat) => chat.id === chatId
-                          );
-                          if (chatIndex !== undefined && chatIndex >= 0) {
-                            simulationContext?.setCurrentChatIndex(chatIndex);
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="w-64">
-                          <SelectValue placeholder="Select chat to view results" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {simulationContext?.chats?.map(
-                            (
-                              chat: AttemptFullResponse["chats"][number]["chat"]
-                            ) => {
-                              // Find rubric result for this chat
-                              const rubricResult =
-                                simulationContext?.allDynamicRubrics.find(
-                                  (rubric) => rubric.chatId === chat.id
-                                );
-
-                              return (
-                                <SelectItem key={chat.id} value={chat.id}>
-                                  <div className="flex items-center gap-2">
-                                    <span>{chat.title}</span>
-                                    {chat.completed && !rubricResult ? (
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-xs"
-                                      >
-                                        Incomplete
-                                      </Badge>
-                                    ) : rubricResult ? (
-                                      <Badge
-                                        variant={
-                                          rubricResult.passed
-                                            ? "default"
-                                            : "destructive"
-                                        }
-                                        className={`text-xs ${
-                                          rubricResult.passed
-                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                                        }`}
-                                      >
-                                        {rubricResult.passed ? "Pass" : "Fail"}
-                                      </Badge>
-                                    ) : null}
-                                  </div>
-                                </SelectItem>
+                      }}
+                    >
+                      <SelectTrigger className="w-64">
+                        <SelectValue placeholder="Select chat to view results" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {simulationContext?.chats?.map(
+                          (
+                            chat: AttemptFullResponse["chats"][number]["chat"]
+                          ) => {
+                            // Find rubric result for this chat
+                            const rubricResult =
+                              simulationContext?.allDynamicRubrics.find(
+                                (rubric) => rubric.chatId === chat.id
                               );
-                            }
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
+
+                            return (
+                              <SelectItem key={chat.id} value={chat.id}>
+                                <div className="flex items-center gap-2">
+                                  <span>{chat.title}</span>
+                                  {chat.completed && !rubricResult ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      Incomplete
+                                    </Badge>
+                                  ) : rubricResult ? (
+                                    <Badge
+                                      variant={
+                                        rubricResult.passed
+                                          ? "default"
+                                          : "destructive"
+                                      }
+                                      className={`text-xs ${
+                                        rubricResult.passed
+                                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                      }`}
+                                    >
+                                      {rubricResult.passed ? "Pass" : "Fail"}
+                                    </Badge>
+                                  ) : null}
+                                </div>
+                              </SelectItem>
+                            );
+                          }
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <CardContent className="flex-1 flex flex-col p-0 min-h-0">
                   <ScrollArea className="flex-1 px-4 min-h-0">
@@ -826,208 +878,265 @@ export default function AttemptChat() {
                 <ResizablePanel defaultSize={88} minSize={70}>
                   <div className="h-full flex flex-col">
                     {/* Timer and Controls Header */}
-                    <div className="p-4 pt-0 border-b flex flex-col gap-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-start gap-2">
-                            <span className="font-medium">
-                              {simulationContext?.scenario?.problemStatement ||
-                                simulationContext?.scenario?.name ||
-                                simulationContext?.currentChat?.title}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-start justify-end gap-2">
+                    <Collapsible
+                      open={showObjectives}
+                      onOpenChange={setShowObjectives}
+                      className="border-b"
+                    >
+                      <div className="p-4 pt-0 flex flex-col gap-2">
+                        <div className="flex items-start justify-between">
                           <div className="flex items-center gap-4">
-                            {/* Hide completed badge logic in infinite mode */}
-                            {!simulationContext?.attempt?.infiniteMode &&
-                              simulationContext?.currentChat?.completed &&
-                              simulationContext?.expectedChatCount ===
-                                simulationContext?.chats.filter(
-                                  (
-                                    chat: AttemptFullResponse["chats"][number]["chat"]
-                                  ) => chat.completed
-                                ).length && (
-                                <Badge variant="default">Completed</Badge>
-                              )}
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium">
+                                {simulationContext?.scenario
+                                  ?.problemStatement ||
+                                  simulationContext?.scenario?.name ||
+                                  simulationContext?.currentChat?.title}
+                              </span>
+                            </div>
                           </div>
-
-                          <div className="flex items-center gap-2">
-                            {(() => {
-                              const currentChatDocIds =
-                                displayChat?.documentIds || [];
-                              const hasDocumentsForCurrentChat =
-                                simulationContext?.scenarioDocuments?.some(
-                                  (doc) =>
-                                    currentChatDocIds.includes(doc.document_id)
-                                );
-                              return hasDocumentsForCurrentChat;
-                            })() && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={
-                                      showDocuments ? "default" : "outline"
-                                    }
-                                    size="sm"
-                                    onClick={() =>
-                                      simulationContext?.setShowDocuments(
-                                        !showDocuments
-                                      )
-                                    }
-                                    className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {showDocuments
-                                      ? "Hide Documents"
-                                      : "Show Documents"}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-
-                            {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
-                            {simulationContext?.simulation?.objectivesEnabled &&
-                              (() => {
-                                const currentScenario = displayChat?.id
-                                  ? simulationContext?.scenariosByChatId[
-                                      displayChat.id
-                                    ]
-                                  : null;
-                                const hasObjectives =
-                                  currentScenario?.objectives &&
-                                  currentScenario.objectives.length > 0;
-                                return hasObjectives;
-                              })() && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant={
-                                        showObjectives ? "default" : "outline"
-                                      }
-                                      size="sm"
-                                      onClick={() =>
-                                        setShowObjectives(!showObjectives)
-                                      }
-                                      className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
-                                    >
-                                      <ListChecks className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>
-                                      {showObjectives
-                                        ? "Hide Objectives"
-                                        : "Show Objectives"}
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                    !simulationContext?.attempt?.infiniteMode &&
-                                    simulationContext?.currentChat?.completed &&
-                                    simulationContext?.currentDynamicRubric &&
-                                    simulationContext?.expectedChatCount ===
-                                      simulationContext?.chats.filter(
-                                        (
-                                          chat: AttemptFullResponse["chats"][number]["chat"]
-                                        ) => chat.completed
-                                      ).length
-                                      ? simulationContext?.currentDynamicRubric
-                                          .passed
-                                        ? "bg-green-100 dark:bg-green-900/30"
-                                        : "bg-red-100 dark:bg-red-900/30"
-                                      : "bg-muted"
-                                  }`}
-                                >
-                                  {simulationContext?.attempt?.infiniteMode ? (
-                                    <InfinityIcon className="h-4 w-4" />
-                                  ) : (
-                                    <Clock className="h-4 w-4" />
-                                  )}
-                                  <span
-                                    className={`text-sm font-medium ${
-                                      simulationContext?.attempt?.infiniteMode
-                                        ? ""
-                                        : simulationContext?.simulation
-                                              ?.timeLimit &&
-                                            simulationContext?.timer
-                                              .remaining !== null &&
-                                            simulationContext?.timer.remaining <
-                                              0
-                                          ? "text-red-500"
-                                          : ""
-                                    }`}
-                                    data-testid="timer"
-                                  >
-                                    {simulationContext?.attempt?.infiniteMode
-                                      ? simulationContext?.simulation?.timeLimit
-                                        ? formatTime(
-                                            Math.max(
-                                              simulationContext?.timer
-                                                .remaining || 0,
-                                              0
-                                            )
-                                          )
-                                        : formatTime(
-                                            simulationContext?.timer.elapsed
-                                          )
-                                      : simulationContext?.simulation
-                                            ?.timeLimit &&
-                                          simulationContext?.timer.remaining !==
-                                            null
-                                        ? formatTime(
-                                            simulationContext?.timer.remaining
-                                          )
-                                        : formatTime(
-                                            simulationContext?.timer.elapsed
-                                          )}
-                                  </span>
-                                  {/* In infinite mode, we don't show negative state; we auto-finish on expiry */}
-                                </div>
-                              </TooltipTrigger>
+                          <div className="flex items-start justify-end gap-2">
+                            <div className="flex items-center gap-4">
+                              {/* Hide completed badge logic in infinite mode */}
                               {!simulationContext?.attempt?.infiniteMode &&
                                 simulationContext?.currentChat?.completed &&
-                                simulationContext?.currentDynamicRubric &&
                                 simulationContext?.expectedChatCount ===
                                   simulationContext?.chats.filter(
                                     (
                                       chat: AttemptFullResponse["chats"][number]["chat"]
                                     ) => chat.completed
                                   ).length && (
+                                  <Badge variant="default">Completed</Badge>
+                                )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const currentChatDocIds =
+                                  displayChat?.documentIds || [];
+                                const hasDocumentsForCurrentChat =
+                                  simulationContext?.scenarioDocuments?.some(
+                                    (doc) =>
+                                      currentChatDocIds.includes(
+                                        doc.document_id
+                                      )
+                                  );
+                                return hasDocumentsForCurrentChat;
+                              })() && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant={
+                                        showDocuments ? "default" : "outline"
+                                      }
+                                      size="sm"
+                                      onClick={() =>
+                                        simulationContext?.setShowDocuments(
+                                          !showDocuments
+                                        )
+                                      }
+                                      className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
                                   <TooltipContent>
                                     <p>
-                                      {simulationContext?.currentDynamicRubric
-                                        .passed
-                                        ? "Passed"
-                                        : "Failed"}
-                                      (
-                                      {
-                                        simulationContext?.currentDynamicRubric
-                                          .score
-                                      }
-                                      /
-                                      {
-                                        simulationContext?.currentDynamicRubric
-                                          .totalPossiblePoints
-                                      }
-                                      )
+                                      {showDocuments
+                                        ? "Hide Documents"
+                                        : "Show Documents"}
                                     </p>
                                   </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
+                              {simulationContext?.simulation
+                                ?.objectivesEnabled &&
+                                (() => {
+                                  const currentScenario = displayChat?.id
+                                    ? simulationContext?.scenariosByChatId[
+                                        displayChat.id
+                                      ]
+                                    : null;
+                                  const hasObjectives =
+                                    currentScenario?.objectives &&
+                                    currentScenario.objectives.length > 0;
+                                  return hasObjectives;
+                                })() && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <CollapsibleTrigger asChild>
+                                        <Button
+                                          variant={
+                                            showObjectives
+                                              ? "default"
+                                              : "outline"
+                                          }
+                                          size="sm"
+                                          className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
+                                        >
+                                          <ListChecks className="h-4 w-4" />
+                                        </Button>
+                                      </CollapsibleTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        {showObjectives
+                                          ? "Hide Objectives"
+                                          : "Show Objectives"}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 )}
-                            </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                      !simulationContext?.attempt
+                                        ?.infiniteMode &&
+                                      simulationContext?.currentChat
+                                        ?.completed &&
+                                      simulationContext?.currentDynamicRubric &&
+                                      simulationContext?.expectedChatCount ===
+                                        simulationContext?.chats.filter(
+                                          (
+                                            chat: AttemptFullResponse["chats"][number]["chat"]
+                                          ) => chat.completed
+                                        ).length
+                                        ? simulationContext
+                                            ?.currentDynamicRubric.passed
+                                          ? "bg-green-100 dark:bg-green-900/30"
+                                          : "bg-red-100 dark:bg-red-900/30"
+                                        : "bg-muted"
+                                    }`}
+                                  >
+                                    {simulationContext?.attempt
+                                      ?.infiniteMode ? (
+                                      <InfinityIcon className="h-4 w-4" />
+                                    ) : (
+                                      <Clock className="h-4 w-4" />
+                                    )}
+                                    <span
+                                      className={`text-sm font-medium ${
+                                        simulationContext?.attempt?.infiniteMode
+                                          ? ""
+                                          : simulationContext?.simulation
+                                                ?.timeLimit &&
+                                              simulationContext?.timer
+                                                .remaining !== null &&
+                                              simulationContext?.timer
+                                                .remaining < 0
+                                            ? "text-red-500"
+                                            : ""
+                                      }`}
+                                      data-testid="timer"
+                                    >
+                                      {simulationContext?.attempt?.infiniteMode
+                                        ? simulationContext?.simulation
+                                            ?.timeLimit
+                                          ? formatTime(
+                                              Math.max(
+                                                simulationContext?.timer
+                                                  .remaining || 0,
+                                                0
+                                              )
+                                            )
+                                          : formatTime(
+                                              simulationContext?.timer.elapsed
+                                            )
+                                        : simulationContext?.simulation
+                                              ?.timeLimit &&
+                                            simulationContext?.timer
+                                              .remaining !== null
+                                          ? formatTime(
+                                              simulationContext?.timer.remaining
+                                            )
+                                          : formatTime(
+                                              simulationContext?.timer.elapsed
+                                            )}
+                                    </span>
+                                    {/* In infinite mode, we don't show negative state; we auto-finish on expiry */}
+                                  </div>
+                                </TooltipTrigger>
+                                {!simulationContext?.attempt?.infiniteMode &&
+                                  simulationContext?.currentChat?.completed &&
+                                  simulationContext?.currentDynamicRubric &&
+                                  simulationContext?.expectedChatCount ===
+                                    simulationContext?.chats.filter(
+                                      (
+                                        chat: AttemptFullResponse["chats"][number]["chat"]
+                                      ) => chat.completed
+                                    ).length && (
+                                    <TooltipContent>
+                                      <p>
+                                        {simulationContext?.currentDynamicRubric
+                                          .passed
+                                          ? "Passed"
+                                          : "Failed"}
+                                        (
+                                        {
+                                          simulationContext
+                                            ?.currentDynamicRubric.score
+                                        }
+                                        /
+                                        {
+                                          simulationContext
+                                            ?.currentDynamicRubric
+                                            .totalPossiblePoints
+                                        }
+                                        )
+                                      </p>
+                                    </TooltipContent>
+                                  )}
+                              </Tooltip>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+
+                      {/* Objectives Collapsible Content */}
+                      {simulationContext?.simulation?.objectivesEnabled &&
+                        (() => {
+                          const currentScenario = displayChat?.id
+                            ? simulationContext?.scenariosByChatId[
+                                displayChat.id
+                              ]
+                            : null;
+                          const objectives = currentScenario?.objectives || [];
+                          return objectives.length > 0;
+                        })() && (
+                          <CollapsibleContent className="pt-2">
+                            <div className="px-4 pb-2">
+                              <ul className="space-y-2 list-none">
+                                {(() => {
+                                  const currentScenario = displayChat?.id
+                                    ? simulationContext?.scenariosByChatId[
+                                        displayChat.id
+                                      ]
+                                    : null;
+                                  const objectives =
+                                    currentScenario?.objectives || [];
+                                  return objectives.map((objective, index) => (
+                                    <li
+                                      key={index}
+                                      className="font-medium flex items-start gap-2"
+                                    >
+                                      <span className="text-primary mt-1.5 flex-shrink-0">
+                                        •
+                                      </span>
+                                      <span className="flex-1">
+                                        {objective}
+                                      </span>
+                                    </li>
+                                  ));
+                                })()}
+                              </ul>
+                            </div>
+                          </CollapsibleContent>
+                        )}
+                    </Collapsible>
 
                     {/* Messages Area */}
                     {/* Progress Bar at the very top */}
@@ -1111,60 +1220,6 @@ export default function AttemptChat() {
           </>
         )}
       </ResizablePanelGroup>
-
-      {/* Objectives Popover */}
-      {showObjectives && simulationContext?.simulation?.objectivesEnabled && (
-        <div
-          className="fixed inset-0 bg-black/20 z-50"
-          onClick={() => setShowObjectives(false)}
-        >
-          <div
-            className="absolute top-20 right-6 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 w-96 max-h-[600px] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <ListChecks className="h-5 w-5" />
-                Learning Objectives
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowObjectives(false)}
-                className="h-8 w-8 p-0"
-              >
-                ×
-              </Button>
-            </div>
-            <ScrollArea className="flex-1 p-4">
-              {(() => {
-                const currentScenario = displayChat?.id
-                  ? simulationContext?.scenariosByChatId[displayChat.id]
-                  : null;
-                const objectives = currentScenario?.objectives || [];
-
-                if (objectives.length === 0) {
-                  return (
-                    <p className="text-sm text-muted-foreground italic">
-                      No objectives defined for this scenario.
-                    </p>
-                  );
-                }
-
-                return (
-                  <ol className="space-y-3 list-decimal list-inside">
-                    {objectives.map((objective, index) => (
-                      <li key={index} className="text-sm leading-relaxed">
-                        {objective}
-                      </li>
-                    ))}
-                  </ol>
-                );
-              })()}
-            </ScrollArea>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
