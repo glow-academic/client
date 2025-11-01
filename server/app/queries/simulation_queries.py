@@ -2172,12 +2172,25 @@ class SimulationQueries:
                          WHERE so.scenario_id = s.id),
                         '[]'::jsonb
                     )
-                ) as scenario_data
+                ) as scenario_data,
+                s.hints_enabled,
+                s.objectives_enabled,
+                s.image_input_enabled,
+                s.input_guardrail_enabled,
+                s.output_guardrail_enabled
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             CROSS JOIN scenario_ids_list sil
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             WHERE s.id = ANY(sil.scenario_ids)
+        ),
+        simulation_flags AS (
+            SELECT 
+                COALESCE((SELECT s.hints_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as hints_enabled,
+                COALESCE((SELECT s.objectives_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), true) as objectives_enabled,
+                COALESCE((SELECT s.image_input_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as image_input_enabled,
+                COALESCE((SELECT s.input_guardrail_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as input_guardrail_enabled,
+                COALESCE((SELECT s.output_guardrail_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as output_guardrail_enabled
         ),
         messages_grouped AS (
             SELECT 
@@ -2364,7 +2377,12 @@ class SimulationQueries:
                         'can_edit', false,
                         'can_delete', false,
                         'active', d.active,
-                        'department_id', d.department_id::text,
+                        'department_ids', COALESCE(
+                            (SELECT array_agg(dd.department_id::text ORDER BY dd.created_at)
+                             FROM document_departments dd 
+                             WHERE dd.document_id = d.id AND dd.active = true),
+                            NULL
+                        ),
                         'file_path', d.file_path,
                         'mime_type', d.mime_type,
                         'parameter_item_ids', COALESCE(
@@ -2625,7 +2643,13 @@ class SimulationQueries:
                 'description', ab.sim_description,
                 'departmentId', CASE WHEN ab.sim_department_id IS NOT NULL THEN ab.sim_department_id::text ELSE NULL END,
                 'active', ab.sim_active,
+                'defaultSimulation', false,
                 'practiceSimulation', ab.sim_practice_simulation,
+                'hintsEnabled', sf.hints_enabled,
+                'objectivesEnabled', sf.objectives_enabled,
+                'imageInputActive', sf.image_input_enabled,
+                'inputGuardrailActive', sf.input_guardrail_enabled,
+                'outputGuardrailActive', sf.output_guardrail_enabled,
                 'timeLimit', ab.sim_time_limit,
                 'rubricId', CASE WHEN ab.sim_rubric_id IS NOT NULL THEN ab.sim_rubric_id::text ELSE NULL END,
                 'createdAt', ab.sim_created_at,
@@ -2652,6 +2676,7 @@ class SimulationQueries:
         CROSS JOIN aggregated_results_data ard
         CROSS JOIN timer_data td
         CROSS JOIN metadata_computed md
+        CROSS JOIN simulation_flags sf
         LEFT JOIN rubric_structure_complete rsc ON true
         """
         return (query, [attempt_id])

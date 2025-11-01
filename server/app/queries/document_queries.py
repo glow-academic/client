@@ -433,7 +433,7 @@ class DocumentQueries:
                 d.name,
                 d.active,
                 d.type,
-                d.department_id
+                (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids
             FROM documents d
             WHERE d.id = $1
         ),
@@ -490,8 +490,20 @@ class DocumentQueries:
                 array_agg(pi.id::text ORDER BY pi.name) as param_item_ids
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            JOIN document_data dd ON p.department_id = dd.department_id
+            CROSS JOIN document_data dd
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             WHERE p.active = true
+              AND (
+                  -- Document has no department links (cross-department) -> show items with no department links
+                  (dd.department_ids IS NULL OR array_length(dd.department_ids, 1) = 0)
+                  AND NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+              )
+              OR (
+                  -- Document has department links -> show items linked to same departments
+                  dd.department_ids IS NOT NULL 
+                  AND array_length(dd.department_ids, 1) > 0
+                  AND pid.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
+              )
         )
         SELECT 
             doc.*,

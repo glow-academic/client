@@ -371,7 +371,7 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                             # Find and update default guest profile
                             queries = ProfileQueries()
                             update_query, insert_query = queries.update_default_guest_profile_to_active()
-                            await conn.execute(update_query, datetime.now(UTC))
+                            await conn.execute(update_query)
                             await conn.execute(insert_query, datetime.now(UTC))
                         logger.info(
                             "Marked default guest profile active (guest connection added)"
