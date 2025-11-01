@@ -143,7 +143,7 @@ export default function Persona({
   const { mutate: updatePersona } = useUpdatePersonaV2();
 
   // Readonly logic using v2 permission flags
-  const isReadonly = !useMemo(() => {
+  const isReadonly = useMemo(() => {
     if (!isEditMode || !personaData) return false;
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
@@ -267,8 +267,14 @@ export default function Persona({
     const promptInfo =
       currentPromptId && personaData.prompt_mapping?.[currentPromptId];
 
-    // Always update to the correct prompt when department changes
-    if (departmentChanged || formData?.promptId !== currentPromptId) {
+    // Check if current formData.promptId is valid for the selected department
+    const currentPromptIsValid = formData?.promptId
+      ? filteredPromptMapping[formData.promptId] !== undefined
+      : true; // null promptId is valid (means using default)
+
+    // Only auto-select when department changes, or if current prompt is invalid for department
+    if (departmentChanged) {
+      // Department changed - always update to the correct prompt
       if (promptInfo) {
         // Prompt exists (default or department-specific) - select it and update system prompt
         setFormData((prev) => ({
@@ -290,6 +296,21 @@ export default function Persona({
           promptId: null,
         }));
       }
+    } else if (!currentPromptIsValid && formData?.promptId) {
+      // Current prompt is invalid for selected department - reset to default
+      if (promptInfo) {
+        setFormData((prev) => ({
+          ...prev,
+          promptId: currentPromptId,
+          systemPrompt: promptInfo.system_prompt,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          promptId: null,
+          systemPrompt: "",
+        }));
+      }
     }
   }, [
     selectedDepartmentId,
@@ -297,6 +318,7 @@ export default function Persona({
     isEditMode,
     formData?.promptId,
     isCreatingNewPrompt,
+    filteredPromptMapping,
   ]);
 
   // Set breadcrumb context when persona data is loaded

@@ -504,11 +504,14 @@ class AgentService(BaseService):
             await self.conn.execute(query, *params)
 
             # Handle prompt update
-            # Always create a new prompt entry when system_prompt is provided (preserves version history)
-            # Only use prompt_id when selecting from version history (no system_prompt provided)
+            # If prompt_id is null, create a new prompt from system_prompt (for version history)
+            # If prompt_id is provided, use the existing prompt (selecting from version history)
             prompt_id = None
-            if request.system_prompt:
-                # Create new prompt entry (for version history)
+            if request.prompt_id:
+                # Use existing prompt (selecting from version history)
+                prompt_id = request.prompt_id
+            elif request.system_prompt:
+                # Create new prompt entry (user edited prompt, create new version)
                 prompt_query, prompt_params = self.queries.create_prompt(
                     request.system_prompt
                 )
@@ -516,9 +519,6 @@ class AgentService(BaseService):
                 if not prompt_row:
                     raise ValueError("Failed to create prompt")
                 prompt_id = prompt_row["prompt_id"]
-            elif request.prompt_id:
-                # Use existing prompt (selecting from version history)
-                prompt_id = request.prompt_id
 
             # Handle department-specific prompt or default prompt
             if request.department_id and prompt_id:
