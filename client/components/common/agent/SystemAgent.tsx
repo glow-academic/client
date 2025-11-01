@@ -7,12 +7,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
-import { PromptPicker } from "@/components/common/forms/PromptPicker";
+import {
+  PromptInfo,
+  PromptPicker,
+} from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { RolePicker } from "@/components/common/forms/RolePicker";
 import { Button } from "@/components/ui/button";
@@ -80,6 +83,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | null
   >(null); // null = "All Departments"
+  const [isCreatingNewPrompt, setIsCreatingNewPrompt] = useState(false);
+  const prevDepartmentIdRef = React.useRef<string | null>(null);
 
   const isEditMode = !!agentId;
 
@@ -103,6 +108,49 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   // Temperature bounds from v2 response
   const temperatureLower = agentData?.temperature_lower ?? 0.0;
   const temperatureUpper = agentData?.temperature_upper ?? 1.0;
+
+  // Filter prompt_mapping based on selected department
+  // When a department is selected, only show department-specific prompts (not default prompts)
+  const filteredPromptMapping = useMemo(() => {
+    if (!isEditMode || !agentDetail?.prompt_mapping) {
+      return agentDetail?.prompt_mapping || {};
+    }
+
+    // If no department selected, show all prompts
+    if (!selectedDepartmentId) {
+      return agentDetail.prompt_mapping;
+    }
+
+    // When department is selected, ONLY show department-specific prompts for that department
+    // Do NOT include default prompts (null department_ids) in version history
+    const filtered: Record<string, PromptInfo> = {};
+    for (const [promptId, promptInfo] of Object.entries(
+      agentDetail.prompt_mapping
+    )) {
+      // Only include if it's a department-specific prompt for the selected department
+      if (
+        promptInfo.department_ids &&
+        promptInfo.department_ids.includes(selectedDepartmentId)
+      ) {
+        filtered[promptId] = promptInfo;
+      }
+    }
+    return filtered;
+  }, [selectedDepartmentId, agentDetail?.prompt_mapping, isEditMode]);
+
+  // Detect if using default prompt (no department-specific prompt exists)
+  const isUsingDefaultPrompt = useMemo(() => {
+    if (!isEditMode || !selectedDepartmentId || !agentDetail) return false;
+    return !agentDetail.department_prompt_links?.[selectedDepartmentId];
+  }, [selectedDepartmentId, agentDetail, isEditMode]);
+
+  // Get default prompt content
+  const defaultPromptContent = useMemo(() => {
+    if (!isEditMode || !agentDetail?.prompt_id || !agentDetail?.prompt_mapping)
+      return "";
+    const defaultPrompt = agentDetail.prompt_mapping[agentDetail.prompt_id];
+    return defaultPrompt?.system_prompt || "";
+  }, [agentDetail, isEditMode]);
 
   const initialFormData: SystemAgentFormData = useMemo(
     () => ({
@@ -182,12 +230,26 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   useEffect(() => {
     if (!isEditMode || !agentDetail) return;
 
+    // Don't override state if user is actively creating a new prompt
+    if (isCreatingNewPrompt) return;
+
+    // Reset creating flag when department changes (but only if not already creating)
+    // This handles the case where department selection changes, not user-initiated creation
+    if (prevDepartmentIdRef.current !== selectedDepartmentId) {
+      setIsCreatingNewPrompt(false);
+      prevDepartmentIdRef.current = selectedDepartmentId;
+    }
+
     const getCurrentPromptId = () => {
       if (
         selectedDepartmentId &&
         agentDetail.department_prompt_links?.[selectedDepartmentId]
       ) {
         return agentDetail.department_prompt_links[selectedDepartmentId];
+      }
+      // If department selected but no department-specific prompt, return null to indicate using default
+      if (selectedDepartmentId) {
+        return null;
       }
       return agentDetail.prompt_id || null;
     };
@@ -196,20 +258,50 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     const promptInfo =
       currentPromptId && agentDetail.prompt_mapping?.[currentPromptId];
 
+    // Validate that current prompt is valid for selected department
+    if (
+      selectedDepartmentId &&
+      formData?.promptId &&
+      !filteredPromptMapping[formData.promptId]
+    ) {
+      // Current prompt is not valid for selected department - reset to default
+      setFormData((prev) => ({
+        ...prev,
+        promptId: null,
+        systemPrompt: "",
+      }));
+      return;
+    }
+
     if (promptInfo) {
+      // Department-specific prompt exists
       setFormData((prev) => ({
         ...prev,
         promptId: currentPromptId,
         systemPrompt: promptInfo.system_prompt,
       }));
-    } else if (currentPromptId === null) {
-      // New prompt, keep current systemPrompt
+    } else if (selectedDepartmentId && !currentPromptId) {
+      // Using default prompt for selected department - clear form data to show default prompt UI
+      setFormData((prev) => ({
+        ...prev,
+        promptId: null,
+        systemPrompt: "", // Clear to show default prompt UI
+      }));
+    } else if (currentPromptId === null && !selectedDepartmentId) {
+      // All Departments selected and no prompt selected
       setFormData((prev) => ({
         ...prev,
         promptId: null,
       }));
     }
-  }, [selectedDepartmentId, agentDetail, isEditMode]);
+  }, [
+    selectedDepartmentId,
+    agentDetail,
+    isEditMode,
+    filteredPromptMapping,
+    formData?.promptId,
+    isCreatingNewPrompt,
+  ]);
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,
@@ -589,17 +681,15 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   )}
                   {isEditMode &&
                     agentDetail &&
-                    agentDetail.prompt_mapping &&
-                    Object.keys(agentDetail.prompt_mapping).length > 0 && (
+                    filteredPromptMapping &&
+                    (Object.keys(filteredPromptMapping).length > 0 ||
+                      selectedDepartmentId) && (
                       <PromptPicker
-                        promptMapping={agentDetail.prompt_mapping}
+                        promptMapping={filteredPromptMapping}
                         selectedPromptId={formData?.promptId || null}
                         onSelect={(promptId) => {
-                          if (
-                            promptId &&
-                            agentDetail.prompt_mapping[promptId]
-                          ) {
-                            const prompt = agentDetail.prompt_mapping[promptId];
+                          if (promptId && filteredPromptMapping[promptId]) {
+                            const prompt = filteredPromptMapping[promptId];
                             setFormData((prev) => ({
                               ...prev,
                               promptId: promptId,
@@ -613,6 +703,9 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                           }
                         }}
                         onCreateNew={() => {
+                          setIsCreatingNewPrompt(true);
+                          // When creating new, always start with empty prompt
+                          // (Use "Branch from Default" button if you want to start with default content)
                           setFormData((prev) => ({
                             ...prev,
                             promptId: null,
@@ -626,30 +719,43 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                     )}
                   {formData?.systemPrompt !== undefined && !isLoading && (
                     <>
-                      {isEditMode && formData?.promptId && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => {
-                                // Duplicate current prompt - keep content but create new prompt
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  promptId: null,
-                                }));
-                              }}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Duplicate Prompt</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
+                      {isEditMode &&
+                        (formData?.promptId || isUsingDefaultPrompt) && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  setIsCreatingNewPrompt(true);
+                                  // Duplicate current prompt - keep content but create new prompt
+                                  // If using default prompt, duplicate default content
+                                  // If All Departments selected, duplicate current prompt content
+                                  const contentToDuplicate =
+                                    isUsingDefaultPrompt
+                                      ? defaultPromptContent
+                                      : formData?.systemPrompt || "";
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    promptId: null,
+                                    systemPrompt: contentToDuplicate,
+                                  }));
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {isUsingDefaultPrompt
+                                  ? "Branch from Default Prompt"
+                                  : "Duplicate Prompt"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -701,32 +807,108 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 </div>
               </div>
               {formData?.systemPrompt !== undefined && !isLoading ? (
-                <div className="h-[500px]">
-                  <UnifiedPromptEditor
-                    value={formData?.systemPrompt || ""}
-                    onChange={(value) => {
-                      handleInputChange("systemPrompt", value);
-                      // Clear promptId when editing, indicating new prompt
-                      setFormData((prev) => ({
-                        ...prev,
-                        promptId: null,
-                      }));
-                    }}
-                    placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
-                    className="h-full"
-                    debugContent={
-                      isEditMode &&
-                      agentDetail &&
-                      effectiveProfile?.role === "superadmin" ? (
-                        <AgentDebugInfo
-                          debugInfo={agentDetail.debug_info}
-                          modelMapping={agentDetail.model_mapping}
-                        />
-                      ) : undefined
-                    }
-                    activeMode={editorMode}
-                  />
-                </div>
+                <>
+                  {isUsingDefaultPrompt &&
+                  formData.systemPrompt === "" &&
+                  !isCreatingNewPrompt ? (
+                    <div className="space-y-4">
+                      <div className="border rounded-lg p-6 bg-muted/50">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-blue-500" />
+                            <p className="text-sm font-medium">
+                              Using Default Prompt
+                            </p>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedDepartmentId &&
+                            agentDetail?.department_mapping?.[
+                              selectedDepartmentId
+                            ]
+                              ? `No department-specific prompt exists for ${agentDetail.department_mapping[selectedDepartmentId].name}. The default prompt is being used.`
+                              : "No department-specific prompt exists. The default prompt is being used."}
+                          </p>
+                          <div className="border-t pt-4 mt-4">
+                            <p className="text-xs font-medium mb-2 text-muted-foreground">
+                              Default Prompt Preview:
+                            </p>
+                            <div className="bg-background border rounded p-4 max-h-[200px] overflow-y-auto">
+                              <pre className="text-xs whitespace-pre-wrap font-mono">
+                                {defaultPromptContent || "No default prompt"}
+                              </pre>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              type="button"
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                setIsCreatingNewPrompt(true);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  promptId: null,
+                                  systemPrompt: "",
+                                }));
+                              }}
+                            >
+                              Create New Prompt
+                              {selectedDepartmentId &&
+                              agentDetail?.department_mapping?.[
+                                selectedDepartmentId
+                              ]
+                                ? ` for ${agentDetail.department_mapping[selectedDepartmentId].name}`
+                                : ""}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setIsCreatingNewPrompt(true);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  promptId: null,
+                                  systemPrompt: defaultPromptContent,
+                                }));
+                              }}
+                            >
+                              Branch from Default
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-[500px]">
+                      <UnifiedPromptEditor
+                        value={formData?.systemPrompt || ""}
+                        onChange={(value) => {
+                          setIsCreatingNewPrompt(true); // User is actively editing
+                          handleInputChange("systemPrompt", value);
+                          // Clear promptId when editing, indicating new prompt
+                          setFormData((prev) => ({
+                            ...prev,
+                            promptId: null,
+                          }));
+                        }}
+                        placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
+                        className="h-full"
+                        debugContent={
+                          isEditMode &&
+                          agentDetail &&
+                          effectiveProfile?.role === "superadmin" ? (
+                            <AgentDebugInfo
+                              debugInfo={agentDetail.debug_info}
+                              modelMapping={agentDetail.model_mapping}
+                            />
+                          ) : undefined
+                        }
+                        activeMode={editorMode}
+                      />
+                    </div>
+                  )}
+                </>
               ) : (
                 <Skeleton className="h-[500px] w-full" />
               )}

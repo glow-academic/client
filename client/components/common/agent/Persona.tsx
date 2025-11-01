@@ -7,7 +7,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -15,7 +15,10 @@ import { useProfile } from "@/contexts/profile-context";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
-import { PromptPicker } from "@/components/common/forms/PromptPicker";
+import {
+  PromptInfo,
+  PromptPicker,
+} from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { Button } from "@/components/ui/button";
 import {
@@ -116,6 +119,8 @@ export default function Persona({
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | null
   >(null); // null = "All Departments"
+  const [isCreatingNewPrompt, setIsCreatingNewPrompt] = useState(false);
+  const prevDepartmentIdRef = React.useRef<string | null>(null);
 
   // V2 API hooks
   const { data: personaDetail, isLoading: isLoadingPersonaDetail } =
@@ -138,12 +143,55 @@ export default function Persona({
   const { mutate: updatePersona } = useUpdatePersonaV2();
 
   // Readonly logic using v2 permission flags
-  const isReadonly = useMemo(() => {
+  const isReadonly = !useMemo(() => {
     if (!isEditMode || !personaData) return false;
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
 
   const isLoading = isLoadingData;
+
+  // Filter prompt_mapping based on selected department
+  // When a department is selected, only show department-specific prompts (not default prompts)
+  const filteredPromptMapping = useMemo(() => {
+    if (!isEditMode || !personaData?.prompt_mapping) {
+      return personaData?.prompt_mapping || {};
+    }
+
+    // If no department selected, show all prompts
+    if (!selectedDepartmentId) {
+      return personaData.prompt_mapping;
+    }
+
+    // When department is selected, ONLY show department-specific prompts for that department
+    // Do NOT include default prompts (null department_ids) in version history
+    const filtered: Record<string, PromptInfo> = {};
+    for (const [promptId, promptInfo] of Object.entries(
+      personaData.prompt_mapping
+    )) {
+      // Only include if it's a department-specific prompt for the selected department
+      if (
+        promptInfo.department_ids &&
+        promptInfo.department_ids.includes(selectedDepartmentId)
+      ) {
+        filtered[promptId] = promptInfo;
+      }
+    }
+    return filtered;
+  }, [selectedDepartmentId, personaData?.prompt_mapping, isEditMode]);
+
+  // Detect if using default prompt (no department-specific prompt exists)
+  const isUsingDefaultPrompt = useMemo(() => {
+    if (!isEditMode || !selectedDepartmentId || !personaData) return false;
+    return !personaData.department_prompt_links?.[selectedDepartmentId];
+  }, [selectedDepartmentId, personaData, isEditMode]);
+
+  // Get default prompt content
+  const defaultPromptContent = useMemo(() => {
+    if (!isEditMode || !personaData?.prompt_id || !personaData?.prompt_mapping)
+      return "";
+    const defaultPrompt = personaData.prompt_mapping[personaData.prompt_id];
+    return defaultPrompt?.system_prompt || "";
+  }, [personaData, isEditMode]);
 
   useEffect(() => {
     if (personaData && isEditMode) {
@@ -186,12 +234,26 @@ export default function Persona({
   useEffect(() => {
     if (!isEditMode || !personaData) return;
 
+    // Don't override state if user is actively creating a new prompt
+    if (isCreatingNewPrompt) return;
+
+    // Reset creating flag when department changes (but only if not already creating)
+    // This handles the case where department selection changes, not user-initiated creation
+    if (prevDepartmentIdRef.current !== selectedDepartmentId) {
+      setIsCreatingNewPrompt(false);
+      prevDepartmentIdRef.current = selectedDepartmentId;
+    }
+
     const getCurrentPromptId = () => {
       if (
         selectedDepartmentId &&
         personaData.department_prompt_links?.[selectedDepartmentId]
       ) {
         return personaData.department_prompt_links[selectedDepartmentId];
+      }
+      // If department selected but no department-specific prompt, return null to indicate using default
+      if (selectedDepartmentId) {
+        return null;
       }
       return personaData.prompt_id || null;
     };
@@ -200,20 +262,50 @@ export default function Persona({
     const promptInfo =
       currentPromptId && personaData.prompt_mapping?.[currentPromptId];
 
+    // Validate that current prompt is valid for selected department
+    if (
+      selectedDepartmentId &&
+      formData?.promptId &&
+      !filteredPromptMapping[formData.promptId]
+    ) {
+      // Current prompt is not valid for selected department - reset to default
+      setFormData((prev) => ({
+        ...prev,
+        promptId: null,
+        systemPrompt: "",
+      }));
+      return;
+    }
+
     if (promptInfo) {
+      // Department-specific prompt exists
       setFormData((prev) => ({
         ...prev,
         promptId: currentPromptId,
         systemPrompt: promptInfo.system_prompt,
       }));
-    } else if (currentPromptId === null) {
-      // New prompt, keep current systemPrompt
+    } else if (selectedDepartmentId && !currentPromptId) {
+      // Using default prompt for selected department - clear form data to show default prompt UI
+      setFormData((prev) => ({
+        ...prev,
+        promptId: null,
+        systemPrompt: "", // Clear to show default prompt UI
+      }));
+    } else if (currentPromptId === null && !selectedDepartmentId) {
+      // All Departments selected and no prompt selected
       setFormData((prev) => ({
         ...prev,
         promptId: null,
       }));
     }
-  }, [selectedDepartmentId, personaData, isEditMode]);
+  }, [
+    selectedDepartmentId,
+    personaData,
+    isEditMode,
+    filteredPromptMapping,
+    formData?.promptId,
+    isCreatingNewPrompt,
+  ]);
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
@@ -776,17 +868,15 @@ export default function Persona({
                   )}
                   {isEditMode &&
                     personaData &&
-                    personaData.prompt_mapping &&
-                    Object.keys(personaData.prompt_mapping).length > 0 && (
+                    filteredPromptMapping &&
+                    (Object.keys(filteredPromptMapping).length > 0 ||
+                      selectedDepartmentId) && (
                       <PromptPicker
-                        promptMapping={personaData.prompt_mapping}
+                        promptMapping={filteredPromptMapping}
                         selectedPromptId={formData?.promptId || null}
                         onSelect={(promptId) => {
-                          if (
-                            promptId &&
-                            personaData.prompt_mapping[promptId]
-                          ) {
-                            const prompt = personaData.prompt_mapping[promptId];
+                          if (promptId && filteredPromptMapping[promptId]) {
+                            const prompt = filteredPromptMapping[promptId];
                             setFormData((prev) => ({
                               ...prev,
                               promptId: promptId,
@@ -800,6 +890,9 @@ export default function Persona({
                           }
                         }}
                         onCreateNew={() => {
+                          setIsCreatingNewPrompt(true);
+                          // When creating new, always start with empty prompt
+                          // (Use "Branch from Default" button if you want to start with default content)
                           setFormData((prev) => ({
                             ...prev,
                             promptId: null,
@@ -813,30 +906,43 @@ export default function Persona({
                     )}
                   {formData?.systemPrompt !== undefined && !isLoading && (
                     <>
-                      {isEditMode && formData?.promptId && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => {
-                                // Duplicate current prompt - keep content but create new prompt
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  promptId: null,
-                                }));
-                              }}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Duplicate Prompt</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
+                      {isEditMode &&
+                        (formData?.promptId || isUsingDefaultPrompt) && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  setIsCreatingNewPrompt(true);
+                                  // Duplicate current prompt - keep content but create new prompt
+                                  // If using default prompt, duplicate default content
+                                  // If All Departments selected, duplicate current prompt content
+                                  const contentToDuplicate =
+                                    isUsingDefaultPrompt
+                                      ? defaultPromptContent
+                                      : formData?.systemPrompt || "";
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    promptId: null,
+                                    systemPrompt: contentToDuplicate,
+                                  }));
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {isUsingDefaultPrompt
+                                  ? "Branch from Default Prompt"
+                                  : "Duplicate Prompt"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -891,32 +997,110 @@ export default function Persona({
                 </div>
               </div>
               {formData?.systemPrompt !== undefined && !isLoading ? (
-                <div className="h-[500px]">
-                  <UnifiedPromptEditor
-                    value={formData?.systemPrompt || ""}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        systemPrompt: value,
-                        promptId: null, // Clear promptId when editing, indicating new prompt
-                      }))
-                    }
-                    placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
-                    disabled={isReadonly}
-                    className="h-full"
-                    debugContent={
-                      isEditMode &&
-                      personaData &&
-                      effectiveProfile?.role === "superadmin" ? (
-                        <PersonaDebugInfo
-                          debugInfo={personaData.debug_info}
-                          modelMapping={personaData.model_mapping}
-                        />
-                      ) : undefined
-                    }
-                    activeMode={editorMode}
-                  />
-                </div>
+                <>
+                  {isUsingDefaultPrompt &&
+                  formData.systemPrompt === "" &&
+                  !isCreatingNewPrompt ? (
+                    <div className="space-y-4">
+                      <div className="border rounded-lg p-6 bg-muted/50">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-blue-500" />
+                            <p className="text-sm font-medium">
+                              Using Default Prompt
+                            </p>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedDepartmentId &&
+                            personaData?.department_mapping?.[
+                              selectedDepartmentId
+                            ]
+                              ? `No department-specific prompt exists for ${personaData.department_mapping[selectedDepartmentId].name}. The default prompt is being used.`
+                              : "No department-specific prompt exists. The default prompt is being used."}
+                          </p>
+                          <div className="border-t pt-4 mt-4">
+                            <p className="text-xs font-medium mb-2 text-muted-foreground">
+                              Default Prompt Preview:
+                            </p>
+                            <div className="bg-background border rounded p-4 max-h-[200px] overflow-y-auto">
+                              <pre className="text-xs whitespace-pre-wrap font-mono">
+                                {defaultPromptContent || "No default prompt"}
+                              </pre>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              type="button"
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                setIsCreatingNewPrompt(true);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  promptId: null,
+                                  systemPrompt: "",
+                                }));
+                              }}
+                              disabled={isReadonly}
+                            >
+                              Create New Prompt
+                              {selectedDepartmentId &&
+                              personaData?.department_mapping?.[
+                                selectedDepartmentId
+                              ]
+                                ? ` for ${personaData.department_mapping[selectedDepartmentId].name}`
+                                : ""}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setIsCreatingNewPrompt(true);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  promptId: null,
+                                  systemPrompt: defaultPromptContent,
+                                }));
+                              }}
+                              disabled={isReadonly}
+                            >
+                              Branch from Default
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-[500px]">
+                      <UnifiedPromptEditor
+                        value={formData?.systemPrompt || ""}
+                        onChange={(value) => {
+                          setIsCreatingNewPrompt(true); // User is actively editing
+                          setFormData((prev) => ({
+                            ...prev,
+                            systemPrompt: value,
+                            promptId: null, // Clear promptId when editing, indicating new prompt
+                          }));
+                        }}
+                        placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
+                        disabled={isReadonly}
+                        className="h-full"
+                        debugContent={
+                          isEditMode &&
+                          personaData &&
+                          effectiveProfile?.role === "superadmin" ? (
+                            <PersonaDebugInfo
+                              debugInfo={personaData.debug_info}
+                              modelMapping={personaData.model_mapping}
+                            />
+                          ) : undefined
+                        }
+                        activeMode={editorMode}
+                      />
+                    </div>
+                  )}
+                </>
               ) : (
                 <Skeleton className="h-[500px] w-full" />
               )}
