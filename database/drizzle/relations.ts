@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { providers, models, profiles, profileRequestLimits, profileActivity, providerEndpoints, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, personas, agents, modelRuns, debugInfo, parameters, parameterItems, scenarios, scenarioProblemStatements, simulations, simulationTimeLimits, simulationAttempts, simulationChats, simulationChatGrades, simulationMessages, simulationChatFeedbacks, scenarioObjectives, simulationHints, documents, documentDepartments, departments, rubricDepartments, prompts, promptDepartments, personaDepartments, personaPrompts, modelRunModels, modelRunPersonas, modelRunAgents, modelRunProfiles, agentDepartments, agentPrompts, parameterItemDepartments, scenarioDepartments, scenarioPersonas, scenarioParameterItems, scenarioDocuments, documentParameterItems, scenarioTree, simulationDepartments, attemptProfiles, cohorts, cohortProfiles, cohortSimulations, cohortDepartments, profileDepartments, appFeedback, appFeedbackProfiles, simulationScenarios } from "./schema";
+import { providers, models, profiles, profileRequestLimits, profileActivity, providerEndpoints, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, personas, agents, modelRuns, debugInfo, parameters, parameterItems, scenarios, scenarioProblemStatements, simulations, simulationTimeLimits, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, scenarioObjectives, attemptChats, simulationHints, documents, documentDepartments, departments, rubricDepartments, prompts, promptDepartments, personaDepartments, personaPrompts, modelRunModels, modelRunPersonas, modelRunAgents, modelRunProfiles, agentDepartments, agentPrompts, parameterItemDepartments, scenarioDepartments, scenarioPersonas, scenarioParameterItems, scenarioDocuments, documentParameterItems, scenarioTree, simulationDepartments, attemptProfiles, cohorts, cohortProfiles, cohortSimulations, cohortDepartments, profileDepartments, appFeedback, appFeedbackProfiles, simulationScenarios } from "./schema";
 
 export const modelsRelations = relations(models, ({one, many}) => ({
 	provider: one(providers, {
@@ -192,7 +192,7 @@ export const simulationAttemptsRelations = relations(simulationAttempts, ({one, 
 		fields: [simulationAttempts.simulationId],
 		references: [simulations.id]
 	}),
-	simulationChats: many(simulationChats),
+	attemptChats: many(attemptChats),
 	attemptProfiles: many(attemptProfiles),
 }));
 
@@ -201,12 +201,17 @@ export const simulationChatsRelations = relations(simulationChats, ({one, many})
 		fields: [simulationChats.scenarioId],
 		references: [scenarios.id]
 	}),
-	simulationAttempt: one(simulationAttempts, {
-		fields: [simulationChats.attemptId],
-		references: [simulationAttempts.id]
-	}),
-	simulationChatGrades: many(simulationChatGrades),
 	simulationMessages: many(simulationMessages),
+	simulationChatGrades: many(simulationChatGrades),
+	attemptChats: many(attemptChats),
+}));
+
+export const simulationMessagesRelations = relations(simulationMessages, ({one, many}) => ({
+	simulationChat: one(simulationChats, {
+		fields: [simulationMessages.chatId],
+		references: [simulationChats.id]
+	}),
+	simulationHints: many(simulationHints),
 }));
 
 export const simulationChatGradesRelations = relations(simulationChatGrades, ({one, many}) => ({
@@ -219,14 +224,6 @@ export const simulationChatGradesRelations = relations(simulationChatGrades, ({o
 		references: [simulationChats.id]
 	}),
 	simulationChatFeedbacks: many(simulationChatFeedbacks),
-}));
-
-export const simulationMessagesRelations = relations(simulationMessages, ({one, many}) => ({
-	simulationChat: one(simulationChats, {
-		fields: [simulationMessages.chatId],
-		references: [simulationChats.id]
-	}),
-	simulationHints: many(simulationHints),
 }));
 
 export const simulationChatFeedbacksRelations = relations(simulationChatFeedbacks, ({one}) => ({
@@ -244,6 +241,17 @@ export const scenarioObjectivesRelations = relations(scenarioObjectives, ({one})
 	scenario: one(scenarios, {
 		fields: [scenarioObjectives.scenarioId],
 		references: [scenarios.id]
+	}),
+}));
+
+export const attemptChatsRelations = relations(attemptChats, ({one}) => ({
+	simulationAttempt: one(simulationAttempts, {
+		fields: [attemptChats.attemptId],
+		references: [simulationAttempts.id]
+	}),
+	simulationChat: one(simulationChats, {
+		fields: [attemptChats.chatId],
+		references: [simulationChats.id]
 	}),
 }));
 

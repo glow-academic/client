@@ -232,6 +232,13 @@
       "when": 1761934385949,
       "tag": "0032_short_invisible_woman",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1761960839271,
+      "tag": "0033_wandering_scalphunter",
+      "breakpoints": true
     }
   ]
 }
