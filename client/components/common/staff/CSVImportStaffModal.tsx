@@ -7,9 +7,9 @@ import {
   Download,
   FileUp,
   Map,
-  Upload,
 } from "lucide-react";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 import { CohortPicker } from "@/components/common/forms/CohortPicker";
@@ -317,8 +317,6 @@ export default function CSVImportStaffModal({
   >({});
   const [showErrorRows, setShowErrorRows] = useState(true);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   // Get available target fields based on scoping
   const availableTargetFields = React.useMemo(() => {
     return TARGET_FIELDS.filter((field) => {
@@ -452,7 +450,7 @@ export default function CSVImportStaffModal({
   const handleFileUpload = useCallback(
     (file: File) => {
       if (!file.name.endsWith(".csv")) {
-        toast.error("Please upload a CSV file.");
+        toast.error("Please upload a CSV file (.csv format).");
         return;
       }
 
@@ -496,6 +494,46 @@ export default function CSVImportStaffModal({
     },
     [parseCSV]
   );
+
+  // React-dropzone hook
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+    },
+    [handleFileUpload]
+  );
+
+  const {
+    getRootProps,
+    getInputProps,
+    isDragActive,
+    open: openFileDialog,
+  } = useDropzone({
+    onDrop,
+    accept: {
+      "text/csv": [".csv"],
+    },
+    noKeyboard: true,
+  });
+
+  // Build requirements text based on scoping
+  const csvRequirements = React.useMemo(() => {
+    const required: string[] = ["First Name", "Last Name", "Alias"];
+    const optional: string[] = ["Role"];
+
+    if (!departmentIds || departmentIds.length === 0) {
+      optional.push("Department");
+    }
+
+    if (!cohortIds || cohortIds.length === 0) {
+      optional.push("Cohort");
+    }
+
+    return { required, optional };
+  }, [departmentIds, cohortIds]);
 
   // Process CSV (mapping stage -> review stage)
   const handleProcessCSV = useCallback(async () => {
@@ -764,37 +802,56 @@ export default function CSVImportStaffModal({
 
           {/* Stage 1: Upload */}
           {stage === "upload" && (
-            <div className="space-y-4">
-              <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFileUpload(file);
-                  }}
-                  className="hidden"
-                />
-                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mb-4">
-                  Upload a CSV file with staff information. Required columns:
-                  First Name, Last Name, Alias/Email.
-                </p>
-                <div className="flex items-center justify-center gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={downloadTemplate}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download Template
-                  </Button>
-                  <Button onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose CSV File
-                  </Button>
+            <div className="space-y-6">
+              {/* Dropzone */}
+              <div
+                {...getRootProps()}
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer",
+                  isDragActive
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-primary/50"
+                )}
+              >
+                <input {...getInputProps()} />
+                <div className="space-y-3">
+                  <p className="text-muted-foreground">
+                    Upload your .csv file or{" "}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openFileDialog();
+                      }}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      browse
+                    </button>
+                  </p>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>
+                      <span className="font-medium">Required:</span>{" "}
+                      {csvRequirements.required.join(", ")}
+                    </p>
+                    {csvRequirements.optional.length > 0 && (
+                      <p>
+                        <span className="font-medium">Optional:</span>{" "}
+                        {csvRequirements.optional.join(", ")}
+                      </p>
+                    )}
+                  </div>
                 </div>
+              </div>
+
+              {/* Download Template Button */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={downloadTemplate}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download CSV Template
+                </Button>
               </div>
             </div>
           )}
@@ -916,8 +973,12 @@ export default function CSVImportStaffModal({
                       <TableHead>Last Name</TableHead>
                       <TableHead>Alias</TableHead>
                       <TableHead>Role</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Cohort</TableHead>
+                      {(!departmentIds || departmentIds.length === 0) && (
+                        <TableHead>Department</TableHead>
+                      )}
+                      {(!cohortIds || cohortIds.length === 0) && (
+                        <TableHead>Cohort</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -945,12 +1006,16 @@ export default function CSVImportStaffModal({
                         const hasRoleError = editableRow.errors.some(
                           (e) => e.field === "role"
                         );
-                        const hasDepartmentError = editableRow.errors.some(
-                          (e) => e.field === "department_id"
-                        );
-                        const hasCohortError = editableRow.errors.some(
-                          (e) => e.field === "cohort_id"
-                        );
+                        const hasDepartmentError =
+                          (!departmentIds || departmentIds.length === 0) &&
+                          editableRow.errors.some(
+                            (e) => e.field === "department_id"
+                          );
+                        const hasCohortError =
+                          (!cohortIds || cohortIds.length === 0) &&
+                          editableRow.errors.some(
+                            (e) => e.field === "cohort_id"
+                          );
 
                         return (
                           <TableRow key={index}>
@@ -1025,12 +1090,12 @@ export default function CSVImportStaffModal({
                                 buttonClassName="h-8"
                               />
                             </TableCell>
-                            <TableCell
-                              className={
-                                hasDepartmentError ? "bg-destructive/10" : ""
-                              }
-                            >
-                              {!departmentIds || departmentIds.length === 0 ? (
+                            {(!departmentIds || departmentIds.length === 0) && (
+                              <TableCell
+                                className={
+                                  hasDepartmentError ? "bg-destructive/10" : ""
+                                }
+                              >
                                 <DepartmentPicker
                                   mapping={departmentMapping}
                                   validIds={validDepartmentIds}
@@ -1050,19 +1115,14 @@ export default function CSVImportStaffModal({
                                   multiSelect={false}
                                   compact={true}
                                 />
-                              ) : (
-                                <div className="text-sm text-muted-foreground">
-                                  {departmentMapping[departmentIds[0]!]?.name ||
-                                    departmentIds[0]}
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell
-                              className={
-                                hasCohortError ? "bg-destructive/10" : ""
-                              }
-                            >
-                              {!cohortIds || cohortIds.length === 0 ? (
+                              </TableCell>
+                            )}
+                            {(!cohortIds || cohortIds.length === 0) && (
+                              <TableCell
+                                className={
+                                  hasCohortError ? "bg-destructive/10" : ""
+                                }
+                              >
                                 <CohortPicker
                                   mapping={cohortMapping}
                                   validIds={validCohortIds}
@@ -1081,13 +1141,8 @@ export default function CSVImportStaffModal({
                                   placeholder="Select cohort"
                                   multiSelect={false}
                                 />
-                              ) : (
-                                <div className="text-sm text-muted-foreground">
-                                  {cohortMapping[cohortIds[0]!]?.name ||
-                                    cohortIds[0]}
-                                </div>
-                              )}
-                            </TableCell>
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })}

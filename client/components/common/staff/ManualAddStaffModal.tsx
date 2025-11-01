@@ -346,7 +346,7 @@ export default function ManualAddStaffModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Manual Add Staff</DialogTitle>
+          <DialogTitle>Manually Add Staff</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
