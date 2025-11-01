@@ -78,6 +78,7 @@ class PromptInfo(BaseModel):
     created_at: str
     updated_at: str
     department_ids: list[str] | None
+    can_delete: bool
 
 
 class AgentDetailResponse(BaseModel):
@@ -165,6 +166,21 @@ class UpdateAgentRequest(BaseModel):
 
 class UpdateAgentResponse(BaseModel):
     """Response for updating an agent."""
+
+    success: bool
+    message: str
+
+
+class DeleteAgentPromptRequest(BaseModel):
+    """Request to delete an agent prompt."""
+
+    agentId: str
+    promptId: str
+    departmentId: str | None = None  # If provided, delete department-specific prompt
+
+
+class DeleteAgentPromptResponse(BaseModel):
+    """Response from delete prompt operation."""
 
     success: bool
     message: str

@@ -94,6 +94,27 @@ export const DeletePersonaResponseSchema = z.object({
 
 export type DeletePersonaResponse = z.infer<typeof DeletePersonaResponseSchema>;
 
+// Delete prompt request
+export const DeletePersonaPromptRequestSchema = z.object({
+  personaId: z.string(),
+  promptId: z.string(),
+  departmentId: z.string().nullable().optional(),
+});
+
+export type DeletePersonaPromptRequest = z.infer<
+  typeof DeletePersonaPromptRequestSchema
+>;
+
+// Delete prompt response
+export const DeletePersonaPromptResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type DeletePersonaPromptResponse = z.infer<
+  typeof DeletePersonaPromptResponseSchema
+>;
+
 // ============================================================================
 // DETAIL SCHEMAS
 // ============================================================================
@@ -138,6 +159,7 @@ export const PersonaDetailResponseSchema = z.object({
       created_at: z.string(),
       updated_at: z.string(),
       department_ids: z.array(z.string()).nullable(),
+      can_delete: z.boolean(),
     })
   ),
 

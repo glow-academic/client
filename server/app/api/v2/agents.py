@@ -3,7 +3,7 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.db import get_db
 from app.schemas.agents import (
@@ -15,6 +15,8 @@ from app.schemas.agents import (
     CreateAgentRequest,
     CreateAgentResponse,
     DeleteAgentRequest,
+    DeleteAgentPromptRequest,
+    DeleteAgentPromptResponse,
     DeleteAgentResponse,
     DuplicateAgentRequest,
     DuplicateAgentResponse,
@@ -94,3 +96,18 @@ async def delete_agent(
     """Delete an agent (with usage check)."""
     service = get_agent_service(conn)
     return await service.delete_agent(request)
+
+
+@router.post("/delete-prompt", response_model=DeleteAgentPromptResponse)
+async def delete_agent_prompt(
+    request: DeleteAgentPromptRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> DeleteAgentPromptResponse:
+    """Delete an agent prompt."""
+    try:
+        service = get_agent_service(conn)
+        return await service.delete_agent_prompt(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

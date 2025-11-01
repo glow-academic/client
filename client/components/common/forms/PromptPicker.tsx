@@ -32,6 +32,7 @@ export interface PromptInfo {
   created_at: string;
   updated_at: string;
   department_ids: string[] | null;
+  can_delete: boolean;
 }
 
 export interface PromptPickerProps extends PopoverProps {

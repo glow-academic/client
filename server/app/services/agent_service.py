@@ -13,9 +13,10 @@ from app.schemas.agents import (AgentDetailDefaultRequest, AgentDetailRequest,
                                 AgentsListRequest, AgentsListResponse,
                                 CreateAgentRequest, CreateAgentResponse,
                                 DebugInfoItem, DeleteAgentRequest,
-                                DeleteAgentResponse, DuplicateAgentRequest,
-                                DuplicateAgentResponse, UpdateAgentRequest,
-                                UpdateAgentResponse)
+                                DeleteAgentPromptRequest,
+                                DeleteAgentPromptResponse, DeleteAgentResponse,
+                                DuplicateAgentRequest, DuplicateAgentResponse,
+                                UpdateAgentRequest, UpdateAgentResponse)
 from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
                               ModelMapping, ModelMappingItem,
                               ReasoningMappingItem)
@@ -228,6 +229,7 @@ class AgentService(BaseService):
                         created_at=prompt_data.get("created_at", ""),
                         updated_at=prompt_data.get("updated_at", ""),
                         department_ids=dept_ids,
+                        can_delete=prompt_data.get("can_delete", False),
                     )
 
         # Parse prompt_id
@@ -563,6 +565,29 @@ class AgentService(BaseService):
         )
 
         return UpdateAgentResponse(success=True, message="Agent updated successfully")
+
+    async def delete_agent_prompt(
+        self, request: "DeleteAgentPromptRequest"
+    ) -> "DeleteAgentPromptResponse":
+        """Delete an agent prompt."""
+        # Execute deletion query
+        query, params = self.queries.delete_agent_prompt(
+            request.agentId, request.promptId, request.departmentId
+        )
+        await self.conn.execute(query, *params)
+
+        # Invalidate caches
+        await self._invalidate_cache(
+            [
+                keys.tag_agent_by_id(request.agentId),
+                keys.tag_agent_all(),
+                keys.tag_department_all(),
+            ]
+        )
+
+        return DeleteAgentPromptResponse(
+            success=True, message="Prompt deleted successfully"
+        )
 
     async def duplicate_agent(
         self, request: DuplicateAgentRequest

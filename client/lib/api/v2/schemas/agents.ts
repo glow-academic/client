@@ -97,6 +97,7 @@ export const AgentDetailResponseSchema = z.object({
       created_at: z.string(),
       updated_at: z.string(),
       department_ids: z.array(z.string()).nullable(),
+      can_delete: z.boolean(),
     })
   ),
 
@@ -206,3 +207,24 @@ export const DeleteAgentResponseSchema = z.object({
 });
 
 export type DeleteAgentResponse = z.infer<typeof DeleteAgentResponseSchema>;
+
+// Delete prompt request
+export const DeleteAgentPromptRequestSchema = z.object({
+  agentId: z.string(),
+  promptId: z.string(),
+  departmentId: z.string().nullable().optional(),
+});
+
+export type DeleteAgentPromptRequest = z.infer<
+  typeof DeleteAgentPromptRequestSchema
+>;
+
+// Delete prompt response
+export const DeleteAgentPromptResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type DeleteAgentPromptResponse = z.infer<
+  typeof DeleteAgentPromptResponseSchema
+>;

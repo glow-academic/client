@@ -10,6 +10,8 @@ from app.schemas.personas import (
     CreatePersonaRequest,
     CreatePersonaResponse,
     DeletePersonaRequest,
+    DeletePersonaPromptRequest,
+    DeletePersonaPromptResponse,
     DeletePersonaResponse,
     DuplicatePersonaRequest,
     DuplicatePersonaResponse,
@@ -63,6 +65,21 @@ async def delete_persona(
     try:
         service = get_persona_service(conn)
         return await service.delete_persona(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/delete-prompt", response_model=DeletePersonaPromptResponse)
+async def delete_persona_prompt(
+    request: DeletePersonaPromptRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> DeletePersonaPromptResponse:
+    """Delete a persona prompt."""
+    try:
+        service = get_persona_service(conn)
+        return await service.delete_persona_prompt(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

@@ -15,6 +15,8 @@ import {
   AgentsListResponseSchema,
   CreateAgentRequest,
   CreateAgentResponseSchema,
+  DeleteAgentPromptRequest,
+  DeleteAgentPromptResponseSchema,
   DeleteAgentRequest,
   DeleteAgentResponseSchema,
   DuplicateAgentRequest,
@@ -185,6 +187,31 @@ export function useDeleteAgent() {
         predicate: (query) => {
           const key = query.queryKey[0];
           return typeof key === "string" && key.startsWith("agents:v2:list");
+        },
+      });
+    },
+  });
+}
+
+export function useDeleteAgentPrompt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: DeleteAgentPromptRequest) => {
+      const res = await api<unknown>("/api/v2/agents/delete-prompt", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return DeleteAgentPromptResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            (typeof key === "string" && key.startsWith("agents:v2:list")) ||
+            (typeof key === "string" && key.startsWith("agents:v2:detail"))
+          );
         },
       });
     },

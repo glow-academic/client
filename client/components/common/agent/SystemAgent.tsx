@@ -18,6 +18,16 @@ import {
 } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { RolePicker } from "@/components/common/forms/RolePicker";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,10 +47,11 @@ import {
   useAgentDetail,
   useAgentDetailDefault,
   useCreateAgent as useCreateAgentV2,
+  useDeleteAgentPrompt,
   useUpdateAgent as useUpdateAgentV2,
 } from "@/lib/api/v2/hooks/agents";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
-import { Bug, Copy, Eye } from "lucide-react";
+import { Bug, Copy, Eye, Trash2 } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
 
@@ -85,6 +96,11 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   >(null); // null = "All Departments"
   const [isCreatingNewPrompt, setIsCreatingNewPrompt] = useState(false);
   const prevDepartmentIdRef = React.useRef<string | null>(null);
+  const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
+  const [promptToDelete, setPromptToDelete] = useState<{
+    promptId: string;
+    isDepartmentSpecific: boolean;
+  } | null>(null);
 
   const isEditMode = !!agentId;
 
@@ -100,6 +116,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
   const { mutate: createAgent } = useCreateAgentV2();
   const { mutate: updateAgent } = useUpdateAgentV2();
+  const { mutate: deleteAgentPrompt } = useDeleteAgentPrompt();
 
   // Use edit detail when editing, default detail when creating
   const agentData = isEditMode ? agentDetail : agentDetailDefault;
@@ -764,8 +781,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                             <TooltipContent>
                               <p>
                                 {isUsingDefaultPrompt
-                                  ? "Branch from Default Prompt"
-                                  : "Duplicate Prompt"}
+                                  ? "Branch from Default"
+                                  : "Duplicate"}
                               </p>
                             </TooltipContent>
                           </Tooltip>
@@ -816,6 +833,39 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                           </TooltipContent>
                         </Tooltip>
                       )}
+                      {isEditMode &&
+                        formData?.promptId &&
+                        filteredPromptMapping[formData.promptId]
+                          ?.can_delete && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  const promptId = formData.promptId!;
+                                  const promptInfo =
+                                    filteredPromptMapping[promptId];
+                                  if (!promptInfo) return;
+                                  setPromptToDelete({
+                                    promptId,
+                                    isDepartmentSpecific:
+                                      !!promptInfo.department_ids &&
+                                      promptInfo.department_ids.length > 0,
+                                  });
+                                  setShowDeletePromptDialog(true);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                     </>
                   )}
                 </div>
@@ -962,6 +1012,73 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             </div>
           </form>
         </div>
+
+        {/* Delete Prompt Confirmation Dialog */}
+        <AlertDialog
+          open={showDeletePromptDialog}
+          onOpenChange={setShowDeletePromptDialog}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Prompt</AlertDialogTitle>
+              <AlertDialogDescription>
+                {promptToDelete?.isDepartmentSpecific ? (
+                  <>
+                    Are you sure you want to delete this department-specific
+                    prompt? This will delete the prompt and fall back to the
+                    default prompt for this department.
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to delete this prompt? This will
+                    delete the prompt and set the latest prompt as active.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setShowDeletePromptDialog(false);
+                  setPromptToDelete(null);
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (!promptToDelete || !agentId) return;
+
+                  deleteAgentPrompt(
+                    {
+                      agentId,
+                      promptId: promptToDelete.promptId,
+                      departmentId: promptToDelete.isDepartmentSpecific
+                        ? selectedDepartmentId || null
+                        : null,
+                    },
+                    {
+                      onSuccess: () => {
+                        toast.success("Prompt deleted successfully");
+                        setShowDeletePromptDialog(false);
+                        setPromptToDelete(null);
+                        // Refresh agent detail - the query will automatically refetch
+                      },
+                      onError: (error) => {
+                        toast.error(
+                          `Failed to delete prompt: ${error.message}`
+                        );
+                      },
+                    }
+                  );
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );

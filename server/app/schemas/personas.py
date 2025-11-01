@@ -90,6 +90,7 @@ class PromptInfo(BaseModel):
     created_at: str
     updated_at: str
     department_ids: list[str] | None
+    can_delete: bool
 
 
 class PersonaDetailResponse(BaseModel):
@@ -192,6 +193,21 @@ class UpdatePersonaRequest(BaseModel):
 
 class UpdatePersonaResponse(BaseModel):
     """Response from update operation."""
+
+    success: bool
+    message: str
+
+
+class DeletePersonaPromptRequest(BaseModel):
+    """Request to delete a persona prompt."""
+
+    personaId: str
+    promptId: str
+    departmentId: str | None = None  # If provided, delete department-specific prompt
+
+
+class DeletePersonaPromptResponse(BaseModel):
+    """Response from delete prompt operation."""
 
     success: bool
     message: str

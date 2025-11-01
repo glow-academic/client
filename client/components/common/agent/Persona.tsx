@@ -20,6 +20,16 @@ import {
   PromptPicker,
 } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -48,6 +58,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   useCreatePersona as useCreatePersonaV2,
+  useDeletePersonaPrompt,
   usePersonaDetail,
   usePersonaDetailDefault,
   useUpdatePersona as useUpdatePersonaV2,
@@ -58,7 +69,7 @@ import {
   getPersonaIconComponent,
   PERSONA_ICON_MAP,
 } from "@/utils/persona-icons";
-import { Bug, Check, ChevronsUpDown, Copy, Eye } from "lucide-react";
+import { Bug, Check, ChevronsUpDown, Copy, Eye, Trash2 } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
 
@@ -121,6 +132,11 @@ export default function Persona({
   >(null); // null = "All Departments"
   const [isCreatingNewPrompt, setIsCreatingNewPrompt] = useState(false);
   const prevDepartmentIdRef = React.useRef<string | null>(null);
+  const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
+  const [promptToDelete, setPromptToDelete] = useState<{
+    promptId: string;
+    isDepartmentSpecific: boolean;
+  } | null>(null);
 
   // V2 API hooks
   const { data: personaDetail, isLoading: isLoadingPersonaDetail } =
@@ -141,6 +157,7 @@ export default function Persona({
 
   const { mutate: createPersona } = useCreatePersonaV2();
   const { mutate: updatePersona } = useUpdatePersonaV2();
+  const { mutate: deletePersonaPrompt } = useDeletePersonaPrompt();
 
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
@@ -951,8 +968,8 @@ export default function Persona({
                             <TooltipContent>
                               <p>
                                 {isUsingDefaultPrompt
-                                  ? "Branch from Default Prompt"
-                                  : "Duplicate Prompt"}
+                                  ? "Branch from Default"
+                                  : "Duplicate"}
                               </p>
                             </TooltipContent>
                           </Tooltip>
@@ -1003,6 +1020,39 @@ export default function Persona({
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>Debug</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      {isEditMode &&
+                        formData?.promptId &&
+                        filteredPromptMapping[formData.promptId]
+                          ?.can_delete && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  const promptId = formData.promptId!;
+                                  const promptInfo =
+                                    filteredPromptMapping[promptId];
+                                  if (!promptInfo) return;
+                                  setPromptToDelete({
+                                    promptId,
+                                    isDepartmentSpecific:
+                                      !!promptInfo.department_ids &&
+                                      promptInfo.department_ids.length > 0,
+                                  });
+                                  setShowDeletePromptDialog(true);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete</p>
                             </TooltipContent>
                           </Tooltip>
                         )}
@@ -1146,6 +1196,73 @@ export default function Persona({
             </div>
           </form>
         </div>
+
+        {/* Delete Prompt Confirmation Dialog */}
+        <AlertDialog
+          open={showDeletePromptDialog}
+          onOpenChange={setShowDeletePromptDialog}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Prompt</AlertDialogTitle>
+              <AlertDialogDescription>
+                {promptToDelete?.isDepartmentSpecific ? (
+                  <>
+                    Are you sure you want to delete this department-specific
+                    prompt? This will delete the prompt and fall back to the
+                    default prompt for this department.
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to delete this prompt? This will
+                    delete the prompt and set the latest prompt as active.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setShowDeletePromptDialog(false);
+                  setPromptToDelete(null);
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (!promptToDelete || !personaId) return;
+
+                  deletePersonaPrompt(
+                    {
+                      personaId,
+                      promptId: promptToDelete.promptId,
+                      departmentId: promptToDelete.isDepartmentSpecific
+                        ? selectedDepartmentId || null
+                        : null,
+                    },
+                    {
+                      onSuccess: () => {
+                        toast.success("Prompt deleted successfully");
+                        setShowDeletePromptDialog(false);
+                        setPromptToDelete(null);
+                        // Refresh persona detail - the query will automatically refetch
+                      },
+                      onError: (error) => {
+                        toast.error(
+                          `Failed to delete prompt: ${error.message}`
+                        );
+                      },
+                    }
+                  );
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );

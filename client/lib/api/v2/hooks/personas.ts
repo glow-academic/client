@@ -13,6 +13,8 @@ import {
 import {
   CreatePersonaRequest,
   CreatePersonaResponseSchema,
+  DeletePersonaPromptRequest,
+  DeletePersonaPromptResponseSchema,
   DeletePersonaRequest,
   DeletePersonaResponseSchema,
   DuplicatePersonaRequest,
@@ -183,6 +185,33 @@ export function useUpdatePersona() {
         body: JSON.stringify(request),
       });
       return UpdatePersonaResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      // Invalidate all personas queries (list, detail, and default detail)
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            typeof key === "string" &&
+            (key.startsWith("personas:v2:list") ||
+              key.startsWith("personas:v2:detail"))
+          );
+        },
+      });
+    },
+  });
+}
+
+export function useDeletePersonaPrompt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: DeletePersonaPromptRequest) => {
+      const res = await api<unknown>("/api/v2/personas/delete-prompt", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return DeletePersonaPromptResponseSchema.parse(res);
     },
     onSuccess: () => {
       // Invalidate all personas queries (list, detail, and default detail)

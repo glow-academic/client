@@ -10,6 +10,8 @@ from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
                               ReasoningMappingItem)
 from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   DebugInfoItem, DeletePersonaRequest,
+                                  DeletePersonaPromptRequest,
+                                  DeletePersonaPromptResponse,
                                   DeletePersonaResponse,
                                   DuplicatePersonaRequest,
                                   DuplicatePersonaResponse,
@@ -407,6 +409,7 @@ class PersonaService(BaseService):
                         created_at=prompt_data.get("created_at", ""),
                         updated_at=prompt_data.get("updated_at", ""),
                         department_ids=dept_ids,
+                        can_delete=prompt_data.get("can_delete", False),
                     )
 
         # Parse prompt_id
@@ -833,6 +836,29 @@ class PersonaService(BaseService):
 
         return UpdatePersonaResponse(
             success=True, message=f"Persona '{request.name}' updated successfully"
+        )
+
+    async def delete_persona_prompt(
+        self, request: "DeletePersonaPromptRequest"
+    ) -> "DeletePersonaPromptResponse":
+        """Delete a persona prompt."""
+        # Execute deletion query
+        query, params = self.queries.delete_persona_prompt(
+            request.personaId, request.promptId, request.departmentId
+        )
+        await self.conn.execute(query, *params)
+
+        # Invalidate caches
+        await self._invalidate_cache(
+            [
+                keys.tag_persona_by_id(request.personaId),
+                keys.tag_persona_all(),
+                keys.tag_analytics_all(),
+            ]
+        )
+
+        return DeletePersonaPromptResponse(
+            success=True, message="Prompt deleted successfully"
         )
 
     @with_cache(lambda self, query, limit: keys.persona_search(query, limit))

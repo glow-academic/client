@@ -266,6 +266,13 @@ class AgentQueries:
             WHERE adp.agent_id = $1::uuid AND adp.active = true
             GROUP BY adp.prompt_id
         ),
+        default_prompt_count AS (
+            -- Count default prompts (from agent_prompts, not department-specific)
+            -- Always return at least one row with count (0 if no prompts)
+            SELECT COALESCE(COUNT(DISTINCT ap.prompt_id), 0)::integer as count
+            FROM agent_prompts ap
+            WHERE ap.agent_id = $1::uuid
+        ),
         prompt_mapping_data AS (
             SELECT 
                 COALESCE(
@@ -275,13 +282,22 @@ class AgentQueries:
                             'system_prompt', ap.system_prompt,
                             'created_at', ap.prompt_created_at::text,
                             'updated_at', ap.prompt_updated_at::text,
-                            'department_ids', COALESCE(pdd.department_ids, NULL)
+                            'department_ids', COALESCE(pdd.department_ids, NULL),
+                            'can_delete', CASE
+                                -- Department-specific prompts can always be deleted (fall back to default)
+                                WHEN pdd.department_ids IS NOT NULL THEN true::boolean
+                                -- Default prompts can be deleted if there's more than one
+                                WHEN pdd.department_ids IS NULL AND COALESCE(dpc.count, 0) > 1 THEN true::boolean
+                                -- Otherwise cannot delete (only one default prompt)
+                                ELSE false::boolean
+                            END
                         )
                     ),
                     '{}'::jsonb
                 ) as prompt_mapping
             FROM agent_all_prompts ap
             LEFT JOIN prompt_departments_data pdd ON pdd.prompt_id = ap.prompt_id
+            CROSS JOIN default_prompt_count dpc
         ),
         agent_departments_data AS (
             SELECT 
@@ -670,6 +686,116 @@ class AgentQueries:
         """
         params: list[Any] = [agent_id, prompt_id]
         return query, params
+
+    def delete_agent_prompt(
+        self, agent_id: str, prompt_id: str, department_id: str | None = None
+    ) -> tuple[str, list[Any]]:
+        """
+        Delete an agent prompt in a single query.
+        
+        If department_id is provided, deletes department-specific prompt link.
+        Otherwise, deletes default prompt link.
+        
+        If the prompt being deleted is active:
+        - For default prompts: activates the latest default prompt
+        - For department-specific prompts: deactivates link (falls back to default)
+        
+        Also deletes the prompt record if no other links exist.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH prompt_info AS (
+            -- Check if this prompt is active (default or department-specific)
+            SELECT 
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM agent_prompts 
+                    WHERE agent_id = $1::uuid AND prompt_id = $2::uuid AND active = true
+                ) THEN 'default' ELSE 'none' END as default_status,
+                CASE WHEN $3::uuid IS NOT NULL AND EXISTS (
+                    SELECT 1 FROM agent_department_prompts 
+                    WHERE agent_id = $1::uuid AND prompt_id = $2::uuid 
+                    AND department_id = $3::uuid AND active = true
+                ) THEN true ELSE false END as is_dept_active
+        ),
+        latest_default_prompt AS (
+            -- Get the latest default prompt (by updated_at) for fallback
+            SELECT prompt_id::text
+            FROM agent_prompts ap
+            JOIN prompts pr ON pr.id = ap.prompt_id
+            WHERE ap.agent_id = $1::uuid 
+            AND ap.prompt_id != $2::uuid
+            ORDER BY pr.updated_at DESC
+            LIMIT 1
+        ),
+        deactivate_and_fallback AS (
+            -- Handle active prompt deactivation and fallback
+            UPDATE agent_prompts
+            SET active = false, updated_at = NOW()
+            WHERE agent_id = $1::uuid 
+            AND prompt_id = $2::uuid 
+            AND active = true
+            AND (SELECT default_status FROM prompt_info) = 'default'
+            RETURNING 1
+        ),
+        activate_latest_default AS (
+            -- Activate latest default prompt if we deleted an active default prompt
+            UPDATE agent_prompts
+            SET active = true, updated_at = NOW()
+            WHERE agent_id = $1::uuid
+            AND prompt_id = (SELECT prompt_id::uuid FROM latest_default_prompt)
+            AND EXISTS (SELECT 1 FROM deactivate_and_fallback)
+        ),
+        deactivate_dept_prompt AS (
+            -- Deactivate department-specific prompt link
+            UPDATE agent_department_prompts
+            SET active = false, updated_at = NOW()
+            WHERE agent_id = $1::uuid 
+            AND prompt_id = $2::uuid 
+            AND ($3::uuid IS NULL OR department_id = $3::uuid)
+            AND active = true
+            RETURNING prompt_id
+        ),
+        delete_agent_prompt_links AS (
+            -- Delete default prompt link (if not already deactivated)
+            DELETE FROM agent_prompts
+            WHERE agent_id = $1::uuid 
+            AND prompt_id = $2::uuid
+            AND NOT EXISTS (SELECT 1 FROM deactivate_and_fallback)
+        ),
+        delete_dept_prompt_links AS (
+            -- Delete department-specific prompt links
+            -- Delete if already inactive OR if we just deactivated them
+            DELETE FROM agent_department_prompts
+            WHERE agent_id = $1::uuid 
+            AND prompt_id = $2::uuid
+            AND ($3::uuid IS NULL OR department_id = $3::uuid)
+            AND (
+                active = false 
+                OR EXISTS (SELECT 1 FROM deactivate_dept_prompt)
+            )
+        ),
+        check_other_links AS (
+            -- Check if prompt is linked elsewhere (other agents or persona tables)
+            SELECT 
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM agent_prompts WHERE prompt_id = $2::uuid
+                    UNION ALL
+                    SELECT 1 FROM agent_department_prompts WHERE prompt_id = $2::uuid AND active = true
+                    UNION ALL
+                    SELECT 1 FROM persona_prompts WHERE prompt_id = $2::uuid
+                    UNION ALL
+                    SELECT 1 FROM persona_department_prompts WHERE prompt_id = $2::uuid AND active = true
+                ) THEN false ELSE true END as can_delete_prompt
+        )
+        -- Delete prompt record if no other links exist
+        DELETE FROM prompts
+        WHERE id = $2::uuid
+        AND (SELECT can_delete_prompt FROM check_other_links) = true
+        """
+        params: list[Any] = [agent_id, prompt_id, department_id]
+        return (query, params)
 
     def create_prompt_departments(
         self, prompt_id: str, department_ids: list[str]
