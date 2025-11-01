@@ -195,7 +195,7 @@ export default function ManualAddStaffModal({
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [formData, effectiveProfile?.role]);
+  }, [formData]);
 
   // Submit handler
   const handleSubmit = useCallback(async () => {
@@ -380,18 +380,6 @@ export default function ManualAddStaffModal({
             </div>
           )}
 
-          {/* Show informational message when department is pre-filled */}
-          {departmentIds && departmentIds.length > 0 && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-800">
-                Department will be automatically assigned:{" "}
-                <span className="font-medium">
-                  {departmentMapping[departmentIds[0]]?.name || departmentIds[0]}
-                </span>
-              </p>
-            </div>
-          )}
-
           {/* Cohort Selection - show when not scoped, or when departmentIds provided but cohortIds not (optional) */}
           {(!cohortIds || cohortIds.length === 0) && (
             <div className="space-y-2">
@@ -411,18 +399,6 @@ export default function ManualAddStaffModal({
               />
               <p className="text-sm text-muted-foreground">
                 Optionally assign this staff member to a cohort.
-              </p>
-            </div>
-          )}
-
-          {/* Show informational message when cohort is pre-filled */}
-          {cohortIds && cohortIds.length > 0 && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-800">
-                Cohort will be automatically assigned:{" "}
-                <span className="font-medium">
-                  {cohortMapping[cohortIds[0]]?.name || cohortIds[0]}
-                </span>
               </p>
             </div>
           )}

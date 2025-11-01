@@ -1,8 +1,9 @@
 "use client";
 
 import {
-  AlertCircle,
+  Check,
   CheckCircle2,
+  ChevronsUpDown,
   Download,
   FileUp,
   Map,
@@ -11,9 +12,17 @@ import {
 import React, { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
+import { CohortPicker } from "@/components/common/forms/CohortPicker";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +32,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -46,6 +61,7 @@ import {
   CSVColumnMapping,
   ProcessedCSVRow,
 } from "@/lib/api/v2/schemas/profile";
+import { cn } from "@/lib/utils";
 
 export interface CSVImportStaffModalProps {
   open: boolean;
@@ -63,12 +79,42 @@ export interface CSVImportStaffModalProps {
 type Stage = "upload" | "mapping" | "review";
 
 const TARGET_FIELDS = [
-  { value: "firstName", label: "First Name" },
-  { value: "lastName", label: "Last Name" },
-  { value: "alias", label: "Alias/Email" },
-  { value: "role", label: "Role" },
-  { value: "department", label: "Department" },
-  { value: "cohort", label: "Cohort" },
+  {
+    value: "firstName",
+    label: "First Name",
+    description: "The staff member's first name",
+    required: true,
+  },
+  {
+    value: "lastName",
+    label: "Last Name",
+    description: "The staff member's last name",
+    required: true,
+  },
+  {
+    value: "alias",
+    label: "Alias/Email",
+    description: "Username or email address (alias only, without @domain)",
+    required: true,
+  },
+  {
+    value: "role",
+    label: "Role",
+    description: "Staff role (instructional, ta, guest, admin, etc.)",
+    required: false,
+  },
+  {
+    value: "department",
+    label: "Department",
+    description: "Department assignment (optional if scoped)",
+    required: false,
+  },
+  {
+    value: "cohort",
+    label: "Cohort",
+    description: "Cohort assignment (optional if scoped)",
+    required: false,
+  },
 ] as const;
 
 // Simple CSV generation function
@@ -147,6 +193,94 @@ const extractAliasFromEmail = (email: string): string => {
   return parts[0]?.trim() || email;
 };
 
+// ColumnPicker Component for destination column mapping
+interface ColumnPickerProps {
+  value: string | null;
+  onValueChange: (value: string | null) => void;
+  availableFields: Array<(typeof TARGET_FIELDS)[number]>;
+}
+
+function ColumnPicker({
+  value,
+  onValueChange,
+  availableFields,
+}: ColumnPickerProps) {
+  const [open, setOpen] = React.useState(false);
+
+  const handleSelect = (fieldValue: string) => {
+    if (fieldValue === "__ignore__") {
+      onValueChange(null);
+    } else {
+      onValueChange(fieldValue);
+    }
+    setOpen(false);
+  };
+
+  const selectedField = availableFields.find((f) => f.value === value);
+  const displayValue = value
+    ? selectedField?.label || value
+    : "Select field...";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
+          <span className="truncate">{displayValue}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] p-0" align="start">
+        <Command>
+          <CommandList>
+            <CommandEmpty>No field found.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem onSelect={() => handleSelect("__ignore__")}>
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-muted-foreground">(Ignore)</span>
+                  {!value && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                </div>
+              </CommandItem>
+            </CommandGroup>
+            <CommandGroup heading="Fields">
+              {availableFields.map((field) => (
+                <CommandItem
+                  key={field.value}
+                  onSelect={() => handleSelect(field.value)}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="truncate">{field.label}</span>
+                        {field.required && (
+                          <span className="text-destructive">*</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 truncate">
+                        {field.description}
+                      </div>
+                    </div>
+                    <Check
+                      className={cn(
+                        "ml-auto h-4 w-4 shrink-0",
+                        value === field.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function CSVImportStaffModal({
   open,
   onOpenChange,
@@ -156,7 +290,7 @@ export default function CSVImportStaffModal({
   validDepartmentIds,
   cohortMapping,
   validCohortIds,
-  roleOptions: _roleOptions,
+  roleOptions,
   onDone,
 }: CSVImportStaffModalProps) {
   const log = useLogger();
@@ -177,6 +311,7 @@ export default function CSVImportStaffModal({
   const [includedColumns, setIncludedColumns] = useState<
     Record<string, boolean>
   >({});
+  const [showErrorRows, setShowErrorRows] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -262,8 +397,22 @@ export default function CSVImportStaffModal({
       setProcessedRows([]);
       setEditableRows({});
       setIncludedColumns({});
+      setShowErrorRows(true);
     }
   }, [open]);
+
+  // Calculate hasErrors from processedRows
+  const hasErrors = React.useMemo(
+    () => processedRows.some((row) => row.errors.length > 0),
+    [processedRows]
+  );
+
+  // Update showErrorRows default when errors appear
+  React.useEffect(() => {
+    if (hasErrors) {
+      setShowErrorRows(true);
+    }
+  }, [hasErrors]);
 
   // Parse CSV file
   const parseCSV = useCallback(
@@ -516,7 +665,6 @@ export default function CSVImportStaffModal({
     log,
   ]);
 
-  const hasErrors = processedRows.some((row) => row.errors.length > 0);
   const validRowCount = processedRows.filter(
     (row) => row.errors.length === 0
   ).length;
@@ -662,41 +810,19 @@ export default function CSVImportStaffModal({
                             {truncatedSample || "-"}
                           </TableCell>
                           <TableCell>
-                            <Select
-                              value={targetField || "__ignore__"}
-                              onValueChange={(value) => {
+                            <ColumnPicker
+                              value={targetField}
+                              onValueChange={(newValue) => {
                                 setColumnMappings((prev) =>
                                   prev.map((m) =>
                                     m.csv_column === header
-                                      ? {
-                                          ...m,
-                                          target_field:
-                                            value === "__ignore__"
-                                              ? null
-                                              : value,
-                                        }
+                                      ? { ...m, target_field: newValue }
                                       : m
                                   )
                                 );
                               }}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select field..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="__ignore__">
-                                  (Ignore)
-                                </SelectItem>
-                                {availableTargetFields.map((field) => (
-                                  <SelectItem
-                                    key={field.value}
-                                    value={field.value}
-                                  >
-                                    {field.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              availableFields={availableTargetFields}
+                            />
                           </TableCell>
                           <TableCell className="text-center">
                             <Checkbox
@@ -716,7 +842,7 @@ export default function CSVImportStaffModal({
                 </Table>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex items-center justify-between pt-4">
                 <Button variant="outline" onClick={() => setStage("upload")}>
                   Back
                 </Button>
@@ -734,15 +860,25 @@ export default function CSVImportStaffModal({
                 <div>
                   <Label>Review Import Data</Label>
                   <p className="text-sm text-muted-foreground">
-                    {validRowCount} valid row(s),{" "}
-                    {processedRows.length - validRowCount} with errors
+                    {processedRows.length} total row(s), {validRowCount} valid
                   </p>
                 </div>
                 {hasErrors && (
-                  <Badge variant="destructive">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    {processedRows.length - validRowCount} errors
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={showErrorRows}
+                        onCheckedChange={setShowErrorRows}
+                        id="show-errors"
+                      />
+                      <Label
+                        htmlFor="show-errors"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Show rows with errors
+                      </Label>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -757,25 +893,48 @@ export default function CSVImportStaffModal({
                       <TableHead>Role</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Cohort</TableHead>
-                      <TableHead>Errors</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {processedRows.map((row, index) => {
-                      const editableRow = editableRows[index] || row;
-                      const hasRowErrors = editableRow.errors.length > 0;
+                    {processedRows
+                      .filter((row, index) => {
+                        const editableRow = editableRows[index] || row;
+                        const hasRowErrors = editableRow.errors.length > 0;
+                        // Filter based on switch: if showErrorRows is false, hide error rows
+                        if (!showErrorRows && hasRowErrors) {
+                          return false;
+                        }
+                        return true;
+                      })
+                      .map((row, index) => {
+                        const editableRow = editableRows[index] || row;
+                        const hasFirstNameError = editableRow.errors.some(
+                          (e) => e.field === "firstName"
+                        );
+                        const hasLastNameError = editableRow.errors.some(
+                          (e) => e.field === "lastName"
+                        );
+                        const hasAliasError = editableRow.errors.some(
+                          (e) => e.field === "alias"
+                        );
+                        const hasRoleError = editableRow.errors.some(
+                          (e) => e.field === "role"
+                        );
+                        const hasDepartmentError = editableRow.errors.some(
+                          (e) => e.field === "department_id"
+                        );
+                        const hasCohortError = editableRow.errors.some(
+                          (e) => e.field === "cohort_id"
+                        );
 
-                      return (
-                        <TableRow
-                          key={index}
-                          className={hasRowErrors ? "bg-destructive/10" : ""}
-                        >
-                          <TableCell>{row.row_index}</TableCell>
-                          <TableCell>
-                            {hasRowErrors &&
-                            editableRow.errors.some(
-                              (e) => e.field === "firstName"
-                            ) ? (
+                        return (
+                          <TableRow key={index}>
+                            <TableCell>{row.row_index}</TableCell>
+                            <TableCell
+                              className={
+                                hasFirstNameError ? "bg-destructive/10" : ""
+                              }
+                            >
                               <Input
                                 value={editableRow.firstName || ""}
                                 onChange={(e) =>
@@ -785,17 +944,14 @@ export default function CSVImportStaffModal({
                                     e.target.value || null
                                   )
                                 }
-                                className="h-8 w-32 border-red-500"
+                                className="h-8 w-full min-w-[120px]"
                               />
-                            ) : (
-                              editableRow.firstName || "-"
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {hasRowErrors &&
-                            editableRow.errors.some(
-                              (e) => e.field === "lastName"
-                            ) ? (
+                            </TableCell>
+                            <TableCell
+                              className={
+                                hasLastNameError ? "bg-destructive/10" : ""
+                              }
+                            >
                               <Input
                                 value={editableRow.lastName || ""}
                                 onChange={(e) =>
@@ -805,17 +961,14 @@ export default function CSVImportStaffModal({
                                     e.target.value || null
                                   )
                                 }
-                                className="h-8 w-32 border-red-500"
+                                className="h-8 w-full min-w-[120px]"
                               />
-                            ) : (
-                              editableRow.lastName || "-"
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {hasRowErrors &&
-                            editableRow.errors.some(
-                              (e) => e.field === "alias"
-                            ) ? (
+                            </TableCell>
+                            <TableCell
+                              className={
+                                hasAliasError ? "bg-destructive/10" : ""
+                              }
+                            >
                               <Input
                                 value={editableRow.alias || ""}
                                 onChange={(e) =>
@@ -825,49 +978,107 @@ export default function CSVImportStaffModal({
                                     e.target.value || null
                                   )
                                 }
-                                className="h-8 w-32 border-red-500"
+                                className="h-8 w-full min-w-[120px]"
                               />
-                            ) : (
-                              editableRow.alias || "-"
-                            )}
-                          </TableCell>
-                          <TableCell>{editableRow.role || "-"}</TableCell>
-                          <TableCell>
-                            {editableRow.department_id
-                              ? departmentMapping[editableRow.department_id]
-                                  ?.name || editableRow.department_id
-                              : "-"}
-                          </TableCell>
-                          <TableCell>
-                            {editableRow.cohort_id
-                              ? cohortMapping[editableRow.cohort_id]?.name ||
-                                editableRow.cohort_id
-                              : "-"}
-                          </TableCell>
-                          <TableCell>
-                            {editableRow.errors.length > 0 ? (
-                              <div className="space-y-1">
-                                {editableRow.errors.map((error, errIdx) => (
-                                  <div
-                                    key={errIdx}
-                                    className="text-xs text-red-500"
-                                  >
-                                    {error.message}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                            </TableCell>
+                            <TableCell
+                              className={
+                                hasRoleError ? "bg-destructive/10" : ""
+                              }
+                            >
+                              <Select
+                                value={editableRow.role || ""}
+                                onValueChange={(value) =>
+                                  updateEditableRow(
+                                    index,
+                                    "role",
+                                    value || null
+                                  )
+                                }
+                              >
+                                <SelectTrigger className="h-8 w-full min-w-[120px]">
+                                  <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {roleOptions.map((role) => (
+                                    <SelectItem key={role} value={role}>
+                                      {role}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell
+                              className={
+                                hasDepartmentError ? "bg-destructive/10" : ""
+                              }
+                            >
+                              {!departmentIds || departmentIds.length === 0 ? (
+                                <DepartmentPicker
+                                  mapping={departmentMapping}
+                                  validIds={validDepartmentIds}
+                                  selectedIds={
+                                    editableRow.department_id
+                                      ? [editableRow.department_id]
+                                      : []
+                                  }
+                                  onSelect={(ids) =>
+                                    updateEditableRow(
+                                      index,
+                                      "department_id",
+                                      ids[0] || null
+                                    )
+                                  }
+                                  placeholder="Select department"
+                                  multiSelect={false}
+                                  compact={true}
+                                />
+                              ) : (
+                                <div className="text-sm text-muted-foreground">
+                                  {departmentMapping[departmentIds[0]!]?.name ||
+                                    departmentIds[0]}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell
+                              className={
+                                hasCohortError ? "bg-destructive/10" : ""
+                              }
+                            >
+                              {!cohortIds || cohortIds.length === 0 ? (
+                                <CohortPicker
+                                  mapping={cohortMapping}
+                                  validIds={validCohortIds}
+                                  selectedIds={
+                                    editableRow.cohort_id
+                                      ? [editableRow.cohort_id]
+                                      : []
+                                  }
+                                  onSelect={(ids) =>
+                                    updateEditableRow(
+                                      index,
+                                      "cohort_id",
+                                      ids[0] || null
+                                    )
+                                  }
+                                  placeholder="Select cohort"
+                                  multiSelect={false}
+                                />
+                              ) : (
+                                <div className="text-sm text-muted-foreground">
+                                  {cohortMapping[cohortIds[0]!]?.name ||
+                                    cohortIds[0]}
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                   </TableBody>
                 </Table>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex items-center justify-between pt-4">
                 <Button variant="outline" onClick={() => setStage("mapping")}>
                   Back
                 </Button>
