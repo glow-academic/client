@@ -12,22 +12,23 @@ CREATE INDEX ON attempt_chats (attempt_id);
 CREATE INDEX ON attempt_chats (chat_id);
 CREATE INDEX ON attempt_chats (attempt_id, chat_id);
 
+-- Drop analytics materialized view first (it depends on attempt_id column)
+DROP MATERIALIZED VIEW IF EXISTS "public"."analytics";
+
 -- Backfill existing data from simulation_chats.attempt_id
 INSERT INTO attempt_chats (attempt_id, chat_id, created_at, updated_at)
 SELECT attempt_id, id, created_at, updated_at
-FROM simulation_chats;
+FROM simulation_chats
+WHERE attempt_id IS NOT NULL;
 
 -- Drop foreign key constraint before removing column
 ALTER TABLE "simulation_chats" DROP CONSTRAINT IF EXISTS "simulation_chats_attempt_id_fkey";
 
 -- Remove attempt_id column from simulation_chats
-ALTER TABLE "simulation_chats" DROP COLUMN "attempt_id";
+ALTER TABLE "simulation_chats" DROP COLUMN IF EXISTS "attempt_id";
 
 -- Add copy_paste_allowed column to scenarios table
-ALTER TABLE "scenarios" ADD COLUMN "copy_paste_allowed" BOOLEAN NOT NULL DEFAULT FALSE;
-
--- Drop and recreate analytics materialized view to use junction table
-DROP MATERIALIZED VIEW IF EXISTS "public"."analytics";
+ALTER TABLE "scenarios" ADD COLUMN IF NOT EXISTS "copy_paste_allowed" BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE MATERIALIZED VIEW "public"."analytics" AS (
 WITH RECURSIVE scenario_roots AS (
