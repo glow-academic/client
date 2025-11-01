@@ -730,9 +730,12 @@ class AgentService(BaseService):
         Get all data needed to run scenario agent with optimized query.
 
         Reduces 8-10 database queries to 1 JOIN query.
+        
+        Agent selection: First tries department-specific scenario agent,
+        falls back to cross-department scenario agent if no department link exists.
 
         Args:
-            department_id: UUID of the department
+            department_id: UUID of the department (used for prioritization)
             persona_id: Optional persona UUID
             document_ids: Optional list of document UUIDs
             parameter_item_ids: Optional list of parameter item UUIDs
@@ -742,7 +745,7 @@ class AgentService(BaseService):
             parameter_items, and default_guest_profile_id
 
         Raises:
-            ValueError: If no scenario agent configured for department
+            ValueError: If no scenario agent configured (neither department-specific nor cross-department)
         """
         return await self._get_scenario_run_context_direct(
             department_id, persona_id, document_ids, parameter_item_ids
@@ -772,7 +775,7 @@ class AgentService(BaseService):
 
         if not context_row:
             raise ValueError(
-                f"No scenario agent configured for department {department_id}"
+                "No scenario agent configured (neither department-specific nor cross-department)"
             )
 
         # Parse JSON arrays

@@ -37,7 +37,7 @@ CREATE INDEX ON persona_departments (persona_id);
 CREATE INDEX ON persona_departments (department_id);
 
 -- Persona ↔ Prompts junction table (BCNF normalization)
--- Multiple active prompts per persona allowed (for department-specific prompts)
+-- Only one active prompt per persona allowed
 CREATE TABLE persona_prompts (
   persona_id UUID NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
   prompt_id  UUID NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
@@ -50,3 +50,7 @@ CREATE TABLE persona_prompts (
 CREATE INDEX ON persona_prompts (persona_id);
 CREATE INDEX ON persona_prompts (prompt_id);
 CREATE INDEX ON persona_prompts (persona_id, active);
+
+-- Only one active prompt per persona
+CREATE UNIQUE INDEX persona_prompts_one_active_per_persona
+  ON persona_prompts(persona_id) WHERE active;

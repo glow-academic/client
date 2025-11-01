@@ -17,7 +17,7 @@ class HealthQueries:
             Tuple of (query, params)
         """
         query = """
-            SELECT p.id, p.name, p.system_prompt, p.temperature,
+            SELECT p.id, p.name, COALESCE(pr_prompt.system_prompt, '') as system_prompt, p.temperature,
                    pr.name as provider_name, pr.api_key,
                    pe.base_url, m.name as model_name,
                    m.custom_model, p.reasoning
@@ -25,6 +25,8 @@ class HealthQueries:
             JOIN models m ON p.model_id = m.id
             JOIN providers pr ON m.provider_id = pr.id
             LEFT JOIN provider_endpoints pe ON pr.id = pe.provider_id
+            LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
+            LEFT JOIN prompts pr_prompt ON pr_prompt.id = pp.prompt_id
             WHERE p.active = true
             LIMIT 1
         """
@@ -41,7 +43,7 @@ class HealthQueries:
             Tuple of (query, params)
         """
         query = """
-            SELECT a.id, a.name, a.system_prompt, a.temperature,
+            SELECT a.id, a.name, COALESCE(pr_prompt.system_prompt, '') as system_prompt, a.temperature,
                    p.name as provider_name, p.api_key,
                    pe.base_url, m.name as model_name,
                    m.custom_model, a.reasoning
@@ -50,6 +52,8 @@ class HealthQueries:
             JOIN models m ON a.model_id = m.id
             JOIN providers p ON m.provider_id = p.id
             LEFT JOIN provider_endpoints pe ON p.id = pe.provider_id
+            LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+            LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap.prompt_id
             WHERE da.role = 'assistant' AND da.active = true AND a.active = true
             LIMIT 1
         """

@@ -708,17 +708,38 @@ class AgentQueries:
         """
         Get all data needed to run classification agent with optimized JOIN.
 
-        Fetches agent (via department_agents), model, provider, and documents
+        Fetches agent (classify role), model, provider, and documents
         in a single query to minimize database round trips.
+        
+        Agent selection logic:
+        - First tries to find a classification agent linked to the specified department
+        - Falls back to cross-department classification agents (no department links)
+        - Prioritizes department-specific agents over cross-department agents
 
         Args:
             document_ids: List of document UUIDs as strings
-            department_id: Department UUID as string
+            department_id: Department UUID as string (used for prioritization)
 
         Returns:
             Tuple of (query, params)
         """
         query = """
+        WITH best_agent AS (
+            SELECT a.id as agent_id
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.role = 'classify'
+            AND (
+                -- Include if agent is linked to the specified department
+                ad.department_id = $2::uuid
+                -- OR agent has no department links (cross-department)
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+            )
+            ORDER BY 
+                -- Prioritize department-specific agents over cross-department agents
+                CASE WHEN ad.department_id = $2::uuid THEN 0 ELSE 1 END
+            LIMIT 1
+        )
         SELECT 
             -- Agent data (via department_agents junction for 'classify' role)
             a.id::text as agent_id,
@@ -751,15 +772,14 @@ class AgentQueries:
                 '[]'::json
             ) as documents
         
-        FROM department_agents da
-        INNER JOIN agents a ON a.id = da.agent_id
+        FROM best_agent ba
+        INNER JOIN agents a ON a.id = ba.agent_id
         LEFT JOIN agent_prompts ap_classify ON ap_classify.agent_id = a.id AND ap_classify.active = true
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_classify.prompt_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN documents d ON d.id = ANY($1::uuid[])
-        WHERE da.department_id = $2 AND da.role = 'classify'
         GROUP BY a.id, a.name, pr_prompt.system_prompt, a.temperature, a.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url
@@ -799,11 +819,16 @@ class AgentQueries:
         """
         Get all data needed to run scenario agent with optimized JOIN.
 
-        Fetches agent (via department_agents), model, provider, persona,
-        documents, parameter items, and default guest profile in a single query.
+        Fetches agent (scenario role), model, provider, persona, documents,
+        parameter items, and default guest profile in a single query.
+        
+        Agent selection logic:
+        - First tries to find a scenario agent linked to the specified department
+        - Falls back to cross-department scenario agents (no department links)
+        - Prioritizes department-specific agents over cross-department agents
 
         Args:
-            department_id: Department UUID as string
+            department_id: Department UUID as string (used for prioritization)
             persona_id: Optional persona UUID as string
             document_ids: Optional list of document UUIDs as strings
             parameter_item_ids: Optional list of parameter item UUIDs as strings
@@ -880,8 +905,8 @@ class AgentQueries:
             -- Default guest profile
             dg.guest_profile_id
         
-        FROM agent_departments ad
-        INNER JOIN agents a ON a.id = ad.agent_id
+        FROM agents a
+        LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         LEFT JOIN agent_prompts ap_scenario ON ap_scenario.agent_id = a.id AND ap_scenario.active = true
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_scenario.prompt_id
         INNER JOIN models m ON m.id = a.model_id
@@ -889,7 +914,17 @@ class AgentQueries:
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         LEFT JOIN personas p ON p.id = $2
         CROSS JOIN default_guest dg
-        WHERE ad.department_id = $1::uuid AND a.role = 'scenario' AND ad.active = true
+        WHERE a.role = 'scenario'
+        AND (
+            -- Include if agent is linked to the specified department
+            ad.department_id = $1::uuid
+            -- OR agent has no department links (cross-department)
+            OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+        )
+        ORDER BY 
+            -- Prioritize department-specific agents over cross-department agents
+            CASE WHEN ad.department_id = $1::uuid THEN 0 ELSE 1 END
+        LIMIT 1
         """
 
         # Convert None to empty arrays for proper SQL handling
@@ -905,14 +940,19 @@ class AgentQueries:
         """
         Get all data needed to run hint agent with optimized JOIN.
 
-        Fetches message, chat, attempt, scenario, agent (via department_agents),
+        Fetches message, chat, attempt, scenario, agent (hint role),
         model, provider, documents, and profile in a single query.
         Messages are fetched separately using get_simulation_messages().
+        
+        Agent selection logic:
+        - First tries to find a hint agent linked to the specified department
+        - Falls back to cross-department hint agents (no department links)
+        - Prioritizes department-specific agents over cross-department agents
 
         Args:
             message_id: Message UUID as string
             chat_id: Chat UUID as string
-            department_id: Department UUID as string
+            department_id: Department UUID as string (used for prioritization)
 
         Returns:
             Tuple of (query, params)
@@ -945,6 +985,22 @@ class AgentQueries:
             FROM attempt_profiles ap
             JOIN attempt_info ai ON ai.id = ap.attempt_id
             WHERE ap.active = true
+            LIMIT 1
+        ),
+        best_agent AS (
+            SELECT a.id as agent_id
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.role = 'hint'
+            AND (
+                -- Include if agent is linked to the specified department
+                ad.department_id = $3::uuid
+                -- OR agent has no department links (cross-department)
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+            )
+            ORDER BY 
+                -- Prioritize department-specific agents over cross-department agents
+                CASE WHEN ad.department_id = $3::uuid THEN 0 ELSE 1 END
             LIMIT 1
         )
         SELECT 
@@ -1011,8 +1067,8 @@ class AgentQueries:
         CROSS JOIN attempt_info ai
         CROSS JOIN scenario_info si
         LEFT JOIN profile_info pi ON true
-        INNER JOIN department_agents da ON da.department_id = $3 AND da.role = 'hint'
-        INNER JOIN agents a ON a.id = da.agent_id
+        CROSS JOIN best_agent ba
+        INNER JOIN agents a ON a.id = ba.agent_id
         LEFT JOIN agent_prompts ap_hint ON ap_hint.agent_id = a.id AND ap_hint.active = true
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_hint.prompt_id
         INNER JOIN models m ON m.id = a.model_id
@@ -1131,12 +1187,17 @@ class AgentQueries:
         Get all data needed to run grading agent with optimized JOIN.
 
         Fetches chat, scenario, attempt, simulation, rubric, standard groups,
-        standards, agent (via department_agents), model, provider, and profile
+        standards, agent (grade role), model, provider, and profile
         in a single query to minimize database round trips.
+        
+        Agent selection logic:
+        - First tries to find a grading agent linked to the specified department
+        - Falls back to cross-department grading agents (no department links)
+        - Prioritizes department-specific agents over cross-department agents
 
         Args:
             simulation_chat_id: Simulation chat UUID as string
-            department_id: Department UUID as string
+            department_id: Department UUID as string (used for prioritization)
 
         Returns:
             Tuple of (query, params)
@@ -1173,6 +1234,22 @@ class AgentQueries:
             FROM simulations s
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             WHERE s.id = (SELECT simulation_id FROM attempt_info)
+        ),
+        best_agent AS (
+            SELECT a.id as agent_id
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.role = 'grade'
+            AND (
+                -- Include if agent is linked to the specified department
+                ad.department_id = $2::uuid
+                -- OR agent has no department links (cross-department)
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+            )
+            ORDER BY 
+                -- Prioritize department-specific agents over cross-department agents
+                CASE WHEN ad.department_id = $2::uuid THEN 0 ELSE 1 END
+            LIMIT 1
         )
         SELECT 
             -- Chat data
@@ -1275,13 +1352,13 @@ class AgentQueries:
         FROM chat_info ci
         CROSS JOIN attempt_info ai
         CROSS JOIN simulation_info si
+        CROSS JOIN best_agent ba
         INNER JOIN scenarios sc ON sc.id = ci.scenario_id
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = sc.id AND sps.active = true
         INNER JOIN rubrics r ON r.id = si.rubric_id
         LEFT JOIN standard_groups sg ON sg.rubric_id = r.id
         LEFT JOIN standards std ON std.standard_group_id = sg.id
-        INNER JOIN department_agents da ON da.department_id = $2 AND da.role = 'grade'
-        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN agents a ON a.id = ba.agent_id
         LEFT JOIN agent_prompts ap_grade ON ap_grade.agent_id = a.id AND ap_grade.active = true
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_grade.prompt_id
         INNER JOIN models m ON m.id = a.model_id
@@ -1360,12 +1437,17 @@ class AgentQueries:
         """
         Get all data needed to run guardrail agent with optimized JOIN.
 
-        Fetches agent (via department_agents), model, provider, chat, attempt,
-        and active profile in a single query to minimize database round trips.
+        Fetches agent (input_guardrail or output_guardrail role), model, provider,
+        chat, attempt, and active profile in a single query to minimize database round trips.
+        
+        Agent selection logic:
+        - First tries to find a guardrail agent linked to the specified department
+        - Falls back to cross-department guardrail agents (no department links)
+        - Prioritizes department-specific agents over cross-department agents
 
         Args:
             chat_id: Chat UUID as string
-            department_id: Department UUID as string
+            department_id: Department UUID as string (used for prioritization)
             guardrail_type: Either "input" or "output" for role filtering
 
         Returns:
@@ -1373,6 +1455,22 @@ class AgentQueries:
         """
         # Role will be 'input_guardrail' or 'output_guardrail'
         query = """
+        WITH best_agent AS (
+            SELECT a.id as agent_id
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.role = $3 || '_guardrail'
+            AND (
+                -- Include if agent is linked to the specified department
+                ad.department_id = $2::uuid
+                -- OR agent has no department links (cross-department)
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+            )
+            ORDER BY 
+                -- Prioritize department-specific agents over cross-department agents
+                CASE WHEN ad.department_id = $2::uuid THEN 0 ELSE 1 END
+            LIMIT 1
+        )
         SELECT 
             -- Agent data (via department_agents junction)
             a.id::text as agent_id,
@@ -1407,9 +1505,8 @@ class AgentQueries:
         FROM simulation_chats sc
         JOIN attempt_chats ac ON ac.chat_id = sc.id
         INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-        INNER JOIN department_agents da ON da.department_id = $2 
-            AND da.role = $3 || '_guardrail'
-        INNER JOIN agents a ON a.id = da.agent_id
+        CROSS JOIN best_agent ba
+        INNER JOIN agents a ON a.id = ba.agent_id
         LEFT JOIN agent_prompts ap_guardrail ON ap_guardrail.agent_id = a.id AND ap_guardrail.active = true
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_guardrail.prompt_id
         INNER JOIN models m ON m.id = a.model_id
@@ -1428,17 +1525,38 @@ class AgentQueries:
         """
         Get all data needed to run title agent with optimized JOIN.
 
-        Fetches agent (via department_agents), model, provider, and chat
+        Fetches agent (title role), model, provider, and chat
         in a single query to minimize database round trips.
+        
+        Agent selection logic:
+        - First tries to find a title agent linked to the specified department
+        - Falls back to cross-department title agents (no department links)
+        - Prioritizes department-specific agents over cross-department agents
 
         Args:
             chat_id: Assistant chat UUID as string
-            department_id: Department UUID as string
+            department_id: Department UUID as string (used for prioritization)
 
         Returns:
             Tuple of (query, params)
         """
         query = """
+        WITH best_agent AS (
+            SELECT a.id as agent_id
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.role = 'title'
+            AND (
+                -- Include if agent is linked to the specified department
+                ad.department_id = $2::uuid
+                -- OR agent has no department links (cross-department)
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+            )
+            ORDER BY 
+                -- Prioritize department-specific agents over cross-department agents
+                CASE WHEN ad.department_id = $2::uuid THEN 0 ELSE 1 END
+            LIMIT 1
+        )
         SELECT 
             -- Agent data (via department_agents junction for 'title' role)
             a.id::text as agent_id,
@@ -1464,15 +1582,14 @@ class AgentQueries:
             ac.title as chat_title,
             ac.trace_id as trace_id
         
-        FROM department_agents da
-        INNER JOIN agents a ON a.id = da.agent_id
+        FROM best_agent ba
+        INNER JOIN agents a ON a.id = ba.agent_id
         LEFT JOIN agent_prompts ap_title ON ap_title.agent_id = a.id AND ap_title.active = true
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_title.prompt_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
         INNER JOIN assistant_chats ac ON ac.id = $1
-        WHERE da.department_id = $2 AND da.role = 'title'
         """
 
         params: list[Any] = [chat_id, department_id]

@@ -16,17 +16,38 @@ class AssistantQueries:
         """
         Get all data needed to run assistant agent with optimized JOIN query.
 
-        Fetches chat, profile, agent (via department_agents), model, and provider
+        Fetches chat, profile, agent (assistant role), model, and provider
         in a single query to minimize database round trips.
+        
+        Agent selection logic:
+        - First tries to find an assistant agent linked to the specified department
+        - Falls back to cross-department assistant agents (no department links)
+        - Prioritizes department-specific agents over cross-department agents
 
         Args:
             chat_id: UUID of the assistant chat
-            department_id: UUID of the department
+            department_id: UUID of the department (used for prioritization)
 
         Returns:
             Tuple of (query, params)
         """
         query = """
+        WITH best_agent AS (
+            SELECT a.id as agent_id
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.role = 'assistant'
+            AND (
+                -- Include if agent is linked to the specified department
+                ad.department_id = $2::uuid
+                -- OR agent has no department links (cross-department)
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+            )
+            ORDER BY 
+                -- Prioritize department-specific agents over cross-department agents
+                CASE WHEN ad.department_id = $2::uuid THEN 0 ELSE 1 END
+            LIMIT 1
+        )
         SELECT 
             -- Chat data
             ac.id::text as chat_id,
@@ -42,7 +63,7 @@ class AssistantQueries:
             -- Agent data (via department_agents junction)
             a.id::text as agent_id,
             a.name as agent_name,
-            a.system_prompt,
+            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
             a.temperature,
             a.reasoning,
             
@@ -59,11 +80,13 @@ class AssistantQueries:
 
         FROM assistant_chats ac
         INNER JOIN profiles p ON p.id = ac.profile_id
-        INNER JOIN department_agents da ON da.department_id = $2 AND da.role = 'assistant'
-        INNER JOIN agents a ON a.id = da.agent_id
+        CROSS JOIN best_agent ba
+        INNER JOIN agents a ON a.id = ba.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+        LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap.prompt_id
         WHERE ac.id = $1
         """
 
@@ -76,18 +99,39 @@ class AssistantQueries:
         """
         Get complete assistant run context in ONE optimized query.
 
-        Fetches chat, profile, agent, model, provider, messages, and tool calls
+        Fetches chat, profile, agent (assistant role), model, provider, messages, and tool calls
         using CTEs and JSONB aggregation to eliminate parallel queries.
+        
+        Agent selection logic:
+        - First tries to find an assistant agent linked to the specified department
+        - Falls back to cross-department assistant agents (no department links)
+        - Prioritizes department-specific agents over cross-department agents
 
         Args:
             chat_id: UUID of the assistant chat
-            department_id: UUID of the department
+            department_id: UUID of the department (used for prioritization)
 
         Returns:
             Tuple of (query, params)
         """
         query = """
-        WITH chat_context AS (
+        WITH best_agent AS (
+            SELECT a.id as agent_id
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.role = 'assistant'
+            AND (
+                -- Include if agent is linked to the specified department
+                ad.department_id = $2::uuid
+                -- OR agent has no department links (cross-department)
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+            )
+            ORDER BY 
+                -- Prioritize department-specific agents over cross-department agents
+                CASE WHEN ad.department_id = $2::uuid THEN 0 ELSE 1 END
+            LIMIT 1
+        ),
+        chat_context AS (
             SELECT 
                 -- Chat data
                 ac.id::text as chat_id,
@@ -103,7 +147,7 @@ class AssistantQueries:
                 -- Agent data (via department_agents junction)
                 a.id::text as agent_id,
                 a.name as agent_name,
-                a.system_prompt,
+                COALESCE(pr_prompt.system_prompt, '') as system_prompt,
                 a.temperature,
                 a.reasoning,
                 
@@ -119,11 +163,13 @@ class AssistantQueries:
             pr.api_key
         FROM assistant_chats ac
         INNER JOIN profiles p ON p.id = ac.profile_id
-        INNER JOIN department_agents da ON da.department_id = $2 AND da.role = 'assistant'
-        INNER JOIN agents a ON a.id = da.agent_id
+        CROSS JOIN best_agent ba
+        INNER JOIN agents a ON a.id = ba.agent_id
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+        LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap.prompt_id
         WHERE ac.id = $1
         ),
         chat_messages AS (

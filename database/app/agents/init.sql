@@ -114,7 +114,7 @@ CREATE INDEX ON agent_departments (agent_id);
 CREATE INDEX ON agent_departments (department_id);
 
 -- Agent ↔ Prompts junction table (BCNF normalization)
--- Multiple active prompts per agent allowed (for department-specific prompts)
+-- Only one active prompt per agent allowed
 CREATE TABLE agent_prompts (
   agent_id   UUID NOT NULL REFERENCES agents(id)   ON DELETE CASCADE,
   prompt_id  UUID NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
@@ -127,3 +127,7 @@ CREATE TABLE agent_prompts (
 CREATE INDEX ON agent_prompts (agent_id);
 CREATE INDEX ON agent_prompts (prompt_id);
 CREATE INDEX ON agent_prompts (agent_id, active);
+
+-- Only one active prompt per agent
+CREATE UNIQUE INDEX agent_prompts_one_active_per_agent
+  ON agent_prompts(agent_id) WHERE active;
