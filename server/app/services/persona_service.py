@@ -710,16 +710,7 @@ class PersonaService(BaseService):
                     raise ValueError("Failed to create prompt")
                 prompt_id = prompt_row["prompt_id"]
 
-                # Link prompt to departments if provided
-                if request.department_ids:
-                    prompt_dept_query, prompt_dept_params = (
-                        self.queries.create_prompt_departments(
-                            prompt_id, request.department_ids
-                        )
-                    )
-                    await self.conn.execute(prompt_dept_query, *prompt_dept_params)
-
-            # Link persona to prompt via persona_prompts junction
+            # Link persona to prompt (set personas.prompt_id)
             if prompt_id:
                 persona_prompt_query, persona_prompt_params = (
                     self.queries.create_persona_prompt(persona_id, prompt_id)
@@ -727,10 +718,11 @@ class PersonaService(BaseService):
                 await self.conn.execute(persona_prompt_query, *persona_prompt_params)
 
             # Insert department links if department_ids provided
-            if request.department_ids:
+            # Note: prompt_id is required for persona_departments
+            if request.department_ids and prompt_id:
                 insert_dept_query, insert_dept_params = (
                     self.queries.create_persona_departments(
-                        persona_id, request.department_ids
+                        persona_id, request.department_ids, prompt_id
                     )
                 )
                 await self.conn.execute(insert_dept_query, *insert_dept_params)
@@ -778,12 +770,11 @@ class PersonaService(BaseService):
             )
 
             # Handle prompt update
+            # Always create a new prompt entry when system_prompt is provided (preserves version history)
+            # Only use prompt_id when selecting from version history (no system_prompt provided)
             prompt_id = None
-            if request.prompt_id:
-                # Use existing prompt
-                prompt_id = request.prompt_id
-            elif request.system_prompt:
-                # Create new prompt (for version history)
+            if request.system_prompt:
+                # Create new prompt entry (for version history)
                 prompt_query, prompt_params = self.queries.create_prompt(
                     request.system_prompt
                 )
@@ -791,15 +782,9 @@ class PersonaService(BaseService):
                 if not prompt_row:
                     raise ValueError("Failed to create prompt")
                 prompt_id = prompt_row["prompt_id"]
-
-                # Link prompt to departments if provided
-                if request.department_ids:
-                    prompt_dept_query, prompt_dept_params = (
-                        self.queries.create_prompt_departments(
-                            prompt_id, request.department_ids
-                        )
-                    )
-                    await self.conn.execute(prompt_dept_query, *prompt_dept_params)
+            elif request.prompt_id:
+                # Use existing prompt (selecting from version history)
+                prompt_id = request.prompt_id
 
             # Handle department-specific prompt or default prompt
             if request.department_id and prompt_id:
@@ -818,6 +803,17 @@ class PersonaService(BaseService):
                 )
                 await self.conn.execute(persona_prompt_query, *persona_prompt_params)
 
+            # Get the persona's current prompt_id for persona_departments
+            # Use the updated prompt_id if set, otherwise get from personas table
+            persona_prompt_id = prompt_id
+            if not persona_prompt_id:
+                persona_prompt_row = await self.conn.fetchrow(
+                    "SELECT prompt_id FROM personas WHERE id = $1::uuid",
+                    request.personaId
+                )
+                if persona_prompt_row:
+                    persona_prompt_id = persona_prompt_row["prompt_id"]
+
             # Update persona-department links (DELETE + INSERT pattern)
             delete_dept_query, delete_dept_params = (
                 self.queries.delete_persona_departments(request.personaId)
@@ -825,10 +821,11 @@ class PersonaService(BaseService):
             await self.conn.execute(delete_dept_query, *delete_dept_params)
 
             # Insert new department links if department_ids provided
-            if request.department_ids:
+            # Note: prompt_id is required for persona_departments
+            if request.department_ids and persona_prompt_id:
                 insert_dept_query, insert_dept_params = (
                     self.queries.create_persona_departments(
-                        request.personaId, request.department_ids
+                        request.personaId, request.department_ids, persona_prompt_id
                     )
                 )
                 await self.conn.execute(insert_dept_query, *insert_dept_params)

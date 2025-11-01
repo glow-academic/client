@@ -454,16 +454,7 @@ class AgentService(BaseService):
                     raise ValueError("Failed to create prompt")
                 prompt_id = prompt_row["prompt_id"]
 
-                # Link prompt to departments if provided
-                if request.department_ids:
-                    prompt_dept_query, prompt_dept_params = (
-                        self.queries.create_prompt_departments(
-                            prompt_id, request.department_ids
-                        )
-                    )
-                    await self.conn.execute(prompt_dept_query, *prompt_dept_params)
-
-            # Link agent to prompt via agent_prompts junction
+            # Link agent to prompt (set agents.prompt_id)
             if prompt_id:
                 agent_prompt_query, agent_prompt_params = (
                     self.queries.create_agent_prompt(agent_id, prompt_id)
@@ -471,9 +462,10 @@ class AgentService(BaseService):
                 await self.conn.execute(agent_prompt_query, *agent_prompt_params)
 
             # Create agent-department links if department_ids provided
-            if request.department_ids:
+            # Note: prompt_id is required for agent_departments, so we use the agent's prompt_id
+            if request.department_ids and prompt_id:
                 dept_query, dept_params = self.queries.create_agent_departments(
-                    agent_id, request.department_ids
+                    agent_id, request.department_ids, prompt_id
                 )
                 await self.conn.execute(dept_query, *dept_params)
 
@@ -511,12 +503,11 @@ class AgentService(BaseService):
             await self.conn.execute(query, *params)
 
             # Handle prompt update
+            # Always create a new prompt entry when system_prompt is provided (preserves version history)
+            # Only use prompt_id when selecting from version history (no system_prompt provided)
             prompt_id = None
-            if request.prompt_id:
-                # Use existing prompt
-                prompt_id = request.prompt_id
-            elif request.system_prompt:
-                # Create new prompt (for version history)
+            if request.system_prompt:
+                # Create new prompt entry (for version history)
                 prompt_query, prompt_params = self.queries.create_prompt(
                     request.system_prompt
                 )
@@ -524,15 +515,9 @@ class AgentService(BaseService):
                 if not prompt_row:
                     raise ValueError("Failed to create prompt")
                 prompt_id = prompt_row["prompt_id"]
-
-                # Link prompt to departments if provided
-                if request.department_ids:
-                    prompt_dept_query, prompt_dept_params = (
-                        self.queries.create_prompt_departments(
-                            prompt_id, request.department_ids
-                        )
-                    )
-                    await self.conn.execute(prompt_dept_query, *prompt_dept_params)
+            elif request.prompt_id:
+                # Use existing prompt (selecting from version history)
+                prompt_id = request.prompt_id
 
             # Handle department-specific prompt or default prompt
             if request.department_id and prompt_id:
@@ -544,12 +529,23 @@ class AgentService(BaseService):
                 )
                 await self.conn.execute(dept_prompt_query, *dept_prompt_params)
             elif prompt_id:
-                # Link agent to prompt via agent_prompts junction (deactivates old, activates new)
+                # Link agent to prompt (set agents.prompt_id)
                 # Only do this if NOT updating a department-specific prompt
                 agent_prompt_query, agent_prompt_params = (
                     self.queries.create_agent_prompt(request.agentId, prompt_id)
                 )
                 await self.conn.execute(agent_prompt_query, *agent_prompt_params)
+
+            # Get the agent's current prompt_id for agent_departments
+            # Use the updated prompt_id if set, otherwise get from agents table
+            agent_prompt_id = prompt_id
+            if not agent_prompt_id:
+                agent_prompt_row = await self.conn.fetchrow(
+                    "SELECT prompt_id FROM agents WHERE id = $1::uuid",
+                    request.agentId
+                )
+                if agent_prompt_row:
+                    agent_prompt_id = agent_prompt_row["prompt_id"]
 
             # Replace agent-department links (DELETE + INSERT pattern)
             delete_query, delete_params = self.queries.delete_agent_departments(
@@ -558,9 +554,10 @@ class AgentService(BaseService):
             await self.conn.execute(delete_query, *delete_params)
 
             # Insert new links if department_ids provided
-            if request.department_ids:
+            # Note: prompt_id is required for agent_departments
+            if request.department_ids and agent_prompt_id:
                 insert_query, insert_params = self.queries.create_agent_departments(
-                    request.agentId, request.department_ids
+                    request.agentId, request.department_ids, agent_prompt_id
                 )
                 await self.conn.execute(insert_query, *insert_params)
 

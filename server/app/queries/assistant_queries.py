@@ -88,8 +88,7 @@ class AssistantQueries:
         -- Try department-specific prompt first, fall back to default prompt
         LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
         LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
-        LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = a.prompt_id
         -- Use department-specific prompt if available, otherwise use default
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         WHERE ac.id = $1
@@ -176,8 +175,7 @@ class AssistantQueries:
         -- Try department-specific prompt first, fall back to default prompt
         LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
         LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
-        LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = a.prompt_id
         -- Use department-specific prompt if available, otherwise use default
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         WHERE ac.id = $1

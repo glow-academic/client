@@ -55,7 +55,7 @@ import {
   getPersonaIconComponent,
   PERSONA_ICON_MAP,
 } from "@/utils/persona-icons";
-import { Bug, Check, ChevronsUpDown, Eye } from "lucide-react";
+import { Bug, Check, ChevronsUpDown, Copy, Eye } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
 
@@ -803,6 +803,7 @@ export default function Persona({
                           setFormData((prev) => ({
                             ...prev,
                             promptId: null,
+                            systemPrompt: "",
                           }));
                         }}
                         placeholder="Select prompt version..."
@@ -812,6 +813,30 @@ export default function Persona({
                     )}
                   {formData?.systemPrompt !== undefined && !isLoading && (
                     <>
+                      {isEditMode && formData?.promptId && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                // Duplicate current prompt - keep content but create new prompt
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  promptId: null,
+                                }));
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Duplicate Prompt</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

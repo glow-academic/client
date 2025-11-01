@@ -323,7 +323,7 @@ class PersonaQueries:
             $4,
             $5,
             $6,
-            $7,
+            COALESCE($7::reasoning_effort, 'none'::reasoning_effort),
             $8
         )
         RETURNING id
@@ -341,7 +341,7 @@ class PersonaQueries:
             color = $5,
             icon = $6,
             model_id = $7,
-            reasoning = $8,
+            reasoning = COALESCE($8::reasoning_effort, 'none'::reasoning_effort),
             temperature = $9,
             updated_at = NOW()
         WHERE id = $1
@@ -385,9 +385,9 @@ class PersonaQueries:
         return (query, [persona_id, department_id, prompt_id])
 
     def create_persona_departments(
-        self, persona_id: str, department_ids: list[str]
+        self, persona_id: str, department_ids: list[str], prompt_id: str
     ) -> tuple[str, list[Any]]:
-        """Build query to create persona-department junction table records.
+        """Build query to create persona-department junction table records with prompt_id.
         
         Returns:
             Tuple of (query, params)
@@ -398,15 +398,15 @@ class PersonaQueries:
 
         # Use UNNEST for efficient batch insert
         query = """
-        INSERT INTO persona_departments (persona_id, department_id, active, created_at, updated_at)
-        SELECT $1, dept_id::uuid, true, NOW(), NOW()
+        INSERT INTO persona_departments (persona_id, department_id, prompt_id, active, created_at, updated_at)
+        SELECT $1::uuid, dept_id::uuid, $3::uuid, true, NOW(), NOW()
         FROM UNNEST($2::text[]) as dept_id
-        ON CONFLICT (persona_id, department_id) DO UPDATE SET
+        ON CONFLICT (persona_id, department_id, prompt_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
         """
 
-        params: list[Any] = [persona_id, department_ids]
+        params: list[Any] = [persona_id, department_ids, prompt_id]
         return query, params
 
     def create_prompt(self, system_prompt: str) -> tuple[str, list[Any]]:
@@ -453,25 +453,15 @@ class PersonaQueries:
         self, prompt_id: str, department_ids: list[str]
     ) -> tuple[str, list[Any]]:
         """
-        Link a prompt to departments via prompt_departments junction.
+        Legacy function - prompt_departments table was removed.
+        This function is now a no-op as department-prompt links are handled
+        via persona_departments.prompt_id directly.
 
         Returns:
-            Tuple of (query, params)
+            Tuple of (query, params) - returns a no-op query
         """
-        if not department_ids:
-            # Return empty query if no departments
-            return "SELECT 1 WHERE false", []
-
-        query = """
-        INSERT INTO prompt_departments (prompt_id, department_id, active, created_at, updated_at)
-        SELECT $1::uuid, dept_id::uuid, true, NOW(), NOW()
-        FROM UNNEST($2::text[]) as dept_id
-        ON CONFLICT (prompt_id, department_id) DO UPDATE SET
-            active = true,
-            updated_at = NOW()
-        """
-        params: list[Any] = [prompt_id, department_ids]
-        return query, params
+        # Return empty query that does nothing
+        return "SELECT 1 WHERE false", []
 
     def get_departments_mapping(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
         """Build query for departments mapping."""
@@ -604,14 +594,14 @@ class PersonaQueries:
         persona_department_prompt_links AS (
             SELECT 
                 COALESCE(
-                    jsonb_object_agg(
+                    (SELECT jsonb_object_agg(
                         pd.department_id::text,
                         pd.prompt_id::text
-                    ),
+                    )
+                    FROM persona_departments pd
+                    WHERE pd.persona_id = $1 AND pd.active = true),
                     '{}'::jsonb
                 ) as department_prompt_links
-            FROM persona_departments pd
-            WHERE pd.persona_id = $1 AND pd.active = true
         ),
         persona_active_prompt AS (
             SELECT 

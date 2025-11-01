@@ -243,22 +243,12 @@ export const assistantToolCalls = pgTable("assistant_tool_calls", {
 		}).onDelete("cascade"),
 ]);
 
-export const prompts = pgTable("prompts", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	systemPrompt: text("system_prompt").notNull(),
-}, (table) => [
-	index("prompts_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
-]);
-
 export const personas = pgTable("personas", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text().notNull(),
 	description: text().notNull(),
-	promptId: uuid("prompt_id").notNull(),
 	temperature: real().notNull(),
 	color: text().notNull(),
 	icon: text().notNull(),
@@ -268,40 +258,19 @@ export const personas = pgTable("personas", {
 }, (table) => [
 	index("personas_id_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
-			columns: [table.promptId],
-			foreignColumns: [prompts.id],
-			name: "personas_prompt_id_fkey"
-		}).onDelete("restrict"),
-	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],
 			name: "personas_model_id_fkey"
 		}).onDelete("restrict"),
 ]);
 
-export const agents = pgTable("agents", {
+export const prompts = pgTable("prompts", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	promptId: uuid("prompt_id").notNull(),
-	temperature: real().notNull(),
-	modelId: uuid("model_id").notNull(),
-	reasoning: reasoningEffort().default('medium').notNull(),
-	role: agentRole().default('assistant').notNull(),
-	active: boolean().default(true).notNull(),
+	systemPrompt: text("system_prompt").notNull(),
 }, (table) => [
-	foreignKey({
-			columns: [table.promptId],
-			foreignColumns: [prompts.id],
-			name: "agents_prompt_id_fkey"
-		}).onDelete("restrict"),
-	foreignKey({
-			columns: [table.modelId],
-			foreignColumns: [models.id],
-			name: "agents_model_id_fkey"
-		}).onDelete("restrict"),
+	index("prompts_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
 ]);
 
 export const modelRuns = pgTable("model_runs", {
@@ -311,6 +280,25 @@ export const modelRuns = pgTable("model_runs", {
 	inputTokens: integer("input_tokens").default(0).notNull(),
 	outputTokens: integer("output_tokens").default(0).notNull(),
 });
+
+export const agents = pgTable("agents", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	temperature: real().notNull(),
+	modelId: uuid("model_id").notNull(),
+	reasoning: reasoningEffort().default('medium').notNull(),
+	role: agentRole().default('assistant').notNull(),
+	active: boolean().default(true).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.modelId],
+			foreignColumns: [models.id],
+			name: "agents_model_id_fkey"
+		}).onDelete("restrict"),
+]);
 
 export const debugInfo = pgTable("debug_info", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -473,27 +461,6 @@ export const simulationMessages = pgTable("simulation_messages", {
 		}).onDelete("cascade"),
 ]);
 
-export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	standardId: uuid("standard_id").notNull(),
-	simulationChatGradeId: uuid("simulation_chat_grade_id").notNull(),
-	total: integer().notNull(),
-	feedback: text().default('No feedback provided').notNull(),
-}, (table) => [
-	index("scf_grade_idx").using("btree", table.simulationChatGradeId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.standardId],
-			foreignColumns: [standards.id],
-			name: "simulation_chat_feedbacks_standard_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.simulationChatGradeId],
-			foreignColumns: [simulationChatGrades.id],
-			name: "simulation_chat_feedbacks_simulation_chat_grade_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const simulationChatGrades = pgTable("simulation_chat_grades", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -516,6 +483,27 @@ export const simulationChatGrades = pgTable("simulation_chat_grades", {
 			columns: [table.simulationChatId],
 			foreignColumns: [simulationChats.id],
 			name: "simulation_chat_grades_simulation_chat_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	standardId: uuid("standard_id").notNull(),
+	simulationChatGradeId: uuid("simulation_chat_grade_id").notNull(),
+	total: integer().notNull(),
+	feedback: text().default('No feedback provided').notNull(),
+}, (table) => [
+	index("scf_grade_idx").using("btree", table.simulationChatGradeId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.standardId],
+			foreignColumns: [standards.id],
+			name: "simulation_chat_feedbacks_standard_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.simulationChatGradeId],
+			foreignColumns: [simulationChatGrades.id],
+			name: "simulation_chat_feedbacks_simulation_chat_grade_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -624,6 +612,30 @@ export const rubricDepartments = pgTable("rubric_departments", {
 	primaryKey({ columns: [table.rubricId, table.departmentId], name: "rubric_departments_pkey"}),
 ]);
 
+export const personaPrompts = pgTable("persona_prompts", {
+	personaId: uuid("persona_id").notNull(),
+	promptId: uuid("prompt_id").notNull(),
+	active: boolean().default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	uniqueIndex("persona_prompts_one_active_per_persona").using("btree", table.personaId.asc().nullsLast().op("uuid_ops")).where(sql`(active = true)`),
+	index("persona_prompts_persona_id_active_idx").using("btree", table.personaId.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
+	index("persona_prompts_persona_id_idx").using("btree", table.personaId.asc().nullsLast().op("uuid_ops")),
+	index("persona_prompts_prompt_id_idx").using("btree", table.promptId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.personaId],
+			foreignColumns: [personas.id],
+			name: "persona_prompts_persona_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.promptId],
+			foreignColumns: [prompts.id],
+			name: "persona_prompts_prompt_id_fkey"
+		}).onDelete("restrict"),
+	primaryKey({ columns: [table.personaId, table.promptId], name: "persona_prompts_pkey"}),
+]);
+
 export const modelRunModels = pgTable("model_run_models", {
 	modelRunId: uuid("model_run_id").notNull(),
 	modelId: uuid("model_id").notNull(),
@@ -712,6 +724,30 @@ export const modelRunProfiles = pgTable("model_run_profiles", {
 	primaryKey({ columns: [table.modelRunId, table.profileId], name: "model_run_profiles_pkey"}),
 ]);
 
+export const agentPrompts = pgTable("agent_prompts", {
+	agentId: uuid("agent_id").notNull(),
+	promptId: uuid("prompt_id").notNull(),
+	active: boolean().default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("agent_prompts_agent_id_active_idx").using("btree", table.agentId.asc().nullsLast().op("uuid_ops"), table.active.asc().nullsLast().op("bool_ops")),
+	index("agent_prompts_agent_id_idx").using("btree", table.agentId.asc().nullsLast().op("uuid_ops")),
+	uniqueIndex("agent_prompts_one_active_per_agent").using("btree", table.agentId.asc().nullsLast().op("uuid_ops")).where(sql`(active = true)`),
+	index("agent_prompts_prompt_id_idx").using("btree", table.promptId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.agentId],
+			foreignColumns: [agents.id],
+			name: "agent_prompts_agent_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.promptId],
+			foreignColumns: [prompts.id],
+			name: "agent_prompts_prompt_id_fkey"
+		}).onDelete("restrict"),
+	primaryKey({ columns: [table.agentId, table.promptId], name: "agent_prompts_pkey"}),
+]);
+
 export const parameterItemDepartments = pgTable("parameter_item_departments", {
 	parameterItemId: uuid("parameter_item_id").notNull(),
 	departmentId: uuid("department_id").notNull(),
@@ -756,6 +792,28 @@ export const scenarioDepartments = pgTable("scenario_departments", {
 	primaryKey({ columns: [table.scenarioId, table.departmentId], name: "scenario_departments_pkey"}),
 ]);
 
+export const scenarioParameterItems = pgTable("scenario_parameter_items", {
+	scenarioId: uuid("scenario_id").notNull(),
+	parameterItemId: uuid("parameter_item_id").notNull(),
+	active: boolean().default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("scenario_parameter_items_parameter_item_id_idx").using("btree", table.parameterItemId.asc().nullsLast().op("uuid_ops")),
+	index("scenario_parameter_items_scenario_id_idx").using("btree", table.scenarioId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.scenarioId],
+			foreignColumns: [scenarios.id],
+			name: "scenario_parameter_items_scenario_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.parameterItemId],
+			foreignColumns: [parameterItems.id],
+			name: "scenario_parameter_items_parameter_item_id_fkey"
+		}).onDelete("cascade"),
+	primaryKey({ columns: [table.scenarioId, table.parameterItemId], name: "scenario_parameter_items_pkey"}),
+]);
+
 export const scenarioPersonas = pgTable("scenario_personas", {
 	scenarioId: uuid("scenario_id").notNull(),
 	personaId: uuid("persona_id").notNull(),
@@ -778,28 +836,6 @@ export const scenarioPersonas = pgTable("scenario_personas", {
 			name: "scenario_personas_persona_id_fkey"
 		}).onDelete("restrict"),
 	primaryKey({ columns: [table.scenarioId, table.personaId], name: "scenario_personas_pkey"}),
-]);
-
-export const scenarioParameterItems = pgTable("scenario_parameter_items", {
-	scenarioId: uuid("scenario_id").notNull(),
-	parameterItemId: uuid("parameter_item_id").notNull(),
-	active: boolean().default(true).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("scenario_parameter_items_parameter_item_id_idx").using("btree", table.parameterItemId.asc().nullsLast().op("uuid_ops")),
-	index("scenario_parameter_items_scenario_id_idx").using("btree", table.scenarioId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.scenarioId],
-			foreignColumns: [scenarios.id],
-			name: "scenario_parameter_items_scenario_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.parameterItemId],
-			foreignColumns: [parameterItems.id],
-			name: "scenario_parameter_items_parameter_item_id_fkey"
-		}).onDelete("cascade"),
-	primaryKey({ columns: [table.scenarioId, table.parameterItemId], name: "scenario_parameter_items_pkey"}),
 ]);
 
 export const scenarioDocuments = pgTable("scenario_documents", {

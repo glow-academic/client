@@ -104,6 +104,7 @@ class AgentDetailResponse(BaseModel):
     department_ids: list[str]
     valid_department_ids: list[str]
     department_mapping: DepartmentMapping
+    department_prompt_links: dict[str, str]  # Maps department_id -> prompt_id
 
     # Prompt version history
     prompt_mapping: dict[str, PromptInfo]

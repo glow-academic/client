@@ -127,6 +127,7 @@ class PersonaDetailResponse(BaseModel):
 
     # Prompt version history
     prompt_mapping: dict[str, PromptInfo]
+    department_prompt_links: dict[str, str]  # Maps department_id -> prompt_id
 
     # Mappings
     model_mapping: ModelMapping
