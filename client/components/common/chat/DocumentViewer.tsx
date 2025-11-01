@@ -18,6 +18,13 @@ export interface DocumentViewerProps {
   compact?: boolean;
 }
 
+// Detect iOS Safari (native PDF viewer has scroll issues in iframes)
+const isMobileSafari =
+  typeof navigator !== "undefined" &&
+  /iP(ad|hone|od)/.test(navigator.userAgent) &&
+  /Safari/.test(navigator.userAgent) &&
+  !/CriOS|FxiOS/.test(navigator.userAgent);
+
 // Simplified document type info
 const getDocumentTypeInfo = (type: string) => {
   const typeMap: Record<string, { icon: string; color: string }> = {
@@ -127,6 +134,24 @@ export default function DocumentViewer({
 
     // PDF viewer - always fit to width
     if (type?.includes("application/pdf")) {
+      // iOS Safari: open natively (scroll works, no freeze)
+      if (isMobileSafari) {
+        return (
+          <div className="p-2">
+            <Button asChild variant="default" className="w-full">
+              <a
+                href={content ?? ""}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open PDF
+              </a>
+            </Button>
+          </div>
+        );
+      }
+
+      // Everyone else: keep iframe
       return (
         <div className="w-full h-full min-h-[400px]">
           <iframe

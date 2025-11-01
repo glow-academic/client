@@ -93,7 +93,177 @@ export default function TableRubric({
 
   return (
     <div className="space-y-6 w-full">
-      <div className="overflow-auto max-h-[70vh]">
+      {/* Mobile: 2-column simplified view */}
+      <div className="md:hidden">
+        <Table className="w-full text-sm">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="font-semibold">Criteria</TableHead>
+              <TableHead className="w-24 font-semibold">Score</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {groupedStandards.map(
+              ({ groupId, groupInfo, standardIds }, groupIndex) => {
+                // Find achieved standard for this group
+                const achievedStandardId = standardIds.find((sid) =>
+                  isStandardAchieved(sid)
+                );
+                const achievedStandard = achievedStandardId
+                  ? standardsMapping[achievedStandardId]
+                  : null;
+                const isPassed = achievedStandardId
+                  ? isStandardPassed(achievedStandardId)
+                  : false;
+                const isFlipped = achievedStandardId
+                  ? flippedCells.has(achievedStandardId)
+                  : false;
+
+                return (
+                  <TableRow
+                    key={groupId}
+                    className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}
+                  >
+                    <TableCell className="font-medium align-top p-2 text-xs">
+                      <HoverCard openDelay={200} closeDelay={150}>
+                        <HoverCardTrigger asChild>
+                          <div className="break-words whitespace-normal overflow-hidden cursor-pointer px-2 py-1 rounded-sm hover:bg-accent/40">
+                            {groupInfo?.name || "Unknown Group"}
+                          </div>
+                        </HoverCardTrigger>
+                        <HoverCardContent side="right" className="w-80">
+                          <div className="space-y-2">
+                            <div className="text-xs font-semibold">
+                              Standards in this group
+                            </div>
+                            {standardIds.length === 0 ? (
+                              <div className="text-xs text-muted-foreground">
+                                No standards in this group.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 gap-1">
+                                {standardIds.map((standardId) => {
+                                  const standardInfo =
+                                    standardsMapping[standardId];
+                                  const isAchievedForS =
+                                    isStandardAchieved(standardId);
+                                  return (
+                                    <div
+                                      key={standardId}
+                                      className="flex items-center justify-between text-xs"
+                                    >
+                                      <span
+                                        className={
+                                          isAchievedForS
+                                            ? "font-semibold"
+                                            : "text-muted-foreground"
+                                        }
+                                      >
+                                        {standardInfo?.name || "Unknown"} (
+                                        {standardInfo?.points || 0})
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    </TableCell>
+                    <TableCell
+                      className={`whitespace-normal text-xs align-top p-2 ${
+                        achievedStandard
+                          ? isPassed
+                            ? "bg-green-200 dark:bg-green-900/40"
+                            : "bg-red-200 dark:bg-red-900/40"
+                          : ""
+                      }`}
+                      role={achievedStandard ? "button" : undefined}
+                      tabIndex={achievedStandard ? 0 : -1}
+                      onKeyDown={(e) => {
+                        const target = e.target as HTMLElement;
+                        if (
+                          target.closest(
+                            "textarea, input, button, select, [contenteditable='true']"
+                          )
+                        ) {
+                          return;
+                        }
+                        if (
+                          (e.key === "Enter" || e.key === " ") &&
+                          achievedStandardId
+                        ) {
+                          e.preventDefault();
+                          setFlippedCells((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(achievedStandardId))
+                              next.delete(achievedStandardId);
+                            else next.add(achievedStandardId);
+                            return next;
+                          });
+                        }
+                      }}
+                      onClick={() => {
+                        if (achievedStandardId) {
+                          setFlippedCells((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(achievedStandardId))
+                              next.delete(achievedStandardId);
+                            else next.add(achievedStandardId);
+                            return next;
+                          });
+                        }
+                      }}
+                    >
+                      {achievedStandard ? (
+                        (() => {
+                          const feedbackText =
+                            gradingState?.feedbackByStandardId?.[
+                              achievedStandardId
+                            ];
+                          const frontContent = (
+                            <div className="text-xs leading-tight">
+                              {feedbackText || achievedStandard.description}
+                            </div>
+                          );
+                          const backContent = (
+                            <div className="text-xs leading-tight">
+                              {achievedStandard.description}
+                            </div>
+                          );
+
+                          return isFlipped ? (
+                            <div
+                              className={`flip3d is-flipped`}
+                              data-dir={1}
+                            >
+                              <div className="face front">{frontContent}</div>
+                              <div className="face back">{backContent}</div>
+                            </div>
+                          ) : (
+                            <div className={`flip3d`} data-dir={-1}>
+                              <div className="face front">{frontContent}</div>
+                              <div className="face back">{backContent}</div>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <div className="text-xs text-muted-foreground">
+                          Not achieved
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              }
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Desktop: Full table view */}
+      <div className="hidden md:block overflow-auto max-h-[70vh]">
         <Table className="min-w-[600px] text-sm table-fixed">
           <TableHeader className="sticky top-0 z-10">
             <TableRow>

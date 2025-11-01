@@ -19,6 +19,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -59,6 +67,7 @@ import { formatTime } from "@/utils/time";
 import { Progress } from "@/components/ui/progress";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useRouter } from "next/navigation";
@@ -73,12 +82,15 @@ export default function AttemptChat() {
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const log = useLogger();
   const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
+  const isMobile = useIsMobile();
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null
   );
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70); // Default height in pixels
   const [showObjectives, setShowObjectives] = useState<boolean>(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showObjectivesModal, setShowObjectivesModal] = useState(false);
 
   // Create a ref for the panel group
   const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
@@ -371,6 +383,7 @@ export default function AttemptChat() {
                 ? 70
                 : 100
             }
+            className="md:flex-none"
           >
             <Card className="h-full flex flex-col py-4">
               <div className="h-full flex flex-col">
@@ -443,11 +456,16 @@ export default function AttemptChat() {
                                       showDocuments ? "default" : "outline"
                                     }
                                     size="sm"
-                                    onClick={() =>
-                                      simulationContext?.setShowDocuments(
-                                        !showDocuments
-                                      )
-                                    }
+                                    onClick={() => {
+                                      // Mobile: open modal, Desktop: toggle panel
+                                      if (isMobile) {
+                                        setShowDocumentModal(true);
+                                      } else {
+                                        simulationContext?.setShowDocuments(
+                                          !showDocuments
+                                        );
+                                      }
+                                    }}
                                     className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
                                   >
                                     <FileText className="h-4 w-4" />
@@ -486,6 +504,13 @@ export default function AttemptChat() {
                                           showObjectives ? "default" : "outline"
                                         }
                                         size="sm"
+                                        onClick={(e) => {
+                                          // Mobile: open modal, Desktop: use collapsible
+                                          if (isMobile) {
+                                            e.preventDefault();
+                                            setShowObjectivesModal(true);
+                                          }
+                                        }}
                                         className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
                                       >
                                         <ListChecks className="h-4 w-4" />
@@ -642,7 +667,7 @@ export default function AttemptChat() {
                       </div>
                     </div>
 
-                    {/* Objectives Collapsible Content */}
+                    {/* Objectives Collapsible Content - Desktop Only */}
                     {simulationContext?.simulation?.objectivesEnabled &&
                       (() => {
                         const currentScenario = displayChat?.id
@@ -651,7 +676,7 @@ export default function AttemptChat() {
                         const objectives = currentScenario?.objectives || [];
                         return objectives.length > 0;
                       })() && (
-                        <CollapsibleContent className="pt-2">
+                        <CollapsibleContent className="pt-2 hidden md:block">
                           <div className="px-4 pb-2">
                             <ul className="space-y-2 list-none">
                               {(() => {
@@ -853,6 +878,141 @@ export default function AttemptChat() {
               );
             })()}
         </ResizablePanelGroup>
+
+        {/* Document Modal - Mobile Only */}
+        <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
+          <DialogContent
+            className="sm:max-w-4xl max-h-[80vh] md:overflow-hidden overflow-auto flex flex-col"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <DialogHeader>
+              <DialogTitle>
+                {(() => {
+                  const currentChatDocIds = displayChat?.documentIds || [];
+                  const filteredDocs =
+                    simulationContext?.scenarioDocuments.filter((doc) =>
+                      currentChatDocIds.includes(doc.document_id)
+                    ) || [];
+                  return (
+                    filteredDocs.find(
+                      (doc) => doc.document_id === selectedDocumentId
+                    )?.name ||
+                    filteredDocs[0]?.name ||
+                    "Document"
+                  );
+                })()}
+              </DialogTitle>
+              <DialogDescription>View scenario document</DialogDescription>
+            </DialogHeader>
+
+            {/* Document selector (if multiple documents) */}
+            {(() => {
+              const currentChatDocIds = displayChat?.documentIds || [];
+              const filteredDocs =
+                simulationContext?.scenarioDocuments.filter((doc) =>
+                  currentChatDocIds.includes(doc.document_id)
+                ) || [];
+              return filteredDocs.length > 1 ? (
+                <div className="pb-3">
+                  <DocumentSelect
+                    documents={filteredDocs}
+                    selectedDocumentId={selectedDocumentId}
+                    onDocumentSelect={setSelectedDocumentId}
+                  />
+                </div>
+              ) : null;
+            })()}
+
+            {/* Document viewer */}
+            {selectedDocumentId && (
+              <div className="flex-1 overflow-auto">
+                {(() => {
+                  const currentChatDocIds = displayChat?.documentIds || [];
+                  const filteredDocs =
+                    simulationContext?.scenarioDocuments.filter((doc) =>
+                      currentChatDocIds.includes(doc.document_id)
+                    ) || [];
+                  const document =
+                    filteredDocs.find(
+                      (doc) => doc.document_id === selectedDocumentId
+                    ) || filteredDocs[0];
+                  return document ? (
+                    <DocumentViewer document={document} bare={true} />
+                  ) : null;
+                })()}
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDocumentModal(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Objectives Modal - Mobile Only */}
+        <Dialog
+          open={showObjectivesModal}
+          onOpenChange={setShowObjectivesModal}
+        >
+          <DialogContent
+            className="sm:max-w-2xl max-h-[80vh] overflow-auto flex flex-col"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <DialogHeader>
+              <DialogTitle>Learning Objectives</DialogTitle>
+              <DialogDescription>
+                View the learning objectives for this scenario
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-auto py-4">
+              {(() => {
+                const currentScenario = displayChat?.id
+                  ? simulationContext?.scenariosByChatId[displayChat.id]
+                  : null;
+                const objectives = currentScenario?.objectives || [];
+
+                if (objectives.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground italic">
+                      No objectives defined for this scenario.
+                    </p>
+                  );
+                }
+
+                return (
+                  <ul className="space-y-2 list-none">
+                    {objectives.map((objective, index) => (
+                      <li
+                        key={index}
+                        className="font-medium flex items-start gap-2"
+                      >
+                        <span className="text-primary mt-1.5 flex-shrink-0">
+                          •
+                        </span>
+                        <span className="flex-1">{objective}</span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowObjectivesModal(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -867,6 +1027,7 @@ export default function AttemptChat() {
               ? 70
               : 100
           }
+          className="md:flex-none"
         >
           <Card className="h-full flex flex-col py-4">
             <TooltipProvider>
@@ -930,11 +1091,16 @@ export default function AttemptChat() {
                                         showDocuments ? "default" : "outline"
                                       }
                                       size="sm"
-                                      onClick={() =>
-                                        simulationContext?.setShowDocuments(
-                                          !showDocuments
-                                        )
-                                      }
+                                      onClick={() => {
+                                        // Mobile: open modal, Desktop: toggle panel
+                                        if (window.innerWidth < 768) {
+                                          setShowDocumentModal(true);
+                                        } else {
+                                          simulationContext?.setShowDocuments(
+                                            !showDocuments
+                                          );
+                                        }
+                                      }}
                                       className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
                                     >
                                       <FileText className="h-4 w-4" />
@@ -974,6 +1140,13 @@ export default function AttemptChat() {
                                               : "outline"
                                           }
                                           size="sm"
+                                          onClick={(e) => {
+                                            // Mobile: open modal, Desktop: use collapsible
+                                            if (window.innerWidth < 768) {
+                                              e.preventDefault();
+                                              setShowObjectivesModal(true);
+                                            }
+                                          }}
                                           className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
                                         >
                                           <ListChecks className="h-4 w-4" />
@@ -1220,6 +1393,138 @@ export default function AttemptChat() {
           </>
         )}
       </ResizablePanelGroup>
+
+      {/* Document Modal - Mobile Only */}
+      <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
+        <DialogContent
+          className="sm:max-w-4xl max-h-[80vh] md:overflow-hidden overflow-auto flex flex-col"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {(() => {
+                const currentChatDocIds = displayChat?.documentIds || [];
+                const filteredDocs =
+                  simulationContext?.scenarioDocuments.filter((doc) =>
+                    currentChatDocIds.includes(doc.document_id)
+                  ) || [];
+                return (
+                  filteredDocs.find(
+                    (doc) => doc.document_id === selectedDocumentId
+                  )?.name ||
+                  filteredDocs[0]?.name ||
+                  "Document"
+                );
+              })()}
+            </DialogTitle>
+            <DialogDescription>View scenario document</DialogDescription>
+          </DialogHeader>
+
+          {/* Document selector (if multiple documents) */}
+          {(() => {
+            const currentChatDocIds = displayChat?.documentIds || [];
+            const filteredDocs =
+              simulationContext?.scenarioDocuments.filter((doc) =>
+                currentChatDocIds.includes(doc.document_id)
+              ) || [];
+            return filteredDocs.length > 1 ? (
+              <div className="pb-3">
+                <DocumentSelect
+                  documents={filteredDocs}
+                  selectedDocumentId={selectedDocumentId}
+                  onDocumentSelect={setSelectedDocumentId}
+                />
+              </div>
+            ) : null;
+          })()}
+
+          {/* Document viewer */}
+          {selectedDocumentId && (
+            <div className="flex-1 overflow-auto">
+              {(() => {
+                const currentChatDocIds = displayChat?.documentIds || [];
+                const filteredDocs =
+                  simulationContext?.scenarioDocuments.filter((doc) =>
+                    currentChatDocIds.includes(doc.document_id)
+                  ) || [];
+                const document =
+                  filteredDocs.find(
+                    (doc) => doc.document_id === selectedDocumentId
+                  ) || filteredDocs[0];
+                return document ? (
+                  <DocumentViewer document={document} bare={true} />
+                ) : null;
+              })()}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDocumentModal(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Objectives Modal - Mobile Only */}
+      <Dialog open={showObjectivesModal} onOpenChange={setShowObjectivesModal}>
+        <DialogContent
+          className="sm:max-w-2xl max-h-[80vh] overflow-auto flex flex-col"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <DialogHeader>
+            <DialogTitle>Learning Objectives</DialogTitle>
+            <DialogDescription>
+              View the learning objectives for this scenario
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto py-4">
+            {(() => {
+              const currentScenario = displayChat?.id
+                ? simulationContext?.scenariosByChatId[displayChat.id]
+                : null;
+              const objectives = currentScenario?.objectives || [];
+
+              if (objectives.length === 0) {
+                return (
+                  <p className="text-sm text-muted-foreground italic">
+                    No objectives defined for this scenario.
+                  </p>
+                );
+              }
+
+              return (
+                <ul className="space-y-2 list-none">
+                  {objectives.map((objective, index) => (
+                    <li
+                      key={index}
+                      className="font-medium flex items-start gap-2"
+                    >
+                      <span className="text-primary mt-1.5 flex-shrink-0">
+                        •
+                      </span>
+                      <span className="flex-1">{objective}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowObjectivesModal(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
