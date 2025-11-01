@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 import { CohortPicker } from "@/components/common/forms/CohortPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -36,13 +37,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -986,27 +980,19 @@ export default function CSVImportStaffModal({
                                 hasRoleError ? "bg-destructive/10" : ""
                               }
                             >
-                              <Select
-                                value={editableRow.role || ""}
-                                onValueChange={(value) =>
+                              <StaffRolePicker
+                                selectedRole={editableRow.role || ""}
+                                onSelect={(value) =>
                                   updateEditableRow(
                                     index,
                                     "role",
                                     value || null
                                   )
                                 }
-                              >
-                                <SelectTrigger className="h-8 w-full min-w-[120px]">
-                                  <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {roleOptions.map((role) => (
-                                    <SelectItem key={role} value={role}>
-                                      {role}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                roleOptions={roleOptions}
+                                placeholder="Select role"
+                                buttonClassName="h-8"
+                              />
                             </TableCell>
                             <TableCell
                               className={

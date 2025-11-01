@@ -10,6 +10,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/table";
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -569,8 +571,14 @@ export function StaffDataTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
   });
 
   return (
@@ -662,6 +670,7 @@ export function StaffDataTable({
             </TableBody>
           </Table>
         </div>
+        <DataTablePagination table={table} />
       </div>
     </TooltipProvider>
   );

@@ -1,12 +1,12 @@
 "use client";
 
-import { Shield, User, UserPlus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { UserPlus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { CohortPicker } from "@/components/common/forms/CohortPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { Badge } from "@/components/ui/badge";
+import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,14 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useCreateOrUpdateStaff } from "@/lib/api/v2/hooks/profile";
 
@@ -42,50 +34,6 @@ export interface ManualAddStaffModalProps {
   onDone?: () => void;
 }
 
-const getRoleIcon = (role: string) => {
-  switch (role) {
-    case "superadmin":
-    case "admin":
-    case "instructional":
-      return Shield;
-    default:
-      return User;
-  }
-};
-
-const getRoleDisplayName = (role: string) => {
-  switch (role) {
-    case "superadmin":
-      return "Super Administrator";
-    case "admin":
-      return "Administrator";
-    case "instructional":
-      return "Instructional Staff";
-    case "instructor":
-      return "Instructor";
-    case "ta":
-      return "Teaching Assistant";
-    case "guest":
-      return "Guest";
-    default:
-      return role.charAt(0).toUpperCase() + role.slice(1);
-  }
-};
-
-const getRoleBadgeVariant = (role: string) => {
-  switch (role) {
-    case "superadmin":
-    case "admin":
-      return "destructive" as const;
-    case "instructional":
-      return "default" as const;
-    case "instructor":
-      return "secondary" as const;
-    default:
-      return "outline" as const;
-  }
-};
-
 export default function ManualAddStaffModal({
   open,
   onOpenChange,
@@ -98,7 +46,6 @@ export default function ManualAddStaffModal({
   roleOptions,
   onDone,
 }: ManualAddStaffModalProps) {
-  const { effectiveProfile } = useProfile();
   const log = useLogger();
   const createOrUpdateMutation = useCreateOrUpdateStaff();
 
@@ -107,7 +54,8 @@ export default function ManualAddStaffModal({
     lastName: "",
     alias: "",
     role: "" as RoleValue | "",
-    departmentId: departmentIds && departmentIds.length > 0 ? departmentIds[0] : "",
+    departmentId:
+      departmentIds && departmentIds.length > 0 ? departmentIds[0] : "",
     cohortId: cohortIds && cohortIds.length > 0 ? cohortIds[0] : "",
   });
 
@@ -129,33 +77,13 @@ export default function ManualAddStaffModal({
         lastName: "",
         alias: "",
         role: "",
-        departmentId: departmentIds && departmentIds.length > 0 ? departmentIds[0] : "",
+        departmentId:
+          departmentIds && departmentIds.length > 0 ? departmentIds[0] : "",
         cohortId: cohortIds && cohortIds.length > 0 ? cohortIds[0] : "",
       });
       setFormErrors({});
     }
   }, [open, departmentIds, cohortIds]);
-
-  // Role availability based on user role
-  const isCurrentUserSuperAdmin = effectiveProfile?.role === "superadmin";
-
-  const availableRoles = useMemo(() => {
-    const base: Array<{ value: RoleValue; label: string; icon: typeof User }> =
-      [
-        { value: "instructional", label: "Instructional", icon: Shield },
-        { value: "ta", label: "Teaching Assistant", icon: User },
-        { value: "guest", label: "Guest", icon: User },
-      ];
-    if (isCurrentUserSuperAdmin) {
-      base.unshift({ value: "admin", label: "Administrator", icon: Shield });
-      base.unshift({
-        value: "superadmin",
-        label: "Super Administrator",
-        icon: Shield,
-      });
-    }
-    return base.filter((role) => roleOptions.includes(role.value));
-  }, [isCurrentUserSuperAdmin, roleOptions]);
 
   // Form validation
   const validateForm = useCallback(() => {
@@ -192,7 +120,6 @@ export default function ManualAddStaffModal({
       errors.role = "Role is required";
     }
 
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   }, [formData]);
@@ -208,12 +135,14 @@ export default function ManualAddStaffModal({
 
     try {
       // Use scoped values if provided, otherwise use form values
-      const finalDepartmentId = departmentIds && departmentIds.length > 0
-        ? departmentIds[0]
-        : formData.departmentId || null;
-      const finalCohortId = cohortIds && cohortIds.length > 0
-        ? cohortIds[0]
-        : formData.cohortId || null;
+      const finalDepartmentId =
+        departmentIds && departmentIds.length > 0
+          ? departmentIds[0]
+          : formData.departmentId || null;
+      const finalCohortId =
+        cohortIds && cohortIds.length > 0
+          ? cohortIds[0]
+          : formData.cohortId || null;
 
       const response = await createOrUpdateMutation.mutateAsync({
         firstName: formData.firstName.trim(),
@@ -318,31 +247,14 @@ export default function ManualAddStaffModal({
             </div>
             <div className="space-y-2 w-full">
               <Label htmlFor="role">Role *</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value: RoleValue) =>
-                  setFormData((p) => ({ ...p, role: value }))
+              <StaffRolePicker
+                selectedRole={formData.role}
+                onSelect={(value) =>
+                  setFormData((p) => ({ ...p, role: value as RoleValue }))
                 }
-              >
-                <SelectTrigger
-                  className={`w-full ${formErrors.role ? "border-red-500" : ""}`}
-                >
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.map((role) => {
-                    const Icon = role.icon;
-                    return (
-                      <SelectItem key={role.value} value={role.value}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {role.label}
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+                roleOptions={roleOptions}
+                placeholder="Select a role"
+              />
               {formErrors.role && (
                 <p className="text-sm text-red-500">{formErrors.role}</p>
               )}
@@ -350,7 +262,7 @@ export default function ManualAddStaffModal({
           </div>
 
           {/* Department Selection - only show when not scoped */}
-          {isCurrentUserSuperAdmin && !departmentIds && (
+          {!departmentIds && (
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
               <DepartmentPicker
@@ -399,33 +311,6 @@ export default function ManualAddStaffModal({
               />
               <p className="text-sm text-muted-foreground">
                 Optionally assign this staff member to a cohort.
-              </p>
-            </div>
-          )}
-
-          {/* Role description */}
-          {formData.role && (
-            <div className="p-4 bg-muted rounded-md">
-              <div className="flex items-center gap-2 mb-2">
-                {(() => {
-                  const RoleIcon = getRoleIcon(formData.role);
-                  return <RoleIcon className="h-4 w-4" />;
-                })()}
-                <Badge variant={getRoleBadgeVariant(formData.role)}>
-                  {getRoleDisplayName(formData.role)}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {formData.role === "superadmin" &&
-                  "Will have full access and user management permissions, plus system-wide settings."}
-                {formData.role === "admin" &&
-                  "Will have full access and user management permissions."}
-                {formData.role === "instructional" &&
-                  "Will have permissions to manage teaching assistants."}
-                {formData.role === "ta" &&
-                  "Will have permissions to take simulations and see their history."}
-                {formData.role === "guest" &&
-                  "Will only have access to practice simulations."}
               </p>
             </div>
           )}

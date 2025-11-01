@@ -28,13 +28,13 @@ import {
   CreateProfileResponseSchema,
   CreateStaffDataRequest,
   CreateStaffDataResponseSchema,
-  ProcessCSVRequest,
-  ProcessCSVResponseSchema,
   DeleteProfileRequest,
   DeleteProfileResponseSchema,
   MarkChatCompleteRequest,
   MarkIntroCompleteRequest,
   MarkTourStepResponseSchema,
+  ProcessCSVRequest,
+  ProcessCSVResponseSchema,
   ProfileDetailBulkResponseSchema,
   ProfileDetailResponseSchema,
   ProfileFilters,
@@ -47,6 +47,7 @@ import {
   UpdateProfileSimpleResponse,
 } from "@/lib/api/v2/schemas/profile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 // Type for profile hook options
 type ProfileHookOptions = {
@@ -78,6 +79,49 @@ export function useProfileList(
       return ProfileListResponseSchema.parse(res);
     },
   });
+}
+
+/**
+ * Hook to search profiles by query string (client-side filtering)
+ * Uses useProfileList and filters results by name/alias
+ */
+export function useSearchProfiles(
+  query: string,
+  filters: ProfileFilters,
+  options: ProfileHookOptions | boolean = true
+) {
+  const { data, ...rest } = useProfileList(filters, options);
+
+  const filteredData = useMemo(() => {
+    if (!data || !query.trim()) {
+      return data;
+    }
+
+    const searchTerm = query.toLowerCase().trim();
+    const filtered = data.staff.filter((profile) => {
+      const firstName = profile.first_name?.toLowerCase() || "";
+      const lastName = profile.last_name?.toLowerCase() || "";
+      const alias = profile.alias?.toLowerCase() || "";
+      const fullName = `${firstName} ${lastName}`.trim();
+
+      return (
+        firstName.includes(searchTerm) ||
+        lastName.includes(searchTerm) ||
+        alias.includes(searchTerm) ||
+        fullName.includes(searchTerm)
+      );
+    });
+
+    return {
+      ...data,
+      staff: filtered,
+    };
+  }, [data, query]);
+
+  return {
+    ...rest,
+    data: filteredData,
+  };
 }
 
 export function useProfileDetail(

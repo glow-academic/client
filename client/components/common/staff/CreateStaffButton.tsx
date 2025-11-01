@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Upload, UserPlus } from "lucide-react";
+import { Plus, Search, Upload, UserPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useCreateStaffData } from "@/lib/api/v2/hooks/profile";
 import CSVImportStaffModal from "./CSVImportStaffModal";
 import ManualAddStaffModal from "./ManualAddStaffModal";
+import SearchExistingStaffModal from "./SearchExistingStaffModal";
 
 export interface CreateStaffButtonProps {
   departmentIds?: string[];
@@ -29,6 +30,7 @@ export default function CreateStaffButton({
   const { effectiveProfile, departmentIds } = useProfile();
   const [showManualModal, setShowManualModal] = useState(false);
   const [showCSVModal, setShowCSVModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   // Fetch create staff data
   const { data: createStaffData, isLoading } = useCreateStaffData(
@@ -86,9 +88,14 @@ export default function CreateStaffButton({
     setShowCSVModal(true);
   };
 
+  const handleSearchExisting = () => {
+    setShowSearchModal(true);
+  };
+
   const handleModalDone = () => {
     setShowManualModal(false);
     setShowCSVModal(false);
+    setShowSearchModal(false);
     if (onDone) {
       onDone();
     }
@@ -112,6 +119,10 @@ export default function CreateStaffButton({
             <Upload className="h-4 w-4 mr-2" />
             CSV Import
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleSearchExisting}>
+            <Search className="h-4 w-4 mr-2" />
+            Search Existing
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -119,8 +130,12 @@ export default function CreateStaffButton({
         <ManualAddStaffModal
           open={showManualModal}
           onOpenChange={setShowManualModal}
-          {...(scopedDepartmentIds && scopedDepartmentIds.length > 0 && { departmentIds: scopedDepartmentIds })}
-          {...(scopedCohortIds && scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
+          {...(scopedDepartmentIds &&
+            scopedDepartmentIds.length > 0 && {
+              departmentIds: scopedDepartmentIds,
+            })}
+          {...(scopedCohortIds &&
+            scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
           cohortMapping={cohortMapping}
@@ -134,13 +149,35 @@ export default function CreateStaffButton({
         <CSVImportStaffModal
           open={showCSVModal}
           onOpenChange={setShowCSVModal}
-          {...(scopedDepartmentIds && scopedDepartmentIds.length > 0 && { departmentIds: scopedDepartmentIds })}
-          {...(scopedCohortIds && scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
+          {...(scopedDepartmentIds &&
+            scopedDepartmentIds.length > 0 && {
+              departmentIds: scopedDepartmentIds,
+            })}
+          {...(scopedCohortIds &&
+            scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
           cohortMapping={cohortMapping}
           validCohortIds={validCohortIds}
           roleOptions={roleOptions}
+          onDone={handleModalDone}
+        />
+      )}
+
+      {showSearchModal && (
+        <SearchExistingStaffModal
+          open={showSearchModal}
+          onOpenChange={setShowSearchModal}
+          {...(scopedDepartmentIds &&
+            scopedDepartmentIds.length > 0 && {
+              departmentIds: scopedDepartmentIds,
+            })}
+          {...(scopedCohortIds &&
+            scopedCohortIds.length > 0 && { cohortIds: scopedCohortIds })}
+          departmentMapping={departmentMapping}
+          validDepartmentIds={validDepartmentIds}
+          cohortMapping={cohortMapping}
+          validCohortIds={validCohortIds}
           onDone={handleModalDone}
         />
       )}

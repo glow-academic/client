@@ -6,6 +6,7 @@
 import { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
 import { HomeFilters } from "@/lib/api/v2/schemas/home";
 import { PracticeFilters } from "@/lib/api/v2/schemas/practice";
+import { ProfileFilters } from "./schemas/profile";
 
 // Ensure stable serialization of filter objects
 function serializeFilters(filters: AnalyticsFilters): string {
@@ -354,7 +355,7 @@ export const rubricsDetailDefaultKeys = {
 // Profile Keys (unified auth + staff)
 export const profileListKeys = {
   all: ["profile:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: ProfileFilters) =>
     [...profileListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
