@@ -358,6 +358,32 @@ class PersonaQueries:
         """
         return (query, [persona_id])
 
+    def create_or_update_persona_department_prompt(
+        self, persona_id: str, department_id: str, prompt_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Create or update persona-department-prompt link.
+        Deactivates any existing active records for (persona_id, department_id) first.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH deactivate_existing AS (
+            UPDATE persona_departments
+            SET active = false, updated_at = NOW()
+            WHERE persona_id = $1::uuid 
+            AND department_id = $2::uuid 
+            AND active = true
+        )
+        INSERT INTO persona_departments (persona_id, department_id, prompt_id, active, created_at, updated_at)
+        VALUES ($1::uuid, $2::uuid, $3::uuid, true, NOW(), NOW())
+        ON CONFLICT (persona_id, department_id, prompt_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+        return (query, [persona_id, department_id, prompt_id])
+
     def create_persona_departments(
         self, persona_id: str, department_ids: list[str]
     ) -> tuple[str, list[Any]]:
@@ -567,13 +593,25 @@ class PersonaQueries:
             Tuple of (query string, params list)
         """
         query = """
-        WITH persona_departments_data AS (
+        WITH         persona_departments_data AS (
             SELECT 
                 pd.persona_id,
                 ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
             FROM persona_departments pd
             WHERE pd.persona_id = $1 AND pd.active = true
             GROUP BY pd.persona_id
+        ),
+        persona_department_prompt_links AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        pd.department_id::text,
+                        pd.prompt_id::text
+                    ),
+                    '{}'::jsonb
+                ) as department_prompt_links
+            FROM persona_departments pd
+            WHERE pd.persona_id = $1 AND pd.active = true
         ),
         persona_active_prompt AS (
             SELECT 
@@ -692,13 +730,15 @@ class PersonaQueries:
             vm.model_ids as valid_model_ids,
             u.usage_count,
             pr.user_role,
-            COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping
+            COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping,
+            COALESCE(pdpl.department_prompt_links, '{}'::jsonb) as department_prompt_links
         FROM persona_data p
         CROSS JOIN valid_depts vd
         CROSS JOIN valid_models vm
         CROSS JOIN usage_data u
         CROSS JOIN profile_data pr
         CROSS JOIN prompt_mapping_data pmd
+        CROSS JOIN persona_department_prompt_links pdpl
         """
         return (query, [persona_id, profile_id])
 

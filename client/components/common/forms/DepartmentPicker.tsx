@@ -46,6 +46,7 @@ export interface DepartmentPickerProps<T extends MappingItem = MappingItem>
   hideSelectedChips?: boolean;
   buttonClassName?: string;
   disabled?: boolean;
+  compact?: boolean; // Compact mode for single-select, smaller button
 }
 
 export function DepartmentPicker<T extends MappingItem = MappingItem>({
@@ -58,6 +59,7 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
   hideSelectedChips = true,
   buttonClassName,
   disabled = false,
+  compact = false,
   ...props
 }: DepartmentPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
@@ -103,7 +105,7 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
 
   const getButtonText = () => {
     if (selectedIds.length === 0) {
-      return placeholder;
+      return compact ? "All Departments" : placeholder;
     }
     if (selectedIds.length === 1) {
       const department = mapping[selectedIds[0]!];
@@ -150,11 +152,14 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
             role="combobox"
             aria-expanded={open}
             aria-label="Select departments"
-            className={cn("w-full justify-between", buttonClassName)}
+            className={cn(
+              compact ? "h-8 justify-between" : "w-full justify-between",
+              buttonClassName
+            )}
             disabled={disabled}
           >
             <span className="truncate text-left">{getButtonText()}</span>
-            <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />
+            <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2 h-4 w-4" />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[300px] p-0">

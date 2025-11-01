@@ -104,6 +104,7 @@ export const AgentDetailResponseSchema = z.object({
   department_ids: z.array(z.string()),
   valid_department_ids: z.array(z.string()),
   department_mapping: DepartmentMappingSchema,
+  department_prompt_links: z.record(z.string(), z.string()),
 
   // Metadata
   valid_model_ids: z.array(z.string()),
@@ -162,6 +163,8 @@ export const UpdateAgentRequestSchema = z.object({
   active: z.boolean(),
   role: z.string(), // agent_role enum value
   department_ids: z.array(z.string()).nullable(), // None = cross-department (superadmin only)
+  department_id: z.string().nullable().optional(), // If provided, edit department-specific prompt
+  department_prompt_id: z.string().nullable().optional(), // How ID for department-specific prompt
 });
 
 export type UpdateAgentRequest = z.infer<typeof UpdateAgentRequestSchema>;

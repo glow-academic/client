@@ -113,6 +113,9 @@ export default function Persona({
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
     "editor"
   );
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+    string | null
+  >(null); // null = "All Departments"
 
   // V2 API hooks
   const { data: personaDetail, isLoading: isLoadingPersonaDetail } =
@@ -179,6 +182,39 @@ export default function Persona({
     }
   }, [personaData, isEditMode, initialFormData]);
 
+  // Update prompt when department selection changes
+  useEffect(() => {
+    if (!isEditMode || !personaData) return;
+
+    const getCurrentPromptId = () => {
+      if (
+        selectedDepartmentId &&
+        personaData.department_prompt_links?.[selectedDepartmentId]
+      ) {
+        return personaData.department_prompt_links[selectedDepartmentId];
+      }
+      return personaData.prompt_id || null;
+    };
+
+    const currentPromptId = getCurrentPromptId();
+    const promptInfo =
+      currentPromptId && personaData.prompt_mapping?.[currentPromptId];
+
+    if (promptInfo) {
+      setFormData((prev) => ({
+        ...prev,
+        promptId: currentPromptId,
+        systemPrompt: promptInfo.system_prompt,
+      }));
+    } else if (currentPromptId === null) {
+      // New prompt, keep current systemPrompt
+      setFormData((prev) => ({
+        ...prev,
+        promptId: null,
+      }));
+    }
+  }, [selectedDepartmentId, personaData, isEditMode]);
+
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
     if (personaDetail?.name && personaId && isEditMode) {
@@ -221,7 +257,6 @@ export default function Persona({
       return;
     }
 
-
     setIsSubmitting(true);
 
     try {
@@ -241,6 +276,11 @@ export default function Persona({
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
             department_ids: formData.departmentIds || null,
+            department_id: selectedDepartmentId || null,
+            department_prompt_id:
+              selectedDepartmentId && formData.promptId
+                ? formData.promptId
+                : null,
           },
           {
             onSuccess: () => {
@@ -715,36 +755,61 @@ export default function Persona({
               <div className="flex items-center justify-between">
                 <Label htmlFor="systemPrompt">System Prompt *</Label>
                 <div className="flex gap-2">
-                  {isEditMode && personaData && personaData.prompt_mapping && Object.keys(personaData.prompt_mapping).length > 0 && (
-                    <PromptPicker
-                      promptMapping={personaData.prompt_mapping}
-                      selectedPromptId={formData?.promptId || null}
-                      onSelect={(promptId) => {
-                        if (promptId && personaData.prompt_mapping[promptId]) {
-                          const prompt = personaData.prompt_mapping[promptId];
-                          setFormData((prev) => ({
-                            ...prev,
-                            promptId: promptId,
-                            systemPrompt: prompt.system_prompt,
-                          }));
-                        } else {
+                  {isEditMode && personaData && (
+                    <DepartmentPicker
+                      mapping={personaData.department_mapping}
+                      validIds={personaData.valid_department_ids}
+                      selectedIds={
+                        selectedDepartmentId ? [selectedDepartmentId] : []
+                      }
+                      onSelect={(ids) => {
+                        setSelectedDepartmentId(
+                          ids.length > 0 ? ids[0]! : null
+                        );
+                      }}
+                      multiSelect={false}
+                      placeholder="All Departments"
+                      disabled={isReadonly}
+                      compact={true}
+                      buttonClassName="h-8"
+                    />
+                  )}
+                  {isEditMode &&
+                    personaData &&
+                    personaData.prompt_mapping &&
+                    Object.keys(personaData.prompt_mapping).length > 0 && (
+                      <PromptPicker
+                        promptMapping={personaData.prompt_mapping}
+                        selectedPromptId={formData?.promptId || null}
+                        onSelect={(promptId) => {
+                          if (
+                            promptId &&
+                            personaData.prompt_mapping[promptId]
+                          ) {
+                            const prompt = personaData.prompt_mapping[promptId];
+                            setFormData((prev) => ({
+                              ...prev,
+                              promptId: promptId,
+                              systemPrompt: prompt.system_prompt,
+                            }));
+                          } else {
+                            setFormData((prev) => ({
+                              ...prev,
+                              promptId: null,
+                            }));
+                          }
+                        }}
+                        onCreateNew={() => {
                           setFormData((prev) => ({
                             ...prev,
                             promptId: null,
                           }));
-                        }
-                      }}
-                      onCreateNew={() => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          promptId: null,
-                        }));
-                      }}
-                      placeholder="Select prompt version..."
-                      disabled={isReadonly}
-                      buttonClassName="h-8"
-                    />
-                  )}
+                        }}
+                        placeholder="Select prompt version..."
+                        disabled={isReadonly}
+                        buttonClassName="h-8"
+                      />
+                    )}
                   {formData?.systemPrompt !== undefined && !isLoading && (
                     <>
                       <Tooltip>

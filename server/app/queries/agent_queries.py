@@ -279,6 +279,18 @@ class AgentQueries:
             WHERE ad.agent_id = $1::uuid AND ad.active = true
             GROUP BY ad.agent_id
         ),
+        agent_department_prompt_links AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        ad.department_id::text,
+                        ad.prompt_id::text
+                    ),
+                    '{}'::jsonb
+                ) as department_prompt_links
+            FROM agent_departments ad
+            WHERE ad.agent_id = $1::uuid AND ad.active = true
+        ),
         debug_data AS (
             SELECT 
                 di.created_at,
@@ -343,6 +355,7 @@ class AgentQueries:
             COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
             COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
             COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping,
+            COALESCE(adpl.department_prompt_links, '{}'::jsonb) as department_prompt_links,
             COALESCE(
                 (SELECT jsonb_agg(
                     jsonb_build_object(
@@ -373,6 +386,7 @@ class AgentQueries:
         LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id
         CROSS JOIN valid_departments_data vdd
         CROSS JOIN prompt_mapping_data pmd
+        CROSS JOIN agent_department_prompt_links adpl
         """
 
         params: list[Any] = [agent_id, profile_id]
@@ -567,6 +581,33 @@ class AgentQueries:
         DELETE FROM agent_departments WHERE agent_id = $1::uuid
         """
         params: list[Any] = [agent_id]
+        return query, params
+
+    def create_or_update_agent_department_prompt(
+        self, agent_id: str, department_id: str, prompt_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Create or update agent-department-prompt link.
+        Deactivates any existing active records for (agent_id, department_id) first.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH deactivate_existing AS (
+            UPDATE agent_departments
+            SET active = false, updated_at = NOW()
+            WHERE agent_id = $1::uuid 
+            AND department_id = $2::uuid 
+            AND active = true
+        )
+        INSERT INTO agent_departments (agent_id, department_id, prompt_id, active, created_at, updated_at)
+        VALUES ($1::uuid, $2::uuid, $3::uuid, true, NOW(), NOW())
+        ON CONFLICT (agent_id, department_id, prompt_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
+        """
+        params: list[Any] = [agent_id, department_id, prompt_id]
         return query, params
 
     def create_prompt(self, system_prompt: str) -> tuple[str, list[Any]]:
@@ -774,8 +815,13 @@ class AgentQueries:
         
         FROM best_agent ba
         INNER JOIN agents a ON a.id = ba.agent_id
+        -- Try department-specific prompt first, fall back to default prompt
+        LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
+        LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
         LEFT JOIN agent_prompts ap_classify ON ap_classify.agent_id = a.id AND ap_classify.active = true
-        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_classify.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_classify.prompt_id
+        -- Use department-specific prompt if available, otherwise use default
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -907,8 +953,13 @@ class AgentQueries:
         
         FROM agents a
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+        -- Try department-specific prompt first, fall back to default prompt
+        LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $1::uuid AND ad_prompt.active = true
+        LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
         LEFT JOIN agent_prompts ap_scenario ON ap_scenario.agent_id = a.id AND ap_scenario.active = true
-        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_scenario.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_scenario.prompt_id
+        -- Use department-specific prompt if available, otherwise use default
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -1069,8 +1120,13 @@ class AgentQueries:
         LEFT JOIN profile_info pi ON true
         CROSS JOIN best_agent ba
         INNER JOIN agents a ON a.id = ba.agent_id
+        -- Try department-specific prompt first, fall back to default prompt
+        LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $3::uuid AND ad_prompt.active = true
+        LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
         LEFT JOIN agent_prompts ap_hint ON ap_hint.agent_id = a.id AND ap_hint.active = true
-        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_hint.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_hint.prompt_id
+        -- Use department-specific prompt if available, otherwise use default
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -1094,6 +1150,17 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
+        WITH scenario_dept AS (
+            SELECT 
+                s.id as scenario_id,
+                (SELECT sd.department_id FROM scenario_departments sd 
+                 WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
+            FROM simulation_chats sc
+            JOIN attempt_chats ac ON ac.chat_id = sc.id
+            INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+            INNER JOIN scenarios s ON s.id = sc.scenario_id
+            WHERE sc.id = $1
+        )
         SELECT 
             -- Chat data
             sc.id::text as chat_id,
@@ -1113,7 +1180,10 @@ class AgentQueries:
             -- Persona data (via scenario_personas junction)
             p.id::text as persona_id,
             p.name as persona_name,
-            COALESCE(pr_prompt.system_prompt, '') as system_prompt,
+            COALESCE(
+                COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
+                ''
+            ) as system_prompt,
             p.temperature,
             p.reasoning,
             
@@ -1158,8 +1228,14 @@ class AgentQueries:
         INNER JOIN simulations sim ON sim.id = sa.simulation_id
         LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
         LEFT JOIN personas p ON p.id = sp.persona_id
+        -- Try department-specific persona prompt first, fall back to default prompt
+        LEFT JOIN scenario_dept sc_dept ON sc_dept.scenario_id = s.id
+        LEFT JOIN persona_departments pd_prompt ON pd_prompt.persona_id = p.id 
+            AND pd_prompt.department_id = sc_dept.department_id
+            AND pd_prompt.active = true
+        LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = pd_prompt.prompt_id
         LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
-        LEFT JOIN prompts pr_prompt ON pr_prompt.id = pp.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = pp.prompt_id
         LEFT JOIN models m ON m.id = p.model_id
         LEFT JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -1170,7 +1246,7 @@ class AgentQueries:
         GROUP BY sc.id, sc.title, sc.trace_id,
                  sa.id, sa.simulation_id,
                  s.id, sps.problem_statement,
-                 p.id, p.name, pr_prompt.system_prompt, p.temperature, p.reasoning,
+                 p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, p.temperature, p.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url,
                  s.image_input_enabled, s.copy_paste_allowed, s.output_guardrail_enabled,
@@ -1359,8 +1435,13 @@ class AgentQueries:
         LEFT JOIN standard_groups sg ON sg.rubric_id = r.id
         LEFT JOIN standards std ON std.standard_group_id = sg.id
         INNER JOIN agents a ON a.id = ba.agent_id
+        -- Try department-specific prompt first, fall back to default prompt
+        LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
+        LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
         LEFT JOIN agent_prompts ap_grade ON ap_grade.agent_id = a.id AND ap_grade.active = true
-        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_grade.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_grade.prompt_id
+        -- Use department-specific prompt if available, otherwise use default
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -1507,8 +1588,13 @@ class AgentQueries:
         INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
         CROSS JOIN best_agent ba
         INNER JOIN agents a ON a.id = ba.agent_id
+        -- Try department-specific prompt first, fall back to default prompt
+        LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
+        LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
         LEFT JOIN agent_prompts ap_guardrail ON ap_guardrail.agent_id = a.id AND ap_guardrail.active = true
-        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_guardrail.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_guardrail.prompt_id
+        -- Use department-specific prompt if available, otherwise use default
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
@@ -1584,8 +1670,13 @@ class AgentQueries:
         
         FROM best_agent ba
         INNER JOIN agents a ON a.id = ba.agent_id
+        -- Try department-specific prompt first, fall back to default prompt
+        LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
+        LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
         LEFT JOIN agent_prompts ap_title ON ap_title.agent_id = a.id AND ap_title.active = true
-        LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap_title.prompt_id
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_title.prompt_id
+        -- Use department-specific prompt if available, otherwise use default
+        LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true

@@ -185,6 +185,8 @@ class UpdatePersonaRequest(BaseModel):
     temperature: float
     prompt_id: str | None  # If provided, use existing prompt
     system_prompt: str  # If prompt_id is None, create new prompt with this
+    department_id: str | None = None  # If provided, edit department-specific prompt
+    department_prompt_id: str | None = None  # Prompt ID for department-specific prompt
 
 
 class UpdatePersonaResponse(BaseModel):

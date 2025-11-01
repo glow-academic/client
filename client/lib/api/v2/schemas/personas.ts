@@ -162,6 +162,7 @@ export const PersonaDetailResponseSchema = z.object({
   model_mapping: ModelMappingSchema,
   reasoning_mapping: ReasoningMappingSchema,
   department_mapping: DepartmentMappingSchema,
+  department_prompt_links: z.record(z.string(), z.string()),
 
   // Debug info
   debug_info: z.array(DebugInfoItemSchema),
@@ -224,6 +225,8 @@ export const UpdatePersonaRequestSchema = z.object({
   temperature: z.number(),
   prompt_id: z.string().nullable().optional(), // If provided, use existing prompt
   system_prompt: z.string(), // If prompt_id is None, create new prompt with this
+  department_id: z.string().nullable().optional(), // If provided, edit department-specific prompt
+  department_prompt_id: z.string().nullable().optional(), // Prompt ID for department-specific prompt
 });
 
 export type UpdatePersonaRequest = z.infer<typeof UpdatePersonaRequestSchema>;

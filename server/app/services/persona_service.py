@@ -414,6 +414,17 @@ class PersonaService(BaseService):
         if prompt_id:
             prompt_id = str(prompt_id)
 
+        # Parse department_prompt_links from JSONB (may be string or dict)
+        department_prompt_links: dict[str, str] = {}
+        department_prompt_links_data = persona.get("department_prompt_links")
+        if isinstance(department_prompt_links_data, str):
+            department_prompt_links_data = json.loads(department_prompt_links_data)
+        if department_prompt_links_data and isinstance(department_prompt_links_data, dict):
+            department_prompt_links = {
+                str(dept_id): str(prompt_id)
+                for dept_id, prompt_id in department_prompt_links_data.items()
+            }
+
         return PersonaDetailResponse(
             # Basic fields
             name=persona["name"],
@@ -448,6 +459,7 @@ class PersonaService(BaseService):
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
             department_mapping=department_mapping,
+            department_prompt_links=department_prompt_links,
             # Debug info
             debug_info=debug_info,
         )
@@ -653,6 +665,7 @@ class PersonaService(BaseService):
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
             department_mapping=department_mapping,
+            department_prompt_links={},
             # Debug info
             debug_info=[],
         )
@@ -788,8 +801,18 @@ class PersonaService(BaseService):
                     )
                     await self.conn.execute(prompt_dept_query, *prompt_dept_params)
 
-            # Link persona to prompt via persona_prompts junction (deactivates old, activates new)
-            if prompt_id:
+            # Handle department-specific prompt or default prompt
+            if request.department_id and prompt_id:
+                # Update department-specific prompt via persona_departments
+                dept_prompt_query, dept_prompt_params = (
+                    self.queries.create_or_update_persona_department_prompt(
+                        request.personaId, request.department_id, prompt_id
+                    )
+                )
+                await self.conn.execute(dept_prompt_query, *dept_prompt_params)
+            elif prompt_id:
+                # Link persona to prompt via persona_prompts junction (deactivates old, activates new)
+                # Only do this if NOT updating a department-specific prompt
                 persona_prompt_query, persona_prompt_params = (
                     self.queries.create_persona_prompt(request.personaId, prompt_id)
                 )

@@ -77,6 +77,9 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
     "editor"
   );
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+    string | null
+  >(null); // null = "All Departments"
 
   const isEditMode = !!agentId;
 
@@ -175,6 +178,39 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     }
   }, [isEditMode, agentDetail, agentDetailDefault, initialFormData]);
 
+  // Update prompt when department selection changes
+  useEffect(() => {
+    if (!isEditMode || !agentDetail) return;
+
+    const getCurrentPromptId = () => {
+      if (
+        selectedDepartmentId &&
+        agentDetail.department_prompt_links?.[selectedDepartmentId]
+      ) {
+        return agentDetail.department_prompt_links[selectedDepartmentId];
+      }
+      return agentDetail.prompt_id || null;
+    };
+
+    const currentPromptId = getCurrentPromptId();
+    const promptInfo =
+      currentPromptId && agentDetail.prompt_mapping?.[currentPromptId];
+
+    if (promptInfo) {
+      setFormData((prev) => ({
+        ...prev,
+        promptId: currentPromptId,
+        systemPrompt: promptInfo.system_prompt,
+      }));
+    } else if (currentPromptId === null) {
+      // New prompt, keep current systemPrompt
+      setFormData((prev) => ({
+        ...prev,
+        promptId: null,
+      }));
+    }
+  }, [selectedDepartmentId, agentDetail, isEditMode]);
+
   const handleInputChange = (
     field: keyof SystemAgentFormData,
     value: string | number | boolean | null | undefined
@@ -243,9 +279,15 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 : null,
             active: formData.active ?? true,
             role: formData.role || "assistant",
-            department_ids: formData.departmentIds && formData.departmentIds.length > 0
-              ? formData.departmentIds
-              : null,
+            department_ids:
+              formData.departmentIds && formData.departmentIds.length > 0
+                ? formData.departmentIds
+                : null,
+            department_id: selectedDepartmentId || null,
+            department_prompt_id:
+              selectedDepartmentId && formData.promptId
+                ? formData.promptId
+                : null,
           },
           {
             onSuccess: () => {
@@ -282,9 +324,10 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 : null,
             active: formData.active ?? true,
             role: formData.role || "assistant",
-            department_ids: formData.departmentIds && formData.departmentIds.length > 0
-              ? formData.departmentIds
-              : null,
+            department_ids:
+              formData.departmentIds && formData.departmentIds.length > 0
+                ? formData.departmentIds
+                : null,
           },
           {
             onSuccess: (response) => {
@@ -525,36 +568,61 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               <div className="flex items-center justify-between">
                 <Label htmlFor="systemPrompt">System Prompt *</Label>
                 <div className="flex gap-2">
-                  {isEditMode && agentDetail && agentDetail.prompt_mapping && Object.keys(agentDetail.prompt_mapping).length > 0 && (
-                    <PromptPicker
-                      promptMapping={agentDetail.prompt_mapping}
-                      selectedPromptId={formData?.promptId || null}
-                      onSelect={(promptId) => {
-                        if (promptId && agentDetail.prompt_mapping[promptId]) {
-                          const prompt = agentDetail.prompt_mapping[promptId];
-                          setFormData((prev) => ({
-                            ...prev,
-                            promptId: promptId,
-                            systemPrompt: prompt.system_prompt,
-                          }));
-                        } else {
+                  {isEditMode && agentDetail && (
+                    <DepartmentPicker
+                      mapping={agentDetail.department_mapping}
+                      validIds={agentDetail.valid_department_ids}
+                      selectedIds={
+                        selectedDepartmentId ? [selectedDepartmentId] : []
+                      }
+                      onSelect={(ids) => {
+                        setSelectedDepartmentId(
+                          ids.length > 0 ? ids[0]! : null
+                        );
+                      }}
+                      multiSelect={false}
+                      placeholder="All Departments"
+                      disabled={false}
+                      compact={true}
+                      buttonClassName="h-8"
+                    />
+                  )}
+                  {isEditMode &&
+                    agentDetail &&
+                    agentDetail.prompt_mapping &&
+                    Object.keys(agentDetail.prompt_mapping).length > 0 && (
+                      <PromptPicker
+                        promptMapping={agentDetail.prompt_mapping}
+                        selectedPromptId={formData?.promptId || null}
+                        onSelect={(promptId) => {
+                          if (
+                            promptId &&
+                            agentDetail.prompt_mapping[promptId]
+                          ) {
+                            const prompt = agentDetail.prompt_mapping[promptId];
+                            setFormData((prev) => ({
+                              ...prev,
+                              promptId: promptId,
+                              systemPrompt: prompt.system_prompt,
+                            }));
+                          } else {
+                            setFormData((prev) => ({
+                              ...prev,
+                              promptId: null,
+                            }));
+                          }
+                        }}
+                        onCreateNew={() => {
                           setFormData((prev) => ({
                             ...prev,
                             promptId: null,
                           }));
-                        }
-                      }}
-                      onCreateNew={() => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          promptId: null,
-                        }));
-                      }}
-                      placeholder="Select prompt version..."
-                      disabled={false}
-                      buttonClassName="h-8"
-                    />
-                  )}
+                        }}
+                        placeholder="Select prompt version..."
+                        disabled={false}
+                        buttonClassName="h-8"
+                      />
+                    )}
                   {formData?.systemPrompt !== undefined && !isLoading && (
                     <>
                       <Tooltip>

@@ -158,6 +158,8 @@ class UpdateAgentRequest(BaseModel):
     active: bool
     role: str  # agent_role enum value
     department_ids: list[str] | None  # None = cross-department (superadmin only)
+    department_id: str | None = None  # If provided, edit department-specific prompt
+    department_prompt_id: str | None = None  # Prompt ID for department-specific prompt
 
 
 class UpdateAgentResponse(BaseModel):

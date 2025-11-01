@@ -235,6 +235,17 @@ class AgentService(BaseService):
         if prompt_id:
             prompt_id = str(prompt_id)
 
+        # Parse department_prompt_links from JSONB (may be string or dict)
+        department_prompt_links: dict[str, str] = {}
+        department_prompt_links_data = result.get("department_prompt_links")
+        if isinstance(department_prompt_links_data, str):
+            department_prompt_links_data = json.loads(department_prompt_links_data)
+        if department_prompt_links_data and isinstance(department_prompt_links_data, dict):
+            department_prompt_links = {
+                str(dept_id): str(prompt_id)
+                for dept_id, prompt_id in department_prompt_links_data.items()
+            }
+
         # Build reasoning_mapping following the reasoning_effort enum
         # Matches database enum: ('none', 'minimal', 'low', 'medium', 'high')
         reasoning_mapping = {
@@ -269,6 +280,7 @@ class AgentService(BaseService):
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
+            department_prompt_links=department_prompt_links,
             prompt_mapping=prompt_mapping,
             valid_model_ids=valid_model_ids,
             reasoning_options=["none", "minimal", "low", "medium", "high"],
@@ -388,6 +400,7 @@ class AgentService(BaseService):
             department_ids=[],
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
+            department_prompt_links={},
             prompt_mapping={},
             valid_model_ids=valid_model_ids,
             reasoning_options=["none", "minimal", "low", "medium", "high"],
@@ -521,8 +534,18 @@ class AgentService(BaseService):
                     )
                     await self.conn.execute(prompt_dept_query, *prompt_dept_params)
 
-            # Link agent to prompt via agent_prompts junction (deactivates old, activates new)
-            if prompt_id:
+            # Handle department-specific prompt or default prompt
+            if request.department_id and prompt_id:
+                # Update department-specific prompt via agent_departments
+                dept_prompt_query, dept_prompt_params = (
+                    self.queries.create_or_update_agent_department_prompt(
+                        request.agentId, request.department_id, prompt_id
+                    )
+                )
+                await self.conn.execute(dept_prompt_query, *dept_prompt_params)
+            elif prompt_id:
+                # Link agent to prompt via agent_prompts junction (deactivates old, activates new)
+                # Only do this if NOT updating a department-specific prompt
                 agent_prompt_query, agent_prompt_params = (
                     self.queries.create_agent_prompt(request.agentId, prompt_id)
                 )
