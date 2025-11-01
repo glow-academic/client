@@ -52,7 +52,8 @@ class HealthQueries:
             JOIN models m ON a.model_id = m.id
             JOIN providers p ON m.provider_id = p.id
             LEFT JOIN provider_endpoints pe ON p.id = pe.provider_id
-            LEFT JOIN prompts pr_prompt ON pr_prompt.id = a.prompt_id
+            LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+            LEFT JOIN prompts pr_prompt ON pr_prompt.id = ap.prompt_id
             WHERE da.role = 'assistant' AND da.active = true AND a.active = true
             LIMIT 1
         """

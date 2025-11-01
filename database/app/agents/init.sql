@@ -98,11 +98,26 @@ CREATE TABLE debug_info (
   content TEXT        NOT NULL
 );
 
--- Agent departments junction table (BCNF normalization)
--- Links agents to departments for multi-department support
+-- Agent → Departments binary relationship table
+-- Tracks which agents are available to departments (no prompt_id)
 -- No records = available to all departments (cross-department)
--- Supports department-specific prompt overrides via prompt_id column
 CREATE TABLE agent_departments (
+  agent_id      UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (agent_id, department_id)
+);
+
+CREATE INDEX ON agent_departments (agent_id);
+CREATE INDEX ON agent_departments (department_id);
+CREATE INDEX ON agent_departments (active);
+
+-- Agent → Department → Prompts ternary relationship table (BCNF normalization)
+-- Supports department-specific prompt overrides for agents
+-- No records = available to all departments (cross-department)
+CREATE TABLE agent_department_prompts (
   agent_id      UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
   prompt_id     UUID NOT NULL REFERENCES prompts(id) ON DELETE RESTRICT,
@@ -112,16 +127,16 @@ CREATE TABLE agent_departments (
   PRIMARY KEY (agent_id, department_id, prompt_id)
 );
 
-CREATE INDEX ON agent_departments (agent_id);
-CREATE INDEX ON agent_departments (department_id);
-CREATE INDEX ON agent_departments (prompt_id);
+CREATE INDEX ON agent_department_prompts (agent_id);
+CREATE INDEX ON agent_department_prompts (department_id);
+CREATE INDEX ON agent_department_prompts (prompt_id);
 
 -- Only one active per (agent_id, prompt_id, department_id)
-CREATE UNIQUE INDEX agent_departments_one_active_per_agent_prompt_dept
-  ON agent_departments(agent_id, prompt_id, department_id) WHERE active = true;
+CREATE UNIQUE INDEX agent_department_prompts_one_active_per_agent_prompt_dept
+  ON agent_department_prompts(agent_id, prompt_id, department_id) WHERE active = true;
 
 -- Agent → Prompts junction table (default prompts)
--- Links agents to their default prompts (can be overridden per department via agent_departments)
+-- Links agents to their default prompts (can be overridden per department via agent_department_prompts)
 CREATE TABLE agent_prompts (
   agent_id    UUID NOT NULL REFERENCES agents(id)     ON DELETE CASCADE,
   prompt_id  UUID NOT NULL REFERENCES prompts(id)      ON DELETE RESTRICT,

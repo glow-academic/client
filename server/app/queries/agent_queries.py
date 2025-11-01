@@ -225,25 +225,27 @@ class AgentQueries:
         ),
         agent_active_prompt AS (
             SELECT 
-                a.id::text as agent_id,
-                a.prompt_id::text as prompt_id,
+                ap.agent_id::text as agent_id,
+                ap.prompt_id::text as prompt_id,
                 pr.system_prompt,
                 pr.created_at as prompt_created_at,
                 pr.updated_at as prompt_updated_at
-            FROM agents a
-            JOIN prompts pr ON pr.id = a.prompt_id
-            WHERE a.id = $1::uuid
+            FROM agent_prompts ap
+            JOIN prompts pr ON pr.id = ap.prompt_id
+            WHERE ap.agent_id = $1::uuid AND ap.active = true
+            LIMIT 1
         ),
         agent_all_prompts AS (
+            -- Get all prompts that were ever linked to this agent (version history)
             SELECT 
-                a.id::text as agent_id,
-                a.prompt_id::text as prompt_id,
+                ap.agent_id::text as agent_id,
+                ap.prompt_id::text as prompt_id,
                 pr.system_prompt,
                 pr.created_at as prompt_created_at,
                 pr.updated_at as prompt_updated_at
-            FROM agents a
-            JOIN prompts pr ON pr.id = a.prompt_id
-            WHERE a.id = $1::uuid
+            FROM agent_prompts ap
+            JOIN prompts pr ON pr.id = ap.prompt_id
+            WHERE ap.agent_id = $1::uuid
         ),
         prompt_departments_data AS (
             SELECT 
@@ -628,15 +630,30 @@ class AgentQueries:
         self, agent_id: str, prompt_id: str
     ) -> tuple[str, list[Any]]:
         """
-        Link an agent to a prompt by updating agents.prompt_id directly.
+        Link an agent to a prompt via agent_prompts junction.
+        Deactivates any existing active prompt first (preserves history).
 
         Returns:
             Tuple of (query, params)
         """
         query = """
-        UPDATE agents
-        SET prompt_id = $2::uuid, updated_at = NOW()
-        WHERE id = $1::uuid
+        WITH deactivate_all AS (
+            UPDATE agent_prompts
+            SET active = false, updated_at = NOW()
+            WHERE agent_id = $1::uuid AND active = true
+            RETURNING 1
+        ),
+        ensure_execution AS (
+            SELECT 1 FROM deactivate_all
+            UNION ALL
+            SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM agent_prompts WHERE agent_id = $1::uuid AND active = true)
+        )
+        INSERT INTO agent_prompts (agent_id, prompt_id, active, created_at, updated_at)
+        SELECT $1::uuid, $2::uuid, true, NOW(), NOW()
+        FROM ensure_execution
+        ON CONFLICT (agent_id, prompt_id) DO UPDATE SET
+            active = true,
+            updated_at = NOW()
         """
         params: list[Any] = [agent_id, prompt_id]
         return query, params
@@ -671,10 +688,11 @@ class AgentQueries:
                 a.model_id,
                 a.reasoning,
                 a.role,
-                a.prompt_id,
+                ap.prompt_id,
                 COALESCE(pr.system_prompt, '') as system_prompt
             FROM agents a
-            LEFT JOIN prompts pr ON pr.id = a.prompt_id
+            LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
+            LEFT JOIN prompts pr ON pr.id = ap.prompt_id
             WHERE a.id = $1::uuid
         ),
         new_prompt AS (
@@ -684,7 +702,7 @@ class AgentQueries:
             RETURNING id as prompt_id
         ),
         new_agent AS (
-            INSERT INTO agents (name, description, temperature, model_id, reasoning, active, role, prompt_id, created_at, updated_at)
+            INSERT INTO agents (name, description, temperature, model_id, reasoning, active, role, created_at, updated_at)
             SELECT 
                 sa.name || ' Copy',
                 sa.description,
@@ -693,12 +711,16 @@ class AgentQueries:
                 COALESCE(sa.reasoning::reasoning_effort, 'none'::reasoning_effort),
                 false,
                 sa.role,
-                np.prompt_id,
                 NOW(),
                 NOW()
             FROM source_agent sa
-            CROSS JOIN new_prompt np
             RETURNING id::text as agent_id
+        ),
+        link_prompt AS (
+            INSERT INTO agent_prompts (agent_id, prompt_id, active, created_at, updated_at)
+            SELECT na.agent_id::uuid, np.prompt_id, true, NOW(), NOW()
+            FROM new_agent na
+            CROSS JOIN new_prompt np
         )
         SELECT agent_id FROM new_agent
         """
@@ -797,7 +819,8 @@ class AgentQueries:
         -- Try department-specific prompt first, fall back to default prompt
         LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
         LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
-        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = a.prompt_id
+        LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
         -- Use department-specific prompt if available, otherwise use default
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
@@ -1414,7 +1437,8 @@ class AgentQueries:
         -- Try department-specific prompt first, fall back to default prompt
         LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
         LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
-        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = a.prompt_id
+        LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
         -- Use department-specific prompt if available, otherwise use default
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
@@ -1566,7 +1590,8 @@ class AgentQueries:
         -- Try department-specific prompt first, fall back to default prompt
         LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
         LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
-        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = a.prompt_id
+        LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
         -- Use department-specific prompt if available, otherwise use default
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id
@@ -1647,7 +1672,8 @@ class AgentQueries:
         -- Try department-specific prompt first, fall back to default prompt
         LEFT JOIN agent_departments ad_prompt ON ad_prompt.agent_id = a.id AND ad_prompt.department_id = $2::uuid AND ad_prompt.active = true
         LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = ad_prompt.prompt_id
-        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = a.prompt_id
+        LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+        LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
         -- Use department-specific prompt if available, otherwise use default
         LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
         INNER JOIN models m ON m.id = a.model_id

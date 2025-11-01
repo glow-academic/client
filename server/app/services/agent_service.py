@@ -537,11 +537,11 @@ class AgentService(BaseService):
                 await self.conn.execute(agent_prompt_query, *agent_prompt_params)
 
             # Get the agent's current prompt_id for agent_departments
-            # Use the updated prompt_id if set, otherwise get from agents table
+            # Use the updated prompt_id if set, otherwise get from agent_prompts junction table
             agent_prompt_id = prompt_id
             if not agent_prompt_id:
                 agent_prompt_row = await self.conn.fetchrow(
-                    "SELECT prompt_id FROM agents WHERE id = $1::uuid",
+                    "SELECT prompt_id FROM agent_prompts WHERE agent_id = $1::uuid AND active = true",
                     request.agentId
                 )
                 if agent_prompt_row:

@@ -804,11 +804,11 @@ class PersonaService(BaseService):
                 await self.conn.execute(persona_prompt_query, *persona_prompt_params)
 
             # Get the persona's current prompt_id for persona_departments
-            # Use the updated prompt_id if set, otherwise get from personas table
+            # Use the updated prompt_id if set, otherwise get from persona_prompts junction table
             persona_prompt_id = prompt_id
             if not persona_prompt_id:
                 persona_prompt_row = await self.conn.fetchrow(
-                    "SELECT prompt_id FROM personas WHERE id = $1::uuid",
+                    "SELECT prompt_id FROM persona_prompts WHERE persona_id = $1::uuid AND active = true",
                     request.personaId
                 )
                 if persona_prompt_row:

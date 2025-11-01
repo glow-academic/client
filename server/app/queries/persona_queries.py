@@ -435,13 +435,20 @@ class PersonaQueries:
             Tuple of (query, params)
         """
         query = """
-        WITH deactivate_existing AS (
+        WITH deactivate_all AS (
             UPDATE persona_prompts
             SET active = false, updated_at = NOW()
             WHERE persona_id = $1::uuid AND active = true
+            RETURNING 1
+        ),
+        ensure_execution AS (
+            SELECT 1 FROM deactivate_all
+            UNION ALL
+            SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM persona_prompts WHERE persona_id = $1::uuid AND active = true)
         )
         INSERT INTO persona_prompts (persona_id, prompt_id, active, created_at, updated_at)
-        VALUES ($1::uuid, $2::uuid, true, NOW(), NOW())
+        SELECT $1::uuid, $2::uuid, true, NOW(), NOW()
+        FROM ensure_execution
         ON CONFLICT (persona_id, prompt_id) DO UPDATE SET
             active = true,
             updated_at = NOW()
@@ -630,8 +637,8 @@ class PersonaQueries:
             SELECT 
                 pd.prompt_id::text as prompt_id,
                 ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
-            FROM prompt_departments pd
-            WHERE pd.active = true
+            FROM persona_departments pd
+            WHERE pd.persona_id = $1 AND pd.active = true
             GROUP BY pd.prompt_id
         ),
         prompt_mapping_data AS (

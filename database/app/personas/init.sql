@@ -22,10 +22,26 @@ CREATE TABLE personas (
   active BOOLEAN NOT NULL DEFAULT FALSE
 );
 
--- Persona → Departments junction table (BCNF normalization)
+-- Persona → Departments binary relationship table
+-- Tracks which personas are available to departments (no prompt_id)
 -- No records = available to all departments (cross-department)
--- Supports department-specific prompt overrides via prompt_id column
 CREATE TABLE persona_departments (
+  persona_id    UUID NOT NULL REFERENCES personas(id)     ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id)  ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (persona_id, department_id)
+);
+
+CREATE INDEX ON persona_departments (persona_id);
+CREATE INDEX ON persona_departments (department_id);
+CREATE INDEX ON persona_departments (active);
+
+-- Persona → Department → Prompts ternary relationship table (BCNF normalization)
+-- Supports department-specific prompt overrides for personas
+-- No records = available to all departments (cross-department)
+CREATE TABLE persona_department_prompts (
   persona_id    UUID NOT NULL REFERENCES personas(id)     ON DELETE CASCADE,
   department_id UUID NOT NULL REFERENCES departments(id)  ON DELETE CASCADE,
   prompt_id     UUID NOT NULL REFERENCES prompts(id)      ON DELETE RESTRICT,
@@ -35,16 +51,16 @@ CREATE TABLE persona_departments (
   PRIMARY KEY (persona_id, department_id, prompt_id)
 );
 
-CREATE INDEX ON persona_departments (persona_id);
-CREATE INDEX ON persona_departments (department_id);
-CREATE INDEX ON persona_departments (prompt_id);
+CREATE INDEX ON persona_department_prompts (persona_id);
+CREATE INDEX ON persona_department_prompts (department_id);
+CREATE INDEX ON persona_department_prompts (prompt_id);
 
 -- Only one active per (persona_id, prompt_id, department_id)
-CREATE UNIQUE INDEX persona_departments_one_active_per_persona_prompt_dept
-  ON persona_departments(persona_id, prompt_id, department_id) WHERE active = true;
+CREATE UNIQUE INDEX persona_department_prompts_one_active_per_persona_prompt_dept
+  ON persona_department_prompts(persona_id, prompt_id, department_id) WHERE active = true;
 
 -- Persona → Prompts junction table (default prompts)
--- Links personas to their default prompts (can be overridden per department via persona_departments)
+-- Links personas to their default prompts (can be overridden per department via persona_department_prompts)
 CREATE TABLE persona_prompts (
   persona_id UUID NOT NULL REFERENCES personas(id)     ON DELETE CASCADE,
   prompt_id  UUID NOT NULL REFERENCES prompts(id)      ON DELETE RESTRICT,
