@@ -19,7 +19,6 @@ from app.utils.document import format_document_info
 
 async def run_simulation_agent(
     chat_id: uuid.UUID,
-    department_id: uuid.UUID,
     conn: asyncpg.Connection = Depends(get_db),
 ) -> AsyncGenerator[str, None]:
     """
@@ -31,15 +30,13 @@ async def run_simulation_agent(
 
     Args:
         chat_id: The ID of the chat session (can be simulation_chat_id or eval_chat_id)
-        input_text: Optional input text to send to the agent
-        test_data: Whether to use test data
-        input_audio: Optional audio to send to the agent
+        conn: Database connection
     Yields:
         Text chunks from the agent's response
     """
 
-    # Handle simulation chat - validation happens in service layer
-    async for token in _handle_simulation_chat(chat_id, department_id, conn):
+    # Handle simulation chat - department_id will be extracted from context
+    async for token in _handle_simulation_chat(chat_id, conn):
         yield token
 
 
@@ -59,7 +56,7 @@ async def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
 
 
 async def _handle_simulation_chat(
-    chat_id: uuid.UUID, department_id: uuid.UUID, conn: asyncpg.Connection
+    chat_id: uuid.UUID, conn: asyncpg.Connection
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
@@ -68,6 +65,12 @@ async def _handle_simulation_chat(
 
     agent_service = AgentService(conn)
     context = await agent_service.get_simulation_run_context(chat_id)
+    
+    # Extract department_id from context (already retrieved from scenario_departments junction)
+    if not context.get("department_id"):
+        raise ValueError(f"Failed to get department_id from run context for chat {chat_id}")
+    
+    department_id = uuid.UUID(context["department_id"])
 
     input_items: list[TResponseInputItem] = []
 

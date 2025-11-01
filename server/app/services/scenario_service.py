@@ -1187,12 +1187,17 @@ class ScenarioService(BaseService):
             if request.parameterItemIds
             else None
         )
+        department_ids = (
+            [str(d) for d in request.departmentIds] if request.departmentIds else None
+        )
 
         # Normalize empty lists
         if document_ids:
             document_ids = [d for d in document_ids if d]
         if parameter_item_ids:
             parameter_item_ids = [p for p in parameter_item_ids if p]
+        if department_ids:
+            department_ids = [d for d in department_ids if d]
         targets = [t for t in request.targets if t.strip()] if request.targets else []
 
         # Get suggestions using internal method
@@ -1202,6 +1207,7 @@ class ScenarioService(BaseService):
             persona_id=persona_id,
             document_ids=document_ids,
             parameter_item_ids=parameter_item_ids,
+            department_ids=department_ids,
             targets=targets,
         )
 
@@ -1217,10 +1223,114 @@ class ScenarioService(BaseService):
             ],
         )
 
+    async def _get_randomization_data_parsed(
+        self, department_ids: list[str] | None = None
+    ) -> dict[str, Any]:
+        """Get and parse randomization data from consolidated query.
+        
+        Returns a dict with parsed data structures ready for use:
+        - active_personas: list[dict] with UUID ids
+        - active_documents: list[dict] with UUID ids  
+        - active_parameters: list[dict] with UUID ids
+        - all_parameter_items: list[dict] with UUID ids
+        - document_parameter_items_junction: list[dict] with UUID ids
+        - parameter_items_by_id: dict[uuid.UUID, dict]
+        - parameter_items_by_param_id: dict[uuid.UUID, list[dict]]
+        - documents_by_id: dict[uuid.UUID, dict]
+        """
+        import json
+        
+        query, params = self.queries.get_randomization_data_complete(department_ids)
+        result = await self.conn.fetchrow(query, *params)
+        
+        if not result:
+            raise ValueError("Failed to fetch randomization data")
+        
+        # Parse JSONB aggregations (may be string or list)
+        personas_data = result.get("personas", [])
+        if isinstance(personas_data, str):
+            personas_data = json.loads(personas_data)
+        if not isinstance(personas_data, list):
+            personas_data = []
+        
+        documents_data = result.get("documents", [])
+        if isinstance(documents_data, str):
+            documents_data = json.loads(documents_data)
+        if not isinstance(documents_data, list):
+            documents_data = []
+        
+        parameters_data = result.get("parameters", [])
+        if isinstance(parameters_data, str):
+            parameters_data = json.loads(parameters_data)
+        if not isinstance(parameters_data, list):
+            parameters_data = []
+        
+        parameter_items_data = result.get("parameter_items", [])
+        if isinstance(parameter_items_data, str):
+            parameter_items_data = json.loads(parameter_items_data)
+        if not isinstance(parameter_items_data, list):
+            parameter_items_data = []
+        
+        document_parameter_items_data = result.get("document_parameter_items", [])
+        if isinstance(document_parameter_items_data, str):
+            document_parameter_items_data = json.loads(document_parameter_items_data)
+        if not isinstance(document_parameter_items_data, list):
+            document_parameter_items_data = []
+        
+        # Convert UUIDs from JSON (they come as strings)
+        active_personas = [dict(p) for p in personas_data]
+        active_documents = [dict(d) for d in documents_data]
+        active_parameters = [dict(p) for p in parameters_data]
+        all_parameter_items = [dict(pi) for pi in parameter_items_data]
+        document_parameter_items_junction = [
+            {
+                "document_id": uuid.UUID(str(j["document_id"])),
+                "parameter_item_id": uuid.UUID(str(j["parameter_item_id"])),
+            }
+            for j in document_parameter_items_data
+        ]
+        
+        # Build lookup maps for efficiency
+        parameter_items_by_id: dict[uuid.UUID, dict[str, Any]] = {}
+        for pi in all_parameter_items:
+            pi_id = uuid.UUID(str(pi["id"]))
+            parameter_items_by_id[pi_id] = {
+                **pi,
+                "id": pi_id,
+                "parameter_id": uuid.UUID(str(pi["parameter_id"])),
+            }
+        
+        parameter_items_by_param_id: dict[uuid.UUID, list[dict[str, Any]]] = {}
+        for pi in all_parameter_items:
+            param_id = uuid.UUID(str(pi["parameter_id"]))
+            if param_id not in parameter_items_by_param_id:
+                parameter_items_by_param_id[param_id] = []
+            parameter_items_by_param_id[param_id].append(parameter_items_by_id[uuid.UUID(str(pi["id"]))])
+        
+        documents_by_id: dict[uuid.UUID, dict[str, Any]] = {}
+        for d in active_documents:
+            doc_id = uuid.UUID(str(d["id"]))
+            documents_by_id[doc_id] = {**d, "id": doc_id}
+        
+        # Convert parameter IDs
+        for p in active_parameters:
+            p["id"] = uuid.UUID(str(p["id"]))
+        
+        return {
+            "active_personas": active_personas,
+            "active_documents": active_documents,
+            "active_parameters": active_parameters,
+            "all_parameter_items": all_parameter_items,
+            "document_parameter_items_junction": document_parameter_items_junction,
+            "parameter_items_by_id": parameter_items_by_id,
+            "parameter_items_by_param_id": parameter_items_by_param_id,
+            "documents_by_id": documents_by_id,
+        }
+
     async def randomly_fill_scenario_attributes(
         self,
         scenario: dict[str, Any],
-        department_id: uuid.UUID,
+        profile_id: str | None = None,
         parent_persona_id: str | None = None,
         parent_document_ids: list[str] | None = None,
         parent_parameter_item_ids: list[str] | None = None,
@@ -1229,7 +1339,7 @@ class ScenarioService(BaseService):
 
         Args:
             scenario: The scenario dict with potentially null attributes
-            department_id: The department ID to use when creating a new scenario
+            profile_id: Optional profile ID to get user's accessible departments for fallback
             parent_persona_id: Optional persona_id to inherit from parent scenario
             parent_document_ids: Optional document_ids to inherit from parent scenario
             parent_parameter_item_ids: Optional parameter_item_ids to inherit from parent scenario
@@ -1245,12 +1355,60 @@ class ScenarioService(BaseService):
         logger = logging.getLogger(__name__)
         scenario_id = scenario["id"]
 
+        # NEW LOGIC: Select department_id first
+        # Priority 1: Get department_ids from scenario_departments junction table
+        query, params = self.queries.get_scenario_departments(str(scenario_id))
+        scenario_dept_rows = await self.conn.fetch(query, *params)
+        scenario_dept_ids = [row["department_id"] for row in scenario_dept_rows]
+
+        selected_dept_id: uuid.UUID | None = None
+        if scenario_dept_ids:
+            # Randomly select one department from scenario's departments
+            selected_dept_id = random.choice(scenario_dept_ids)
+            logger.info(f"Selected department_id from scenario_departments: {selected_dept_id}")
+        else:
+            # Cross-department scenario - need to pick a department
+            if profile_id:
+                # Get user's accessible departments
+                query, params = self.queries.get_departments_for_profile(profile_id)
+                profile_dept_rows = await self.conn.fetch(query, *params)
+                profile_dept_ids = [row["id"] for row in profile_dept_rows]
+                if profile_dept_ids:
+                    selected_dept_id = random.choice(profile_dept_ids)
+                    logger.info(f"Selected department_id from user's accessible departments: {selected_dept_id}")
+                else:
+                    logger.warning(f"No accessible departments found for profile {profile_id}")
+            else:
+                # No profile_id - get all active departments
+                query = "SELECT id FROM departments WHERE active = true"
+                all_dept_rows = await self.conn.fetch(query)
+                all_dept_ids = [row["id"] for row in all_dept_rows]
+                if all_dept_ids:
+                    selected_dept_id = random.choice(all_dept_ids)
+                    logger.info(f"Selected department_id from all active departments: {selected_dept_id}")
+                else:
+                    logger.warning("No active departments found in database")
+
+        if not selected_dept_id:
+            raise ValueError("Cannot proceed without a department_id - no departments available")
+
+        selected_dept_id_str = str(selected_dept_id)
+        
+        # Get all randomization data in a single query
+        randomization_data = await self._get_randomization_data_parsed([selected_dept_id_str])
+        active_personas = randomization_data["active_personas"]
+        active_documents = randomization_data["active_documents"]
+        active_parameters = randomization_data["active_parameters"]
+        parameter_items_by_param_id = randomization_data["parameter_items_by_param_id"]
+        documents_by_id = randomization_data["documents_by_id"]
+        document_parameter_items_junction = randomization_data["document_parameter_items_junction"]
+
         # Get persona from parent, or from scenario_personas junction, or randomly select
-        scenario_persona_id = None
+        scenario_persona_id: uuid.UUID | None = None
         
         # Priority 1: Use parent's persona if provided
         if parent_persona_id:
-            scenario_persona_id = parent_persona_id
+            scenario_persona_id = uuid.UUID(parent_persona_id) if isinstance(parent_persona_id, str) else uuid.UUID(str(parent_persona_id))
             logger.info(f"Using parent persona_id: {scenario_persona_id}")
         else:
             # Priority 2: Check for existing persona link in database
@@ -1260,12 +1418,11 @@ class ScenarioService(BaseService):
                 existing_persona_link["persona_id"] if existing_persona_link else None
             )
 
-        # Priority 3: Random persona selection if still none
+        # Priority 3: Random persona selection if still none (filtered by selected department)
         if scenario_persona_id is None:
-            query, params = self.queries.get_active_personas()
-            active_personas = await self.conn.fetch(query, *params)
             if active_personas:
-                scenario_persona_id = random.choice(active_personas)["id"]
+                persona_dict = random.choice(active_personas)
+                scenario_persona_id = uuid.UUID(str(persona_dict["id"]))
                 logger.info(f"Randomly selected persona_id: {scenario_persona_id}")
 
                 # Create the junction record
@@ -1307,7 +1464,7 @@ class ScenarioService(BaseService):
                 
                 # Generate problem statement using AI
                 name, description, objectives, trace_id = await run_scenario_agent(
-                    department_id=department_id,
+                    department_id=selected_dept_id,
                     persona_id=persona_id,
                     document_ids=[uuid.UUID(doc_id) for doc_id in doc_ids],
                     parameter_item_ids=[uuid.UUID(param_id) for param_id in param_ids],
@@ -1352,26 +1509,26 @@ class ScenarioService(BaseService):
             # First, get parameter items for this scenario
             scenario_parameter_item_ids = []
             if existing_param_ids:
-                scenario_parameter_item_ids = [str(pid) for pid in existing_param_ids]
+                scenario_parameter_item_ids = existing_param_ids
             else:
-                # Get parameter items that will be selected below
-                query, params = self.queries.get_active_parameters()
-                active_parameters = await self.conn.fetch(query, *params)
+                # Get parameter items that will be selected below (filtered by selected department)
                 if active_parameters:
                     for param in active_parameters:
-                        query, params = self.queries.get_parameter_items_by_parameter(
-                            str(param["id"])
-                        )
-                        param_items = await self.conn.fetch(query, *params)
+                        param_items = parameter_items_by_param_id.get(param["id"], [])
                         if param_items:
                             selected_item = random.choice(param_items)
-                            scenario_parameter_item_ids.append(str(selected_item["id"]))
+                            scenario_parameter_item_ids.append(selected_item["id"])
 
             # Try to find documents that match parameter items via document_parameter_items junction
             matching_documents = []
             if scenario_parameter_item_ids:
-                query, params = self.queries.get_documents_by_parameter_items(scenario_parameter_item_ids)
-                matching_documents = await self.conn.fetch(query, *params)
+                # Find documents linked to parameter items via junction
+                matching_documents = [
+                    documents_by_id[j["document_id"]]
+                    for j in document_parameter_items_junction
+                    if j["parameter_item_id"] in scenario_parameter_item_ids
+                    and j["document_id"] in documents_by_id
+                ]
                 logger.info(f"Found {len(matching_documents)} documents matching parameter items: {scenario_parameter_item_ids}")
 
             if matching_documents:
@@ -1380,10 +1537,8 @@ class ScenarioService(BaseService):
                 scenario_documents = [selected_doc["id"]]
                 logger.info(f"Selected document via parameter items: {selected_doc['id']} ({selected_doc['name']})")
             else:
-                # Fallback to text similarity scoring
+                # Fallback to text similarity scoring (filtered by selected department)
                 logger.info("No documents match parameter items, falling back to text similarity")
-                query, params = self.queries.get_active_documents()
-                active_documents = await self.conn.fetch(query, *params)
 
                 if active_documents:
                     # Build scenario signal text from name/problem_statement
@@ -1457,20 +1612,13 @@ class ScenarioService(BaseService):
             scenario_documents = existing_doc_ids
             logger.info(f"Scenario already has {len(existing_doc_ids)} documents, skipping document selection")
 
-        # Random parameter item selection if no parameters linked via junction
+        # Random parameter item selection if no parameters linked via junction (filtered by selected department)
         if not existing_param_ids:
-            query, params = self.queries.get_active_parameters()
-            active_parameters = await self.conn.fetch(query, *params)
-
             if active_parameters:
                 # For each active parameter, randomly select one parameter item
                 scenario_parameter_item_ids = []
                 for param in active_parameters:
-                    query, params = self.queries.get_parameter_items_by_parameter(
-                        str(param["id"])
-                    )
-                    param_items = await self.conn.fetch(query, *params)
-
+                    param_items = parameter_items_by_param_id.get(param["id"], [])
                     if param_items:
                         selected_item = random.choice(param_items)
                         scenario_parameter_item_ids.append(selected_item["id"])
@@ -1485,23 +1633,22 @@ class ScenarioService(BaseService):
                 scenario_parameter_item_ids = []
                 logger.info("No active parameters found")
         else:
-            # If parameter_item_ids are provided, ensure we have one per active parameter
-            query, params = self.queries.get_active_parameters()
-            active_parameters = await self.conn.fetch(query, *params)
+            # If parameter_item_ids are provided, ensure we have one per active parameter (filtered by selected department)
             active_param_ids = {param["id"] for param in active_parameters}
-
-            # Get all parameter items for the existing IDs from junction
-            query, params = self.queries.get_parameter_items_batch(
-                [str(pid) for pid in existing_param_ids]
-            )
-            existing_param_items = await self.conn.fetch(query, *params)
+            
+            # Get all parameter items for the existing IDs from lookup map
+            parameter_items_by_id = randomization_data["parameter_items_by_id"]
+            existing_param_items = [
+                parameter_items_by_id[pid] for pid in existing_param_ids if pid in parameter_items_by_id
+            ]
 
             # Group existing parameter items by their parameter_id
             existing_items_by_param: dict[uuid.UUID, list[dict[str, Any]]] = {}
             for item in existing_param_items:
-                if item["parameter_id"] not in existing_items_by_param:
-                    existing_items_by_param[item["parameter_id"]] = []
-                existing_items_by_param[item["parameter_id"]].append(dict(item))
+                param_id = item["parameter_id"]
+                if param_id not in existing_items_by_param:
+                    existing_items_by_param[param_id] = []
+                existing_items_by_param[param_id].append(item)
 
             # For each active parameter, ensure we have exactly one parameter item
             scenario_parameter_item_ids = []
@@ -1514,11 +1661,8 @@ class ScenarioService(BaseService):
                     else:
                         scenario_parameter_item_ids.append(items[0]["id"])
                 else:
-                    # No items for this parameter, randomly select one
-                    query, params = self.queries.get_parameter_items_by_parameter(
-                        str(param_id)
-                    )
-                    param_items = await self.conn.fetch(query, *params)
+                    # No items for this parameter, randomly select one (filtered by selected department)
+                    param_items = parameter_items_by_param_id.get(param_id, [])
                     if param_items:
                         selected_item = random.choice(param_items)
                         scenario_parameter_item_ids.append(selected_item["id"])
@@ -1630,9 +1774,10 @@ class ScenarioService(BaseService):
                     True,
                 )
 
-        # NEW BUSINESS LOGIC: Add objectives and problem statement to return value
+        # NEW BUSINESS LOGIC: Add objectives, problem statement, and department_id to return value
         new_scenario["objectives"] = scenario_objectives
         new_scenario["problem_statement"] = scenario_problem_statement
+        new_scenario["department_id"] = selected_dept_id
         
         return new_scenario
 
@@ -1644,6 +1789,7 @@ class ScenarioService(BaseService):
         persona_id: uuid.UUID | None,
         document_ids: list[uuid.UUID] | None,
         parameter_item_ids: list[uuid.UUID] | None,
+        department_ids: list[str] | None = None,
         targets: list[str],
     ) -> dict[str, Any]:
         """Suggest persona/documents/parameters based on current inputs and text.
@@ -1700,184 +1846,665 @@ class ScenarioService(BaseService):
                 except Exception:
                     pass
 
+        # Get all randomization data in a single query
+        randomization_data = await self._get_randomization_data_parsed(department_ids)
+        active_personas = randomization_data["active_personas"]
+        active_documents = randomization_data["active_documents"]
+        active_parameters = randomization_data["active_parameters"]
+        all_parameter_items = randomization_data["all_parameter_items"]
+        document_parameter_items_junction = randomization_data["document_parameter_items_junction"]
+        parameter_items_by_id = randomization_data["parameter_items_by_id"]
+        parameter_items_by_param_id = randomization_data["parameter_items_by_param_id"]
+        documents_by_id = randomization_data["documents_by_id"]
+        
+        # Get parameters with document_parameter=true
+        doc_params = [p for p in active_parameters if p.get("document_parameter", False)]
+        doc_param_ids = {p["id"] for p in doc_params}
+        
         # Suggest persona -----------------------------------------------------
         suggested_persona_id = persona_id
         if "persona" in targets_set:
             # Make persona selection fully random among active personas to reduce determinism
-            query, params = self.queries.get_active_personas()
-            active_personas = await self.conn.fetch(query, *params)
             if active_personas:
-                suggested_persona_id = random.choice(active_personas)["id"]
+                persona_dict = random.choice(active_personas)
+                suggested_persona_id = uuid.UUID(str(persona_dict["id"]))
 
-        # Suggest documents ---------------------------------------------------
-        # If documents explicitly provided as empty list, respect "no documents"
+        # Suggest documents and parameters with intelligent matching -----------------
+        # Determine what needs to be suggested first
+        suggest_docs = "documents" in targets_set
+        suggest_params = "parameters" in targets_set
+        
+        # Handle empty list signals
+        suggested_document_ids: list[uuid.UUID] = []
         if document_ids is not None and len(document_ids) == 0:
             suggested_document_ids = []
+        elif suggest_docs:
+            # When randomizing documents, start fresh (don't preserve existing)
+            suggested_document_ids = []
         else:
+            # When NOT randomizing documents, preserve existing selection
             suggested_document_ids = list(document_ids or [])
-        if "documents" in targets_set:
-            # Respect explicit no-documents signal
-            if document_ids is not None and len(document_ids) == 0:
-                suggested_document_ids = []
-                return {
-                    "persona_id": persona_id,
-                    "document_ids": suggested_document_ids,
-                    "parameter_item_ids": list(parameter_item_ids or []),
-                }
-            query, params = self.queries.get_active_documents()
-            active_documents = await self.conn.fetch(query, *params)
-            active_documents = [dict(d) for d in active_documents]
-
-            known_types = [
-                "homework",
-                "project",
-                "quiz",
-                "midterm",
-                "lab",
-                "lecture",
-                "syllabus",
-            ]
-            scenario_text_norm = normalize_text(base_text)
-            has_type = {
-                t: (t in context_tokens) or (t in scenario_text_norm)
-                for t in known_types
+        
+        # Use a set to track parameter items and prevent duplicates
+        # When randomizing parameters, start fresh (don't preserve existing)
+        if suggest_params:
+            suggested_parameter_item_ids_set: set[uuid.UUID] = set()
+        else:
+            suggested_parameter_item_ids_set = set(parameter_item_ids or [])
+        
+        # Respect explicit no-documents signal
+        if suggest_docs and document_ids is not None and len(document_ids) == 0:
+            suggested_document_ids = []
+            return {
+                "persona_id": suggested_persona_id,
+                "document_ids": suggested_document_ids,
+                "parameter_item_ids": list(suggested_parameter_item_ids_set),
             }
-
-            def score_doc(doc: dict[str, Any]) -> float:
-                score = 0.0
-                name_overlap = context_tokens.intersection(
-                    set(tokenize(doc.get("name") or ""))
-                )
-                score += 2.0 * len(name_overlap)
-                d_type = (doc.get("type") or "").lower()
-                if d_type and has_type.get(d_type, False):
-                    score += 10.0
-                if d_type and d_type in scenario_text_norm:
-                    score += 3.0
-                # Content similarity (token set ratio over truncated content)
-                try:
-                    file_path = doc.get("file_path")
-                    if file_path:
-                        doc_text = read_document_content_for_similarity(file_path)
-                        doc_text = doc_text[:5000]
-                        sim = fuzz.token_set_ratio(
-                            context_text, normalize_text(doc_text)
-                        )  # 0..100
-                        score += sim * 0.15  # weight content moderately
-                except Exception:
-                    pass
-                return score
-
-            if active_documents:
-                # Ensure all selected share the same tag
-                tag_to_docs: dict[str, list[dict[str, Any]]] = {}
-                for d in active_documents:
-                    tags = ["__untagged__"]  # doc.tags removed in BCNF migration
-                    for t in tags:
-                        tag_to_docs.setdefault(t, []).append(d)
-
-                # Rank tags by best doc score with jitter
-                tag_scores: list[tuple[str, float]] = []
-                for t, docs in tag_to_docs.items():
-                    best = 0.0
-                    for d in docs:
-                        s = score_doc(d)
-                        if s > best:
-                            best = s
-                    tag_scores.append((t, best + random.random() * 0.1))
-                # Pick a tag by weighted probability (less deterministic)
-                chosen_tag = weighted_choice(tag_scores) or (
-                    tag_scores[0][0] if tag_scores else "__untagged__"
-                )
-                candidates = tag_to_docs.get(chosen_tag, [])
-                # Score candidates and sample 1 without replacement by weight
-                cand_docs = candidates
-                cand_scores = [score_doc(d) for d in cand_docs]
-                selected = weighted_sample_without_replacement(
-                    cand_docs, cand_scores, 1
-                )
-                suggested_document_ids = [d["id"] for d in selected]
-
-        # Suggest parameters --------------------------------------------------
-        suggested_parameter_item_ids = list(parameter_item_ids or [])
-        if "parameters" in targets_set:
-            query, params = self.queries.get_active_parameters()
-            active_parameters = await self.conn.fetch(query, *params)
-            if active_parameters:
-                chosen: list[uuid.UUID] = []
-                for param in active_parameters:
-                    query, params = self.queries.get_parameter_items_by_parameter(
-                        str(param["id"])
+        
+        # Helper function for fuzzy document scoring
+        known_types = [
+            "homework", "project", "quiz", "midterm", "lab", "lecture", "syllabus",
+        ]
+        scenario_text_norm = normalize_text(base_text)
+        has_type = {
+            t: (t in context_tokens) or (t in scenario_text_norm)
+            for t in known_types
+        }
+        
+        def score_doc_fuzzy(doc: dict[str, Any]) -> float:
+            """Score document using fuzzy matching."""
+            score = 0.0
+            name_overlap = context_tokens.intersection(
+                set(tokenize(doc.get("name") or ""))
+            )
+            score += 2.0 * len(name_overlap)
+            d_type = (doc.get("type") or "").lower()
+            if d_type and has_type.get(d_type, False):
+                score += 10.0
+            if d_type and d_type in scenario_text_norm:
+                score += 3.0
+            try:
+                file_path = doc.get("file_path")
+                if file_path:
+                    doc_text = read_document_content_for_similarity(file_path)
+                    doc_text = doc_text[:5000]
+                    sim = fuzz.token_set_ratio(
+                        context_text, normalize_text(doc_text)
                     )
-                    items = await self.conn.fetch(query, *params)
-                    items = [dict(item) for item in items]
-                    if not items:
-                        continue
-                    # Check if parameter is cross-department (no department links = default behavior)
-                    # Cross-department parameters use random selection, department-specific use similarity
-                    param_is_cross_dept = not param.get("department_ids") or len(param.get("department_ids", [])) == 0
+                    score += sim * 0.15
+            except Exception:
+                pass
+            return score
+        
+        def score_param_item_fuzzy(it: dict[str, Any], param: dict[str, Any]) -> float:
+            """Score parameter item using fuzzy matching."""
+            score = 0.0
+            name_norm = normalize_text(it.get("name", ""))
+            desc_norm = normalize_text(it.get("description", ""))
+            value_norm = normalize_text(it.get("value", ""))
+            
+            name_tokens = set(tokenize(name_norm))
+            desc_tokens = set(tokenize(desc_norm))
+            value_tokens = set(tokenize(value_norm))
+            p_tokens = set(tokenize(param.get("name", ""))) | set(
+                tokenize(param.get("description", ""))
+            )
+            
+            score += 2.0 * len(name_tokens & context_tokens)
+            score += 2.0 * len(desc_tokens & context_tokens)
+            score += 6.0 * len(value_tokens & context_tokens)
+            score += 1.5 * len(p_tokens & context_tokens)
+            
+            if value_norm and value_norm in context_text:
+                score += 25.0
+            
+            sim_all = float(
+                fuzz.token_set_ratio(
+                    context_text,
+                    normalize_text(f"{it.get('name', '')} {it.get('description', '')} {it.get('value', '')}"),
+                )
+            )
+            sim_value = float(fuzz.token_set_ratio(context_text, value_norm))
+            score += sim_all * 0.06
+            score += sim_value * 0.20
+            score += random.random() * 0.75
+            return score
+        
+        # If we need to suggest both documents and parameters, do intelligent matching
+        if suggest_docs and suggest_params:
+            # Get current state
+            current_doc_ids = {d for d in (document_ids or [])}
+            current_param_item_ids = suggested_parameter_item_ids_set.copy()
+            
+            # Build a map of parameter_item_id -> parameter_id for efficient lookup
+            param_item_to_param: dict[uuid.UUID, uuid.UUID] = {}
+            for pi_id, pi_data in parameter_items_by_id.items():
+                if pi_id in current_param_item_ids:
+                    param_item_to_param[pi_id] = pi_data["parameter_id"]
+            
+            # Priority 1: Ensure one-to-one connection for document_parameter=true parameters
+            # For each parameter with document_parameter=true, ensure we have matching doc/param_item pair
+            for doc_param in doc_params:
+                param_id = doc_param["id"]
+                # Get parameter items for this document_parameter parameter from lookup map
+                param_items = parameter_items_by_param_id.get(param_id, [])
+                
+                if not param_items:
+                    continue
+                
+                # Check if we already have a parameter_item for this parameter
+                existing_item_for_param = None
+                for existing_param_item_id in current_param_item_ids:
+                    # Check if this item belongs to this parameter
+                    if existing_param_item_id in param_item_to_param:
+                        if param_item_to_param[existing_param_item_id] == param_id:
+                            # Find the full item details from lookup map
+                            if existing_param_item_id in parameter_items_by_id:
+                                existing_item_for_param = parameter_items_by_id[existing_param_item_id]
+                                break
+                
+                if existing_item_for_param:
+                    # We have a parameter_item, find matching document via junction
+                    item_id = existing_item_for_param["id"]
+                    matching_docs = [
+                        documents_by_id[j["document_id"]]
+                        for j in document_parameter_items_junction
+                        if j["parameter_item_id"] == item_id
+                    ]
                     
-                    if param_is_cross_dept:
-                        # Cross-department parameter: completely random selection
-                        chosen.append(random.choice(items)["id"])
+                    if matching_docs:
+                        # Add matching document if not already present
+                        # But ensure it shares common parameter_item_ids with already selected documents
+                        best_doc = None
+                        for doc in matching_docs:
+                            if doc["id"] not in current_doc_ids:
+                                # If we already have documents, check if this doc shares common parameter_item_ids
+                                if suggested_document_ids:
+                                    # Build set of parameter_item_ids for already selected docs
+                                    selected_param_items: set[uuid.UUID] = set()
+                                    for junction in document_parameter_items_junction:
+                                        if junction["document_id"] in suggested_document_ids:
+                                            selected_param_items.add(junction["parameter_item_id"])
+                                    
+                                    # Check if this doc shares at least one common parameter_item_id
+                                    doc_param_items = {
+                                        j["parameter_item_id"]
+                                        for j in document_parameter_items_junction
+                                        if j["document_id"] == doc["id"]
+                                    }
+                                    
+                                    if not selected_param_items.intersection(doc_param_items):
+                                        # This doc doesn't share common parameter_item_ids - skip it
+                                        continue
+                                
+                                if best_doc is None or score_doc_fuzzy(doc) > score_doc_fuzzy(best_doc):
+                                    best_doc = doc
+                        if best_doc:
+                            suggested_document_ids.append(best_doc["id"])
+                            current_doc_ids.add(best_doc["id"])
+                else:
+                    # We don't have a parameter_item yet, but might have documents
+                    # Find best matching param_item -> document pair
+                    best_match_score = -1.0
+                    best_item = None
+                    best_doc = None
+                    
+                    for item in param_items:
+                        item_id = item["id"]
+                        # Find matching documents via junction
+                        matching_docs = [
+                            documents_by_id[j["document_id"]]
+                            for j in document_parameter_items_junction
+                            if j["parameter_item_id"] == item_id
+                        ]
+                        
+                        if matching_docs:
+                            for doc in matching_docs:
+                                # Score based on fuzzy matching for both
+                                item_score = score_param_item_fuzzy(item, doc_param)
+                                doc_score = score_doc_fuzzy(doc)
+                                combined_score = item_score + doc_score
+                                
+                                if combined_score > best_match_score:
+                                    best_match_score = combined_score
+                                    best_item = item
+                                    best_doc = doc
+                    
+                    if best_item and best_doc:
+                        # If we already have documents, ensure this doc shares common parameter_item_ids
+                        if suggested_document_ids:
+                            # Build set of parameter_item_ids for already selected docs (use different name to avoid conflict)
+                            selected_param_items_retry: set[uuid.UUID] = set()
+                            for junction in document_parameter_items_junction:
+                                if junction["document_id"] in suggested_document_ids:
+                                    selected_param_items_retry.add(junction["parameter_item_id"])
+                            
+                            # Check if this doc shares at least one common parameter_item_id
+                            # Include the new parameter_item_id we're about to add
+                            doc_param_items_retry = {
+                                j["parameter_item_id"]
+                                for j in document_parameter_items_junction
+                                if j["document_id"] == best_doc["id"]
+                            }
+                            doc_param_items_retry.add(best_item["id"])  # Include the new item we're adding
+                            
+                            if not selected_param_items_retry.intersection(doc_param_items_retry):
+                                # This doc doesn't share common parameter_item_ids - skip it
+                                # Try to find a better match that shares common parameter_item_ids
+                                best_match_score_retry = -1.0
+                                best_item_retry = None
+                                best_doc_retry = None
+                                
+                                for item in param_items:
+                                    item_id = item["id"]
+                                    matching_docs = [
+                                        documents_by_id[j["document_id"]]
+                                        for j in document_parameter_items_junction
+                                        if j["parameter_item_id"] == item_id
+                                    ]
+                                    
+                                    for doc in matching_docs:
+                                        if doc["id"] in current_doc_ids:
+                                            continue
+                                        
+                                        # Check if this doc shares common parameter_item_ids
+                                        doc_param_items_check_retry = {
+                                            j["parameter_item_id"]
+                                            for j in document_parameter_items_junction
+                                            if j["document_id"] == doc["id"]
+                                        }
+                                        doc_param_items_check_retry.add(item_id)
+                                        
+                                        if selected_param_items_retry.intersection(doc_param_items_check_retry):
+                                            # This doc shares common parameter_item_ids - consider it
+                                            item_score = score_param_item_fuzzy(item, doc_param)
+                                            doc_score = score_doc_fuzzy(doc)
+                                            combined_score = item_score + doc_score
+                                            
+                                            if combined_score > best_match_score_retry:
+                                                best_match_score_retry = combined_score
+                                                best_item_retry = item
+                                                best_doc_retry = doc
+                                
+                                # If we found a better match, use it; otherwise skip
+                                if best_item_retry and best_doc_retry:
+                                    best_item = best_item_retry
+                                    best_doc = best_doc_retry
+                                else:
+                                    # No valid match found - skip adding this document/parameter pair
+                                    continue
+                        
+                        # Add to set to prevent duplicates
+                        if best_item["id"] not in suggested_parameter_item_ids_set:
+                            suggested_parameter_item_ids_set.add(best_item["id"])
+                            current_param_item_ids.add(best_item["id"])
+                        if best_doc["id"] not in current_doc_ids:
+                            suggested_document_ids.append(best_doc["id"])
+                            current_doc_ids.add(best_doc["id"])
+            
+            # Update param_item_to_param map with newly suggested items
+            for pi_id in suggested_parameter_item_ids_set:
+                if pi_id in parameter_items_by_id:
+                    param_item_to_param[pi_id] = parameter_items_by_id[pi_id]["parameter_id"]
+            
+            # Priority 2: Match via document_parameter_items junction for remaining parameters
+            # Handle remaining parameters (non-document_parameter ones or ones not yet matched)
+            for param in active_parameters:
+                # Skip if already handled in Priority 1
+                if param["id"] in doc_param_ids:
+                    # Check if we already have an item for this parameter using the map
+                    has_item = False
+                    for existing_item_id in suggested_parameter_item_ids_set:
+                        if existing_item_id in param_item_to_param:
+                            if param_item_to_param[existing_item_id] == param["id"]:
+                                has_item = True
+                                break
+                    if has_item:
+                        continue
+                
+                # Get items for this parameter from lookup map
+                items = parameter_items_by_param_id.get(param["id"], [])
+                
+                if not items:
+                    continue
+                
+                # If we have documents, try to match via junction
+                if suggested_document_ids:
+                    # Find parameter items linked to suggested documents via junction
+                    suggested_doc_ids_set = set(suggested_document_ids)
+                    matching_items = [
+                        parameter_items_by_id[j["parameter_item_id"]]
+                        for j in document_parameter_items_junction
+                        if j["document_id"] in suggested_doc_ids_set
+                        and j["parameter_item_id"] in parameter_items_by_id
+                    ]
+                    
+                    # Filter to items for this parameter
+                    param_matching_items = [
+                        it for it in matching_items
+                        if it["parameter_id"] == param["id"]
+                    ]
+                    
+                    if param_matching_items:
+                        # Score and pick best matching item
+                        best_item = max(param_matching_items, key=lambda it: score_param_item_fuzzy(it, param))
+                        if best_item["id"] not in suggested_parameter_item_ids_set:
+                            suggested_parameter_item_ids_set.add(best_item["id"])
+                        continue
+                
+                # Priority 3: Fuzzy matching
+                ranked_items = sorted(items, key=lambda it: score_param_item_fuzzy(it, param), reverse=True)
+                top_pool = ranked_items[: min(5, len(ranked_items))]
+                if top_pool:
+                    chosen_item = random.choice(top_pool)
+                    if chosen_item["id"] not in suggested_parameter_item_ids_set:
+                        suggested_parameter_item_ids_set.add(chosen_item["id"])
+            
+            # Priority 2: For documents, match via document_parameter_items junction
+            if suggest_docs and len(suggested_document_ids) == len(document_ids or []):
+                # We haven't added any new documents yet, try matching via junction
+                if suggested_parameter_item_ids_set:
+                    # Find documents linked to suggested parameter items via junction
+                    matching_docs = [
+                        documents_by_id[j["document_id"]]
+                        for j in document_parameter_items_junction
+                        if j["parameter_item_id"] in suggested_parameter_item_ids_set
+                        and j["document_id"] in documents_by_id
+                    ]
+                    
+                    if matching_docs:
+                        # Filter out already selected documents
+                        available_docs = [d for d in matching_docs if d["id"] not in current_doc_ids]
+                        if available_docs:
+                            best_doc = max(available_docs, key=score_doc_fuzzy)
+                            suggested_document_ids.append(best_doc["id"])
+                            current_doc_ids.add(best_doc["id"])
+            
+            # Priority 3: Fuzzy matching for documents (if still needed)
+            if suggest_docs and len(suggested_document_ids) == len(document_ids or []):
+                available_docs_both = [d for d in active_documents if d["id"] not in current_doc_ids]
+                if available_docs_both:
+                    tag_to_docs_both: dict[str, list[dict[str, Any]]] = {}
+                    for d in available_docs_both:
+                        tags = ["__untagged__"]
+                        for t in tags:
+                            tag_to_docs_both.setdefault(t, []).append(d)
+                    
+                    tag_scores_both: list[tuple[str, float]] = []
+                    for t, docs in tag_to_docs_both.items():
+                        best = max((score_doc_fuzzy(d) for d in docs), default=0.0)
+                        tag_scores_both.append((t, best + random.random() * 0.1))
+                    
+                    chosen_tag = weighted_choice(tag_scores_both) or (
+                        tag_scores_both[0][0] if tag_scores_both else "__untagged__"
+                    )
+                    candidates = tag_to_docs_both.get(chosen_tag, [])
+                    cand_scores = [score_doc_fuzzy(d) for d in candidates]
+                    selected = weighted_sample_without_replacement(candidates, cand_scores, 1)
+                    if selected:
+                        suggested_document_ids.append(selected[0]["id"])
+        
+        elif suggest_docs:
+            # Only suggesting documents
+            if document_ids and not parameter_item_ids:
+                # We have documents but no parameters - pick parameter items that match documents
+                doc_ids_set = set(document_ids)
+                matching_items = [
+                    parameter_items_by_id[j["parameter_item_id"]]
+                    for j in document_parameter_items_junction
+                    if j["document_id"] in doc_ids_set
+                    and j["parameter_item_id"] in parameter_items_by_id
+                ]
+                
+                # Group by parameter and pick one item per parameter
+                items_by_param: dict[uuid.UUID, list[dict[str, Any]]] = {}
+                for it in matching_items:
+                    param_id = it["parameter_id"]
+                    if param_id not in items_by_param:
+                        items_by_param[param_id] = []
+                    items_by_param[param_id].append(it)
+                
+                for param in active_parameters:
+                    param_id = param["id"]
+                    if param_id in items_by_param:
+                        items = items_by_param[param_id]
+                        best_item = max(items, key=lambda it: score_param_item_fuzzy(it, param))
+                        if best_item["id"] not in suggested_parameter_item_ids_set:
+                            suggested_parameter_item_ids_set.add(best_item["id"])
+            
+            # Priority 2: Match via junction if we have parameter items
+            if parameter_item_ids:
+                param_item_ids_set = set(parameter_item_ids)
+                matching_docs = [
+                    documents_by_id[j["document_id"]]
+                    for j in document_parameter_items_junction
+                    if j["parameter_item_id"] in param_item_ids_set
+                    and j["document_id"] in documents_by_id
+                ]
+                
+                if matching_docs:
+                    available_docs = [d for d in matching_docs if d["id"] not in (document_ids or [])]
+                    if available_docs:
+                        # If we already have documents, only add documents that share common parameter_item_ids
+                        if suggested_document_ids:
+                            # Build map of document_id -> parameter_item_ids for already selected docs
+                            selected_doc_param_items: dict[uuid.UUID, set[uuid.UUID]] = {}
+                            for junction in document_parameter_items_junction:
+                                if junction["document_id"] in suggested_document_ids:
+                                    if junction["document_id"] not in selected_doc_param_items:
+                                        selected_doc_param_items[junction["document_id"]] = set()
+                                    selected_doc_param_items[junction["document_id"]].add(junction["parameter_item_id"])
+                            
+                            # Find common parameter_item_ids across all selected documents
+                            if selected_doc_param_items:
+                                common_param_items = set.intersection(*selected_doc_param_items.values())
+                                
+                                # Only add documents that share at least one common parameter_item_id
+                                if common_param_items:
+                                    valid_docs = [
+                                        d for d in available_docs
+                                        if d["id"] in documents_by_id
+                                        and any(
+                                            j["document_id"] == d["id"] and j["parameter_item_id"] in common_param_items
+                                            for j in document_parameter_items_junction
+                                        )
+                                    ]
+                                    if valid_docs:
+                                        best_doc = max(valid_docs, key=score_doc_fuzzy)
+                                        suggested_document_ids.append(best_doc["id"])
+                                else:
+                                    # Selected documents don't share common parameter_item_ids - don't add more
+                                    pass
+                            else:
+                                # No parameter_item_ids for selected docs - don't add more
+                                pass
+                        else:
+                            # No documents selected yet - add only ONE best matching document
+                            # to avoid having multiple documents that don't share common parameter_item_ids
+                            best_doc = max(available_docs, key=score_doc_fuzzy)
+                            suggested_document_ids.append(best_doc["id"])
+                            # Don't add more documents here - let validation handle it if needed
+            
+            # Priority 3: Fuzzy matching - only add if we don't already have a document
+            # (because we need to ensure documents share common parameter_item_ids)
+            if len(suggested_document_ids) == 0:
+                available_docs_only = [d for d in active_documents if d["id"] not in (document_ids or [])]
+                if available_docs_only:
+                    tag_to_docs_only: dict[str, list[dict[str, Any]]] = {}
+                    for d in available_docs_only:
+                        tags = ["__untagged__"]
+                        for t in tags:
+                            tag_to_docs_only.setdefault(t, []).append(d)
+                    
+                    tag_scores_only: list[tuple[str, float]] = []
+                    for t, docs in tag_to_docs_only.items():
+                        best = max((score_doc_fuzzy(d) for d in docs), default=0.0)
+                        tag_scores_only.append((t, best + random.random() * 0.1))
+                    
+                    chosen_tag = weighted_choice(tag_scores_only) or (
+                        tag_scores_only[0][0] if tag_scores_only else "__untagged__"
+                    )
+                    candidates = tag_to_docs_only.get(chosen_tag, [])
+                    cand_scores = [score_doc_fuzzy(d) for d in candidates]
+                    selected = weighted_sample_without_replacement(candidates, cand_scores, 1)
+                    if selected:
+                        suggested_document_ids.append(selected[0]["id"])
+        
+        elif suggest_params:
+            # Only suggesting parameters
+            if parameter_item_ids and not document_ids:
+                # We have parameter items but no documents - pick documents that match parameter items
+                param_item_ids_set = set(parameter_item_ids)
+                matching_docs = [
+                    documents_by_id[j["document_id"]]
+                    for j in document_parameter_items_junction
+                    if j["parameter_item_id"] in param_item_ids_set
+                    and j["document_id"] in documents_by_id
+                ]
+                
+                if matching_docs:
+                    best_doc = max(matching_docs, key=score_doc_fuzzy)
+                    suggested_document_ids.append(best_doc["id"])
+            
+            # Process each parameter - ensure only one item per parameter
+            for param in active_parameters:
+                # Check if we already have an item for this parameter
+                has_item_for_param = False
+                for existing_item_id in suggested_parameter_item_ids_set:
+                    if existing_item_id in parameter_items_by_id:
+                        if parameter_items_by_id[existing_item_id]["parameter_id"] == param["id"]:
+                            has_item_for_param = True
+                            break
+                
+                # Skip if we already have an item for this parameter
+                if has_item_for_param:
+                    continue
+                
+                # Get items for this parameter from lookup map
+                items = parameter_items_by_param_id.get(param["id"], [])
+                
+                if not items:
+                    continue
+                
+                # Priority 2: Match via junction if we have documents
+                if document_ids:
+                    doc_ids_set = set(document_ids)
+                    matching_items = [
+                        parameter_items_by_id[j["parameter_item_id"]]
+                        for j in document_parameter_items_junction
+                        if j["document_id"] in doc_ids_set
+                        and j["parameter_item_id"] in parameter_items_by_id
+                    ]
+                    
+                    param_matching_items = [
+                        it for it in matching_items
+                        if it["parameter_id"] == param["id"]
+                    ]
+                    
+                    if param_matching_items:
+                        best_item = max(param_matching_items, key=lambda it: score_param_item_fuzzy(it, param))
+                        if best_item["id"] not in suggested_parameter_item_ids_set:
+                            suggested_parameter_item_ids_set.add(best_item["id"])
+                        continue
+                
+                # Priority 3: Fuzzy matching
+                ranked_items = sorted(items, key=lambda it: score_param_item_fuzzy(it, param), reverse=True)
+                top_pool = ranked_items[: min(5, len(ranked_items))]
+                if top_pool:
+                    chosen_item = random.choice(top_pool)
+                    if chosen_item["id"] not in suggested_parameter_item_ids_set:
+                        suggested_parameter_item_ids_set.add(chosen_item["id"])
+
+        # Ensure documents are suggested if suggest_docs is true and we haven't added any
+        # Note: We don't add fallback documents here if we already have documents, because
+        # the validation below will ensure documents share common parameter_item_ids
+        if suggest_docs and len(suggested_document_ids) == 0 and len(document_ids or []) == 0:
+            # Fallback: try to add at least one document if none were added
+            available_docs_fallback = [d for d in active_documents if d["id"] not in (document_ids or [])]
+            if available_docs_fallback:
+                # Pick best matching document
+                best_doc = max(available_docs_fallback, key=score_doc_fuzzy)
+                suggested_document_ids.append(best_doc["id"])
+        
+        # Validate that all suggested documents share at least one common parameter_item_id
+        if len(suggested_document_ids) > 1:
+            # Build map of document_id -> set of parameter_item_ids
+            doc_to_param_items: dict[uuid.UUID, set[uuid.UUID]] = {}
+            for junction in document_parameter_items_junction:
+                doc_id = junction["document_id"]
+                param_item_id = junction["parameter_item_id"]
+                if doc_id not in doc_to_param_items:
+                    doc_to_param_items[doc_id] = set()
+                doc_to_param_items[doc_id].add(param_item_id)
+            
+            # Check if all documents share at least one common parameter_item_id
+            # suggested_document_ids contains UUID objects
+            doc_ids_uuid = [d for d in suggested_document_ids if isinstance(d, uuid.UUID)]
+            
+            if doc_ids_uuid:
+                # Get parameter_item_ids for each document (only include documents that have parameter_item_ids)
+                param_item_sets: list[tuple[uuid.UUID, set[uuid.UUID]]] = [
+                    (doc_id, doc_to_param_items[doc_id])
+                    for doc_id in doc_ids_uuid
+                    if doc_id in doc_to_param_items and len(doc_to_param_items[doc_id]) > 0
+                ]
+                
+                # Filter to only documents that have parameter_item_ids
+                valid_doc_ids = [doc_id for doc_id, _ in param_item_sets]
+                
+                if len(valid_doc_ids) == 0:
+                    # No documents have parameter_item_ids - keep only the first document
+                    logger.warning(
+                        f"None of the selected documents {suggested_document_ids} have parameter_item_ids. "
+                        f"Keeping only the first document: {suggested_document_ids[0]}"
+                    )
+                    suggested_document_ids = [doc_ids_uuid[0]]
+                elif len(valid_doc_ids) == 1:
+                    # Only one document has parameter_item_ids - that's fine
+                    suggested_document_ids = valid_doc_ids
+                else:
+                    # Multiple documents with parameter_item_ids - check if they share common ones
+                    param_item_set_values = [param_set for _, param_set in param_item_sets]
+                    # Find intersection of all sets
+                    common_items = param_item_set_values[0]
+                    for param_items in param_item_set_values[1:]:
+                        common_items = common_items.intersection(param_items)
+                    
+                    # If no common parameter_item_ids, keep only the first document
+                    if len(common_items) == 0:
+                        logger.warning(
+                            f"Selected documents {valid_doc_ids} don't share common parameter_item_ids. "
+                            f"Keeping only the first document: {valid_doc_ids[0]}"
+                        )
+                        suggested_document_ids = [valid_doc_ids[0]]
                     else:
-                        # Department-specific parameter: similarity-based with randomness
-                        def score_item(it: dict[str, Any]) -> float:
-                            score = 0.0
-                            name_norm = normalize_text(it.get("name"))
-                            desc_norm = normalize_text(it.get("description"))
-                            value_norm = normalize_text(it.get("value"))
-
-                            # Token overlaps
-                            name_tokens = set(tokenize(name_norm))
-                            desc_tokens = set(tokenize(desc_norm))
-                            value_tokens = set(tokenize(value_norm))
-                            p_tokens = set(tokenize(param.get("name"))) | set(
-                                tokenize(param.get("description"))
-                            )
-
-                            # Item tokens overlap with context (value gets higher weight)
-                            score += 2.0 * len(name_tokens & context_tokens)
-                            score += 2.0 * len(desc_tokens & context_tokens)
-                            score += 6.0 * len(value_tokens & context_tokens)
-
-                            # Parameter name/desc overlap with context
-                            score += 1.5 * len(p_tokens & context_tokens)
-
-                            # Exact phrase boost for value if appears in context
-                            if value_norm and value_norm in context_text:
-                                score += 25.0
-
-                            # Fuzzy similarity with heavier emphasis on value
-                            sim_all: float = float(
-                                fuzz.token_set_ratio(
-                                    context_text,
-                                    normalize_text(
-                                        f"{it.get('name')} {it.get('description')} {it.get('value')}"
-                                    ),
-                                )
-                            )
-                            sim_value: float = float(
-                                fuzz.token_set_ratio(context_text, value_norm)
-                            )
-                            score += sim_all * 0.06
-                            score += sim_value * 0.20
-
-                            # Small randomness to avoid determinism
-                            score += random.random() * 0.75
-                            return score
-
-                        ranked_items = sorted(items, key=score_item, reverse=True)
-                        top_pool = ranked_items[: min(5, len(ranked_items))]
-                        if top_pool:
-                            chosen_item = random.choice(top_pool)
-                            chosen.append(chosen_item["id"])
-                suggested_parameter_item_ids = chosen
+                        # Documents share common parameter_item_ids - that's valid
+                        suggested_document_ids = valid_doc_ids
+        
+        # Ensure we only have one parameter item per parameter when randomizing
+        if suggest_params:
+            # Group suggested items by parameter_id
+            param_to_items: dict[uuid.UUID, list[uuid.UUID]] = {}
+            for item_id in suggested_parameter_item_ids_set:
+                if item_id in parameter_items_by_id:
+                    param_id = parameter_items_by_id[item_id]["parameter_id"]
+                    if param_id not in param_to_items:
+                        param_to_items[param_id] = []
+                    param_to_items[param_id].append(item_id)
+            
+            # Keep only one item per parameter (prefer the first one added)
+            final_param_item_ids: set[uuid.UUID] = set()
+            for param_id, item_ids in param_to_items.items():
+                if item_ids:
+                    # Keep the first item for this parameter
+                    final_param_item_ids.add(item_ids[0])
+            
+            suggested_parameter_item_ids_set = final_param_item_ids
 
         return {
             "persona_id": suggested_persona_id,
             "document_ids": suggested_document_ids,
-            "parameter_item_ids": suggested_parameter_item_ids,
+            "parameter_item_ids": list(suggested_parameter_item_ids_set),
         }
 
     @with_cache(lambda self, query, limit: keys.scenario_search(query, limit))

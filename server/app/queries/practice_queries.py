@@ -577,13 +577,16 @@ class PracticeQueries:
                     '{{}}'::jsonb
                 ) as mapping
                 FROM parameters par
-                LEFT JOIN parameter_departments pd ON pd.parameter_id = par.id AND pd.active = true
+                JOIN parameter_items pi ON pi.parameter_id = par.id
+                LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
                 WHERE par.active = true
                   AND par.practice_parameter = true
                 GROUP BY par.id, par.name, par.description, par.numerical
                 HAVING 
-                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY({dept_param_placeholder})) > 0)
-                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = par.id AND pd2.active = true))
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = par.id AND pid2.active = true))
             ),
             parameter_item_mapping_data AS (
                 SELECT COALESCE(
@@ -601,14 +604,15 @@ class PracticeQueries:
                 ) as mapping
                 FROM parameter_items pi
                 JOIN parameters par ON pi.parameter_id = par.id
-                LEFT JOIN parameter_departments pd ON pd.parameter_id = par.id AND pd.active = true
+                LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
                 WHERE par.active = true
                   AND par.practice_parameter = true
                   AND pi.default_item = true
                 GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, par.name, pi.value
                 HAVING 
-                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(pd.parameter_id) FILTER (WHERE pd.department_id = ANY({dept_param_placeholder})) > 0)
-                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = pi.parameter_id AND pd2.active = true))
+                    (cardinality({dept_param_placeholder}) = 0 OR COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY({dept_param_placeholder})) > 0)
+                    OR (cardinality({dept_param_placeholder}) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              WHERE pid2.parameter_item_id = pi.id AND pid2.active = true))
             )
             SELECT json_build_object(
                 'mode', 'practice',

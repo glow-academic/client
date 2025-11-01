@@ -171,27 +171,6 @@ export default function Practice() {
           return;
         }
 
-        // Get the simulation's department_id from simulation_mapping (use first from array)
-        const departmentIds = simulationMapping[simulationId]?.department_ids;
-        const simulationDepartmentId = departmentIds && departmentIds.length > 0 ? departmentIds[0] : null;
-        
-        if (!simulationDepartmentId) {
-          toast.error("Simulation department not found. Please contact support.");
-          error("simulation.start.precheck.failed", {
-            message: "Simulation department_ids not found in simulation_mapping",
-            subject: { entityType: "simulation", entityId: simulationId },
-            ...(effectiveProfile?.id
-              ? { actor: { profileId: effectiveProfile.id } }
-              : {}),
-            context: {
-              component: "Practice",
-              function: "handleStartSimulation",
-              simulation_mapping: simulationMapping,
-            },
-          });
-          return;
-        }
-
         if (!isConnected) {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
@@ -229,14 +208,12 @@ export default function Practice() {
             component: "Practice",
             function: "handleStartSimulation",
             isConnected,
-            departmentId: simulationDepartmentId,
           },
         });
 
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
-          department_id: simulationDepartmentId,
         });
 
         // timeout...
@@ -278,7 +255,6 @@ export default function Practice() {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-      simulationMapping,
       info,
       error,
     ]
@@ -480,7 +456,7 @@ export default function Practice() {
                       personaColors: item.personaColors,
                       score: item.score,
                       simulation_id: item.simulation_id,
-                      department_id: item.department_id,
+                      department_id: item.department_ids?.[0] ?? "",
                       scenario_titles: item.scenario_titles,
                       scenario_ids: item.scenario_ids,
                       isArchived: item.isArchived,
@@ -520,22 +496,6 @@ export default function Practice() {
                 );
                 return;
               }
-              // Get the simulation's department_id from simulation_mapping (use first from array)
-              const departmentIds = simulationMapping[params.simulationId]?.department_ids;
-              const simulationDepartmentId = departmentIds && departmentIds.length > 0 ? departmentIds[0] : null;
-              if (!simulationDepartmentId) {
-                toast.error("Simulation department not found. Please contact support.");
-                error("simulation.start.precheck.failed", {
-                  message: "Simulation department_ids not found in simulation_mapping",
-                  subject: { entityType: "simulation", entityId: params.simulationId },
-                  context: {
-                    component: "Practice",
-                    function: "onStartAttempt",
-                    simulation_mapping: simulationMapping,
-                  },
-                });
-                return;
-              }
               const profileIdForEmit =
                 effectiveProfile?.role === "guest"
                   ? ""
@@ -548,7 +508,6 @@ export default function Practice() {
                 profile_id: profileIdForEmit,
                 infinite: true,
                 infinite_time_limit: params.timeLimit,
-                department_id: simulationDepartmentId,
               });
               setCustomizeOpen(false);
             } else {

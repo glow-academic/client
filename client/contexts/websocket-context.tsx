@@ -52,20 +52,17 @@ export interface WebSocketContextType {
     scenario_id?: string | null;
     infinite?: boolean;
     infinite_time_limit?: number | null;
-    department_id: string;
   }) => void;
   emitSendSimulationMessage: (data: {
     chat_id: string;
     message: string;
     isRetry?: boolean;
-    department_id: string;
   }) => void;
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
     chat_id: string;
     attempt_id: string;
     end_all?: boolean;
-    department_id?: string;
   }) => void;
 
   // Assistant event emitters
@@ -1097,7 +1094,6 @@ export function WebSocketProvider({
       scenario_id?: string | null;
       infinite?: boolean;
       infinite_time_limit?: number | null;
-      department_id: string;
     }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.start.skip_not_connected", {
@@ -1117,7 +1113,6 @@ export function WebSocketProvider({
         ...(data.infinite_time_limit !== undefined && {
           infinite_time_limit: data.infinite_time_limit,
         }),
-        department_id: data.department_id,
       };
 
       setStartingSimulationId(data.simulation_id);
@@ -1132,7 +1127,6 @@ export function WebSocketProvider({
       chat_id: string;
       message: string;
       isRetry?: boolean;
-      department_id: string;
     }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.send.skip_not_connected", {
@@ -1146,7 +1140,6 @@ export function WebSocketProvider({
         context: {
           chatId: data.chat_id,
           isRetry: data.isRetry,
-          departmentId: data.department_id,
         },
       });
       socketRef.current.emit("send_simulation_message", data);
@@ -1176,7 +1169,6 @@ export function WebSocketProvider({
       chat_id: string;
       attempt_id: string;
       end_all?: boolean;
-      department_id?: string;
     }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.continue.skip_not_connected", {

@@ -86,7 +86,7 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
                     queries = ProfileQueries()
                     update_query, insert_query = queries.update_profile_to_inactive()
                     last_active = datetime.now(UTC)
-                    await conn.execute(update_query, profile_id, last_active)
+                    await conn.execute(update_query, profile_id)
                     await conn.execute(insert_query, profile_id, last_active)
             logger.info(f"Updated profile {profile_id} to inactive in database")
     except Exception as e:
@@ -149,7 +149,6 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
     try:
         chat_id = data.get("chat_id")
         message = data.get("message")
-        department_id = data.get("department_id")
         assistant_audio_enabled = data.get("assistant_audio_enabled", False)
         sketch_data = data.get("sketch_data")
 
@@ -157,10 +156,6 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
             logger.error(
                 f"Missing chat_id or both message and sketch_data in request from {sid}"
             )
-            return
-
-        if not department_id:
-            logger.error(f"Missing department_id in request from {sid}")
             return
 
         logger.info(
@@ -176,7 +171,6 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
         await process_simulation_message_websocket(
             chat_id=uuid.UUID(chat_id),
             message=message or "",
-            department_id=department_id,
             is_retry=is_retry,
         )
 
@@ -351,7 +345,7 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                         queries = ProfileQueries()
                         update_query, insert_query = queries.update_profile_to_active()
                         last_active = datetime.now(UTC)
-                        await conn.execute(update_query, profile_id, last_active)
+                        await conn.execute(update_query, profile_id)
                         await conn.execute(insert_query, profile_id, last_active)
                     logger.info(f"Updated profile {profile_id} to active in database")
         except Exception as e:

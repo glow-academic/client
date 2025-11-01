@@ -1294,6 +1294,15 @@ class ScenarioQueries:
         return (query, [scenario_ids])
 
     # Queries for randomly_fill_scenario_attributes
+    def get_scenario_departments(self, scenario_id: str) -> tuple[str, list[Any]]:
+        """Build query to get all department_ids from scenario_departments junction table."""
+        query = """
+        SELECT department_id
+        FROM scenario_departments
+        WHERE scenario_id = $1 AND active = true
+        """
+        return (query, [scenario_id])
+
     def get_scenario_persona_link(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's active persona link."""
         query = """
@@ -1304,10 +1313,37 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_active_personas(self) -> tuple[str, list[Any]]:
-        """Build query to get all active personas."""
-        query = "SELECT id FROM personas WHERE active = true"
-        return (query, [])
+    def get_active_personas(
+        self, department_id: str | None = None, department_ids: list[str] | None = None
+    ) -> tuple[str, list[Any]]:
+        """Build query to get active personas, optionally filtered by department(s)."""
+        if department_ids and len(department_ids) > 0:
+            query = """
+            SELECT p.id
+            FROM personas p
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+            WHERE p.active = true
+            GROUP BY p.id
+            HAVING 
+                COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
+                OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+            """
+            return (query, [department_ids])
+        elif department_id:
+            query = """
+            SELECT p.id
+            FROM personas p
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+            WHERE p.active = true
+            GROUP BY p.id
+            HAVING 
+                COUNT(pd.persona_id) FILTER (WHERE pd.department_id = $1::uuid) > 0
+                OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+            """
+            return (query, [department_id])
+        else:
+            query = "SELECT id FROM personas WHERE active = true"
+            return (query, [])
 
     def get_scenario_document_links(self, scenario_id: str) -> tuple[str, list[Any]]:
         """Build query to get scenario's document links."""
@@ -1325,22 +1361,95 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_active_documents(self) -> tuple[str, list[Any]]:
-        """Build query to get all active documents with details."""
-        query = "SELECT id, name, type, file_path FROM documents WHERE active = true"
-        return (query, [])
+    def get_active_documents(
+        self, department_id: str | None = None, department_ids: list[str] | None = None
+    ) -> tuple[str, list[Any]]:
+        """Build query to get active documents with details, optionally filtered by department(s)."""
+        if department_ids and len(department_ids) > 0:
+            query = """
+            SELECT d.id, d.name, d.type, d.file_path
+            FROM documents d
+            LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+            WHERE d.active = true
+            GROUP BY d.id, d.name, d.type, d.file_path
+            HAVING 
+                COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1::uuid[])) > 0
+                OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+            """
+            return (query, [department_ids])
+        elif department_id:
+            query = """
+            SELECT d.id, d.name, d.type, d.file_path
+            FROM documents d
+            LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+            WHERE d.active = true
+            GROUP BY d.id, d.name, d.type, d.file_path
+            HAVING 
+                COUNT(dd.document_id) FILTER (WHERE dd.department_id = $1::uuid) > 0
+                OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+            """
+            return (query, [department_id])
+        else:
+            query = "SELECT id, name, type, file_path FROM documents WHERE active = true"
+            return (query, [])
 
-    def get_active_parameters(self) -> tuple[str, list[Any]]:
-        """Build query to get all active parameters."""
-        query = "SELECT id, name FROM parameters WHERE active = true"
-        return (query, [])
+    def get_active_parameters(
+        self, department_id: str | None = None, department_ids: list[str] | None = None
+    ) -> tuple[str, list[Any]]:
+        """Build query to get active parameters, optionally filtered by department(s) via parameter_items."""
+        if department_ids and len(department_ids) > 0:
+            query = """
+            SELECT DISTINCT p.id, p.name, p.description, p.document_parameter
+            FROM parameters p
+            JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE p.active = true
+            GROUP BY p.id, p.name, p.description, p.document_parameter
+            HAVING 
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($1::uuid[])) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
+            """
+            return (query, [department_ids])
+        elif department_id:
+            query = """
+            SELECT DISTINCT p.id, p.name, p.description, p.document_parameter
+            FROM parameters p
+            JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE p.active = true
+            GROUP BY p.id, p.name, p.description, p.document_parameter
+            HAVING 
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = $1::uuid) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
+            """
+            return (query, [department_id])
+        else:
+            query = "SELECT id, name, description, document_parameter FROM parameters WHERE active = true"
+            return (query, [])
 
     def get_parameter_items_by_parameter(
-        self, parameter_id: str
+        self, parameter_id: str, department_id: str | None = None
     ) -> tuple[str, list[Any]]:
-        """Build query to get parameter items for a parameter."""
-        query = "SELECT id, name FROM parameter_items WHERE parameter_id = $1"
-        return (query, [parameter_id])
+        """Build query to get parameter items for a parameter, optionally filtered by department."""
+        if department_id:
+            query = """
+            SELECT pi.id, pi.name
+            FROM parameter_items pi
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE pi.parameter_id = $1
+            GROUP BY pi.id, pi.name
+            HAVING 
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = $2::uuid) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            """
+            return (query, [parameter_id, department_id])
+        else:
+            query = "SELECT id, name FROM parameter_items WHERE parameter_id = $1"
+            return (query, [parameter_id])
 
     def get_parameter_items_batch(
         self, parameter_item_ids: list[str]
@@ -2002,6 +2111,226 @@ class ScenarioQueries:
           AND d.active = true
         """
         return (query, [parameter_item_ids])
+
+    def get_parameters_with_document_parameter(self) -> tuple[str, list[Any]]:
+        """Get all active parameters where document_parameter = true."""
+        query = """
+        SELECT id, name, description, document_parameter
+        FROM parameters
+        WHERE active = true AND document_parameter = true
+        """
+        return (query, [])
+
+    def get_parameter_items_for_documents(self, document_ids: list[str]) -> tuple[str, list[Any]]:
+        """Get parameter items that match given documents via document_parameter_items junction."""
+        query = """
+        SELECT DISTINCT pi.id, pi.name, pi.description, pi.value, pi.parameter_id
+        FROM parameter_items pi
+        JOIN document_parameter_items dpi ON dpi.parameter_item_id = pi.id
+        WHERE dpi.document_id = ANY($1::uuid[])
+          AND dpi.active = true
+        """
+        return (query, [document_ids])
+
+    def get_parameter_items_for_document_parameter_params(
+        self, parameter_ids: list[str]
+    ) -> tuple[str, list[Any]]:
+        """Get parameter items for parameters with document_parameter=true."""
+        query = """
+        SELECT pi.id, pi.name, pi.description, pi.value, pi.parameter_id
+        FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
+        WHERE p.id = ANY($1::uuid[])
+          AND p.document_parameter = true
+          AND p.active = true
+        """
+        return (query, [parameter_ids])
+
+    def get_randomization_data_complete(
+        self, department_ids: list[str] | None = None
+    ) -> tuple[str, list[Any]]:
+        """Get all data needed for randomization in a single query.
+        
+        Returns personas, documents, parameters, parameter_items, and junction data
+        all filtered by department_ids if provided, using JSONB aggregations.
+        Avoids cartesian products by aggregating each entity type separately.
+        """
+        if department_ids and len(department_ids) > 0:
+            # Convert string UUIDs to UUID objects for asyncpg
+            import uuid
+            department_uuids = [uuid.UUID(d) for d in department_ids]
+            query = """
+            WITH filtered_personas AS (
+                SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description
+                FROM personas p
+                LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+                WHERE p.active = true
+                GROUP BY p.id, p.name, p.description
+                HAVING 
+                    COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
+                    OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+            ),
+            filtered_documents AS (
+                SELECT DISTINCT d.id, d.name, d.type, d.file_path
+                FROM documents d
+                LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+                WHERE d.active = true
+                GROUP BY d.id, d.name, d.type, d.file_path
+                HAVING 
+                    COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1::uuid[])) > 0
+                    OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+            ),
+            filtered_parameters AS (
+                SELECT DISTINCT p.id, p.name, p.description, p.document_parameter
+                FROM parameters p
+                JOIN parameter_items pi ON pi.parameter_id = p.id
+                LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+                WHERE p.active = true
+                GROUP BY p.id, p.name, p.description, p.document_parameter
+                HAVING 
+                    COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($1::uuid[])) > 0
+                    OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                                  JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                                  WHERE pi2.parameter_id = p.id AND pid2.active = true)
+            ),
+            parameter_items_data AS (
+                SELECT DISTINCT pi.id, pi.name, pi.description, pi.value, pi.parameter_id
+                FROM parameter_items pi
+                JOIN filtered_parameters fp ON fp.id = pi.parameter_id
+                LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+                GROUP BY pi.id, pi.name, pi.description, pi.value, pi.parameter_id
+                HAVING 
+                    COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($1::uuid[])) > 0
+                    OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            ),
+            document_parameter_items_junction AS (
+                SELECT DISTINCT dpi.document_id, dpi.parameter_item_id
+                FROM document_parameter_items dpi
+                JOIN filtered_documents fd ON fd.id = dpi.document_id
+                JOIN parameter_items_data pid ON pid.id = dpi.parameter_item_id
+                WHERE dpi.active = true
+            )
+            SELECT 
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', fp.id,
+                        'name', fp.name,
+                        'description', fp.description
+                    )),
+                    '[]'::json
+                ) FROM filtered_personas fp) as personas,
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', fd.id,
+                        'name', fd.name,
+                        'type', fd.type,
+                        'file_path', fd.file_path
+                    )),
+                    '[]'::json
+                ) FROM filtered_documents fd) as documents,
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', fp2.id,
+                        'name', fp2.name,
+                        'description', fp2.description,
+                        'document_parameter', fp2.document_parameter
+                    )),
+                    '[]'::json
+                ) FROM filtered_parameters fp2) as parameters,
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', pid.id,
+                        'name', pid.name,
+                        'description', pid.description,
+                        'value', pid.value,
+                        'parameter_id', pid.parameter_id
+                    )),
+                    '[]'::json
+                ) FROM parameter_items_data pid) as parameter_items,
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'document_id', dpi.document_id,
+                        'parameter_item_id', dpi.parameter_item_id
+                    )),
+                    '[]'::json
+                ) FROM document_parameter_items_junction dpi) as document_parameter_items
+            """
+            return (query, [department_uuids])
+        else:
+            query = """
+            WITH all_personas AS (
+                SELECT id, name, COALESCE(description, '') as description
+                FROM personas
+                WHERE active = true
+            ),
+            all_documents AS (
+                SELECT id, name, type, file_path
+                FROM documents
+                WHERE active = true
+            ),
+            all_parameters AS (
+                SELECT DISTINCT p.id, p.name, p.description, p.document_parameter
+                FROM parameters p
+                WHERE p.active = true
+            ),
+            all_parameter_items AS (
+                SELECT pi.id, pi.name, pi.description, pi.value, pi.parameter_id
+                FROM parameter_items pi
+                JOIN all_parameters ap ON ap.id = pi.parameter_id
+            ),
+            all_document_parameter_items AS (
+                SELECT DISTINCT dpi.document_id, dpi.parameter_item_id
+                FROM document_parameter_items dpi
+                JOIN all_documents ad ON ad.id = dpi.document_id
+                JOIN all_parameter_items api ON api.id = dpi.parameter_item_id
+                WHERE dpi.active = true
+            )
+            SELECT 
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', ap.id,
+                        'name', ap.name,
+                        'description', ap.description
+                    )),
+                    '[]'::json
+                ) FROM all_personas ap) as personas,
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', ad.id,
+                        'name', ad.name,
+                        'type', ad.type,
+                        'file_path', ad.file_path
+                    )),
+                    '[]'::json
+                ) FROM all_documents ad) as documents,
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', ap2.id,
+                        'name', ap2.name,
+                        'description', ap2.description,
+                        'document_parameter', ap2.document_parameter
+                    )),
+                    '[]'::json
+                ) FROM all_parameters ap2) as parameters,
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', api.id,
+                        'name', api.name,
+                        'description', api.description,
+                        'value', api.value,
+                        'parameter_id', api.parameter_id
+                    )),
+                    '[]'::json
+                ) FROM all_parameter_items api) as parameter_items,
+                (SELECT COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'document_id', adpi.document_id,
+                        'parameter_item_id', adpi.parameter_item_id
+                    )),
+                    '[]'::json
+                ) FROM all_document_parameter_items adpi) as document_parameter_items
+            """
+            return (query, [])
 
     def get_scenario_objectives_top_n(self, scenario_id: str, limit: int) -> tuple[str, list[Any]]:
         """Get top N objectives for scenario ordered by idx."""

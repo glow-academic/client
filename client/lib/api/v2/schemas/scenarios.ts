@@ -282,6 +282,7 @@ export const RandomizeScenarioRequestSchema = z.object({
   personaId: z.string().optional(),
   documentIds: z.array(z.string()).optional(),
   parameterItemIds: z.array(z.string()).optional(),
+  departmentIds: z.array(z.string()).optional(),
   targets: z.array(z.string()),
 });
 

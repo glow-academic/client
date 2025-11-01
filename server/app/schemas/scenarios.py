@@ -251,6 +251,7 @@ class RandomizeScenarioRequest(BaseModel):
     personaId: str | None = None
     documentIds: list[str] | None = None
     parameterItemIds: list[str] | None = None
+    departmentIds: list[str] | None = None  # Optional department filter for narrowing selection
     targets: list[str] = []  # ["persona", "documents", "parameters"]
 
 

@@ -143,24 +143,6 @@ export default function Home() {
           return;
         }
 
-        // Get the simulation's department_id from simulation_mapping (use first from array)
-        const departmentIds = bundle?.simulation_mapping?.[simulationId]?.department_ids;
-        const simulationDepartmentId = departmentIds && departmentIds.length > 0 ? departmentIds[0] : null;
-        
-        if (!simulationDepartmentId) {
-          toast.error("Simulation department not found. Please contact support.");
-          log.error("simulation.start.precheck.failed", {
-            message: "Simulation department_ids not found in simulation_mapping",
-            subject: { entityType: "simulation", entityId: simulationId },
-            context: {
-              component: "Home",
-              function: "handleStartSimulation",
-              simulation_mapping: bundle?.simulation_mapping,
-            },
-          });
-          return;
-        }
-
         if (!isConnected) {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
@@ -192,14 +174,12 @@ export default function Home() {
             component: "Home",
             function: "handleStartSimulation",
             isConnected,
-            departmentId: simulationDepartmentId,
           },
         });
 
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
-          department_id: simulationDepartmentId,
         });
 
         // timeout...
@@ -232,7 +212,6 @@ export default function Home() {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-      bundle?.simulation_mapping,
       log,
     ]
   );
@@ -743,7 +722,7 @@ export default function Home() {
                   scenario_titles: item.scenario_titles,
                   score: item.score,
                   simulation_id: item.simulation_id,
-                  department_id: item.department_id,
+                  department_id: item.department_ids?.[0] ?? "",
                   scenario_ids: item.scenario_ids,
                   isArchived: item.isArchived,
                   showView: item.showView,

@@ -374,6 +374,7 @@ export default function Scenario({
               );
               if (validDocs.length > 0) {
                 setCurrentDocumentIds((prevDocs) => {
+                  // Deduplicate when merging staged documents back
                   const combined = new Set([...prevDocs, ...validDocs]);
                   return Array.from(combined);
                 });
@@ -678,9 +679,11 @@ export default function Scenario({
         personaId: selectedPersonaId || undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
+        departmentIds: formData.departmentIds || undefined,
         targets: ["parameters"],
       });
       if (!resp.success) throw new Error(resp.message);
+      // Overwrite (not merge) parameter items - completely replace existing selection
       setCurrentParameterItemIds(resp.parameterItemIds || []);
       toast.success("Parameter suggestions applied");
     } catch (error) {
@@ -721,10 +724,12 @@ export default function Scenario({
         personaId: selectedPersonaId || undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
+        departmentIds: formData.departmentIds || undefined,
         targets: ["persona"],
       });
       if (!resp.success) throw new Error(resp.message);
-      if (resp.personaId) setSelectedPersonaId(resp.personaId);
+      // Overwrite (not merge) persona - completely replace existing selection
+      setSelectedPersonaId(resp.personaId || null);
       toast.success("Persona suggestion applied");
     } catch (error) {
       log.error("scenario.persona.randomize.failed", {
@@ -765,10 +770,14 @@ export default function Scenario({
         personaId: selectedPersonaId || undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
+        departmentIds: formData.departmentIds || undefined,
         targets: ["documents"],
       });
       if (!resp.success) throw new Error(resp.message);
-      setCurrentDocumentIds(resp.documentIds || []);
+      // Overwrite (not merge) documents - completely replace existing selection
+      // Deduplicate to prevent React key errors
+      const uniqueDocumentIds = Array.from(new Set(resp.documentIds || []));
+      setCurrentDocumentIds(uniqueDocumentIds);
       toast.success("Document suggestions applied");
     } catch (error) {
       log.error("scenario.documents.randomize.failed", {
@@ -1403,8 +1412,9 @@ export default function Scenario({
               description="Choose documents that will be available during this scenario."
               disabled={isReadonly || !useDocuments}
               onSelect={(ids) => {
-                // Enforce max 2 documents
-                const limitedIds = ids.slice(0, 2);
+                // Enforce max 2 documents and deduplicate
+                const uniqueIds = Array.from(new Set(ids));
+                const limitedIds = uniqueIds.slice(0, 2);
                 setCurrentDocumentIds(limitedIds);
               }}
             />

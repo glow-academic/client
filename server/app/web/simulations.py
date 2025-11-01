@@ -43,17 +43,10 @@ async def handle_start_simulation(sid: str, data: dict[str, Any]) -> None:
         scenario_id_override = data.get("scenario_id")
         infinite = bool(data.get("infinite", False))
         infinite_time_limit = data.get("infinite_time_limit")
-        department_id = data.get("department_id")
 
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")
             await emit_error(sid, "Missing simulation_id")
-            return
-
-        # Validate department_id is not null
-        if not department_id:
-            logger.error(f"Missing department_id in request from {sid}")
-            await emit_error(sid, "Missing department_id - please refresh the page")
             return
 
         # If the client indicates guest (empty/"null"/None), register under default guest profile
@@ -100,7 +93,6 @@ async def handle_start_simulation(sid: str, data: dict[str, Any]) -> None:
                 profile_id=str(profile_id) if profile_id else None,
                 scenario_id_override=scenario_id_override,
                 infinite=infinite,
-                department_id=department_id,
             )
 
             logger.info(
@@ -219,11 +211,6 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
         chat_id = data.get("chat_id")
         attempt_id = data.get("attempt_id")
         end_all = data.get("end_all", False)
-        department_id = data.get("department_id")
-
-        if not department_id:
-            await emit_error(sid, "Missing department_id")
-            return
 
         if not chat_id or not attempt_id:
             await emit_error(sid, "Missing chat_id or attempt_id")
@@ -245,7 +232,6 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
             result = await service.continue_simulation_attempt(
                 chat_id=str(chat_id),
                 attempt_id=str(attempt_id),
-                department_id=str(department_id),
                 end_all=end_all,
                 sio_instance=sio_instance,
             )
@@ -342,7 +328,6 @@ async def _generate_hints_background(
 
 async def process_simulation_message_websocket(
     chat_id: uuid.UUID,
-    department_id: uuid.UUID,
     message: str = "",
     is_retry: bool = False,
 ) -> None:
@@ -418,7 +403,7 @@ async def process_simulation_message_websocket(
                 # We poll for a cancellation flag bound to this chat's active run ID
                 from app.extensions import get_active_run, is_run_cancelled
 
-                async for token in run_simulation_agent(chat_id, department_id, conn):  # type: ignore[arg-type]
+                async for token in run_simulation_agent(chat_id, conn):  # type: ignore[arg-type]
                     # Check cancellation BEFORE processing this token to avoid emitting it
                     try:
                         run_id = await get_active_run(str(chat_id))
@@ -539,14 +524,23 @@ async def process_simulation_message_websocket(
                     logger.info(
                         f"Triggering hint generation for practice message {assistant_message['id']}"
                     )
-                    asyncio.create_task(
-                        _generate_hints_background(
-                            chat_id=chat_id,
-                            message_id=assistant_message["id"],
-                            department_id=department_id,
-                            sio_instance=sio_instance,
+                    # Extract department_id from run context for hint generation
+                    from app.queries.agent_queries import AgentQueries
+                    agent_queries = AgentQueries()
+                    query, params = agent_queries.get_simulation_run_context(str(chat_id))
+                    run_context_for_hints = await conn.fetchrow(query, *params)
+                    hint_dept_id = run_context_for_hints.get("department_id") if run_context_for_hints else None
+                    if not hint_dept_id:
+                        logger.warning(f"Failed to get department_id for hint generation in chat {chat_id}")
+                    else:
+                        asyncio.create_task(
+                            _generate_hints_background(
+                                chat_id=chat_id,
+                                message_id=assistant_message["id"],
+                                department_id=uuid.UUID(hint_dept_id),
+                                sio_instance=sio_instance,
+                            )
                         )
-                    )
                 else:
                     logger.debug("Skipping hint generation for non-practice simulation")
 

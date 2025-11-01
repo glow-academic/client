@@ -877,7 +877,6 @@ class SimulationService(BaseService):
                 duplicate_query,
                 result["title"],
                 result["description"],
-                result["department_id"],
                 result["rubric_id"],
             )
 
@@ -973,7 +972,6 @@ class SimulationService(BaseService):
         profile_id: str | None,
         scenario_id_override: str | None,
         infinite: bool,
-        department_id: str,
     ) -> dict[str, Any]:
         """Create simulation attempt with all related entities using single query.
 
@@ -994,7 +992,7 @@ class SimulationService(BaseService):
         # Convert None to empty string to avoid PostgreSQL parameter type ambiguity
         scenario_override = scenario_id_override if scenario_id_override else ""
         query, params = self.queries.start_simulation_attempt_complete(
-            simulation_id, profile_id, scenario_override, infinite, department_id
+            simulation_id, profile_id, scenario_override, infinite
         )
         result = await self.conn.fetchrow(query, *params)
         
@@ -1021,14 +1019,31 @@ class SimulationService(BaseService):
             scenario_metadata = json.loads(scenario_metadata)
 
         # Build scenario object from metadata
+        # Note: department_id will be extracted from scenario after randomization
         scenario = {
             "id": scenario_id,
             "name": scenario_name,
             "problem_statement": problem_statement,
             "active": scenario_metadata["active"],
             "generated": scenario_metadata["generated"],
-            "department_id": scenario_metadata["department_id"],
         }
+        
+        # Randomly fill scenario attributes (this will select department_id internally)
+        from app.services.scenario_service import ScenarioService
+        scenario_service = ScenarioService(self.conn)
+        filled_scenario = await scenario_service.randomly_fill_scenario_attributes(
+            scenario,
+            profile_id=profile_id,
+        )
+        
+        # Extract department_id from filled scenario
+        department_id = str(filled_scenario.get("department_id"))
+        if not department_id:
+            raise ValueError("Failed to get department_id from randomized scenario")
+        
+        # Update scenario with filled data
+        scenario.update(filled_scenario)
+        scenario["department_id"] = department_id
 
         # Handle scenario generation if needed
         if needs_generation:
@@ -1105,11 +1120,16 @@ class SimulationService(BaseService):
                     "active": True,
                     "generated": True,
                 },
-                department_id=uuid_module.UUID(department_id),
+                profile_id=attempt_profile_id,
                 parent_persona_id=parent_persona_id_str,
                 parent_document_ids=parent_doc_ids,
                 parent_parameter_item_ids=parent_param_ids,
             )
+            
+            # Extract department_id from filled scenario for agent call
+            department_id = str(filled_scenario.get("department_id"))
+            if not department_id:
+                raise ValueError("Failed to get department_id from randomized scenario")
             
             # Use the returned scenario (which might be a new variant with persona/docs/params)
             final_scenario_id = filled_scenario["id"]
@@ -1188,7 +1208,6 @@ class SimulationService(BaseService):
         self,
         chat_id: str,
         attempt_id: str,
-        department_id: str,
         end_all: bool,
         sio_instance: Any = None,
     ) -> dict[str, Any]:
@@ -1211,11 +1230,25 @@ class SimulationService(BaseService):
         if not chat:
             raise ValueError("Chat not found")
 
-        # Get the attempt
-        query, params = self.queries.get_attempt_by_id(attempt_id)
-        simulation_attempt = await self.conn.fetchrow(query, *params)
-        if not simulation_attempt:
+        # Get the attempt with profile
+        query, params = self.queries.get_attempt_with_profile(attempt_id)
+        attempt_with_profile = await self.conn.fetchrow(query, *params)
+        if not attempt_with_profile:
             raise ValueError("Attempt not found")
+        
+        simulation_attempt = attempt_with_profile
+        profile_id = attempt_with_profile.get("profile_id")
+        
+        # Extract department_id from chat/scenario for grading
+        from app.queries.agent_queries import AgentQueries
+        agent_queries = AgentQueries()
+        query, params = agent_queries.get_simulation_run_context(str(chat_id))
+        run_context = await self.conn.fetchrow(query, *params)
+        
+        if not run_context or not run_context.get("department_id"):
+            raise ValueError(f"Failed to get department_id from run context for chat {chat_id}")
+        
+        department_id = run_context["department_id"]
 
         # Get the simulation
         query, params = self.queries.get_simulation_by_id(
@@ -1258,7 +1291,7 @@ class SimulationService(BaseService):
                 created_next_chat = await self._create_chat_for_scenario(
                     str(next_scenario_id),
                     attempt_id,
-                    department_id,
+                    profile_id,
                     mark_completed=False,
                 )
                 if created_next_chat is None:
@@ -1318,7 +1351,7 @@ class SimulationService(BaseService):
             for offset in range(total_needed):
                 next_id = scenario_links[start_index + offset]["scenario_id"]
                 created = await self._create_chat_for_scenario(
-                    str(next_id), attempt_id, department_id, mark_completed=True
+                    str(next_id), attempt_id, profile_id, mark_completed=True
                 )
                 if created is None:
                     break
@@ -1411,7 +1444,7 @@ class SimulationService(BaseService):
         self,
         scenario_id: str,
         attempt_id: str,
-        department_id: str,
+        profile_id: str | None,
         mark_completed: bool,
     ) -> dict[str, Any] | None:
         """Create chat for a scenario with full scenario preparation.
@@ -1428,15 +1461,13 @@ class SimulationService(BaseService):
         if not old_scenario:
             return None
 
-        # Randomly fill any null attributes
-        import uuid as uuid_module
-
+        # Randomly fill any null attributes (this will select department_id internally)
         # Create scenario service locally to avoid storing service dependencies
         from app.services.scenario_service import ScenarioService
 
         scenario_service = ScenarioService(self.conn)
         scenario = await scenario_service.randomly_fill_scenario_attributes(
-            dict(old_scenario), uuid_module.UUID(department_id)
+            dict(old_scenario), profile_id=profile_id
         )
 
         # Set chat title and generate trace_id

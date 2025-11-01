@@ -386,7 +386,6 @@ class SimulationQueries:
         SELECT 
             title,
             description,
-            department_id,
             rubric_id
         FROM simulations
         WHERE id = $1
@@ -396,26 +395,22 @@ class SimulationQueries:
     def insert_duplicate_simulation(self) -> str:
         """Build query to insert duplicate simulation.
 
-        Params order: title, description, department_id, rubric_id
+        Params order: title, description, rubric_id
         """
         return """
         INSERT INTO simulations (
             title,
             description,
-            department_id,
             active,
-            default_simulation,
             practice_simulation,
             rubric_id
         )
         VALUES (
             $1 || ' Copy',
             $2,
-            $3,
             false,
             false,
-            $4,
-            $5
+            $3
         )
         RETURNING id
         """
@@ -1122,12 +1117,17 @@ class SimulationQueries:
                 COALESCE(p.description, '') as description,
                 p.numerical
             FROM parameters p
-            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_department_ids udi
-            WHERE (
-                pd.department_id = ANY(udi.ids)
-                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
-            )
+            WHERE p.active = true
+            GROUP BY p.id, p.name, p.description, p.numerical
+            HAVING 
+                -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
         ),
         parameter_mapping_data AS (
             SELECT COALESCE(
@@ -1395,7 +1395,6 @@ class SimulationQueries:
         profile_id: str | None,
         scenario_id_override: str | None,
         infinite: bool,
-        department_id: str,
     ) -> tuple[str, list[Any]]:
         """
         Single query to start simulation attempt with all related data.
@@ -1408,7 +1407,6 @@ class SimulationQueries:
             profile_id: UUID of profile (can be None for guests)
             scenario_id_override: UUID of specific scenario to use (optional)
             infinite: Whether attempt has infinite time
-            department_id: UUID of department for context
             
         Returns:
             Tuple of (query, params) that returns single row with all needed data
@@ -1435,9 +1433,7 @@ class SimulationQueries:
                 s.id,
                 s.title,
                 s.description,
-                s.department_id,
                 s.active,
-                s.default_simulation,
                 s.practice_simulation,
                 s.rubric_id
             FROM simulations s
@@ -1463,7 +1459,6 @@ class SimulationQueries:
                     ELSE (
                         SELECT s.id 
                         FROM scenarios s 
-                        WHERE s.department_id = $5::uuid 
                         ORDER BY random() 
                         LIMIT 1
                     )
@@ -1577,9 +1572,7 @@ class SimulationQueries:
                 'id', sd.id::text,
                 'title', sd.title,
                 'description', sd.description,
-                'department_id', sd.department_id::text,
                 'active', sd.active,
-                'default_simulation', sd.default_simulation,
                 'practice_simulation', sd.practice_simulation,
                 'rubric_id', sd.rubric_id::text
             ) as simulation_data,
@@ -1603,8 +1596,7 @@ class SimulationQueries:
                 'parameter_items', sfd.parameter_items,
                 'active', sfd.active,
                 'default_scenario', sfd.default_scenario,
-                'generated', sfd.generated,
-                'department_id', sfd.department_id::text
+                'generated', sfd.generated
             ) as scenario_metadata
         FROM new_attempt na
         CROSS JOIN new_chat nc
@@ -1612,7 +1604,7 @@ class SimulationQueries:
         CROSS JOIN simulation_data sd
         """
         
-        params = [simulation_id, infinite, profile_id, scenario_id_override, department_id]
+        params = [simulation_id, infinite, profile_id, scenario_id_override]
         return (query, params)
 
     def update_chat_title(self) -> str:
@@ -1828,12 +1820,17 @@ class SimulationQueries:
                 COALESCE(p.description, '') as description,
                 p.numerical
             FROM parameters p
-            LEFT JOIN parameter_departments pd ON pd.parameter_id = p.id AND pd.active = true
+            JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_department_ids udi
-            WHERE (
-                pd.department_id = ANY(udi.ids)
-                OR NOT EXISTS (SELECT 1 FROM parameter_departments pd2 WHERE pd2.parameter_id = p.id AND pd2.active = true)
-            )
+            WHERE p.active = true
+            GROUP BY p.id, p.name, p.description, p.numerical
+            HAVING 
+                -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
         ),
         parameter_mapping_data AS (
             SELECT COALESCE(
@@ -2004,7 +2001,7 @@ class SimulationQueries:
             SELECT DISTINCT d.id, d.title as name, d.description
             FROM departments d
             JOIN profile_departments pd ON d.id = pd.department_id
-            WHERE pd.profile_id = $2 AND d.active = true
+            WHERE pd.profile_id = $1 AND d.active = true
         ),
         department_scenario_ids_default AS (
             SELECT 

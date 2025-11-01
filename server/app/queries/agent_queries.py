@@ -1049,7 +1049,8 @@ class AgentQueries:
             
             -- Scenario data
             s.id::text as scenario_id,
-            s.department_id::text,
+            (SELECT sd.department_id::text FROM scenario_departments sd 
+             WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id,
             sps.problem_statement,
             
             -- Persona data (via scenario_personas junction)
@@ -1109,7 +1110,7 @@ class AgentQueries:
         WHERE sc.id = $1
         GROUP BY sc.id, sc.title, sc.trace_id,
                  sa.id, sa.simulation_id,
-                 s.id, s.department_id, sps.problem_statement,
+                 s.id, sps.problem_statement,
                  p.id, p.name, pr_prompt.system_prompt, p.temperature, p.reasoning,
                  m.id, m.name, m.custom_model,
                  pr.id, pr.name, pr.api_key, pe.base_url,
@@ -1162,7 +1163,8 @@ class AgentQueries:
             SELECT 
                 s.id,
                 s.rubric_id,
-                s.department_id,
+                (SELECT sd.department_id::text FROM simulation_departments sd 
+                 WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as department_id,
                 stl.time_limit_seconds as time_limit
             FROM simulations s
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
