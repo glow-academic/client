@@ -5,7 +5,6 @@
  * 06/07/2025
  */
 "use client";
-import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,37 +15,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useBulkDeleteProfile,
-  useBulkUpdateProfile,
   useDeleteProfile,
-  useProfileDetailBulk,
   useProfileList,
 } from "@/lib/api/v2/hooks/profile";
 import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import React from "react";
 import { toast } from "sonner";
+import StaffBulkEditModal from "./StaffBulkEditModal";
 import { StaffDataTable } from "./StaffDataTable";
-import StaffEdit from "./StaffEdit";
+import StaffEditModal from "./StaffEditModal";
 import ActiveUsersKPI from "./kpis/ActiveUsersKPI";
 import AdminUsersKPI from "./kpis/AdminUsersKPI";
 import InstructionalUsersKPI from "./kpis/InstructionalUsersKPI";
@@ -74,7 +55,6 @@ export default function Staff() {
   // Mutation hooks
   const deleteStaffMutation = useDeleteProfile();
   const bulkDeleteStaffMutation = useBulkDeleteProfile();
-  const bulkUpdateStaffMutation = useBulkUpdateProfile();
 
   // Selection
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
@@ -86,12 +66,6 @@ export default function Staff() {
 
   // Bulk edit modal state
   const [showBulkEditModal, setShowBulkEditModal] = React.useState(false);
-  const [bulkRole, setBulkRole] = React.useState<string>("__keep__");
-  const [bulkReqPerDay, setBulkReqPerDay] = React.useState<string>("");
-  const [bulkUnlimited, setBulkUnlimited] = React.useState<boolean>(false);
-  const [bulkDepartmentId, setBulkDepartmentId] = React.useState<string | null>(
-    null
-  );
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
@@ -101,13 +75,6 @@ export default function Staff() {
     React.useState(false);
   const [deleteStaffMember, setDeleteStaffMember] =
     React.useState<ProfileListItem | null>(null);
-
-  // Bulk edit detail hook
-  const { data: bulkStaffDetail } = useProfileDetailBulk(
-    selectedStaffIds,
-    effectiveProfile?.id || "",
-    selectedStaffIds.length > 0 && !!effectiveProfile?.id
-  );
 
   // Extract data from V2 API response
   const staff = React.useMemo(() => staffData?.staff || [], [staffData?.staff]);
@@ -334,156 +301,26 @@ export default function Staff() {
       />
 
       {/* Edit Staff Modal */}
-      <Dialog
+      <StaffEditModal
+        profileId={editProfileId}
         open={!!editProfileId}
-        onOpenChange={(open) => !open && setEditProfileId(null)}
-      >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Staff</DialogTitle>
-          </DialogHeader>
-          {editProfileId && (
-            <StaffEdit
-              profileId={editProfileId}
-              hideDelete={true}
-              hideBack={true}
-              redirectOnSuccess={false}
-              canToggleDefault={effectiveProfile?.role === "superadmin"}
-              onDone={() => {
-                setEditProfileId(null);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        onOpenChange={(open: boolean) => !open && setEditProfileId(null)}
+        onDone={() => {
+          setEditProfileId(null);
+          refetch();
+        }}
+      />
 
       {/* Bulk Edit Modal */}
-      <Dialog open={showBulkEditModal} onOpenChange={setShowBulkEditModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Edit {selectedStaffIds.length} staff
-              {selectedStaffIds.length > 1 ? "" : ""}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <Label>Role</Label>
-              <Select value={bulkRole} onValueChange={(v) => setBulkRole(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Keep existing" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__keep__">Keep existing</SelectItem>
-                  {roleOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>Requests per day</Label>
-
-              <Input
-                type="number"
-                placeholder="Leave blank to keep existing"
-                value={bulkReqPerDay}
-                onChange={(e) => setBulkReqPerDay(e.target.value)}
-                min={1}
-                disabled={bulkUnlimited}
-              />
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="bulk-unlimited"
-                  checked={bulkUnlimited}
-                  onCheckedChange={(checked) => {
-                    const isChecked = Boolean(checked);
-                    setBulkUnlimited(isChecked);
-                    if (isChecked) setBulkReqPerDay("");
-                  }}
-                />
-                <Label htmlFor="bulk-unlimited" className="mb-0">
-                  Unlimited
-                </Label>
-              </div>
-            </div>
-
-            {/* Department Selection */}
-            {bulkStaffDetail && (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <DepartmentPicker
-                  mapping={bulkStaffDetail.department_mapping}
-                  validIds={bulkStaffDetail.valid_department_ids}
-                  selectedIds={
-                    bulkDepartmentId
-                      ? [bulkDepartmentId]
-                      : bulkStaffDetail.department_ids[0]
-                        ? [bulkStaffDetail.department_ids[0]]
-                        : []
-                  }
-                  onSelect={(ids) => setBulkDepartmentId(ids[0] || null)}
-                  multiSelect={false}
-                />
-              </div>
-            )}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowBulkEditModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                if (selectedStaffIds.length === 0) return;
-
-                try {
-                  const updates: {
-                    profileIds: string[];
-                    role?: string;
-                    requests_per_day?: number | null;
-                    department_id?: string;
-                  } = {
-                    profileIds: selectedStaffIds,
-                  };
-
-                  if (bulkRole !== "__keep__") {
-                    updates.role = bulkRole;
-                  }
-
-                  if (bulkUnlimited) {
-                    updates.requests_per_day = null;
-                  } else if (bulkReqPerDay !== "") {
-                    const num = Number(bulkReqPerDay);
-                    updates.requests_per_day = Number.isNaN(num) ? null : num;
-                  }
-
-                  if (bulkDepartmentId) {
-                    updates.department_id = bulkDepartmentId;
-                  }
-
-                  await bulkUpdateStaffMutation.mutateAsync(updates);
-                  toast.success("Staff updated successfully");
-                  setShowBulkEditModal(false);
-                  setSelectedStaffIds([]);
-                  setBulkRole("__keep__");
-                  setBulkReqPerDay("");
-                  setBulkUnlimited(false);
-                  setBulkDepartmentId(null);
-                } catch {
-                  toast.error("Failed to update staff");
-                }
-              }}
-            >
-              Apply Changes
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <StaffBulkEditModal
+        profileIds={selectedStaffIds}
+        open={showBulkEditModal}
+        onOpenChange={setShowBulkEditModal}
+        onDone={() => {
+          setSelectedStaffIds([]);
+          refetch();
+        }}
+      />
 
       {/* Bulk Delete Confirmation */}
       <AlertDialog

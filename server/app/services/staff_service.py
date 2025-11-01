@@ -481,44 +481,134 @@ class StaffService(BaseService):
     async def bulk_update_staff(
         self, request: BulkUpdateStaffRequest
     ) -> BulkUpdateStaffResponse:
-        """Bulk update staff members."""
+        """Bulk update staff members with permission validation."""
+
+        # Get current user's role for validation
+        current_profile_id = request.currentProfileId
+        query, params = self.queries.get_profile_role(current_profile_id)
+        current_user = await self.conn.fetchrow(query, *params)
+        
+        if not current_user:
+            raise ValueError(f"Current user profile not found: {current_profile_id}")
+        
+        current_user_role = current_user["role"]
+
+        # Role hierarchy validation helper
+        def can_assign_role(creator_role: str, target_role: str) -> bool:
+            """Check if creator_role can assign target_role."""
+            role_hierarchy = {
+                "superadmin": ["superadmin", "admin", "instructional", "ta", "guest"],
+                "admin": ["instructional", "ta", "guest"],
+                "instructional": ["ta", "guest"],
+                "ta": ["guest"],
+                "guest": [],
+            }
+            return target_role in role_hierarchy.get(creator_role, [])
+        
+        def get_assignable_roles(creator_role: str) -> list[str]:
+            """Get list of roles that creator_role can assign."""
+            role_hierarchy = {
+                "superadmin": ["superadmin", "admin", "instructional", "ta", "guest"],
+                "admin": ["instructional", "ta", "guest"],
+                "instructional": ["ta", "guest"],
+                "ta": ["guest"],
+                "guest": [],
+            }
+            return role_hierarchy.get(creator_role, [])
 
         async with transaction(self.conn):
+            # Validate permissions for each profile before updating
+            for profile_id in request.profileIds:
+                # Check if profile is default_profile
+                check_default_query = "SELECT default_profile, role FROM profiles WHERE id = $1"
+                profile_data = await self.conn.fetchrow(check_default_query, profile_id)
+                
+                if not profile_data:
+                    raise ValueError(f"Profile not found: {profile_id}")
+                
+                target_is_default = profile_data["default_profile"]
+                target_role = profile_data["role"]
+                
+                # Validate default_profile editing (only superadmin can edit default profiles)
+                if target_is_default and current_user_role != "superadmin":
+                    raise ValueError(
+                        f"Cannot edit default profile {profile_id}. Only superadmin can edit default profiles."
+                    )
+                
+                # Validate role assignment if role is being updated
+                if request.role is not None:
+                    if not can_assign_role(current_user_role, request.role):
+                        assignable = get_assignable_roles(current_user_role)
+                        raise ValueError(
+                            f"Cannot assign role '{request.role}' with current role '{current_user_role}'. "
+                            f"Only roles: {', '.join(assignable)} can be assigned."
+                        )
+                    
+                    # Cannot assign role equal or higher than current role (except self and superadmin)
+                    if profile_id != current_profile_id and current_user_role != "superadmin":
+                        role_levels = {
+                            "superadmin": 4,
+                            "admin": 3,
+                            "instructional": 2,
+                            "ta": 1,
+                            "guest": 0,
+                        }
+                        current_level = role_levels.get(current_user_role, -1)
+                        target_level = role_levels.get(request.role, -1)
+                        if target_level >= current_level:
+                            raise ValueError(
+                                f"Cannot assign role '{request.role}' which is equal or higher than current role '{current_user_role}'."
+                            )
+
             # Build dynamic SET clauses for profiles table (excluding requests_per_day)
             set_clauses = []
-            params: dict[str, Any] = {"profile_ids": request.profileIds}
+            params_dict: dict[str, Any] = {"profile_ids": request.profileIds}
 
             if request.role is not None:
                 set_clauses.append("role = :role")
-                params["role"] = request.role
+                params_dict["role"] = request.role
+
+            if request.default_profile is not None:
+                set_clauses.append("default_profile = :default_profile")
+                params_dict["default_profile"] = request.default_profile
 
             if request.active is not None:
                 set_clauses.append("active = :active")
-                params["active"] = request.active
+                params_dict["active"] = request.active
 
             # Update profiles if there are fields to update
             if set_clauses:
                 query, _ = self.queries.bulk_update_profiles()
                 query = query.format(set_clauses=", ".join(set_clauses) + ",")
-                await self.conn.execute(query, **params)
-
-            # Update departments if provided
-            if request.department_id is not None:
-                query, _ = self.queries.bulk_update_profile_departments()
-                await self.conn.execute(
-                    query,
-                    request.profileIds,
-                    request.department_id,
-                )
+                await self.conn.execute(query, **params_dict)
 
             # Update request limits if provided
-            if request.requests_per_day is not None:
+            # requests_per_day can be:
+            # - int: specific limit
+            # - None: unlimited
+            # - "__keep__": don't update (keep existing)
+            if isinstance(request.requests_per_day, str) and request.requests_per_day == "__keep__":
+                # Don't update requests_per_day
+                pass
+            else:
                 limit_query, _ = self.queries.upsert_profile_request_limit()
                 for profile_id in request.profileIds:
+                    # Convert string to int if needed (from frontend)
+                    value = None
+                    if isinstance(request.requests_per_day, str) and request.requests_per_day != "__keep__":
+                        try:
+                            value = int(request.requests_per_day)
+                        except (ValueError, TypeError):
+                            value = None  # Treat invalid as unlimited
+                    elif isinstance(request.requests_per_day, int):
+                        value = request.requests_per_day
+                    elif request.requests_per_day is None:
+                        value = None  # Explicitly unlimited
+                    
                     await self.conn.execute(
                         limit_query,
                         profile_id,
-                        request.requests_per_day,
+                        value,
                     )
 
         # Invalidate caches
@@ -823,7 +913,7 @@ class StaffService(BaseService):
                     existing_cohort_ids = {row["cohort_id"] for row in existing}
                     
                     # Insert only cohorts that don't already exist
-                    query, _ = self.cohort_queries.insert_cohort_profile()
+                        query, _ = self.cohort_queries.insert_cohort_profile()
                     for cohort_id in request.cohort_ids:
                         if cohort_id not in existing_cohort_ids:
                             await self.conn.execute(query, cohort_id, profile_id)
@@ -999,7 +1089,7 @@ class StaffService(BaseService):
                         existing_cohort_ids = {row["cohort_id"] for row in existing}
                         
                         # Insert only cohorts that don't already exist
-                        query, _ = self.cohort_queries.insert_cohort_profile()
+                            query, _ = self.cohort_queries.insert_cohort_profile()
                         for cohort_id in profile_req.cohort_ids:
                             if cohort_id not in existing_cohort_ids:
                                 await self.conn.execute(query, cohort_id, profile_id)

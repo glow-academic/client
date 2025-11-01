@@ -168,8 +168,9 @@ class BulkUpdateStaffRequest(BaseModel):
 
     profileIds: list[str]
     role: str | None = None
-    requests_per_day: int | None = None
-    department_id: str | None = None
+    requests_per_day: int | None | str = None  # int for limit, None for unlimited, "__keep__" to not update
+    default_profile: bool | None = None
+    currentProfileId: str  # Current user's profile ID for permission validation
     active: bool | None = None
 
 

@@ -438,7 +438,7 @@ export default function Cohort({ cohortId }: CohortProps) {
         JSON.stringify(originalSimulationIds.sort()) ||
       JSON.stringify(simulationActiveStates) !==
         JSON.stringify(originalSimulationActiveStates) ||
-      stagedProfilesToAdd.length > 0  // Check for staged profiles
+      stagedProfilesToAdd.length > 0 // Check for staged profiles
     );
   }, [
     formData,
@@ -1143,10 +1143,22 @@ export default function Cohort({ cohortId }: CohortProps) {
                       );
                     }
                   }}
-                  canDelete={() => true} // All profiles can be removed from cohort
-                  deletableCount={selectedStaffIds.length}
-                  canEdit={() => false} // Edit not available in scoped view
-                  editableCount={0}
+                  canDelete={(profileId) => {
+                    const staff = mergedStaff.find(
+                      (s) => s.profile_id === profileId
+                    );
+                    return staff?.can_delete ?? false;
+                  }}
+                  deletableCount={
+                    mergedStaff.filter((s) => s.can_delete).length
+                  }
+                  canEdit={(profileId) => {
+                    const staff = mergedStaff.find(
+                      (s) => s.profile_id === profileId
+                    );
+                    return staff?.can_edit ?? false;
+                  }}
+                  editableCount={mergedStaff.filter((s) => s.can_edit).length}
                 />
               </div>
             );

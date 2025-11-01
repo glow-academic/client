@@ -166,8 +166,9 @@ export type UpdateProfileResponse = z.infer<typeof UpdateProfileResponseSchema>;
 export const BulkUpdateProfileRequestSchema = z.object({
   profileIds: z.array(z.string()),
   role: z.string().optional(),
-  requests_per_day: z.number().nullable().optional(),
-  department_id: z.string().optional(),
+  requests_per_day: z.union([z.number(), z.string()]).nullable().optional(), // int for limit, "__keep__" to not update, null for unlimited
+  default_profile: z.boolean().optional(),
+  currentProfileId: z.string(), // Current user's profile ID for permission validation
   active: z.boolean().optional(),
 });
 

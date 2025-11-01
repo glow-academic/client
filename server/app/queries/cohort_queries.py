@@ -321,16 +321,28 @@ class CohortQueries:
                 COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
                 COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
                 CASE 
+                    -- Always allow editing self
+                    WHEN p.id = $2 THEN true
+                    -- Superadmin has no restrictions
                     WHEN ups.role = 'superadmin' THEN true
+                    -- Cannot edit default_profile unless superadmin
+                    WHEN p.default_profile = true THEN false
+                    -- Role hierarchy: can only edit roles lower than current role
                     WHEN ups.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
                     WHEN ups.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
                     WHEN ups.role = 'ta' AND p.role = 'guest' THEN true
                     ELSE false
                 END as can_edit,
                 CASE 
-                    WHEN p.default_profile = true THEN false
-                    WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
+                    -- Cannot remove ourselves from cohort
+                    WHEN p.id = $2 THEN false
+                    -- Superadmin has no restrictions (except self)
                     WHEN ups.role = 'superadmin' THEN true
+                    -- Cannot delete default_profile unless superadmin
+                    WHEN p.default_profile = true THEN false
+                    -- Cannot delete profiles with cohort links (prevent orphaned data)
+                    WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
+                    -- Role hierarchy: can only delete roles lower than current role
                     WHEN ups.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
                     WHEN ups.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
                     WHEN ups.role = 'ta' AND p.role = 'guest' THEN true
@@ -833,16 +845,28 @@ class CohortQueries:
                 COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
                 COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
                 CASE 
+                    -- Always allow editing self
+                    WHEN p.id = $2 THEN true
+                    -- Superadmin has no restrictions
                     WHEN ups.role = 'superadmin' THEN true
+                    -- Cannot edit default_profile unless superadmin
+                    WHEN p.default_profile = true THEN false
+                    -- Role hierarchy: can only edit roles lower than current role
                     WHEN ups.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
                     WHEN ups.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
                     WHEN ups.role = 'ta' AND p.role = 'guest' THEN true
                     ELSE false
                 END as can_edit,
                 CASE 
-                    WHEN p.default_profile = true THEN false
-                    WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
+                    -- Cannot remove ourselves from cohort
+                    WHEN p.id = $2 THEN false
+                    -- Superadmin has no restrictions (except self)
                     WHEN ups.role = 'superadmin' THEN true
+                    -- Cannot delete default_profile unless superadmin
+                    WHEN p.default_profile = true THEN false
+                    -- Cannot delete profiles with cohort links (prevent orphaned data)
+                    WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
+                    -- Role hierarchy: can only delete roles lower than current role
                     WHEN ups.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
                     WHEN ups.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
                     WHEN ups.role = 'ta' AND p.role = 'guest' THEN true
