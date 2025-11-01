@@ -239,6 +239,13 @@
       "when": 1761960839271,
       "tag": "0033_wandering_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1761967184689,
+      "tag": "0034_heavy_lifeguard",
+      "breakpoints": true
     }
   ]
 }

@@ -465,6 +465,28 @@ class ScenarioService(BaseService):
                         parameter_item_ids=to_str_list(parameter_item_ids),
                     )
 
+        # Parse JSONB problem statement mapping (may be string or dict)
+        problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
+        ps_mapping_data = scenario.get("problem_statement_mapping")
+        if isinstance(ps_mapping_data, str):
+            ps_mapping_data = json.loads(ps_mapping_data)
+        if ps_mapping_data and isinstance(ps_mapping_data, dict):
+            for psid, psdata in ps_mapping_data.items():
+                if isinstance(psdata, dict):
+                    from app.schemas.scenarios import ProblemStatementInfo
+
+                    problem_statement_mapping[psid] = ProblemStatementInfo(
+                        problem_statement=psdata.get("problem_statement", ""),
+                        created_at=psdata.get("created_at", ""),
+                        updated_at=psdata.get("updated_at", ""),
+                    )
+
+        # Parse objectives_history array
+        objectives_history: list[str] = []
+        obj_history_data = scenario.get("objectives_history")
+        if isinstance(obj_history_data, list):
+            objectives_history = [str(obj) for obj in obj_history_data if obj]
+
         # Parse document_details from JSONB (array of full document objects)
         document_details: list[DocumentDetailItem] = []
         doc_details_data = scenario.get("document_details")
@@ -509,6 +531,7 @@ class ScenarioService(BaseService):
             # Basic fields
             name=scenario["name"],
             problem_statement=scenario["problem_statement"],
+            problem_statement_id=scenario.get("problem_statement_id"),
             active=scenario["active"],
             generated=is_generated,
             hints_enabled=scenario.get("hints_enabled", False),
@@ -529,6 +552,7 @@ class ScenarioService(BaseService):
             # Objectives
             objective_ids=objective_ids,
             valid_objectives=[],  # Empty (free-form)
+            objectives_history=objectives_history,
             # Parameters
             parameters=parameters_dict,
             # Simulations
@@ -547,6 +571,7 @@ class ScenarioService(BaseService):
             document_mapping=document_mapping,
             objective_mapping=objective_mapping,
             department_mapping=department_mapping,
+            problem_statement_mapping=problem_statement_mapping,
         )
 
     @with_cache(lambda self, request: keys.scenario_default(request.profileId))
@@ -665,6 +690,28 @@ class ScenarioService(BaseService):
                         parameter_item_ids=to_str_list(parameter_item_ids),
                     )
 
+        # Parse JSONB problem statement mapping (empty for default)
+        problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
+        ps_mapping_data = result.get("problem_statement_mapping")
+        if isinstance(ps_mapping_data, str):
+            ps_mapping_data = json.loads(ps_mapping_data)
+        if ps_mapping_data and isinstance(ps_mapping_data, dict):
+            for psid, psdata in ps_mapping_data.items():
+                if isinstance(psdata, dict):
+                    from app.schemas.scenarios import ProblemStatementInfo
+
+                    problem_statement_mapping[psid] = ProblemStatementInfo(
+                        problem_statement=psdata.get("problem_statement", ""),
+                        created_at=psdata.get("created_at", ""),
+                        updated_at=psdata.get("updated_at", ""),
+                    )
+
+        # Parse objectives_history array
+        objectives_history: list[str] = []
+        obj_history_data = result.get("objectives_history")
+        if isinstance(obj_history_data, list):
+            objectives_history = [str(obj) for obj in obj_history_data if obj]
+
         # Parse JSONB parameters into ParameterDetail dict
         parameters_dict: dict[str, ParameterDetail] = {}
         params_data = result.get("parameters_json")
@@ -724,6 +771,7 @@ class ScenarioService(BaseService):
             # Basic fields (empty defaults)
             name="",
             problem_statement="",
+            problem_statement_id=None,
             active=True,
             generated=False,
             hints_enabled=False,
@@ -744,6 +792,7 @@ class ScenarioService(BaseService):
             # Objectives (empty defaults)
             objective_ids=[],
             valid_objectives=[],
+            objectives_history=objectives_history,
             # Parameters (with valid options for creation)
             parameters=parameters_dict,
             # Simulations (empty defaults)
@@ -762,6 +811,7 @@ class ScenarioService(BaseService):
             document_mapping=document_mapping,
             objective_mapping={},
             department_mapping=department_mapping,
+            problem_statement_mapping=problem_statement_mapping,
         )
 
     async def create_scenario(
@@ -894,7 +944,6 @@ class ScenarioService(BaseService):
             await self.conn.execute(
                 update_query,
                 request.name,
-                request.problem_statement,
                 request.active,
                 request.hints_enabled,
                 request.objectives_enabled,
@@ -904,6 +953,13 @@ class ScenarioService(BaseService):
                 request.output_guardrail_enabled,
                 request.scenarioId,
             )
+
+            # Update problem statement (always create new version, deactivate old)
+            if request.problem_statement:
+                query, params = self.queries.create_scenario_problem_statement(
+                    request.scenarioId, request.problem_statement
+                )
+                await self.conn.fetchval(query, *params)
 
             # Update scenario-department links (DELETE + INSERT pattern)
             delete_dept_query, delete_dept_params = (

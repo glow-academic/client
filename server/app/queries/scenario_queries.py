@@ -326,11 +326,48 @@ class ScenarioQueries:
             WHERE sd.scenario_id = $1 AND sd.active = true
             GROUP BY sd.scenario_id
         ),
+        scenario_active_problem_statement AS (
+            SELECT 
+                sps.scenario_id,
+                sps.id::text as problem_statement_id,
+                sps.problem_statement,
+                sps.created_at as problem_statement_created_at,
+                sps.updated_at as problem_statement_updated_at
+            FROM scenario_problem_statements sps
+            WHERE sps.scenario_id = $1 AND sps.active = true
+            LIMIT 1
+        ),
+        scenario_all_problem_statements AS (
+            SELECT 
+                sps.scenario_id,
+                sps.id::text as problem_statement_id,
+                sps.problem_statement,
+                sps.created_at as problem_statement_created_at,
+                sps.updated_at as problem_statement_updated_at
+            FROM scenario_problem_statements sps
+            WHERE sps.scenario_id = $1
+        ),
+        problem_statement_mapping_data AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        sps.problem_statement_id,
+                        jsonb_build_object(
+                            'problem_statement', sps.problem_statement,
+                            'created_at', sps.problem_statement_created_at::text,
+                            'updated_at', sps.problem_statement_updated_at::text
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as problem_statement_mapping
+            FROM scenario_all_problem_statements sps
+        ),
         scenario_core AS (
             SELECT 
                 s.id,
                 s.name,
-                sps.problem_statement,
+                COALESCE(saps.problem_statement, '') as problem_statement,
+                COALESCE(saps.problem_statement_id, NULL) as problem_statement_id,
                 s.active,
                 s.generated,
                 st.parent_id::text as parent_scenario_id,
@@ -343,7 +380,7 @@ class ScenarioQueries:
                 s.output_guardrail_enabled
             FROM scenarios s
             LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
-            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
             LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
             WHERE s.id = $1
         ),
@@ -693,11 +730,33 @@ class ScenarioQueries:
             LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
             LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
             WHERE d.id = ANY(ud.dept_ids)
+        ),
+        accessible_scenarios AS (
+            SELECT DISTINCT s.id as scenario_id
+            FROM scenarios s
+            LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+            CROSS JOIN user_departments ud
+            WHERE s.active = true
+            AND (
+                -- Include if scenario is linked to user's accessible departments
+                sd.department_id = ANY(ud.dept_ids)
+                -- OR scenario has no department links (cross-department) - accessible to all
+                OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
+            )
+        ),
+        objectives_history_data AS (
+            SELECT COALESCE(
+                ARRAY_AGG(DISTINCT so.objective ORDER BY so.objective) FILTER (WHERE so.objective IS NOT NULL AND so.objective != ''),
+                ARRAY[]::text[]
+            ) as objectives_history
+            FROM scenario_objectives so
+            JOIN accessible_scenarios acs ON acs.scenario_id = so.scenario_id
         )
         SELECT 
             sc.id,
             sc.name,
             sc.problem_statement,
+            sc.problem_statement_id,
             sc.active,
             sc.generated,
             sc.department_ids,
@@ -725,7 +784,9 @@ class ScenarioQueries:
             pmd.parameter_mapping,
             pimd.parameter_item_mapping,
             dmd.department_mapping,
-            ddd.document_details
+            ddd.document_details,
+            COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
+            COALESCE(ohd.objectives_history, ARRAY[]::text[]) as objectives_history
         FROM scenario_core sc
         CROSS JOIN user_profile up
         LEFT JOIN scenario_persona sp ON true
@@ -740,6 +801,8 @@ class ScenarioQueries:
         CROSS JOIN parameter_mapping_data pmd
         CROSS JOIN parameter_item_mapping_data pimd
         CROSS JOIN department_mapping_data dmd
+        CROSS JOIN problem_statement_mapping_data psmd
+        CROSS JOIN objectives_history_data ohd
         """
         return (query, [scenario_id, profile_id])
 
@@ -957,22 +1020,22 @@ class ScenarioQueries:
     def update_scenario(self) -> str:
         """Build query to update scenario.
 
-        Params order: name, problem_statement, active, hints_enabled, objectives_enabled, 
+        Params order: name, active, hints_enabled, objectives_enabled, 
         image_input_enabled, input_guardrail_enabled, output_guardrail_enabled, scenario_id
+        Note: problem_statement is handled separately via create_scenario_problem_statement()
         """
         return """
         UPDATE scenarios SET
             name = $1,
-            problem_statement = $2,
-            active = $3,
-            hints_enabled = $4,
-            objectives_enabled = $5,
-            image_input_enabled = $6,
-            copy_paste_allowed = $7,
-            input_guardrail_enabled = $8,
-            output_guardrail_enabled = $9,
+            active = $2,
+            hints_enabled = $3,
+            objectives_enabled = $4,
+            image_input_enabled = $5,
+            copy_paste_allowed = $6,
+            input_guardrail_enabled = $7,
+            output_guardrail_enabled = $8,
             updated_at = NOW()
-        WHERE id = $10
+        WHERE id = $9
         """
 
     def delete_scenario_departments(
@@ -1496,6 +1559,29 @@ class ScenarioQueries:
         VALUES ($1, $2, $3)
         RETURNING *
         """
+
+    def create_scenario_problem_statement(
+        self, scenario_id: str, problem_statement: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Create a new problem statement for a scenario.
+        Deactivates any existing active problem statements first.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH deactivate_existing AS (
+            UPDATE scenario_problem_statements
+            SET active = false, updated_at = NOW()
+            WHERE scenario_id = $1::uuid AND active = true
+        )
+        INSERT INTO scenario_problem_statements (scenario_id, problem_statement, active, created_at, updated_at)
+        VALUES ($1::uuid, $2, true, NOW(), NOW())
+        RETURNING id
+        """
+        params: list[Any] = [scenario_id, problem_statement]
+        return query, params
 
     def insert_scenario_tree_edge(self) -> str:
         """Build query to insert scenario tree edge.
@@ -2087,6 +2173,29 @@ class ScenarioQueries:
         ),
         document_details_data AS (
             SELECT '[]'::jsonb as document_details
+        ),
+        accessible_scenarios_default AS (
+            SELECT DISTINCT s.id as scenario_id
+            FROM scenarios s
+            LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+            WHERE s.active = true
+            AND (
+                -- Include if scenario is linked to user's accessible departments
+                sd.department_id IN (SELECT id FROM user_departments)
+                -- OR scenario has no department links (cross-department) - accessible to all
+                OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
+            )
+        ),
+        objectives_history_data_default AS (
+            SELECT COALESCE(
+                ARRAY_AGG(DISTINCT so.objective ORDER BY so.objective) FILTER (WHERE so.objective IS NOT NULL AND so.objective != ''),
+                ARRAY[]::text[]
+            ) as objectives_history
+            FROM scenario_objectives so
+            JOIN accessible_scenarios_default acs ON acs.scenario_id = so.scenario_id
+        ),
+        problem_statement_mapping_data_default AS (
+            SELECT '{}'::jsonb as problem_statement_mapping
         )
         SELECT 
             COALESCE(
@@ -2107,7 +2216,9 @@ class ScenarioQueries:
             (SELECT mapping FROM parameter_mapping_data) as parameter_mapping,
             (SELECT mapping FROM parameter_item_mapping_data) as parameter_item_mapping,
             (SELECT parameters_json FROM parameters_structure) as parameters_json,
-            (SELECT document_details FROM document_details_data) as document_details
+            (SELECT document_details FROM document_details_data) as document_details,
+            (SELECT problem_statement_mapping FROM problem_statement_mapping_data_default) as problem_statement_mapping,
+            (SELECT objectives_history FROM objectives_history_data_default) as objectives_history
         """
         return (query, [profile_id])
 

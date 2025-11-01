@@ -84,10 +84,18 @@ export const ParameterDetailSchema = z.object({
   valid_parameter_item_ids: z.array(z.string()), // Available items
 });
 
+// Problem statement version history info
+export const ProblemStatementInfoSchema = z.object({
+  problem_statement: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
 export const ScenarioDetailResponseSchema = z.object({
   // Basic fields
   name: z.string(),
   problem_statement: z.string(),
+  problem_statement_id: z.string().nullable(),
   active: z.boolean(),
   generated: z.boolean(),
   parent_scenario_id: z.string().nullable(),
@@ -111,6 +119,7 @@ export const ScenarioDetailResponseSchema = z.object({
   // Objectives (use IDs)
   objective_ids: z.array(z.string()), // "scenarioId_idx" composite keys
   valid_objectives: z.array(z.string()), // Empty (free-form)
+  objectives_history: z.array(z.string()), // Autocomplete suggestions from accessible scenarios
 
   // Parameters (structured by parameter_id)
   parameters: z.record(z.string(), ParameterDetailSchema),
@@ -134,12 +143,14 @@ export const ScenarioDetailResponseSchema = z.object({
   document_mapping: DocumentMappingSchema,
   objective_mapping: ObjectiveMappingSchema,
   department_mapping: DepartmentMappingSchema,
+  problem_statement_mapping: z.record(z.string(), ProblemStatementInfoSchema),
 });
 
 export type ScenarioDetailResponse = z.infer<
   typeof ScenarioDetailResponseSchema
 >;
 export type ParameterDetail = z.infer<typeof ParameterDetailSchema>;
+export type ProblemStatementInfo = z.infer<typeof ProblemStatementInfoSchema>;
 
 // Default detail request
 export const ScenarioDetailDefaultRequestSchema = z.object({

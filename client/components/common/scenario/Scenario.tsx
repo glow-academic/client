@@ -38,8 +38,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +63,7 @@ import {
 } from "@/components/ui/tooltip";
 
 // Custom Components
+import { ProblemStatementPicker } from "@/components/common/forms/ProblemStatementPicker";
 import { DocumentPicker } from "./DocumentPicker";
 import { ParameterSelector } from "./ParameterSelector";
 import { PersonaPicker } from "./PersonaPicker";
@@ -73,6 +87,129 @@ import {
   getParameterItemIdsFromStructure,
   groupParameterItemsByParameterId,
 } from "@/utils/scenario-helpers";
+
+// Component for objective input with autocomplete
+function ObjectiveInputWithAutocomplete({
+  index,
+  value,
+  onChange,
+  placeholder,
+  suggestions,
+  disabled,
+  draggedObjectiveIndex,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onRemove,
+}: {
+  index: number;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  suggestions: string[];
+  disabled: boolean;
+  draggedObjectiveIndex: number | null;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onRemove: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  // Filter suggestions based on search
+  const filteredSuggestions = useMemo(() => {
+    if (!search.trim()) return suggestions.slice(0, 5); // Show top 5 when no search
+    const searchLower = search.toLowerCase();
+    return suggestions
+      .filter((s) => s.toLowerCase().includes(searchLower))
+      .slice(0, 5);
+  }, [suggestions, search]);
+
+  const handleSelect = (suggestion: string) => {
+    onChange(suggestion);
+    setOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <div
+      className={`flex items-center gap-2 ${
+        draggedObjectiveIndex === index ? "opacity-50" : ""
+      }`}
+      draggable={!disabled}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
+      <Popover
+        open={open && !disabled && suggestions.length > 0}
+        onOpenChange={setOpen}
+      >
+        <PopoverTrigger asChild>
+          <div className="flex-1 relative">
+            <Input
+              value={value}
+              onChange={(e) => {
+                onChange(e.target.value);
+                setSearch(e.target.value);
+                if (e.target.value && suggestions.length > 0) {
+                  setOpen(true);
+                } else {
+                  setOpen(false);
+                }
+              }}
+              onFocus={() => {
+                if (value && suggestions.length > 0) {
+                  setOpen(true);
+                }
+              }}
+              placeholder={placeholder}
+              className="flex-1"
+              disabled={disabled}
+            />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-[400px] p-0" align="start">
+          <Command>
+            <CommandInput
+              placeholder="Search objectives..."
+              value={search}
+              onValueChange={setSearch}
+            />
+            <CommandList>
+              <CommandEmpty>No suggestions found.</CommandEmpty>
+              {filteredSuggestions.length > 0 && (
+                <CommandGroup heading="Suggestions">
+                  {filteredSuggestions.map((suggestion, idx) => (
+                    <CommandItem
+                      key={idx}
+                      onSelect={() => handleSelect(suggestion)}
+                      className="cursor-pointer"
+                    >
+                      {suggestion}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        onClick={onRemove}
+        className="h-8 w-8 shrink-0"
+        disabled={disabled}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -164,6 +301,10 @@ export default function Scenario({
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(
     null
   );
+  // Store problem statement ID for version selection
+  const [selectedProblemStatementId, setSelectedProblemStatementId] = useState<
+    string | null
+  >(null);
   const [originalDocumentIds, setOriginalDocumentIds] = useState<string[]>([]);
   const [originalParameterItemIds, setOriginalParameterItemIds] = useState<
     string[]
@@ -226,6 +367,14 @@ export default function Scenario({
   );
   const departmentMapping = useMemo(
     () => scenarioData?.department_mapping || {},
+    [scenarioData]
+  );
+  const problemStatementMapping = useMemo(
+    () => scenarioData?.problem_statement_mapping || {},
+    [scenarioData]
+  );
+  const objectivesHistory = useMemo(
+    () => scenarioData?.objectives_history || [],
     [scenarioData]
   );
 
@@ -484,6 +633,7 @@ export default function Scenario({
         setPreviousDepartmentIds(deptIds);
       }
       setSelectedPersonaId(scenarioData.persona_id);
+      setSelectedProblemStatementId(scenarioData.problem_statement_id || null);
       setCurrentDocumentIds(scenarioData.document_ids);
       setCurrentParameterItemIds(
         getParameterItemIdsFromStructure(scenarioData.parameters)
@@ -851,10 +1001,7 @@ export default function Scenario({
     });
   };
 
-  const handleDragStartObjective = (
-    e: React.DragEvent<HTMLDivElement>,
-    index: number
-  ) => {
+  const handleDragStartObjective = (e: React.DragEvent, index: number) => {
     setDraggedObjectiveIndex(index);
     e.dataTransfer.effectAllowed = "move";
   };
@@ -864,10 +1011,7 @@ export default function Scenario({
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDropObjective = (
-    e: React.DragEvent<HTMLDivElement>,
-    targetIndex: number
-  ) => {
+  const handleDropObjective = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     if (draggedObjectiveIndex === null) return;
     setCurrentObjectives((prev) => {
@@ -1597,12 +1741,38 @@ export default function Scenario({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
+              {isEditMode &&
+                Object.keys(problemStatementMapping).length > 0 && (
+                  <div className="flex justify-end">
+                    <ProblemStatementPicker
+                      problemStatementMapping={problemStatementMapping}
+                      selectedProblemStatementId={selectedProblemStatementId}
+                      onSelect={(id) => {
+                        setSelectedProblemStatementId(id);
+                        if (id && problemStatementMapping[id]) {
+                          handleInputChange(
+                            "problemStatement",
+                            problemStatementMapping[id].problem_statement
+                          );
+                        }
+                      }}
+                      onCreateNew={() => {
+                        setSelectedProblemStatementId(null);
+                      }}
+                      disabled={isReadonly}
+                    />
+                  </div>
+                )}
               <Textarea
                 id="description"
                 value={formData.problemStatement || ""}
-                onChange={(e) =>
-                  handleInputChange("problemStatement", e.target.value)
-                }
+                onChange={(e) => {
+                  handleInputChange("problemStatement", e.target.value);
+                  // Clear selected version when user manually edits
+                  if (selectedProblemStatementId) {
+                    setSelectedProblemStatementId(null);
+                  }
+                }}
                 placeholder="Enter a custom scenario description or leave blank to auto-generate..."
                 className="min-h-[120px]"
                 disabled={isReadonly}
@@ -1652,35 +1822,20 @@ export default function Scenario({
               {formData.objectivesEnabled && (
                 <div className="space-y-2">
                   {currentObjectives.map((objective, index) => (
-                    <div
+                    <ObjectiveInputWithAutocomplete
                       key={`objective-${index}`}
-                      className={`flex items-center gap-2 ${
-                        draggedObjectiveIndex === index ? "opacity-50" : ""
-                      }`}
-                      draggable={!isReadonly}
+                      index={index}
+                      value={objective || ""}
+                      onChange={(value) => updateObjective(index, value)}
+                      placeholder={`Learning objective ${index + 1}`}
+                      suggestions={objectivesHistory}
+                      disabled={isReadonly}
+                      draggedObjectiveIndex={draggedObjectiveIndex}
                       onDragStart={(e) => handleDragStartObjective(e, index)}
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDropObjective(e, index)}
-                    >
-                      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
-                      <Input
-                        value={objective || ""}
-                        onChange={(e) => updateObjective(index, e.target.value)}
-                        placeholder={`Learning objective ${index + 1}`}
-                        className="flex-1"
-                        disabled={isReadonly}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => removeObjective(index)}
-                        className="h-8 w-8 shrink-0"
-                        disabled={isReadonly}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      onRemove={() => removeObjective(index)}
+                    />
                   ))}
                 </div>
               )}

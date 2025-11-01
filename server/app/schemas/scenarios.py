@@ -78,12 +78,21 @@ class DocumentDetailItem(BaseModel):
     parameter_item_ids: list[str]
 
 
+class ProblemStatementInfo(BaseModel):
+    """Problem statement information for version history."""
+
+    problem_statement: str
+    created_at: str
+    updated_at: str
+
+
 class ScenarioDetailResponse(BaseModel):
     """Detailed scenario response with all fields and metadata."""
 
     # Basic fields
     name: str
     problem_statement: str
+    problem_statement_id: str | None  # ID of active problem statement
     active: bool
     generated: bool
     parent_scenario_id: str | None
@@ -107,6 +116,7 @@ class ScenarioDetailResponse(BaseModel):
     # Objectives (use IDs)
     objective_ids: list[str]  # "scenarioId_idx" composite keys
     valid_objectives: list[str]  # Empty (free-form)
+    objectives_history: list[str]  # Autocomplete suggestions from accessible scenarios
 
     # Parameters (structured by parameter_id)
     parameters: dict[str, ParameterDetail]
@@ -130,6 +140,7 @@ class ScenarioDetailResponse(BaseModel):
     document_mapping: DocumentMapping
     objective_mapping: ObjectiveMapping
     department_mapping: DepartmentMapping
+    problem_statement_mapping: dict[str, ProblemStatementInfo]  # Version history
 
 
 class ScenarioDetailDefaultRequest(BaseModel):
