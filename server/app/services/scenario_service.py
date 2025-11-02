@@ -70,17 +70,18 @@ class ScenarioService(BaseService):
                 persona_mapping_global = persona_mapping_raw or {}
 
             scenario_persona_mapping = {}
-            if row["persona_id"]:
-                persona_id_str = str(row["persona_id"])
-                if persona_id_str in persona_mapping_global:
-                    pdata = persona_mapping_global[persona_id_str]
-                    scenario_persona_mapping[persona_id_str] = PersonaMappingItem(
-                        name=pdata.get("name", ""),
-                        description=pdata.get("description", ""),
-                        color=pdata.get("color", ""),
-                        icon=pdata.get("icon", ""),
-                        image_model=pdata.get("image_model"),
-                    )
+            persona_ids = row.get("persona_ids") or []
+            if persona_ids:
+                for persona_id_str in persona_ids:
+                    if persona_id_str in persona_mapping_global:
+                        pdata = persona_mapping_global[persona_id_str]
+                        scenario_persona_mapping[persona_id_str] = PersonaMappingItem(
+                            name=pdata.get("name", ""),
+                            description=pdata.get("description", ""),
+                            color=pdata.get("color", ""),
+                            icon=pdata.get("icon", ""),
+                            image_model=pdata.get("image_model"),
+                        )
 
             # Parse JSONB document mapping (may be string or dict)
             document_mapping_raw = row["document_mapping"]
@@ -122,7 +123,7 @@ class ScenarioService(BaseService):
             enhanced_mapping[scenario_id] = ScenarioMappingItem(
                 name=row["name"],
                 description=row["description"],
-                persona_id=str(row["persona_id"]) if row["persona_id"] else None,
+                persona_ids=row.get("persona_ids") or [],
                 persona_mapping=scenario_persona_mapping,
                 document_mapping=scenario_document_mapping,
                 parameter_item_mapping=scenario_parameter_item_mapping,
@@ -272,7 +273,7 @@ class ScenarioService(BaseService):
                     parent_scenario_id=row["parent_scenario_id"],
                         department_ids=dept_ids,
                     objective_ids=objective_ids,
-                    persona_id=str(row["persona_id"]) if row["persona_id"] else None,
+                    persona_ids=row.get("persona_ids") or [],
                     parameter_item_ids=parameter_item_ids,
                     simulation_ids=simulation_ids,
                     num_simulations=row["num_simulations"],
@@ -310,7 +311,7 @@ class ScenarioService(BaseService):
             raise ValueError(f"Scenario not found: {request.scenarioId}")
 
         # Parse basic data
-        persona_id = scenario["persona_id"]
+        persona_ids = scenario.get("persona_ids") or []
         # Note: document_ids from query may be incorrect due to cache/query issues
         # We'll derive it from document_details which is the source of truth
         document_ids_from_query = scenario["document_ids"] or []
@@ -574,7 +575,7 @@ class ScenarioService(BaseService):
             department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=dept_ids,
             # IDs
-            persona_id=persona_id,
+            persona_ids=persona_ids,
             valid_persona_ids=valid_persona_ids,
             document_ids=document_ids,
             valid_document_ids=valid_document_ids,
@@ -833,7 +834,7 @@ class ScenarioService(BaseService):
             department_ids=default_department_ids,
             valid_department_ids=dept_ids,
             # IDs (empty defaults)
-            persona_id=None,
+            persona_ids=[],
             valid_persona_ids=valid_persona_ids,
             document_ids=[],
             valid_document_ids=valid_document_ids,
@@ -928,14 +929,15 @@ class ScenarioService(BaseService):
                     True,
                 )
 
-            # Insert persona relationship
-            if request.persona_id:
+            # Insert persona relationships
+            if request.persona_ids:
                 persona_query = self.queries.insert_scenario_persona()
-                await self.conn.execute(
-                    persona_query,
-                    scenario_id,
-                    request.persona_id,
-                )
+                for persona_id in request.persona_ids:
+                    await self.conn.execute(
+                        persona_query,
+                        scenario_id,
+                        persona_id,
+                    )
 
             # Insert document relationships
             for document_id in request.document_ids:
@@ -1044,17 +1046,18 @@ class ScenarioService(BaseService):
                 )
                 await self.conn.execute(insert_dept_query, *insert_dept_params)
 
-            # Update persona (delete old, insert new)
+            # Update personas (delete old, insert new)
             query, params = self.queries.delete_scenario_personas(request.scenarioId)
             await self.conn.execute(query, *params)
 
-            if request.persona_id:
+            if request.persona_ids:
                 insert_persona_query = self.queries.insert_scenario_persona()
-                await self.conn.execute(
-                    insert_persona_query,
-                    request.scenarioId,
-                    request.persona_id,
-                )
+                for persona_id in request.persona_ids:
+                    await self.conn.execute(
+                        insert_persona_query,
+                        request.scenarioId,
+                        persona_id,
+                    )
 
             # Update documents
             query, params = self.queries.delete_scenario_documents(request.scenarioId)
@@ -1259,7 +1262,11 @@ class ScenarioService(BaseService):
 
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(request.departmentId)
-        persona_id = uuid.UUID(request.personaId) if request.personaId else None
+        persona_ids = (
+            [uuid.UUID(p) for p in request.personaIds] if request.personaIds else None
+        )
+        # For AI agent, use first persona if multiple provided (agent expects single persona_id)
+        persona_id = persona_ids[0] if persona_ids and len(persona_ids) > 0 else None
         document_ids = (
             [uuid.UUID(d) for d in request.documentIds] if request.documentIds else None
         )
@@ -1277,6 +1284,7 @@ class ScenarioService(BaseService):
         # Run the scenario agent
         # Note: run_scenario_agent needs to be migrated to use asyncpg conn
         # For now, passing conn and agent will handle conversion internally
+        # TODO: Update run_scenario_agent to accept multiple persona_ids
         title, description, objectives, _ = await run_scenario_agent(
             department_id=department_id,
             persona_id=persona_id,
@@ -1307,7 +1315,12 @@ class ScenarioService(BaseService):
         Suggest randomized persona/documents/parameters based on current inputs.
         """
         # Convert string IDs to UUIDs
-        persona_id = uuid.UUID(request.personaId) if request.personaId else None
+        persona_ids = (
+            [uuid.UUID(p) for p in request.personaIds] if request.personaIds else None
+        )
+        # For now, use first persona for suggestions (suggest_randomized_sections expects single)
+        # TODO: Update suggest_randomized_sections to handle multiple personas
+        persona_id = persona_ids[0] if persona_ids and len(persona_ids) > 0 else None
         document_ids = (
             [uuid.UUID(d) for d in request.documentIds] if request.documentIds else None
         )
@@ -1340,12 +1353,18 @@ class ScenarioService(BaseService):
             targets=targets,
         )
 
+        # Return persona_ids array (can expand suggestions later to return multiple)
+        suggested_persona_ids = []
+        if suggestions.get("persona_id"):
+            suggested_persona_ids = [str(suggestions["persona_id"])]
+        # If user provided multiple personas, preserve them in response
+        elif persona_ids:
+            suggested_persona_ids = [str(p) for p in persona_ids]
+
         return RandomizeScenarioResponse(
             success=True,
             message="Randomization suggestions generated",
-            personaId=str(suggestions["persona_id"])
-            if suggestions.get("persona_id")
-            else None,
+            personaIds=suggested_persona_ids,
             documentIds=[str(x) for x in (suggestions.get("document_ids") or [])],
             parameterItemIds=[
                 str(x) for x in (suggestions.get("parameter_item_ids") or [])
@@ -1460,7 +1479,7 @@ class ScenarioService(BaseService):
         self,
         scenario: dict[str, Any],
         profile_id: str | None = None,
-        parent_persona_id: str | None = None,
+        parent_persona_ids: list[str] | None = None,
         parent_document_ids: list[str] | None = None,
         parent_parameter_item_ids: list[str] | None = None,
     ) -> dict[str, Any]:
@@ -1469,7 +1488,7 @@ class ScenarioService(BaseService):
         Args:
             scenario: The scenario dict with potentially null attributes
             profile_id: Optional profile ID to get user's accessible departments for fallback
-            parent_persona_id: Optional persona_id to inherit from parent scenario
+            parent_persona_ids: Optional persona_ids list to inherit from parent scenario
             parent_document_ids: Optional document_ids to inherit from parent scenario
             parent_parameter_item_ids: Optional parameter_item_ids to inherit from parent scenario
 
@@ -1532,38 +1551,53 @@ class ScenarioService(BaseService):
         documents_by_id = randomization_data["documents_by_id"]
         document_parameter_items_junction = randomization_data["document_parameter_items_junction"]
 
-        # Get persona from parent, or from scenario_personas junction, or randomly select
-        scenario_persona_id: uuid.UUID | None = None
+        # Get personas from parent, or from scenario_personas junction, or randomly select
+        scenario_persona_ids: list[uuid.UUID] = []
         
-        # Priority 1: Use parent's persona if provided
-        if parent_persona_id:
-            scenario_persona_id = uuid.UUID(parent_persona_id) if isinstance(parent_persona_id, str) else uuid.UUID(str(parent_persona_id))
-            logger.info(f"Using parent persona_id: {scenario_persona_id}")
+        # Priority 1: Use parent's personas if provided
+        if parent_persona_ids:
+            scenario_persona_ids = [
+                uuid.UUID(p) if isinstance(p, str) else uuid.UUID(str(p))
+                for p in parent_persona_ids
+            ]
+            logger.info(f"Using {len(scenario_persona_ids)} parent persona_ids: {scenario_persona_ids}")
         else:
-            # Priority 2: Check for existing persona link in database
-            query, params = self.queries.get_scenario_persona_link(str(scenario_id))
-            existing_persona_link = await self.conn.fetchrow(query, *params)
-            scenario_persona_id = (
-                existing_persona_link["persona_id"] if existing_persona_link else None
-            )
+            # Priority 2: Check for existing persona links in database
+            query, params = self.queries.get_scenario_persona_links(str(scenario_id))
+            existing_persona_links = await self.conn.fetchrow(query, *params)
+            if existing_persona_links and existing_persona_links.get("persona_ids"):
+                scenario_persona_ids = [
+                    uuid.UUID(p) for p in existing_persona_links["persona_ids"]
+                ]
+                logger.info(f"Found {len(scenario_persona_ids)} existing persona_ids: {scenario_persona_ids}")
 
         # Priority 3: Random persona selection if still none (filtered by selected department)
-        if scenario_persona_id is None:
+        if not scenario_persona_ids:
             if active_personas:
-                persona_dict = random.choice(active_personas)
-                scenario_persona_id = uuid.UUID(str(persona_dict["id"]))
-                logger.info(f"Randomly selected persona_id: {scenario_persona_id}")
+                # Randomly select 1-3 personas
+                num_personas = random.randint(1, min(3, len(active_personas)))
+                selected_personas = random.sample(active_personas, num_personas)
+                scenario_persona_ids = [
+                    uuid.UUID(str(p["id"])) for p in selected_personas
+                ]
+                logger.info(f"Randomly selected {len(scenario_persona_ids)} persona_ids: {scenario_persona_ids}")
+            else:
+                logger.info("No active personas found")
 
-                # Create the junction record
+        # Create junction records for all selected personas
+        if scenario_persona_ids:
+            # Delete existing personas first
+            query, params = self.queries.delete_scenario_personas(str(scenario_id))
+            await self.conn.execute(query, *params)
+            
+            # Insert all selected personas
+            for persona_id in scenario_persona_ids:
                 await self.conn.execute(
                     self.queries.insert_scenario_persona_link(),
                     scenario_id,
-                    scenario_persona_id,
+                    persona_id,
                     True,
                 )
-            else:
-                scenario_persona_id = None
-                logger.info("No active personas found")
 
         # NEW BUSINESS LOGIC: Get objectives (first 3 by idx)
         query, params = self.queries.get_scenario_objectives_top_n(str(scenario_id), 3)
@@ -1589,7 +1623,9 @@ class ScenarioService(BaseService):
                 
                 doc_ids = list(scenario_metadata["document_ids"]) if scenario_metadata["document_ids"] else []
                 param_ids = list(scenario_metadata["parameter_item_ids"]) if scenario_metadata["parameter_item_ids"] else []
-                persona_id = scenario_metadata["persona_id"]
+                persona_ids = scenario_metadata.get("persona_ids") or []
+                # Use first persona for AI agent (it expects single persona_id)
+                persona_id = uuid.UUID(persona_ids[0]) if persona_ids and len(persona_ids) > 0 else None
                 
                 # Generate problem statement using AI
                 name, description, objectives, trace_id = await run_scenario_agent(
@@ -1814,19 +1850,20 @@ class ScenarioService(BaseService):
             [link["parameter_item_id"] for link in current_param_links]
         )
 
-        # Get current persona from junction
-        query, params = self.queries.get_scenario_persona_link(str(scenario_id))
-        current_persona_link = await self.conn.fetchrow(query, *params)
-        current_persona_id = (
-            current_persona_link["persona_id"] if current_persona_link else None
-        )
+        # Get current personas from junction
+        query, params = self.queries.get_scenario_persona_links(str(scenario_id))
+        current_persona_links = await self.conn.fetchrow(query, *params)
+        current_persona_ids = sorted(
+            [uuid.UUID(p) for p in (current_persona_links.get("persona_ids") or [])]
+        ) if current_persona_links else []
 
         # Compare with new values
         new_docs = sorted(scenario_documents or [])
         new_params = sorted(scenario_parameter_item_ids or [])
+        new_personas = sorted(scenario_persona_ids or [])
 
         if (
-            scenario_persona_id == current_persona_id
+            new_personas == current_persona_ids
             and new_docs == current_doc_ids
             and new_params == current_param_ids
         ):
@@ -1874,14 +1911,15 @@ class ScenarioService(BaseService):
             self.queries.insert_scenario_tree_edge(), scenario_id, new_scenario_id, True
         )
 
-        # Create junction record for persona
-        if scenario_persona_id:
-            await self.conn.execute(
-                self.queries.insert_scenario_persona_link(),
-                new_scenario_id,
-                scenario_persona_id,
-                True,
-            )
+        # Create junction records for personas
+        if scenario_persona_ids:
+            for persona_id in scenario_persona_ids:
+                await self.conn.execute(
+                    self.queries.insert_scenario_persona_link(),
+                    new_scenario_id,
+                    persona_id,
+                    True,
+                )
 
         # Create junction records for documents
         if scenario_documents:

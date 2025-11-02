@@ -84,7 +84,7 @@ class DocumentService(BaseService):
                         scenario_mapping[sid] = ScenarioMappingItem(
                             name=sdata.get("name", ""),
                             description=sdata.get("description", ""),
-                            persona_id=None,
+                            persona_ids=[],
                             persona_mapping={},
                             document_mapping={},
                             parameter_item_mapping={},

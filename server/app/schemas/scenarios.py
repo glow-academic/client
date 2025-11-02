@@ -24,7 +24,7 @@ class ScenarioItem(BaseModel):
     parent_scenario_id: str | None
     department_ids: list[str] | None  # None = cross-department (all departments)
     objective_ids: list[str]  # "scenarioId_idx" composite keys
-    persona_id: str | None
+    persona_ids: list[str]
     parameter_item_ids: list[str]
     simulation_ids: list[str]
     num_simulations: int
@@ -114,7 +114,7 @@ class ScenarioDetailResponse(BaseModel):
     valid_department_ids: list[str]
 
     # IDs
-    persona_id: str | None
+    persona_ids: list[str]
     valid_persona_ids: list[str]
     document_ids: list[str]
     valid_document_ids: list[str]
@@ -163,7 +163,7 @@ class CreateScenarioRequest(BaseModel):
     problem_statement_versions: list[str] | None = None  # Optional: versions to save (first active, others inactive)
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    persona_id: str | None
+    persona_ids: list[str] | None
     document_ids: list[str]
     objective_ids: list[str]  # Can be composite IDs or raw text
     parameters: dict[str, list[str]]  # { parameter_id: [parameter_item_ids] }
@@ -191,7 +191,7 @@ class UpdateScenarioRequest(BaseModel):
     problem_statement: str
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
-    persona_id: str | None
+    persona_ids: list[str] | None
     document_ids: list[str]
     objective_ids: list[str]
     parameters: dict[str, list[str]]
@@ -246,7 +246,7 @@ class GenerateScenarioAIRequest(BaseModel):
     """Request to generate AI scenario content."""
 
     departmentId: str
-    personaId: str | None = None
+    personaIds: list[str] | None = None
     documentIds: list[str] | None = None
     parameterItemIds: list[str] | None = None
     profileId: str | None = None
@@ -269,7 +269,7 @@ class RandomizeScenarioRequest(BaseModel):
 
     name: str | None = None
     description: str | None = None
-    personaId: str | None = None
+    personaIds: list[str] | None = None
     documentIds: list[str] | None = None
     parameterItemIds: list[str] | None = None
     departmentIds: list[str] | None = None  # Optional department filter for narrowing selection
@@ -281,6 +281,6 @@ class RandomizeScenarioResponse(BaseModel):
 
     success: bool
     message: str
-    personaId: str | None = None
+    personaIds: list[str] = []
     documentIds: list[str] = []
     parameterItemIds: list[str] = []

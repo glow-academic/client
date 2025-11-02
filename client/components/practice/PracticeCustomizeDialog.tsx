@@ -87,7 +87,10 @@ export function PracticeCustomizeDialog({
         id,
         name: sc.name,
         defaultScenario: true, // Server filters to defaults
-        personaId: sc.persona_id,
+        personaId:
+          sc.persona_ids && sc.persona_ids.length > 0
+            ? sc.persona_ids[0]
+            : undefined,
       })),
     [scenarioMapping]
   );

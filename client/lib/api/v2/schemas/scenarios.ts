@@ -44,7 +44,7 @@ export const ScenarioItemSchema = z.object({
   parent_scenario_id: z.string().nullable(),
   department_ids: z.array(z.string()).nullable(), // None = cross-department (all departments)
   objective_ids: z.array(z.string()), // "scenarioId_idx" composite keys
-  persona_id: z.string().nullable(),
+  persona_ids: z.array(z.string()),
   parameter_item_ids: z.array(z.string()),
   simulation_ids: z.array(z.string()),
   num_simulations: z.number(),
@@ -117,7 +117,7 @@ export const ScenarioDetailResponseSchema = z.object({
   valid_department_ids: z.array(z.string()),
 
   // IDs
-  persona_id: z.string().nullable(),
+  persona_ids: z.array(z.string()),
   valid_persona_ids: z.array(z.string()),
   document_ids: z.array(z.string()),
   valid_document_ids: z.array(z.string()),
@@ -181,7 +181,7 @@ export const CreateScenarioRequestSchema = z.object({
   problem_statement_versions: z.array(z.string()).optional().nullable(), // Optional: versions to save (first active, others inactive)
   department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  persona_id: z.string().nullable(),
+  persona_ids: z.array(z.string()).nullable(),
   document_ids: z.array(z.string()),
   objective_ids: z.array(z.string()), // Can be composite IDs or raw text
   parameters: z.record(z.string(), z.array(z.string())), // { parameter_id: [parameter_item_ids] }
@@ -212,7 +212,7 @@ export const UpdateScenarioRequestSchema = z.object({
   problem_statement: z.string(),
   department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
-  persona_id: z.string().nullable(),
+  persona_ids: z.array(z.string()).nullable(),
   document_ids: z.array(z.string()),
   objective_ids: z.array(z.string()),
   parameters: z.record(z.string(), z.array(z.string())),
@@ -276,7 +276,7 @@ export type DeleteScenarioResponse = z.infer<
 
 export const GenerateScenarioAIRequestSchema = z.object({
   departmentId: z.string(),
-  personaId: z.string().optional(),
+  personaIds: z.array(z.string()).optional(),
   documentIds: z.array(z.string()).optional(),
   parameterItemIds: z.array(z.string()).optional(),
   profileId: z.string().optional(),
@@ -303,7 +303,7 @@ export type GenerateScenarioAIResponse = z.infer<
 export const RandomizeScenarioRequestSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
-  personaId: z.string().optional(),
+  personaIds: z.array(z.string()).optional(),
   documentIds: z.array(z.string()).optional(),
   parameterItemIds: z.array(z.string()).optional(),
   departmentIds: z.array(z.string()).optional(),
@@ -317,7 +317,7 @@ export type RandomizeScenarioRequest = z.infer<
 export const RandomizeScenarioResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  personaId: z.string().nullable(),
+  personaIds: z.array(z.string()),
   documentIds: z.array(z.string()),
   parameterItemIds: z.array(z.string()),
 });

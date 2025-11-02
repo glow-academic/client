@@ -56,12 +56,13 @@ class ScenarioQueries:
             WHERE ss.active = true AND cs.active = true
             GROUP BY ss.scenario_id
         ),
-        scenario_personas AS (
+        scenario_personas_agg AS (
             SELECT 
                 sp.scenario_id,
-                sp.persona_id
+                ARRAY_AGG(sp.persona_id::text ORDER BY sp.persona_id) as persona_ids
             FROM scenario_personas sp
             WHERE sp.active = true
+            GROUP BY sp.scenario_id
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $1
@@ -84,7 +85,7 @@ class ScenarioQueries:
                 s.updated_at,
                 st.parent_id::text as parent_scenario_id,
                 COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
-                sp.persona_id,
+                COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
                 COALESCE(spar.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
                 COALESCE(ss.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
                 COALESCE(ss.num_simulations, 0) as num_simulations,
@@ -122,10 +123,10 @@ class ScenarioQueries:
             LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id
             LEFT JOIN scenario_all_simulation_links sal ON sal.scenario_id = s.id
             LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
-            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id
+            LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
             CROSS JOIN user_profile up
             GROUP BY s.id, s.name, sps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
-                     so.objective_ids, sp.persona_id, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
+                     so.objective_ids, spa.persona_ids, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
                      sc.cohort_ids, sdd.department_ids, sal.total_links, up.role
             HAVING 
                 -- Include if has matching department link OR has no department links at all (cross-dept)
@@ -385,11 +386,10 @@ class ScenarioQueries:
             LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
             WHERE s.id = $1
         ),
-        scenario_persona AS (
-            SELECT persona_id::text
+        scenario_personas_agg AS (
+            SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id) as persona_ids
             FROM scenario_personas
             WHERE scenario_id = $1 AND active = true
-            LIMIT 1
         ),
         scenario_documents_agg AS (
             SELECT ARRAY_AGG(document_id::text ORDER BY document_id) as document_ids
@@ -500,7 +500,7 @@ class ScenarioQueries:
         persona_data AS (
             SELECT * FROM valid_personas_filtered
             UNION
-            -- Also include currently selected persona (for edit mode - ensures selected item is available)
+            -- Also include currently selected personas (for edit mode - ensures selected items are available)
             SELECT DISTINCT
                 p2.id,
                 p2.name,
@@ -508,8 +508,9 @@ class ScenarioQueries:
                 p2.color,
                 p2.icon,
                 m2.image_model
-            FROM scenario_persona sp
-            JOIN personas p2 ON p2.id = sp.persona_id::uuid
+            FROM scenario_personas_agg spa
+            CROSS JOIN LATERAL unnest(spa.persona_ids) as persona_id
+            JOIN personas p2 ON p2.id = persona_id::uuid
             LEFT JOIN models m2 ON m2.id = p2.model_id
             WHERE p2.active = true
             ORDER BY name
@@ -1052,7 +1053,7 @@ class ScenarioQueries:
             sc.copy_paste_allowed,
             sc.input_guardrail_enabled,
             sc.output_guardrail_enabled,
-            sp.persona_id,
+            COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
             COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
             COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,
             COALESCE(ssa.simulation_ids, ARRAY[]::text[]) as simulation_ids,
@@ -1074,7 +1075,7 @@ class ScenarioQueries:
             COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history
         FROM scenario_core sc
         CROSS JOIN user_profile up
-        LEFT JOIN scenario_persona sp ON true
+        LEFT JOIN scenario_personas_agg spa ON true
         LEFT JOIN scenario_documents_agg sd ON true
         LEFT JOIN scenario_objectives_data sod ON true
         LEFT JOIN scenario_simulations_agg ssa ON true
@@ -1099,10 +1100,11 @@ class ScenarioQueries:
         """
         return (query, [scenario_id, profile_id])
 
-    def get_scenario_persona(self, scenario_id: str) -> tuple[str, list[Any]]:
-        """Build query to get scenario's persona."""
+    def get_scenario_personas(self, scenario_id: str) -> tuple[str, list[Any]]:
+        """Build query to get scenario's personas."""
         query = """
-        SELECT persona_id FROM scenario_personas 
+        SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id) as persona_ids
+        FROM scenario_personas 
         WHERE scenario_id = $1 AND active = true
         """
         return (query, [scenario_id])
@@ -1521,7 +1523,11 @@ class ScenarioQueries:
             s.id as scenario_id,
             s.name,
             sps.problem_statement as description,
-            sp.persona_id,
+            COALESCE((
+                SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id)
+                FROM scenario_personas
+                WHERE scenario_id = s.id AND active = true
+            ), ARRAY[]::text[]) as persona_ids,
             COALESCE(
                 (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
                  FROM scenario_parameter_items spi
@@ -1530,7 +1536,6 @@ class ScenarioQueries:
             ) as parameter_item_ids
         FROM scenarios s
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-        LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
         WHERE s.id = ANY($1)
         """
         return (query, [scenario_ids])
@@ -1561,7 +1566,11 @@ class ScenarioQueries:
                 s.id as scenario_id,
                 s.name,
                 sps.problem_statement as description,
-                sp.persona_id,
+                COALESCE((
+                    SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id)
+                    FROM scenario_personas
+                    WHERE scenario_id = s.id AND active = true
+                ), ARRAY[]::text[]) as persona_ids,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
                      FROM scenario_parameter_items spi
@@ -1570,7 +1579,6 @@ class ScenarioQueries:
                 ) as parameter_item_ids
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             WHERE s.id = ANY($1)
         ),
         scenario_documents AS (
@@ -1586,13 +1594,14 @@ class ScenarioQueries:
             FROM scenario_documents
         ),
         all_persona_ids AS (
-            SELECT DISTINCT persona_id
+            SELECT DISTINCT unnest(persona_ids) as persona_id
             FROM scenarios_base
-            WHERE persona_id IS NOT NULL
+            WHERE persona_ids IS NOT NULL AND array_length(persona_ids, 1) > 0
         ),
         all_param_item_ids AS (
             SELECT DISTINCT unnest(parameter_item_ids) as param_item_id
             FROM scenarios_base
+            WHERE parameter_item_ids IS NOT NULL AND array_length(parameter_item_ids, 1) > 0
         ),
         persona_mapping_data AS (
             SELECT COALESCE(
@@ -1647,7 +1656,7 @@ class ScenarioQueries:
             sb.scenario_id,
             sb.name,
             sb.description,
-            sb.persona_id,
+            sb.persona_ids,
             sb.parameter_item_ids,
             COALESCE(sd.document_ids, ARRAY[]::uuid[]) as document_ids,
             pm.persona_mapping,
@@ -1672,13 +1681,12 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
-    def get_scenario_persona_link(self, scenario_id: str) -> tuple[str, list[Any]]:
-        """Build query to get scenario's active persona link."""
+    def get_scenario_persona_links(self, scenario_id: str) -> tuple[str, list[Any]]:
+        """Build query to get scenario's active persona links."""
         query = """
-        SELECT persona_id
+        SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id) as persona_ids
         FROM scenario_personas
         WHERE scenario_id = $1 AND active = true
-        LIMIT 1
         """
         return (query, [scenario_id])
 
@@ -1989,10 +1997,13 @@ class ScenarioQueries:
                 s.name,
                 sps.problem_statement,
                 s.default_scenario,
-                sp.persona_id
+                COALESCE((
+                    SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id)
+                    FROM scenario_personas
+                    WHERE scenario_id = s.id AND active = true
+                ), ARRAY[]::text[]) as persona_ids
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             WHERE {where_clause}
             LIMIT ${{param_count}}
         """
@@ -2025,9 +2036,12 @@ class ScenarioQueries:
                 )) FILTER (WHERE sim.id IS NOT NULL),
                 '[]'::jsonb
             ) as simulations,
-            -- Persona ID (single value from junction)
-            (SELECT persona_id FROM scenario_personas 
-             WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
+            -- Persona IDs (array from junction)
+            COALESCE((
+                SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id)
+                FROM scenario_personas 
+                WHERE scenario_id = s.id AND active = true
+            ), ARRAY[]::text[]) as persona_ids
         FROM scenarios s
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         LEFT JOIN simulation_scenarios ss ON ss.scenario_id = s.id
@@ -2849,7 +2863,11 @@ class ScenarioQueries:
             s.use_documents,
             COALESCE(ARRAY_AGG(DISTINCT sd.document_id) FILTER (WHERE sd.document_id IS NOT NULL), ARRAY[]::uuid[]) as document_ids,
             COALESCE(ARRAY_AGG(DISTINCT spi.parameter_item_id) FILTER (WHERE spi.parameter_item_id IS NOT NULL), ARRAY[]::uuid[]) as parameter_item_ids,
-            (SELECT persona_id FROM scenario_personas WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
+            COALESCE((
+                SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id)
+                FROM scenario_personas 
+                WHERE scenario_id = s.id AND active = true
+            ), ARRAY[]::text[]) as persona_ids
         FROM scenarios s
         LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
         LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id

@@ -239,7 +239,7 @@ export type Mapping = z.infer<typeof MappingSchema>;
 export const ScenarioMappingItemSchema = z.object({
   name: z.string(),
   description: z.string(),
-  persona_id: z.string().nullable(),
+  persona_ids: z.array(z.string()),
   persona_mapping: z.lazy(() => PersonaMappingSchema),
   document_mapping: z.lazy(() => DocumentMappingSchema),
   parameter_item_mapping: z.lazy(() => ParameterItemMappingSchema),

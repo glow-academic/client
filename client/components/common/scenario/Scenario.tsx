@@ -305,10 +305,8 @@ export default function Scenario({
   // Track if form data has been initialized from scenarioData to prevent resetting user changes
   const formDataInitializedRef = useRef<boolean>(false);
 
-  // Store personaId separately since it's now in junction table
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(
-    null
-  );
+  // Store personaIds separately since it's now in junction table
+  const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   // Store problem statement ID for version selection
   const [selectedProblemStatementId, setSelectedProblemStatementId] = useState<
     string | null
@@ -352,7 +350,7 @@ export default function Scenario({
 
   // Staged selections per department (preserved when departments are deselected)
   type StagedSelections = {
-    persona_id?: string | null;
+    persona_ids?: string[];
     document_ids?: string[];
     parameter_item_ids?: string[];
   };
@@ -472,12 +470,10 @@ export default function Scenario({
     const baseIds = scenarioData?.valid_persona_ids || [];
     const selectedDeptIds = formData.departmentIds || [];
 
-    // Always include currently selected persona (for edit mode - ensures selected item is visible)
-    const selectedPersonaIdSet = selectedPersonaId
-      ? new Set([selectedPersonaId])
-      : new Set<string>();
+    // Always include currently selected personas (for edit mode - ensures selected items are visible)
+    const selectedPersonaIdSet = new Set(selectedPersonaIds);
 
-    // If no departments selected, return all valid IDs plus selected one
+    // If no departments selected, return all valid IDs plus selected ones
     if (selectedDeptIds.length === 0) {
       return Array.from(new Set([...baseIds, ...selectedPersonaIdSet]));
     }
@@ -514,7 +510,7 @@ export default function Scenario({
     scenarioData?.valid_persona_ids,
     formData.departmentIds,
     departmentMapping,
-    selectedPersonaId,
+    selectedPersonaIds,
   ]);
 
   // Extract valid document IDs from V2 response, filtered by selected departments
@@ -661,7 +657,7 @@ export default function Scenario({
         const updated = { ...prev };
         deselectedDepts.forEach((deptId) => {
           updated[deptId] = {
-            persona_id: selectedPersonaId,
+            persona_ids: selectedPersonaIds,
             document_ids: [...currentDocumentIds],
             parameter_item_ids: [...currentParameterItemIds],
           };
@@ -677,13 +673,19 @@ export default function Scenario({
           const staged = prev[deptId];
           if (staged) {
             // Restore persona if valid
-            if (
-              staged.persona_id &&
-              validPersonaIds.includes(staged.persona_id)
-            ) {
-              setSelectedPersonaId(
-                (prevPersona) => prevPersona || staged.persona_id || null
+            if (staged.persona_ids && staged.persona_ids.length > 0) {
+              // Restore personas that are still valid
+              const validPersonaSet = new Set(validPersonaIds);
+              const validPersonas = staged.persona_ids.filter((id) =>
+                validPersonaSet.has(id)
               );
+              if (validPersonas.length > 0) {
+                setSelectedPersonaIds((prevPersonas) => {
+                  // Merge staged personas with existing ones, deduplicate
+                  const combined = new Set([...prevPersonas, ...validPersonas]);
+                  return Array.from(combined);
+                });
+              }
             }
 
             // Restore documents if valid
@@ -728,7 +730,7 @@ export default function Scenario({
   }, [
     formData.departmentIds,
     previousDepartmentIds,
-    selectedPersonaId,
+    selectedPersonaIds,
     currentDocumentIds,
     currentParameterItemIds,
     validPersonaIds,
@@ -753,11 +755,15 @@ export default function Scenario({
   // Clear selections when they become invalid after department changes
   // (but preserve cross-department entities and staged selections)
   useEffect(() => {
-    // Clear persona if it's no longer valid
-    if (selectedPersonaId && !validPersonaIds.includes(selectedPersonaId)) {
-      setSelectedPersonaId(null);
+    // Clear personas that are no longer valid
+    if (selectedPersonaIds.length > 0) {
+      const validSet = new Set(validPersonaIds);
+      const filtered = selectedPersonaIds.filter((id) => validSet.has(id));
+      if (filtered.length !== selectedPersonaIds.length) {
+        setSelectedPersonaIds(filtered);
+      }
     }
-  }, [selectedPersonaId, validPersonaIds]);
+  }, [selectedPersonaIds, validPersonaIds]);
 
   useEffect(() => {
     // Clear documents that are no longer valid
@@ -802,7 +808,7 @@ export default function Scenario({
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
         setPreviousDepartmentIds(deptIds);
       }
-      setSelectedPersonaId(scenarioData.persona_id);
+      setSelectedPersonaIds(scenarioData.persona_ids || []);
       setSelectedProblemStatementId(scenarioData.problem_statement_id || null);
       // Clear local versions when loading existing scenario (edit mode)
       setLocalProblemStatementVersions([]);
@@ -878,10 +884,11 @@ export default function Scenario({
 
     const current = formData;
     const original = originalFormData;
-    const originalPersonaId = scenarioData?.persona_id || null;
+    const originalPersonaIds = scenarioData?.persona_ids || [];
 
     return (
-      selectedPersonaId !== originalPersonaId ||
+      JSON.stringify(selectedPersonaIds.sort()) !==
+        JSON.stringify(originalPersonaIds.sort()) ||
       current.name !== original.name ||
       current.problemStatement !== original.problemStatement ||
       current.active !== original.active ||
@@ -904,7 +911,7 @@ export default function Scenario({
     formData,
     originalFormData,
     isEditMode,
-    selectedPersonaId,
+    selectedPersonaIds,
     scenarioData,
     currentDocumentIds,
     originalDocumentIds,
@@ -943,21 +950,21 @@ export default function Scenario({
         return "completed";
       case "persona":
         // Can start immediately, doesn't depend on name
-        return selectedPersonaId ? "completed" : "active";
+        return selectedPersonaIds.length > 0 ? "completed" : "active";
       case "documents":
-        return !selectedPersonaId
+        return selectedPersonaIds.length === 0
           ? "pending"
           : currentDocumentIds.length > 0 || !useDocuments
             ? "completed"
             : "active";
       case "parameters":
-        return !selectedPersonaId
+        return selectedPersonaIds.length === 0
           ? "pending"
           : currentParameterItemIds.length > 0
             ? "completed"
             : "active";
       case "content":
-        return !selectedPersonaId ? "pending" : "active"; // Always active once persona is selected, user can choose to fill or leave blank
+        return selectedPersonaIds.length === 0 ? "pending" : "active"; // Always active once personas are selected, user can choose to fill or leave blank
       default:
         return "pending";
     }
@@ -1011,7 +1018,8 @@ export default function Scenario({
       setIsRandomizingParameters(true);
       const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaId: selectedPersonaId || undefined,
+        personaIds:
+          selectedPersonaIds.length > 0 ? selectedPersonaIds : undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         departmentIds: formData.departmentIds || undefined,
@@ -1056,15 +1064,16 @@ export default function Scenario({
       setIsRandomizingPersona(true);
       const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaId: selectedPersonaId || undefined,
+        personaIds:
+          selectedPersonaIds.length > 0 ? selectedPersonaIds : undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         departmentIds: formData.departmentIds || undefined,
         targets: ["persona"],
       });
       if (!resp.success) throw new Error(resp.message);
-      // Overwrite (not merge) persona - completely replace existing selection
-      setSelectedPersonaId(resp.personaId || null);
+      // Overwrite (not merge) personas - completely replace existing selection
+      setSelectedPersonaIds(resp.personaIds || []);
       toast.success("Persona suggestion applied");
     } catch (error) {
       log.error("scenario.persona.randomize.failed", {
@@ -1080,7 +1089,7 @@ export default function Scenario({
 
   const handleResetPersona = () => {
     try {
-      setSelectedPersonaId(null);
+      setSelectedPersonaIds([]);
       toast.success("Persona reset");
     } catch (error) {
       log.error("scenario.persona.reset.failed", {
@@ -1102,7 +1111,8 @@ export default function Scenario({
       }
       const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaId: selectedPersonaId || undefined,
+        personaIds:
+          selectedPersonaIds.length > 0 ? selectedPersonaIds : undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         departmentIds: formData.departmentIds || undefined,
@@ -1228,7 +1238,8 @@ export default function Scenario({
 
       const result = await generateAIMutation.mutateAsync({
         departmentId,
-        personaId: selectedPersonaId || undefined,
+        personaIds:
+          selectedPersonaIds.length > 0 ? selectedPersonaIds : undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         profileId: effectiveProfile?.id || undefined,
@@ -1287,7 +1298,7 @@ export default function Scenario({
                   ? formData.departmentIds
                   : null,
               active: formData.active,
-              persona_id: selectedPersonaId,
+              persona_ids: selectedPersonaIds,
               document_ids: currentDocumentIds,
               objective_ids: currentObjectives.filter((obj) => obj.trim()),
               parameters: groupParameterItemsByParameterId(
@@ -1369,7 +1380,7 @@ export default function Scenario({
         problem_statement_versions?: string[];
         department_ids: string[] | null;
         active: boolean;
-        persona_id: string | null;
+        persona_ids: string[] | null;
         document_ids: string[];
         objective_ids: string[];
         parameters: Record<string, string[]>;
@@ -1384,7 +1395,7 @@ export default function Scenario({
         problem_statement: formData.problemStatement?.trim() || "",
         department_ids: formData.departmentIds || null,
         active: formData.active ?? true,
-        persona_id: selectedPersonaId,
+        persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
         parameters: groupParameterItemsByParameterId(
@@ -1496,14 +1507,9 @@ export default function Scenario({
     handleSubmit();
   };
 
-  // Convert selectedPersonaId to selectedPersonaIds array for PersonaPicker
-  const selectedPersonaIds = useMemo(() => {
-    return selectedPersonaId ? [selectedPersonaId] : [];
-  }, [selectedPersonaId]);
-
-  // Handler to convert PersonaPicker output (array) to single ID
+  // Handler for PersonaPicker multi-select
   const handlePersonaSelect = (ids: string[]) => {
-    setSelectedPersonaId(ids[0] || null);
+    setSelectedPersonaIds(ids);
   };
 
   // Loading state for edit mode
@@ -1724,7 +1730,7 @@ export default function Scenario({
               validIds={validPersonaIds}
               selectedIds={selectedPersonaIds}
               onSelect={handlePersonaSelect}
-              multiSelect={false}
+              multiSelect={true}
               label=""
               placeholder="Select a persona..."
               description="Choose the persona that will interact with students in this scenario."

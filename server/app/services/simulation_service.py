@@ -73,12 +73,18 @@ class SimulationService(BaseService):
             if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
                 for sid, sdata in scenario_mapping_data.items():
                     if isinstance(sdata, dict):
+                        # Parse persona_ids from data (may be array or single value for backward compatibility)
+                        persona_ids = []
+                        if sdata.get("persona_ids"):
+                            persona_ids = sdata["persona_ids"] if isinstance(sdata["persona_ids"], list) else [sdata["persona_ids"]]
+                        elif sdata.get("persona_id"):
+                            # Backward compatibility: convert single persona_id to array
+                            persona_ids = [str(sdata["persona_id"])]
+                        
                         scenario_mapping[sid] = ScenarioMappingItem(
                             name=sdata.get("name", ""),
                             description=sdata.get("description", ""),
-                            persona_id=str(sdata["persona_id"])
-                            if sdata.get("persona_id")
-                            else None,
+                            persona_ids=persona_ids,
                             persona_mapping=sdata.get("persona_mapping", {}),
                             document_mapping=sdata.get("document_mapping", {}),
                             parameter_item_mapping=sdata.get(
@@ -283,10 +289,18 @@ class SimulationService(BaseService):
                                     value=pidata.get("value", ""),
                                 )
 
+                    # Parse persona_ids from data (may be array or single value for backward compatibility)
+                    persona_ids = []
+                    if sdata.get("persona_ids"):
+                        persona_ids = sdata["persona_ids"] if isinstance(sdata["persona_ids"], list) else [sdata["persona_ids"]]
+                    elif sdata.get("persona_id"):
+                        # Backward compatibility: convert single persona_id to array
+                        persona_ids = [str(sdata["persona_id"])]
+                    
                     scenario_mapping[sid] = ScenarioMappingItem(
                         name=sdata.get("name", ""),
                         description=sdata.get("description", ""),
-                        persona_id=sdata.get("persona_id"),
+                        persona_ids=persona_ids,
                         persona_mapping=persona_mapping,
                         document_mapping=document_mapping,
                         parameter_item_mapping=param_item_mapping,
@@ -537,10 +551,18 @@ class SimulationService(BaseService):
                                     value=pidata.get("value", ""),
                                 )
 
+                    # Parse persona_ids from data (may be array or single value for backward compatibility)
+                    persona_ids = []
+                    if sdata.get("persona_ids"):
+                        persona_ids = sdata["persona_ids"] if isinstance(sdata["persona_ids"], list) else [sdata["persona_ids"]]
+                    elif sdata.get("persona_id"):
+                        # Backward compatibility: convert single persona_id to array
+                        persona_ids = [str(sdata["persona_id"])]
+                    
                     scenario_mapping[sid] = ScenarioMappingItem(
                         name=sdata.get("name", ""),
                         description=sdata.get("description", ""),
-                        persona_id=sdata.get("persona_id"),
+                        persona_ids=persona_ids,
                         persona_mapping=persona_mapping,
                         document_mapping=document_mapping,
                         parameter_item_mapping=param_item_mapping,
@@ -1108,9 +1130,9 @@ class SimulationService(BaseService):
             scenario_service = ScenarioService(self.conn)
             
             # Extract parent IDs for inheritance
-            parent_persona_id_str = str(persona_id) if persona_id else None
-            parent_doc_ids = [doc["id"] for doc in documents] if documents else None
-            parent_param_ids = [item["id"] for item in parameter_items] if parameter_items else None
+            parent_persona_ids = [str(persona_id)] if persona_id else None
+            parent_doc_ids = [str(doc["id"]) for doc in documents] if documents else None
+            parent_param_ids = [str(item["id"]) for item in parameter_items] if parameter_items else None
             
             # Pass parent data to ensure child inherits attributes
             filled_scenario = await scenario_service.randomly_fill_scenario_attributes(
@@ -1121,7 +1143,7 @@ class SimulationService(BaseService):
                     "generated": True,
                 },
                 profile_id=attempt_profile_id,
-                parent_persona_id=parent_persona_id_str,
+                parent_persona_ids=parent_persona_ids,
                 parent_document_ids=parent_doc_ids,
                 parent_parameter_item_ids=parent_param_ids,
             )

@@ -107,7 +107,7 @@ class ScenarioMappingItem(BaseModel):
 
     name: str
     description: str
-    persona_id: str | None
+    persona_ids: list[str]
     persona_mapping: "PersonaMapping"
     document_mapping: "DocumentMapping"
     parameter_item_mapping: "ParameterItemMapping"
