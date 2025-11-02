@@ -1853,22 +1853,34 @@ class ScenarioQueries:
         RETURNING *
         """
 
+    def deactivate_scenario_problem_statements(
+        self, scenario_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Deactivate all active problem statements for a scenario.
+        
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        UPDATE scenario_problem_statements
+        SET active = false, updated_at = NOW()
+        WHERE scenario_id = $1::uuid AND active = true
+        """
+        params: list[Any] = [scenario_id]
+        return query, params
+
     def create_scenario_problem_statement(
         self, scenario_id: str, problem_statement: str
     ) -> tuple[str, list[Any]]:
         """
         Create a new problem statement for a scenario.
-        Deactivates any existing active problem statements first.
+        Note: Call deactivate_scenario_problem_statements first to deactivate existing active ones.
 
         Returns:
             Tuple of (query, params)
         """
         query = """
-        WITH deactivate_existing AS (
-            UPDATE scenario_problem_statements
-            SET active = false, updated_at = NOW()
-            WHERE scenario_id = $1::uuid AND active = true
-        )
         INSERT INTO scenario_problem_statements (scenario_id, problem_statement, active, created_at, updated_at)
         VALUES ($1::uuid, $2, true, NOW(), NOW())
         RETURNING id

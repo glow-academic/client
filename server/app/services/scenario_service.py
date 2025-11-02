@@ -1016,6 +1016,14 @@ class ScenarioService(BaseService):
 
             # Update problem statement (always create new version, deactivate old)
             if request.problem_statement:
+                # First deactivate any existing active problem statements
+                deactivate_query, deactivate_params = (
+                    self.queries.deactivate_scenario_problem_statements(
+                        request.scenarioId
+                    )
+                )
+                await self.conn.execute(deactivate_query, *deactivate_params)
+                # Then create the new active problem statement
                 query, params = self.queries.create_scenario_problem_statement(
                     request.scenarioId, request.problem_statement
                 )
