@@ -15,7 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
@@ -295,6 +295,9 @@ export default function Scenario({
   );
 
   const [formData, setFormData] = useState(initialFormData);
+
+  // Track if form data has been initialized from scenarioData to prevent resetting user changes
+  const formDataInitializedRef = useRef<boolean>(false);
 
   // Store personaId separately since it's now in junction table
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(
@@ -697,8 +700,8 @@ export default function Scenario({
 
   // Load scenario data from V2 response
   useEffect(() => {
-    if (scenarioData && isEditMode) {
-      // Edit mode: load existing scenario data
+    if (scenarioData && isEditMode && !formDataInitializedRef.current) {
+      // Edit mode: load existing scenario data (only once)
       const deptIds = scenarioData.department_ids || [];
       setFormData({
         name: scenarioData.name,
@@ -751,29 +754,25 @@ export default function Scenario({
           scenarioData.objective_mapping
         )
       );
-    } else if (!isEditMode && scenarioData) {
+      formDataInitializedRef.current = true;
+    } else if (!isEditMode && scenarioData && !formDataInitializedRef.current) {
       // Create mode: use initialFormData (which already has primaryDepartmentId set correctly)
       // Only set on initial load to prevent overwriting user selections when scenarioData updates
-      // Use a simple check: if formData is at default state, initialize it
-      const isUnchanged =
-        formData.name === initialFormData.name &&
-        formData.problemStatement === initialFormData.problemStatement &&
-        JSON.stringify(formData.departmentIds?.sort() || []) ===
-          JSON.stringify(initialFormData.departmentIds?.sort() || []);
-      if (isUnchanged) {
-        setFormData(initialFormData);
-      }
+      setFormData(initialFormData);
+      formDataInitializedRef.current = true;
     }
   }, [
     scenarioData,
     isEditMode,
     previousDepartmentIds.length,
     effectiveProfile?.primaryDepartmentId,
-    formData.departmentIds,
-    formData.name,
-    formData.problemStatement,
     initialFormData,
   ]);
+
+  // Reset initialization flag when switching between edit/create modes or scenario changes
+  useEffect(() => {
+    formDataInitializedRef.current = false;
+  }, [scenarioId, isEditMode]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {

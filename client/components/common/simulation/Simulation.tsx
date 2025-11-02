@@ -156,6 +156,9 @@ export default function Simulation({ simulationId }: SimulationProps) {
     [simulationData]
   );
 
+  // State for managing scenario IDs (declared early for use in validScenarioIds useMemo)
+  const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
+
   // Extract valid scenario IDs from V2 response, filtered by selected departments
   // Includes: items from selected departments + cross-department items + currently selected items
   const validScenarioIds = useMemo(() => {
@@ -331,9 +334,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
-
-  // State for managing scenario IDs
-  const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
 
   // Staged selections per department (preserved when departments are deselected)
   type StagedSelections = {
