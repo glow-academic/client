@@ -337,20 +337,21 @@ export function SimulationProvider({
     return () => clearInterval(interval);
   }, [currentChat?.id, currentChat?.completed, showResults]);
 
-  // Compute display timer
+  // Compute display timer - allow negative values for normal mode (like origin/main)
+  // Infinite mode is already clamped to 0 on server side
   const timer: AttemptFullResponse["timer"] = useMemo(() => {
     const displayElapsed = serverTimer.elapsed + localElapsedOffset;
+    const displayRemaining =
+      serverTimer.remaining !== null
+        ? serverTimer.remaining - localElapsedOffset
+        : null;
 
     return {
       elapsed: displayElapsed,
-      remaining:
-        serverTimer.remaining !== null
-          ? Math.max(serverTimer.remaining - localElapsedOffset, 0)
-          : null,
+      remaining: displayRemaining,
       expired:
         serverTimer.expired ||
-        (serverTimer.remaining !== null &&
-          serverTimer.remaining - localElapsedOffset <= 0),
+        (displayRemaining !== null && displayRemaining <= 0),
     };
   }, [serverTimer, localElapsedOffset]);
 

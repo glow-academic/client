@@ -68,15 +68,10 @@ export function SimulationControls() {
     }
   }, [simulationContext?.endChatLoading]);
 
-  // If no simulation context, don't render anything
-  if (!simulationContext) {
-    return null;
-  }
-
+  // Extract data from context (must be before early returns to maintain hook order)
   const {
     endChat,
     endChatLoading,
-    isSingleChatAttempt,
     isLastAttempt,
     simulation,
     isActive,
@@ -87,111 +82,161 @@ export function SimulationControls() {
     attemptId,
     endAllChats,
     attemptData,
-  } = simulationContext;
+  } = simulationContext || {};
+
+  // Get previous chats for current chat to show red dot indicator
+  // Must be computed before early returns to maintain hook order
+  const currentChatData = useMemo(() => {
+    return attemptData?.chats.find((c) => c.chat.id === currentChat?.id);
+  }, [attemptData?.chats, currentChat?.id]);
+
+  const previousChats = useMemo(() => {
+    return currentChatData?.previousChats || [];
+  }, [currentChatData?.previousChats]);
+
+  const hasPreviousChats = previousChats.length > 0;
+
+  // Check if there's a better previous attempt (higher score or passed when current failed)
+  // Must be before early returns to maintain hook order
+  const currentGrade = currentChatData?.grade;
+  const hasBetterPreviousAttempt = useMemo(() => {
+    if (!hasPreviousChats || !currentGrade) return false;
+
+    const currentScore = currentGrade.score || 0;
+    const currentPassed = currentGrade.passed || false;
+
+    // Check if any previous chat has better score or passed when current failed
+    return previousChats.some((prevChat) => {
+      const prevScore = prevChat.score || 0;
+      const prevPassed = prevChat.passed || false;
+
+      // Better if: previous passed and current didn't, OR previous has higher score
+      return (prevPassed && !currentPassed) || prevScore > currentScore;
+    });
+  }, [hasPreviousChats, currentGrade, previousChats]);
+
+  // If no simulation context, don't render anything
+  if (!simulationContext) {
+    return null;
+  }
+
+  // After this point, simulationContext is guaranteed to exist
+  // TypeScript doesn't know this, so we need to assert or use the values directly
+  const safeEndChat = endChat!;
+  const safeEndAllChats = endAllChats!;
+  const safeChats = chats!;
+  const safeExpectedChatCount = expectedChatCount!;
+  const safeAttemptId = attemptId!;
+  const safeCurrentChat = currentChat!;
 
   // Don't show if results are showing or user is not the owner
   if (showResults || !isAttemptOwner) {
     return null;
   }
 
-  let buttonLabel = "End Chat";
-  if (isSingleChatAttempt) {
-    buttonLabel = "End Session";
-  } else if (isLastAttempt) {
-    buttonLabel = "End Session";
-  } else {
-    buttonLabel = "End & Next Chat";
-  }
+  // Handle Next Chat button click (moves to next chat)
+  const handleNextChat = () => {
+    const totalMessages = currentChatMessages.length;
 
-  // Check if there are at least 2 remaining sessions for End All button
-  const incompleteChats = chats.filter((chat) => !chat.completed).length;
-  const createdChats = chats.length;
-  const remainingScenarios = expectedChatCount - createdChats;
-  const remainingSessions = incompleteChats + remainingScenarios;
-  const showEndAllButton = remainingSessions >= 2;
+    // If there are previous chats available, bypass the "no messages" warning
+    // and go directly to the previous chats selection dialog
+    if (hasPreviousChats) {
+      setShowPreviousChatsDialog(true);
+      setSelectedPreviousChatId(""); // Default to "continue normally"
+      return;
+    }
+
+    // Only show "no messages" warning if no previous chats exist
+    if (totalMessages < 2) {
+      setConfirmEndChatOpen(true);
+      return;
+    }
+
+    // No previous chats and has messages, proceed normally
+    // Dispatch endChatButtonPressed event for tour progression and navigating state management
+    window.dispatchEvent(
+      new CustomEvent("endChatButtonPressed", {
+        detail: {
+          chatId: safeCurrentChat?.id,
+          attemptId: safeAttemptId,
+        },
+      })
+    );
+    setEndingAction("endChat");
+    safeEndChat();
+  };
+
+  // Handle End Session button click (ends whole session)
+  const handleEndSession = () => {
+    const incompleteChats = safeChats.filter((chat) => !chat.completed).length;
+    const createdChats = safeChats.length;
+    const remainingScenarios = safeExpectedChatCount - createdChats;
+    const remainingSessions = incompleteChats + remainingScenarios;
+    setEndAllRemainingSessions(remainingSessions);
+    setConfirmEndAllOpen(true);
+  };
 
   return (
     <>
       <div className="flex gap-2">
-        {showEndAllButton && (
+        {/* Next Chat button - only show if not last attempt */}
+        {!isLastAttempt && (
           <Button
             type="button"
-            variant="destructive"
-            onClick={() => {
-              setEndAllRemainingSessions(remainingSessions);
-              setConfirmEndAllOpen(true);
-            }}
-            disabled={endChatLoading}
-            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
-            data-tour-end-all
+            variant="outline"
+            onClick={handleNextChat}
+            disabled={
+              endChatLoading || (simulation?.timeLimit ? !isActive : false)
+            }
+            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+            data-tour-end-chat
           >
-            {endChatLoading && endingAction === "endAll"
-              ? "Ending..."
-              : `End All (${remainingSessions})`}
-          </Button>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            const totalMessages = currentChatMessages.length;
-            if (totalMessages < 2) {
-              setConfirmEndChatOpen(true);
-              return;
-            }
-
-            // Check if current chat has previous chats for same scenario
-            const currentChatData = attemptData?.chats.find(
-              (c) => c.chat.id === currentChat?.id
-            );
-            const previousChats = currentChatData?.previousChats || [];
-
-            if (previousChats.length > 0) {
-              // Show dialog to select previous chat
-              setShowPreviousChatsDialog(true);
-              setSelectedPreviousChatId(""); // Default to "continue normally"
-            } else {
-              // No previous chats, proceed normally
-              // Dispatch endChatButtonPressed event for tour progression and navigating state management
-              window.dispatchEvent(
-                new CustomEvent("endChatButtonPressed", {
-                  detail: {
-                    chatId: currentChat?.id,
-                    attemptId: attemptId,
-                  },
-                })
-              );
-              setEndingAction("endChat");
-              endChat();
-            }
-          }}
-          disabled={
-            endChatLoading || (simulation?.timeLimit ? !isActive : false)
-          }
-          className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-hidden"
-          data-tour-end-chat
-        >
-          {/* Grading progress overlay - fills from left to right */}
-          {simulationContext?.isGrading &&
-            simulationContext?.gradingProgress && (
-              <span
-                className="absolute inset-0 bg-blue-500/20 transition-all duration-300 ease-out"
-                style={{
-                  width: `${
-                    (simulationContext.gradingProgress.completed /
-                      simulationContext.gradingProgress.total) *
-                    100
-                  }%`,
-                }}
-              />
+            {/* Red dot indicator for previous chats - overlays on top right corner */}
+            {hasPreviousChats && (
+              <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
             )}
 
-          {/* Button text */}
-          <span className="relative z-10">
-            {endChatLoading && endingAction === "endChat"
-              ? "Ending..."
-              : buttonLabel}
-          </span>
+            {/* Grading progress overlay - fills from left to right */}
+            {simulationContext?.isGrading &&
+              simulationContext?.gradingProgress && (
+                <span
+                  className="absolute inset-0 bg-blue-500/20 transition-all duration-300 ease-out"
+                  style={{
+                    width: `${
+                      (simulationContext.gradingProgress.completed /
+                        simulationContext.gradingProgress.total) *
+                      100
+                    }%`,
+                  }}
+                />
+              )}
+
+            {/* Button text */}
+            <span className="relative z-10">
+              {endChatLoading && endingAction === "endChat"
+                ? "Ending..."
+                : "Next Chat"}
+            </span>
+          </Button>
+        )}
+
+        {/* End Session button - always show, outline variant when last attempt */}
+        <Button
+          type="button"
+          variant={isLastAttempt ? "outline" : "destructive"}
+          onClick={handleEndSession}
+          disabled={endChatLoading}
+          className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+          data-tour-end-all
+        >
+          {/* Red dot indicator for better previous attempts (only on last attempt) - overlays on top right corner */}
+          {isLastAttempt && hasBetterPreviousAttempt && (
+            <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+          )}
+
+          {endChatLoading && endingAction === "endAll"
+            ? "Ending..."
+            : "End Session"}
         </Button>
       </div>
 
@@ -214,14 +259,14 @@ export function SimulationControls() {
                 window.dispatchEvent(
                   new CustomEvent("endAllChatsButtonPressed", {
                     detail: {
-                      attemptId: attemptId,
+                      attemptId: safeAttemptId,
                       remainingSessions: endAllRemainingSessions,
                     },
                   })
                 );
                 setConfirmEndAllOpen(false);
                 setEndingAction("endAll");
-                endAllChats();
+                safeEndAllChats();
               }}
             >
               End All
@@ -244,21 +289,21 @@ export function SimulationControls() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Continue Chat</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 // Dispatch endChatButtonPressed event for tour progression and navigating state management
                 window.dispatchEvent(
                   new CustomEvent("endChatButtonPressed", {
                     detail: {
-                      chatId: currentChat?.id,
-                      attemptId: attemptId,
+                      chatId: safeCurrentChat?.id,
+                      attemptId: safeAttemptId,
                     },
                   })
                 );
                 setConfirmEndChatOpen(false);
                 setEndingAction("endChat");
-                endChat();
+                safeEndChat();
               }}
             >
               End Chat
@@ -285,7 +330,7 @@ export function SimulationControls() {
           <div className="py-4">
             {(() => {
               const currentChatData = attemptData?.chats.find(
-                (c) => c.chat.id === currentChat?.id
+                (c) => c.chat.id === safeCurrentChat?.id
               );
               const previousChats = currentChatData?.previousChats || [];
 
@@ -352,14 +397,14 @@ export function SimulationControls() {
                 window.dispatchEvent(
                   new CustomEvent("endChatButtonPressed", {
                     detail: {
-                      chatId: currentChat?.id,
-                      attemptId: attemptId,
+                      chatId: safeCurrentChat?.id,
+                      attemptId: safeAttemptId,
                     },
                   })
                 );
                 setShowPreviousChatsDialog(false);
                 setEndingAction("endChat");
-                endChat(
+                safeEndChat(
                   undefined,
                   selectedPreviousChatId && selectedPreviousChatId !== ""
                     ? selectedPreviousChatId
@@ -369,7 +414,7 @@ export function SimulationControls() {
               }}
               disabled={false}
             >
-              End Session
+              Continue
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1313,9 +1313,6 @@ class SimulationService(BaseService):
             query, params = self.queries.update_chat_completed(chat_id)
             await self.conn.execute(query, *params)
             
-            # Attempt is finished - no next chat
-            next_chat_id = chat_id
-            
             # If end_all, mark all remaining incomplete chats as completed
             if end_all:
                 for existing_chat in existing_chats:
@@ -1324,32 +1321,32 @@ class SimulationService(BaseService):
                             str(existing_chat["id"])
                         )
                         await self.conn.execute(query, *params)
-        else:
-            # Create next chat if not end_all
-            next_chat_id = chat_id
-            if not end_all and scenario_links:
-                next_scenario_id = None
-                if is_infinite_mode:
-                    # Cycle through the configured scenarios indefinitely
-                    num_scenarios = len(scenario_links)
-                    if num_scenarios > 0:
-                        cycling_index = next_index % num_scenarios
-                        next_scenario_id = scenario_links[cycling_index]["scenario_id"]
-                elif next_index < len(scenario_links):
-                    next_scenario_id = scenario_links[next_index]["scenario_id"]
+        
+        # Create next chat if not end_all (works for both previous_chat_id and normal cases)
+        next_chat_id = chat_id
+        if not end_all and scenario_links:
+            next_scenario_id = None
+            if is_infinite_mode:
+                # Cycle through the configured scenarios indefinitely
+                num_scenarios = len(scenario_links)
+                if num_scenarios > 0:
+                    cycling_index = next_index % num_scenarios
+                    next_scenario_id = scenario_links[cycling_index]["scenario_id"]
+            elif next_index < len(scenario_links):
+                next_scenario_id = scenario_links[next_index]["scenario_id"]
 
-                if next_scenario_id is not None:
-                    created_next_chat = await self._create_chat_for_scenario(
-                        str(next_scenario_id),
-                        attempt_id,
-                        profile_id,
-                        mark_completed=False,
-                    )
-                    if created_next_chat is None:
-                        raise ValueError("Next scenario not found")
-                    if "id" not in created_next_chat:
-                        raise ValueError(f"Created chat missing 'id' field: {created_next_chat}")
-                    next_chat_id = created_next_chat["id"]
+            if next_scenario_id is not None:
+                created_next_chat = await self._create_chat_for_scenario(
+                    str(next_scenario_id),
+                    attempt_id,
+                    profile_id,
+                    mark_completed=False,
+                )
+                if created_next_chat is None:
+                    raise ValueError("Next scenario not found")
+                if "id" not in created_next_chat:
+                    raise ValueError(f"Created chat missing 'id' field: {created_next_chat}")
+                next_chat_id = created_next_chat["id"]
 
         # Grade the just-completed chat if it has at least 2 messages (only if not using previous_chat_id)
         simulation_grade_id = None

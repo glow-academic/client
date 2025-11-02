@@ -283,7 +283,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             )}
 
             {/* Simulation Controls - Only shown when in an attempt */}
-            <SimulationControls />
+            <div className="pr-4">
+              <SimulationControls />
+            </div>
 
             {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>

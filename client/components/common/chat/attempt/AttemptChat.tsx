@@ -144,6 +144,67 @@ export default function AttemptChat() {
   const showGrades = simulationContext?.showGrades ?? false;
   const showDocuments = simulationContext?.showDocuments ?? true;
 
+  // Chat picker component - reusable Select component for chat selection
+  const chatPicker = useMemo(() => {
+    if (simulationContext?.isSingleChatAttempt) return null;
+
+    return (
+      <Select
+        value={
+          simulationContext?.chats[simulationContext.currentChatIndex]?.id || ""
+        }
+        onValueChange={(chatId) => {
+          const chatIndex = simulationContext?.chats.findIndex(
+            (chat) => chat.id === chatId
+          );
+          if (chatIndex !== undefined && chatIndex >= 0) {
+            simulationContext?.setCurrentChatIndex(chatIndex);
+          }
+        }}
+      >
+        <SelectTrigger className="w-64">
+          <SelectValue placeholder="Select chat to view results" />
+        </SelectTrigger>
+        <SelectContent>
+          {simulationContext?.chats?.map(
+            (chat: AttemptFullResponse["chats"][number]["chat"]) => {
+              // Find rubric result for this chat
+              const rubricResult = simulationContext?.allDynamicRubrics.find(
+                (rubric) => rubric.chatId === chat.id
+              );
+
+              return (
+                <SelectItem key={chat.id} value={chat.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{chat.title}</span>
+                    {chat.completed && !rubricResult ? (
+                      <Badge variant="secondary" className="text-xs">
+                        Incomplete
+                      </Badge>
+                    ) : rubricResult ? (
+                      <Badge
+                        variant={
+                          rubricResult.passed ? "default" : "destructive"
+                        }
+                        className={`text-xs ${
+                          rubricResult.passed
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                        }`}
+                      >
+                        {rubricResult.passed ? "Pass" : "Fail"}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </SelectItem>
+              );
+            }
+          )}
+        </SelectContent>
+      </Select>
+    );
+  }, [simulationContext]);
+
   // Get selected scenario from context (v2 single source of truth)
   const selectedScenario = useMemo(() => {
     if (!displayChat?.id || !simulationContext?.scenariosByChatId) {
@@ -300,35 +361,39 @@ export default function AttemptChat() {
     simulationContext,
   ]);
 
-  // Set default selected document
+  // Reset selected document when chat changes - scope to current chat's documents
   useEffect(() => {
-    if (
-      simulationContext?.scenarioDocuments &&
-      simulationContext?.scenarioDocuments.length > 0 &&
-      !selectedDocumentId &&
-      simulationContext?.scenarioDocuments[0]
-    ) {
-      setSelectedDocumentId(
-        simulationContext?.scenarioDocuments[0].document_id
-      );
+    if (!displayChat || !simulationContext?.scenarioDocuments) {
+      setSelectedDocumentId(null);
+      return;
     }
-  }, [simulationContext?.scenarioDocuments, selectedDocumentId]);
 
-  // Reset selected document when chat changes
-  useEffect(() => {
-    if (
-      simulationContext?.scenarioDocuments &&
-      simulationContext?.scenarioDocuments.length > 0 &&
-      simulationContext?.scenarioDocuments[0]
-    ) {
-      setSelectedDocumentId(
-        simulationContext?.scenarioDocuments[0].document_id
-      );
+    // Filter documents to only include current chat's documents
+    const currentChatDocIds = displayChat.documentIds || [];
+    const filteredDocs = simulationContext.scenarioDocuments.filter((doc) =>
+      currentChatDocIds.includes(doc.document_id)
+    );
+
+    // Set to first document of current chat, or null if no documents
+    if (filteredDocs.length > 0) {
+      // Only update if current selection is not valid for this chat
+      if (
+        !selectedDocumentId ||
+        !currentChatDocIds.includes(selectedDocumentId)
+      ) {
+        const firstDoc = filteredDocs[0];
+        if (firstDoc) {
+          setSelectedDocumentId(firstDoc.document_id);
+        }
+      }
+    } else {
+      setSelectedDocumentId(null);
     }
   }, [
+    displayChat,
     simulationContext?.currentChatIndex,
-    simulationContext?.currentChat?.id,
     simulationContext?.scenarioDocuments,
+    selectedDocumentId,
   ]);
 
   if (simulationContext?.isLoadingChats) {
@@ -482,7 +547,7 @@ export default function AttemptChat() {
                             </TooltipProvider>
                           )}
 
-                          {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
+                          {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives, hide in grading mode */}
                           {simulationContext?.simulation?.objectivesEnabled &&
                             (() => {
                               const currentScenario = displayChat?.id
@@ -494,7 +559,8 @@ export default function AttemptChat() {
                                 currentScenario?.objectives &&
                                 currentScenario.objectives.length > 0;
                               return hasObjectives;
-                            })() && (
+                            })() &&
+                            !showGrades && (
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -667,7 +733,7 @@ export default function AttemptChat() {
                       </div>
                     </div>
 
-                    {/* Objectives Collapsible Content - Desktop Only */}
+                    {/* Objectives Collapsible Content - Desktop Only, hide in grading mode */}
                     {simulationContext?.simulation?.objectivesEnabled &&
                       (() => {
                         const currentScenario = displayChat?.id
@@ -675,7 +741,8 @@ export default function AttemptChat() {
                           : null;
                         const objectives = currentScenario?.objectives || [];
                         return objectives.length > 0;
-                      })() && (
+                      })() &&
+                      !showGrades && (
                         <CollapsibleContent className="pt-2 hidden md:block">
                           <div className="px-4 pb-2">
                             <ul className="space-y-2 list-none">
@@ -706,73 +773,9 @@ export default function AttemptChat() {
                   </div>
                 </Collapsible>
 
-                {/* Show completion status for completed attempts */}
-                {!simulationContext?.isSingleChatAttempt && (
-                  <div className="flex justify-end">
-                    <Select
-                      value={
-                        simulationContext?.chats[
-                          simulationContext.currentChatIndex
-                        ]?.id || ""
-                      }
-                      onValueChange={(chatId) => {
-                        const chatIndex = simulationContext?.chats.findIndex(
-                          (chat) => chat.id === chatId
-                        );
-                        if (chatIndex !== undefined && chatIndex >= 0) {
-                          simulationContext?.setCurrentChatIndex(chatIndex);
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-64">
-                        <SelectValue placeholder="Select chat to view results" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {simulationContext?.chats?.map(
-                          (
-                            chat: AttemptFullResponse["chats"][number]["chat"]
-                          ) => {
-                            // Find rubric result for this chat
-                            const rubricResult =
-                              simulationContext?.allDynamicRubrics.find(
-                                (rubric) => rubric.chatId === chat.id
-                              );
-
-                            return (
-                              <SelectItem key={chat.id} value={chat.id}>
-                                <div className="flex items-center gap-2">
-                                  <span>{chat.title}</span>
-                                  {chat.completed && !rubricResult ? (
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      Incomplete
-                                    </Badge>
-                                  ) : rubricResult ? (
-                                    <Badge
-                                      variant={
-                                        rubricResult.passed
-                                          ? "default"
-                                          : "destructive"
-                                      }
-                                      className={`text-xs ${
-                                        rubricResult.passed
-                                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                                      }`}
-                                    >
-                                      {rubricResult.passed ? "Pass" : "Fail"}
-                                    </Badge>
-                                  ) : null}
-                                </div>
-                              </SelectItem>
-                            );
-                          }
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Chat picker below header - show when multi-chat attempt (both grading and non-grading modes) */}
+                {!simulationContext?.isSingleChatAttempt && chatPicker && (
+                  <div className="flex justify-end">{chatPicker}</div>
                 )}
 
                 <CardContent className="flex-1 flex flex-col p-0 min-h-0">
@@ -839,8 +842,13 @@ export default function AttemptChat() {
               return (
                 filteredDocs.length > 0 && (
                   <>
-                    <ResizableHandle className="bg-transparent" />
-                    <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                    <ResizableHandle className="bg-transparent hidden md:block" />
+                    <ResizablePanel
+                      defaultSize={30}
+                      minSize={20}
+                      maxSize={50}
+                      className="hidden md:block"
+                    >
                       <Card className="h-full flex flex-col ml-4 p-0">
                         <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                           {/* Select dropdown directly above document */}
@@ -1269,7 +1277,7 @@ export default function AttemptChat() {
                         </div>
                       </div>
 
-                      {/* Objectives Collapsible Content */}
+                      {/* Objectives Collapsible Content - hide in grading mode */}
                       {simulationContext?.simulation?.objectivesEnabled &&
                         (() => {
                           const currentScenario = displayChat?.id
@@ -1279,7 +1287,8 @@ export default function AttemptChat() {
                             : null;
                           const objectives = currentScenario?.objectives || [];
                           return objectives.length > 0;
-                        })() && (
+                        })() &&
+                        !showGrades && (
                           <CollapsibleContent className="pt-2">
                             <div className="px-4 pb-2">
                               <ul className="space-y-2 list-none">
@@ -1355,43 +1364,61 @@ export default function AttemptChat() {
         </ResizablePanel>
 
         {/* Right Panel - Documents */}
-        {showDocuments && simulationContext?.scenarioDocuments.length > 0 && (
-          <>
-            <ResizableHandle className="bg-transparent" />
-            <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-              <Card className="h-full flex flex-col ml-4 p-0">
-                <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
-                  {/* Select dropdown directly above document */}
-                  {simulationContext?.scenarioDocuments.length > 1 && (
-                    <div className="p-3 pb-2 border-b">
-                      <DocumentSelect
-                        documents={simulationContext?.scenarioDocuments}
-                        selectedDocumentId={selectedDocumentId}
-                        onDocumentSelect={setSelectedDocumentId}
-                      />
-                    </div>
-                  )}
-                  {/* Document viewer with minimal padding */}
-                  <div className="flex-1 min-h-0 p-2">
-                    {selectedDocumentId &&
-                      (() => {
-                        const document =
-                          simulationContext.scenarioDocuments.find(
-                            (doc) => doc.document_id === selectedDocumentId
-                          ) || simulationContext.scenarioDocuments[0];
-                        return document ? (
-                          <DocumentViewer
-                            key={selectedDocumentId}
-                            document={document}
-                          />
-                        ) : null;
-                      })()}
-                  </div>
-                </CardContent>
-              </Card>
-            </ResizablePanel>
-          </>
-        )}
+        {showDocuments &&
+          (() => {
+            // Filter documents for current chat's scenario
+            const currentChatDocIds = displayChat?.documentIds || [];
+            const filteredDocs =
+              simulationContext?.scenarioDocuments.filter((doc) =>
+                currentChatDocIds.includes(doc.document_id)
+              ) || [];
+
+            return (
+              filteredDocs.length > 0 && (
+                <>
+                  <ResizableHandle className="bg-transparent hidden md:block" />
+                  <ResizablePanel
+                    defaultSize={30}
+                    minSize={20}
+                    maxSize={50}
+                    className="hidden md:block"
+                  >
+                    <Card className="h-full flex flex-col ml-4 p-0">
+                      <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
+                        {/* Select dropdown directly above document */}
+                        {filteredDocs.length > 1 && (
+                          <div className="p-3 pb-2 border-b">
+                            <DocumentSelect
+                              documents={filteredDocs}
+                              selectedDocumentId={selectedDocumentId}
+                              onDocumentSelect={setSelectedDocumentId}
+                            />
+                          </div>
+                        )}
+                        {/* Document viewer with minimal padding */}
+                        <div className="flex-1 min-h-0 p-2">
+                          {selectedDocumentId &&
+                            (() => {
+                              const document =
+                                filteredDocs.find(
+                                  (doc) =>
+                                    doc.document_id === selectedDocumentId
+                                ) || filteredDocs[0];
+                              return document ? (
+                                <DocumentViewer
+                                  key={selectedDocumentId}
+                                  document={document}
+                                />
+                              ) : null;
+                            })()}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </ResizablePanel>
+                </>
+              )
+            );
+          })()}
       </ResizablePanelGroup>
 
       {/* Document Modal - Mobile Only */}

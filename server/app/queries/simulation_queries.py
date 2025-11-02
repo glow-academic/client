@@ -2738,11 +2738,20 @@ class SimulationQueries:
                     'expired', CASE 
                         WHEN ab.infinite_mode AND ab.sim_time_limit IS NOT NULL THEN
                             (GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) <= 0)
+                        WHEN ab.sim_time_limit IS NOT NULL THEN
+                            ((ab.sim_time_limit * 60) - etc.total_elapsed < 0)
                         ELSE false
                     END
                 ) as timer
             FROM attempt_base ab
             CROSS JOIN elapsed_time_calc etc
+        ),
+        simulation_scenario_count AS (
+            SELECT 
+                COUNT(*)::integer as total_scenarios
+            FROM simulation_scenarios ss
+            CROSS JOIN attempt_base ab
+            WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
         ),
         metadata_computed AS (
             SELECT 
@@ -2753,15 +2762,32 @@ class SimulationQueries:
                      LIMIT 1),
                     0
                 ) as current_chat_index,
-                COUNT(*)::integer as expected_chat_count,
+                -- For infinite mode, still return scenario count (scenarios cycle)
+                -- For normal mode, use simulation scenario count or fallback to created chats
+                COALESCE((SELECT total_scenarios FROM simulation_scenario_count), COUNT(*)::integer) as expected_chat_count,
                 COUNT(*) = 1 as is_single_chat_attempt,
-                COALESCE(
-                    (SELECT ROW_NUMBER() OVER (ORDER BY created_at) - 1
-                     FROM chats_with_all_data
-                     WHERE completed = false
-                     LIMIT 1),
-                    0
-                ) = COUNT(*) - 1 as is_last_attempt,
+                CASE 
+                    -- In infinite mode, never last attempt (scenarios cycle)
+                    WHEN (SELECT infinite_mode FROM attempt_base) THEN false
+                    -- Use simulation scenario count when available
+                    WHEN (SELECT total_scenarios FROM simulation_scenario_count) > 0 THEN
+                        COALESCE(
+                            (SELECT ROW_NUMBER() OVER (ORDER BY created_at) - 1
+                             FROM chats_with_all_data
+                             WHERE completed = false
+                             LIMIT 1),
+                            0
+                        ) = (SELECT total_scenarios FROM simulation_scenario_count) - 1
+                    -- Fallback to created chats count
+                    ELSE
+                        COALESCE(
+                            (SELECT ROW_NUMBER() OVER (ORDER BY created_at) - 1
+                             FROM chats_with_all_data
+                             WHERE completed = false
+                             LIMIT 1),
+                            0
+                        ) = COUNT(*) - 1
+                END as is_last_attempt,
                 BOOL_AND(completed) as show_results
             FROM chats_with_all_data
         )
