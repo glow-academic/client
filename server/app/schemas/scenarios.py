@@ -86,6 +86,12 @@ class ProblemStatementInfo(BaseModel):
     updated_at: str
 
 
+class ObjectiveWithDepartments(BaseModel):
+    """Objective with associated department IDs."""
+    objective: str
+    department_ids: list[str]
+
+
 class ScenarioDetailResponse(BaseModel):
     """Detailed scenario response with all fields and metadata."""
 
@@ -116,7 +122,7 @@ class ScenarioDetailResponse(BaseModel):
     # Objectives (use IDs)
     objective_ids: list[str]  # "scenarioId_idx" composite keys
     valid_objectives: list[str]  # Empty (free-form)
-    objectives_history: list[str]  # Autocomplete suggestions from accessible scenarios
+    objectives_history: list[ObjectiveWithDepartments]  # Autocomplete suggestions from accessible scenarios with department filtering
 
     # Parameters (structured by parameter_id)
     parameters: dict[str, ParameterDetail]
@@ -154,6 +160,7 @@ class CreateScenarioRequest(BaseModel):
 
     name: str
     problem_statement: str
+    problem_statement_versions: list[str] | None = None  # Optional: versions to save (first active, others inactive)
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     active: bool
     persona_id: str | None

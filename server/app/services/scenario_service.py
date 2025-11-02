@@ -487,11 +487,30 @@ class ScenarioService(BaseService):
                         updated_at=psdata.get("updated_at", ""),
                     )
 
-        # Parse objectives_history array
-        objectives_history: list[str] = []
+        # Parse objectives_history JSONB array (now with department_ids)
+        objectives_history: list[ObjectiveWithDepartments] = []
         obj_history_data = scenario.get("objectives_history")
-        if isinstance(obj_history_data, list):
-            objectives_history = [str(obj) for obj in obj_history_data if obj]
+        if isinstance(obj_history_data, str):
+            obj_history_data = json.loads(obj_history_data)
+        if obj_history_data and isinstance(obj_history_data, list):
+            from app.schemas.scenarios import ObjectiveWithDepartments
+            
+            for obj_data in obj_history_data:
+                if isinstance(obj_data, dict):
+                    objectives_history.append(
+                        ObjectiveWithDepartments(
+                            objective=obj_data.get("objective", ""),
+                            department_ids=obj_data.get("department_ids", []) or []
+                        )
+                    )
+                elif isinstance(obj_data, str):
+                    # Fallback for backward compatibility (shouldn't happen with new query)
+                    objectives_history.append(
+                        ObjectiveWithDepartments(
+                            objective=obj_data,
+                            department_ids=[]
+                        )
+                    )
 
         # Parse document_details from JSONB (array of full document objects)
         document_details: list[DocumentDetailItem] = []
@@ -716,11 +735,30 @@ class ScenarioService(BaseService):
                         updated_at=psdata.get("updated_at", ""),
                     )
 
-        # Parse objectives_history array
-        objectives_history: list[str] = []
+        # Parse objectives_history JSONB array (now with department_ids)
+        objectives_history: list[ObjectiveWithDepartments] = []
         obj_history_data = result.get("objectives_history")
-        if isinstance(obj_history_data, list):
-            objectives_history = [str(obj) for obj in obj_history_data if obj]
+        if isinstance(obj_history_data, str):
+            obj_history_data = json.loads(obj_history_data)
+        if obj_history_data and isinstance(obj_history_data, list):
+            from app.schemas.scenarios import ObjectiveWithDepartments
+            
+            for obj_data in obj_history_data:
+                if isinstance(obj_data, dict):
+                    objectives_history.append(
+                        ObjectiveWithDepartments(
+                            objective=obj_data.get("objective", ""),
+                            department_ids=obj_data.get("department_ids", []) or []
+                        )
+                    )
+                elif isinstance(obj_data, str):
+                    # Fallback for backward compatibility (shouldn't happen with new query)
+                    objectives_history.append(
+                        ObjectiveWithDepartments(
+                            objective=obj_data,
+                            department_ids=[]
+                        )
+                    )
 
         # Parse JSONB parameters into ParameterDetail dict
         parameters_dict: dict[str, ParameterDetail] = {}
@@ -868,8 +906,20 @@ class ScenarioService(BaseService):
                 True,
             )
 
-            # Insert problem statement into junction table
-            if request.problem_statement:
+            # Insert problem statement versions (if provided) or single problem statement
+            if request.problem_statement_versions and len(request.problem_statement_versions) > 0:
+                # Save all versions: last one (most recent) is active, others inactive
+                versions_list = [v for v in request.problem_statement_versions if v and v.strip()]
+                for idx, version_text in enumerate(versions_list):
+                    problem_stmt_query = self.queries.insert_scenario_problem_statement()
+                    await self.conn.execute(
+                        problem_stmt_query,
+                        scenario_id,
+                        version_text.strip(),
+                        idx == len(versions_list) - 1,  # Last version (most recent) is active
+                    )
+            elif request.problem_statement:
+                # Single problem statement (existing behavior)
                 problem_stmt_query = self.queries.insert_scenario_problem_statement()
                 await self.conn.execute(
                     problem_stmt_query,

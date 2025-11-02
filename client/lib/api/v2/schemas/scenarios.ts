@@ -91,6 +91,12 @@ export const ProblemStatementInfoSchema = z.object({
   updated_at: z.string(),
 });
 
+// Objective with department IDs for filtering
+export const ObjectiveWithDepartmentsSchema = z.object({
+  objective: z.string(),
+  department_ids: z.array(z.string()),
+});
+
 export const ScenarioDetailResponseSchema = z.object({
   // Basic fields
   name: z.string(),
@@ -119,7 +125,7 @@ export const ScenarioDetailResponseSchema = z.object({
   // Objectives (use IDs)
   objective_ids: z.array(z.string()), // "scenarioId_idx" composite keys
   valid_objectives: z.array(z.string()), // Empty (free-form)
-  objectives_history: z.array(z.string()), // Autocomplete suggestions from accessible scenarios
+  objectives_history: z.array(ObjectiveWithDepartmentsSchema), // Autocomplete suggestions from accessible scenarios with department filtering
 
   // Parameters (structured by parameter_id)
   parameters: z.record(z.string(), ParameterDetailSchema),
@@ -150,6 +156,9 @@ export type ScenarioDetailResponse = z.infer<
   typeof ScenarioDetailResponseSchema
 >;
 export type ParameterDetail = z.infer<typeof ParameterDetailSchema>;
+export type ObjectiveWithDepartments = z.infer<
+  typeof ObjectiveWithDepartmentsSchema
+>;
 export type ProblemStatementInfo = z.infer<typeof ProblemStatementInfoSchema>;
 
 // Default detail request
@@ -169,6 +178,7 @@ export type ScenarioDetailDefaultRequest = z.infer<
 export const CreateScenarioRequestSchema = z.object({
   name: z.string(),
   problem_statement: z.string(),
+  problem_statement_versions: z.array(z.string()).optional().nullable(), // Optional: versions to save (first active, others inactive)
   department_ids: z.array(z.string()).nullable(),
   active: z.boolean(),
   persona_id: z.string().nullable(),

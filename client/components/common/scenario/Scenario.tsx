@@ -29,7 +29,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -107,11 +106,16 @@ function ObjectiveInputWithAutocomplete({
   const filteredSuggestions = useMemo(() => {
     if (!value.trim() || !suggestions.length) return [];
 
-    const valueLower = value.toLowerCase();
+    const valueLower = value.toLowerCase().trim();
+
     // Filter suggestions that start with or contain the typed text
+    // Exclude exact matches (case-insensitive) to avoid distraction
     const matching = suggestions
       .filter((s) => {
-        const sLower = s.toLowerCase();
+        const sLower = s.toLowerCase().trim();
+        // Skip exact matches
+        if (sLower === valueLower) return false;
+        // Include if starts with or contains the typed text
         return sLower.startsWith(valueLower) || sLower.includes(valueLower);
       })
       .slice(0, 5); // Show top 5 matches
@@ -293,6 +297,16 @@ export default function Scenario({
   const [selectedProblemStatementId, setSelectedProblemStatementId] = useState<
     string | null
   >(null);
+  // Track local problem statement versions during creation (before scenario is saved)
+  const [localProblemStatementVersions, setLocalProblemStatementVersions] =
+    useState<
+      Array<{
+        id: string;
+        problem_statement: string;
+        created_at: string;
+        updated_at: string;
+      }>
+    >([]);
   const [originalDocumentIds, setOriginalDocumentIds] = useState<string[]>([]);
   const [originalParameterItemIds, setOriginalParameterItemIds] = useState<
     string[]
@@ -360,14 +374,80 @@ export default function Scenario({
   const departmentMapping = useMemo(() => {
     return scenarioData?.department_mapping || {};
   }, [scenarioData]);
-  const problemStatementMapping = useMemo(
-    () => scenarioData?.problem_statement_mapping || {},
-    [scenarioData]
-  );
-  const objectivesHistory = useMemo(
-    () => scenarioData?.objectives_history || [],
-    [scenarioData]
-  );
+  // Merge server problem statement mapping with local versions (for create mode)
+  // IDs from database are unique, so just merge - local versions override server versions if same ID
+  const problemStatementMapping = useMemo(() => {
+    const serverMapping = scenarioData?.problem_statement_mapping || {};
+    const localMapping: Record<
+      string,
+      { problem_statement: string; created_at: string; updated_at: string }
+    > = {};
+
+    // Convert local versions to ProblemStatementInfo format
+    localProblemStatementVersions.forEach((version) => {
+      localMapping[version.id] = {
+        problem_statement: version.problem_statement,
+        created_at: version.created_at,
+        updated_at: version.updated_at,
+      };
+    });
+
+    // Simple merge: server versions + local versions (local takes precedence if same ID)
+    return { ...serverMapping, ...localMapping };
+  }, [scenarioData?.problem_statement_mapping, localProblemStatementVersions]);
+  // Filter objectives_history based on selected departments
+  const objectivesHistory = useMemo(() => {
+    const rawHistory = scenarioData?.objectives_history || [];
+    const selectedDeptIds = formData.departmentIds || [];
+
+    // Convert to array of strings for autocomplete
+    const objectives: string[] = [];
+
+    // If no departments selected, return all objectives
+    if (selectedDeptIds.length === 0) {
+      rawHistory.forEach((obj) => {
+        if (typeof obj === "string") {
+          objectives.push(obj);
+        } else if (obj && typeof obj === "object") {
+          const objWithDept = obj as {
+            objective: string;
+            department_ids?: string[];
+          };
+          if ("objective" in objWithDept) {
+            objectives.push(objWithDept.objective);
+          }
+        }
+      });
+      return objectives;
+    }
+
+    // Filter objectives that:
+    // 1. Have department_ids that intersect with selected departments
+    // 2. Are cross-department (empty department_ids array)
+    rawHistory.forEach((obj) => {
+      // Handle both new format (object with department_ids) and legacy format (string)
+      if (typeof obj === "string") {
+        objectives.push(obj); // Legacy format - include all
+      } else if (obj && typeof obj === "object") {
+        const objWithDept = obj as {
+          objective: string;
+          department_ids?: string[];
+        };
+        if ("objective" in objWithDept) {
+          const deptIds = objWithDept.department_ids || [];
+          // Include if cross-department (empty) or has intersection with selected departments
+          if (
+            deptIds.length === 0 ||
+            deptIds.some((id: string) => selectedDeptIds.includes(id))
+          ) {
+            objectives.push(objWithDept.objective);
+          }
+        }
+      }
+    });
+
+    return objectives;
+  }, [scenarioData?.objectives_history, formData.departmentIds]);
 
   // Extract valid IDs from V2 response, filtered by selected departments
   // Includes: items from selected departments + cross-department items + currently selected items
@@ -707,6 +787,8 @@ export default function Scenario({
       }
       setSelectedPersonaId(scenarioData.persona_id);
       setSelectedProblemStatementId(scenarioData.problem_statement_id || null);
+      // Clear local versions when loading existing scenario (edit mode)
+      setLocalProblemStatementVersions([]);
       setCurrentDocumentIds(scenarioData.document_ids);
       setCurrentParameterItemIds(
         getParameterItemIdsFromStructure(scenarioData.parameters)
@@ -1117,6 +1199,25 @@ export default function Scenario({
       }
 
       if (result.title || result.description) {
+        const newProblemStatement =
+          result.description || formData.problemStatement || "";
+
+        // If in create mode and we have a new problem statement, add it to local versions
+        if (!isEditMode && newProblemStatement.trim()) {
+          const now = new Date().toISOString();
+          const versionId = `local-${Date.now()}`;
+          setLocalProblemStatementVersions((prev) => [
+            ...prev,
+            {
+              id: versionId,
+              problem_statement: newProblemStatement,
+              created_at: now,
+              updated_at: now,
+            },
+          ]);
+          setSelectedProblemStatementId(versionId);
+        }
+
         setFormData((prev) => ({
           ...prev,
           // Only replace name if it's still the default "New Scenario"
@@ -1126,7 +1227,7 @@ export default function Scenario({
             prev.name.trim() === ""
               ? result.title || prev.name || "New Scenario"
               : prev.name,
-          problemStatement: result.description || prev.problemStatement || "",
+          problemStatement: newProblemStatement,
         }));
         // Update objectives only if objectives are enabled and returned
         if (
@@ -1162,7 +1263,23 @@ export default function Scenario({
 
     try {
       // Prepare payload for V2 API
-      const payload = {
+      const payload: {
+        name: string;
+        problem_statement: string;
+        problem_statement_versions?: string[];
+        department_ids: string[] | null;
+        active: boolean;
+        persona_id: string | null;
+        document_ids: string[];
+        objective_ids: string[];
+        parameters: Record<string, string[]>;
+        hints_enabled: boolean;
+        objectives_enabled: boolean;
+        image_input_enabled: boolean;
+        copy_paste_allowed: boolean;
+        input_guardrail_enabled: boolean;
+        output_guardrail_enabled: boolean;
+      } = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
         department_ids: formData.departmentIds || null,
@@ -1181,6 +1298,22 @@ export default function Scenario({
         input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
         output_guardrail_enabled: formData.outputGuardrailEnabled ?? false,
       };
+
+      // Include problem_statement_versions if in create mode and we have local versions
+      if (!isEditMode && localProblemStatementVersions.length > 0) {
+        const versions = localProblemStatementVersions.map(
+          (v) => v.problem_statement
+        );
+        // Ensure current problem statement is included as the last version (most recent)
+        const currentProblemStatement = formData.problemStatement?.trim() || "";
+        if (
+          currentProblemStatement &&
+          !versions.includes(currentProblemStatement)
+        ) {
+          versions.push(currentProblemStatement);
+        }
+        payload.problem_statement_versions = versions;
+      }
 
       if (isEditMode) {
         // UPDATE mode - V2 handles all junction tables automatically
@@ -1213,6 +1346,8 @@ export default function Scenario({
         // CREATE mode - V2 handles all junction tables automatically
         createScenario(payload, {
           onSuccess: () => {
+            // Clear local versions after successful creation
+            setLocalProblemStatementVersions([]);
             toast.success("Scenario created successfully!");
             router.push("/create/scenarios");
           },
@@ -1564,9 +1699,6 @@ export default function Scenario({
                   <CardTitle className="text-lg">
                     {steps[2]?.title || ""}
                   </CardTitle>
-                  <Badge variant="secondary" className="text-xs">
-                    Optional
-                  </Badge>
                 </div>
                 <CardDescription>{steps[2]?.description || ""}</CardDescription>
               </div>
@@ -1870,7 +2002,7 @@ export default function Scenario({
             </div>
 
             {/* Objectives Section */}
-            <div className="space-y-2 pt-2">
+            <div className="space-y-2 pt-1">
               <div className="flex items-center gap-2">
                 <Label htmlFor="objectivesEnabled" className="text-sm">
                   Objectives Enabled
@@ -1887,9 +2019,6 @@ export default function Scenario({
                   }}
                   disabled={isReadonly}
                 />
-                <Badge variant="secondary" className="text-xs">
-                  Optional
-                </Badge>
               </div>
 
               {formData.objectivesEnabled && (

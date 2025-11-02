@@ -50,18 +50,23 @@ export function ProblemStatementPicker({
   const [open, setOpen] = React.useState(false);
 
   const problemStatements = React.useMemo(() => {
+    // IDs from database are unique, so just convert mapping to array
     return Object.entries(problemStatementMapping).map(([id, info]) => ({
       id,
       ...info,
     }));
   }, [problemStatementMapping]);
 
-  // Sort by updated_at descending (newest first)
+  // Sort by updated_at descending (newest first), then by id for stable sort
   const sortedProblemStatements = React.useMemo(() => {
     return [...problemStatements].sort((a, b) => {
       const dateA = new Date(a.updated_at).getTime();
       const dateB = new Date(b.updated_at).getTime();
-      return dateB - dateA;
+      if (dateB !== dateA) {
+        return dateB - dateA;
+      }
+      // If same timestamp, sort by ID for stable ordering
+      return a.id.localeCompare(b.id);
     });
   }, [problemStatements]);
 
@@ -109,7 +114,7 @@ export function ProblemStatementPicker({
             <CommandInput placeholder="Search problem statements..." />
             <CommandEmpty>No problem statements found.</CommandEmpty>
             <CommandGroup heading="Actions">
-              <CommandItem onSelect={handleCreateNew}>
+              <CommandItem value="__create_new__" onSelect={handleCreateNew}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create New Problem Statement
               </CommandItem>
@@ -123,6 +128,7 @@ export function ProblemStatementPicker({
                   return (
                     <CommandItem
                       key={problemStatement.id}
+                      value={problemStatement.id}
                       onSelect={() => handleSelect(problemStatement.id)}
                       className="flex flex-col items-start py-3"
                     >

@@ -995,13 +995,47 @@ class ScenarioQueries:
                 OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
             )
         ),
-        objectives_history_data AS (
-            SELECT COALESCE(
-                ARRAY_AGG(DISTINCT so.objective ORDER BY so.objective) FILTER (WHERE so.objective IS NOT NULL AND so.objective != ''),
-                ARRAY[]::text[]
-            ) as objectives_history
+        objectives_with_departments AS (
+            SELECT
+                so.objective,
+                COALESCE(
+                    (
+                        SELECT ARRAY_AGG(DISTINCT dept_id ORDER BY dept_id)
+                        FROM (
+                            SELECT DISTINCT sd.department_id::text as dept_id
+                            FROM scenario_objectives so2
+                            JOIN accessible_scenarios acs2 ON acs2.scenario_id = so2.scenario_id
+                            LEFT JOIN scenario_departments sd ON sd.scenario_id = so2.scenario_id AND sd.active = true
+                            WHERE so2.objective = so.objective
+                                AND so2.objective IS NOT NULL 
+                                AND so2.objective != ''
+                                AND sd.department_id IS NOT NULL
+                        ) dept_list
+                    ),
+                    ARRAY[]::text[]
+                ) as department_ids
             FROM scenario_objectives so
             JOIN accessible_scenarios acs ON acs.scenario_id = so.scenario_id
+            WHERE so.objective IS NOT NULL AND so.objective != ''
+            GROUP BY so.objective
+        ),
+        objectives_history_data AS (
+            SELECT COALESCE(
+                (
+                    SELECT jsonb_agg(
+                        jsonb_build_object(
+                            'objective', objective,
+                            'department_ids', department_ids
+                        )
+                    )
+                    FROM (
+                        SELECT objective, department_ids
+                        FROM objectives_with_departments
+                        ORDER BY objective
+                    ) sorted
+                ),
+                '[]'::jsonb
+            ) as objectives_history
         )
         SELECT 
             sc.id,
@@ -1037,7 +1071,7 @@ class ScenarioQueries:
             COALESCE(edmdept.department_mapping, dmd.department_mapping) as department_mapping,
             ddd.document_details,
             COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
-            COALESCE(ohd.objectives_history, ARRAY[]::text[]) as objectives_history
+            COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history
         FROM scenario_core sc
         CROSS JOIN user_profile up
         LEFT JOIN scenario_persona sp ON true
@@ -2455,13 +2489,47 @@ class ScenarioQueries:
                 OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
             )
         ),
-        objectives_history_data_default AS (
-            SELECT COALESCE(
-                ARRAY_AGG(DISTINCT so.objective ORDER BY so.objective) FILTER (WHERE so.objective IS NOT NULL AND so.objective != ''),
-                ARRAY[]::text[]
-            ) as objectives_history
+        objectives_with_departments_default AS (
+            SELECT
+                so.objective,
+                COALESCE(
+                    (
+                        SELECT ARRAY_AGG(DISTINCT dept_id ORDER BY dept_id)
+                        FROM (
+                            SELECT DISTINCT sd.department_id::text as dept_id
+                            FROM scenario_objectives so2
+                            JOIN accessible_scenarios_default acs2 ON acs2.scenario_id = so2.scenario_id
+                            LEFT JOIN scenario_departments sd ON sd.scenario_id = so2.scenario_id AND sd.active = true
+                            WHERE so2.objective = so.objective
+                                AND so2.objective IS NOT NULL 
+                                AND so2.objective != ''
+                                AND sd.department_id IS NOT NULL
+                        ) dept_list
+                    ),
+                    ARRAY[]::text[]
+                ) as department_ids
             FROM scenario_objectives so
             JOIN accessible_scenarios_default acs ON acs.scenario_id = so.scenario_id
+            WHERE so.objective IS NOT NULL AND so.objective != ''
+            GROUP BY so.objective
+        ),
+        objectives_history_data_default AS (
+            SELECT COALESCE(
+                (
+                    SELECT jsonb_agg(
+                        jsonb_build_object(
+                            'objective', objective,
+                            'department_ids', department_ids
+                        )
+                    )
+                    FROM (
+                        SELECT objective, department_ids
+                        FROM objectives_with_departments_default
+                        ORDER BY objective
+                    ) sorted
+                ),
+                '[]'::jsonb
+            ) as objectives_history
         ),
         problem_statement_mapping_data_default AS (
             SELECT '{}'::jsonb as problem_statement_mapping
