@@ -854,6 +854,19 @@ export default function Scenario({
     initialFormData,
   ]);
 
+  // Sync selectedProblemStatementId with server data when it changes (e.g., after save/refetch)
+  useEffect(() => {
+    if (
+      isEditMode &&
+      scenarioData?.problem_statement_id &&
+      formDataInitializedRef.current
+    ) {
+      // Only update if the ID changed and form is already initialized
+      // This handles refetches after save operations
+      setSelectedProblemStatementId(scenarioData.problem_statement_id);
+    }
+  }, [scenarioData?.problem_statement_id, isEditMode]);
+
   // Reset initialization flag when switching between edit/create modes or scenario changes
   useEffect(() => {
     formDataInitializedRef.current = false;
@@ -1249,6 +1262,56 @@ export default function Scenario({
               : prev.name,
           problemStatement: newProblemStatement,
         }));
+
+        // If in edit mode, immediately save the new problem statement to create a version
+        if (isEditMode && scenarioId && newProblemStatement.trim()) {
+          // Clear selected version temporarily - it will be set by the refetch after save
+          setSelectedProblemStatementId(null);
+          // Save immediately to create new version in database
+          updateScenario(
+            {
+              scenarioId: scenarioId,
+              name: formData.name,
+              problem_statement: newProblemStatement,
+              department_ids: formData.departmentIds.length > 0 ? formData.departmentIds : null,
+              active: formData.active,
+              persona_id: selectedPersonaId,
+              document_ids: currentDocumentIds,
+              objective_ids: currentObjectives.filter((obj) => obj.trim()),
+              parameters: groupParameterItemsByParameterId(
+                currentParameterItemIds,
+                parameterItemMapping
+              ),
+              hints_enabled: formData.hintsEnabled ?? false,
+              objectives_enabled: formData.objectivesEnabled ?? false,
+              image_input_enabled: formData.imageInputEnabled ?? false,
+              copy_paste_allowed: formData.copyPasteAllowed ?? false,
+              input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
+              output_guardrail_enabled: formData.outputGuardrailEnabled ?? false,
+            },
+            {
+              onSuccess: () => {
+                // Query will refetch automatically via mutation's onSuccess invalidation
+                // The useEffect watching problem_statement_id will update selectedProblemStatementId
+                toast.success("Problem statement regenerated and saved!");
+              },
+              onError: (error) => {
+                log.error("scenario.regenerate.save.failed", {
+                  message: "Error saving regenerated problem statement",
+                  error,
+                  context: {
+                    component: "Scenario",
+                    function: "handleGenerateScenario",
+                    scenarioId,
+                  },
+                });
+                toast.error(
+                  `Failed to save regenerated problem statement: ${error.message}`
+                );
+              },
+            }
+          );
+        }
         // Update objectives only if regenerateObjectives is true and objectives are enabled
         if (
           shouldRegenerateObjectives &&
@@ -1261,7 +1324,10 @@ export default function Scenario({
           // Clear objectives if disabled
           setCurrentObjectives([]);
         }
-        toast.success("Scenario generated successfully!");
+        // Only show success toast if not in edit mode (edit mode shows its own toast after save)
+        if (!isEditMode) {
+          toast.success("Scenario generated successfully!");
+        }
       } else {
         throw new Error("No scenario content was generated");
       }

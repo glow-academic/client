@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type {
   ParameterItemMapping,
   ParameterMapping,
@@ -22,6 +23,7 @@ import type {
   SimulationMapping,
 } from "@/lib/api/v2/schemas/base";
 import { ProfileItem } from "@/lib/api/v2/schemas/profile";
+import { Infinity, Target } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -156,25 +158,46 @@ export function PracticeCustomizeDialog({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Customize Practice Session</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="hidden">
             {isInfiniteMode
-              ? "Start an infinite practice session with a specific simulation."
-              : "Practice one scenario with a specific persona and parameter set."}
+              ? "Start an infinite practice session with a specific simulation. Toggle to Focus Mode to practice with a single target persona."
+              : "Practice with a single target persona and specific parameter set in Focus Mode. Toggle to Infinite Mode for extended practice sessions."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="infinite-mode"
-              checked={isInfiniteMode}
-              onChange={(e) => setIsInfiniteMode(e.target.checked)}
-              className="rounded"
-            />
-            <Label htmlFor="infinite-mode">
-              Infinite Mode (no scenario limit)
-            </Label>
+          {/* Mode Switch */}
+          <div className="space-y-2 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="infinite-mode"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  {isInfiniteMode ? (
+                    <>
+                      <Infinity className="h-3.5 w-3.5 text-muted-foreground" />
+                      Infinite Mode
+                    </>
+                  ) : (
+                    <>
+                      <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                      Focus Mode
+                    </>
+                  )}
+                </Label>
+                <Switch
+                  id="infinite-mode"
+                  checked={isInfiniteMode}
+                  onCheckedChange={setIsInfiniteMode}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                {isInfiniteMode
+                  ? "Start an infinite practice session with a specific simulation. Toggle to view Focus Mode."
+                  : "Practice with a single target persona and specific parameter set. Toggle to view Infinite Mode."}
+              </p>
+            </div>
           </div>
 
           {isInfiniteMode ? (
@@ -221,8 +244,8 @@ export function PracticeCustomizeDialog({
                   selectedIds={selectedPersonaIds}
                   onSelect={setSelectedPersonaIds}
                   multiSelect={false}
-                  label="Persona"
-                  description="Choose who you'll practice with."
+                  label="Target Persona"
+                  description="Choose the target persona you'll practice with in focus mode."
                 />
               </div>
               <div className="grid gap-2">
