@@ -146,19 +146,90 @@ class DocumentQueries:
                     OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
             ) pi
         ),
+        department_parameter_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+            FROM departments d
+            LEFT JOIN parameters p ON p.active = true
+            LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE d.id IN (SELECT department_id FROM user_departments)
+            AND (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                                                         JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                                                         WHERE pi2.parameter_id = p.id AND pid2.active = true))
+            GROUP BY d.id
+        ),
+        department_parameter_item_ids AS (
+            SELECT 
+                d.id as department_id,
+                COALESCE(ARRAY_AGG(pi.id::text ORDER BY pi.id) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
+            FROM departments d
+            LEFT JOIN parameter_items pi ON true
+            LEFT JOIN parameters p ON p.id = pi.parameter_id AND p.active = true
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE d.id IN (SELECT department_id FROM user_departments)
+            AND p.id IS NOT NULL  -- Only include items from active parameters
+            AND (
+                -- Include parameter item if linked to this specific department
+                pid.department_id = d.id 
+                -- OR parameter item is cross-department (no department links) - include in all departments
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            )
+            GROUP BY d.id
+        ),
         department_mapping_data AS (
             SELECT COALESCE(
                 jsonb_object_agg(
                     d.id::text,
                     jsonb_build_object(
                         'name', d.title,
-                        'description', COALESCE(d.description, '')
+                        'description', COALESCE(d.description, ''),
+                        'parameter_ids', CASE WHEN dparami.parameter_ids IS NOT NULL AND array_length(dparami.parameter_ids, 1) > 0 THEN to_jsonb(dparami.parameter_ids) ELSE NULL END,
+                        'parameter_item_ids', CASE WHEN dparamitems.parameter_item_ids IS NOT NULL AND array_length(dparamitems.parameter_item_ids, 1) > 0 THEN to_jsonb(dparamitems.parameter_item_ids) ELSE NULL END
                     )
                 ) FILTER (WHERE d.id IS NOT NULL),
                 '{}'::jsonb
             ) as mapping
             FROM departments d
+            LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
+            LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
             WHERE d.id IN (SELECT department_id FROM user_departments)
+        ),
+        parameter_data AS (
+            SELECT DISTINCT 
+                p.id,
+                p.name,
+                COALESCE(p.description, '') as description,
+                p.numerical,
+                p.document_parameter
+            FROM parameters p
+            JOIN parameter_items pi ON pi.parameter_id = p.id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            WHERE p.active = true
+            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter
+            HAVING 
+                -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
+            ORDER BY p.name
+        ),
+        parameter_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object(
+                        'name', p.name,
+                        'description', p.description,
+                        'numerical', p.numerical,
+                        'document_parameter', p.document_parameter
+                    )
+                ),
+                '{}'::jsonb
+            ) as mapping
+            FROM parameter_data p
         )
         SELECT 
             dd.*,
@@ -175,12 +246,14 @@ class DocumentQueries:
             END as can_delete,
             sm.mapping as scenario_mapping,
             pim.mapping as parameter_item_mapping,
-            dm.mapping as department_mapping
+            dm.mapping as department_mapping,
+            pm.mapping as parameter_mapping
         FROM document_data dd
         CROSS JOIN user_profile up
         CROSS JOIN scenario_mapping_data sm
         CROSS JOIN parameter_item_mapping_data pim
         CROSS JOIN department_mapping_data dm
+        CROSS JOIN parameter_mapping_data pm
         ORDER BY dd.updated_at DESC
         """
 

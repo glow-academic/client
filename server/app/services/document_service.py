@@ -17,7 +17,7 @@ from app.cache import keys
 from app.extensions import UPLOAD_FOLDER
 from app.queries.document_queries import DocumentQueries
 from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
-                              ParameterItemMappingItem)
+                              ParameterItemMappingItem, ParameterMapping)
 from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    BulkUpdateDocumentsRequest,
                                    DeleteDocumentRequest,
@@ -66,6 +66,7 @@ class DocumentService(BaseService):
         documents = []
         scenario_mapping = {}
         parameter_item_mapping = {}
+        parameter_mapping: ParameterMapping = {}
         department_mapping: DepartmentMapping = {}
 
         # Parse mappings from first row (same across all rows)
@@ -109,6 +110,22 @@ class DocumentService(BaseService):
                             value=pdata.get("value", ""),
                         )
 
+            # Parse parameter mapping from JSONB with type safety (may be string or dict)
+            param_mapping_raw = first_row.get("parameter_mapping")
+            if isinstance(param_mapping_raw, str):
+                param_mapping_raw = json.loads(param_mapping_raw)
+            if param_mapping_raw and isinstance(param_mapping_raw, dict):
+                from app.schemas.base import ParameterMappingItem
+                
+                for pid, pdata in param_mapping_raw.items():
+                    if isinstance(pdata, dict):
+                        parameter_mapping[pid] = ParameterMappingItem(
+                            name=pdata.get("name", ""),
+                            description=pdata.get("description", ""),
+                            numerical=pdata.get("numerical", False),
+                            document_parameter=pdata.get("document_parameter", False),
+                        )
+
             # Parse department mapping from JSONB with type safety (may be string or dict)
             dept_mapping_data = first_row.get("department_mapping")
             if isinstance(dept_mapping_data, str):
@@ -117,8 +134,8 @@ class DocumentService(BaseService):
                 for did, ddata in dept_mapping_data.items():
                     if isinstance(ddata, dict):
                         # Parse optional ID arrays (handle None, empty arrays, or missing keys)
-                        # Document form only needs: parameter_ids
                         parameter_ids = ddata.get("parameter_ids")
+                        parameter_item_ids = ddata.get("parameter_item_ids")
                         
                         # Convert to list[str] if present, otherwise None
                         def to_str_list(value: Any) -> list[str] | None:
@@ -132,6 +149,7 @@ class DocumentService(BaseService):
                             name=ddata.get("name", ""),
                             description=ddata.get("description", ""),
                             parameter_ids=to_str_list(parameter_ids),
+                            parameter_item_ids=to_str_list(parameter_item_ids),
                         )
 
         # Build document items
@@ -164,6 +182,7 @@ class DocumentService(BaseService):
             documents=documents,
             scenario_mapping=scenario_mapping,
             parameter_item_mapping=parameter_item_mapping,
+            parameter_mapping=parameter_mapping,
             department_mapping=department_mapping,
         )
 

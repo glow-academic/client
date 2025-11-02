@@ -68,6 +68,8 @@ export interface ParameterItemPickerProps<
   compact?: boolean;
   /** Custom button className */
   buttonClassName?: string;
+  /** Show required indicator */
+  required?: boolean;
 }
 
 export function ParameterItemPicker<
@@ -90,6 +92,7 @@ export function ParameterItemPicker<
   hideSelectedChips = false,
   compact = false,
   buttonClassName,
+  required = false,
 }: ParameterItemPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -148,14 +151,16 @@ export function ParameterItemPicker<
   };
 
   const getButtonText = () => {
+    const requiredIndicator = required ? " *" : "";
     if (selectedIds.length === 0) {
-      return `Select ${parameterName.toLowerCase()}`;
+      return `Select ${parameterName.toLowerCase()}${requiredIndicator}`;
     }
     if (multiSelect) {
-      return `${selectedIds.length} ${parameterName.toLowerCase()} selected`;
+      return `${selectedIds.length} ${parameterName.toLowerCase()} selected${requiredIndicator}`;
     }
     return (
-      mapping[selectedIds[0]!]?.name || `Select ${parameterName.toLowerCase()}`
+      (mapping[selectedIds[0]!]?.name ||
+        `Select ${parameterName.toLowerCase()}`) + requiredIndicator
     );
   };
 

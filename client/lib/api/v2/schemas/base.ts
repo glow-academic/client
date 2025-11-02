@@ -161,12 +161,13 @@ export const DepartmentMappingItemSchema = MappingItemSchema.extend({
 export type DepartmentMappingItem = z.infer<typeof DepartmentMappingItemSchema>;
 
 /**
- * Parameter mapping item with numerical field
+ * Parameter mapping item with numerical and document_parameter fields
  */
 export const ParameterMappingItemSchema = z.object({
   name: z.string(),
   description: z.string(),
   numerical: z.boolean(),
+  document_parameter: z.boolean(),
 });
 
 export type ParameterMappingItem = z.infer<typeof ParameterMappingItemSchema>;

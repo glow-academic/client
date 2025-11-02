@@ -19,7 +19,9 @@ import { useProfile } from "@/contexts/profile-context";
 import {
   DocumentType,
   type ParameterItemMappingItem,
+  type ParameterMappingItem,
 } from "@/lib/api/v2/schemas/base";
+import { toast } from "sonner";
 
 export type FileClassification = {
   type: DocumentType;
@@ -37,9 +39,13 @@ export interface UploadClassificationDialogProps {
   ) => void;
   onAddFiles?: (files: File[]) => void;
   onRemoveFile?: (fileName: string) => void;
-  departmentMapping: Record<string, { name: string; description: string }>;
+  departmentMapping: Record<
+    string,
+    { name: string; description: string; parameter_item_ids?: string[] | null }
+  >;
   validDepartmentIds: string[];
   parameterItemMapping: Record<string, ParameterItemMappingItem>;
+  parameterMapping: Record<string, ParameterMappingItem>;
   validParameterItemIds: string[];
 }
 
@@ -56,6 +62,7 @@ export function UploadClassificationDialog({
   departmentMapping,
   validDepartmentIds,
   parameterItemMapping,
+  parameterMapping,
   validParameterItemIds,
 }: UploadClassificationDialogProps) {
   const { effectiveProfile } = useProfile();
@@ -95,7 +102,15 @@ export function UploadClassificationDialog({
     string[]
   >([]);
 
+  // Identify document_parameter=true parameters (required for each document)
+  const documentParameterIds = React.useMemo(() => {
+    return Object.keys(parameterMapping).filter(
+      (paramId) => parameterMapping[paramId]?.document_parameter === true
+    );
+  }, [parameterMapping]);
+
   // Filter valid parameter item IDs based on selected departments
+  // Uses parameter_item_ids from department mapping (like Scenario.tsx)
   const filteredValidParameterItemIds = React.useMemo(() => {
     const selectedDeptIds = selectedDepartmentIds || [];
 
@@ -104,32 +119,44 @@ export function UploadClassificationDialog({
       return validParameterItemIds;
     }
 
-    // Get union of parameter_ids from selected departments
-    const deptParameterIds = new Set<string>();
+    // Get union of parameter_item_ids from selected departments
+    const selectedDeptParameterItemIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
       const deptData = departmentMapping[deptId];
       if (
         deptData &&
-        "parameter_ids" in deptData &&
-        Array.isArray(deptData.parameter_ids)
+        "parameter_item_ids" in deptData &&
+        Array.isArray(deptData.parameter_item_ids)
       ) {
-        deptData.parameter_ids.forEach((id: string) =>
-          deptParameterIds.add(id)
+        deptData.parameter_item_ids.forEach((id: string) =>
+          selectedDeptParameterItemIds.add(id)
         );
       }
     });
 
-    // Filter parameter items: include if their parameter_id is in department parameter IDs
-    return validParameterItemIds.filter((itemId) => {
-      const item = parameterItemMapping[itemId];
-      return item && deptParameterIds.has(item.parameter_id);
+    // Get union of parameter_item_ids from ALL departments (to identify cross-department items)
+    const allDeptParameterItemIds = new Set<string>();
+    Object.values(departmentMapping).forEach((deptData) => {
+      if (
+        deptData?.parameter_item_ids &&
+        Array.isArray(deptData.parameter_item_ids)
+      ) {
+        deptData.parameter_item_ids.forEach((id: string) =>
+          allDeptParameterItemIds.add(id)
+        );
+      }
     });
-  }, [
-    validParameterItemIds,
-    selectedDepartmentIds,
-    departmentMapping,
-    parameterItemMapping,
-  ]);
+
+    // Include items that are:
+    // 1. In selected departments
+    // 2. Cross-department (not in any department's parameter_item_ids)
+    // 3. Currently selected (preserved for edit mode)
+    return validParameterItemIds.filter((itemId) => {
+      const inSelectedDepts = selectedDeptParameterItemIds.has(itemId);
+      const isCrossDept = !allDeptParameterItemIds.has(itemId); // Not in any department = cross-department
+      return inSelectedDepts || isCrossDept;
+    });
+  }, [validParameterItemIds, selectedDepartmentIds, departmentMapping]);
 
   // Track department changes and manage staged selections
   React.useEffect(() => {
@@ -406,6 +433,63 @@ export function UploadClassificationDialog({
     });
   };
 
+  // Validation: Check that each document has at least one parameter item for each document_parameter=true parameter
+  const validationErrors = React.useMemo(() => {
+    const errors: Record<string, string[]> = {};
+
+    if (documentParameterIds.length === 0) {
+      return errors; // No document parameters required
+    }
+
+    files.forEach((file) => {
+      const fc = perFile[file.name] ?? {
+        type: globalDefaultType,
+        parameterItemIds: [...globalDefaultParameterItemIds],
+      };
+
+      const selectedItemIds = fc.parameterItemIds || [];
+
+      // For each document_parameter=true parameter, check if at least one item is selected
+      documentParameterIds.forEach((paramId) => {
+        // Find parameter items for this parameter
+        const itemsForParam = filteredValidParameterItemIds.filter((itemId) => {
+          const item = parameterItemMapping[itemId];
+          return item && item.parameter_id === paramId;
+        });
+
+        // Check if at least one item from this parameter is selected
+        const hasItemForParam = itemsForParam.some((itemId) =>
+          selectedItemIds.includes(itemId)
+        );
+
+        if (!hasItemForParam && itemsForParam.length > 0) {
+          if (!errors[file.name]) {
+            errors[file.name] = [];
+          }
+          const paramName = parameterMapping[paramId]?.name || paramId;
+          errors[file.name]!.push(
+            `Required: Select at least one ${paramName} option`
+          );
+        }
+      });
+    });
+
+    return errors;
+  }, [
+    files,
+    perFile,
+    globalDefaultType,
+    globalDefaultParameterItemIds,
+    documentParameterIds,
+    filteredValidParameterItemIds,
+    parameterItemMapping,
+    parameterMapping,
+  ]);
+
+  const canSubmit = React.useMemo(() => {
+    return Object.keys(validationErrors).length === 0;
+  }, [validationErrors]);
+
   // Previously used to show a ZIP-specific panel; now unified under apply-to-all controls
   // const hasZip = files.some((f) => f.name.toLowerCase().endsWith(".zip"));
 
@@ -464,6 +548,15 @@ export function UploadClassificationDialog({
                 showClearAll={true}
                 hideSelectedChips={false}
                 compact={true}
+                required={
+                  documentParameterIds.length > 0 &&
+                  documentParameterIds.some((paramId) =>
+                    filteredValidParameterItemIds.some(
+                      (itemId) =>
+                        parameterItemMapping[itemId]?.parameter_id === paramId
+                    )
+                  )
+                }
               />
             </div>
             <Button
@@ -625,8 +718,27 @@ export function UploadClassificationDialog({
                       showClearAll={false}
                       hideSelectedChips={false}
                       compact={true}
+                      required={
+                        documentParameterIds.length > 0 &&
+                        documentParameterIds.some((paramId) =>
+                          filteredValidParameterItemIds.some(
+                            (itemId) =>
+                              parameterItemMapping[itemId]?.parameter_id ===
+                              paramId
+                          )
+                        )
+                      }
                     />
                   </div>
+                  {/* Validation errors */}
+                  {validationErrors[file.name] &&
+                    validationErrors[file.name]!.length > 0 && (
+                      <div className="mt-1 text-xs text-red-600">
+                        {validationErrors[file.name]!.map((error, idx) => (
+                          <div key={idx}>{error}</div>
+                        ))}
+                      </div>
+                    )}
                 </div>
               </div>
             );
@@ -683,6 +795,14 @@ export function UploadClassificationDialog({
               <Button
                 type="button"
                 onClick={() => {
+                  if (!canSubmit) {
+                    // Show first validation error
+                    const firstError = Object.values(validationErrors)[0];
+                    if (firstError && firstError.length > 0) {
+                      toast.error(firstError[0]);
+                    }
+                    return;
+                  }
                   // Include department information in the classification
                   const perFileWithDepartment = Object.fromEntries(
                     Object.entries(perFile).map(
@@ -701,6 +821,7 @@ export function UploadClassificationDialog({
                   };
                   onConfirm(perFileWithDepartment, zipDefaultsWithDepartment);
                 }}
+                disabled={!canSubmit}
               >
                 Start Upload
               </Button>

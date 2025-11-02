@@ -61,6 +61,7 @@ class ParameterMappingItem(MappingItem):
     """Parameter mapping item - extends MappingItem"""
 
     numerical: bool
+    document_parameter: bool
 
 
 class ParameterItemMappingItem(MappingItem):

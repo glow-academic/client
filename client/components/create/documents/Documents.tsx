@@ -157,6 +157,10 @@ export default function Documents() {
     () => documentsData?.parameter_item_mapping || {},
     [documentsData]
   );
+  const parameterMapping = useMemo(
+    () => documentsData?.parameter_mapping || {},
+    [documentsData]
+  );
   const departmentMapping = useMemo(
     () => documentsData?.department_mapping || {},
     [documentsData]
@@ -1422,6 +1426,7 @@ export default function Documents() {
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
           parameterItemMapping={parameterItemMapping}
+          parameterMapping={parameterMapping}
           validParameterItemIds={Object.keys(parameterItemMapping)}
         />
       )}

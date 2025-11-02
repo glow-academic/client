@@ -263,6 +263,7 @@ export default function Parameter({
           active: formData.active || false,
           document_parameter: formData.document_parameter || false,
           practice_parameter: formData.practice_parameter || false,
+          department_ids: formData.departmentIds ?? null,
           parameter_items,
         });
 
@@ -276,6 +277,7 @@ export default function Parameter({
           active: formData.active || false,
           document_parameter: formData.document_parameter || false,
           practice_parameter: formData.practice_parameter || false,
+          department_ids: formData.departmentIds ?? null,
           parameter_items,
         });
 

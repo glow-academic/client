@@ -4,7 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from .base import DepartmentMapping, ParameterItemMapping, ScenarioMapping
+from .base import (DepartmentMapping, ParameterItemMapping, ParameterMapping,
+                   ScenarioMapping)
 
 
 class DocumentsFilters(BaseModel):
@@ -37,6 +38,7 @@ class DocumentsListResponse(BaseModel):
     documents: list[DocumentItem]
     scenario_mapping: ScenarioMapping
     parameter_item_mapping: ParameterItemMapping
+    parameter_mapping: ParameterMapping
     department_mapping: DepartmentMapping
 
 

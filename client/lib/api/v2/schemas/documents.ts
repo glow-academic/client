@@ -7,6 +7,7 @@ import { z } from "zod";
 import {
   DepartmentMappingSchema,
   ParameterItemMappingSchema,
+  ParameterMappingSchema,
   ScenarioMappingSchema,
 } from "./base";
 
@@ -40,6 +41,7 @@ export const DocumentsListResponseSchema = z.object({
   documents: z.array(DocumentItemSchema),
   scenario_mapping: ScenarioMappingSchema,
   parameter_item_mapping: ParameterItemMappingSchema,
+  parameter_mapping: ParameterMappingSchema,
   department_mapping: DepartmentMappingSchema,
 });
 
