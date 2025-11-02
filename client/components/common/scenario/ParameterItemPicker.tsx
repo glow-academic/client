@@ -64,6 +64,10 @@ export interface ParameterItemPickerProps<
   showClearAll?: boolean;
   /** Hide the selected badges (for compact display) */
   hideSelectedChips?: boolean;
+  /** Compact mode - smaller button, no label */
+  compact?: boolean;
+  /** Custom button className */
+  buttonClassName?: string;
 }
 
 export function ParameterItemPicker<
@@ -84,6 +88,8 @@ export function ParameterItemPicker<
   badgesPosition = "below",
   showClearAll = false,
   hideSelectedChips = false,
+  compact = false,
+  buttonClassName,
 }: ParameterItemPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -186,7 +192,6 @@ export function ParameterItemPicker<
         name: newName.trim(),
         description: newDescription.trim(),
         value: proposedValue,
-        default_item: false,
       });
 
       toast.success("Parameter item created");
@@ -242,7 +247,7 @@ export function ParameterItemPicker<
   );
 
   return (
-    <div className="grid gap-2">
+    <div className={compact ? "" : "grid gap-2"}>
       {/* Show badges above button if configured */}
       {multiSelect &&
         !hideSelectedChips &&
@@ -259,11 +264,19 @@ export function ParameterItemPicker<
             role="combobox"
             aria-expanded={open}
             aria-label={`Select ${parameterName}`}
-            className="w-full justify-between"
+            className={cn(
+              compact
+                ? "h-7 px-2 text-xs justify-between w-full"
+                : "w-full justify-between",
+              buttonClassName
+            )}
+            size={compact ? "sm" : "default"}
             disabled={disabled}
           >
             <span className="truncate">{getButtonText()}</span>
-            <ChevronsUpDown className="opacity-50" />
+            <ChevronsUpDown
+              className={compact ? "h-3 w-3 opacity-50" : "opacity-50"}
+            />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[360px] p-0">

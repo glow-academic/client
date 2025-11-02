@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 
+import { DocumentTypePicker } from "@/components/common/documents/DocumentTypePicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemPicker } from "@/components/common/scenario/ParameterItemPicker";
 import { Badge } from "@/components/ui/badge";
@@ -14,19 +15,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useProfile } from "@/contexts/profile-context";
 import {
   DocumentType,
   type ParameterItemMappingItem,
 } from "@/lib/api/v2/schemas/base";
-import { inferMimeFromName } from "@/utils/mime-map";
 
 export type FileClassification = {
   type: DocumentType;
@@ -50,15 +43,8 @@ export interface UploadClassificationDialogProps {
   validParameterItemIds: string[];
 }
 
-const TYPE_OPTIONS: { value: DocumentType; label: string }[] = [
-  { value: "homework", label: "📚 Homework" },
-  { value: "project", label: "🎯 Project" },
-  { value: "quiz", label: "❓ Quiz" },
-  { value: "midterm", label: "📝 Midterm" },
-  { value: "lab", label: "🧪 Lab" },
-  { value: "lecture", label: "📖 Lecture" },
-  { value: "syllabus", label: "📋 Syllabus" },
-];
+// Global defaults state - tracks the default values to apply to all files
+const DEFAULT_TYPE: DocumentType = "homework";
 
 export function UploadClassificationDialog({
   open,
@@ -79,11 +65,13 @@ export function UploadClassificationDialog({
     Record<string, FileClassification>
   >({});
   const [zipDefaults, setZipDefaults] = React.useState<FileClassification>({
-    type: "homework",
+    type: DEFAULT_TYPE,
     parameterItemIds: [],
   });
-  // Additive apply-to-all parameter items
-  const [applyAllTempParameterItemIds, setApplyAllTempParameterItemIds] =
+  // Global defaults state
+  const [globalDefaultType, setGlobalDefaultType] =
+    React.useState<DocumentType>(DEFAULT_TYPE);
+  const [globalDefaultParameterItemIds, setGlobalDefaultParameterItemIds] =
     React.useState<string[]>([]);
   // Department selection state - default to user's primary department
   const [selectedDepartmentIds, setSelectedDepartmentIds] = React.useState<
@@ -99,7 +87,8 @@ export function UploadClassificationDialog({
     apply_all_parameter_item_ids?: string[];
     per_file_parameter_item_ids?: Record<string, string[]>;
   };
-  const [stagedSelections, setStagedSelections] = React.useState<
+  // State is used indirectly through functional updates (prev parameter)
+  const [_stagedSelections, setStagedSelections] = React.useState<
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = React.useState<
@@ -109,27 +98,38 @@ export function UploadClassificationDialog({
   // Filter valid parameter item IDs based on selected departments
   const filteredValidParameterItemIds = React.useMemo(() => {
     const selectedDeptIds = selectedDepartmentIds || [];
-    
+
     // If no departments selected, return all valid IDs
     if (selectedDeptIds.length === 0) {
       return validParameterItemIds;
     }
-    
+
     // Get union of parameter_ids from selected departments
     const deptParameterIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
       const deptData = departmentMapping[deptId];
-      if (deptData && "parameter_ids" in deptData && Array.isArray(deptData.parameter_ids)) {
-        deptData.parameter_ids.forEach((id: string) => deptParameterIds.add(id));
+      if (
+        deptData &&
+        "parameter_ids" in deptData &&
+        Array.isArray(deptData.parameter_ids)
+      ) {
+        deptData.parameter_ids.forEach((id: string) =>
+          deptParameterIds.add(id)
+        );
       }
     });
-    
+
     // Filter parameter items: include if their parameter_id is in department parameter IDs
     return validParameterItemIds.filter((itemId) => {
       const item = parameterItemMapping[itemId];
       return item && deptParameterIds.has(item.parameter_id);
     });
-  }, [validParameterItemIds, selectedDepartmentIds, departmentMapping, parameterItemMapping]);
+  }, [
+    validParameterItemIds,
+    selectedDepartmentIds,
+    departmentMapping,
+    parameterItemMapping,
+  ]);
 
   // Track department changes and manage staged selections
   React.useEffect(() => {
@@ -166,13 +166,14 @@ export function UploadClassificationDialog({
           // Save per-file parameter item IDs
           const perFileParams: Record<string, string[]> = {};
           Object.keys(perFile).forEach((fileName) => {
-            perFileParams[fileName] = [
-              ...(perFile[fileName].parameterItemIds || []),
-            ];
+            const fileClass = perFile[fileName];
+            if (fileClass) {
+              perFileParams[fileName] = [...(fileClass.parameterItemIds || [])];
+            }
           });
 
           updated[deptId] = {
-            apply_all_parameter_item_ids: [...applyAllTempParameterItemIds],
+            apply_all_parameter_item_ids: [...globalDefaultParameterItemIds],
             per_file_parameter_item_ids: perFileParams,
           };
         });
@@ -196,7 +197,7 @@ export function UploadClassificationDialog({
                 (id) => validParamSet.has(id)
               );
               if (validParams.length > 0) {
-                setApplyAllTempParameterItemIds((prevParams) => {
+                setGlobalDefaultParameterItemIds((prevParams) => {
                   const combined = new Set([...prevParams, ...validParams]);
                   return Array.from(combined);
                 });
@@ -246,7 +247,7 @@ export function UploadClassificationDialog({
   }, [
     selectedDepartmentIds,
     previousDepartmentIds,
-    applyAllTempParameterItemIds,
+    globalDefaultParameterItemIds,
     perFile,
     filteredValidParameterItemIds,
   ]);
@@ -269,11 +270,13 @@ export function UploadClassificationDialog({
   // Clear invalid parameter item selections when departments change
   React.useEffect(() => {
     // Clear apply-all selections that are no longer valid
-    if (applyAllTempParameterItemIds.length > 0) {
+    if (globalDefaultParameterItemIds.length > 0) {
       const validSet = new Set(filteredValidParameterItemIds);
-      const filtered = applyAllTempParameterItemIds.filter((id) => validSet.has(id));
-      if (filtered.length !== applyAllTempParameterItemIds.length) {
-        setApplyAllTempParameterItemIds(filtered);
+      const filtered = globalDefaultParameterItemIds.filter((id) =>
+        validSet.has(id)
+      );
+      if (filtered.length !== globalDefaultParameterItemIds.length) {
+        setGlobalDefaultParameterItemIds(filtered);
       }
     }
 
@@ -283,7 +286,9 @@ export function UploadClassificationDialog({
       let hasChanges = false;
       Object.entries(prev).forEach(([fileName, fc]) => {
         const validSet = new Set(filteredValidParameterItemIds);
-        const filtered = (fc.parameterItemIds || []).filter((id) => validSet.has(id));
+        const filtered = (fc.parameterItemIds || []).filter((id) =>
+          validSet.has(id)
+        );
         if (filtered.length !== (fc.parameterItemIds || []).length) {
           hasChanges = true;
           updated[fileName] = { ...fc, parameterItemIds: filtered };
@@ -293,15 +298,15 @@ export function UploadClassificationDialog({
       });
       return hasChanges ? updated : prev;
     });
-  }, [filteredValidParameterItemIds, applyAllTempParameterItemIds]);
+  }, [filteredValidParameterItemIds, globalDefaultParameterItemIds]);
 
   React.useEffect(() => {
     // Initialize defaults for new files
     const next: Record<string, FileClassification> = {};
     files.forEach((f) => {
       const current: FileClassification = perFile[f.name] ?? {
-        type: "homework",
-        parameterItemIds: [],
+        type: globalDefaultType,
+        parameterItemIds: [...globalDefaultParameterItemIds],
       };
       next[f.name] = current;
     });
@@ -313,7 +318,7 @@ export function UploadClassificationDialog({
   React.useEffect(() => {
     const allFiles = Object.values(perFile);
     if (allFiles.length === 0) {
-      setApplyAllTempParameterItemIds([]);
+      setGlobalDefaultParameterItemIds([]);
       return;
     }
     const intersection = allFiles
@@ -322,10 +327,11 @@ export function UploadClassificationDialog({
         if (index === 0) return Array.from(set);
         return acc.filter((id) => set.has(id));
       }, []);
-    setApplyAllTempParameterItemIds(intersection);
+    setGlobalDefaultParameterItemIds(intersection);
   }, [perFile]);
 
   const applyTypeToAll = (type: DocumentType) => {
+    setGlobalDefaultType(type);
     setPerFile((prev) =>
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => [k, { ...v, type }])
@@ -336,6 +342,10 @@ export function UploadClassificationDialog({
 
   const applyParameterItemsToAll = (incomingIds: string[]) => {
     if (incomingIds.length === 0) return;
+    setGlobalDefaultParameterItemIds((prev) => {
+      const merged = Array.from(new Set([...prev, ...incomingIds]));
+      return merged;
+    });
     setPerFile((prev) =>
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
@@ -356,6 +366,9 @@ export function UploadClassificationDialog({
 
   const removeParameterItemsFromAll = (idsToRemove: string[]) => {
     if (idsToRemove.length === 0) return;
+    setGlobalDefaultParameterItemIds((prev) =>
+      prev.filter((id) => !idsToRemove.includes(id))
+    );
     setPerFile((prev) =>
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
@@ -374,6 +387,25 @@ export function UploadClassificationDialog({
     }));
   };
 
+  // Apply defaults now - force apply current defaults to all files
+  const applyDefaultsNow = () => {
+    setPerFile((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([k]) => [
+          k,
+          {
+            type: globalDefaultType,
+            parameterItemIds: [...globalDefaultParameterItemIds],
+          },
+        ])
+      )
+    );
+    setZipDefaults({
+      type: globalDefaultType,
+      parameterItemIds: [...globalDefaultParameterItemIds],
+    });
+  };
+
   // Previously used to show a ZIP-specific panel; now unified under apply-to-all controls
   // const hasZip = files.some((f) => f.name.toLowerCase().endsWith(".zip"));
 
@@ -388,213 +420,212 @@ export function UploadClassificationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* ZIP-specific panel removed; apply-to-all controls below cover ZIP behavior */}
-
-        {/* Apply to all controls above the file list - only show when multiple files */}
+        {/* Compact Horizontal Defaults Toolbar - only show when multiple files */}
         {files.length > 1 && (
-          <div className="rounded-md border p-3 bg-muted/40 mb-4">
-            <div className="text-sm font-medium mb-3">
-              Apply to all files below
+          <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-md border flex-wrap">
+            <span className="text-xs text-muted-foreground">Defaults →</span>
+            <DepartmentPicker
+              mapping={departmentMapping}
+              validIds={validDepartmentIds}
+              selectedIds={selectedDepartmentIds}
+              onSelect={setSelectedDepartmentIds}
+              placeholder="Dept"
+              multiSelect={true}
+              compact={true}
+              buttonClassName="h-7 px-2 text-xs"
+            />
+            <DocumentTypePicker
+              selectedType={globalDefaultType}
+              onSelect={applyTypeToAll}
+              placeholder="Type"
+              compact={true}
+            />
+            <div className="flex-1 min-w-[120px]">
+              <ParameterItemPicker
+                mapping={parameterItemMapping}
+                validIds={filteredValidParameterItemIds}
+                selectedIds={globalDefaultParameterItemIds}
+                onSelect={(next) => {
+                  const added = next.filter(
+                    (id) => !globalDefaultParameterItemIds.includes(id)
+                  );
+                  const removed = globalDefaultParameterItemIds.filter(
+                    (id) => !next.includes(id)
+                  );
+                  if (added.length) applyParameterItemsToAll(added);
+                  if (removed.length) removeParameterItemsFromAll(removed);
+                  setGlobalDefaultParameterItemIds(next);
+                }}
+                parameterId=""
+                parameterName="Params"
+                allowCreate={false}
+                multiSelect={true}
+                badgesPosition="below"
+                showClearAll={true}
+                hideSelectedChips={false}
+                compact={true}
+              />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <Select
-                  onValueChange={(v) => applyTypeToAll(v as DocumentType)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <ParameterItemPicker
-                  mapping={parameterItemMapping}
-                  validIds={filteredValidParameterItemIds}
-                  selectedIds={applyAllTempParameterItemIds}
-                  onSelect={(next) => {
-                    setApplyAllTempParameterItemIds((prev) => {
-                      const added = next.filter((id) => !prev.includes(id));
-                      const removed = prev.filter((id) => !next.includes(id));
-                      if (added.length) applyParameterItemsToAll(added);
-                      if (removed.length) removeParameterItemsFromAll(removed);
-                      return next;
-                    });
-                  }}
-                  parameterId=""
-                  parameterName="Parameter Items"
-                  allowCreate={false}
-                  multiSelect={true}
-                  badgesPosition="below"
-                  showClearAll={true}
-                  hideSelectedChips={false}
-                />
-              </div>
-            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={applyDefaultsNow}
+              size="sm"
+              className="h-7 px-2 text-xs border bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border-indigo-200"
+            >
+              Apply to all
+            </Button>
           </div>
         )}
 
-        {/* Department Selection */}
-        <div className="space-y-2 mb-4">
-          <Label htmlFor="department">Department</Label>
-          <DepartmentPicker
-            mapping={departmentMapping}
-            validIds={validDepartmentIds}
-            selectedIds={selectedDepartmentIds}
-            onSelect={setSelectedDepartmentIds}
-            placeholder="All Departments"
-            multiSelect={true}
-          />
-        </div>
+        {/* Department Selection - show when single file */}
+        {files.length === 1 && (
+          <div className="space-y-2 mb-4">
+            <Label htmlFor="department">Department</Label>
+            <DepartmentPicker
+              mapping={departmentMapping}
+              validIds={validDepartmentIds}
+              selectedIds={selectedDepartmentIds}
+              onSelect={setSelectedDepartmentIds}
+              placeholder="All Departments"
+              multiSelect={true}
+            />
+          </div>
+        )}
 
-        <div className="space-y-4 max-h-[50vh] overflow-auto pr-1">
+        {/* Section 2: Files List */}
+        <div className="space-y-2 max-h-[50vh] overflow-auto pr-1">
           {files.map((file) => {
             const fc = perFile[file.name] ?? {
-              type: "homework",
-              parameterItemIds: [],
+              type: globalDefaultType,
+              parameterItemIds: [...globalDefaultParameterItemIds],
             };
-            const mime = file.type || inferMimeFromName(file.name);
-            // gradient colors based on type (blue/purple theme) and mime
-            const typeColorMap: Record<DocumentType, string> = {
-              homework: "from-indigo-100",
-              project: "from-purple-100",
-              quiz: "from-indigo-200",
-              midterm: "from-violet-200",
-              lab: "from-blue-100",
-              lecture: "from-purple-200",
-              syllabus: "from-indigo-50",
-            };
-            const mimeToColor = (m: string) => {
-              const mm = m.toLowerCase();
-              if (mm.includes("pdf")) return "to-purple-200";
-              if (
-                mm.includes("word") ||
-                mm.includes("msword") ||
-                mm.includes("doc")
-              )
-                return "to-blue-200";
-              if (mm.startsWith("image/")) return "to-purple-300";
-              if (mm.includes("text")) return "to-indigo-200";
-              if (mm.includes("zip")) return "to-indigo-300";
-              if (
-                mm.includes("json") ||
-                mm.includes("yaml") ||
-                mm.includes("xml")
-              )
-                return "to-indigo-300";
-              return "to-violet-200";
-            };
-            const gradientClass = `bg-gradient-to-br ${typeColorMap[fc.type]} ${mimeToColor(mime)}`;
+
             return (
-              <div
-                key={file.name}
-                className={`rounded-md p-0.5 ${gradientClass}`}
-              >
-                <div className="rounded-md p-3 bg-white text-gray-800">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium truncate mr-2 text-gray-900">
-                      {file.name}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {Math.round(file.size / 1024)} KB
-                      </Badge>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => {
-                          // Remove this file from the local classification map and rely on parent to re-render with fewer files
-                          setPerFile((prev) => {
-                            const next = { ...prev };
-                            delete next[file.name];
-                            return next;
-                          });
-                          if (onRemoveFile) {
-                            onRemoveFile(file.name);
-                          } else {
-                            // Dispatch a custom event to request removal upstream
-                            const evt = new CustomEvent("upload:remove-file", {
-                              detail: { fileName: file.name },
-                            });
-                            window.dispatchEvent(evt);
-                          }
-                        }}
-                        aria-label="Remove file from upload"
-                        title="Remove file"
-                      >
-                        ✕
-                      </Button>
-                    </div>
+              <div key={file.name} className="rounded-md border p-2 bg-white">
+                {/* Row 1: Filename + Size + Remove */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium truncate mr-2 text-gray-900">
+                    📄 {file.name}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                    <div>
-                      <Select
-                        value={fc.type}
-                        onValueChange={(v) =>
-                          setPerFile((prev) => {
-                            const prevForFile: FileClassification = prev[
-                              file.name
-                            ] ?? {
-                              type: "homework",
-                              parameterItemIds: [],
-                            };
-                            return {
-                              ...prev,
-                              [file.name]: {
-                                ...prevForFile,
-                                type: v as DocumentType,
-                              },
-                            } as Record<string, FileClassification>;
-                          })
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {Math.round(file.size / 1024)} KB
+                    </Badge>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() => {
+                        setPerFile((prev) => {
+                          const next = { ...prev };
+                          delete next[file.name];
+                          return next;
+                        });
+                        if (onRemoveFile) {
+                          onRemoveFile(file.name);
+                        } else {
+                          const evt = new CustomEvent("upload:remove-file", {
+                            detail: { fileName: file.name },
+                          });
+                          window.dispatchEvent(evt);
                         }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {TYPE_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <ParameterItemPicker
-                        mapping={parameterItemMapping}
-                        validIds={filteredValidParameterItemIds}
-                        selectedIds={fc.parameterItemIds}
-                        onSelect={(parameterItemIds) =>
-                          setPerFile((prev) => {
-                            const prevForFile: FileClassification = prev[
-                              file.name
-                            ] ?? {
-                              type: fc.type,
-                              parameterItemIds: [],
-                            };
-                            return {
-                              ...prev,
-                              [file.name]: { ...prevForFile, parameterItemIds },
-                            } as Record<string, FileClassification>;
-                          })
-                        }
-                        parameterId=""
-                        parameterName="Parameter Items"
-                        allowCreate={false}
-                        multiSelect={true}
-                        badgesPosition="below"
-                        showClearAll={false}
-                      />
-                    </div>
+                      }}
+                      aria-label="Remove file from upload"
+                      title="Remove file"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Horizontal Layout: Dept, Type, Params */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={validDepartmentIds}
+                    selectedIds={fc.departmentIds || selectedDepartmentIds}
+                    onSelect={(ids) =>
+                      setPerFile((prev) => {
+                        const prevForFile: FileClassification = prev[
+                          file.name
+                        ] ?? {
+                          type: globalDefaultType,
+                          parameterItemIds: [...globalDefaultParameterItemIds],
+                          departmentIds: selectedDepartmentIds,
+                        };
+                        return {
+                          ...prev,
+                          [file.name]: {
+                            ...prevForFile,
+                            departmentIds: ids,
+                          },
+                        } as Record<string, FileClassification>;
+                      })
+                    }
+                    placeholder="Dept"
+                    multiSelect={true}
+                    compact={true}
+                    buttonClassName="h-7 px-2 text-xs"
+                  />
+                  <DocumentTypePicker
+                    selectedType={fc.type}
+                    onSelect={(type) =>
+                      setPerFile((prev) => {
+                        const prevForFile: FileClassification = prev[
+                          file.name
+                        ] ?? {
+                          type: globalDefaultType,
+                          parameterItemIds: [...globalDefaultParameterItemIds],
+                          departmentIds: selectedDepartmentIds,
+                        };
+                        return {
+                          ...prev,
+                          [file.name]: {
+                            ...prevForFile,
+                            type,
+                          },
+                        } as Record<string, FileClassification>;
+                      })
+                    }
+                    placeholder="Type"
+                    compact={true}
+                  />
+                  <div className="flex-1 min-w-[120px]">
+                    <ParameterItemPicker
+                      mapping={parameterItemMapping}
+                      validIds={filteredValidParameterItemIds}
+                      selectedIds={fc.parameterItemIds}
+                      onSelect={(parameterItemIds) =>
+                        setPerFile((prev) => {
+                          const prevForFile: FileClassification = prev[
+                            file.name
+                          ] ?? {
+                            type: fc.type,
+                            parameterItemIds: [
+                              ...globalDefaultParameterItemIds,
+                            ],
+                            departmentIds: selectedDepartmentIds,
+                          };
+                          return {
+                            ...prev,
+                            [file.name]: {
+                              ...prevForFile,
+                              parameterItemIds,
+                            },
+                          } as Record<string, FileClassification>;
+                        })
+                      }
+                      parameterId=""
+                      parameterName="Params"
+                      allowCreate={false}
+                      multiSelect={true}
+                      badgesPosition="below"
+                      showClearAll={false}
+                      hideSelectedChips={false}
+                      compact={true}
+                    />
                   </div>
                 </div>
               </div>
@@ -633,14 +664,16 @@ export function UploadClassificationDialog({
               <Button
                 type="button"
                 variant="secondary"
+                size="sm"
                 onClick={() => {
                   const el = document.getElementById(
                     "upload-dialog-file-input"
                   ) as HTMLInputElement | null;
                   el?.click();
                 }}
+                className="border bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border-indigo-200"
               >
-                Add More Documents
+                + Add More Documents
               </Button>
             </div>
             <div className="flex items-center gap-2">
