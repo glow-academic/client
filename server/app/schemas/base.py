@@ -78,9 +78,10 @@ class CohortMappingItem(MappingItem):
 
 
 class DocumentMappingItem(MappingItem):
-    """Document mapping item - extends MappingItem"""
+    """Document mapping item - extends MappingItem with file metadata"""
 
-    pass
+    filePath: str | None = None
+    mimeType: str | None = None
 
 
 class StaffMappingItem(MappingItem):

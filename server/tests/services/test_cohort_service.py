@@ -585,7 +585,57 @@ async def test_remove_profiles_from_cohort(
     dept_id = await get_cs_dept_id(db)
     admin_id = await get_superadmin_alias(db)
 
-    # Create a cohort with admin
+    # Get a TA profile to add and remove
+    ta_profile = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role = 'ta' LIMIT 1"
+    )
+    if not ta_profile:
+        pytest.skip("No TA profile found in seed data")
+    ta_id = str(ta_profile["id"])
+
+    # Create a cohort with admin and TA
+    svc = CohortService(db)
+    create_resp = await svc.create_cohort(
+        CreateCohortRequest(
+            title="Test Cohort",
+            description="Test",
+            department_id=dept_id,
+            active=True,
+            default_cohort=False,
+            profile_ids=[admin_id, ta_id],
+            simulation_ids=[],
+        )
+    )
+
+    # Remove TA from cohort (using superadmin as current user)
+    remove_resp = await svc.remove_profiles_from_cohort(
+        RemoveProfilesFromCohortRequest(
+            cohortId=create_resp.cohortId,
+            profileIds=[ta_id],
+            currentProfileId=admin_id,
+        )
+    )
+
+    assert remove_resp.success is True
+
+    # Verify profile was removed (or marked inactive)
+    link = await db.fetchrow(
+        "SELECT active FROM cohort_profiles WHERE cohort_id = $1 AND profile_id = $2",
+        create_resp.cohortId,
+        ta_id,
+    )
+    if link:
+        assert link["active"] is False
+    # If hard delete, link would be None (acceptable)
+
+
+async def test_remove_profiles_from_cohort_prevents_self_removal(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that removing yourself from cohort is prevented."""
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
+
     svc = CohortService(db)
     create_resp = await svc.create_cohort(
         CreateCohortRequest(
@@ -599,24 +649,100 @@ async def test_remove_profiles_from_cohort(
         )
     )
 
-    # Remove admin from cohort
-    remove_resp = await svc.remove_profiles_from_cohort(
-        RemoveProfilesFromCohortRequest(
-            cohortId=create_resp.cohortId, profileIds=[admin_id]
+    # Try to remove self - should fail
+    with pytest.raises(ValueError, match="Cannot remove yourself"):
+        await svc.remove_profiles_from_cohort(
+            RemoveProfilesFromCohortRequest(
+                cohortId=create_resp.cohortId,
+                profileIds=[admin_id],
+                currentProfileId=admin_id,
+            )
+        )
+
+
+async def test_remove_profiles_from_cohort_role_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that role-based permissions are enforced for removal."""
+    dept_id = await get_cs_dept_id(db)
+    admin_id = await get_superadmin_alias(db)
+
+    # Get an admin profile (different from superadmin)
+    admin_profile = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role = 'admin' AND id != $1 LIMIT 1",
+        admin_id,
+    )
+    if not admin_profile:
+        pytest.skip("No admin profile found in seed data")
+    admin2_id = str(admin_profile["id"])
+
+    # Get a TA profile
+    ta_profile = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role = 'ta' LIMIT 1"
+    )
+    if not ta_profile:
+        pytest.skip("No TA profile found in seed data")
+    ta_id = str(ta_profile["id"])
+
+    svc = CohortService(db)
+    create_resp = await svc.create_cohort(
+        CreateCohortRequest(
+            title="Test Cohort",
+            description="Test",
+            department_id=dept_id,
+            active=True,
+            default_cohort=False,
+            profile_ids=[admin2_id, ta_id],
+            simulation_ids=[],
         )
     )
 
-    assert remove_resp.success is True
+    # Admin cannot remove self (self-removal prevention)
+    with pytest.raises(ValueError, match="Cannot remove yourself"):
+        await svc.remove_profiles_from_cohort(
+            RemoveProfilesFromCohortRequest(
+                cohortId=create_resp.cohortId,
+                profileIds=[admin2_id],
+                currentProfileId=admin2_id,  # Admin trying to remove self
+            )
+        )
 
-    # Verify profile was removed (or marked inactive)
-    link = await db.fetchrow(
-        "SELECT active FROM cohort_profiles WHERE cohort_id = $1 AND profile_id = $2",
-        create_resp.cohortId,
+    # Admin cannot remove another admin (same level) - use superadmin as current user
+    # First need to add another admin to the cohort
+    admin3_profile = await db.fetchrow(
+        "SELECT id FROM profiles WHERE role = 'admin' AND id NOT IN ($1, $2) LIMIT 1",
         admin_id,
+        admin2_id,
     )
-    if link:
-        assert link["active"] is False
-    # If hard delete, link would be None (acceptable)
+    if admin3_profile:
+        admin3_id = str(admin3_profile["id"])
+        # Add admin3 to cohort
+        await svc.add_profiles_to_cohort(
+            AddProfilesToCohortRequest(
+                cohortId=create_resp.cohortId,
+                departmentIds=[dept_id],
+                existingProfileIds=[admin3_id],
+            )
+        )
+        # Admin2 cannot remove admin3 (same level)
+        with pytest.raises(ValueError, match="can only remove roles equal or below"):
+            await svc.remove_profiles_from_cohort(
+                RemoveProfilesFromCohortRequest(
+                    cohortId=create_resp.cohortId,
+                    profileIds=[admin3_id],
+                    currentProfileId=admin2_id,  # Admin trying to remove another admin
+                )
+            )
+
+    # Admin can remove TA (lower level)
+    remove_resp = await svc.remove_profiles_from_cohort(
+        RemoveProfilesFromCohortRequest(
+            cohortId=create_resp.cohortId,
+            profileIds=[ta_id],
+            currentProfileId=admin2_id,
+        )
+    )
+    assert remove_resp.success is True
 
 
 # ============================================================================

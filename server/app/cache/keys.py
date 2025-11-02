@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    48  # Bumped: Fixed staff permission queries (can_edit/can_delete) to properly handle superadmin and prevent self-deletion
+    49  # Bumped: Fixed department_mapping to include cross-department personas and parameter items in all departments
 )
 
 # Namespaces

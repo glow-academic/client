@@ -2,17 +2,12 @@
 
 import asyncpg  # type: ignore
 import pytest
-from tests.seed_helpers import (
-    get_cs_dept_id,  # type: ignore
-    get_superadmin_alias,  # type: ignore
-)
-
-from app.schemas.scenarios import (
-    GenerateScenarioAIRequest,  # type: ignore
-    ScenarioDetailRequest,  # type: ignore
-    ScenariosFilters,  # type: ignore
-)
+from app.schemas.scenarios import GenerateScenarioAIRequest  # type: ignore
+from app.schemas.scenarios import ScenarioDetailRequest  # type: ignore
+from app.schemas.scenarios import ScenariosFilters  # type: ignore
 from app.services.scenario_service import ScenarioService  # type: ignore
+from tests.seed_helpers import get_cs_dept_id  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -328,6 +323,32 @@ async def test_get_scenario_detail_needs_scenario_in_seed(
         assert hasattr(param_item, "name") and len(param_item.name) > 0, (
             "Parameter item mapping should have valid name"
         )
+
+    # CRITICAL: Verify department_mapping includes scenario's departments
+    if resp.department_ids and len(resp.department_ids) > 0:
+        for dept_id in resp.department_ids:
+            assert dept_id in resp.department_mapping, (
+                f"Department {dept_id} should be in department_mapping"
+            )
+            dept_item = resp.department_mapping[dept_id]
+            assert hasattr(dept_item, "name") and len(dept_item.name) > 0, (
+                "Department mapping should have valid name"
+            )
+
+    # CRITICAL: Verify parameter_item_mapping includes selected parameter items from parameters structure
+    if resp.parameters:
+        all_selected_param_items = []
+        for param_detail in resp.parameters.values():
+            all_selected_param_items.extend(param_detail.parameter_item_ids)
+        
+        for param_item_id in all_selected_param_items:
+            assert param_item_id in resp.parameter_item_mapping, (
+                f"Selected parameter item {param_item_id} should be in parameter_item_mapping"
+            )
+            param_item = resp.parameter_item_mapping[param_item_id]
+            assert hasattr(param_item, "name") and len(param_item.name) > 0, (
+                f"Parameter item {param_item_id} mapping should have valid name, got: {param_item.name if hasattr(param_item, 'name') else 'N/A'}"
+            )
 
 
 async def test_get_scenario_detail_invalid_id(

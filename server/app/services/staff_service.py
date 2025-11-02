@@ -913,7 +913,7 @@ class StaffService(BaseService):
                     existing_cohort_ids = {row["cohort_id"] for row in existing}
                     
                     # Insert only cohorts that don't already exist
-                        query, _ = self.cohort_queries.insert_cohort_profile()
+                    query, _ = self.cohort_queries.insert_cohort_profile()
                     for cohort_id in request.cohort_ids:
                         if cohort_id not in existing_cohort_ids:
                             await self.conn.execute(query, cohort_id, profile_id)
@@ -1089,7 +1089,7 @@ class StaffService(BaseService):
                         existing_cohort_ids = {row["cohort_id"] for row in existing}
                         
                         # Insert only cohorts that don't already exist
-                            query, _ = self.cohort_queries.insert_cohort_profile()
+                        query, _ = self.cohort_queries.insert_cohort_profile()
                         for cohort_id in profile_req.cohort_ids:
                             if cohort_id not in existing_cohort_ids:
                                 await self.conn.execute(query, cohort_id, profile_id)

@@ -123,7 +123,7 @@ export function ParameterSelector({
 
   const getSelectedNumericalValue = (parameterId: string): number[] => {
     const selectedItemIds = selectedItemsByParameter[parameterId] || [];
-    
+
     if (selectedItemIds.length === 0) {
       // Return [min, max] as default range if nothing selected
       const { min, max } = getNumericalParameterRange(parameterId);
@@ -186,11 +186,15 @@ export function ParameterSelector({
       const item = parameterItemMapping[itemId];
       if (item) {
         const itemValue = parseFloat(item.value);
-        if (!isNaN(itemValue) && itemValue >= minRange && itemValue <= maxRange) {
+        if (
+          !isNaN(itemValue) &&
+          itemValue >= minRange &&
+          itemValue <= maxRange
+        ) {
           matchingItemIds.push(itemId);
-          }
         }
       }
+    }
 
     // Update selection with all matching items
     handleNumericalParameterChange(parameterId, matchingItemIds);
@@ -268,9 +272,12 @@ export function ParameterSelector({
                         {selectedItemIds.map((id) => {
                           const item = parameterItemMapping[id];
                           return item ? (
-                            <p key={id} className="text-xs text-muted-foreground">
+                            <p
+                              key={id}
+                              className="text-xs text-muted-foreground"
+                            >
                               {item.description}
-                      </p>
+                            </p>
                           ) : null;
                         })}
                       </div>
@@ -305,14 +312,17 @@ export function ParameterSelector({
                           {parameter?.name || "Parameter"}
                         </Label>
                         {hasSelection && (
-                            <p className="text-xs text-muted-foreground">
-                            {selectedItemIds.length} item{selectedItemIds.length !== 1 ? "s" : ""} selected
-                            </p>
-                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {selectedItemIds.length} item
+                            {selectedItemIds.length !== 1 ? "s" : ""} selected
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">
-                          {hasSelection && minValue !== undefined && maxValue !== undefined
+                          {hasSelection &&
+                          minValue !== undefined &&
+                          maxValue !== undefined
                             ? `${minValue} - ${maxValue}`
                             : `${min} - ${max}`}
                         </span>
@@ -352,15 +362,18 @@ export function ParameterSelector({
                         {selectedItemIds.slice(0, 3).map((id) => {
                           const item = parameterItemMapping[id];
                           return item ? (
-                            <p key={id} className="text-xs text-muted-foreground">
+                            <p
+                              key={id}
+                              className="text-xs text-muted-foreground"
+                            >
                               {item.name}: {item.description}
                             </p>
                           ) : null;
                         })}
                         {selectedItemIds.length > 3 && (
-                      <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             +{selectedItemIds.length - 3} more
-                      </p>
+                          </p>
                         )}
                       </div>
                     )}

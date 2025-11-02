@@ -606,6 +606,8 @@ class CohortService(BaseService):
                             active=profile_data["active"],
                             last_active=profile_data["lastActive"],
                             cohort_ids=profile_data["cohort_ids"] or [],
+                            department_ids=profile_data["department_ids"] or [],
+                            total_requests=profile_data["total_requests"],
                             requests_per_day=profile_data["requests_per_day"],
                             default_profile=profile_data["default_profile"],
                             requests_in_last_day=profile_data["requests_in_last_day"],
@@ -994,14 +996,69 @@ class CohortService(BaseService):
     async def remove_profiles_from_cohort(
         self, request: RemoveProfilesFromCohortRequest
     ) -> RemoveProfilesFromCohortResponse:
-        """Remove profiles from cohort."""
+        """Remove profiles from cohort with role-based permission validation."""
 
-        # Check if cohort exists
-        query, params = self.queries.get_cohort_title(request.cohortId)
-        cohort = await self.conn.fetchrow(query, *params)
+        # Get cohort title, current user role, and target profile roles in one query
+        query, params = self.queries.get_cohort_and_profile_roles_for_removal(
+            request.cohortId, request.profileIds, request.currentProfileId
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        if not cohort:
+        if not result or not result["cohort_title"]:
             raise ValueError(f"Cohort not found: {request.cohortId}")
+
+        cohort_title = result["cohort_title"]
+        current_user_role = result["current_user_role"]
+
+        if not current_user_role:
+            raise ValueError(
+                f"Current user profile not found: {request.currentProfileId}"
+            )
+
+        # Parse target profiles from JSON
+        target_profiles_data = result["target_profiles"]
+        if isinstance(target_profiles_data, str):
+            target_profiles_data = json.loads(target_profiles_data)
+        target_profiles = target_profiles_data if target_profiles_data else []
+
+        # Role hierarchy validation helper
+        def can_remove_role(remover_role: str, target_role: str) -> bool:
+            """Check if remover_role can remove target_role."""
+            role_levels = {
+                "superadmin": 4,
+                "admin": 3,
+                "instructional": 2,
+                "ta": 1,
+                "guest": 0,
+            }
+            remover_level = role_levels.get(remover_role, -1)
+            target_level = role_levels.get(target_role, 999)
+            # Can only remove roles equal or below current role
+            return target_level <= remover_level
+
+        # Validate permissions for each profile
+        target_profile_ids = {p["id"] for p in target_profiles}
+        missing_profiles = set(request.profileIds) - target_profile_ids
+
+        if missing_profiles:
+            raise ValueError(
+                f"Some profiles not found: {', '.join(missing_profiles)}"
+            )
+
+        # Check self-removal
+        if request.currentProfileId in request.profileIds:
+            raise ValueError("Cannot remove yourself from cohort")
+
+        # Validate role permissions
+        for profile in target_profiles:
+            profile_id = profile["id"]
+            profile_role = profile["role"]
+
+            if not can_remove_role(current_user_role, profile_role):
+                raise ValueError(
+                    f"Cannot remove profile {profile_id} with role '{profile_role}'. "
+                    f"Your role '{current_user_role}' can only remove roles equal or below it."
+                )
 
         # Remove profiles from cohort by setting active = false
         query, params = self.queries.remove_cohort_profiles()
@@ -1021,7 +1078,7 @@ class CohortService(BaseService):
 
         return RemoveProfilesFromCohortResponse(
             success=True,
-            message=f"Removed {len(request.profileIds)} profile(s) from cohort '{cohort['title']}' successfully",
+            message=f"Removed {len(request.profileIds)} profile(s) from cohort '{cohort_title}' successfully",
         )
 
     @with_cache(lambda self, query, limit: keys.cohort_search(query, limit))

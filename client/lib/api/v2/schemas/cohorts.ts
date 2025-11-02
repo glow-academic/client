@@ -259,6 +259,7 @@ export type AddProfilesToCohortResponse = z.infer<
 export const RemoveProfilesFromCohortRequestSchema = z.object({
   cohortId: z.string(),
   profileIds: z.array(z.string()),
+  currentProfileId: z.string(), // Current user's profile ID for permission validation
 });
 
 export type RemoveProfilesFromCohortRequest = z.infer<

@@ -234,6 +234,7 @@ class RemoveProfilesFromCohortRequest(BaseModel):
 
     cohortId: str
     profileIds: list[str]
+    currentProfileId: str  # Current user's profile ID for permission validation
 
 
 class RemoveProfilesFromCohortResponse(BaseModel):

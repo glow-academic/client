@@ -316,7 +316,8 @@ class ScenarioQueries:
         user_departments AS (
             SELECT ARRAY_AGG(DISTINCT pd.department_id) as dept_ids
             FROM profile_departments pd
-            WHERE pd.profile_id = $2
+            JOIN departments d ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND pd.active = true AND d.active = true
         ),
         scenario_departments_data AS (
             SELECT 
@@ -423,9 +424,26 @@ class ScenarioQueries:
                     WHERE spi2.scenario_id = $1 AND pi2.parameter_id = p.id AND spi2.active = true
                 ), '[]'::jsonb) as selected_items,
                 COALESCE((
-                    SELECT jsonb_agg(pi3.id::text ORDER BY pi3.id)
-                    FROM parameter_items pi3
-                    WHERE pi3.parameter_id = p.id
+                    SELECT jsonb_agg(id::text ORDER BY id::text)
+                    FROM (
+                        -- Get accessible items (same filtering as parameter_item_mapping)
+                        SELECT pi3.id
+                        FROM parameter_items pi3
+                        LEFT JOIN parameter_item_departments pid3 ON pid3.parameter_item_id = pi3.id AND pid3.active = true
+                        CROSS JOIN user_departments ud3
+                        WHERE pi3.parameter_id = p.id
+                        GROUP BY pi3.id
+                        HAVING 
+                            -- Include if has matching department link OR has no department links at all (cross-dept)
+                            COUNT(pid3.parameter_item_id) FILTER (WHERE pid3.department_id = ANY(ud3.dept_ids)) > 0
+                            OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid4 WHERE pid4.parameter_item_id = pi3.id AND pid4.active = true)
+                        UNION
+                        -- Also include selected items (for edit mode - ensures selected items are available)
+                        SELECT spi2.parameter_item_id as id
+                        FROM scenario_parameter_items spi2
+                        JOIN parameter_items pi2 ON pi2.id = spi2.parameter_item_id
+                        WHERE spi2.scenario_id = $1 AND pi2.parameter_id = p.id AND spi2.active = true
+                    ) combined_items
                 ), '[]'::jsonb) as valid_items
             FROM parameters p
             JOIN parameter_items pi ON pi.parameter_id = p.id
@@ -460,6 +478,42 @@ class ScenarioQueries:
                 WHERE jsonb_typeof(value->'parameter_item_ids') = 'array'
             )) as param_item_id
         ),
+        valid_personas_filtered AS (
+            SELECT DISTINCT
+                p.id,
+                p.name,
+                COALESCE(p.description, '') as description,
+                p.color,
+                p.icon,
+                m.image_model
+            FROM personas p
+            LEFT JOIN models m ON m.id = p.model_id
+            LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+            CROSS JOIN user_departments ud
+            WHERE p.active = true
+            GROUP BY p.id, p.name, p.description, p.color, p.icon, m.image_model
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+        ),
+        persona_data AS (
+            SELECT * FROM valid_personas_filtered
+            UNION
+            -- Also include currently selected persona (for edit mode - ensures selected item is available)
+            SELECT DISTINCT
+                p2.id,
+                p2.name,
+                COALESCE(p2.description, '') as description,
+                p2.color,
+                p2.icon,
+                m2.image_model
+            FROM scenario_persona sp
+            JOIN personas p2 ON p2.id = sp.persona_id::uuid
+            LEFT JOIN models m2 ON m2.id = p2.model_id
+            WHERE p2.active = true
+            ORDER BY name
+        ),
         valid_personas_data AS (
             SELECT 
                 COALESCE(ARRAY_AGG(p.id::text ORDER BY p.name), ARRAY[]::text[]) as valid_persona_ids,
@@ -467,100 +521,129 @@ class ScenarioQueries:
                     p.id::text,
                     jsonb_build_object(
                         'name', p.name,
-                        'description', COALESCE(p.description, ''),
+                        'description', p.description,
                         'color', p.color,
                         'icon', p.icon,
                         'image_model', COALESCE(p.image_model, false)
                     )
                 ), '{}'::jsonb) as persona_mapping
-            FROM (
-                SELECT 
-                    p.id,
-                    p.name,
-                    p.description,
-                    p.color,
-                    p.icon,
-                    p.active,
-                    p.model_id,
-                    p.reasoning,
-                    p.temperature,
-                    p.created_at,
-                    p.updated_at,
-                    m.image_model
-                FROM personas p
-                LEFT JOIN models m ON m.id = p.model_id
-                LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-                CROSS JOIN user_departments ud
-                WHERE p.active = true
-                GROUP BY p.id, p.name, p.description, p.color, p.icon, p.active, p.model_id, p.reasoning, p.temperature, p.created_at, p.updated_at, m.image_model
-                HAVING 
-                    -- Include if has matching department link OR has no department links at all (cross-dept)
-                    COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY(ud.dept_ids)) > 0
-                    OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
-            ) p
+            FROM persona_data p
+        ),
+        valid_documents_filtered AS (
+            SELECT DISTINCT
+                d.id,
+                d.name,
+                d.type::text as description,
+                d.file_path,
+                d.mime_type
+            FROM documents d
+            LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+            CROSS JOIN user_departments ud
+            WHERE d.active = true
+            GROUP BY d.id, d.name, d.type, d.file_path, d.mime_type
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
+        ),
+        document_data AS (
+            SELECT * FROM valid_documents_filtered
+            UNION
+            -- Also include currently selected documents (for edit mode - ensures selected items are available)
+            SELECT DISTINCT
+                d2.id,
+                d2.name,
+                d2.type::text as description,
+                d2.file_path,
+                d2.mime_type
+            FROM scenario_documents_agg sda
+            CROSS JOIN LATERAL unnest(sda.document_ids) as doc_id
+            JOIN documents d2 ON d2.id = doc_id::uuid
+            WHERE d2.active = true
+            ORDER BY name
         ),
         valid_documents_data AS (
             SELECT 
                 COALESCE(ARRAY_AGG(d.id::text ORDER BY d.name), ARRAY[]::text[]) as valid_document_ids,
                 COALESCE(jsonb_object_agg(
                     d.id::text,
-                    jsonb_build_object('name', d.name, 'description', COALESCE(d.type::text, ''))
+                    jsonb_build_object(
+                        'name', d.name,
+                        'description', d.description,
+                        'filePath', d.file_path,
+                        'mimeType', d.mime_type
+                    )
                 ), '{}'::jsonb) as document_mapping
-            FROM (
-                SELECT 
-                    d.id,
-                    d.name,
-                    d.type,
-                    d.file_path,
-                    d.mime_type,
-                    d.active,
-                    d.created_at,
-                    d.updated_at
-                FROM documents d
-                LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
-                CROSS JOIN user_departments ud
-                WHERE d.active = true
-                GROUP BY d.id, d.name, d.type, d.file_path, d.mime_type, d.active, d.created_at, d.updated_at
-                HAVING 
-                    -- Include if has matching department link OR has no department links at all (cross-dept)
-                    COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY(ud.dept_ids)) > 0
-                    OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
-            ) d
+            FROM document_data d
+        ),
+        scenario_documents_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.name,
+                        'description', COALESCE(d.type::text, ''),
+                        'filePath', d.file_path,
+                        'mimeType', d.mime_type
+                    )
+                ),
+                '{}'::jsonb
+            ) as document_mapping
+            FROM scenario_documents sd
+            JOIN documents d ON d.id = sd.document_id
+            WHERE sd.scenario_id = $1 AND sd.active = true AND d.active = true
+        ),
+        enhanced_document_mapping_data AS (
+            SELECT 
+                COALESCE(
+                    (
+                        SELECT jsonb_object_agg(key, value)
+                        FROM (
+                            SELECT key, value 
+                            FROM jsonb_each(vdd.document_mapping)
+                            UNION ALL
+                            SELECT key, value 
+                            FROM jsonb_each(sdmd.document_mapping)
+                        ) combined
+                    ),
+                    '{}'::jsonb
+                ) as document_mapping
+            FROM valid_documents_data vdd
+            CROSS JOIN scenario_documents_mapping_data sdmd
         ),
         document_details_data AS (
             SELECT COALESCE(
-                jsonb_agg(
-                    jsonb_build_object(
-                        'document_id', d.id::text,
-                        'name', d.name,
-                        'type', d.type,
-                        'updatedAt', d.updated_at::text,
-                        'extension', SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'),
-                        'scenario_ids', COALESCE((
-                            SELECT jsonb_agg(sd.scenario_id::text)
-                            FROM scenario_documents sd
-                            WHERE sd.document_id = d.id AND sd.active = true
-                        ), '[]'::jsonb),
-                        'can_edit', true,
-                        'can_delete', true,
-                        'active', d.active,
-                        'file_path', d.file_path,
-                        'mime_type', d.mime_type,
-                        'parameter_item_ids', COALESCE((
-                            SELECT jsonb_agg(dpi.parameter_item_id::text)
-                            FROM document_parameter_items dpi
-                            WHERE dpi.document_id = d.id AND dpi.active = true
-                        ), '[]'::jsonb)
-                    ) ORDER BY d.name
-                ) FILTER (WHERE d.id = ANY(
-                    COALESCE((SELECT document_ids::uuid[] FROM scenario_documents_agg), ARRAY[]::uuid[])
-                )),
+                (
+                    SELECT jsonb_agg(
+                        jsonb_build_object(
+                            'document_id', d.id::text,
+                            'name', d.name,
+                            'type', d.type,
+                            'updatedAt', d.updated_at::text,
+                            'extension', SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'),
+                            'scenario_ids', COALESCE((
+                                SELECT jsonb_agg(sd2.scenario_id::text)
+                                FROM scenario_documents sd2
+                                WHERE sd2.document_id = d.id AND sd2.active = true
+                            ), '[]'::jsonb),
+                            'can_edit', true,
+                            'can_delete', true,
+                            'active', d.active,
+                            'file_path', d.file_path,
+                            'mime_type', d.mime_type,
+                            'parameter_item_ids', COALESCE((
+                                SELECT jsonb_agg(dpi.parameter_item_id::text)
+                                FROM document_parameter_items dpi
+                                WHERE dpi.document_id = d.id AND dpi.active = true
+                            ), '[]'::jsonb)
+                        ) ORDER BY d.name
+                    )
+                    FROM scenario_documents sd
+                    JOIN documents d ON d.id = sd.document_id
+                    WHERE sd.scenario_id = $1 AND sd.active = true
+                ),
                 '[]'::jsonb
             ) as document_details
-            FROM documents d
-            WHERE d.id = ANY(
-                COALESCE((SELECT document_ids::uuid[] FROM scenario_documents_agg), ARRAY[]::uuid[])
-            )
         ),
         simulation_mapping_data AS (
             SELECT COALESCE(jsonb_object_agg(
@@ -583,28 +666,102 @@ class ScenarioQueries:
                 COALESCE((SELECT simulation_ids::uuid[] FROM scenario_simulations_agg), ARRAY[]::uuid[])
             )
         ),
-        parameter_mapping_data AS (
-            SELECT 
-                COALESCE(jsonb_object_agg(
-                    p.id::text,
-                    jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''), 'numerical', p.numerical)
-                ), '{}'::jsonb) as parameter_mapping
+        parameter_data_for_mapping AS (
+            SELECT DISTINCT 
+                p.id,
+                p.name,
+                COALESCE(p.description, '') as description,
+                p.numerical
             FROM parameters p
             JOIN parameter_items pi ON pi.parameter_id = p.id
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_departments ud
             WHERE p.active = true
-            GROUP BY p.id
+            GROUP BY p.id, p.name, p.description, p.numerical
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
                 COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
                 OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
                               JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
                               WHERE pi2.parameter_id = p.id AND pid2.active = true)
+            ORDER BY p.name
+        ),
+        parameter_mapping_data AS (
+            SELECT 
+                COALESCE(jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object('name', p.name, 'description', p.description, 'numerical', p.numerical)
+                ), '{}'::jsonb) as parameter_mapping
+            FROM parameter_data_for_mapping p
+        ),
+        scenario_parameters_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    p.id::text,
+                    jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''), 'numerical', p.numerical)
+                ),
+                '{}'::jsonb
+            ) as parameter_mapping
+            FROM scenario_parameter_items spi
+            JOIN parameter_items pi ON pi.id = spi.parameter_item_id
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE spi.scenario_id = $1 AND spi.active = true AND p.active = true
+        ),
+        enhanced_parameter_mapping_data AS (
+            SELECT 
+                COALESCE(
+                    (
+                        SELECT jsonb_object_agg(key, value)
+                        FROM (
+                            SELECT key, value 
+                            FROM jsonb_each(pmd.parameter_mapping)
+                            UNION ALL
+                            SELECT key, value 
+                            FROM jsonb_each(spmd.parameter_mapping)
+                        ) combined
+                    ),
+                    '{}'::jsonb
+                ) as parameter_mapping
+            FROM parameter_mapping_data pmd
+            CROSS JOIN scenario_parameters_mapping_data spmd
+        ),
+        parameter_item_data AS (
+            SELECT 
+                pi.id,
+                pi.name,
+                COALESCE(pi.description, '') as description,
+                pi.parameter_id,
+                p.name as parameter_name,
+                pi.value
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            CROSS JOIN user_departments ud
+            WHERE p.active = true
+            GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            ORDER BY p.name, pi.name
         ),
         parameter_item_mapping_data AS (
             SELECT 
                 COALESCE(jsonb_object_agg(
+                    pi.id::text,
+                    jsonb_build_object(
+                        'name', pi.name,
+                        'description', pi.description,
+                        'parameter_id', pi.parameter_id::text,
+                        'parameter_name', pi.parameter_name,
+                        'value', pi.value
+                    )
+                ), '{}'::jsonb) as parameter_item_mapping
+            FROM parameter_item_data pi
+        ),
+        scenario_parameter_items_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
                     pi.id::text,
                     jsonb_build_object(
                         'name', pi.name,
@@ -613,17 +770,31 @@ class ScenarioQueries:
                         'parameter_name', p.name,
                         'value', pi.value
                     )
-                ), '{}'::jsonb) as parameter_item_mapping
-            FROM parameter_items pi
+                ),
+                '{}'::jsonb
+            ) as parameter_item_mapping
+            FROM scenario_parameter_items spi
+            JOIN parameter_items pi ON pi.id = spi.parameter_item_id
             JOIN parameters p ON p.id = pi.parameter_id
-            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-            CROSS JOIN user_departments ud
-            WHERE p.active = true
-            GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, pi.value, p.id, p.name
-            HAVING 
-                -- Include if has matching department link OR has no department links at all (cross-dept)
-                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            WHERE spi.scenario_id = $1 AND spi.active = true AND p.active = true
+        ),
+        enhanced_parameter_item_mapping_data AS (
+            SELECT 
+                COALESCE(
+                    (
+                        SELECT jsonb_object_agg(key, value)
+                        FROM (
+                            SELECT key, value 
+                            FROM jsonb_each(pimd.parameter_item_mapping)
+                            UNION ALL
+                            SELECT key, value 
+                            FROM jsonb_each(spimd.parameter_item_mapping)
+                        ) combined
+                    ),
+                    '{}'::jsonb
+                ) as parameter_item_mapping
+            FROM parameter_item_mapping_data pimd
+            CROSS JOIN scenario_parameter_items_mapping_data spimd
         ),
         department_persona_ids AS (
             SELECT 
@@ -631,10 +802,21 @@ class ScenarioQueries:
                 COALESCE(ARRAY_AGG(p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as persona_ids
             FROM departments d
             CROSS JOIN user_departments ud
+            -- Only include personas accessible to user (from valid_personas_filtered logic)
             LEFT JOIN personas p ON p.active = true
             LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
             WHERE d.id = ANY(ud.dept_ids)
-            AND (pd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
+            -- Include persona if linked to this specific department
+            AND (
+                pd.department_id = d.id 
+                -- OR persona is cross-department (no department links) - include in ALL departments
+                OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+            )
+            -- Also ensure persona is accessible to user (has matching department link OR is cross-department)
+            AND (
+                pd.department_id = ANY(ud.dept_ids)
+                OR NOT EXISTS (SELECT 1 FROM persona_departments pd3 WHERE pd3.persona_id = p.id AND pd3.active = true)
+            )
             GROUP BY d.id
         ),
         department_document_ids AS (
@@ -670,10 +852,23 @@ class ScenarioQueries:
                 COALESCE(ARRAY_AGG(pi.id::text ORDER BY pi.id) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
             FROM departments d
             CROSS JOIN user_departments ud
+            -- Join with parameters to ensure we only include items from active parameters
             LEFT JOIN parameter_items pi ON true
+            LEFT JOIN parameters p ON p.id = pi.parameter_id AND p.active = true
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             WHERE d.id = ANY(ud.dept_ids)
-            AND (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true))
+            AND p.id IS NOT NULL  -- Only include items from active parameters
+            -- Include parameter item if linked to this specific department
+            AND (
+                pid.department_id = d.id 
+                -- OR parameter item is cross-department (no department links) - include in ALL departments
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            )
+            -- Also ensure parameter item is accessible to user (has matching department link OR is cross-department)
+            AND (
+                pid.department_id = ANY(ud.dept_ids)
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid3 WHERE pid3.parameter_item_id = pi.id AND pid3.active = true)
+            )
             GROUP BY d.id
         ),
         department_agent_ids AS (
@@ -731,6 +926,62 @@ class ScenarioQueries:
             LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
             WHERE d.id = ANY(ud.dept_ids)
         ),
+        scenario_departments_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    d.id::text,
+                    jsonb_build_object(
+                        'name', d.title,
+                        'description', COALESCE(d.description, ''),
+                        'persona_ids', NULL,
+                        'document_ids', NULL,
+                        'parameter_ids', NULL,
+                        'parameter_item_ids', NULL
+                    )
+                ),
+                '{}'::jsonb
+            ) as department_mapping
+            FROM scenario_departments sd
+            JOIN departments d ON d.id = sd.department_id
+            WHERE sd.scenario_id = $1 AND sd.active = true AND d.active = true
+        ),
+        enhanced_department_mapping_data AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        dept_key,
+                        -- Merge: start with department_mapping_data values, overlay scenario-specific fields
+                        -- But preserve non-NULL arrays from department_mapping_data
+                        COALESCE(dmd.value, '{}'::jsonb) || 
+                        COALESCE(sdmdept.value, '{}'::jsonb) ||
+                        -- Explicitly preserve arrays from department_mapping_data (don't let NULL overwrite)
+                        jsonb_build_object(
+                            'persona_ids', COALESCE(dmd.value->'persona_ids', sdmdept.value->'persona_ids'),
+                            'document_ids', COALESCE(dmd.value->'document_ids', sdmdept.value->'document_ids'),
+                            'parameter_ids', COALESCE(dmd.value->'parameter_ids', sdmdept.value->'parameter_ids'),
+                            'parameter_item_ids', COALESCE(dmd.value->'parameter_item_ids', sdmdept.value->'parameter_item_ids'),
+                            'agent_ids', COALESCE(dmd.value->'agent_ids', sdmdept.value->'agent_ids'),
+                            'staff_ids', COALESCE(dmd.value->'staff_ids', sdmdept.value->'staff_ids'),
+                            'cohort_ids', COALESCE(dmd.value->'cohort_ids', sdmdept.value->'cohort_ids')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as department_mapping
+            FROM (
+                SELECT DISTINCT dept_key
+                FROM (
+                    SELECT key as dept_key FROM jsonb_each((SELECT department_mapping FROM department_mapping_data))
+                    UNION
+                    SELECT key as dept_key FROM jsonb_each((SELECT department_mapping FROM scenario_departments_mapping_data))
+                ) all_keys
+            ) keys
+            LEFT JOIN LATERAL (
+                SELECT value FROM jsonb_each((SELECT department_mapping FROM department_mapping_data)) WHERE key = keys.dept_key
+            ) dmd ON true
+            LEFT JOIN LATERAL (
+                SELECT value FROM jsonb_each((SELECT department_mapping FROM scenario_departments_mapping_data)) WHERE key = keys.dept_key
+            ) sdmdept ON true
+        ),
         accessible_scenarios AS (
             SELECT DISTINCT s.id as scenario_id
             FROM scenarios s
@@ -779,11 +1030,11 @@ class ScenarioQueries:
             up.role as user_role,
             sod.objective_mapping,
             vpd2.persona_mapping,
-            vdd.document_mapping,
+            COALESCE(edmd.document_mapping, vdd.document_mapping) as document_mapping,
             smd.simulation_mapping,
-            pmd.parameter_mapping,
-            pimd.parameter_item_mapping,
-            dmd.department_mapping,
+            COALESCE(epmd.parameter_mapping, pmd.parameter_mapping) as parameter_mapping,
+            COALESCE(epimd.parameter_item_mapping, pimd.parameter_item_mapping) as parameter_item_mapping,
+            COALESCE(edmdept.department_mapping, dmd.department_mapping) as department_mapping,
             ddd.document_details,
             COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
             COALESCE(ohd.objectives_history, ARRAY[]::text[]) as objectives_history
@@ -796,11 +1047,19 @@ class ScenarioQueries:
         CROSS JOIN merged_parameters_data mpd
         CROSS JOIN valid_personas_data vpd2
         CROSS JOIN valid_documents_data vdd
+        CROSS JOIN scenario_documents_mapping_data sdmd
+        CROSS JOIN enhanced_document_mapping_data edmd
         CROSS JOIN document_details_data ddd
         CROSS JOIN simulation_mapping_data smd
         CROSS JOIN parameter_mapping_data pmd
+        CROSS JOIN scenario_parameters_mapping_data spmd
+        CROSS JOIN enhanced_parameter_mapping_data epmd
         CROSS JOIN parameter_item_mapping_data pimd
+        CROSS JOIN scenario_parameter_items_mapping_data spimd
+        CROSS JOIN enhanced_parameter_item_mapping_data epimd
         CROSS JOIN department_mapping_data dmd
+        CROSS JOIN scenario_departments_mapping_data sdmdept
+        CROSS JOIN enhanced_department_mapping_data edmdept
         CROSS JOIN problem_statement_mapping_data psmd
         CROSS JOIN objectives_history_data ohd
         """
@@ -1962,7 +2221,12 @@ class ScenarioQueries:
             INNER JOIN user_departments ud ON d.id = ud.id
             LEFT JOIN personas p ON p.active = true
             LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-            WHERE (pd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
+            WHERE (
+                -- Include persona if linked to this specific department
+                pd.department_id = d.id 
+                -- OR persona is cross-department (no department links) - include in all departments
+                OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
+            )
             GROUP BY d.id
         ),
         department_document_ids AS (
@@ -1998,7 +2262,12 @@ class ScenarioQueries:
             INNER JOIN user_departments ud ON d.id = ud.id
             LEFT JOIN parameter_items pi ON true
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-            WHERE (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true))
+            WHERE (
+                -- Include parameter item if linked to this specific department
+                pid.department_id = d.id 
+                -- OR parameter item is cross-department (no department links) - include in all departments
+                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+            )
             GROUP BY d.id
         ),
         department_mapping_data AS (

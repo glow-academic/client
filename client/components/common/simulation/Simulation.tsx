@@ -156,56 +156,103 @@ export default function Simulation({ simulationId }: SimulationProps) {
     [simulationData]
   );
 
-  // Filter valid IDs based on selected departments
+  // Extract valid scenario IDs from V2 response, filtered by selected departments
+  // Includes: items from selected departments + cross-department items + currently selected items
   const validScenarioIds = useMemo(() => {
     const baseIds = simulationData?.valid_scenario_ids || [];
     const selectedDeptIds = formData?.departmentIds || [];
 
-    // If no departments selected, return all valid IDs
+    // Always include currently selected scenarios (for edit mode - ensures selected items are visible)
+    const selectedScenarioIdsSet = new Set(currentScenarioIds);
+
+    // If no departments selected, return all valid IDs plus selected ones
     if (selectedDeptIds.length === 0) {
-      return baseIds;
+      return Array.from(new Set([...baseIds, ...selectedScenarioIdsSet]));
     }
 
-    // Get union of scenario_ids from selected departments
-    const deptScenarioIds = new Set<string>();
-    selectedDeptIds.forEach((deptId) => {
-      const deptData = departmentMapping[deptId];
+    // Get union of scenario_ids from ALL departments (to identify cross-department items)
+    const allDeptScenarioIds = new Set<string>();
+    Object.values(departmentMapping).forEach((deptData) => {
       if (deptData?.scenario_ids && Array.isArray(deptData.scenario_ids)) {
-        deptData.scenario_ids.forEach((id) => deptScenarioIds.add(id));
+        deptData.scenario_ids.forEach((id) => allDeptScenarioIds.add(id));
       }
     });
 
-    // Filter base IDs to only include those in department scenario IDs
-    return baseIds.filter((id) => deptScenarioIds.has(id));
+    // Get union of scenario_ids from selected departments
+    const selectedDeptScenarioIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.scenario_ids && Array.isArray(deptData.scenario_ids)) {
+        deptData.scenario_ids.forEach((id) => selectedDeptScenarioIds.add(id));
+      }
+    });
+
+    // Include items that are:
+    // 1. In selected departments
+    // 2. Cross-department (not in any department's scenario_ids)
+    // 3. Currently selected
+    const filtered = baseIds.filter((id) => {
+      const inSelectedDepts = selectedDeptScenarioIds.has(id);
+      const isCrossDept = !allDeptScenarioIds.has(id); // Not in any department = cross-department
+      return inSelectedDepts || isCrossDept;
+    });
+
+    return Array.from(new Set([...filtered, ...selectedScenarioIdsSet]));
   }, [
     simulationData?.valid_scenario_ids,
     formData?.departmentIds,
     departmentMapping,
+    currentScenarioIds,
   ]);
 
+  // Extract valid rubric IDs from V2 response, filtered by selected departments
+  // Includes: items from selected departments + cross-department items + currently selected items
   const validRubricIds = useMemo(() => {
     const baseIds = simulationData?.valid_rubric_ids || [];
     const selectedDeptIds = formData?.departmentIds || [];
 
-    // If no departments selected, return all valid IDs
+    // Always include currently selected rubric (for edit mode - ensures selected item is visible)
+    const selectedRubricIdSet = formData?.rubricId
+      ? new Set([formData.rubricId])
+      : new Set<string>();
+
+    // If no departments selected, return all valid IDs plus selected one
     if (selectedDeptIds.length === 0) {
-      return baseIds;
+      return Array.from(new Set([...baseIds, ...selectedRubricIdSet]));
     }
 
-    // Get union of rubric_ids from selected departments
-    const deptRubricIds = new Set<string>();
-    selectedDeptIds.forEach((deptId) => {
-      const deptData = departmentMapping[deptId];
+    // Get union of rubric_ids from ALL departments (to identify cross-department items)
+    const allDeptRubricIds = new Set<string>();
+    Object.values(departmentMapping).forEach((deptData) => {
       if (deptData?.rubric_ids && Array.isArray(deptData.rubric_ids)) {
-        deptData.rubric_ids.forEach((id) => deptRubricIds.add(id));
+        deptData.rubric_ids.forEach((id) => allDeptRubricIds.add(id));
       }
     });
 
-    // Filter base IDs to only include those in department rubric IDs
-    return baseIds.filter((id) => deptRubricIds.has(id));
+    // Get union of rubric_ids from selected departments
+    const selectedDeptRubricIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.rubric_ids && Array.isArray(deptData.rubric_ids)) {
+        deptData.rubric_ids.forEach((id) => selectedDeptRubricIds.add(id));
+      }
+    });
+
+    // Include items that are:
+    // 1. In selected departments
+    // 2. Cross-department (not in any department's rubric_ids)
+    // 3. Currently selected
+    const filtered = baseIds.filter((id) => {
+      const inSelectedDepts = selectedDeptRubricIds.has(id);
+      const isCrossDept = !allDeptRubricIds.has(id); // Not in any department = cross-department
+      return inSelectedDepts || isCrossDept;
+    });
+
+    return Array.from(new Set([...filtered, ...selectedRubricIdSet]));
   }, [
     simulationData?.valid_rubric_ids,
     formData?.departmentIds,
+    formData?.rubricId,
     departmentMapping,
   ]);
 

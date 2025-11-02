@@ -28,14 +28,15 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import StaffBulkEditModal from "@/components/management/staff/StaffBulkEditModal";
 import { StaffDataTable } from "@/components/management/staff/StaffDataTable";
+import StaffEditModal from "@/components/management/staff/StaffEditModal";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCohortDetail,
   useCohortDetailDefault,
   useCreateCohort,
-  useRemoveProfilesFromCohort,
   useUpdateCohort,
 } from "@/lib/api/v2/hooks/cohorts";
 import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
@@ -87,6 +88,13 @@ export default function Cohort({ cohortId }: CohortProps) {
   // Staff management state (for StaffDataTable)
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Modal state management
+  const [editProfileId, setEditProfileId] = useState<string | null>(null);
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+  const [showBulkRemoveDialog, setShowBulkRemoveDialog] = useState(false);
+  const [removeStaffMember, setRemoveStaffMember] =
+    useState<ProfileListItem | null>(null);
+  const [showSingleRemoveDialog, setShowSingleRemoveDialog] = useState(false);
   // Staged profiles to be added when cohort is updated
   // Store minimal profile data for immediate display
   interface StagedProfile {
@@ -101,6 +109,10 @@ export default function Cohort({ cohortId }: CohortProps) {
   const [stagedProfilesToAdd, setStagedProfilesToAdd] = useState<
     StagedProfile[]
   >([]);
+  // Staged profiles to be removed when cohort is updated
+  const [stagedProfilesToRemove, setStagedProfilesToRemove] = useState<
+    string[]
+  >([]);
 
   // Simulation active state management (staged changes)
   const [simulationActiveStates, setSimulationActiveStates] = useState<
@@ -110,8 +122,6 @@ export default function Cohort({ cohortId }: CohortProps) {
     useState<Record<string, boolean>>({});
 
   // Memoize callback functions to prevent unnecessary re-renders
-  // Mutation hooks for removing profiles
-  const removeProfilesFromCohortMutation = useRemoveProfilesFromCohort();
 
   // V2 API hooks
   const {
@@ -438,7 +448,8 @@ export default function Cohort({ cohortId }: CohortProps) {
         JSON.stringify(originalSimulationIds.sort()) ||
       JSON.stringify(simulationActiveStates) !==
         JSON.stringify(originalSimulationActiveStates) ||
-      stagedProfilesToAdd.length > 0 // Check for staged profiles
+      stagedProfilesToAdd.length > 0 || // Check for staged profiles to add
+      stagedProfilesToRemove.length > 0 // Check for staged profiles to remove
     );
   }, [
     formData,
@@ -449,6 +460,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     simulationActiveStates,
     originalSimulationActiveStates,
     stagedProfilesToAdd.length,
+    stagedProfilesToRemove.length,
   ]);
 
   const handleInputChange = (
@@ -540,9 +552,12 @@ export default function Cohort({ cohortId }: CohortProps) {
 
     try {
       // Prepare profile IDs from current cohort staff + staged profiles to add
+      // Exclude staged profiles to remove
       const existingProfileIds =
         cohortId && cohortData?.staff
-          ? cohortData.staff.map((s) => s.profile_id)
+          ? cohortData.staff
+              .map((s) => s.profile_id)
+              .filter((id) => !stagedProfilesToRemove.includes(id))
           : [];
       const stagedProfileIds = stagedProfilesToAdd.map((p) => p.profileId);
       const profileIds = [...existingProfileIds, ...stagedProfileIds];
@@ -566,6 +581,7 @@ export default function Cohort({ cohortId }: CohortProps) {
         toast.success("Cohort updated successfully!");
         // Clear staged profiles after successful update
         setStagedProfilesToAdd([]);
+        setStagedProfilesToRemove([]);
       } else {
         // CREATE mode - V2 API handles junction tables with active states
         await createCohortMutation.mutateAsync({
@@ -583,6 +599,7 @@ export default function Cohort({ cohortId }: CohortProps) {
         toast.success("Cohort created successfully!");
         // Clear staged profiles after successful create
         setStagedProfilesToAdd([]);
+        setStagedProfilesToRemove([]);
       }
 
       resetFormAndState();
@@ -971,13 +988,23 @@ export default function Cohort({ cohortId }: CohortProps) {
                   requests_in_last_day: 0,
                   can_edit: false,
                   can_delete: false,
+                  can_remove: true, // Staged profiles can always be removed
                   isStaged: true,
                 };
               })
               .filter((p) => !existingStaffIds.has(p.profile_id));
 
+            // Filter out staged removals from display
+            const stagedRemovalsSet = new Set(stagedProfilesToRemove);
+            const filteredExistingStaff = existingStaff.filter(
+              (s) => !stagedRemovalsSet.has(s.profile_id)
+            );
+
             // Combine existing staff with staged profiles (staged profiles first)
-            const mergedStaff = [...stagedWithDetails, ...existingStaff];
+            const mergedStaff = [
+              ...stagedWithDetails,
+              ...filteredExistingStaff,
+            ];
 
             return (
               <div className="space-y-4">
@@ -1084,73 +1111,82 @@ export default function Cohort({ cohortId }: CohortProps) {
                       "noopener,noreferrer"
                     );
                   }}
-                  onEdit={() => {
-                    // Edit handled via modal if needed
-                  }}
+                  onEdit={(staff) => setEditProfileId(staff.profile_id)}
                   onDelete={() => {
                     // Delete not available in scoped view
                   }}
-                  onRemoveFromCohort={async (staff) => {
+                  onRemoveFromCohort={(staff) => {
                     // Check if this is a staged profile
                     const isStaged = (
                       staff as ProfileListItem & { isStaged?: boolean }
                     ).isStaged;
 
                     if (isStaged) {
-                      // Remove from staging list
+                      // Remove from staging list immediately (no confirmation needed)
                       setStagedProfilesToAdd((prev) =>
                         prev.filter((p) => p.profileId !== staff.profile_id)
                       );
                       toast.success("Removed staged profile");
                     } else {
-                      // Remove from cohort (existing profile)
-                      try {
-                        await removeProfilesFromCohortMutation.mutateAsync({
-                          cohortId: cohortId,
-                          profileIds: [staff.profile_id],
-                        });
-                        toast.success("Removed profile from cohort");
-                        setIsRefreshing(true);
-                        await refetchCohortDetail();
-                        setIsRefreshing(false);
-                      } catch (error) {
+                      // Use server-side can_remove flag
+                      if (!staff.can_remove) {
                         toast.error(
-                          `Failed to remove profile: ${error instanceof Error ? error.message : "Unknown error"}`
+                          "You cannot remove this staff member from the cohort."
                         );
+                        return;
                       }
+                      // Show confirmation dialog to stage removal
+                      setRemoveStaffMember(staff);
+                      setShowSingleRemoveDialog(true);
                     }
                   }}
-                  onBulkEdit={() => {
-                    // Bulk edit can be implemented if needed
-                  }}
-                  onBulkDelete={async () => {
-                    if (selectedStaffIds.length === 0) return;
-                    try {
-                      await removeProfilesFromCohortMutation.mutateAsync({
-                        cohortId: cohortId,
-                        profileIds: selectedStaffIds,
-                      });
-                      toast.success(
-                        `Removed ${selectedStaffIds.length} profile(s) from cohort`
+                  onBulkEdit={() => setShowBulkEditModal(true)}
+                  onBulkDelete={() => {
+                    // Filter selected staff that can be removed (use server-side can_remove)
+                    const removableIds = selectedStaffIds.filter((id) => {
+                      const staff = mergedStaff.find(
+                        (s) => s.profile_id === id
                       );
-                      setSelectedStaffIds([]);
-                      setIsRefreshing(true);
-                      await refetchCohortDetail();
-                      setIsRefreshing(false);
-                    } catch (error) {
+                      if (!staff) return false;
+                      const isStaged = (
+                        staff as ProfileListItem & { isStaged?: boolean }
+                      ).isStaged;
+                      if (isStaged) return true; // Staged profiles can always be removed
+                      return staff.can_remove ?? false;
+                    });
+
+                    if (removableIds.length === 0) {
                       toast.error(
-                        `Failed to remove profiles: ${error instanceof Error ? error.message : "Unknown error"}`
+                        "None of the selected staff members can be removed from the cohort."
                       );
+                      return;
                     }
+
+                    setShowBulkRemoveDialog(true);
                   }}
                   canDelete={(profileId) => {
                     const staff = mergedStaff.find(
                       (s) => s.profile_id === profileId
                     );
-                    return staff?.can_delete ?? false;
+                    if (!staff) return false;
+                    const isStaged = (
+                      staff as ProfileListItem & { isStaged?: boolean }
+                    ).isStaged;
+                    if (isStaged) return true; // Staged profiles can always be removed
+                    return staff.can_remove ?? false;
                   }}
                   deletableCount={
-                    mergedStaff.filter((s) => s.can_delete).length
+                    selectedStaffIds.filter((id) => {
+                      const staff = mergedStaff.find(
+                        (s) => s.profile_id === id
+                      );
+                      if (!staff) return false;
+                      const isStaged = (
+                        staff as ProfileListItem & { isStaged?: boolean }
+                      ).isStaged;
+                      if (isStaged) return true;
+                      return staff.can_remove ?? false;
+                    }).length
                   }
                   canEdit={(profileId) => {
                     const staff = mergedStaff.find(
@@ -1158,11 +1194,188 @@ export default function Cohort({ cohortId }: CohortProps) {
                     );
                     return staff?.can_edit ?? false;
                   }}
-                  editableCount={mergedStaff.filter((s) => s.can_edit).length}
+                  editableCount={
+                    selectedStaffIds.filter((id) => {
+                      const staff = mergedStaff.find(
+                        (s) => s.profile_id === id
+                      );
+                      return staff?.can_edit ?? false;
+                    }).length
+                  }
                 />
               </div>
             );
           })()}
+
+        {/* Edit Staff Modal */}
+        {cohortId && (
+          <StaffEditModal
+            profileId={editProfileId}
+            open={!!editProfileId}
+            onOpenChange={(open: boolean) => !open && setEditProfileId(null)}
+            onDone={() => {
+              setEditProfileId(null);
+              refetchCohortDetail();
+            }}
+          />
+        )}
+
+        {/* Bulk Edit Modal */}
+        {cohortId && (
+          <StaffBulkEditModal
+            profileIds={selectedStaffIds}
+            open={showBulkEditModal}
+            onOpenChange={setShowBulkEditModal}
+            onDone={() => {
+              setSelectedStaffIds([]);
+              setShowBulkEditModal(false);
+              refetchCohortDetail();
+            }}
+          />
+        )}
+
+        {/* Single Remove from Cohort Confirmation */}
+        {cohortId && (
+          <AlertDialog
+            open={showSingleRemoveDialog}
+            onOpenChange={setShowSingleRemoveDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Remove {removeStaffMember?.first_name}{" "}
+                  {removeStaffMember?.last_name}?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove them from the cohort. Changes will be applied
+                  when you save.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => {
+                    if (!removeStaffMember || !cohortId) return;
+
+                    // Stage removal (will be applied on form submit)
+                    setStagedProfilesToRemove((prev) => {
+                      if (!prev.includes(removeStaffMember.profile_id)) {
+                        return [...prev, removeStaffMember.profile_id];
+                      }
+                      return prev;
+                    });
+                    toast.success(
+                      "Staff member staged for removal. Changes will be applied when you save the cohort."
+                    );
+                    setShowSingleRemoveDialog(false);
+                    setRemoveStaffMember(null);
+                  }}
+                >
+                  Stage Removal
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+
+        {/* Bulk Remove from Cohort Confirmation */}
+        {cohortId && (
+          <AlertDialog
+            open={showBulkRemoveDialog}
+            onOpenChange={setShowBulkRemoveDialog}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Remove {selectedStaffIds.length} staff member
+                  {selectedStaffIds.length !== 1 ? "s" : ""}?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove them from the cohort. Changes will be applied
+                  when you save.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => {
+                    if (selectedStaffIds.length === 0 || !cohortId) return;
+
+                    // Recreate mergedStaff in this scope
+                    const existingStaff = cohortData?.staff || [];
+                    const existingStaffIds = new Set(
+                      existingStaff.map((s) => s.profile_id)
+                    );
+                    const stagedWithDetails = stagedProfilesToAdd.map(
+                      (staged) => ({
+                        profile_id: staged.profileId,
+                        can_remove: true, // Staged profiles can always be removed
+                        isStaged: true,
+                      })
+                    );
+                    const stagedRemovalsSet = new Set(stagedProfilesToRemove);
+                    const filteredExistingStaff = existingStaff.filter(
+                      (s) => !stagedRemovalsSet.has(s.profile_id)
+                    );
+                    const mergedStaffForCheck = [
+                      ...stagedWithDetails,
+                      ...filteredExistingStaff,
+                    ];
+
+                    // Filter to only removable profiles (use server-side can_remove)
+                    const removableIds = selectedStaffIds.filter((id) => {
+                      const staff = mergedStaffForCheck.find(
+                        (s: ProfileListItem & { isStaged?: boolean }) =>
+                          s.profile_id === id
+                      );
+                      if (!staff) return false;
+                      const isStaged = (
+                        staff as ProfileListItem & { isStaged?: boolean }
+                      ).isStaged;
+                      if (isStaged) return true;
+                      return staff.can_remove ?? false;
+                    });
+
+                    // Separate staged profiles from existing profiles
+                    const stagedIds = removableIds.filter(
+                      (id) => !existingStaffIds.has(id)
+                    );
+                    const existingIds = removableIds.filter((id) =>
+                      existingStaffIds.has(id)
+                    );
+
+                    // Remove staged profiles from staging list
+                    if (stagedIds.length > 0) {
+                      setStagedProfilesToAdd((prev) =>
+                        prev.filter((p) => !stagedIds.includes(p.profileId))
+                      );
+                    }
+
+                    // Stage existing profiles for removal
+                    if (existingIds.length > 0) {
+                      setStagedProfilesToRemove((prev) => {
+                        const newRemovals = existingIds.filter(
+                          (id) => !prev.includes(id)
+                        );
+                        return [...prev, ...newRemovals];
+                      });
+                    }
+
+                    toast.success(
+                      `${removableIds.length} staff member(s) staged for removal. Changes will be applied when you save the cohort.`
+                    );
+                    setSelectedStaffIds([]);
+                    setShowBulkRemoveDialog(false);
+                  }}
+                >
+                  Stage Removal
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">

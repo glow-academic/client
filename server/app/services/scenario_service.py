@@ -96,6 +96,8 @@ class ScenarioService(BaseService):
                     scenario_document_mapping[did] = DocumentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
+                        filePath=ddata.get("filePath"),
+                        mimeType=ddata.get("mimeType"),
                     )
 
             # Parse JSONB parameter_item mapping (may be string or dict)
@@ -309,7 +311,9 @@ class ScenarioService(BaseService):
 
         # Parse basic data
         persona_id = scenario["persona_id"]
-        document_ids = scenario["document_ids"] or []
+        # Note: document_ids from query may be incorrect due to cache/query issues
+        # We'll derive it from document_details which is the source of truth
+        document_ids_from_query = scenario["document_ids"] or []
         objective_ids = scenario["objective_ids"] or []
         active_simulation_ids = scenario["simulation_ids"] or []
         valid_persona_ids = scenario["valid_persona_ids"] or []
@@ -383,6 +387,8 @@ class ScenarioService(BaseService):
                     document_mapping[did] = DocumentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
+                        filePath=ddata.get("filePath"),
+                        mimeType=ddata.get("mimeType"),
                     )
 
         # Parse JSONB simulation mapping (may be string or dict)
@@ -512,6 +518,10 @@ class ScenarioService(BaseService):
                             parameter_item_ids=doc.get("parameter_item_ids", []),
                         )
                     )
+        
+        # Derive document_ids from document_details (source of truth)
+        # This ensures consistency since document_details is correctly filtered by scenario_id
+        document_ids = [doc.document_id for doc in document_details if doc.document_id]
 
         # Compute permissions from query data
         in_use_by_active = scenario["active_usage_count"] > 0

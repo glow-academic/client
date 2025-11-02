@@ -63,6 +63,7 @@ export const ProfileListItemSchema = z.object({
   requests_in_last_day: z.number(),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
+  can_remove: z.boolean(),
 });
 
 export const ProfileListResponseSchema = z.object({

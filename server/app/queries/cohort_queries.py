@@ -347,7 +347,19 @@ class CohortQueries:
                     WHEN ups.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
                     WHEN ups.role = 'ta' AND p.role = 'guest' THEN true
                     ELSE false
-                END as can_delete
+                END as can_delete,
+                CASE 
+                    -- Cannot remove ourselves from cohort
+                    WHEN p.id = $2 THEN false
+                    -- Superadmin can remove anyone (except self)
+                    WHEN ups.role = 'superadmin' THEN true
+                    -- Role hierarchy: can only remove roles equal or below current role
+                    WHEN ups.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest') THEN true
+                    WHEN ups.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest') THEN true
+                    WHEN ups.role = 'ta' AND p.role IN ('ta', 'guest') THEN true
+                    WHEN ups.role = 'guest' AND p.role = 'guest' THEN true
+                    ELSE false
+                END as can_remove
             FROM profiles p
             JOIN cohort_profile_ids cpi ON cpi.profile_id = p.id
             LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
@@ -555,7 +567,8 @@ class CohortQueries:
                     'default_profile', cs.default_profile,
                     'requests_in_last_day', cs.requests_in_last_day,
                     'can_edit', cs.can_edit,
-                    'can_delete', cs.can_delete
+                    'can_delete', cs.can_delete,
+                    'can_remove', cs.can_remove
                 ) ORDER BY cs.last_name, cs.first_name
              ), '[]'::jsonb)
              FROM cohort_staff cs
@@ -871,7 +884,19 @@ class CohortQueries:
                     WHEN ups.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
                     WHEN ups.role = 'ta' AND p.role = 'guest' THEN true
                     ELSE false
-                END as can_delete
+                END as can_delete,
+                CASE 
+                    -- Cannot remove ourselves from cohort
+                    WHEN p.id = $1 THEN false
+                    -- Superadmin can remove anyone (except self)
+                    WHEN ups.role = 'superadmin' THEN true
+                    -- Role hierarchy: can only remove roles equal or below current role
+                    WHEN ups.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest') THEN true
+                    WHEN ups.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest') THEN true
+                    WHEN ups.role = 'ta' AND p.role IN ('ta', 'guest') THEN true
+                    WHEN ups.role = 'guest' AND p.role = 'guest' THEN true
+                    ELSE false
+                END as can_remove
             FROM profiles p
             JOIN cohort_profile_ids cpi ON cpi.profile_id = p.id
             LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
@@ -964,7 +989,8 @@ class CohortQueries:
                     'default_profile', cs.default_profile,
                     'requests_in_last_day', cs.requests_in_last_day,
                     'can_edit', cs.can_edit,
-                    'can_delete', cs.can_delete
+                    'can_delete', cs.can_delete,
+                    'can_remove', cs.can_remove
                 ) ORDER BY cs.last_name, cs.first_name
              ), '[]'::jsonb)
              FROM cohort_staff cs
@@ -1216,6 +1242,44 @@ class CohortQueries:
         """Build query to delete cohort simulations."""
         query = "DELETE FROM cohort_simulations WHERE cohort_id = $1"
         return (query, [cohort_id])
+
+    def get_cohort_and_profile_roles_for_removal(
+        self, cohort_id: str, profile_ids: list[str], current_profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Get cohort title and profile roles for permission validation in one query."""
+        query = """
+        WITH cohort_info AS (
+            SELECT title
+            FROM cohorts
+            WHERE id = $1
+        ),
+        current_user_role AS (
+            SELECT role
+            FROM profiles
+            WHERE id = $2
+        ),
+        target_profiles AS (
+            SELECT 
+                id,
+                role
+            FROM profiles
+            WHERE id = ANY($3::uuid[])
+        )
+        SELECT 
+            (SELECT title FROM cohort_info) as cohort_title,
+            (SELECT role FROM current_user_role) as current_user_role,
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'id', id,
+                        'role', role
+                    )
+                ) FILTER (WHERE id IS NOT NULL),
+                '[]'::json
+            ) as target_profiles
+        FROM target_profiles
+        """
+        return (query, [cohort_id, current_profile_id, profile_ids])
 
     def remove_cohort_profiles(self) -> tuple[str, list[Any]]:
         """Build query to remove profiles from cohort (set active = false)."""

@@ -221,9 +221,12 @@ export default function StaffBulkEditModal({
                 <div className="flex-1">
                   <StaffRolePicker
                     selectedRole={bulkRole === "__keep__" ? "" : bulkRole}
-                    onSelect={(value) => setBulkRole(value)}
+                    onSelect={(value) => {
+                      // When a role is selected, switch from __keep__ to that role
+                      setBulkRole(value);
+                    }}
                     placeholder="Select role"
-                    disabled={isSubmitting || bulkRole === "__keep__"}
+                    disabled={isSubmitting}
                     buttonClassName="h-10"
                   />
                 </div>

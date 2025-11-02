@@ -1101,7 +1101,7 @@ class SimulationQueries:
         ),
         valid_scenarios_list AS (
             -- Get scenarios that are marked as roots in scenario_tree (parent_id = child_id)
-            -- and are active and in user's departments
+            -- and are active and in user's departments OR cross-department (no department links)
             SELECT DISTINCT
                 s.id,
                 s.name,
@@ -1110,9 +1110,36 @@ class SimulationQueries:
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             CROSS JOIN user_department_ids udi
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
-            JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
-            WHERE sd.department_id = ANY(udi.ids) 
-              AND s.active = true
+            LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+            WHERE s.active = true
+              AND (
+                  sd.department_id = ANY(udi.ids)
+                  OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
+              )
+            UNION
+            -- Also include root scenarios for currently selected scenarios (for edit mode - ensures selected items are available)
+            SELECT DISTINCT
+                COALESCE(
+                    (SELECT st2.parent_id 
+                     FROM scenario_tree st2 
+                     WHERE st2.child_id = ssb.scenario_id 
+                       AND st2.parent_id = st2.child_id 
+                     LIMIT 1),
+                    ssb.scenario_id
+                ) as id,
+                s2.name,
+                sps2.problem_statement
+            FROM simulation_scenarios_base ssb
+            JOIN scenarios s2 ON s2.id = COALESCE(
+                (SELECT st3.parent_id 
+                 FROM scenario_tree st3 
+                 WHERE st3.child_id = ssb.scenario_id 
+                   AND st3.parent_id = st3.child_id 
+                 LIMIT 1),
+                ssb.scenario_id
+            )
+            LEFT JOIN scenario_problem_statements sps2 ON sps2.scenario_id = s2.id AND sps2.active = true
+            WHERE s2.active = true
         ),
         valid_scenarios AS (
             SELECT ARRAY_AGG(id::text) as ids
@@ -1131,6 +1158,15 @@ class SimulationQueries:
                   rd.department_id = ANY(udi.ids)
                   OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
               )
+            UNION
+            -- Also include currently selected rubric (for edit mode - ensures selected item is available)
+            SELECT DISTINCT
+                r2.id,
+                r2.name,
+                COALESCE(r2.description, '') as description
+            FROM simulation_base sb
+            JOIN rubrics r2 ON r2.id = sb.rubric_id
+            WHERE sb.rubric_id IS NOT NULL AND r2.active = true
         ),
         rubric_mapping_data AS (
             SELECT COALESCE(

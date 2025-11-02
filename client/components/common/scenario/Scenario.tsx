@@ -64,7 +64,7 @@ import {
 
 // Custom Components
 import { ProblemStatementPicker } from "@/components/common/forms/ProblemStatementPicker";
-import { DocumentPicker } from "./DocumentPicker";
+import { DocumentPicker, type DocumentMappingItem } from "./DocumentPicker";
 import { ParameterSelector } from "./ParameterSelector";
 import { PersonaPicker } from "./PersonaPicker";
 
@@ -82,7 +82,6 @@ import {
   useUpdateScenario,
 } from "@/lib/api/v2/hooks/scenarios";
 import {
-  getAllValidParameterItemIds,
   getObjectivesFromMapping,
   getParameterItemIdsFromStructure,
   groupParameterItemsByParameterId,
@@ -349,26 +348,29 @@ export default function Scenario({
     () => scenarioData?.persona_mapping || {},
     [scenarioData]
   );
-  const documentMapping = useMemo(
-    () => scenarioData?.document_mapping || {},
-    [scenarioData]
-  );
+  // Backend now includes selected documents in document_mapping with all necessary fields
+  const documentMapping = useMemo((): Record<string, DocumentMappingItem> => {
+    return (scenarioData?.document_mapping || {}) as Record<
+      string,
+      DocumentMappingItem
+    >;
+  }, [scenarioData]);
   const parameterMapping = useMemo(
     () => scenarioData?.parameter_mapping || {},
     [scenarioData]
   );
-  const parameterItemMapping = useMemo(
-    () => scenarioData?.parameter_item_mapping || {},
-    [scenarioData]
-  );
+  // Backend now includes selected parameter items in parameter_item_mapping with all necessary fields
+  const parameterItemMapping = useMemo(() => {
+    return scenarioData?.parameter_item_mapping || {};
+  }, [scenarioData]);
   const simulationMapping = useMemo(
     () => scenarioData?.simulation_mapping || {},
     [scenarioData]
   );
-  const departmentMapping = useMemo(
-    () => scenarioData?.department_mapping || {},
-    [scenarioData]
-  );
+  // Backend now includes selected departments in department_mapping
+  const departmentMapping = useMemo(() => {
+    return scenarioData?.department_mapping || {};
+  }, [scenarioData]);
   const problemStatementMapping = useMemo(
     () => scenarioData?.problem_statement_mapping || {},
     [scenarioData]
@@ -379,69 +381,137 @@ export default function Scenario({
   );
 
   // Extract valid IDs from V2 response, filtered by selected departments
+  // Includes: items from selected departments + cross-department items + currently selected items
   const validPersonaIds = useMemo(() => {
     const baseIds = scenarioData?.valid_persona_ids || [];
     const selectedDeptIds = formData.departmentIds || [];
 
-    // If no departments selected, return all valid IDs
+    // Always include currently selected persona (for edit mode - ensures selected item is visible)
+    const selectedPersonaIdSet = selectedPersonaId
+      ? new Set([selectedPersonaId])
+      : new Set<string>();
+
+    // If no departments selected, return all valid IDs plus selected one
     if (selectedDeptIds.length === 0) {
-      return baseIds;
+      return Array.from(new Set([...baseIds, ...selectedPersonaIdSet]));
     }
 
-    // Get union of persona_ids from selected departments
-    const deptPersonaIds = new Set<string>();
-    selectedDeptIds.forEach((deptId) => {
-      const deptData = departmentMapping[deptId];
+    // Get union of persona_ids from ALL departments (to identify cross-department items)
+    const allDeptPersonaIds = new Set<string>();
+    Object.values(departmentMapping).forEach((deptData) => {
       if (deptData?.persona_ids && Array.isArray(deptData.persona_ids)) {
-        deptData.persona_ids.forEach((id) => deptPersonaIds.add(id));
+        deptData.persona_ids.forEach((id) => allDeptPersonaIds.add(id));
       }
     });
 
-    // Filter base IDs to only include those in department persona IDs
-    return baseIds.filter((id) => deptPersonaIds.has(id));
+    // Get union of persona_ids from selected departments
+    const selectedDeptPersonaIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.persona_ids && Array.isArray(deptData.persona_ids)) {
+        deptData.persona_ids.forEach((id) => selectedDeptPersonaIds.add(id));
+      }
+    });
+
+    // Include items that are:
+    // 1. In selected departments
+    // 2. Cross-department (not in any department's persona_ids)
+    // 3. Currently selected
+    const filtered = baseIds.filter((id) => {
+      const inSelectedDepts = selectedDeptPersonaIds.has(id);
+      const isCrossDept = !allDeptPersonaIds.has(id); // Not in any department = cross-department
+      return inSelectedDepts || isCrossDept;
+    });
+
+    return Array.from(new Set([...filtered, ...selectedPersonaIdSet]));
   }, [
     scenarioData?.valid_persona_ids,
     formData.departmentIds,
     departmentMapping,
+    selectedPersonaId,
   ]);
 
+  // Extract valid document IDs from V2 response, filtered by selected departments
+  // Includes: items from selected departments + cross-department items + currently selected items
   const validDocumentIds = useMemo(() => {
     const baseIds = scenarioData?.valid_document_ids || [];
     const selectedDeptIds = formData.departmentIds || [];
 
-    // If no departments selected, return all valid IDs
+    // Always include currently selected documents (for edit mode - ensures selected items are visible)
+    const selectedDocIds = new Set(currentDocumentIds);
+
+    // If no departments selected, return all valid IDs plus selected ones
     if (selectedDeptIds.length === 0) {
-      return baseIds;
+      return Array.from(new Set([...baseIds, ...selectedDocIds]));
     }
 
-    // Get union of document_ids from selected departments
-    const deptDocumentIds = new Set<string>();
-    selectedDeptIds.forEach((deptId) => {
-      const deptData = departmentMapping[deptId];
+    // Get union of document_ids from ALL departments (to identify cross-department items)
+    const allDeptDocumentIds = new Set<string>();
+    Object.values(departmentMapping).forEach((deptData) => {
       if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
-        deptData.document_ids.forEach((id) => deptDocumentIds.add(id));
+        deptData.document_ids.forEach((id) => allDeptDocumentIds.add(id));
       }
     });
 
-    // Filter base IDs to only include those in department document IDs
-    return baseIds.filter((id) => deptDocumentIds.has(id));
+    // Get union of document_ids from selected departments
+    const selectedDeptDocumentIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.document_ids && Array.isArray(deptData.document_ids)) {
+        deptData.document_ids.forEach((id) => selectedDeptDocumentIds.add(id));
+      }
+    });
+
+    // Include items that are:
+    // 1. In selected departments
+    // 2. Cross-department (not in any department's document_ids)
+    // 3. Currently selected
+    const filtered = baseIds.filter((id) => {
+      const inSelectedDepts = selectedDeptDocumentIds.has(id);
+      const isCrossDept = !allDeptDocumentIds.has(id); // Not in any department = cross-department
+      return inSelectedDepts || isCrossDept;
+    });
+
+    return Array.from(new Set([...filtered, ...selectedDocIds]));
   }, [
     scenarioData?.valid_document_ids,
     formData.departmentIds,
     departmentMapping,
+    currentDocumentIds,
   ]);
 
+  // Extract valid parameter item IDs, filtered by selected departments
+  // Includes: items from selected departments + cross-department items + currently selected items
   const validParameterItemIds = useMemo(() => {
-    const baseIds = getAllValidParameterItemIds(scenarioData?.parameters || {});
+    // Derive valid IDs from parameter_item_mapping keys
+    // This ensures consistency - whatever is in the mapping is considered valid
+    // Backend now returns all accessible items in parameter_item_mapping (same as default mode)
+    const mappingIds = Object.keys(parameterItemMapping || {});
     const selectedDeptIds = formData.departmentIds || [];
 
-    // If no departments selected, return all valid IDs
+    // Always include currently selected parameter items (for edit mode - ensures selected items are visible)
+    const selectedParamItemIds = new Set(currentParameterItemIds);
+
+    // If no departments selected, return all mapping IDs plus selected ones
     if (selectedDeptIds.length === 0) {
-      return baseIds;
+      return Array.from(new Set([...mappingIds, ...selectedParamItemIds]));
     }
 
+    // Get union of parameter_item_ids from ALL departments (to identify cross-department items)
+    const allDeptParameterItemIds = new Set<string>();
+    Object.values(departmentMapping).forEach((deptData) => {
+      if (
+        deptData?.parameter_item_ids &&
+        Array.isArray(deptData.parameter_item_ids)
+      ) {
+        deptData.parameter_item_ids.forEach((id: string) =>
+          allDeptParameterItemIds.add(id)
+        );
+      }
+    });
+
     // Get union of parameter_item_ids from selected departments
-    const deptParameterItemIds = new Set<string>();
+    const selectedDeptParameterItemIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
       const deptData = departmentMapping[deptId];
       if (
@@ -449,14 +519,28 @@ export default function Scenario({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          deptParameterItemIds.add(id)
+          selectedDeptParameterItemIds.add(id)
         );
       }
     });
 
-    // Filter base IDs to only include those in department parameter item IDs
-    return baseIds.filter((itemId) => deptParameterItemIds.has(itemId));
-  }, [scenarioData?.parameters, formData.departmentIds, departmentMapping]);
+    // Include items that are:
+    // 1. In selected departments
+    // 2. Cross-department (not in any department's parameter_item_ids)
+    // 3. Currently selected
+    const filtered = mappingIds.filter((itemId) => {
+      const inSelectedDepts = selectedDeptParameterItemIds.has(itemId);
+      const isCrossDept = !allDeptParameterItemIds.has(itemId); // Not in any department = cross-department
+      return inSelectedDepts || isCrossDept;
+    });
+
+    return Array.from(new Set([...filtered, ...selectedParamItemIds]));
+  }, [
+    parameterItemMapping,
+    formData.departmentIds,
+    departmentMapping,
+    currentParameterItemIds,
+  ]);
 
   // Track department changes and manage staged selections
   useEffect(() => {
@@ -1305,7 +1389,12 @@ export default function Scenario({
               {formData?.departmentIds !== undefined && !isLoadingData ? (
                 <DepartmentPicker
                   mapping={departmentMapping}
-                  validIds={scenarioData?.valid_department_ids || []}
+                  validIds={Array.from(
+                    new Set([
+                      ...(scenarioData?.valid_department_ids || []),
+                      ...(formData.departmentIds || []),
+                    ])
+                  )}
                   selectedIds={formData.departmentIds || []}
                   onSelect={(ids) => handleInputChange("departmentIds", ids)}
                   placeholder="All Departments"
