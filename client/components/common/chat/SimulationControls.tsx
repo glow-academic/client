@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
 import { formatTime } from "@/utils/time";
@@ -35,9 +34,14 @@ export function SimulationControls() {
   const attemptProfileId = simulationContext?.attemptProfileId;
 
   // Check if current user is the owner of this attempt
+  // Allow buttons to show even if profile IDs aren't loaded yet (they'll be disabled by isActive)
   const isAttemptOwner = useMemo(() => {
-    if (!activeProfile?.id || !effectiveProfile?.id || !attemptProfileId) {
-      return false;
+    // If no attemptProfileId yet, assume owner (will be disabled by isActive if not)
+    if (!attemptProfileId) {
+      return true; // Show buttons, will be disabled if actually not owner
+    }
+    if (!activeProfile?.id || !effectiveProfile?.id) {
+      return true; // Show buttons, will be disabled if actually not owner
     }
     return (
       (activeProfile.id === effectiveProfile.id &&
@@ -77,15 +81,13 @@ export function SimulationControls() {
     endChat,
     endChatLoading,
     isLastAttempt,
-    simulation,
-    isActive,
-    showResults,
     chats,
     expectedChatCount,
     currentChat,
     attemptId,
     endAllChats,
     attemptData,
+    isLoadingChats,
   } = simulationContext || {};
 
   // Generate permutations for End All dialog
@@ -189,16 +191,13 @@ export function SimulationControls() {
           0
         );
 
-        // Calculate total percentage if all selected options have totalPossiblePoints
-        // We need to sum up the rubric points for all scenarios
-        // For simplicity, use average percentage if available
-        const percentages = perm
-          .map((opt) => opt.percentage)
-          .filter((p): p is number => p !== null);
+        // Calculate total percentage - include skipped sessions as 0 in the average
+        // Skipped sessions (null percentage) count as 0 and are included in the average
         const totalPercentage =
-          percentages.length > 0
+          perm.length > 0
             ? Math.round(
-                percentages.reduce((sum, p) => sum + p, 0) / percentages.length
+                perm.reduce((sum, opt) => sum + (opt.percentage || 0), 0) /
+                  perm.length
               )
             : null;
 
@@ -260,6 +259,11 @@ export function SimulationControls() {
     return null;
   }
 
+  // Don't show buttons while data is still loading
+  if (isLoadingChats) {
+    return null;
+  }
+
   // After this point, simulationContext is guaranteed to exist
   // TypeScript doesn't know this, so we need to assert or use the values directly
   const safeEndChat = endChat!;
@@ -269,10 +273,13 @@ export function SimulationControls() {
   const safeAttemptId = attemptId!;
   const safeCurrentChat = currentChat!;
 
-  // Don't show if results are showing or user is not the owner
-  if (showResults || !isAttemptOwner) {
+  // Don't show if user is not the owner
+  if (!isAttemptOwner) {
     return null;
   }
+
+  // Note: We still show buttons even when showResults is true or timer expired
+  // They will be disabled instead (handled by isActive check)
 
   // Handle Next Chat button click (moves to next chat)
   const handleNextChat = () => {
@@ -331,9 +338,7 @@ export function SimulationControls() {
             type="button"
             variant="outline"
             onClick={handleNextChat}
-            disabled={
-              endChatLoading || (simulation?.timeLimit ? !isActive : false)
-            }
+            disabled={endChatLoading}
             className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
             data-tour-end-chat
           >
@@ -388,7 +393,7 @@ export function SimulationControls() {
 
       {/* Confirm End All Dialog with Permutation Selection */}
       <AlertDialog open={confirmEndAllOpen} onOpenChange={setConfirmEndAllOpen}>
-        <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
           <AlertDialogHeader>
             <AlertDialogTitle>End all remaining sessions?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -399,32 +404,30 @@ export function SimulationControls() {
           </AlertDialogHeader>
 
           {permutations.length > 0 ? (
-            <ScrollArea className="flex-1 pr-4">
+            <div className="flex-1 overflow-auto">
               <RadioGroup
                 value={selectedPermutation}
                 onValueChange={setSelectedPermutation}
-                className="space-y-3"
+                className="space-y-3 pr-4"
               >
                 {permutations.map((perm) => (
                   <div
                     key={perm.id}
-                    className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors ${
+                    className={`rounded-lg border-2 transition-colors ${
                       selectedPermutation === perm.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <RadioGroupItem
-                      value={perm.id}
-                      id={perm.id}
-                      className="mt-1"
-                    />
-                    <Label
-                      htmlFor={perm.id}
-                      className="cursor-pointer flex-1 space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                    <Label htmlFor={perm.id} className="cursor-pointer block">
+                      {/* Header row with radio button and cumulative info */}
+                      <div className="flex items-center gap-3 p-3 pb-2">
+                        <RadioGroupItem
+                          value={perm.id}
+                          id={perm.id}
+                          className="flex-shrink-0"
+                        />
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
                           <span className="font-medium">
                             Total: {perm.totalScore} pts
                           </span>
@@ -439,24 +442,19 @@ export function SimulationControls() {
                             </span>
                           )}
                           {perm.id === permutations[0]?.id && (
-                            <Badge variant="default" className="ml-2">
+                            <Badge variant="default" className="ml-auto">
                               Best
                             </Badge>
                           )}
                         </div>
                       </div>
-                      <div className="space-y-1 pl-6">
+                      {/* Individual chat cases below */}
+                      <div className="space-y-1 px-3 pb-3 pl-11">
                         {perm.options.map((opt, optIdx) => (
                           <div
                             key={optIdx}
                             className="text-sm text-muted-foreground"
                           >
-                            <span className="font-medium">
-                              {allSimulationScenarios.find(
-                                (s) => s.scenarioId === opt.scenarioId
-                              )?.scenarioName || "Scenario"}
-                            </span>
-                            {" → "}
                             <span>{opt.title}</span>
                             {opt.score !== null && (
                               <>
@@ -476,7 +474,7 @@ export function SimulationControls() {
                   </div>
                 ))}
               </RadioGroup>
-            </ScrollArea>
+            </div>
           ) : null}
 
           <AlertDialogFooter>

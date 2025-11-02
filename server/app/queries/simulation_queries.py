@@ -2304,7 +2304,7 @@ class SimulationQueries:
                             'passed', pwg.passed,
                             'createdAt', pwg.created_at,
                             'title', pwg.title,
-                            'timeTaken', COALESCE(pat.total_time_taken, 0),
+                            'timeTaken', COALESCE(pwg.time_taken, 0),
                             'totalPossiblePoints', COALESCE(parp.total_points, 0),
                             'percentage', CASE 
                                 WHEN pwg.score IS NOT NULL AND parp.total_points > 0 THEN

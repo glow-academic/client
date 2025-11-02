@@ -165,7 +165,6 @@ export function SimulationProvider({
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
-  const onSimulationFinishedRef = useRef(onSimulationFinished);
   const simulationRef = useRef<SimulationItem | null>(null);
   const pendingNextChatIdRef = useRef<string | null>(null);
   const log = useLogger();
@@ -303,12 +302,16 @@ export function SimulationProvider({
   const isSingleChatAttempt = attemptData?.isSingleChatAttempt ?? true;
   const isLastAttempt = attemptData?.isLastAttempt ?? true;
 
-  // Timer from v2 (server computed baseline)
-  const serverTimer: AttemptFullResponse["timer"] = attemptData?.timer || {
-    elapsed: 0,
-    remaining: null,
-    expired: false,
-  };
+  // Timer from v2 (server computed baseline) - wrap in useMemo to avoid dependency issues
+  const serverTimer: AttemptFullResponse["timer"] = useMemo(
+    () =>
+      attemptData?.timer || {
+        elapsed: 0,
+        remaining: null,
+        expired: false,
+      },
+    [attemptData?.timer]
+  );
 
   // Track when we last fetched data
   const dataFetchedAtRef = useRef<number>(Date.now());
@@ -335,7 +338,7 @@ export function SimulationProvider({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [currentChat?.id, currentChat?.completed, showResults]);
+  }, [currentChat, showResults]);
 
   // Compute display timer - allow negative values for normal mode (like origin/main)
   // Infinite mode is already clamped to 0 on server side
@@ -360,17 +363,10 @@ export function SimulationProvider({
     simulationRef.current = (simulation as unknown as SimulationItem) || null;
   }, [simulation]);
 
-  // Check if timer expired and finish simulation
-  useEffect(() => {
-    // Update the ref to the latest callback
-    onSimulationFinishedRef.current = onSimulationFinished;
-
-    // Check if timer expired and finish
-    if (attemptData?.timer.expired && !showResults) {
-      setShowResults(true);
-      onSimulationFinishedRef.current?.();
-    }
-  }, [attemptData?.timer.expired, showResults, onSimulationFinished]);
+  // Check if timer expired and disable actions (but don't auto-show results)
+  // In origin/main, timer expiration disabled buttons but didn't auto-finish
+  // Users could still end the session manually even after time expired
+  // Note: We rely on isActive to disable buttons instead of auto-showing results
 
   // Initialize to first incomplete chat when data loads
   useEffect(() => {
@@ -514,12 +510,7 @@ export function SimulationProvider({
       // (handleSimulationMessageComplete, handleSimulationMessageCancelled, etc.)
       // to ensure proper state management with server responses
     },
-    [
-      currentChat,
-      isSendingMessage,
-      emitSendSimulationMessage,
-      readOnly,
-    ]
+    [currentChat, isSendingMessage, emitSendSimulationMessage, readOnly]
   );
 
   // Stop message function
@@ -554,13 +545,18 @@ export function SimulationProvider({
         // Backend handles completion tracking automatically
 
         // Call backend with end_all=false for single chat ending
-        emitContinueSimulation({
+        const continueData: Parameters<typeof emitContinueSimulation>[0] = {
           chat_id: targetChatId,
           attempt_id: attemptId,
           end_all: false,
-          department_id: simulation?.departmentId,
-          previous_chat_id: previousChatId,
-        });
+        };
+        if (simulation?.departmentId) {
+          continueData.department_id = simulation.departmentId;
+        }
+        if (previousChatId) {
+          continueData.previous_chat_id = previousChatId;
+        }
+        emitContinueSimulation(continueData);
       } catch (error) {
         // Invalidate to refetch on error
         queryClient.invalidateQueries({
@@ -580,42 +576,50 @@ export function SimulationProvider({
     ]
   );
 
-  const endAllChats = useCallback(async (previousChatMap?: Record<string, string | null>) => {
-    if (readOnly) return;
-    if (!simulation || !attempt || !currentChat) return;
+  const endAllChats = useCallback(
+    async (previousChatMap?: Record<string, string | null>) => {
+      if (readOnly) return;
+      if (!simulation || !attempt || !currentChat) return;
 
-    setEndChatLoading(true);
+      setEndChatLoading(true);
 
-    try {
-      // Note: completed_at column was removed from simulation_chats table
-      // Completion time is now tracked via simulation_chat_grades.time_taken
-      // Backend handles completion tracking automatically
+      try {
+        // Note: completed_at column was removed from simulation_chats table
+        // Completion time is now tracked via simulation_chat_grades.time_taken
+        // Backend handles completion tracking automatically
 
-      // Call backend with end_all=true to handle all remaining chats
-      emitContinueSimulation({
-        chat_id: currentChat.id,
-        attempt_id: attemptId,
-        end_all: true,
-        previous_chat_map: previousChatMap,
-        department_id: simulation?.departmentId,
-      });
-    } catch (error) {
-      // Invalidate to refetch on error
-      queryClient.invalidateQueries({
-        queryKey: attemptsFullKeys.all,
-      });
-      toast.error(`Failed to end all chats: ${error}`);
-      setEndChatLoading(false);
-    }
-  }, [
-    simulation,
-    attempt,
-    currentChat,
-    attemptId,
-    emitContinueSimulation,
-    readOnly,
-    queryClient,
-  ]);
+        // Call backend with end_all=true to handle all remaining chats
+        const continueData: Parameters<typeof emitContinueSimulation>[0] = {
+          chat_id: currentChat.id,
+          attempt_id: attemptId,
+          end_all: true,
+        };
+        if (previousChatMap) {
+          continueData.previous_chat_map = previousChatMap;
+        }
+        if (simulation?.departmentId) {
+          continueData.department_id = simulation.departmentId;
+        }
+        emitContinueSimulation(continueData);
+      } catch (error) {
+        // Invalidate to refetch on error
+        queryClient.invalidateQueries({
+          queryKey: attemptsFullKeys.all,
+        });
+        toast.error(`Failed to end all chats: ${error}`);
+        setEndChatLoading(false);
+      }
+    },
+    [
+      simulation,
+      attempt,
+      currentChat,
+      attemptId,
+      emitContinueSimulation,
+      readOnly,
+      queryClient,
+    ]
+  );
 
   // Listen for WebSocket loading state changes
   useEffect(() => {
@@ -953,7 +957,9 @@ export function SimulationProvider({
 
     // Timer state (from v2 server-side computation)
     timer,
-    isActive: attemptData?.isActive ?? true,
+    // isActive: true if timer hasn't expired and results aren't showing
+    // Use computed timer (includes local offset) to catch when timer goes negative
+    isActive: !timer.expired && !showResults,
 
     // UI state (from v2 metadata)
     showResults: showResults || (attemptData?.showResults ?? false),

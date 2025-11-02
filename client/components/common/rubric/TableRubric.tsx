@@ -9,11 +9,6 @@
 import * as React from "react";
 
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import {
   Table,
   TableBody,
   TableCell,
@@ -125,51 +120,9 @@ export default function TableRubric({
                     className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}
                   >
                     <TableCell className="font-medium align-top p-2 text-xs">
-                      <HoverCard openDelay={200} closeDelay={150}>
-                        <HoverCardTrigger asChild>
-                          <div className="break-words whitespace-normal overflow-hidden cursor-pointer px-2 py-1 rounded-sm hover:bg-accent/40">
-                            {groupInfo?.name || "Unknown Group"}
-                          </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent side="right" className="w-80">
-                          <div className="space-y-2">
-                            <div className="text-xs font-semibold">
-                              Standards in this group
-                            </div>
-                            {standardIds.length === 0 ? (
-                              <div className="text-xs text-muted-foreground">
-                                No standards in this group.
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-1 gap-1">
-                                {standardIds.map((standardId) => {
-                                  const standardInfo =
-                                    standardsMapping[standardId];
-                                  const isAchievedForS =
-                                    isStandardAchieved(standardId);
-                                  return (
-                                    <div
-                                      key={standardId}
-                                      className="flex items-center justify-between text-xs"
-                                    >
-                                      <span
-                                        className={
-                                          isAchievedForS
-                                            ? "font-semibold"
-                                            : "text-muted-foreground"
-                                        }
-                                      >
-                                        {standardInfo?.name || "Unknown"} (
-                                        {standardInfo?.points || 0})
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
+                      <div className="break-words whitespace-normal overflow-hidden px-2 py-1">
+                        {groupInfo?.name || "Unknown Group"}
+                      </div>
                     </TableCell>
                     <TableCell
                       className={`whitespace-normal text-xs align-top p-2 ${
@@ -304,51 +257,9 @@ export default function TableRubric({
                     className="font-medium align-top p-2 text-xs"
                     style={{ width: "20%" }}
                   >
-                    <HoverCard openDelay={200} closeDelay={150}>
-                      <HoverCardTrigger asChild>
-                        <div className="break-words whitespace-normal overflow-hidden cursor-pointer px-2 py-1 rounded-sm hover:bg-accent/40">
-                          {groupInfo?.name || "Unknown Group"}
-                        </div>
-                      </HoverCardTrigger>
-                      <HoverCardContent side="right" className="w-80">
-                        <div className="space-y-2">
-                          <div className="text-xs font-semibold">
-                            Standards in this group
-                          </div>
-                          {standardIds.length === 0 ? (
-                            <div className="text-xs text-muted-foreground">
-                              No standards in this group.
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-1 gap-1">
-                              {standardIds.map((standardId) => {
-                                const standardInfo =
-                                  standardsMapping[standardId];
-                                const isAchievedForS =
-                                  isStandardAchieved(standardId);
-                                return (
-                                  <div
-                                    key={standardId}
-                                    className="flex items-center justify-between text-xs"
-                                  >
-                                    <span
-                                      className={
-                                        isAchievedForS
-                                          ? "font-semibold"
-                                          : "text-muted-foreground"
-                                      }
-                                    >
-                                      {standardInfo?.name || "Unknown"} (
-                                      {standardInfo?.points || 0})
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
+                    <div className="break-words whitespace-normal overflow-hidden px-2 py-1">
+                      {groupInfo?.name || "Unknown Group"}
+                    </div>
                   </TableCell>
                   {Array.from({ length: maxStandards }, (_, standardIndex) => {
                     const standardId = standardIds[standardIndex];

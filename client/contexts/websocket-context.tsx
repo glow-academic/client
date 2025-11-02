@@ -65,6 +65,7 @@ export interface WebSocketContextType {
     end_all?: boolean;
     previous_chat_id?: string;
     previous_chat_map?: Record<string, string | null>;
+    department_id?: string;
   }) => void;
 
   // Assistant event emitters
