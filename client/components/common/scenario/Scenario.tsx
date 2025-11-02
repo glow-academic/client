@@ -38,21 +38,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -113,27 +100,50 @@ function ObjectiveInputWithAutocomplete({
   onDrop: (e: React.DragEvent) => void;
   onRemove: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Filter suggestions based on search
+  // Filter suggestions based on current input value (completing the sentence)
   const filteredSuggestions = useMemo(() => {
-    if (!search.trim()) return suggestions.slice(0, 5); // Show top 5 when no search
-    const searchLower = search.toLowerCase();
-    return suggestions
-      .filter((s) => s.toLowerCase().includes(searchLower))
-      .slice(0, 5);
-  }, [suggestions, search]);
+    if (!value.trim() || !suggestions.length) return [];
+
+    const valueLower = value.toLowerCase();
+    // Filter suggestions that start with or contain the typed text
+    const matching = suggestions
+      .filter((s) => {
+        const sLower = s.toLowerCase();
+        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
+      })
+      .slice(0, 5); // Show top 5 matches
+
+    return matching;
+  }, [suggestions, value]);
 
   const handleSelect = (suggestion: string) => {
     onChange(suggestion);
-    setOpen(false);
-    setSearch("");
+    setShowSuggestions(false);
+    inputRef.current?.focus();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+    setShowSuggestions(true);
+  };
+
+  const handleFocus = () => {
+    if (value && filteredSuggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleBlur = () => {
+    // Delay hiding suggestions to allow clicks
+    setTimeout(() => setShowSuggestions(false), 200);
   };
 
   return (
     <div
-      className={`flex items-center gap-2 ${
+      className={`flex flex-col gap-2 ${
         draggedObjectiveIndex === index ? "opacity-50" : ""
       }`}
       draggable={!disabled}
@@ -141,71 +151,47 @@ function ObjectiveInputWithAutocomplete({
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
-      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
-      <Popover
-        open={open && !disabled && suggestions.length > 0}
-        onOpenChange={setOpen}
-      >
-        <PopoverTrigger asChild>
-          <div className="flex-1 relative">
-            <Input
-              value={value}
-              onChange={(e) => {
-                onChange(e.target.value);
-                setSearch(e.target.value);
-                if (e.target.value && suggestions.length > 0) {
-                  setOpen(true);
-                } else {
-                  setOpen(false);
-                }
-              }}
-              onFocus={() => {
-                if (value && suggestions.length > 0) {
-                  setOpen(true);
-                }
-              }}
-              placeholder={placeholder}
-              className="flex-1"
-              disabled={disabled}
-            />
-          </div>
-        </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-0" align="start">
-          <Command>
-            <CommandInput
-              placeholder="Search objectives..."
-              value={search}
-              onValueChange={setSearch}
-            />
-            <CommandList>
-              <CommandEmpty>No suggestions found.</CommandEmpty>
-              {filteredSuggestions.length > 0 && (
-                <CommandGroup heading="Suggestions">
-                  {filteredSuggestions.map((suggestion, idx) => (
-                    <CommandItem
-                      key={idx}
-                      onSelect={() => handleSelect(suggestion)}
-                      className="cursor-pointer"
-                    >
-                      {suggestion}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        onClick={onRemove}
-        className="h-8 w-8 shrink-0"
-        disabled={disabled}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
+        <div className="flex-1 relative">
+          <Input
+            ref={inputRef}
+            value={value}
+            onChange={handleInputChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            placeholder={placeholder}
+            className="flex-1"
+            disabled={disabled}
+          />
+          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
+              <div className="p-1">
+                {filteredSuggestions.map((suggestion, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleSelect(suggestion)}
+                    onMouseDown={(e) => e.preventDefault()} // Prevent input blur
+                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={onRemove}
+          className="h-8 w-8 shrink-0"
+          disabled={disabled}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -1784,6 +1770,27 @@ export default function Scenario({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {Object.keys(problemStatementMapping).length > 0 && (
+                <ProblemStatementPicker
+                  problemStatementMapping={problemStatementMapping}
+                  selectedProblemStatementId={selectedProblemStatementId}
+                  onSelect={(id) => {
+                    setSelectedProblemStatementId(id);
+                    if (id && problemStatementMapping[id]) {
+                      handleInputChange(
+                        "problemStatement",
+                        problemStatementMapping[id].problem_statement
+                      );
+                    }
+                  }}
+                  onCreateNew={() => {
+                    setSelectedProblemStatementId(null);
+                    handleInputChange("problemStatement", "");
+                  }}
+                  disabled={isReadonly}
+                  buttonClassName="h-9"
+                />
+              )}
               <Button
                 variant="default"
                 size="sm"
@@ -1829,28 +1836,6 @@ export default function Scenario({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              {isEditMode &&
-                Object.keys(problemStatementMapping).length > 0 && (
-                  <div className="flex justify-end">
-                    <ProblemStatementPicker
-                      problemStatementMapping={problemStatementMapping}
-                      selectedProblemStatementId={selectedProblemStatementId}
-                      onSelect={(id) => {
-                        setSelectedProblemStatementId(id);
-                        if (id && problemStatementMapping[id]) {
-                          handleInputChange(
-                            "problemStatement",
-                            problemStatementMapping[id].problem_statement
-                          );
-                        }
-                      }}
-                      onCreateNew={() => {
-                        setSelectedProblemStatementId(null);
-                      }}
-                      disabled={isReadonly}
-                    />
-                  </div>
-                )}
               <Textarea
                 id="description"
                 value={formData.problemStatement || ""}
