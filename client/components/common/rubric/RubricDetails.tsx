@@ -23,7 +23,7 @@ import {
   useRubricUnifiedUpdate,
 } from "@/lib/api/v2/hooks/rubrics";
 import { RubricItem } from "@/lib/api/v2/schemas/rubrics";
-import { Edit } from "lucide-react";
+import { Edit, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export interface RubricDetailsProps {
@@ -136,56 +136,62 @@ export default function RubricDetails({
     });
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex-1 flex flex-col gap-4">
-          {isEditing ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  className="text-2xl font-bold"
-                  placeholder="Rubric Name"
-                  disabled={
-                    createRubricMutation.isPending || isUpdating || isReadonly
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  placeholder="Rubric Description"
-                  disabled={
-                    createRubricMutation.isPending || isUpdating || isReadonly
-                  }
-                />
-              </div>
+  const content = (
+    <div className="flex-1 flex flex-col gap-4">
+      {isEditing ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              className="text-2xl font-bold"
+              placeholder="Rubric Name"
+              disabled={
+                createRubricMutation.isPending || isUpdating || isReadonly
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) =>
+                handleInputChange("description", e.target.value)
+              }
+              placeholder="Rubric Description"
+              disabled={
+                createRubricMutation.isPending || isUpdating || isReadonly
+              }
+            />
+          </div>
 
-              {/* Department Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={validDepartmentIds}
-                  selectedIds={formData.departmentIds || []}
-                  onSelect={handleDepartmentChange}
-                  placeholder="All Departments"
-                  disabled={
-                    createRubricMutation.isPending || isUpdating || isReadonly
-                  }
-                  multiSelect={true}
-                />
-              </div>
-              <div className="flex items-center space-x-2">
+          {/* Department Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            <DepartmentPicker
+              mapping={departmentMapping}
+              validIds={validDepartmentIds}
+              selectedIds={formData.departmentIds || []}
+              onSelect={handleDepartmentChange}
+              placeholder="All Departments"
+              disabled={
+                createRubricMutation.isPending || isUpdating || isReadonly
+              }
+              multiSelect={true}
+            />
+          </div>
+
+          {/* Active Switch */}
+          <div className="space-y-2 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="active" className="text-sm flex items-center gap-1.5">
+                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                  Active
+                </Label>
                 <Switch
                   id="active"
                   checked={formData.active}
@@ -196,8 +202,12 @@ export default function RubricDetails({
                     createRubricMutation.isPending || isUpdating || isReadonly
                   }
                 />
-                <Label htmlFor="active">Active</Label>
               </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Inactive rubrics will not be available for simulations
+              </p>
+            </div>
+          </div>
               {!isCreateMode && (
                 <div className="p-3 bg-muted/20 rounded-lg border">
                   <h4 className="text-sm font-medium mb-2">
@@ -281,7 +291,16 @@ export default function RubricDetails({
             )}
           </div>
         </div>
-      </CardHeader>
+  );
+
+  // In create mode, render without Card wrapper; in edit mode, use Card
+  if (isCreateMode) {
+    return <div className="space-y-4">{content}</div>;
+  }
+
+  return (
+    <Card>
+      <CardHeader>{content}</CardHeader>
     </Card>
   );
 }

@@ -211,13 +211,17 @@ class ParameterQueries:
             name,
             description,
             numerical,
-            active
+            active,
+            document_parameter,
+            practice_parameter
         )
         VALUES (
             $1,
             $2,
             $3,
-            $4
+            $4,
+            $5,
+            $6
         )
         RETURNING id
         """
@@ -230,15 +234,13 @@ class ParameterQueries:
             parameter_id,
             name,
             description,
-            value,
-            default_item
+            value
         )
         VALUES (
             $1,
             $2,
             $3,
-            $4,
-            $5
+            $4
         )
         RETURNING id
         """
@@ -257,6 +259,8 @@ class ParameterQueries:
             description = $3,
             numerical = $4,
             active = $5,
+            document_parameter = $6,
+            practice_parameter = $7,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -309,7 +313,9 @@ class ParameterQueries:
         SELECT 
             name,
             description,
-            numerical
+            numerical,
+            document_parameter,
+            practice_parameter
         FROM parameters
         WHERE id = $1
         """
@@ -322,13 +328,17 @@ class ParameterQueries:
             name,
             description,
             numerical,
-            active
+            active,
+            document_parameter,
+            practice_parameter
         )
         VALUES (
             $1 || ' Copy',
             $2,
             $3,
-            false
+            false,
+            $4,
+            $5
         )
         RETURNING id
         """
@@ -341,8 +351,7 @@ class ParameterQueries:
             id,
             name,
             description,
-            value,
-            default_item
+            value
         FROM parameter_items
         WHERE parameter_id = $1
         ORDER BY name
@@ -402,6 +411,8 @@ class ParameterQueries:
                 p.description,
                 p.numerical,
                 p.active,
+                p.document_parameter,
+                p.practice_parameter,
                 COALESCE(pda.department_ids, NULL) as department_ids
             FROM parameters p
             LEFT JOIN parameter_departments_aggregated pda ON true
@@ -413,14 +424,13 @@ class ParameterQueries:
                 pi.name,
                 pi.description,
                 pi.value,
-                pi.default_item,
                 COALESCE(COUNT(spi.scenario_id), 0) as usage_count,
                 COALESCE(pidd.department_ids, NULL) as department_ids
             FROM parameter_items pi
             LEFT JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id AND spi.active = true
             LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_item_id = pi.id
             WHERE pi.parameter_id = $1
-            GROUP BY pi.id, pi.name, pi.description, pi.value, pi.default_item, pidd.department_ids
+            GROUP BY pi.id, pi.name, pi.description, pi.value, pidd.department_ids
         ),
         items_json AS (
             SELECT COALESCE(
@@ -430,7 +440,6 @@ class ParameterQueries:
                         'name', name,
                         'description', description,
                         'value', value,
-                        'default_item', default_item,
                         'usage_count', usage_count
                     )
                     ORDER BY name
@@ -501,8 +510,8 @@ class ParameterQueries:
                 p.description,
                 p.numerical,
                 p.active,
-                p.default_parameter,
-                p.department_id
+                p.document_parameter,
+                p.practice_parameter
             FROM parameters p
             JOIN default_parameter dp ON p.id = dp.id
         ),
@@ -512,12 +521,11 @@ class ParameterQueries:
                 pi.name,
                 pi.description,
                 pi.value,
-                pi.default_item,
                 COALESCE(COUNT(spi.scenario_id), 0) as usage_count
             FROM parameter_items pi
             JOIN default_parameter dp ON pi.parameter_id = dp.id
             LEFT JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id AND spi.active = true
-            GROUP BY pi.id, pi.name, pi.description, pi.value, pi.default_item
+            GROUP BY pi.id, pi.name, pi.description, pi.value
         ),
         items_json AS (
             SELECT COALESCE(
@@ -527,7 +535,6 @@ class ParameterQueries:
                         'name', name,
                         'description', description,
                         'value', value,
-                        'default_item', default_item,
                         'usage_count', usage_count
                     )
                     ORDER BY name

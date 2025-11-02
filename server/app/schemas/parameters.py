@@ -71,7 +71,6 @@ class ParameterItemDetail(BaseModel):
     name: str
     description: str
     value: str
-    default_item: bool
     department_ids: list[str] | None  # None = cross-department (all departments)
     can_delete: bool
 
@@ -84,6 +83,8 @@ class ParameterDetailResponse(BaseModel):
     description: str
     numerical: bool
     active: bool
+    document_parameter: bool
+    practice_parameter: bool
     department_ids: list[str] | None  # None = cross-department (all departments)
     valid_department_ids: list[str]
 
@@ -111,7 +112,6 @@ class ParameterItemCreate(BaseModel):
     name: str
     description: str
     value: str
-    default_item: bool
     department_ids: list[str] | None = None  # Optional for backward compatibility
 
 
@@ -122,6 +122,8 @@ class CreateParameterRequest(BaseModel):
     description: str
     numerical: bool
     active: bool
+    document_parameter: bool = False
+    practice_parameter: bool = False
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_items: list[ParameterItemCreate]
 
@@ -142,6 +144,8 @@ class UpdateParameterRequest(BaseModel):
     description: str
     numerical: bool
     active: bool
+    document_parameter: bool
+    practice_parameter: bool
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_items: list[ParameterItemCreate]
 
@@ -192,7 +196,6 @@ class CreateParameterItemRequest(BaseModel):
     name: str
     description: str
     value: str
-    default_item: bool
 
 
 class CreateParameterItemResponse(BaseModel):

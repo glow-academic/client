@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,13 +38,22 @@ import {
   useParameterDetailDefault,
   useUpdateParameter,
 } from "@/lib/api/v2/hooks/parameters";
-import { Plus, Trash2 } from "lucide-react";
+import {
+  Calculator,
+  FileText,
+  GraduationCap,
+  Plus,
+  Power,
+  Trash2,
+} from "lucide-react";
 
 interface FormData {
   name?: string;
   description?: string;
   numerical?: boolean;
   active?: boolean;
+  document_parameter?: boolean;
+  practice_parameter?: boolean;
   departmentIds?: string[] | null;
 }
 
@@ -56,7 +64,6 @@ interface ParameterItemFormData {
   value: string;
   isNew?: boolean;
   isDeleted?: boolean;
-  defaultItem?: boolean;
   canDelete?: boolean;
   departmentIds?: string[] | null;
 }
@@ -81,6 +88,8 @@ export default function Parameter({
       description: "",
       numerical: false,
       active: false,
+      document_parameter: false,
+      practice_parameter: false,
       departmentIds: null, // No longer used at parameter level
     }),
     []
@@ -160,6 +169,8 @@ export default function Parameter({
         description: parameterData.description,
         numerical: parameterData.numerical,
         active: parameterData.active,
+        document_parameter: parameterData.document_parameter ?? false,
+        practice_parameter: parameterData.practice_parameter ?? false,
         departmentIds: null, // No longer used at parameter level
       });
     } else if (!isEditMode && parameterData) {
@@ -182,7 +193,6 @@ export default function Parameter({
         name: item.name,
         description: item.description,
         value: item.value,
-        defaultItem: item.default_item ?? false,
         canDelete: item.can_delete,
         departmentIds: item.department_ids ?? null,
         isNew: false,
@@ -208,7 +218,6 @@ export default function Parameter({
         name: item.name,
         description: item.description,
         value: item.value,
-        defaultItem: item.default_item ?? false,
         canDelete: item.can_delete,
         departmentIds: item.department_ids ?? null,
         isNew: false,
@@ -241,7 +250,6 @@ export default function Parameter({
           name: item.name,
           description: item.description,
           value: formData.numerical ? item.value : item.name,
-          default_item: !!item.defaultItem,
           department_ids: item.departmentIds ?? null,
         }));
 
@@ -253,6 +261,8 @@ export default function Parameter({
           description: formData.description!,
           numerical: formData.numerical || false,
           active: formData.active || false,
+          document_parameter: formData.document_parameter || false,
+          practice_parameter: formData.practice_parameter || false,
           parameter_items,
         });
 
@@ -264,6 +274,8 @@ export default function Parameter({
           description: formData.description!,
           numerical: formData.numerical || false,
           active: formData.active || false,
+          document_parameter: formData.document_parameter || false,
+          practice_parameter: formData.practice_parameter || false,
           parameter_items,
         });
 
@@ -299,7 +311,6 @@ export default function Parameter({
       value: "",
       isNew: true,
       isDeleted: false,
-      defaultItem: false,
       departmentIds: effectiveProfile?.primaryDepartmentId
         ? [effectiveProfile.primaryDepartmentId]
         : null,
@@ -338,7 +349,6 @@ export default function Parameter({
     const activeItems = parameterItemsFormData.filter(
       (item) => !item.isDeleted
     );
-
 
     activeItems.forEach((item, index) => {
       if (!item.name.trim()) {
@@ -410,39 +420,126 @@ export default function Parameter({
               )}
             </div>
 
-
-            <div className="flex items-center space-x-2">
-              {formData?.numerical !== undefined && !isLoading ? (
-                <>
-                  <Switch
-                    id="numerical"
-                    checked={formData.numerical}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, numerical: checked }))
-                    }
-                  />
-                  <Label htmlFor="numerical">Numerical Parameter</Label>
-                </>
-              ) : (
-                <Skeleton className="h-6 w-32" />
-              )}
+            {/* Active Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="active"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                    Active
+                  </Label>
+                  {formData?.active !== undefined && !isLoading ? (
+                    <Switch
+                      id="active"
+                      checked={formData.active}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, active: checked }))
+                      }
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Inactive parameters will not be available for scenarios
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              {formData?.active !== undefined && !isLoading ? (
-                <>
-                  <Switch
-                    id="active"
-                    checked={formData.active}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, active: checked }))
-                    }
-                  />
-                  <Label htmlFor="active">Active</Label>
-                </>
-              ) : (
-                <Skeleton className="h-6 w-32" />
-              )}
+            {/* Numerical Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="numerical"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Calculator className="h-3.5 w-3.5 text-muted-foreground" />
+                    Numerical
+                  </Label>
+                  {formData?.numerical !== undefined && !isLoading ? (
+                    <Switch
+                      id="numerical"
+                      checked={formData.numerical}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, numerical: checked }))
+                      }
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Parameter values must be numeric
+                </p>
+              </div>
+            </div>
+
+            {/* Document Parameter Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="document_parameter"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                    Require Documents
+                  </Label>
+                  {formData?.document_parameter !== undefined && !isLoading ? (
+                    <Switch
+                      id="document_parameter"
+                      checked={formData.document_parameter}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          document_parameter: checked,
+                        }))
+                      }
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Documents must be connected to this parameter
+                </p>
+              </div>
+            </div>
+
+            {/* Practice Parameter Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="practice_parameter"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+                    Practice
+                  </Label>
+                  {formData?.practice_parameter !== undefined && !isLoading ? (
+                    <Switch
+                      id="practice_parameter"
+                      checked={formData.practice_parameter}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          practice_parameter: checked,
+                        }))
+                      }
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  This shows up as a custom practice option
+                </p>
+              </div>
             </div>
           </div>
 
@@ -541,28 +638,6 @@ export default function Parameter({
                         </TableCell>
                         <TableCell className="w-20">
                           <div className="flex items-center gap-1">
-                            {effectiveProfile?.role === "superadmin" && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div>
-                                    <Checkbox
-                                      checked={!!item.defaultItem}
-                                      onCheckedChange={(checked) =>
-                                        handleParameterItemInputChange(
-                                          itemIndex,
-                                          "defaultItem",
-                                          Boolean(checked)
-                                        )
-                                      }
-                                      aria-label="Save as system item"
-                                    />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  Save as system item
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
                             {item.canDelete !== false && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -631,7 +706,6 @@ export default function Parameter({
                         name: item.name,
                         description: item.description,
                         value: item.value,
-                        defaultItem: item.default_item ?? false,
                         canDelete: item.can_delete,
                         departmentIds: item.department_ids ?? null,
                         isNew: false,

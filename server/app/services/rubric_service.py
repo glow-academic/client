@@ -151,11 +151,9 @@ class RubricService(BaseService):
         user_role = rubric.get("user_role", "student")
 
         # Compute can_edit permission
-        # Default rubrics can only be edited by superadmin
+        # All rubrics can be edited by admin/superadmin
         is_admin = user_role in ("admin", "superadmin")
-        can_edit = is_admin and (
-            not rubric["default_rubric"] or user_role == "superadmin"
-        )
+        can_edit = is_admin
 
         # Parse department_mapping from JSONB with type safety (may be string or dict)
         department_mapping = {}
@@ -253,20 +251,22 @@ class RubricService(BaseService):
         # Compute can_edit permission
         user_role = result["user_role"] if result.get("user_role") else "trainee"
         is_admin = user_role in ("admin", "superadmin")
-        can_edit = is_admin and (
-            not result["default_rubric"] or user_role == "superadmin"
-        )
+        can_edit = is_admin
 
-        # Parse department_mapping from JSONB
-        department_mapping_json = json.loads(result["department_mapping"])
-        valid_department_ids = result["valid_department_ids"]
+        # Parse department_mapping from JSONB with type safety (may be string or dict)
+        department_mapping = {}
+        dept_mapping_data = result.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for dept_id, ddata in dept_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
 
-        department_mapping: dict[str, DepartmentMappingItem] = {}
-        for dept_id, ddata in department_mapping_json.items():
-            department_mapping[dept_id] = DepartmentMappingItem(
-                name=ddata.get("name", ""),
-                description=ddata.get("description", ""),
-            )
+        valid_department_ids = result["valid_department_ids"] or []
 
         # Parse hierarchical standard groups structure from JSONB
         standard_group_ids = []
@@ -274,7 +274,9 @@ class RubricService(BaseService):
         standard_groups_mapping = {}
         standards_mapping = {}
 
-        standard_groups_data = json.loads(result["standard_groups_complete"])
+        standard_groups_data = result.get("standard_groups_complete")
+        if isinstance(standard_groups_data, str):
+            standard_groups_data = json.loads(standard_groups_data)
         if isinstance(standard_groups_data, list):
             for group_data in standard_groups_data:
                 if isinstance(group_data, dict):

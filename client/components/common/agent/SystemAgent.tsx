@@ -51,7 +51,7 @@ import {
   useUpdateAgent as useUpdateAgentV2,
 } from "@/lib/api/v2/hooks/agents";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
-import { Bug, Copy, Eye, Trash2 } from "lucide-react";
+import { Bug, Copy, Eye, Power, Trash2 } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
 
@@ -573,24 +573,33 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               </div>
             </div>
 
-            {/* Switches - Horizontal Layout */}
-            <div className="flex gap-8">
-              {/* Agent Active Switch */}
-              <div className="flex items-center gap-2">
-                <Label htmlFor="active" className="text-sm">
-                  Agent Active
-                </Label>
-                {formData?.active !== undefined && !isLoading ? (
-                  <Switch
-                    id="active"
-                    checked={formData.active ?? true}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("active", checked)
-                    }
-                  />
-                ) : (
-                  <Skeleton className="h-6 w-11" />
-                )}
+            {/* Active Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="active"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                    Active
+                  </Label>
+                  {formData?.active !== undefined && !isLoading ? (
+                    <Switch
+                      id="active"
+                      checked={formData.active ?? true}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("active", checked)
+                      }
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Inactive agents will not be available to perform operations
+                  for departments
+                </p>
               </div>
             </div>
 

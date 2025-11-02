@@ -69,7 +69,7 @@ import {
   getPersonaIconComponent,
   PERSONA_ICON_MAP,
 } from "@/utils/persona-icons";
-import { Bug, Check, ChevronsUpDown, Copy, Eye, Trash2 } from "lucide-react";
+import { Bug, Check, ChevronsUpDown, Copy, Eye, Power, Trash2 } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
 
@@ -563,28 +563,33 @@ export default function Persona({
               )}
             </div>
 
-            {/* Switches - Horizontal Layout */}
-            <div className="flex gap-8">
-              {/* Persona Active Switch */}
-              <div className="flex items-center gap-2">
-                <Label htmlFor="active" className="text-sm">
-                  Persona Active
-                </Label>
-                {formData?.active !== undefined && !isLoading ? (
-                  <Switch
-                    id="active"
-                    checked={formData.active ?? true}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        active: checked,
-                      }))
-                    }
-                    disabled={isReadonly}
-                  />
-                ) : (
-                  <Skeleton className="h-6 w-11" />
-                )}
+            {/* Active Switch */}
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="active" className="text-sm flex items-center gap-1.5">
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                    Active
+                  </Label>
+                  {formData?.active !== undefined && !isLoading ? (
+                    <Switch
+                      id="active"
+                      checked={formData.active ?? true}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          active: checked,
+                        }))
+                      }
+                      disabled={isReadonly}
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Inactive personas will not be available for scenarios
+                </p>
               </div>
             </div>
 

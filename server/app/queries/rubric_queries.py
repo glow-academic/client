@@ -484,13 +484,17 @@ class RubricQueries:
             SELECT 
                 name,
                 description,
-                department_id,
                 active,
-                default_rubric,
                 points,
                 pass_points as passpoints
             FROM rubrics
             WHERE id = $1
+        ),
+        rubric_departments_data AS (
+            SELECT 
+                ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) as department_ids
+            FROM rubric_departments rd
+            WHERE rd.rubric_id = $1 AND rd.active = true
         ),
         valid_depts AS (
             SELECT 
@@ -550,11 +554,13 @@ class RubricQueries:
         )
         SELECT 
             r.*,
+            rdd.department_ids,
             vd.dept_mapping as department_mapping,
             vd.dept_ids as valid_department_ids,
             pr.user_role,
             sg.groups_json as standard_groups_complete
         FROM rubric_data r
+        LEFT JOIN rubric_departments_data rdd ON true
         CROSS JOIN valid_depts vd
         CROSS JOIN profile_data pr
         CROSS JOIN standard_groups_with_standards sg
@@ -579,27 +585,37 @@ class RubricQueries:
         WITH user_departments AS (
             SELECT DISTINCT pd.department_id
             FROM profile_departments pd
-            WHERE pd.profile_id = $1
+            WHERE pd.profile_id = $1 AND pd.active = true
         ),
         default_rubric AS (
             SELECT r.id
             FROM rubrics r
-            JOIN user_departments ud ON ud.department_id = r.department_id
+            LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
             WHERE r.active = true
-            ORDER BY r.default_rubric DESC, r.created_at DESC
+            GROUP BY r.id
+            HAVING 
+                -- Include if has matching department link OR has no department links at all (cross-dept)
+                COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+            ORDER BY r.created_at DESC
             LIMIT 1
         ),
         rubric_data AS (
             SELECT 
                 r.name,
                 r.description,
-                r.department_id,
                 r.active,
-                r.default_rubric,
                 r.points,
                 r.pass_points as passpoints
             FROM rubrics r
             JOIN default_rubric dr ON r.id = dr.id
+        ),
+        rubric_departments_data AS (
+            SELECT 
+                ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) as department_ids
+            FROM rubric_departments rd
+            JOIN default_rubric dr ON rd.rubric_id = dr.id
+            WHERE rd.active = true
         ),
         valid_depts AS (
             SELECT 
@@ -659,11 +675,13 @@ class RubricQueries:
         )
         SELECT 
             r.*,
+            rdd.department_ids,
             vd.dept_mapping as department_mapping,
             vd.dept_ids as valid_department_ids,
             pr.user_role,
             sg.groups_json as standard_groups_complete
         FROM rubric_data r
+        LEFT JOIN rubric_departments_data rdd ON true
         CROSS JOIN valid_depts vd
         CROSS JOIN profile_data pr
         CROSS JOIN standard_groups_with_standards sg

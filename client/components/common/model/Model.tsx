@@ -24,6 +24,7 @@ import {
   useProviderDetail,
   useUpdateModel,
 } from "@/lib/api/v2/hooks/providers";
+import { Power, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 interface FormErrors {
   name?: string;
@@ -286,40 +287,60 @@ export default function Model({ modelId, providerId }: ModelProps) {
           )}
         </div>
 
-        {/* Custom Model and Active Switches */}
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="customModel" className="text-sm">
-              Custom Model
-            </Label>
-            {formData.customModel !== undefined && !isLoading ? (
-              <Switch
-                id="customModel"
-                checked={formData.customModel}
-                onCheckedChange={(checked) =>
-                  handleInputChange("customModel", checked)
-                }
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
+        {/* Active and Custom Model Switches */}
+        <div className="space-y-2 pt-2">
+          {/* Active Switch */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="active"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                Active
+              </Label>
+              {formData.active !== undefined && !isLoading ? (
+                <Switch
+                  id="active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("active", checked)
+                  }
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Inactive models will not be available for selection
+            </p>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="active" className="text-sm">
-              Model Active
-            </Label>
-            {formData.active !== undefined && !isLoading ? (
-              <Switch
-                id="active"
-                checked={formData.active}
-                onCheckedChange={(checked) =>
-                  handleInputChange("active", checked)
-                }
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
+          {/* Custom Model Switch */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="customModel"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+                Custom Model
+              </Label>
+              {formData.customModel !== undefined && !isLoading ? (
+                <Switch
+                  id="customModel"
+                  checked={formData.customModel}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("customModel", checked)
+                  }
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Uses the base URL from the provider
+            </p>
           </div>
         </div>
 

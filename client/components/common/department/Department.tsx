@@ -27,6 +27,7 @@ import {
 } from "@/lib/api/v2/hooks/departments";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { ProfileListItem } from "@/lib/api/v2/schemas/profile";
+import { Power } from "lucide-react";
 
 export interface DepartmentProps {
   departmentId?: string;
@@ -310,23 +311,32 @@ export default function Department({ departmentId }: DepartmentProps) {
         </div>
 
         {/* Active Switch */}
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="active" className="text-sm">
-              Department Active
-            </Label>
-            {formData?.active !== undefined && !isLoading ? (
-              <Switch
-                id="active"
-                checked={formData.active ?? true}
-                onCheckedChange={(checked) =>
-                  handleInputChange("active", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
+        <div className="space-y-2 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="active"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                Active
+              </Label>
+              {formData?.active !== undefined && !isLoading ? (
+                <Switch
+                  id="active"
+                  checked={formData.active ?? true}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("active", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Inactive departments will not be visible to users
+            </p>
           </div>
         </div>
 

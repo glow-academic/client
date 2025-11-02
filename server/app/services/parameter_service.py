@@ -164,7 +164,6 @@ class ParameterService(BaseService):
                             name=item_data.get("name", ""),
                             description=item_data.get("description", ""),
                             value=item_data.get("value", ""),
-                            default_item=item_data.get("default_item", False),
                             department_ids=dept_ids,
                             can_delete=usage_count == 0,
                         )
@@ -180,6 +179,8 @@ class ParameterService(BaseService):
             description=parameter["description"],
             numerical=parameter["numerical"],
             active=parameter["active"],
+            document_parameter=parameter.get("document_parameter", False),
+            practice_parameter=parameter.get("practice_parameter", False),
             department_ids=department_ids,  # None or list of department IDs
             valid_department_ids=valid_department_ids,
             parameter_items=parameter_items,
@@ -255,6 +256,8 @@ class ParameterService(BaseService):
             description="",
             numerical=False,
             active=True,
+            document_parameter=False,
+            practice_parameter=False,
             department_ids=default_department_ids,
             parameter_items=[],  # Empty - user will define items
             department_mapping=department_mapping,
@@ -276,6 +279,8 @@ class ParameterService(BaseService):
                 request.description,
                 request.numerical,
                 request.active,
+                request.document_parameter,
+                request.practice_parameter,
             )
 
             if not parameter_result:
@@ -293,7 +298,6 @@ class ParameterService(BaseService):
                     item.name,
                     item.description,
                     item.value,
-                    item.default_item,
                 )
                 if item_result:
                     item_id = str(item_result["id"])
@@ -346,6 +350,8 @@ class ParameterService(BaseService):
                 request.description,
                 request.numerical,
                 request.active,
+                request.document_parameter,
+                request.practice_parameter,
             )
 
             # Delete existing parameter items (this will cascade delete parameter_item_departments)
@@ -362,7 +368,6 @@ class ParameterService(BaseService):
                     item.name,
                     item.description,
                     item.value,
-                    item.default_item,
                 )
                 if item_result:
                     item_id = str(item_result["id"])
@@ -412,6 +417,8 @@ class ParameterService(BaseService):
                 parameter["name"],
                 parameter["description"],
                 parameter["numerical"],
+                parameter.get("document_parameter", False),
+                parameter.get("practice_parameter", False),
             )
 
             if not new_parameter:
@@ -439,7 +446,6 @@ class ParameterService(BaseService):
                     item["name"],
                     item["description"],
                     item["value"],
-                    item["default_item"],
                 )
                 if item_result:
                     new_item_id = str(item_result["id"])
@@ -530,7 +536,6 @@ class ParameterService(BaseService):
             request.name,
             request.description,
             request.value,
-            request.default_item,
         )
 
         if not result:
