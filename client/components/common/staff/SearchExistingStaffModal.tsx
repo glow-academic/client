@@ -24,8 +24,8 @@ import {
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
-import { useSearchProfiles } from "@/lib/api/v2/hooks/profile";
-import { ProfileFilters, ProfileListItem } from "@/lib/api/v2/schemas/profile";
+import { useSearchStaff } from "@/lib/api/v2/hooks/profile";
+import { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 
 export interface SearchExistingStaffModalProps {
   open: boolean;
@@ -62,8 +62,8 @@ export default function SearchExistingStaffModal({
   onDone,
   onStagedProfiles,
 }: SearchExistingStaffModalProps) {
-  const { effectiveProfile } = useProfile();
   const log = useLogger();
+  const { effectiveProfile } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileIds, setSelectedProfileIds] = useState<Set<string>>(
     new Set()
@@ -72,32 +72,32 @@ export default function SearchExistingStaffModal({
     Map<string, ProfileListItem>
   >(new Map());
 
-  // Search profiles
-  const filters: ProfileFilters = {
-    profileId: effectiveProfile?.id || "",
-  };
-
-  const { data: searchData, isLoading: isSearching } = useSearchProfiles(
-    searchQuery,
-    filters,
-    open && !!effectiveProfile?.id
+  // Use server-side search hook
+  const { data: searchData, isLoading } = useSearchStaff(
+    {
+      query: searchQuery || undefined,
+      cohortIds: scopedCohortIds || undefined,
+      departmentIds: _scopedDepartmentIds || undefined,
+      limit: 200,
+      profileId: effectiveProfile?.id || "",
+    },
+    {
+      enabled: open && !!effectiveProfile?.id,
+    }
   );
 
-  // Filter out profiles already in cohort when scoped
+  // Get search results from API response
   const searchResults = React.useMemo(() => {
-    const allResults = searchData?.staff || [];
-
-    // If scoped to a cohort, filter out profiles already in that cohort
-    if (scopedCohortIds && scopedCohortIds.length > 0) {
-      const scopedCohortId = scopedCohortIds[0];
-      return allResults.filter((profile) => {
-        // Exclude profiles whose cohort_ids include the scoped cohort
-        return !profile.cohort_ids?.includes(scopedCohortId!);
-      });
+    if (!searchData?.staff) {
+      return [];
     }
 
-    return allResults;
-  }, [searchData?.staff, scopedCohortIds]);
+    // Filter out staged profiles (client-side since amount is small)
+    const stagedProfileIds = new Set(Array.from(selectedProfiles.keys()));
+    return searchData.staff.filter(
+      (profile) => !stagedProfileIds.has(profile.profile_id)
+    );
+  }, [searchData?.staff, selectedProfiles]);
 
   // Reset state when modal closes
   React.useEffect(() => {
@@ -220,15 +220,17 @@ export default function SearchExistingStaffModal({
 
           {/* Search Results */}
           <div className="border rounded-md max-h-96 overflow-y-auto">
-            {isSearching ? (
+            {isLoading ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                Searching...
+                Loading profiles...
               </div>
             ) : searchResults.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
                 {searchQuery
                   ? "No profiles found matching your search"
-                  : "Start typing to search for profiles"}
+                  : scopedCohortIds && scopedCohortIds.length > 0
+                    ? "All available profiles are already in this cohort"
+                    : "Start typing to search for profiles"}
               </div>
             ) : (
               <Table>

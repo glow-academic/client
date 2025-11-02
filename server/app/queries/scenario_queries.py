@@ -1841,7 +1841,8 @@ class ScenarioQueries:
     def insert_scenario_variant(self) -> str:
         """Build query to insert a scenario variant.
 
-        Params order: name, generated, active
+        Params order: name, generated, active, hints_enabled, objectives_enabled,
+        image_input_enabled, copy_paste_allowed, input_guardrail_enabled, output_guardrail_enabled
         """
         return """
         INSERT INTO scenarios (name, generated, active, hints_enabled, objectives_enabled, 

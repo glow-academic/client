@@ -456,7 +456,49 @@ class StaffQueries:
     ) -> tuple[str, list[Any]]:
         """Build query to get all data needed for create staff UI in one query."""
         query = """
-        WITH all_cohort_ids AS (
+        WITH user_profile AS (
+            SELECT COALESCE((SELECT role FROM profiles WHERE id = $2), 'guest') as role
+        ),
+        user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $2 AND active = true
+        ),
+        profile_cohorts AS (
+            SELECT 
+                cp.profile_id,
+                ARRAY_AGG(cp.cohort_id ORDER BY c.title) as cohort_ids
+            FROM cohort_profiles cp
+            JOIN cohorts c ON c.id = cp.cohort_id
+            WHERE cp.active = true
+            GROUP BY cp.profile_id
+        ),
+        profile_departments_agg AS (
+            SELECT 
+                pd.profile_id,
+                ARRAY_AGG(pd.department_id ORDER BY d.title) as department_ids
+            FROM profile_departments pd
+            JOIN departments d ON d.id = pd.department_id
+            WHERE pd.active = true
+            GROUP BY pd.profile_id
+        ),
+        recent_runs AS (
+            SELECT 
+                mrp.profile_id,
+                COUNT(*) as run_count
+            FROM model_runs mr
+            JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+            WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
+            GROUP BY mrp.profile_id
+        ),
+        profile_total_runs AS (
+            SELECT 
+                mrp.profile_id,
+                COUNT(*) as total_requests
+            FROM model_run_profiles mrp
+            GROUP BY mrp.profile_id
+        ),
+        all_cohort_ids AS (
             SELECT DISTINCT c.id as cohort_id
             FROM cohorts c
             WHERE c.active = true
@@ -482,14 +524,273 @@ class StaffQueries:
             ), '{}'::jsonb) as department_mapping
             FROM departments d
             WHERE d.id = ANY($1) AND d.active = true
+        ),
+        staff_data AS (
+            SELECT DISTINCT ON (p.id)
+                jsonb_build_object(
+                    'profile_id', p.id::text,
+                    'first_name', p.first_name,
+                    'last_name', p.last_name,
+                    'alias', p.alias,
+                    'name', p.first_name || ' ' || p.last_name,
+                    'role', p.role,
+                    'active', p.active,
+                    'last_active', CASE WHEN pa.last_active IS NOT NULL THEN pa.last_active::text ELSE NULL END,
+                    'cohort_ids', COALESCE(
+                        ARRAY(SELECT unnest(pc.cohort_ids)::text),
+                        ARRAY[]::text[]
+                    ),
+                    'department_ids', COALESCE(
+                        ARRAY(SELECT unnest(pda.department_ids)::text),
+                        ARRAY[]::text[]
+                    ),
+                    'requests_per_day', prl.requests_per_day,
+                    'total_requests', COALESCE(ptr.total_requests, 0),
+                    'default_profile', p.default_profile,
+                    'requests_in_last_day', COALESCE(rr.run_count::int, 0)
+                ) as staff_item
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
+            LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
+            LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
+            LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
+            LEFT JOIN recent_runs rr ON rr.profile_id = p.id
+            LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+            LEFT JOIN LATERAL (
+                SELECT last_active 
+                FROM profile_activity 
+                WHERE profile_id = p.id 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            ) pa ON true
+            CROSS JOIN user_profile up
+            WHERE (
+                -- Superadmin sees all staff
+                up.role = 'superadmin'
+                OR
+                -- For create-staff-data, show all staff with active departments
+                -- (used when adding staff to cohorts, so user should see all available)
+                true
+            )
+            ORDER BY p.id, p.last_name, p.first_name
+        ),
+        staff_aggregated AS (
+            SELECT COALESCE(
+                jsonb_agg(sd.staff_item ORDER BY sd.staff_item->>'last_name', sd.staff_item->>'first_name'),
+                '[]'::jsonb
+            ) as staff
+            FROM staff_data sd
         )
         SELECT 
+            sa.staff,
             cmd.cohort_mapping,
             dmd.department_mapping
         FROM cohort_mapping_data cmd
         CROSS JOIN department_mapping_data dmd
+        CROSS JOIN staff_aggregated sa
         """
-        return (query, [department_ids])
+        return (query, [department_ids, current_profile_id])
+
+    def search_staff(
+        self,
+        query: str | None,
+        cohort_ids: list[str] | None,
+        department_ids: list[str] | None,
+        limit: int,
+        current_profile_id: str,
+        campus_domain: str,
+    ) -> tuple[str, list[Any]]:
+        """Build query to search staff with filters in one query."""
+        # Start with current_profile_id (used in CTEs)
+        params: list[Any] = [current_profile_id]
+        param_idx = 2  # $1 is current_profile_id
+
+        # Build search WHERE clause
+        search_conditions = []
+        
+        # Search query filter (if provided)
+        if query and query.strip():
+            search_term = f"%{query.strip()}%"
+            search_conditions.append(
+                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.alias ILIKE ${param_idx})"
+            )
+            params.append(search_term)
+            param_idx += 1
+
+        # Cohort exclusion filter (if provided)
+        cohort_exclusion = ""
+        if cohort_ids and len(cohort_ids) > 0:
+            cohort_exclusion = f"AND NOT EXISTS (SELECT 1 FROM cohort_profiles cp WHERE cp.profile_id = p.id AND cp.cohort_id = ANY(${param_idx}::uuid[]) AND cp.active = true)"
+            params.append(cohort_ids)
+            param_idx += 1
+
+        # Department exclusion filter (if provided)
+        dept_exclusion = ""
+        if department_ids and len(department_ids) > 0:
+            dept_exclusion = f"AND NOT EXISTS (SELECT 1 FROM profile_departments pd2 WHERE pd2.profile_id = p.id AND pd2.department_id = ANY(${param_idx}::uuid[]) AND pd2.active = true)"
+            params.append(department_ids)
+            param_idx += 1
+
+        # Build WHERE clause
+        where_clause = ""
+        if search_conditions:
+            where_clause = "AND " + " AND ".join(search_conditions)
+
+        # Add limit
+        params.append(limit)
+        limit_param = param_idx
+        param_idx += 1
+
+        # Add campus_domain
+        params.append(campus_domain)
+        campus_param = param_idx
+        param_idx += 1
+
+        # profile_param is $1 (current_profile_id)
+        profile_param = 1
+
+        sql_query = f"""
+        WITH user_profile AS (
+            SELECT COALESCE((SELECT role FROM profiles WHERE id = $1), 'guest') as role
+        ),
+        user_departments AS (
+            SELECT department_id
+            FROM profile_departments
+            WHERE profile_id = $1 AND active = true
+        ),
+        profile_cohorts AS (
+            SELECT 
+                cp.profile_id,
+                ARRAY_AGG(cp.cohort_id ORDER BY c.title) as cohort_ids
+            FROM cohort_profiles cp
+            JOIN cohorts c ON c.id = cp.cohort_id
+            WHERE cp.active = true
+            GROUP BY cp.profile_id
+        ),
+        profile_departments_agg AS (
+            SELECT 
+                pd.profile_id,
+                ARRAY_AGG(pd.department_id ORDER BY d.title) as department_ids
+            FROM profile_departments pd
+            JOIN departments d ON d.id = pd.department_id
+            WHERE pd.active = true
+            GROUP BY pd.profile_id
+        ),
+        recent_runs AS (
+            SELECT 
+                mrp.profile_id,
+                COUNT(*) as run_count
+            FROM model_runs mr
+            JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+            WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
+            GROUP BY mrp.profile_id
+        ),
+        profile_total_runs AS (
+            SELECT 
+                mrp.profile_id,
+                COUNT(*) as total_requests
+            FROM model_run_profiles mrp
+            GROUP BY mrp.profile_id
+        ),
+        all_cohort_ids AS (
+            SELECT DISTINCT c.id as cohort_id
+            FROM cohorts c
+            WHERE c.active = true
+        ),
+        cohort_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                c.id::text,
+                jsonb_build_object(
+                    'name', c.title,
+                    'description', COALESCE(c.description, '')
+                )
+            ), '{{}}'::jsonb) as cohort_mapping
+            FROM cohorts c
+            WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object(
+                    'name', d.title,
+                    'description', COALESCE(d.description, '')
+                )
+            ), '{{}}'::jsonb) as department_mapping
+            FROM departments d
+            WHERE d.active = true
+        ),
+        staff_data AS (
+            SELECT DISTINCT ON (p.id)
+                jsonb_build_object(
+                    'profile_id', p.id::text,
+                    'first_name', p.first_name,
+                    'last_name', p.last_name,
+                    'alias', p.alias,
+                    'name', p.first_name || ' ' || p.last_name,
+                    'role', p.role,
+                    'email', p.alias || ${campus_param},
+                    'initials', SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1),
+                    'active', p.active,
+                    'last_active', CASE WHEN pa.last_active IS NOT NULL THEN pa.last_active::text ELSE NULL END,
+                    'cohort_ids', COALESCE(
+                        ARRAY(SELECT unnest(pc.cohort_ids)::text),
+                        ARRAY[]::text[]
+                    ),
+                    'department_ids', COALESCE(
+                        ARRAY(SELECT unnest(pda.department_ids)::text),
+                        ARRAY[]::text[]
+                    ),
+                    'requests_per_day', prl.requests_per_day,
+                    'total_requests', COALESCE(ptr.total_requests, 0),
+                    'default_profile', p.default_profile,
+                    'requests_in_last_day', COALESCE(rr.run_count::int, 0),
+                    'can_edit', false,
+                    'can_delete', false
+                ) as staff_item
+            FROM profiles p
+            JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
+            LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
+            LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
+            LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
+            LEFT JOIN recent_runs rr ON rr.profile_id = p.id
+            LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+            LEFT JOIN LATERAL (
+                SELECT last_active 
+                FROM profile_activity 
+                WHERE profile_id = p.id 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            ) pa ON true
+            CROSS JOIN user_profile up
+            WHERE (
+                -- Superadmin sees all staff
+                up.role = 'superadmin'
+                OR
+                -- For search, show all staff with active departments
+                true
+            )
+            {where_clause}
+            {cohort_exclusion}
+            {dept_exclusion}
+            ORDER BY p.id, p.last_name, p.first_name
+            LIMIT ${limit_param}
+        ),
+        staff_aggregated AS (
+            SELECT COALESCE(
+                jsonb_agg(sd.staff_item ORDER BY sd.staff_item->>'last_name', sd.staff_item->>'first_name'),
+                '[]'::jsonb
+            ) as staff
+            FROM staff_data sd
+        )
+        SELECT 
+            sa.staff,
+            cmd.cohort_mapping,
+            dmd.department_mapping
+        FROM cohort_mapping_data cmd
+        CROSS JOIN department_mapping_data dmd
+        CROSS JOIN staff_aggregated sa
+        """
+        return (sql_query, params)
 
     def get_valid_departments_for_profile(
         self, profile_id: str

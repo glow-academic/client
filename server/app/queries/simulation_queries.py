@@ -1613,22 +1613,29 @@ class SimulationQueries:
                      p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.custom_model,
                      pr.id, pr.name, pr.api_key, pe.base_url
         ),
-        -- Create simulation chat
+        -- Create simulation chat (without attempt_id - uses junction table)
         new_chat AS (
             INSERT INTO simulation_chats (
-                created_at, title, scenario_id, attempt_id, completed, trace_id, updated_at
+                created_at, title, scenario_id, completed, trace_id, updated_at
             )
             SELECT 
                 now(),
                 COALESCE(sfd.scenario_name, 'New Simulation'),
                 sfd.scenario_id,
-                na.attempt_id,
                 false,
                 gen_random_uuid(),
                 now()
             FROM new_attempt na
             CROSS JOIN scenario_full_data sfd
-            RETURNING id as chat_id, title as chat_title
+            RETURNING id as chat_id, title as chat_title, created_at, updated_at
+        ),
+        -- Create attempt_chats junction table entry
+        attempt_chat_link AS (
+            INSERT INTO attempt_chats (attempt_id, chat_id, created_at, updated_at)
+            SELECT na.attempt_id, nc.chat_id, nc.created_at, nc.updated_at
+            FROM new_attempt na
+            CROSS JOIN new_chat nc
+            RETURNING attempt_id, chat_id
         )
         -- Return all data in single row
         SELECT 
@@ -1672,6 +1679,7 @@ class SimulationQueries:
             ) as scenario_metadata
         FROM new_attempt na
         CROSS JOIN new_chat nc
+        INNER JOIN attempt_chat_link acl ON acl.chat_id = nc.chat_id AND acl.attempt_id = na.attempt_id
         CROSS JOIN scenario_full_data sfd
         CROSS JOIN simulation_data sd
         """

@@ -41,13 +41,15 @@ import {
   ProfileItem,
   ProfileListResponseSchema,
   ProfileSimpleDetailResponse,
+  SearchStaffRequest,
+  SearchStaffResponseSchema,
   UpdateProfileRequest,
   UpdateProfileResponseSchema,
   UpdateProfileSimpleRequest,
   UpdateProfileSimpleResponse,
 } from "@/lib/api/v2/schemas/profile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 // Type for profile hook options
 type ProfileHookOptions = {
@@ -245,6 +247,57 @@ export function useCreateStaffData(
       return CreateStaffDataResponseSchema.parse(res);
     },
     enabled: queryOptions.enabled && !!request.profileId,
+  });
+}
+
+/**
+ * Hook to search staff with server-side filtering.
+ * Includes debouncing to prevent excessive API calls.
+ */
+export function useSearchStaff(
+  request: SearchStaffRequest,
+  options: ProfileHookOptions | boolean = true
+) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
+  // Debounce the query string
+  const [debouncedQuery, setDebouncedQuery] = useState(request.query || "");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(request.query || "");
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [request.query]);
+
+  // Create debounced request
+  const debouncedRequest = useMemo(
+    () => ({ ...request, query: debouncedQuery }),
+    [request, debouncedQuery]
+  );
+
+  return useQuery({
+    queryKey: [
+      "profile:v2:search-staff",
+      debouncedRequest.query,
+      debouncedRequest.cohortIds,
+      debouncedRequest.departmentIds,
+      debouncedRequest.profileId,
+      debouncedRequest.limit,
+    ],
+    ...queryOptions,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v2/profile/search", {
+        method: "POST",
+        body: JSON.stringify(debouncedRequest),
+      });
+      return SearchStaffResponseSchema.parse(res);
+    },
+    enabled: queryOptions.enabled && !!debouncedRequest.profileId,
   });
 }
 

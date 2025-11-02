@@ -57,8 +57,8 @@ class AttemptsService(BaseService):
         if result == "UPDATE 0":
             raise ValueError(f"Chat not found: {request.chatId}")
 
-        # Get attempt_id for this chat to invalidate its cache
-        attempt_query = "SELECT attempt_id FROM simulation_chats WHERE id = $1"
+        # Get attempt_id for this chat to invalidate its cache (using junction table)
+        attempt_query = "SELECT attempt_id FROM attempt_chats WHERE chat_id = $1"
         attempt_result = await self.conn.fetchrow(attempt_query, request.chatId)
         
         if attempt_result:

@@ -1102,9 +1102,15 @@ class SimulationService(BaseService):
             query = scenario_queries.insert_scenario_variant()
             new_scenario = await self.conn.fetchrow(
                 query,
-                name,  # scenario name
-                True,  # generated = True
-                True,  # active = True
+                name,  # scenario name ($1)
+                True,  # generated = True ($2)
+                True,  # active = True ($3)
+                False,  # hints_enabled ($4)
+                True,  # objectives_enabled ($5)
+                False,  # image_input_enabled ($6)
+                False,  # copy_paste_allowed ($7)
+                False,  # input_guardrail_enabled ($8)
+                False,  # output_guardrail_enabled ($9)
             )
             
             # Insert problem statement

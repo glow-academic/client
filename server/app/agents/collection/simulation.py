@@ -81,8 +81,8 @@ async def _handle_simulation_chat(
         )
         input_items.append(document_info)
 
-    # Get all messages using service layer
-    messages = await agent_service.get_simulation_messages(chat_id)
+    # Get all messages using service layer (use direct method to bypass cache and get fresh data)
+    messages = await agent_service._get_simulation_messages_direct(chat_id)
 
     # Prepare conversation history from chat_id
     conversation_history = get_simulation_conversation_history(messages)

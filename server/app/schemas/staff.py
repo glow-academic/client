@@ -222,9 +222,33 @@ class CreateStaffDataRequest(BaseModel):
 class CreateStaffDataResponse(BaseModel):
     """Response with all data needed for create staff UI."""
 
+    staff: list[StaffItem]
     department_mapping: DepartmentMapping
     cohort_mapping: CohortMapping
     role_options: list[str]
+
+
+# ============================================================================
+# SEARCH STAFF SCHEMAS
+# ============================================================================
+
+
+class SearchStaffRequest(BaseModel):
+    """Request for staff search."""
+
+    query: str | None = None  # Search term (first_name, last_name, alias). Empty/None returns all profiles (up to limit)
+    cohortIds: list[str] | None = None  # Cohort IDs to EXCLUDE profiles from (optional)
+    departmentIds: list[str] | None = None  # Department IDs to EXCLUDE profiles from (optional)
+    limit: int = 200  # Maximum number of results
+    profileId: str  # Current user's profile ID for permissions
+
+
+class SearchStaffResponse(BaseModel):
+    """Response for staff search endpoint."""
+
+    staff: list[StaffItem]  # Filtered staff list (max limit items)
+    cohort_mapping: CohortMapping
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================

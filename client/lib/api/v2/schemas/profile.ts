@@ -63,7 +63,7 @@ export const ProfileListItemSchema = z.object({
   requests_in_last_day: z.number(),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
-  can_remove: z.boolean(),
+  can_remove: z.boolean().optional(),
 });
 
 export const ProfileListResponseSchema = z.object({
@@ -276,6 +276,7 @@ export type CreateStaffDataRequest = z.infer<
 >;
 
 export const CreateStaffDataResponseSchema = z.object({
+  staff: z.array(ProfileListItemSchema),
   department_mapping: DepartmentMappingSchema,
   cohort_mapping: CohortMappingSchema,
   role_options: z.array(z.string()),
@@ -284,6 +285,28 @@ export const CreateStaffDataResponseSchema = z.object({
 export type CreateStaffDataResponse = z.infer<
   typeof CreateStaffDataResponseSchema
 >;
+
+// ============================================================================
+// SEARCH STAFF OPERATIONS
+// ============================================================================
+
+export const SearchStaffRequestSchema = z.object({
+  query: z.string().optional(),
+  cohortIds: z.array(z.string()).optional(),
+  departmentIds: z.array(z.string()).optional(),
+  limit: z.number().default(200),
+  profileId: z.string(),
+});
+
+export type SearchStaffRequest = z.infer<typeof SearchStaffRequestSchema>;
+
+export const SearchStaffResponseSchema = z.object({
+  staff: z.array(ProfileListItemSchema),
+  cohort_mapping: CohortMappingSchema,
+  department_mapping: DepartmentMappingSchema,
+});
+
+export type SearchStaffResponse = z.infer<typeof SearchStaffResponseSchema>;
 
 // ============================================================================
 // CSV PROCESSING OPERATIONS

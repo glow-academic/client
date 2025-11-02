@@ -53,7 +53,8 @@ async def test_get_attempt_full_data_chats_have_persona_id(
         """
         SELECT sa.id 
         FROM simulation_attempts sa
-        JOIN simulation_chats sc ON sc.attempt_id = sa.id
+        JOIN attempt_chats ac ON ac.attempt_id = sa.id
+        JOIN simulation_chats sc ON sc.id = ac.chat_id
         ORDER BY sa.created_at DESC 
         LIMIT 1
         """
@@ -84,7 +85,8 @@ async def test_get_attempt_full_data_chats_have_completed_at(
         """
         SELECT sa.id 
         FROM simulation_attempts sa
-        JOIN simulation_chats sc ON sc.attempt_id = sa.id
+        JOIN attempt_chats ac ON ac.attempt_id = sa.id
+        JOIN simulation_chats sc ON sc.id = ac.chat_id
         WHERE sc.completed = true
         ORDER BY sa.created_at DESC 
         LIMIT 1
@@ -119,7 +121,8 @@ async def test_get_attempt_full_data_timer_uses_grade_time_taken(
         """
         SELECT sa.id 
         FROM simulation_attempts sa
-        JOIN simulation_chats sc ON sc.attempt_id = sa.id
+        JOIN attempt_chats ac ON ac.attempt_id = sa.id
+        JOIN simulation_chats sc ON sc.id = ac.chat_id
         JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
         WHERE sc.completed = true
         ORDER BY sa.created_at DESC 

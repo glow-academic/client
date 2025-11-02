@@ -1878,6 +1878,7 @@ class ScenarioService(BaseService):
             scenario.get("hints_enabled", False),
             scenario.get("objectives_enabled", True),
             scenario.get("image_input_enabled", False),
+            scenario.get("copy_paste_allowed", False),  # Missing parameter $7
             scenario.get("input_guardrail_enabled", False),
             scenario.get("output_guardrail_enabled", False),
         )
