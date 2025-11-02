@@ -16,11 +16,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
+import { formatTime } from "@/utils/time";
 import { useEffect, useMemo, useState } from "react";
 
 export function SimulationControls() {
@@ -56,6 +59,7 @@ export function SimulationControls() {
   const [selectedPreviousChatId, setSelectedPreviousChatId] = useState<
     string | null
   >(null);
+  const [selectedPermutation, setSelectedPermutation] = useState<string>("");
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
@@ -83,6 +87,142 @@ export function SimulationControls() {
     endAllChats,
     attemptData,
   } = simulationContext || {};
+
+  // Generate permutations for End All dialog
+  // Must be computed before early returns to maintain hook order
+  type PermutationOption = {
+    scenarioId: string;
+    chatId: string | null; // null means "continue normally"
+    previousChatId: string | null;
+    title: string;
+    score: number | null;
+    percentage: number | null;
+    timeTaken: number | null;
+  };
+
+  type Permutation = {
+    id: string;
+    options: PermutationOption[];
+    totalScore: number;
+    totalPercentage: number | null;
+    totalTimeTaken: number;
+  };
+
+  // Get all simulation scenarios with their previous chats for permutation generation
+  const allSimulationScenarios = useMemo(() => {
+    if (!attemptData?.allSimulationScenarios) return [];
+
+    // Map to include chatId if a chat exists for this scenario
+    return attemptData.allSimulationScenarios.map((scenarioData) => {
+      // Find if there's a chat for this scenario in the current attempt
+      const existingChat = attemptData.chats?.find(
+        (c) => c.scenario?.id === scenarioData.scenarioId
+      );
+
+      return {
+        scenarioId: scenarioData.scenarioId,
+        scenarioName: scenarioData.scenarioName || "Scenario",
+        chatId: existingChat?.chat.id || null,
+        previousChats: scenarioData.previousChats || [],
+      };
+    });
+  }, [attemptData?.allSimulationScenarios, attemptData?.chats]);
+
+  const permutations = useMemo(() => {
+    if (allSimulationScenarios.length === 0) return [];
+
+    // Generate all permutations using cartesian product
+    const generatePermutations = (
+      scenarios: typeof allSimulationScenarios,
+      index: number = 0,
+      currentPermutation: PermutationOption[] = []
+    ): PermutationOption[][] => {
+      if (index >= scenarios.length) {
+        return [currentPermutation];
+      }
+
+      const scenario = scenarios[index];
+      if (!scenario) return [];
+
+      const options: PermutationOption[] = [
+        // Option 1: Skip/End without score (always available when ending session)
+        {
+          scenarioId: scenario.scenarioId,
+          chatId: scenario.chatId,
+          previousChatId: null,
+          title: "Skip (no score)",
+          score: null,
+          percentage: null,
+          timeTaken: null,
+        },
+        // Options 2+: Each previous chat (reuse score from previous attempt)
+        ...scenario.previousChats.map((prevChat) => ({
+          scenarioId: scenario.scenarioId,
+          chatId: scenario.chatId,
+          previousChatId: prevChat.chatId,
+          title: prevChat.title,
+          score: prevChat.score,
+          percentage: prevChat.percentage,
+          timeTaken: prevChat.timeTaken,
+        })),
+      ];
+
+      const results: PermutationOption[][] = [];
+      for (const option of options) {
+        const newPermutation = [...currentPermutation, option];
+        results.push(
+          ...generatePermutations(scenarios, index + 1, newPermutation)
+        );
+      }
+
+      return results;
+    };
+
+    const allPermutations = generatePermutations(allSimulationScenarios);
+
+    // Calculate total scores and percentages for each permutation
+    const permutationsWithScores: Permutation[] = allPermutations.map(
+      (perm, idx) => {
+        const totalScore = perm.reduce((sum, opt) => sum + (opt.score || 0), 0);
+        const totalTimeTaken = perm.reduce(
+          (sum, opt) => sum + (opt.timeTaken || 0),
+          0
+        );
+
+        // Calculate total percentage if all selected options have totalPossiblePoints
+        // We need to sum up the rubric points for all scenarios
+        // For simplicity, use average percentage if available
+        const percentages = perm
+          .map((opt) => opt.percentage)
+          .filter((p): p is number => p !== null);
+        const totalPercentage =
+          percentages.length > 0
+            ? Math.round(
+                percentages.reduce((sum, p) => sum + p, 0) / percentages.length
+              )
+            : null;
+
+        return {
+          id: `perm-${idx}`,
+          options: perm,
+          totalScore,
+          totalPercentage,
+          totalTimeTaken,
+        };
+      }
+    );
+
+    // Sort by total score (descending), then by total percentage (descending)
+    return permutationsWithScores.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) {
+        return b.totalScore - a.totalScore;
+      }
+      if (a.totalPercentage === null && b.totalPercentage === null) return 0;
+      if (a.totalPercentage === null) return 1;
+      if (b.totalPercentage === null) return -1;
+      return b.totalPercentage - a.totalPercentage;
+    });
+  }, [allSimulationScenarios]);
 
   // Get previous chats for current chat to show red dot indicator
   // Must be computed before early returns to maintain hook order
@@ -173,6 +313,12 @@ export function SimulationControls() {
     const remainingScenarios = safeExpectedChatCount - createdChats;
     const remainingSessions = incompleteChats + remainingScenarios;
     setEndAllRemainingSessions(remainingSessions);
+
+    // If there are permutations available, select the best one by default
+    if (permutations && permutations.length > 0) {
+      setSelectedPermutation(permutations[0]!.id);
+    }
+
     setConfirmEndAllOpen(true);
   };
 
@@ -240,17 +386,99 @@ export function SimulationControls() {
         </Button>
       </div>
 
-      {/* Confirm End All Dialog */}
+      {/* Confirm End All Dialog with Permutation Selection */}
       <AlertDialog open={confirmEndAllOpen} onOpenChange={setConfirmEndAllOpen}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <AlertDialogHeader>
             <AlertDialogTitle>End all remaining sessions?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will mark {endAllRemainingSessions} remaining session
-              {endAllRemainingSessions === 1 ? "" : "s"} as incomplete, and
-              their scores will not count.
+              {permutations.length > 0
+                ? `Choose which previous attempts to use for the ${endAllRemainingSessions} remaining session${endAllRemainingSessions === 1 ? "" : "s"}. Permutations are sorted by highest total score.`
+                : `This will mark ${endAllRemainingSessions} remaining session${endAllRemainingSessions === 1 ? "" : "s"} as incomplete, and their scores will not count.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {permutations.length > 0 ? (
+            <ScrollArea className="flex-1 pr-4">
+              <RadioGroup
+                value={selectedPermutation}
+                onValueChange={setSelectedPermutation}
+                className="space-y-3"
+              >
+                {permutations.map((perm) => (
+                  <div
+                    key={perm.id}
+                    className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors ${
+                      selectedPermutation === perm.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <RadioGroupItem
+                      value={perm.id}
+                      id={perm.id}
+                      className="mt-1"
+                    />
+                    <Label
+                      htmlFor={perm.id}
+                      className="cursor-pointer flex-1 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            Total: {perm.totalScore} pts
+                          </span>
+                          {perm.totalPercentage !== null && (
+                            <Badge variant="secondary">
+                              {perm.totalPercentage}%
+                            </Badge>
+                          )}
+                          {perm.totalTimeTaken > 0 && (
+                            <span className="text-sm text-muted-foreground">
+                              ({formatTime(perm.totalTimeTaken)})
+                            </span>
+                          )}
+                          {perm.id === permutations[0]?.id && (
+                            <Badge variant="default" className="ml-2">
+                              Best
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1 pl-6">
+                        {perm.options.map((opt, optIdx) => (
+                          <div
+                            key={optIdx}
+                            className="text-sm text-muted-foreground"
+                          >
+                            <span className="font-medium">
+                              {allSimulationScenarios.find(
+                                (s) => s.scenarioId === opt.scenarioId
+                              )?.scenarioName || "Scenario"}
+                            </span>
+                            {" → "}
+                            <span>{opt.title}</span>
+                            {opt.score !== null && (
+                              <>
+                                {" ("}
+                                {opt.percentage !== null
+                                  ? `${opt.percentage}%`
+                                  : `${opt.score} pts`}
+                                {opt.timeTaken !== null &&
+                                  ` - ${formatTime(opt.timeTaken)}`}
+                                {")"}
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </ScrollArea>
+          ) : null}
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
@@ -264,9 +492,26 @@ export function SimulationControls() {
                     },
                   })
                 );
+
+                // Extract permutation map if one is selected
+                let previousChatMap: Record<string, string | null> | undefined;
+                if (selectedPermutation && permutations.length > 0) {
+                  const selectedPerm = permutations.find(
+                    (p) => p.id === selectedPermutation
+                  );
+                  if (selectedPerm) {
+                    previousChatMap = {};
+                    selectedPerm.options.forEach((opt) => {
+                      if (opt.previousChatId !== null) {
+                        previousChatMap![opt.scenarioId] = opt.previousChatId;
+                      }
+                    });
+                  }
+                }
+
                 setConfirmEndAllOpen(false);
                 setEndingAction("endAll");
-                safeEndAllChats();
+                safeEndAllChats(previousChatMap);
               }}
             >
               End All
@@ -370,7 +615,7 @@ export function SimulationControls() {
                             <span className="text-sm text-muted-foreground ml-2">
                               {prevChat.score !== null &&
                               prevChat.passed !== null
-                                ? `${prevChat.score} pts (${prevChat.passed ? "Passed" : "Failed"})`
+                                ? `${prevChat.percentage ?? "N/A"}% (${prevChat.passed ? "Passed" : "Failed"})${prevChat.timeTaken !== null ? ` - ${formatTime(prevChat.timeTaken)}` : ""}`
                                 : "No score"}
                             </span>
                           </div>

@@ -185,11 +185,34 @@ export const AttemptFullResponseSchema = z.object({
           passed: z.boolean().nullable(),
           createdAt: z.string(),
           title: z.string(),
+          timeTaken: z.number().nullable(),
+          totalPossiblePoints: z.number().nullable(),
+          percentage: z.number().nullable(),
         })
       ),
     })
   ),
   scenarioDocuments: z.array(DocumentItemSchema),
+  allSimulationScenarios: z.array(
+    z.object({
+      scenarioId: z.string(),
+      position: z.number(),
+      scenarioName: z.string().nullable(),
+      previousChats: z.array(
+        z.object({
+          chatId: z.string(),
+          attemptId: z.string(),
+          score: z.number().nullable(),
+          passed: z.boolean().nullable(),
+          createdAt: z.string(),
+          title: z.string(),
+          timeTaken: z.number().nullable(),
+          totalPossiblePoints: z.number().nullable(),
+          percentage: z.number().nullable(),
+        })
+      ),
+    })
+  ),
   aggregatedResults: z
     .object({
       totalChats: z.number(),

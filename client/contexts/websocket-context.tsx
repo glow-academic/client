@@ -63,6 +63,8 @@ export interface WebSocketContextType {
     chat_id: string;
     attempt_id: string;
     end_all?: boolean;
+    previous_chat_id?: string;
+    previous_chat_map?: Record<string, string | null>;
   }) => void;
 
   // Assistant event emitters
@@ -1170,6 +1172,7 @@ export function WebSocketProvider({
       attempt_id: string;
       end_all?: boolean;
       previous_chat_id?: string;
+      previous_chat_map?: Record<string, string | null>;
       department_id?: string;
     }) => {
       if (!socketRef.current || !isConnected) {

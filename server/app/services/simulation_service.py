@@ -1238,6 +1238,7 @@ class SimulationService(BaseService):
         attempt_id: str,
         end_all: bool,
         previous_chat_id: str | None = None,
+        previous_chat_map: dict[str, str | None] | None = None,
         sio_instance: Any = None,
     ) -> dict[str, Any]:
         """Complete current chat, create next chat, handle grading.
@@ -1321,6 +1322,50 @@ class SimulationService(BaseService):
                             str(existing_chat["id"])
                         )
                         await self.conn.execute(query, *params)
+        
+        # Handle previous_chat_map if provided (for end_all with permutations)
+        if end_all and previous_chat_map:
+            # Get scenario_id for each incomplete chat
+            for existing_chat in existing_chats:
+                if not existing_chat["completed"]:
+                    chat_scenario_id = str(existing_chat.get("scenario_id", ""))
+                    if chat_scenario_id in previous_chat_map:
+                        prev_chat_id = previous_chat_map[chat_scenario_id]
+                        if prev_chat_id:
+                            # Link the previous chat to current attempt
+                            query = self.queries.link_chat_to_attempt()
+                            await self.conn.execute(query, attempt_id, prev_chat_id)
+                        
+                        # Mark this chat as completed (reused previous or skipped)
+                        query, params = self.queries.update_chat_completed(
+                            str(existing_chat["id"])
+                        )
+                        await self.conn.execute(query, *params)
+            # Also handle current chat if not already handled
+            current_chat_completed = any(
+                str(c["id"]) == chat_id and c["completed"] for c in existing_chats
+            )
+            if not current_chat_completed:
+                chat_scenario_id_result = await self.conn.fetchrow(
+                    "SELECT scenario_id FROM simulation_chats WHERE id = $1", chat_id
+                )
+                if chat_scenario_id_result:
+                    chat_scenario_id = str(chat_scenario_id_result["scenario_id"])
+                    if chat_scenario_id in previous_chat_map:
+                        prev_chat_id = previous_chat_map[chat_scenario_id]
+                        if prev_chat_id:
+                            query = self.queries.link_chat_to_attempt()
+                            await self.conn.execute(query, attempt_id, prev_chat_id)
+                        query, params = self.queries.update_chat_completed(chat_id)
+                        await self.conn.execute(query, *params)
+        elif end_all and not previous_chat_map and not previous_chat_id:
+            # If end_all but no previous_chat_map or previous_chat_id, mark all remaining incomplete chats as completed (skipped)
+            for existing_chat in existing_chats:
+                if not existing_chat["completed"]:
+                    query, params = self.queries.update_chat_completed(
+                        str(existing_chat["id"])
+                    )
+                    await self.conn.execute(query, *params)
         
         # Create next chat if not end_all (works for both previous_chat_id and normal cases)
         next_chat_id = chat_id

@@ -2232,29 +2232,65 @@ class SimulationQueries:
             WHERE ap.attempt_id = $1 AND ap.active = true
             LIMIT 1
         ),
+        -- Get all scenarios for this simulation (for permutation generation)
+        simulation_scenarios_list AS (
+            SELECT ss.scenario_id, ss.position
+            FROM simulation_scenarios ss
+            CROSS JOIN attempt_base ab
+            WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
+            ORDER BY ss.position
+        ),
         -- Find previous completed chats with same scenario_id from other attempts by same profile
         -- Use latest grade per chat (DISTINCT ON)
+        -- Include ALL simulation scenarios, not just ones in chats_base
         previous_chats_with_grades AS (
             SELECT DISTINCT ON (sc.id)
                 sc.id as chat_id,
                 sc.scenario_id,
                 ac2.attempt_id,
+                sa2.simulation_id,
                 sc.title,
                 sc.created_at,
                 scg.score,
-                scg.passed
+                scg.passed,
+                scg.time_taken
             FROM simulation_chats sc
             JOIN attempt_chats ac2 ON ac2.chat_id = sc.id
             JOIN simulation_attempts sa2 ON sa2.id = ac2.attempt_id
             JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
             CROSS JOIN current_attempt_profile cap
+            CROSS JOIN simulation_scenarios_list ssl
             LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
             WHERE ap2.profile_id = cap.profile_id
               AND sc.completed = true
               AND scg.id IS NOT NULL
-              AND sc.scenario_id IN (SELECT scenario_id FROM chats_base)
+              AND sc.scenario_id = ssl.scenario_id  -- Include ALL simulation scenarios
               AND ac2.attempt_id != $1
             ORDER BY sc.id, scg.created_at DESC
+        ),
+        -- Aggregate timeTaken from all completed chats per previous attempt
+        previous_attempt_time_aggregation AS (
+            SELECT 
+                ac.attempt_id,
+                COALESCE(SUM(scg.time_taken), 0)::integer as total_time_taken
+            FROM attempt_chats ac
+            JOIN simulation_chats sc ON sc.id = ac.chat_id
+            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            WHERE ac.attempt_id IN (SELECT DISTINCT attempt_id FROM previous_chats_with_grades)
+              AND sc.completed = true
+              AND scg.id IS NOT NULL
+            GROUP BY ac.attempt_id
+        ),
+        -- Get rubric total points per simulation for previous attempts
+        previous_attempt_rubric_points AS (
+            SELECT 
+                sa.simulation_id,
+                COALESCE(SUM(sg.points), 0)::integer as total_points
+            FROM simulation_attempts sa
+            JOIN simulations s ON s.id = sa.simulation_id
+            LEFT JOIN standard_groups sg ON sg.rubric_id = s.rubric_id
+            WHERE sa.id IN (SELECT DISTINCT attempt_id FROM previous_chats_with_grades)
+            GROUP BY sa.simulation_id
         ),
         previous_chats_for_scenarios AS (
             SELECT 
@@ -2267,13 +2303,35 @@ class SimulationQueries:
                             'score', pwg.score,
                             'passed', pwg.passed,
                             'createdAt', pwg.created_at,
-                            'title', pwg.title
+                            'title', pwg.title,
+                            'timeTaken', COALESCE(pat.total_time_taken, 0),
+                            'totalPossiblePoints', COALESCE(parp.total_points, 0),
+                            'percentage', CASE 
+                                WHEN pwg.score IS NOT NULL AND parp.total_points > 0 THEN
+                                    ROUND((pwg.score::numeric / parp.total_points::numeric) * 100.0)::integer
+                                ELSE NULL
+                            END
                         ) ORDER BY pwg.created_at DESC
                     ),
                     '[]'::jsonb
                 ) as previous_chats
             FROM previous_chats_with_grades pwg
+            LEFT JOIN previous_attempt_time_aggregation pat ON pat.attempt_id = pwg.attempt_id
+            LEFT JOIN previous_attempt_rubric_points parp ON parp.simulation_id = pwg.simulation_id
             GROUP BY pwg.scenario_id
+        ),
+        -- All simulation scenarios with their previous chats (for permutation generation)
+        -- This MUST include ALL scenarios, even if they have no previous chats
+        all_simulation_scenarios_with_previous_chats AS (
+            SELECT 
+                ssl.scenario_id,
+                ssl.position,
+                COALESCE(s.name, 'Unknown Scenario') as scenario_name,
+                COALESCE(pcf.previous_chats, '[]'::jsonb) as previous_chats
+            FROM simulation_scenarios_list ssl
+            LEFT JOIN scenarios s ON s.id = ssl.scenario_id
+            LEFT JOIN previous_chats_for_scenarios pcf ON pcf.scenario_id = ssl.scenario_id
+            ORDER BY ssl.position
         ),
         chat_ids_list AS (
             SELECT array_agg(id) as chat_ids
@@ -2832,7 +2890,21 @@ class SimulationQueries:
             md.is_last_attempt as "isLastAttempt",
             md.show_results as "showResults",
             NOT (COALESCE((td.timer->>'expired')::boolean, false) OR md.show_results) as "isActive",
-            rsc.rubric_structure as "rubricStructure"
+            rsc.rubric_structure as "rubricStructure",
+            COALESCE(
+                (
+                    SELECT jsonb_agg(
+                        jsonb_build_object(
+                            'scenarioId', scenario_id::text,
+                            'position', position,
+                            'scenarioName', scenario_name,
+                            'previousChats', previous_chats
+                        ) ORDER BY position
+                    )
+                    FROM all_simulation_scenarios_with_previous_chats
+                ),
+                '[]'::jsonb
+            ) as "allSimulationScenarios"
         FROM attempt_base ab
         CROSS JOIN attempt_profiles_data apd
         CROSS JOIN scenario_documents_data sdd
@@ -2868,6 +2940,7 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         "attemptProfiles": json.loads(result["attemptProfiles"]) if isinstance(result["attemptProfiles"], str) else result["attemptProfiles"],
         "chats": json.loads(result["chats"]) if isinstance(result["chats"], str) else result["chats"],
         "scenarioDocuments": json.loads(result["scenarioDocuments"]) if isinstance(result["scenarioDocuments"], str) else result["scenarioDocuments"],
+        "allSimulationScenarios": json.loads(result["allSimulationScenarios"]) if isinstance(result["allSimulationScenarios"], str) else result["allSimulationScenarios"],
         "aggregatedResults": json.loads(result["aggregatedResults"]) if result["aggregatedResults"] and isinstance(result["aggregatedResults"], str) else result["aggregatedResults"],
         "timer": json.loads(result["timer"]) if isinstance(result["timer"], str) else result["timer"],
         "currentChatIndex": result["currentChatIndex"],

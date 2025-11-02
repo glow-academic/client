@@ -107,7 +107,7 @@ export interface SimulationContextType {
   sendMessage: (message: string, isRetry?: boolean) => void;
   stopMessage: () => void;
   endChat: (chatId?: string, previousChatId?: string) => void;
-  endAllChats: () => void;
+  endAllChats: (previousChatMap?: Record<string, string | null>) => void;
 
   // Loading states
   isSendingMessage: boolean;
@@ -580,7 +580,7 @@ export function SimulationProvider({
     ]
   );
 
-  const endAllChats = useCallback(async () => {
+  const endAllChats = useCallback(async (previousChatMap?: Record<string, string | null>) => {
     if (readOnly) return;
     if (!simulation || !attempt || !currentChat) return;
 
@@ -596,6 +596,7 @@ export function SimulationProvider({
         chat_id: currentChat.id,
         attempt_id: attemptId,
         end_all: true,
+        previous_chat_map: previousChatMap,
         department_id: simulation?.departmentId,
       });
     } catch (error) {
