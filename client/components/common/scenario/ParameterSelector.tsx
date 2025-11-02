@@ -7,7 +7,7 @@
  */
 "use client";
 import { X } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,177 @@ import type {
   ParameterMapping,
 } from "@/lib/api/v2/schemas/base";
 import { ParameterItemPicker } from "./ParameterItemPicker";
+
+// Component for slider with precisely aligned labels
+function SliderLabelContainer({
+  min,
+  max,
+  minValue,
+  maxValue,
+  hasSelection,
+  value,
+  onValueChange,
+  step,
+  disabled,
+}: {
+  min: number;
+  max: number;
+  minValue: number | undefined;
+  maxValue: number | undefined;
+  hasSelection: boolean;
+  value: number[];
+  onValueChange: (value: number[]) => void;
+  step: number;
+  disabled: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [handlePositions, setHandlePositions] = useState<
+    Record<number, number>
+  >({});
+
+  useEffect(() => {
+    const updateHandlePositions = () => {
+      if (containerRef.current && sliderRef.current) {
+        const handles = sliderRef.current.querySelectorAll(
+          '[data-slot="slider-thumb"]'
+        ) as NodeListOf<HTMLElement>;
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const positions: Record<number, number> = {};
+
+        handles.forEach((handle, index) => {
+          const handleRect = handle.getBoundingClientRect();
+          const handleCenter = handleRect.left + handleRect.width / 2;
+          const positionInContainer = handleCenter - containerRect.left;
+          const containerWidth = containerRef.current!.offsetWidth;
+          if (containerWidth > 0) {
+            const handleValue = value[index];
+            if (handleValue !== undefined) {
+              positions[handleValue] =
+                (positionInContainer / containerWidth) * 100;
+            }
+          }
+        });
+
+        setHandlePositions(positions);
+      }
+    };
+
+    // Use requestAnimationFrame to ensure DOM is ready
+    const rafId = requestAnimationFrame(() => {
+      updateHandlePositions();
+    });
+
+    window.addEventListener("resize", updateHandlePositions);
+    // Use MutationObserver to watch for slider changes
+    const observer = new MutationObserver(() => {
+      requestAnimationFrame(updateHandlePositions);
+    });
+    if (sliderRef.current) {
+      observer.observe(sliderRef.current, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style", "class"],
+      });
+    }
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", updateHandlePositions);
+      observer.disconnect();
+    };
+  }, [value, min, max]);
+
+  const getLabelPosition = (val: number): number => {
+    // Use measured handle position if available, otherwise fallback to calculation
+    if (handlePositions[val] !== undefined) {
+      return handlePositions[val];
+    }
+    // Fallback to percentage calculation
+    return ((val - min) / (max - min)) * 100;
+  };
+
+  return (
+    <div
+      className="relative"
+      style={{ paddingBottom: "8px" }}
+      ref={containerRef}
+    >
+      <div ref={sliderRef}>
+        <Slider
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onValueChange={onValueChange}
+          className="w-full"
+          disabled={disabled}
+        />
+      </div>
+
+      {/* Combined labels container - all at bottom-0 for perfect alignment */}
+      <div className="absolute bottom-0 inset-x-0">
+        {/* Min edge label - always shown */}
+        <span className="absolute left-0 text-xs text-muted-foreground leading-none">
+          {min}
+        </span>
+
+        {/* Max edge label - always shown */}
+        <span className="absolute right-0 text-xs text-muted-foreground leading-none">
+          {max}
+        </span>
+
+        {/* Handle value labels - only show when not at edges */}
+        {hasSelection && minValue !== undefined && maxValue !== undefined && (
+          <>
+            {minValue === maxValue ? (
+              // Single handle case - only show if not at min or max
+              minValue !== min &&
+              minValue !== max && (
+                <span
+                  className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                  style={{
+                    left: `${getLabelPosition(minValue)}%`,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  {minValue}
+                </span>
+              )
+            ) : (
+              // Range case - show handles only if not at edges
+              <>
+                {minValue !== min && (
+                  <span
+                    className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                    style={{
+                      left: `${getLabelPosition(minValue)}%`,
+                      transform: "translateX(-50%)",
+                    }}
+                  >
+                    {minValue}
+                  </span>
+                )}
+                {maxValue !== max && (
+                  <span
+                    className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                    style={{
+                      left: `${getLabelPosition(maxValue)}%`,
+                      transform: "translateX(-50%)",
+                    }}
+                  >
+                    {maxValue}
+                  </span>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface ParameterSelectorProps {
   parameterMapping: ParameterMapping;
@@ -331,81 +502,19 @@ export function ParameterSelector({
                       )}
                     </div>
 
-                    <div className="relative" style={{ paddingBottom: "8px" }}>
-                      <Slider
-                        min={min}
-                        max={max}
-                        step={step}
-                        value={currentValue}
-                        onValueChange={(value) =>
-                          handleNumericalSliderChange(parameterId, value)
-                        }
-                        className="w-full"
-                        disabled={itemIds.length === 0 || disabled}
-                      />
-
-                      {/* Combined labels container - all at bottom-0 for perfect alignment */}
-                      <div className="absolute bottom-0 inset-x-0">
-                        {/* Min edge label - always shown */}
-                        <span className="absolute left-0 text-xs text-muted-foreground leading-none">
-                          {min}
-                        </span>
-
-                        {/* Max edge label - always shown */}
-                        <span className="absolute right-0 text-xs text-muted-foreground leading-none">
-                          {max}
-                        </span>
-
-                        {/* Handle value labels - only show when not at edges */}
-                        {hasSelection &&
-                          minValue !== undefined &&
-                          maxValue !== undefined && (
-                            <>
-                              {minValue === maxValue ? (
-                                // Single handle case - only show if not at min or max
-                                minValue !== min &&
-                                minValue !== max && (
-                                  <span
-                                    className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
-                                    style={{
-                                      left: `${((minValue - min) / (max - min)) * 100}%`,
-                                      transform: "translateX(-50%)",
-                                    }}
-                                  >
-                                    {minValue}
-                                  </span>
-                                )
-                              ) : (
-                                // Range case - show handles only if not at edges
-                                <>
-                                  {minValue !== min && (
-                                    <span
-                                      className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
-                                      style={{
-                                        left: `${((minValue - min) / (max - min)) * 100}%`,
-                                        transform: "translateX(-50%)",
-                                      }}
-                                    >
-                                      {minValue}
-                                    </span>
-                                  )}
-                                  {maxValue !== max && (
-                                    <span
-                                      className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
-                                      style={{
-                                        left: `${((maxValue - min) / (max - min)) * 100}%`,
-                                        transform: "translateX(-50%)",
-                                      }}
-                                    >
-                                      {maxValue}
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </>
-                          )}
-                      </div>
-                    </div>
+                    <SliderLabelContainer
+                      min={min}
+                      max={max}
+                      minValue={minValue}
+                      maxValue={maxValue}
+                      hasSelection={hasSelection}
+                      value={currentValue}
+                      onValueChange={(value) =>
+                        handleNumericalSliderChange(parameterId, value)
+                      }
+                      step={step}
+                      disabled={itemIds.length === 0 || disabled}
+                    />
 
                     {hasSelection && (
                       <div className="space-y-1 mt-6">

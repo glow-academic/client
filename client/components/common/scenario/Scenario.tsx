@@ -1145,7 +1145,16 @@ export default function Scenario({
 
   const handleResetContent = () => {
     try {
-      setFormData((prev) => ({ ...prev, description: "" }));
+      // Clear problem statement and turn off objectives
+      setFormData((prev) => ({
+        ...prev,
+        problemStatement: "",
+        objectivesEnabled: false,
+      }));
+      // Clear objectives array
+      setCurrentObjectives([]);
+      // Clear selected problem statement ID
+      setSelectedProblemStatementId(null);
       toast.success("Scenario content reset");
     } catch (error) {
       log.error("scenario.content.reset.failed", {
@@ -1273,7 +1282,10 @@ export default function Scenario({
               scenarioId: scenarioId,
               name: formData.name,
               problem_statement: newProblemStatement,
-              department_ids: formData.departmentIds.length > 0 ? formData.departmentIds : null,
+              department_ids:
+                formData.departmentIds.length > 0
+                  ? formData.departmentIds
+                  : null,
               active: formData.active,
               persona_id: selectedPersonaId,
               document_ids: currentDocumentIds,
@@ -1287,7 +1299,8 @@ export default function Scenario({
               image_input_enabled: formData.imageInputEnabled ?? false,
               copy_paste_allowed: formData.copyPasteAllowed ?? false,
               input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
-              output_guardrail_enabled: formData.outputGuardrailEnabled ?? false,
+              output_guardrail_enabled:
+                formData.outputGuardrailEnabled ?? false,
             },
             {
               onSuccess: () => {
