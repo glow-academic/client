@@ -88,11 +88,37 @@ function CommandList({
   className,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.List>) {
+  const listRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const { scrollTop, scrollHeight, clientHeight } = list;
+      const isAtTop = scrollTop === 0;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+      
+      // Allow scrolling if we're not at boundaries, or prevent default if we are
+      if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+        // At boundary - let event propagate
+        return;
+      }
+      
+      // We can scroll - prevent event from bubbling to dialog
+      e.stopPropagation();
+    };
+
+    list.addEventListener('wheel', handleWheel, { passive: false });
+    return () => list.removeEventListener('wheel', handleWheel);
+  }, []);
+
   return (
     <CommandPrimitive.List
+      ref={listRef}
       data-slot="command-list"
       className={cn(
-        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto",
+        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto [touch-action:pan-y]",
         className,
       )}
       {...props}

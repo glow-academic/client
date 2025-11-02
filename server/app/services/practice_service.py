@@ -121,10 +121,18 @@ class PracticeService(BaseService):
         if isinstance(parsed_result.get("scenario_mapping"), dict):
             for scenario_id, scenario_data in parsed_result["scenario_mapping"].items():
                 if isinstance(scenario_data, dict):
+                    # Parse persona_ids from data (may be array or single value for backward compatibility)
+                    persona_ids = []
+                    if scenario_data.get("persona_ids"):
+                        persona_ids = scenario_data["persona_ids"] if isinstance(scenario_data["persona_ids"], list) else [scenario_data["persona_ids"]]
+                    elif scenario_data.get("persona_id"):
+                        # Backward compatibility: convert single persona_id to array
+                        persona_ids = [str(scenario_data["persona_id"])]
+                    
                     scenario_mapping[scenario_id] = ScenarioMappingItem(
                         name=scenario_data.get("name", ""),
                         description=scenario_data.get("description", ""),
-                        persona_id=None,
+                        persona_ids=persona_ids,
                         persona_mapping={},
                         document_mapping={},
                         parameter_item_mapping={},
