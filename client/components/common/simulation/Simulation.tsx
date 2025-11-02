@@ -39,7 +39,14 @@ import {
   useUpdateSimulation as useUpdateSimulationV2,
 } from "@/lib/api/v2/hooks/simulations";
 import type { SimulationDetailResponse } from "@/lib/api/v2/schemas/simulations";
-import { BarChart3, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import {
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  GraduationCap,
+  Loader2,
+  Power,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationScenarioPicker } from "./SimulationScenarioPicker";
 
@@ -747,45 +754,63 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
         </div>
 
-        {/* First Row of Switches - Simulation Active, Default Simulation, Practice Simulation */}
-        <div className="flex gap-8">
-          {/* Simulation Active Switch */}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="active" className="text-sm">
-              Simulation Active
-            </Label>
-            {formData?.active !== undefined && !isLoading ? (
-              <Switch
-                id="active"
-                checked={formData.active ?? true}
-                onCheckedChange={(checked) =>
-                  handleInputChange("active", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-
-          {/* Practice Simulation Switch - Only for superadmin */}
-          {effectiveProfile?.role === "superadmin" && (
+        {/* Active and Practice Simulation Switches */}
+        <div className="space-y-2 pt-2">
+          {/* Active Switch */}
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Label htmlFor="practiceSimulation" className="text-sm">
-                Practice Simulation
+              <Label
+                htmlFor="active"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                Active
               </Label>
-              {formData?.practiceSimulation !== undefined && !isLoading ? (
+              {formData?.active !== undefined && !isLoading ? (
                 <Switch
-                  id="practiceSimulation"
-                  checked={formData.practiceSimulation ?? false}
+                  id="active"
+                  checked={formData.active ?? true}
                   onCheckedChange={(checked) =>
-                    handleInputChange("practiceSimulation", checked)
+                    handleInputChange("active", checked)
                   }
                   disabled={isReadonly}
                 />
               ) : (
                 <Skeleton className="h-6 w-11" />
               )}
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Inactive simulations will not be available for cohorts
+            </p>
+          </div>
+
+          {/* Practice Simulation Switch - Only for superadmin */}
+          {effectiveProfile?.role === "superadmin" && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="practiceSimulation"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+                  Practice
+                </Label>
+                {formData?.practiceSimulation !== undefined && !isLoading ? (
+                  <Switch
+                    id="practiceSimulation"
+                    checked={formData.practiceSimulation ?? false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("practiceSimulation", checked)
+                    }
+                    disabled={isReadonly}
+                  />
+                ) : (
+                  <Skeleton className="h-6 w-11" />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Show this simulation on the practice page
+              </p>
             </div>
           )}
         </div>

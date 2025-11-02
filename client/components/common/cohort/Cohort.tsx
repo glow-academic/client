@@ -40,7 +40,7 @@ import {
   useUpdateCohort,
 } from "@/lib/api/v2/hooks/cohorts";
 import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
-import { BarChart3, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
 
@@ -732,25 +732,33 @@ export default function Cohort({ cohortId }: CohortProps) {
           )}
         </div>
 
-        {/* Switches - Horizontal Layout */}
-        <div className="flex gap-8">
-          {/* Active/Inactive Switch */}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="active" className="text-sm">
-              Cohort Active
-            </Label>
-            {formData.active !== undefined && !isLoading ? (
-              <Switch
-                id="active"
-                checked={formData.active ?? true}
-                onCheckedChange={(checked) =>
-                  handleInputChange("active", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
+        {/* Active Switch */}
+        <div className="space-y-2 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="active"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                Active
+              </Label>
+              {formData.active !== undefined && !isLoading ? (
+                <Switch
+                  id="active"
+                  checked={formData.active ?? true}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("active", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Inactive cohorts will not be shown
+            </p>
           </div>
         </div>
 

@@ -7,11 +7,18 @@
 "use client";
 import {
   Check,
+  Copy,
   GripVertical,
+  Image,
+  Lightbulb,
   Loader2,
   PlusCircle,
+  Power,
   RotateCcw,
+  Shield,
+  ShieldCheck,
   Shuffle,
+  Target,
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -86,6 +93,7 @@ function ObjectiveInputWithAutocomplete({
   onDragOver,
   onDrop,
   onRemove,
+  totalObjectives,
 }: {
   index: number;
   value: string;
@@ -98,6 +106,7 @@ function ObjectiveInputWithAutocomplete({
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
   onRemove: () => void;
+  totalObjectives: number;
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -150,13 +159,17 @@ function ObjectiveInputWithAutocomplete({
       className={`flex flex-col gap-2 ${
         draggedObjectiveIndex === index ? "opacity-50" : ""
       }`}
-      draggable={!disabled}
-      onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
       <div className="flex items-center gap-2">
-        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
+        <div
+          draggable={!disabled}
+          onDragStart={onDragStart}
+          className="cursor-grab active:cursor-grabbing shrink-0"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
         <div className="flex-1 relative">
           <Input
             ref={inputRef}
@@ -167,6 +180,7 @@ function ObjectiveInputWithAutocomplete({
             placeholder={placeholder}
             className="flex-1"
             disabled={disabled}
+            onDragStart={(e) => e.preventDefault()} // Prevent dragging from input
           />
           {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
@@ -185,16 +199,18 @@ function ObjectiveInputWithAutocomplete({
             </div>
           )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={onRemove}
-          className="h-8 w-8 shrink-0"
-          disabled={disabled}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {totalObjectives > 1 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={onRemove}
+            className="h-8 w-8 shrink-0"
+            disabled={disabled}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -320,6 +336,7 @@ export default function Scenario({
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [showRegenerationDialog, setShowRegenerationDialog] = useState(false);
   const [regenerationInstructions, setRegenerationInstructions] = useState("");
+  const [regenerateObjectives, setRegenerateObjectives] = useState(true);
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
   const [useDocuments, setUseDocuments] = useState(true);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
@@ -1174,7 +1191,10 @@ export default function Scenario({
     setDraggedObjectiveIndex(null);
   };
 
-  const handleGenerateScenario = async (userInstructions?: string) => {
+  const handleGenerateScenario = async (
+    userInstructions?: string,
+    shouldRegenerateObjectives?: boolean
+  ) => {
     setIsGeneratingScenario(true);
 
     try {
@@ -1229,8 +1249,9 @@ export default function Scenario({
               : prev.name,
           problemStatement: newProblemStatement,
         }));
-        // Update objectives only if objectives are enabled and returned
+        // Update objectives only if regenerateObjectives is true and objectives are enabled
         if (
+          shouldRegenerateObjectives &&
           formData.objectivesEnabled &&
           result.objectives &&
           result.objectives.length > 0
@@ -1527,21 +1548,30 @@ export default function Scenario({
             </div>
 
             {/* Active Switch */}
-            <div className="flex items-center gap-2">
-              <Label htmlFor="active" className="text-sm">
-                Scenario Active
-              </Label>
-              <Switch
-                id="active"
-                checked={formData.active ?? true}
-                onCheckedChange={(checked) =>
-                  handleInputChange("active", checked)
-                }
-                disabled={isReadonly}
-              />
+            <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="active"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                    Active
+                  </Label>
+                  <Switch
+                    id="active"
+                    checked={formData.active ?? true}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("active", checked)
+                    }
+                    disabled={isReadonly}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Inactive scenarios will not be available for other simulations
+                </p>
+              </div>
             </div>
-
-            {/* Scenario Flags - Removed guardrails, moved to persona section */}
           </CardContent>
         </Card>
         {/* Step 2: Persona Selection */}
@@ -1624,46 +1654,73 @@ export default function Scenario({
 
             {/* Guardrail Switches */}
             <div className="space-y-2 pt-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="copyPasteAllowed" className="text-sm">
-                  Copy Paste Allowed
-                </Label>
-                <Switch
-                  id="copyPasteAllowed"
-                  checked={formData.copyPasteAllowed ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("copyPasteAllowed", checked)
-                  }
-                  disabled={isReadonly}
-                />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="copyPasteAllowed"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                    Copy Paste
+                  </Label>
+                  <Switch
+                    id="copyPasteAllowed"
+                    checked={formData.copyPasteAllowed ?? false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("copyPasteAllowed", checked)
+                    }
+                    disabled={isReadonly}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Allow students to copy and paste text during the scenario
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Label htmlFor="inputGuardrailEnabled" className="text-sm">
-                  Input Guardrail Enabled
-                </Label>
-                <Switch
-                  id="inputGuardrailEnabled"
-                  checked={formData.inputGuardrailEnabled ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("inputGuardrailEnabled", checked)
-                  }
-                  disabled={isReadonly}
-                />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="inputGuardrailEnabled"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                    Input Guardrail
+                  </Label>
+                  <Switch
+                    id="inputGuardrailEnabled"
+                    checked={formData.inputGuardrailEnabled ?? false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("inputGuardrailEnabled", checked)
+                    }
+                    disabled={isReadonly}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Monitor and filter inappropriate input from students
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Label htmlFor="outputGuardrailEnabled" className="text-sm">
-                  Output Guardrail Enabled
-                </Label>
-                <Switch
-                  id="outputGuardrailEnabled"
-                  checked={formData.outputGuardrailEnabled ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("outputGuardrailEnabled", checked)
-                  }
-                  disabled={isReadonly}
-                />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="outputGuardrailEnabled"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                    Output Guardrail
+                  </Label>
+                  <Switch
+                    id="outputGuardrailEnabled"
+                    checked={formData.outputGuardrailEnabled ?? false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("outputGuardrailEnabled", checked)
+                    }
+                    disabled={isReadonly}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Monitor and filter inappropriate output from the persona
+                </p>
               </div>
             </div>
           </CardContent>
@@ -1704,21 +1761,6 @@ export default function Scenario({
               </div>
             </div>
             <div className="ml-auto flex items-center gap-3">
-              {useDocuments && (
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="imageInputEnabled"
-                    checked={formData.imageInputEnabled ?? false}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("imageInputEnabled", checked)
-                    }
-                    disabled={isReadonly}
-                  />
-                  <Label htmlFor="imageInputEnabled" className="text-sm">
-                    Image Input Enabled
-                  </Label>
-                </div>
-              )}
               <div className="flex items-center gap-2">
                 <Switch
                   id="use-documents"
@@ -1769,7 +1811,7 @@ export default function Scenario({
               </Tooltip>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <DocumentPicker
               mapping={documentMapping}
               validIds={validDocumentIds}
@@ -1787,6 +1829,34 @@ export default function Scenario({
                 setCurrentDocumentIds(limitedIds);
               }}
             />
+
+            {/* Image Input Enabled Switch */}
+            {useDocuments && (
+              <div className="space-y-2 pt-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="imageInputEnabled"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <Image className="h-3.5 w-3.5 text-muted-foreground" />
+                      Image Vision
+                    </Label>
+                    <Switch
+                      id="imageInputEnabled"
+                      checked={formData.imageInputEnabled ?? false}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("imageInputEnabled", checked)
+                      }
+                      disabled={isReadonly}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Enable AI vision to analyze visual content in documents
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -1984,78 +2054,95 @@ export default function Scenario({
               />
             </div>
 
-            {/* Hints Enabled Switch */}
+            {/* Hints Enabled and Objectives Enabled Switches */}
             <div className="space-y-2 pt-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="hintsEnabled" className="text-sm">
-                  Hints Enabled
-                </Label>
-                <Switch
-                  id="hintsEnabled"
-                  checked={formData.hintsEnabled ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("hintsEnabled", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              </div>
-            </div>
-
-            {/* Objectives Section */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="objectivesEnabled" className="text-sm">
-                  Objectives Enabled
-                </Label>
-                <Switch
-                  id="objectivesEnabled"
-                  checked={formData.objectivesEnabled ?? false}
-                  onCheckedChange={(checked) => {
-                    handleInputChange("objectivesEnabled", checked);
-                    // Auto-create first objective when enabling
-                    if (checked && currentObjectives.length === 0) {
-                      setCurrentObjectives([""]);
-                    }
-                  }}
-                  disabled={isReadonly}
-                />
-              </div>
-
-              {formData.objectivesEnabled && (
-                <div className="space-y-2">
-                  {currentObjectives.map((objective, index) => (
-                    <ObjectiveInputWithAutocomplete
-                      key={`objective-${index}`}
-                      index={index}
-                      value={objective || ""}
-                      onChange={(value) => updateObjective(index, value)}
-                      placeholder={`Learning objective ${index + 1}`}
-                      suggestions={objectivesHistory}
-                      disabled={isReadonly}
-                      draggedObjectiveIndex={draggedObjectiveIndex}
-                      onDragStart={(e) => handleDragStartObjective(e, index)}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDropObjective(e, index)}
-                      onRemove={() => removeObjective(index)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {formData.objectivesEnabled && currentObjectives.length < 3 && (
-                <div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addObjective}
-                    disabled={isReadonly}
-                    size="sm"
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="hintsEnabled"
+                    className="text-sm flex items-center gap-1.5"
                   >
-                    <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-                  </Button>
+                    <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
+                    Hints
+                  </Label>
+                  <Switch
+                    id="hintsEnabled"
+                    checked={formData.hintsEnabled ?? false}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("hintsEnabled", checked)
+                    }
+                    disabled={isReadonly}
+                  />
                 </div>
-              )}
+                <p className="text-xs text-muted-foreground pl-5">
+                  Provide hints to help students progress through the scenario
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="objectivesEnabled"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                    Objectives
+                  </Label>
+                  <Switch
+                    id="objectivesEnabled"
+                    checked={formData.objectivesEnabled ?? false}
+                    onCheckedChange={(checked) => {
+                      handleInputChange("objectivesEnabled", checked);
+                      // Auto-create first objective when enabling
+                      if (checked && currentObjectives.length === 0) {
+                        setCurrentObjectives([""]);
+                      }
+                    }}
+                    disabled={isReadonly}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Display learning objectives to students during the scenario
+                </p>
+              </div>
             </div>
+
+            {/* Objectives List */}
+            {formData.objectivesEnabled && (
+              <div className="space-y-2">
+                {currentObjectives.map((objective, index) => (
+                  <ObjectiveInputWithAutocomplete
+                    key={`objective-${index}`}
+                    index={index}
+                    value={objective || ""}
+                    onChange={(value) => updateObjective(index, value)}
+                    placeholder={`Learning objective ${index + 1}`}
+                    suggestions={objectivesHistory}
+                    disabled={isReadonly}
+                    draggedObjectiveIndex={draggedObjectiveIndex}
+                    onDragStart={(e) => handleDragStartObjective(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDropObjective(e, index)}
+                    onRemove={() => removeObjective(index)}
+                    totalObjectives={currentObjectives.length}
+                  />
+                ))}
+              </div>
+            )}
+
+            {formData.objectivesEnabled && currentObjectives.length < 3 && (
+              <div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={addObjective}
+                  disabled={isReadonly}
+                  size="sm"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -2100,31 +2187,52 @@ export default function Scenario({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Regenerate Scenario</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to change or emphasize in this scenario?
-              Provide any specific instructions for the AI generation.
+            <AlertDialogDescription className="pb-2">
+              Provide instructions for what you'd like to change.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             <div className="space-y-2">
-              <Label htmlFor="regeneration-instructions">
-                Instructions (Optional)
-              </Label>
+              <Label htmlFor="regeneration-instructions">Instructions</Label>
               <Textarea
                 id="regeneration-instructions"
                 value={regenerationInstructions}
                 onChange={(e) => setRegenerationInstructions(e.target.value)}
-                placeholder="e.g., Make it more challenging, focus on time management, emphasize the student's frustration..."
+                placeholder="e.g., Make it more challenging, focus on time management..."
                 className="min-h-[100px]"
                 disabled={isGeneratingScenario}
               />
             </div>
+            {formData.objectivesEnabled && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="regenerate-objectives"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                    Regenerate Objectives
+                  </Label>
+                  <Switch
+                    id="regenerate-objectives"
+                    checked={regenerateObjectives}
+                    onCheckedChange={setRegenerateObjectives}
+                    disabled={isGeneratingScenario}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Replace current objectives; previous versions remain in
+                  history
+                </p>
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel
               disabled={isGeneratingScenario}
               onClick={() => {
                 setRegenerationInstructions("");
+                setRegenerateObjectives(true);
                 setShowRegenerationDialog(false);
               }}
             >
@@ -2133,10 +2241,12 @@ export default function Scenario({
             <AlertDialogAction
               onClick={() => {
                 handleGenerateScenario(
-                  regenerationInstructions.trim() || undefined
+                  regenerationInstructions.trim() || undefined,
+                  regenerateObjectives
                 );
                 setShowRegenerationDialog(false);
                 setRegenerationInstructions("");
+                setRegenerateObjectives(true);
               }}
               disabled={isGeneratingScenario}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
