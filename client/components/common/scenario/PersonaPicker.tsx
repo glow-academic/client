@@ -151,6 +151,16 @@ export function PersonaPicker<
     return persona?.name || placeholder;
   };
 
+  // Get selected persona for displaying icon/color (single select or first in multi-select)
+  const selectedPersona = React.useMemo(() => {
+    if (selectedIds.length === 0) return null;
+    const firstId = selectedIds[0];
+    if (!firstId) return null;
+    const persona = mapping[firstId];
+    if (!persona) return null;
+    return { id: firstId, ...persona };
+  }, [selectedIds, mapping]);
+
   const getSearchNotFoundMessage = () => {
     return `No ${label} found.`;
   };
@@ -209,8 +219,26 @@ export function PersonaPicker<
             className="w-full justify-between"
             disabled={disabled}
           >
-            {getButtonText()}
-            <ChevronsUpDown className="opacity-50" />
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {selectedPersona && (
+                <div
+                  className="p-1 rounded-md shadow-sm flex-shrink-0"
+                  style={{
+                    background: generateGradientFromHex(
+                      selectedPersona.color || "#64748b"
+                    ),
+                  }}
+                >
+                  {(() => {
+                    const IconComponent =
+                      getPersonaIconComponent(selectedPersona.icon) || Brain;
+                    return <IconComponent className="h-3.5 w-3.5 text-white" />;
+                  })()}
+                </div>
+              )}
+              <span className="truncate">{getButtonText()}</span>
+            </div>
+            <ChevronsUpDown className="opacity-50 ml-2 flex-shrink-0" />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[300px] p-0">

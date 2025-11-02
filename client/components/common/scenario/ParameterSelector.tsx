@@ -318,47 +318,97 @@ export function ParameterSelector({
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          {hasSelection &&
-                          minValue !== undefined &&
-                          maxValue !== undefined
-                            ? `${minValue} - ${maxValue}`
-                            : `${min} - ${max}`}
+                      {hasSelection && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resetNumericalParameter(parameterId)}
+                          className="h-6 w-6 p-0 hover:bg-muted"
+                          disabled={disabled}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="relative" style={{ paddingBottom: "8px" }}>
+                      <Slider
+                        min={min}
+                        max={max}
+                        step={step}
+                        value={currentValue}
+                        onValueChange={(value) =>
+                          handleNumericalSliderChange(parameterId, value)
+                        }
+                        className="w-full"
+                        disabled={itemIds.length === 0 || disabled}
+                      />
+
+                      {/* Combined labels container - all at bottom-0 for perfect alignment */}
+                      <div className="absolute bottom-0 inset-x-0">
+                        {/* Min edge label - always shown */}
+                        <span className="absolute left-0 text-xs text-muted-foreground leading-none">
+                          {min}
                         </span>
-                        {hasSelection && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => resetNumericalParameter(parameterId)}
-                            className="h-6 w-6 p-0 hover:bg-muted"
-                            disabled={disabled}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        )}
+
+                        {/* Max edge label - always shown */}
+                        <span className="absolute right-0 text-xs text-muted-foreground leading-none">
+                          {max}
+                        </span>
+
+                        {/* Handle value labels - only show when not at edges */}
+                        {hasSelection &&
+                          minValue !== undefined &&
+                          maxValue !== undefined && (
+                            <>
+                              {minValue === maxValue ? (
+                                // Single handle case - only show if not at min or max
+                                minValue !== min &&
+                                minValue !== max && (
+                                  <span
+                                    className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                                    style={{
+                                      left: `${((minValue - min) / (max - min)) * 100}%`,
+                                      transform: "translateX(-50%)",
+                                    }}
+                                  >
+                                    {minValue}
+                                  </span>
+                                )
+                              ) : (
+                                // Range case - show handles only if not at edges
+                                <>
+                                  {minValue !== min && (
+                                    <span
+                                      className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                                      style={{
+                                        left: `${((minValue - min) / (max - min)) * 100}%`,
+                                        transform: "translateX(-50%)",
+                                      }}
+                                    >
+                                      {minValue}
+                                    </span>
+                                  )}
+                                  {maxValue !== max && (
+                                    <span
+                                      className="absolute text-xs font-medium text-muted-foreground leading-none whitespace-nowrap"
+                                      style={{
+                                        left: `${((maxValue - min) / (max - min)) * 100}%`,
+                                        transform: "translateX(-50%)",
+                                      }}
+                                    >
+                                      {maxValue}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </>
+                          )}
                       </div>
                     </div>
 
-                    <Slider
-                      min={min}
-                      max={max}
-                      step={step}
-                      value={currentValue}
-                      onValueChange={(value) =>
-                        handleNumericalSliderChange(parameterId, value)
-                      }
-                      className="w-full"
-                      disabled={itemIds.length === 0 || disabled}
-                    />
-
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{min}</span>
-                      <span>{max}</span>
-                    </div>
-
                     {hasSelection && (
-                      <div className="space-y-1">
+                      <div className="space-y-1 mt-6">
                         {selectedItemIds.slice(0, 3).map((id) => {
                           const item = parameterItemMapping[id];
                           return item ? (
