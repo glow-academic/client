@@ -210,19 +210,19 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/system/agents") {
+    if (pathname === "/management/agents") {
       return (
-        <Button onClick={() => router.push("/system/agents/new")} size="sm">
+        <Button onClick={() => router.push("/management/agents/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
       );
     }
 
-    if (pathname === "/management/departments") {
+    if (pathname === "/system/departments") {
       return (
         <Button
-          onClick={() => router.push("/management/departments/new")}
+          onClick={() => router.push("/system/departments/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />

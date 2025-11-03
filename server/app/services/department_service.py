@@ -230,6 +230,10 @@ class DepartmentService(BaseService):
             in_use=False,
             staff_count=0,
             total_price_spent=0.0,
+            # Empty mappings and staff for new department
+            staff=[],
+            cohort_mapping={},
+            department_mapping={},
         )
 
     async def create_department(

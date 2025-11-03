@@ -41,7 +41,7 @@ class ProfileQueries:
 
     def update_profile(
         self, profile_id: str, updates: dict[str, Any]
-    ) -> dict[str, tuple[str, list[Any]] | None]:
+    ) -> dict[str, Any]:
         """Build query to update profile fields."""
         # Map camelCase API field names to snake_case database column names
         field_map = {
@@ -90,14 +90,14 @@ class ProfileQueries:
         """
         
         # Build INSERT query for lastActive if provided (with its own parameter numbering)
-        insert_query = None
-        insert_params = None
+        insert_tuple: tuple[str, list[Any]] | None = None
         if last_active_value is not None:
             insert_query = """
             INSERT INTO profile_activity (profile_id, last_active)
             VALUES ($1, $2)
             """
             insert_params = [profile_id, last_active_value]
+            insert_tuple = (insert_query, insert_params)
         
         # Build SELECT query to get full profile (with its own parameter numbering)
         select_query = """
@@ -124,7 +124,7 @@ class ProfileQueries:
         
         return {
             "update": (update_query, update_params),
-            "insert": (insert_query, insert_params) if insert_query else None,
+            "insert": insert_tuple,
             "select": (select_query, select_params),
         }
 

@@ -1285,7 +1285,12 @@ class DashboardQueries:
             parameter_mapping AS (
                 SELECT COALESCE(jsonb_object_agg(
                     p.id::text,
-                    jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''))
+                    jsonb_build_object(
+                        'name', p.name, 
+                        'description', COALESCE(p.description, ''),
+                        'numerical', p.numerical,
+                        'document_parameter', p.document_parameter
+                    )
                 ), '{}'::jsonb) AS mapping
                 FROM parameters p
                 WHERE p.active = true
@@ -1313,7 +1318,8 @@ class DashboardQueries:
                         'name', pi.name, 
                         'description', COALESCE(pi.description, ''),
                         'parameterId', pi.parameter_id::text,
-                        'parameterName', p.name
+                        'parameterName', p.name,
+                        'value', COALESCE(pi.value, '')
                     )
                 ), '{}'::jsonb) AS mapping
                 FROM parameter_items pi

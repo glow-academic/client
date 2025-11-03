@@ -124,7 +124,8 @@ class DocumentQueries:
                         'name', pi.name,
                         'description', COALESCE(pi.description, ''),
                         'parameter_id', pi.parameter_id::text,
-                        'parameter_name', pi.parameter_name
+                        'parameter_name', pi.parameter_name,
+                        'value', COALESCE(pi.value, '')
                     )
                 ) FILTER (WHERE pi.id IS NOT NULL),
                 '{}'::jsonb
@@ -134,12 +135,14 @@ class DocumentQueries:
                     pi.id,
                     pi.name,
                     pi.description,
+                    pi.value,
                     pi.parameter_id,
                     p.name as parameter_name
                 FROM parameter_items pi
                 JOIN parameters p ON p.id = pi.parameter_id
                 LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-                GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.name
+                WHERE p.active = true
+                GROUP BY pi.id, pi.name, pi.description, pi.value, pi.parameter_id, p.name
                 HAVING 
                     -- Include if has matching department link OR has no department links at all (cross-dept)
                     COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -519,7 +522,7 @@ class DocumentQueries:
         department_parameter_ids AS (
             SELECT 
                 ud.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
             FROM user_departments ud
             LEFT JOIN parameters p ON p.active = true
             LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
@@ -628,7 +631,7 @@ class DocumentQueries:
         department_parameter_ids AS (
             SELECT 
                 ud.id as department_id,
-                COALESCE(ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
+                COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
             FROM user_departments ud
             LEFT JOIN parameters p ON p.active = true
             LEFT JOIN parameter_items pi ON pi.parameter_id = p.id

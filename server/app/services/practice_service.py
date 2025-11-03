@@ -149,6 +149,7 @@ class PracticeService(BaseService):
                         name=param_data.get("name", ""),
                         description=param_data.get("description", ""),
                         numerical=param_data.get("numerical", False),
+                        document_parameter=param_data.get("document_parameter", False),
                     )
 
         # Parse embedded parameter_item mapping

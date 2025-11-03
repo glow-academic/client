@@ -3,6 +3,7 @@
 import json
 import uuid
 from typing import Any
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.cache import keys
@@ -311,9 +312,9 @@ class ScenarioService(BaseService):
             raise ValueError(f"Scenario not found: {request.scenarioId}")
 
         # Parse basic data
-        persona_ids = scenario.get("persona_ids") or []
-        # Note: document_ids from query may be incorrect due to cache/query issues
-        # We'll derive it from document_details which is the source of truth
+        # Note: persona_ids and document_ids from query may be incorrect due to cache/query issues
+        # We'll derive them from database queries as the source of truth
+        persona_ids_from_query = scenario.get("persona_ids") or []
         document_ids_from_query = scenario["document_ids"] or []
         objective_ids = scenario["objective_ids"] or []
         active_simulation_ids = scenario["simulation_ids"] or []
@@ -419,6 +420,7 @@ class ScenarioService(BaseService):
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
                         numerical=pdata.get("numerical", False),
+                        document_parameter=pdata.get("document_parameter", False),
                     )
 
         # Parse JSONB parameter_item mapping (may be string or dict)
@@ -542,6 +544,17 @@ class ScenarioService(BaseService):
         # Derive document_ids from document_details (source of truth)
         # This ensures consistency since document_details is correctly filtered by scenario_id
         document_ids = [doc.document_id for doc in document_details if doc.document_id]
+        
+        # Derive persona_ids directly from database (source of truth)
+        # This ensures consistency and avoids cache/query issues that may return incorrect data
+        persona_query, persona_params = self.queries.get_scenario_personas(request.scenarioId)
+        persona_result = await self.conn.fetchrow(persona_query, *persona_params)
+        persona_ids = persona_result.get("persona_ids", []) if persona_result else []
+        # Ensure persona_ids is a list of strings
+        if persona_ids and not isinstance(persona_ids, list):
+            persona_ids = [str(persona_ids)] if persona_ids else []
+        elif persona_ids:
+            persona_ids = [str(pid) for pid in persona_ids if pid]
 
         # Compute permissions from query data
         in_use_by_active = scenario["active_usage_count"] > 0
@@ -669,6 +682,7 @@ class ScenarioService(BaseService):
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
                         numerical=pdata.get("numerical", False),
+                        document_parameter=pdata.get("document_parameter", False),
                     )
 
         parameter_item_mapping_data = result.get("parameter_item_mapping") or {}
@@ -1591,11 +1605,11 @@ class ScenarioService(BaseService):
             await self.conn.execute(query, *params)
             
             # Insert all selected personas
-            for persona_id in scenario_persona_ids:
+            for pid in scenario_persona_ids:
                 await self.conn.execute(
                     self.queries.insert_scenario_persona_link(),
                     scenario_id,
-                    persona_id,
+                    pid,
                     True,
                 )
 
@@ -1625,7 +1639,7 @@ class ScenarioService(BaseService):
                 param_ids = list(scenario_metadata["parameter_item_ids"]) if scenario_metadata["parameter_item_ids"] else []
                 persona_ids = scenario_metadata.get("persona_ids") or []
                 # Use first persona for AI agent (it expects single persona_id)
-                persona_id = uuid.UUID(persona_ids[0]) if persona_ids and len(persona_ids) > 0 else None
+                persona_id: UUID | None = UUID(persona_ids[0]) if persona_ids and len(persona_ids) > 0 else None
                 
                 # Generate problem statement using AI
                 name, description, objectives, trace_id = await run_scenario_agent(

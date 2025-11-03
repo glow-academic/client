@@ -66,7 +66,7 @@ class ReportsService(BaseService):
                     scenario_mapping[scenario_id] = ScenarioMappingItem(
                         name=scenario_data.get("name", ""),
                         description=scenario_data.get("description", ""),
-                        persona_id=None,
+                        persona_ids=[],
                         persona_mapping={},
                         document_mapping={},
                         parameter_item_mapping={},
@@ -86,7 +86,7 @@ class ReportsService(BaseService):
                         name=sim_data.get("name", ""),
                         description=sim_data.get("description", ""),
                         time_limit=sim_data.get("time_limit"),
-                        department_id=sim_data.get("department_id", ""),
+                        department_ids=sim_data.get("department_ids"),
                     )
 
         return ReportsBundleResponse(

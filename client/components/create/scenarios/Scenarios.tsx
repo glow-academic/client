@@ -143,7 +143,11 @@ export function Scenarios() {
 
   // Build department options from mapping
   const departmentMapping = useMemo(
-    () => (scenariosData?.department_mapping as Record<string, { name: string; description: string }>) || {},
+    () =>
+      (scenariosData?.department_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
     [scenariosData?.department_mapping]
   );
 
@@ -192,14 +196,20 @@ export function Scenarios() {
           return value.some((v) => rowIds.includes(v));
         },
       },
-      // Hidden faceting column for Persona (single ID)
+      // Hidden faceting column for Persona (array of IDs)
       {
         id: "persona_id",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorKey: "persona_id",
+        accessorFn: (row: ScenarioItem) => row.persona_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("persona_id") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show items with no personas when no filter
+          return value.some((v) => rowIds.includes(v));
+        },
       },
       // Hidden faceting column for Simulations (array of IDs)
       {
@@ -230,10 +240,12 @@ export function Scenarios() {
         },
       },
       {
-        accessorKey: "persona_id",
+        id: "persona_display",
+        accessorFn: (row: ScenarioItem) => row.persona_ids?.[0] ?? null,
         header: "Persona",
         cell: ({ row }) => {
-          const personaId = row.original.persona_ids[0]; // TODO: Handle multiple personas
+          const personaIds = row.original.persona_ids ?? [];
+          const personaId = personaIds[0]; // TODO: Handle multiple personas
           return (
             <div className="text-sm">
               {personaId && personaMapping[personaId] ? (

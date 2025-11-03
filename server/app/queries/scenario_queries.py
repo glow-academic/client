@@ -148,7 +148,8 @@ class ScenarioQueries:
                         'name', pi.name,
                         'description', COALESCE(pi.description, ''),
                         'parameter_id', pi.parameter_id::text,
-                        'parameter_name', p.name
+                        'parameter_name', p.name,
+                        'value', COALESCE(pi.value, '')
                     )
                 ) FILTER (WHERE pi.id IS NOT NULL),
                 '{}'::jsonb
@@ -177,9 +178,9 @@ class ScenarioQueries:
             WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
         ),
         all_persona_ids AS (
-            SELECT DISTINCT persona_id
+            SELECT DISTINCT unnest(persona_ids)::uuid as persona_id
             FROM scenario_data
-            WHERE persona_id IS NOT NULL
+            WHERE persona_ids IS NOT NULL
         ),
         persona_mapping_data AS (
             SELECT COALESCE(
@@ -1594,7 +1595,7 @@ class ScenarioQueries:
             FROM scenario_documents
         ),
         all_persona_ids AS (
-            SELECT DISTINCT unnest(persona_ids) as persona_id
+            SELECT DISTINCT unnest(persona_ids)::uuid as persona_id
             FROM scenarios_base
             WHERE persona_ids IS NOT NULL AND array_length(persona_ids, 1) > 0
         ),
@@ -2272,7 +2273,7 @@ class ScenarioQueries:
             SELECT DISTINCT d.id
             FROM departments d
             JOIN profile_departments pd ON pd.department_id = d.id
-            WHERE pd.profile_id = $1 AND d.active = true
+            WHERE pd.profile_id = $1 AND pd.active = true AND d.active = true
         ),
         department_persona_ids AS (
             SELECT 
@@ -2421,12 +2422,13 @@ class ScenarioQueries:
                 p.id,
                 p.name,
                 COALESCE(p.description, '') as description,
-                p.numerical
+                p.numerical,
+                p.document_parameter
             FROM parameters p
             JOIN parameter_items pi ON pi.parameter_id = p.id
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             WHERE p.active = true
-            GROUP BY p.id, p.name, p.description, p.numerical
+            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
                 COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT id FROM user_departments)) > 0
@@ -2442,7 +2444,8 @@ class ScenarioQueries:
                     jsonb_build_object(
                         'name', p.name,
                         'description', p.description,
-                        'numerical', p.numerical
+                        'numerical', p.numerical,
+                        'document_parameter', p.document_parameter
                     )
                 ),
                 '{}'::jsonb

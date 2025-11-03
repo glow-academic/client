@@ -1924,6 +1924,7 @@ export default function Scenario({
                       htmlFor="imageInputEnabled"
                       className="text-sm flex items-center gap-1.5"
                     >
+                      {/* eslint-disable-next-line */}
                       <Image className="h-3.5 w-3.5 text-muted-foreground" />
                       Image Vision
                     </Label>
@@ -2088,7 +2089,7 @@ export default function Scenario({
                   ) {
                     setShowRegenerationDialog(true);
                   } else {
-                    handleGenerateScenario();
+                    handleGenerateScenario(undefined, true);
                   }
                 }}
                 disabled={isSubmitting || isGeneratingScenario || isReadonly}

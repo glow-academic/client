@@ -8,7 +8,7 @@ from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
 GLOBAL_CACHE_VERSION = (
-    49  # Bumped: Fixed department_mapping to include cross-department personas and parameter items in all departments
+    50  # Bumped: Fixed persona_ids to derive from database instead of cached query result to avoid stale data
 )
 
 # Namespaces
