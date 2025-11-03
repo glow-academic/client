@@ -43,6 +43,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Icons
 import {
+  CheckCircle2,
   Clock,
   FileText,
   Infinity as InfinityIcon,
@@ -773,12 +774,12 @@ export default function AttemptChat() {
                                 return objectives.map((objective, index) => (
                                   <li
                                     key={index}
-                                    className="font-medium flex items-start gap-2"
+                                    className="font-normal flex items-start gap-2"
                                   >
-                                    <span className="text-primary mt-1.5 flex-shrink-0">
-                                      •
+                                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                    <span className="flex-1 -mt-0.5">
+                                      {objective}
                                     </span>
-                                    <span className="flex-1">{objective}</span>
                                   </li>
                                 ));
                               })()}
@@ -1009,12 +1010,10 @@ export default function AttemptChat() {
                     {objectives.map((objective, index) => (
                       <li
                         key={index}
-                        className="font-medium flex items-start gap-2"
+                        className="font-normal flex items-start gap-2"
                       >
-                        <span className="text-primary mt-1.5 flex-shrink-0">
-                          •
-                        </span>
-                        <span className="flex-1">{objective}</span>
+                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        <span className="flex-1 -mt-0.5">{objective}</span>
                       </li>
                     ))}
                   </ul>
@@ -1314,12 +1313,10 @@ export default function AttemptChat() {
                                   return objectives.map((objective, index) => (
                                     <li
                                       key={index}
-                                      className="font-medium flex items-start gap-2"
+                                      className="font-normal flex items-start gap-2"
                                     >
-                                      <span className="text-primary mt-1.5 flex-shrink-0">
-                                        •
-                                      </span>
-                                      <span className="flex-1">
+                                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                      <span className="flex-1 -mt-0.5">
                                         {objective}
                                       </span>
                                     </li>
@@ -1338,31 +1335,29 @@ export default function AttemptChat() {
                       simulationContext?.expectedChatCount > 1 && (
                         <div className="p-0">
                           <Progress
-                            value={
-                              (() => {
-                                // Count unique scenarios with at least one graded chat
-                                // A scenario is considered complete only if it has at least one chat with a grade
-                                const scenariosWithGrades = new Set<string>();
-                                simulationContext?.attemptData?.chats?.forEach(
-                                  (chatData) => {
-                                    if (
-                                      chatData.chat.completed &&
-                                      chatData.grade !== null &&
-                                      chatData.scenario?.id
-                                    ) {
-                                      scenariosWithGrades.add(
-                                        chatData.scenario.id
-                                      );
-                                    }
+                            value={(() => {
+                              // Count unique scenarios with at least one graded chat
+                              // A scenario is considered complete only if it has at least one chat with a grade
+                              const scenariosWithGrades = new Set<string>();
+                              simulationContext?.attemptData?.chats?.forEach(
+                                (chatData) => {
+                                  if (
+                                    chatData.chat.completed &&
+                                    chatData.grade !== null &&
+                                    chatData.scenario?.id
+                                  ) {
+                                    scenariosWithGrades.add(
+                                      chatData.scenario.id
+                                    );
                                   }
-                                );
-                                return (
-                                  (scenariosWithGrades.size /
-                                simulationContext?.expectedChatCount) *
-                              100
-                                );
-                              })()
-                            }
+                                }
+                              );
+                              return (
+                                (scenariosWithGrades.size /
+                                  simulationContext?.expectedChatCount) *
+                                100
+                              );
+                            })()}
                             className="w-full bg-transparent rounded-none [&>div]:rounded-none [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
                           />
                         </div>
