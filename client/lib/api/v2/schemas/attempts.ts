@@ -232,6 +232,7 @@ export const AttemptFullResponseSchema = z.object({
   isSingleChatAttempt: z.boolean(),
   isLastAttempt: z.boolean(),
   showResults: z.boolean(),
+  shouldShowControls: z.boolean(),
   isActive: z.boolean(),
   rubricStructure: z
     .object({

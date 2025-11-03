@@ -3,6 +3,7 @@
 import json
 import re
 import uuid
+from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import UUID
 
@@ -60,9 +61,34 @@ class ProfileService(BaseService):
             # No updates, just return the current profile
             return await self.get_profile(profile_id)
 
-        query, params = self.queries.update_profile(profile_id, updates)
-        result = await self.conn.fetchrow(query, *params)
+        # Convert lastLogin ISO string to datetime if present
+        processed_updates = updates.copy()
+        if "lastLogin" in processed_updates and isinstance(processed_updates["lastLogin"], str):
+            try:
+                # Parse ISO format string to timezone-aware datetime
+                dt = datetime.fromisoformat(processed_updates["lastLogin"].replace("Z", "+00:00"))
+                # Ensure timezone-aware
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=UTC)
+                processed_updates["lastLogin"] = dt
+            except (ValueError, AttributeError):
+                # If parsing fails, leave as-is (will error at DB level)
+                pass
 
+        queries = self.queries.update_profile(profile_id, processed_updates)
+        
+        # Execute queries in a transaction
+        async with self.conn.transaction():
+            # Execute UPDATE
+            await self.conn.execute(queries["update"][0], *queries["update"][1])
+            
+            # Execute INSERT for lastActive if provided
+            if queries["insert"]:
+                await self.conn.execute(queries["insert"][0], *queries["insert"][1])
+            
+            # Execute SELECT to get updated profile
+            result = await self.conn.fetchrow(queries["select"][0], *queries["select"][1])
+        
         if not result:
             return None
 

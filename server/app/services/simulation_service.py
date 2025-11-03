@@ -350,6 +350,7 @@ class SimulationService(BaseService):
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
                         numerical=pdata.get("numerical", False),
+                        document_parameter=pdata.get("document_parameter", False),
                     )
 
         # Parse parameter_item mapping from JSONB with type safety
@@ -612,6 +613,7 @@ class SimulationService(BaseService):
                         name=pdata.get("name", ""),
                         description=pdata.get("description", ""),
                         numerical=pdata.get("numerical", False),
+                        document_parameter=pdata.get("document_parameter", False),
                     )
 
         # Parse parameter item mapping from JSONB with type safety (may be string or dict)
@@ -1298,17 +1300,62 @@ class SimulationService(BaseService):
         # Get existing chats for this attempt
         query, params = self.queries.get_existing_chats_for_attempt(attempt_id)
         existing_chats = await self.conn.fetch(query, *params)
-        next_index = len(existing_chats)
         
         # Debug: Check if existing_chats have 'id' field
         if existing_chats and "id" not in existing_chats[0]:
             raise ValueError(f"Existing chats missing 'id' field: {existing_chats[0]}")
+        
+        # Get scenarios that already have graded chats (completed with grade)
+        # A scenario is considered done only if it has at least one chat with a grade
+        query = """
+            SELECT DISTINCT sc.scenario_id
+            FROM attempt_chats ac
+            JOIN simulation_chats sc ON sc.id = ac.chat_id
+            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            WHERE ac.attempt_id = $1 AND sc.completed = true
+        """
+        scenarios_with_grades = await self.conn.fetch(query, attempt_id)
+        scenarios_with_grades_set = {
+            str(row["scenario_id"]) for row in scenarios_with_grades
+        }
+        
+        # Find the next scenario index that doesn't have a graded chat
+        next_index = None
+        for idx, scenario_link in enumerate(scenario_links):
+            scenario_id_str = str(scenario_link["scenario_id"])
+            if scenario_id_str not in scenarios_with_grades_set:
+                next_index = idx
+                break
+        
+        # If all scenarios have graded chats, use the length for infinite mode cycling
+        if next_index is None:
+            next_index = len(scenario_links)
 
         # Handle previous_chat_id if provided (reusing score from previous attempt)
         if previous_chat_id:
             # Link the previous chat to current attempt via junction table
             query = self.queries.link_chat_to_attempt()
             await self.conn.execute(query, attempt_id, previous_chat_id)
+            
+            # Check if the previous chat has a grade and update scenarios_with_grades_set
+            query = """
+                SELECT sc.scenario_id, scg.id IS NOT NULL as has_grade
+                FROM simulation_chats sc
+                LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+                WHERE sc.id = $1 AND sc.completed = true
+            """
+            prev_chat_info = await self.conn.fetchrow(query, previous_chat_id)
+            if prev_chat_info and prev_chat_info["has_grade"] and prev_chat_info["scenario_id"]:
+                scenarios_with_grades_set.add(str(prev_chat_info["scenario_id"]))
+                # Recalculate next_index since we now have a new scenario with a grade
+                next_index = None
+                for idx, scenario_link in enumerate(scenario_links):
+                    scenario_id_str = str(scenario_link["scenario_id"])
+                    if scenario_id_str not in scenarios_with_grades_set:
+                        next_index = idx
+                        break
+                if next_index is None:
+                    next_index = len(scenario_links)
             
             # Mark current incomplete chat as completed (without grade = skipped)
             query, params = self.queries.update_chat_completed(chat_id)
@@ -1324,40 +1371,53 @@ class SimulationService(BaseService):
                         await self.conn.execute(query, *params)
         
         # Handle previous_chat_map if provided (for end_all with permutations)
+        created_chats_count_map = 0
         if end_all and previous_chat_map:
-            # Get scenario_id for each incomplete chat
-            for existing_chat in existing_chats:
-                if not existing_chat["completed"]:
-                    chat_scenario_id = str(existing_chat.get("scenario_id", ""))
-                    if chat_scenario_id in previous_chat_map:
-                        prev_chat_id = previous_chat_map[chat_scenario_id]
-                        if prev_chat_id:
-                            # Link the previous chat to current attempt
-                            query = self.queries.link_chat_to_attempt()
-                            await self.conn.execute(query, attempt_id, prev_chat_id)
+            # Mark current chat as completed (without grading - user is using previous chat scores)
+            query, params = self.queries.update_chat_completed(chat_id)
+            await self.conn.execute(query, *params)
+            
+            # Get scenario IDs that already have chats in this attempt
+            existing_scenario_ids = {
+                str(ec.get("scenario_id")) for ec in existing_chats if ec.get("scenario_id")
+            }
+            
+            # Process ALL scenarios in the simulation
+            # For each scenario in previous_chat_map: link previous chat if provided
+            # For scenarios NOT in previous_chat_map: create skipped chat if they don't have a chat yet
+            for scenario_link in scenario_links:
+                scenario_id_str = str(scenario_link["scenario_id"])
+                
+                if scenario_id_str in previous_chat_map:
+                    # User selected a previous chat to reuse for this scenario
+                    prev_chat_id = previous_chat_map[scenario_id_str]
+                    if prev_chat_id:
+                        # Link the previous chat to current attempt via junction table
+                        query = self.queries.link_chat_to_attempt()
+                        await self.conn.execute(query, attempt_id, prev_chat_id)
                         
-                        # Mark this chat as completed (reused previous or skipped)
-                        query, params = self.queries.update_chat_completed(
-                            str(existing_chat["id"])
-                        )
-                        await self.conn.execute(query, *params)
-            # Also handle current chat if not already handled
-            current_chat_completed = any(
-                str(c["id"]) == chat_id and c["completed"] for c in existing_chats
-            )
-            if not current_chat_completed:
-                chat_scenario_id_result = await self.conn.fetchrow(
-                    "SELECT scenario_id FROM simulation_chats WHERE id = $1", chat_id
-                )
-                if chat_scenario_id_result:
-                    chat_scenario_id = str(chat_scenario_id_result["scenario_id"])
-                    if chat_scenario_id in previous_chat_map:
-                        prev_chat_id = previous_chat_map[chat_scenario_id]
-                        if prev_chat_id:
-                            query = self.queries.link_chat_to_attempt()
-                            await self.conn.execute(query, attempt_id, prev_chat_id)
-                        query, params = self.queries.update_chat_completed(chat_id)
-                        await self.conn.execute(query, *params)
+                        # Check if the previous chat has a grade and update scenarios_with_grades_set
+                        query = """
+                            SELECT sc.scenario_id, scg.id IS NOT NULL as has_grade
+                            FROM simulation_chats sc
+                            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+                            WHERE sc.id = $1 AND sc.completed = true
+                        """
+                        prev_chat_info = await self.conn.fetchrow(query, prev_chat_id)
+                        if prev_chat_info and prev_chat_info["has_grade"] and prev_chat_info["scenario_id"]:
+                            scenarios_with_grades_set.add(str(prev_chat_info["scenario_id"]))
+                elif scenario_id_str not in existing_scenario_ids:
+                    # Scenario not in map and doesn't have a chat yet = skipped, create new completed chat (no grade)
+                    created = await self._create_chat_for_scenario(
+                        scenario_id_str,
+                        attempt_id,
+                        profile_id,
+                        mark_completed=True,
+                    )
+                    if created is None:
+                        # Scenario not found, skip it
+                        continue
+                    created_chats_count_map += 1
         elif end_all and not previous_chat_map and not previous_chat_id:
             # If end_all but no previous_chat_map or previous_chat_id, mark all remaining incomplete chats as completed (skipped)
             for existing_chat in existing_chats:
@@ -1373,29 +1433,41 @@ class SimulationService(BaseService):
             next_scenario_id = None
             if is_infinite_mode:
                 # Cycle through the configured scenarios indefinitely
+                # Find the next scenario without a graded chat, cycling if needed
                 num_scenarios = len(scenario_links)
                 if num_scenarios > 0:
-                    cycling_index = next_index % num_scenarios
-                    next_scenario_id = scenario_links[cycling_index]["scenario_id"]
-            elif next_index < len(scenario_links):
+                    # Start from next_index and cycle until we find one without a graded chat
+                    for offset in range(num_scenarios):
+                        cycling_index = (next_index + offset) % num_scenarios
+                        scenario_id_str = str(scenario_links[cycling_index]["scenario_id"])
+                        if scenario_id_str not in scenarios_with_grades_set:
+                            next_scenario_id = scenario_links[cycling_index]["scenario_id"]
+                            break
+            elif next_index is not None and next_index < len(scenario_links):
+                # Use the next scenario that doesn't have a graded chat
                 next_scenario_id = scenario_links[next_index]["scenario_id"]
 
             if next_scenario_id is not None:
-                created_next_chat = await self._create_chat_for_scenario(
-                    str(next_scenario_id),
-                    attempt_id,
-                    profile_id,
-                    mark_completed=False,
-                )
-                if created_next_chat is None:
-                    raise ValueError("Next scenario not found")
-                if "id" not in created_next_chat:
-                    raise ValueError(f"Created chat missing 'id' field: {created_next_chat}")
-                next_chat_id = created_next_chat["id"]
+                # Double-check that this scenario doesn't already have a graded chat
+                # (it might have been created between the query and now)
+                scenario_id_str = str(next_scenario_id)
+                if scenario_id_str not in scenarios_with_grades_set:
+                    created_next_chat = await self._create_chat_for_scenario(
+                        scenario_id_str,
+                        attempt_id,
+                        profile_id,
+                        mark_completed=False,
+                    )
+                    if created_next_chat is None:
+                        raise ValueError("Next scenario not found")
+                    if "id" not in created_next_chat:
+                        raise ValueError(f"Created chat missing 'id' field: {created_next_chat}")
+                    next_chat_id = created_next_chat["id"]
 
-        # Grade the just-completed chat if it has at least 2 messages (only if not using previous_chat_id)
+        # Grade the just-completed chat if it has at least 2 messages
+        # Skip grading if using previous_chat_id or previous_chat_map (user is reusing previous scores)
         simulation_grade_id = None
-        if not previous_chat_id:
+        if not previous_chat_id and not previous_chat_map:
             # Use optimized batch query to get message counts
             existing_chat_ids = [str(c["id"]) for c in existing_chats]
             query, params = self.queries.get_messages_count_by_chat_ids(existing_chat_ids)
@@ -1412,12 +1484,14 @@ class SimulationService(BaseService):
                     UUID(chat_id), UUID(department_id), self.conn, sio_instance
                 )  # type: ignore
 
-            # Mark the current chat as completed
-            query, params = self.queries.update_chat_completed(chat_id)
-            await self.conn.execute(query, *params)
+            # Mark the current chat as completed (if not already marked by previous_chat_map handling)
+            if not (end_all and previous_chat_map):
+                query, params = self.queries.update_chat_completed(chat_id)
+                await self.conn.execute(query, *params)
 
         created_chats_count = 0
-        if end_all and not previous_chat_id:
+        # Only process remaining chats if not using previous_chat_map (already handled above)
+        if end_all and not previous_chat_id and not previous_chat_map:
             # End any other incomplete chats for this attempt
             existing_chat_ids = [str(c["id"]) for c in existing_chats]
             query, params = self.queries.get_messages_count_by_chat_ids(existing_chat_ids)
@@ -1467,12 +1541,15 @@ class SimulationService(BaseService):
             ]
         )
 
+        # Include chats created from previous_chat_map handling
+        total_created_chats = created_chats_count + created_chats_count_map
+
         return {
             "completed_chat_id": chat_id,
             "next_chat_id": next_chat_id,
             "is_attempt_finished": is_attempt_finished,
             "simulation_grade_id": simulation_grade_id,
-            "created_chats_count": created_chats_count,
+            "created_chats_count": total_created_chats,
         }
 
     # ===== Message Operations =====

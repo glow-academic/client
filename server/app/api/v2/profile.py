@@ -1,5 +1,6 @@
 """Profile v2 API endpoints - unified auth and staff operations."""
 
+import logging
 from typing import Annotated
 
 import asyncpg  # type: ignore
@@ -345,6 +346,8 @@ async def update_profile_simple(
     except HTTPException:
         raise
     except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error updating profile {request.profileId}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

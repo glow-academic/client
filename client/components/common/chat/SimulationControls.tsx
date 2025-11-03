@@ -80,14 +80,12 @@ export function SimulationControls() {
   const {
     endChat,
     endChatLoading,
-    isLastAttempt,
-    chats,
-    expectedChatCount,
     currentChat,
     attemptId,
     endAllChats,
     attemptData,
     isLoadingChats,
+    shouldShowControls,
   } = simulationContext || {};
 
   // Generate permutations for End All dialog
@@ -116,26 +114,44 @@ export function SimulationControls() {
 
     // Map to include chatId if a chat exists for this scenario
     return attemptData.allSimulationScenarios.map((scenarioData) => {
-      // Find if there's a chat for this scenario in the current attempt
-      const existingChat = attemptData.chats?.find(
-        (c) => c.scenario?.id === scenarioData.scenarioId
+      // Find all chats for this scenario in the current attempt
+      const scenarioChats =
+        attemptData.chats?.filter(
+          (c) => c.scenario?.id === scenarioData.scenarioId
+        ) || [];
+
+      // Check if this scenario has at least one chat with a grade (completed and graded)
+      const hasGradedChat = scenarioChats.some(
+        (c) => c.chat.completed && c.grade !== null
       );
+
+      // Get the first chat ID if any exist
+      const firstChat = scenarioChats[0];
 
       return {
         scenarioId: scenarioData.scenarioId,
         scenarioName: scenarioData.scenarioName || "Scenario",
-        chatId: existingChat?.chat.id || null,
+        chatId: firstChat?.chat.id || null,
+        hasCompletedChat: hasGradedChat,
         previousChats: scenarioData.previousChats || [],
       };
     });
   }, [attemptData?.allSimulationScenarios, attemptData?.chats]);
 
+  // Filter to only include scenarios without completed chats for End All permutations
+  const remainingScenarios = useMemo(() => {
+    return allSimulationScenarios.filter(
+      (scenario) => !scenario.hasCompletedChat
+    );
+  }, [allSimulationScenarios]);
+
   const permutations = useMemo(() => {
-    if (allSimulationScenarios.length === 0) return [];
+    // Only generate permutations for remaining scenarios (without completed chats)
+    if (remainingScenarios.length === 0) return [];
 
     // Generate all permutations using cartesian product
     const generatePermutations = (
-      scenarios: typeof allSimulationScenarios,
+      scenarios: typeof remainingScenarios,
       index: number = 0,
       currentPermutation: PermutationOption[] = []
     ): PermutationOption[][] => {
@@ -180,7 +196,7 @@ export function SimulationControls() {
       return results;
     };
 
-    const allPermutations = generatePermutations(allSimulationScenarios);
+    const allPermutations = generatePermutations(remainingScenarios);
 
     // Calculate total scores and percentages for each permutation
     const permutationsWithScores: Permutation[] = allPermutations.map(
@@ -221,7 +237,7 @@ export function SimulationControls() {
       if (b.totalPercentage === null) return -1;
       return b.totalPercentage - a.totalPercentage;
     });
-  }, [allSimulationScenarios]);
+  }, [remainingScenarios]);
 
   // Get previous chats for current chat to show red dot indicator
   // Must be computed before early returns to maintain hook order
@@ -264,12 +280,15 @@ export function SimulationControls() {
     return null;
   }
 
+  // Don't show buttons if server says not to (not all scenarios have completed chats)
+  if (shouldShowControls === false) {
+    return null;
+  }
+
   // After this point, simulationContext is guaranteed to exist
   // TypeScript doesn't know this, so we need to assert or use the values directly
   const safeEndChat = endChat!;
   const safeEndAllChats = endAllChats!;
-  const safeChats = chats!;
-  const safeExpectedChatCount = expectedChatCount!;
   const safeAttemptId = attemptId!;
   const safeCurrentChat = currentChat!;
 
@@ -315,10 +334,8 @@ export function SimulationControls() {
 
   // Handle End Session button click (ends whole session)
   const handleEndSession = () => {
-    const incompleteChats = safeChats.filter((chat) => !chat.completed).length;
-    const createdChats = safeChats.length;
-    const remainingScenarios = safeExpectedChatCount - createdChats;
-    const remainingSessions = incompleteChats + remainingScenarios;
+    // Use the actual count of remaining scenarios (without completed chats)
+    const remainingSessions = remainingScenarios.length;
     setEndAllRemainingSessions(remainingSessions);
 
     // If there are permutations available, select the best one by default
@@ -329,11 +346,14 @@ export function SimulationControls() {
     setConfirmEndAllOpen(true);
   };
 
+  // Determine if we should show combined button (1 remaining scenario) or separate buttons (2+ remaining)
+  const isLastRemainingScenario = remainingScenarios.length === 1;
+
   return (
     <>
       <div className="flex gap-2">
-        {/* Next Chat button - only show if not last attempt */}
-        {!isLastAttempt && (
+        {/* If only 1 remaining scenario, show "Next Chat" button styled but with "End Session" text */}
+        {isLastRemainingScenario && shouldShowControls ? (
           <Button
             type="button"
             variant="outline"
@@ -362,33 +382,77 @@ export function SimulationControls() {
                 />
               )}
 
-            {/* Button text */}
+            {/* Button text - "End Session" but functionally it's Next Chat */}
             <span className="relative z-10">
               {endChatLoading && endingAction === "endChat"
                 ? "Ending..."
-                : "Next Chat"}
+                : "End Session"}
             </span>
           </Button>
+        ) : (
+          <>
+            {/* Next Chat button - only show if there are 2+ remaining scenarios */}
+            {shouldShowControls && remainingScenarios.length > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleNextChat}
+                disabled={endChatLoading}
+                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                data-tour-end-chat
+              >
+                {/* Red dot indicator for previous chats - overlays on top right corner */}
+                {hasPreviousChats && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+                )}
+
+                {/* Grading progress overlay - fills from left to right */}
+                {simulationContext?.isGrading &&
+                  simulationContext?.gradingProgress && (
+                    <span
+                      className="absolute inset-0 bg-blue-500/20 transition-all duration-300 ease-out"
+                      style={{
+                        width: `${
+                          (simulationContext.gradingProgress.completed /
+                            simulationContext.gradingProgress.total) *
+                          100
+                        }%`,
+                      }}
+                    />
+                  )}
+
+                {/* Button text */}
+                <span className="relative z-10">
+                  {endChatLoading && endingAction === "endChat"
+                    ? "Ending..."
+                    : "Next Chat"}
+                </span>
+              </Button>
+            )}
+
+            {/* End Session button - show when there are 2+ remaining scenarios OR when all scenarios have graded chats */}
+            {(shouldShowControls && remainingScenarios.length > 1) ||
+            !shouldShowControls ? (
+              <Button
+                type="button"
+                variant={shouldShowControls ? "destructive" : "outline"}
+                onClick={handleEndSession}
+                disabled={endChatLoading}
+                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                data-tour-end-all
+              >
+                {/* Red dot indicator for better previous attempts - overlays on top right corner */}
+                {hasBetterPreviousAttempt && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+                )}
+
+                {endChatLoading && endingAction === "endAll"
+                  ? "Ending..."
+                  : "End Session"}
+              </Button>
+            ) : null}
+          </>
         )}
-
-        {/* End Session button - always show, outline variant when last attempt */}
-        <Button
-          type="button"
-          variant={isLastAttempt ? "outline" : "destructive"}
-          onClick={handleEndSession}
-          disabled={endChatLoading}
-          className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-          data-tour-end-all
-        >
-          {/* Red dot indicator for better previous attempts (only on last attempt) - overlays on top right corner */}
-          {isLastAttempt && hasBetterPreviousAttempt && (
-            <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-          )}
-
-          {endChatLoading && endingAction === "endAll"
-            ? "Ending..."
-            : "End Session"}
-        </Button>
       </div>
 
       {/* Confirm End All Dialog with Permutation Selection */}
@@ -567,7 +631,8 @@ export function SimulationControls() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               You have completed this scenario before. Select a previous attempt
-              to reuse its score, or continue normally.
+              to reuse its score, or{" "}
+              {isLastRemainingScenario ? "end normally" : "continue normally"}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
@@ -590,7 +655,10 @@ export function SimulationControls() {
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="" id="none" />
                       <Label htmlFor="none" className="cursor-pointer">
-                        Continue normally (don't reuse score)
+                        {isLastRemainingScenario
+                          ? "End normally"
+                          : "Continue normally"}{" "}
+                        (don't reuse score)
                       </Label>
                     </div>
                     {previousChats.map((prevChat) => (
@@ -657,7 +725,7 @@ export function SimulationControls() {
               }}
               disabled={false}
             >
-              Continue
+              {isLastRemainingScenario ? "End" : "Continue"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,8 +3,8 @@ import {
   UpdateProfileSimpleRequestSchema,
   UpdateProfileSimpleResponseSchema,
 } from "@/lib/api/v2/schemas/profile";
-import { NextRequest, NextResponse } from "next/server";
 import { log } from "@/lib/api/v2/server/logs";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {

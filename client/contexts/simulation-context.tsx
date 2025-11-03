@@ -89,6 +89,7 @@ export interface SimulationContextType {
   isSingleChatAttempt: boolean;
   isLastAttempt: boolean;
   expectedChatCount: number;
+  shouldShowControls: boolean;
   freshlyCompletedChats: Set<string>;
   setFreshlyCompletedChats: React.Dispatch<React.SetStateAction<Set<string>>>;
 
@@ -301,6 +302,7 @@ export function SimulationProvider({
   const expectedChatCount = attemptData?.expectedChatCount || 1;
   const isSingleChatAttempt = attemptData?.isSingleChatAttempt ?? true;
   const isLastAttempt = attemptData?.isLastAttempt ?? true;
+  const shouldShowControls = attemptData?.shouldShowControls ?? true;
 
   // Timer from v2 (server computed baseline) - wrap in useMemo to avoid dependency issues
   const serverTimer: AttemptFullResponse["timer"] = useMemo(
@@ -966,6 +968,7 @@ export function SimulationProvider({
     isSingleChatAttempt,
     isLastAttempt,
     expectedChatCount,
+    shouldShowControls,
     freshlyCompletedChats,
     setFreshlyCompletedChats,
 

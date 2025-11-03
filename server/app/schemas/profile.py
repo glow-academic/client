@@ -45,6 +45,7 @@ class UpdateProfileRequest(BaseModel):
     profileId: str
     firstName: str | None = None
     lastName: str | None = None
+    lastLogin: str | None = None  # ISO datetime
     role: str | None = None
     active: bool | None = None
     viewedIntro: bool | None = None

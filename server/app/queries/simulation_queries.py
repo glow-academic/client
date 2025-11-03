@@ -1187,13 +1187,14 @@ class SimulationQueries:
                 p.id,
                 p.name,
                 COALESCE(p.description, '') as description,
-                p.numerical
+                p.numerical,
+                p.document_parameter
             FROM parameters p
             JOIN parameter_items pi ON pi.parameter_id = p.id
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_department_ids udi
             WHERE p.active = true
-            GROUP BY p.id, p.name, p.description, p.numerical
+            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
                 COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
@@ -1208,7 +1209,8 @@ class SimulationQueries:
                     jsonb_build_object(
                         'name', pd.name,
                         'description', pd.description,
-                        'numerical', pd.numerical
+                        'numerical', pd.numerical,
+                        'document_parameter', pd.document_parameter
                     )
                 ),
                 '{}'::jsonb
@@ -1898,13 +1900,14 @@ class SimulationQueries:
                 p.id,
                 p.name,
                 COALESCE(p.description, '') as description,
-                p.numerical
+                p.numerical,
+                p.document_parameter
             FROM parameters p
             JOIN parameter_items pi ON pi.parameter_id = p.id
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_department_ids udi
             WHERE p.active = true
-            GROUP BY p.id, p.name, p.description, p.numerical
+            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
                 COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
@@ -1919,7 +1922,8 @@ class SimulationQueries:
                     jsonb_build_object(
                         'name', pd.name,
                         'description', pd.description,
-                        'numerical', pd.numerical
+                        'numerical', pd.numerical,
+                        'document_parameter', pd.document_parameter
                     )
                 ),
                 '{}'::jsonb
@@ -2240,6 +2244,32 @@ class SimulationQueries:
             WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
             ORDER BY ss.position
         ),
+        -- Get root scenarios for this simulation (for controls check)
+        -- Root scenarios are those with parent_id = child_id in scenario_tree, or scenarios without a parent
+        simulation_root_scenarios_list AS (
+            SELECT DISTINCT
+                COALESCE(
+                    (SELECT st.parent_id 
+                     FROM scenario_tree st 
+                     WHERE st.child_id = ss.scenario_id 
+                       AND st.parent_id = st.child_id 
+                     LIMIT 1),
+                    ss.scenario_id
+                ) as root_scenario_id,
+                MIN(ss.position) as position
+            FROM simulation_scenarios ss
+            CROSS JOIN attempt_base ab
+            WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
+            GROUP BY COALESCE(
+                (SELECT st.parent_id 
+                 FROM scenario_tree st 
+                 WHERE st.child_id = ss.scenario_id 
+                   AND st.parent_id = st.child_id 
+                 LIMIT 1),
+                ss.scenario_id
+            )
+            ORDER BY MIN(ss.position)
+        ),
         -- Find previous completed chats with same scenario_id from other attempts by same profile
         -- Use latest grade per chat (DISTINCT ON)
         -- Include ALL simulation scenarios, not just ones in chats_base
@@ -2282,15 +2312,16 @@ class SimulationQueries:
             GROUP BY ac.attempt_id
         ),
         -- Get rubric total points per simulation for previous attempts
+        -- Use r.points from rubrics table (matching analytics MV calculation)
         previous_attempt_rubric_points AS (
-            SELECT 
+            SELECT DISTINCT ON (sa.simulation_id)
                 sa.simulation_id,
-                COALESCE(SUM(sg.points), 0)::integer as total_points
+                COALESCE(r.points, 0)::integer as total_points
             FROM simulation_attempts sa
             JOIN simulations s ON s.id = sa.simulation_id
-            LEFT JOIN standard_groups sg ON sg.rubric_id = s.rubric_id
+            LEFT JOIN rubrics r ON r.id = s.rubric_id
             WHERE sa.id IN (SELECT DISTINCT attempt_id FROM previous_chats_with_grades)
-            GROUP BY sa.simulation_id
+            ORDER BY sa.simulation_id
         ),
         previous_chats_for_scenarios AS (
             SELECT 
@@ -2636,7 +2667,9 @@ class SimulationQueries:
                                 '{}'::jsonb
                             ),
                             'totalPossiblePoints', COALESCE(
-                                (SELECT SUM(points) FROM rubric_standard_groups),
+                                (SELECT r.points FROM rubrics r 
+                                 CROSS JOIN attempt_base ab 
+                                 WHERE r.id = ab.sim_rubric_id),
                                 0
                             )
                         )
@@ -2811,6 +2844,23 @@ class SimulationQueries:
             CROSS JOIN attempt_base ab
             WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
         ),
+        -- Check if every root scenario has at least one graded chat
+        -- A scenario is considered complete only if it has at least one chat with a grade
+        -- Completed chats can be for any child scenario in the root's tree
+        scenarios_with_completed_chats AS (
+            SELECT DISTINCT
+                COALESCE(
+                    (SELECT st.parent_id 
+                     FROM scenario_tree st 
+                     WHERE st.child_id = cb.scenario_id 
+                       AND st.parent_id = st.child_id 
+                     LIMIT 1),
+                    cb.scenario_id
+                ) as root_scenario_id
+            FROM chats_base cb
+            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = cb.id
+            WHERE cb.completed = true
+        ),
         metadata_computed AS (
             SELECT 
                 COALESCE(
@@ -2846,7 +2896,18 @@ class SimulationQueries:
                             0
                         ) = COUNT(*) - 1
                 END as is_last_attempt,
-                BOOL_AND(completed) as show_results
+                BOOL_AND(completed) as show_results,
+                -- Show controls only if there are root scenarios without completed chats (work remaining)
+                -- Hide controls if every root scenario has at least one completed chat
+                -- Completed chats can be for any child scenario in the root's tree
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM simulation_root_scenarios_list) = 0 THEN false
+                    ELSE (
+                        SELECT COUNT(DISTINCT srsl.root_scenario_id) != COUNT(DISTINCT swcc.root_scenario_id)
+                        FROM simulation_root_scenarios_list srsl
+                        LEFT JOIN scenarios_with_completed_chats swcc ON swcc.root_scenario_id = srsl.root_scenario_id
+                    )
+                END as should_show_controls
             FROM chats_with_all_data
         )
         SELECT 
@@ -2889,6 +2950,7 @@ class SimulationQueries:
             md.is_single_chat_attempt as "isSingleChatAttempt",
             md.is_last_attempt as "isLastAttempt",
             md.show_results as "showResults",
+            md.should_show_controls as "shouldShowControls",
             NOT (COALESCE((td.timer->>'expired')::boolean, false) OR md.show_results) as "isActive",
             rsc.rubric_structure as "rubricStructure",
             COALESCE(
@@ -2948,6 +3010,7 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         "isSingleChatAttempt": result["isSingleChatAttempt"],
         "isLastAttempt": result["isLastAttempt"],
         "showResults": result["showResults"],
+        "shouldShowControls": result["shouldShowControls"],
         "isActive": result["isActive"],
         "rubricStructure": json.loads(result["rubricStructure"]) if result["rubricStructure"] and isinstance(result["rubricStructure"], str) else result["rubricStructure"],
     }

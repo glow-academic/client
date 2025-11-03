@@ -41,7 +41,7 @@ class ProfileQueries:
 
     def update_profile(
         self, profile_id: str, updates: dict[str, Any]
-    ) -> tuple[str, list[Any]]:
+    ) -> dict[str, tuple[str, list[Any]] | None]:
         """Build query to update profile fields."""
         # Map camelCase API field names to snake_case database column names
         field_map = {
@@ -78,27 +78,29 @@ class ProfileQueries:
         # Always update updated_at
         set_clauses.append("updated_at = NOW()")
 
-        # Add profile_id as last parameter
-        params.append(profile_id)
+        # Add profile_id as parameter for UPDATE WHERE clause
+        profile_id_param = param_counter
+        update_params = params + [profile_id]
 
-        # Build query with optional profile_activity insert for lastActive
-        query_parts = []
-        if set_clauses:
-            query_parts.append(f"""
+        # Build UPDATE query
+        update_query = f"""
         UPDATE profiles SET
             {", ".join(set_clauses)}
-        WHERE id = ${param_counter}
-        """)
+        WHERE id = ${profile_id_param}
+        """
         
-        # Insert into profile_activity if lastActive was provided
+        # Build INSERT query for lastActive if provided (with its own parameter numbering)
+        insert_query = None
+        insert_params = None
         if last_active_value is not None:
-            query_parts.append(f"""
-        INSERT INTO profile_activity (profile_id, last_active)
-        VALUES (${param_counter + 1}, ${param_counter + 2});
-        """)
-            params.append(last_active_value)
+            insert_query = """
+            INSERT INTO profile_activity (profile_id, last_active)
+            VALUES ($1, $2)
+            """
+            insert_params = [profile_id, last_active_value]
         
-        query_parts.append(f"""
+        # Build SELECT query to get full profile (with its own parameter numbering)
+        select_query = """
         SELECT 
             p.id,
             p.first_name,
@@ -116,11 +118,15 @@ class ProfileQueries:
             p.updated_at,
             (SELECT department_id FROM profile_departments WHERE profile_id = p.id AND is_primary = TRUE LIMIT 1) as primary_department_id
         FROM profiles p
-        WHERE p.id = ${param_counter + (2 if last_active_value is not None else 0)}
-        """)
+        WHERE p.id = $1
+        """
+        select_params = [profile_id]
         
-        query = "".join(query_parts)
-        return (query, params)
+        return {
+            "update": (update_query, update_params),
+            "insert": (insert_query, insert_params) if insert_query else None,
+            "select": (select_query, select_params),
+        }
 
     def get_profile_role(self, profile_id: str) -> tuple[str, list[Any]]:
         """Build query to get profile role."""

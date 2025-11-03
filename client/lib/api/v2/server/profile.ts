@@ -12,6 +12,7 @@ import {
   CreateProfileResponseSchema,
   ProfileDetailResponseSchema,
   ProfileSimpleDetailResponseSchema,
+  UpdateProfileSimpleResponseSchema,
 } from "../schemas/profile";
 
 /**
@@ -105,7 +106,7 @@ export const updateProfileSimple = async (
   }
 
   const data = await res.json();
-  const parsed = ProfileSimpleDetailResponseSchema.parse(data);
+  const parsed = UpdateProfileSimpleResponseSchema.parse(data);
   return parsed.profile;
 };
 
