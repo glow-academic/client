@@ -371,7 +371,6 @@ export function SimulationControls() {
             {(() => {
               const isGrading = simulationContext?.isGrading;
               const progress = simulationContext?.gradingProgress;
-              console.log("[SimulationControls] End Session button - isGrading:", isGrading, "progress:", progress, "displayedProgress:", progress?.displayedProgress);
               return isGrading && progress ? (
                 <span
                   className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
@@ -410,7 +409,6 @@ export function SimulationControls() {
                 {(() => {
                   const isGrading = simulationContext?.isGrading;
                   const progress = simulationContext?.gradingProgress;
-                  console.log("[SimulationControls] Rendering - isGrading:", isGrading, "progress:", progress, "displayedProgress:", progress?.displayedProgress);
                   return isGrading && progress ? (
                     <span
                       className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"

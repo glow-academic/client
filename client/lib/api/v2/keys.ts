@@ -12,6 +12,9 @@ import { DepartmentsFilters } from "./schemas/departments";
 import { DocumentsFilters } from "./schemas/documents";
 import { ScenariosFilters } from "./schemas/scenarios";
 import { SimulationsFilters } from "./schemas/simulations";
+import { ParametersFilters } from "./schemas/parameters";
+import { PersonasFilters } from "./schemas/personas";
+import { RubricsFilters } from "./schemas/rubrics";
 
 // Ensure stable serialization of filter objects
 function serializeFilters(filters: AnalyticsFilters): string {
@@ -265,7 +268,7 @@ export const analyticsDashboardBundleKeys = {
 // Personas Keys
 export const personasListKeys = {
   all: ["personas:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: PersonasFilters) =>
     [...personasListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
@@ -341,7 +344,7 @@ export const simulationsDetailDefaultKeys = {
 // Rubrics Keys
 export const rubricsListKeys = {
   all: ["rubrics:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: RubricsFilters) =>
     [...rubricsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
@@ -427,7 +430,7 @@ export const modelsDetailKeys = {
 // Parameters Keys
 export const parametersListKeys = {
   all: ["parameters:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: ParametersFilters) =>
     [...parametersListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
