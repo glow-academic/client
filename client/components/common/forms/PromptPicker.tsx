@@ -95,10 +95,6 @@ export function PromptPicker({
     return `Version ${date.toLocaleDateString()}`;
   };
 
-  const selectedPrompt = selectedPromptId
-    ? promptMapping[selectedPromptId]
-    : null;
-
   return (
     <Popover open={open} onOpenChange={setOpen} {...props}>
       <PopoverTrigger asChild>

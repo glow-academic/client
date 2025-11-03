@@ -305,6 +305,60 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const secondaryComponents = useMemo(() => {
     if (!bundle) return [];
 
+    // Normalize simulation_mapping to convert undefined to null for exactOptionalPropertyTypes
+    // For CohortPerformance: optional department_ids and time_limit
+    const normalizedSimulationMapping = Object.entries(
+      bundle.simulation_mapping
+    ).reduce(
+      (acc, [key, value]) => {
+        const normalized: {
+          name: string;
+          description: string;
+          department_ids?: string[] | null;
+          time_limit?: number | null;
+        } = {
+          name: value.name,
+          description: value.description,
+        };
+        // Only include optional properties if they're not undefined
+        if (value.department_ids !== undefined) {
+          normalized.department_ids = value.department_ids;
+        }
+        if (value.time_limit !== undefined) {
+          normalized.time_limit = value.time_limit;
+        }
+        acc[key] = normalized;
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          name: string;
+          description: string;
+          department_ids?: string[] | null;
+          time_limit?: number | null;
+        }
+      >
+    );
+
+    // For AttemptImprovement: required department_ids (must always be present)
+    const normalizedSimulationMappingRequired = Object.entries(
+      bundle.simulation_mapping
+    ).reduce(
+      (acc, [key, value]) => {
+        acc[key] = {
+          name: value.name,
+          description: value.description,
+          department_ids: value.department_ids ?? null,
+        };
+        return acc;
+      },
+      {} as Record<
+        string,
+        { name: string; description: string; department_ids: string[] | null }
+      >
+    );
+
     return [
       <CohortPerformance
         key="cohort-performance"
@@ -312,7 +366,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         dailyData={bundle.secondary.cohort_performance.dailyData}
         cohortFacts={bundle.secondary.cohort_performance.cohortFacts}
         dailyFacts={bundle.secondary.cohort_performance.dailyFacts}
-        simulationMapping={bundle.simulation_mapping}
+        simulationMapping={normalizedSimulationMapping}
         validSimulationIds={
           bundle.secondary.cohort_performance.validSimulationIds
         }
@@ -326,7 +380,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         key="attempt-improvement"
         chartData={bundle.secondary.attempt_improvement.chartData}
         facts={bundle.secondary.attempt_improvement.facts}
-        simulationMapping={bundle.simulation_mapping}
+        simulationMapping={normalizedSimulationMappingRequired}
         validSimulationIds={
           bundle.secondary.attempt_improvement.validSimulationIds
         }

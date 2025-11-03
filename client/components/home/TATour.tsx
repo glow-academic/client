@@ -94,7 +94,6 @@ export default function TATour() {
   const {
     effectiveProfile,
     activeProfile,
-    simulations,
     cohorts: taCohorts,
     isFullEmulation,
   } = useProfile();
@@ -347,18 +346,9 @@ export default function TATour() {
           },
         });
 
-        const departmentId = simulations?.find(
-          (simulation) => simulation.id === simulationId
-        )?.departmentId;
-        if (!departmentId) {
-          toast.error("No department found. Please contact support.");
-          return;
-        }
-
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: String(effectiveProfile.id),
-          department_id: departmentId,
         });
 
         // Set timeout for simulation start
@@ -388,7 +378,6 @@ export default function TATour() {
       effectiveProfile?.id,
       emitStartSimulation,
       setLoadingSimulation,
-      simulations,
       info,
       error,
     ]

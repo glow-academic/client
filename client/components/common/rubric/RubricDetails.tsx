@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useCreateRubric,
@@ -47,7 +46,6 @@ export default function RubricDetails({
 }: RubricDetailsProps) {
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
   const log = useLogger();
   // V2 mutation hooks
   const createRubricMutation = useCreateRubric();
@@ -71,7 +69,6 @@ export default function RubricDetails({
   };
 
   const handleSave = async () => {
-
     try {
       if (isCreateMode) {
         // V2 create with empty standard_groups (will be added later)
@@ -158,9 +155,7 @@ export default function RubricDetails({
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) =>
-                handleInputChange("description", e.target.value)
-              }
+              onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Rubric Description"
               disabled={
                 createRubricMutation.isPending || isUpdating || isReadonly
@@ -188,7 +183,10 @@ export default function RubricDetails({
           <div className="space-y-2 pt-2">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Label htmlFor="active" className="text-sm flex items-center gap-1.5">
+                <Label
+                  htmlFor="active"
+                  className="text-sm flex items-center gap-1.5"
+                >
                   <Power className="h-3.5 w-3.5 text-muted-foreground" />
                   Active
                 </Label>
@@ -208,89 +206,83 @@ export default function RubricDetails({
               </p>
             </div>
           </div>
-              {!isCreateMode && (
-                <div className="p-3 bg-muted/20 rounded-lg border">
-                  <h4 className="text-sm font-medium mb-2">
-                    Points Calculation
-                  </h4>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Points are automatically calculated from standard groups and
-                    cannot be edited directly.
-                  </p>
-                  <div className="flex gap-2">
-                    <Badge variant="outline">
-                      Total: {rubric.points} points
-                    </Badge>
-                    <Badge variant="outline">
-                      Pass: {rubric.passPoints} points
-                    </Badge>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              <h1 className="text-2xl font-bold">
-                {isCreateMode ? "Create New Rubric" : rubric.name}
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                {isCreateMode
-                  ? "Define the basic information for this evaluation rubric. You'll be able to add standard groups after creation."
-                  : rubric.description}
+          {!isCreateMode && (
+            <div className="p-3 bg-muted/20 rounded-lg border">
+              <h4 className="text-sm font-medium mb-2">Points Calculation</h4>
+              <p className="text-xs text-muted-foreground mb-2">
+                Points are automatically calculated from standard groups and
+                cannot be edited directly.
               </p>
-              {!isCreateMode && (
-                <div className="flex gap-4 mt-2">
-                  <Badge variant="outline">Total: {rubric.points} points</Badge>
-                  <Badge variant="outline">
-                    Pass: {rubric.passPoints} points
-                  </Badge>
-                  <Badge variant={true ? "default" : "secondary"}>
-                    {true ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <Badge variant="outline">Total: {rubric.points} points</Badge>
+                <Badge variant="outline">
+                  Pass: {rubric.passPoints} points
+                </Badge>
+              </div>
             </div>
           )}
-          <div className="flex gap-2 justify-end">
-            {isEditing ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={createRubricMutation.isPending || isUpdating}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={
-                    createRubricMutation.isPending || isUpdating || isReadonly
-                  }
-                >
-                  {createRubricMutation.isPending || isUpdating
-                    ? isCreateMode
-                      ? "Creating..."
-                      : "Updating..."
-                    : isCreateMode
-                      ? "Create Rubric"
-                      : "Update"}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditing(true)}
-                  disabled={isReadonly}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              </>
-            )}
-          </div>
         </div>
+      ) : (
+        <div>
+          <h1 className="text-2xl font-bold">
+            {isCreateMode ? "Create New Rubric" : rubric.name}
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            {isCreateMode
+              ? "Define the basic information for this evaluation rubric. You'll be able to add standard groups after creation."
+              : rubric.description}
+          </p>
+          {!isCreateMode && (
+            <div className="flex gap-4 mt-2">
+              <Badge variant="outline">Total: {rubric.points} points</Badge>
+              <Badge variant="outline">Pass: {rubric.passPoints} points</Badge>
+              <Badge variant={true ? "default" : "secondary"}>
+                {true ? "Active" : "Inactive"}
+              </Badge>
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex gap-2 justify-end">
+        {isEditing ? (
+          <>
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={createRubricMutation.isPending || isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={
+                createRubricMutation.isPending || isUpdating || isReadonly
+              }
+            >
+              {createRubricMutation.isPending || isUpdating
+                ? isCreateMode
+                  ? "Creating..."
+                  : "Updating..."
+                : isCreateMode
+                  ? "Create Rubric"
+                  : "Update"}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              disabled={isReadonly}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
   );
 
   // In create mode, render without Card wrapper; in edit mode, use Card

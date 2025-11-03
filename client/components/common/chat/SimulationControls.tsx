@@ -368,19 +368,19 @@ export function SimulationControls() {
             )}
 
             {/* Grading progress overlay - fills from left to right */}
-            {simulationContext?.isGrading &&
-              simulationContext?.gradingProgress && (
+            {(() => {
+              const isGrading = simulationContext?.isGrading;
+              const progress = simulationContext?.gradingProgress;
+              console.log("[SimulationControls] End Session button - isGrading:", isGrading, "progress:", progress, "displayedProgress:", progress?.displayedProgress);
+              return isGrading && progress ? (
                 <span
-                  className="absolute inset-0 bg-blue-500/20 transition-all duration-300 ease-out"
+                  className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
                   style={{
-                    width: `${
-                      (simulationContext.gradingProgress.completed /
-                        simulationContext.gradingProgress.total) *
-                      100
-                    }%`,
+                    width: `${progress.displayedProgress}%`,
                   }}
                 />
-              )}
+              ) : null;
+            })()}
 
             {/* Button text - "End Session" but functionally it's Next Chat */}
             <span className="relative z-10">
@@ -407,19 +407,19 @@ export function SimulationControls() {
                 )}
 
                 {/* Grading progress overlay - fills from left to right */}
-                {simulationContext?.isGrading &&
-                  simulationContext?.gradingProgress && (
+                {(() => {
+                  const isGrading = simulationContext?.isGrading;
+                  const progress = simulationContext?.gradingProgress;
+                  console.log("[SimulationControls] Rendering - isGrading:", isGrading, "progress:", progress, "displayedProgress:", progress?.displayedProgress);
+                  return isGrading && progress ? (
                     <span
-                      className="absolute inset-0 bg-blue-500/20 transition-all duration-300 ease-out"
+                      className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
                       style={{
-                        width: `${
-                          (simulationContext.gradingProgress.completed /
-                            simulationContext.gradingProgress.total) *
-                          100
-                        }%`,
+                        width: `${progress.displayedProgress}%`,
                       }}
                     />
-                  )}
+                  ) : null;
+                })()}
 
                 {/* Button text */}
                 <span className="relative z-10">

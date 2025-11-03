@@ -119,16 +119,16 @@ export function SimulationScenarioPicker<
     >();
     let hasNoPersona = false;
 
-    baseScenarios.forEach((sc) => {
-      if (!sc.persona_id) {
+    baseScenarios.forEach((sc) => { // TODO: Handle multiple personas
+      if (!sc.persona_ids || sc.persona_ids.length === 0) {
         hasNoPersona = true;
       } else {
         const persona = Object.entries(sc.persona_mapping || {}).find(
-          ([id]) => id === sc.persona_id
+          ([id]) => id === sc.persona_ids?.[0]
         )?.[1];
         if (persona) {
-          const existing = personaMap.get(sc.persona_id);
-          personaMap.set(sc.persona_id, {
+          const existing = personaMap.get(sc.persona_ids?.[0] || "");
+          personaMap.set(sc.persona_ids?.[0] || "", {
             name: persona.name,
             color: persona.color,
             icon: persona.icon,
@@ -152,7 +152,7 @@ export function SimulationScenarioPicker<
         name: "No Persona",
         color: "#gray",
         icon: "user-x",
-        count: baseScenarios.filter((sc) => !sc.persona_id).length,
+        count: baseScenarios.filter((sc) => !sc.persona_ids || sc.persona_ids.length === 0).length,
       });
     }
 
@@ -271,9 +271,9 @@ export function SimulationScenarioPicker<
       if (filterPersonaIds.length > 0) {
         const hasNoPersona = filterPersonaIds.includes(NO_PERSONA_KEY);
         const matchesPersona =
-          scenario.persona_id && filterPersonaIds.includes(scenario.persona_id);
+          scenario.persona_ids && scenario.persona_ids.length > 0 && filterPersonaIds.includes(scenario.persona_ids?.[0] || "");
         if (!hasNoPersona && !matchesPersona) return false;
-        if (hasNoPersona && scenario.persona_id !== null && !matchesPersona)
+        if (hasNoPersona && scenario.persona_ids && scenario.persona_ids.length > 0 && !matchesPersona)
           return false;
       }
 

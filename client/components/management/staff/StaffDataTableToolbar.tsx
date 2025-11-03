@@ -127,10 +127,10 @@ export function StaffDataTableToolbar({
         {/* Create Staff Button - only show when no rows are selected */}
         {onCreate && selectedCount === 0 && (
           <CreateStaffButton
-            cohortIds={cohortIds}
-            departmentIds={departmentIds}
+            cohortIds={cohortIds || []}
+            departmentIds={departmentIds || []}
             onDone={() => onCreate()}
-            onStagedProfiles={(profiles) => onCreate(profiles)}
+            onStagedProfiles={onCreate}
           />
         )}
 

@@ -138,11 +138,10 @@ export interface CreateStaffProps {
 
 export default function CreateStaff({ onDone }: CreateStaffProps) {
   const router = useRouter();
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const log = useLogger();
   // Fetch all data with single v2 call
   const { data: profileListResponse } = useProfileList({
-    departmentIds: departmentIds,
     profileId: effectiveProfile?.id || "",
   });
 
@@ -377,7 +376,7 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [manualProfile, effectiveProfile?.role]);
+  }, [manualProfile]);
 
   // Manual add
   const addManualProfile = useCallback(async () => {

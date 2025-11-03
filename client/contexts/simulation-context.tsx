@@ -77,6 +77,8 @@ export interface SimulationContextType {
   gradingProgress: {
     completed: number;
     total: number;
+    displayedProgress: number; // Animated progress value (0-100)
+    phase: "tools" | "summary" | null; // Current grading phase
   } | null;
   isGrading: boolean;
 
@@ -158,8 +160,17 @@ export function SimulationProvider({
   const [gradingProgress, setGradingProgress] = useState<{
     completed: number;
     total: number;
+    displayedProgress: number;
+    phase: "tools" | "summary" | null;
   } | null>(null);
   const [isGrading, setIsGrading] = useState(false);
+  const gradingProgressRef = useRef<{
+    completed: number;
+    total: number;
+    displayedProgress: number;
+    phase: "tools" | "summary" | null;
+  } | null>(null);
+  const isGradingRef = useRef(false);
 
   const queryClient = useQueryClient();
   // Note: updateChatCompletedAt removed - completed_at column was removed from database
@@ -858,18 +869,120 @@ export function SimulationProvider({
       const { type, chat_id, completed_count, total_count } =
         customEvent.detail;
 
-      // Only process events for current chat
-      if (chat_id !== currentChat?.id) return;
+      console.log("[Grading Event] Received:", {
+        type,
+        chat_id,
+        currentChatId: currentChat?.id,
+        completed_count,
+        total_count,
+        matches: chat_id === currentChat?.id,
+      });
 
-      if (
+      // Only process events for current chat
+      if (chat_id !== currentChat?.id) {
+        console.log("[Grading Event] Chat ID mismatch, ignoring");
+        // Clean up if this is a different chat and we're currently grading
+        if (isGrading && gradingProgress) {
+          isGradingRef.current = false;
+          setIsGrading(false);
+          setGradingProgress(null);
+          gradingProgressRef.current = null;
+        }
+        return;
+      }
+
+      if (type === "start") {
+        // Initialize grading state when grading starts
+        console.log("[Grading Event] Start event - setting isGrading to true");
+        isGradingRef.current = true;
+        setIsGrading(true);
+        // Note: start event may not have total_count, but standards_count might be available
+        // We'll initialize fully on first standard_graded event if needed
+        const initialTotal =
+          total_count ??
+          (customEvent.detail.standards_count as number | undefined);
+        console.log(
+          "[Grading Event] Start event - initialTotal:",
+          initialTotal
+        );
+        if (initialTotal !== undefined) {
+          const initialProgress = {
+            completed: 0,
+            total: initialTotal,
+            displayedProgress: 0,
+            phase: "tools" as const,
+          };
+          gradingProgressRef.current = initialProgress;
+          setGradingProgress(initialProgress);
+          console.log(
+            "[Grading Event] Start event - initialized progress:",
+            initialProgress
+          );
+        } else {
+          console.log(
+            "[Grading Event] Start event - no total_count or standards_count"
+          );
+        }
+        log.debug("grading.start", {
+          context: {
+            chatId: chat_id,
+            total: initialTotal,
+          },
+        });
+      } else if (
         type === "standard_graded" &&
         completed_count !== undefined &&
         total_count !== undefined
       ) {
+        console.log(
+          "[Grading Event] Standard graded - completed:",
+          completed_count,
+          "total:",
+          total_count
+        );
+        isGradingRef.current = true;
         setIsGrading(true);
-        setGradingProgress({
-          completed: completed_count,
-          total: total_count,
+        setGradingProgress((prev) => {
+          // Check if all tools are complete (transition to summary phase)
+          const allToolsComplete = completed_count === total_count;
+          const newPhase = allToolsComplete
+            ? "summary"
+            : prev?.phase || "tools";
+
+          // Calculate displayed progress directly from backend data
+          let displayedProgress: number;
+          if (newPhase === "tools") {
+            // Tools phase: (completed/total) * 90, max 90%
+            displayedProgress = Math.min(
+              (completed_count / total_count) * 90,
+              90
+            );
+          } else {
+            // Summary phase: 95%
+            displayedProgress = 95;
+          }
+
+          // Initialize if doesn't exist
+          if (!prev) {
+            const newProgress = {
+              completed: completed_count,
+              total: total_count,
+              displayedProgress,
+              phase: newPhase,
+            };
+            gradingProgressRef.current = newProgress;
+            return newProgress;
+          }
+
+          const updatedProgress = {
+            ...prev,
+            completed: completed_count,
+            total: total_count,
+            phase: newPhase,
+            displayedProgress, // Update directly from calculation
+          };
+          gradingProgressRef.current = updatedProgress;
+          return updatedProgress;
         });
         log.debug("grading.progress", {
           context: {
@@ -879,10 +992,37 @@ export function SimulationProvider({
             progress: `${completed_count}/${total_count}`,
           },
         });
+      } else if (type === "summary_recorded") {
+        // Explicitly mark summary phase and set progress to 95%
+        setGradingProgress((prev) => {
+          if (!prev) return null;
+          const updatedProgress = {
+            ...prev,
+            phase: "summary" as const,
+            displayedProgress: 95,
+          };
+          gradingProgressRef.current = updatedProgress;
+          return updatedProgress;
+        });
+        log.debug("grading.summary_recorded", {
+          context: { chatId: chat_id },
+        });
       } else if (type === "complete") {
-        // Reset grading state on completion
-        setIsGrading(false);
-        setGradingProgress(null);
+        // Set to 100% briefly, then reset
+        setGradingProgress((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            displayedProgress: 100,
+          };
+        });
+        // Clear after brief moment to show completion
+        setTimeout(() => {
+          isGradingRef.current = false;
+          setIsGrading(false);
+          setGradingProgress(null);
+          gradingProgressRef.current = null;
+        }, 300);
         log.info("grading.complete", {
           context: { chatId: chat_id },
         });
@@ -897,7 +1037,13 @@ export function SimulationProvider({
         handleGradingProgress
       );
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentChat?.id, log]);
+
+  // Update ref when grading state changes
+  useEffect(() => {
+    isGradingRef.current = isGrading;
+  }, [isGrading]);
 
   // After chats refresh, jump to the next chat if one was provided by the server
   useEffect(() => {

@@ -233,7 +233,7 @@ export function Scenarios() {
         accessorKey: "persona_id",
         header: "Persona",
         cell: ({ row }) => {
-          const personaId = row.original.persona_id;
+          const personaId = row.original.persona_ids[0]; // TODO: Handle multiple personas
           return (
             <div className="text-sm">
               {personaId && personaMapping[personaId] ? (

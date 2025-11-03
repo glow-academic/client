@@ -7,6 +7,11 @@ import { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
 import { HomeFilters } from "@/lib/api/v2/schemas/home";
 import { PracticeFilters } from "@/lib/api/v2/schemas/practice";
 import { ProfileFilters } from "./schemas/profile";
+import { CohortsFilters } from "./schemas/cohorts";
+import { DepartmentsFilters } from "./schemas/departments";
+import { DocumentsFilters } from "./schemas/documents";
+import { ScenariosFilters } from "./schemas/scenarios";
+import { SimulationsFilters } from "./schemas/simulations";
 
 // Ensure stable serialization of filter objects
 function serializeFilters(filters: AnalyticsFilters): string {
@@ -279,7 +284,7 @@ export const personasDetailDefaultKeys = {
 // Documents Keys
 export const documentsListKeys = {
   all: ["documents:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: DocumentsFilters) =>
     [...documentsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
@@ -298,7 +303,7 @@ export const documentsDetailBulkKeys = {
 // Scenarios Keys
 export const scenariosListKeys = {
   all: ["scenarios:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: ScenariosFilters) =>
     [...scenariosListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
@@ -317,7 +322,7 @@ export const scenariosDetailDefaultKeys = {
 // Simulations Keys
 export const simulationsListKeys = {
   all: ["simulations:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: SimulationsFilters) =>
     [...simulationsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
@@ -383,7 +388,7 @@ export const profileContextKeys = {
 // Cohorts Keys
 export const cohortsListKeys = {
   all: ["cohorts:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: CohortsFilters) =>
     [...cohortsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
@@ -441,7 +446,7 @@ export const parametersDetailDefaultKeys = {
 // Departments Keys
 export const departmentsListKeys = {
   all: ["departments:v2:list"] as const,
-  list: (filters: { departmentIds: string[]; profileId: string }) =>
+  list: (filters: DepartmentsFilters) =>
     [...departmentsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 

@@ -33,7 +33,6 @@ export function DataTableRowActions({
   id,
   profileId,
   simulationId,
-  departmentId,
   scenarios: _scenarios,
   interactionIds: _interactionIds,
   isPractice = false,
@@ -106,7 +105,7 @@ export function DataTableRowActions({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (disabledForEmulation || !isConnected || !departmentId)
+                if (disabledForEmulation || !isConnected)
                   return;
                 setIsRetrying(true);
                 try {
@@ -118,7 +117,6 @@ export function DataTableRowActions({
                     simulation_id: String(simulationId),
                     profile_id: profileIdForEmit,
                     scenario_id: null, // optional: pick first scenario id if you want
-                    department_id: departmentId,
                   });
                 } finally {
                   setTimeout(() => setIsRetrying(false), 2000);

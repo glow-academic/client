@@ -173,7 +173,7 @@ export default function TableRubric({
                         (() => {
                           const feedbackText =
                             gradingState?.feedbackByStandardId?.[
-                              achievedStandardId
+                              achievedStandardId || ""
                             ];
                           const frontContent = (
                             <div className="text-xs leading-tight">

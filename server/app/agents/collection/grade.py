@@ -63,7 +63,7 @@ async def _emit_grading_progress(event_data: dict[str, Any]) -> None:
 
 
 def create_grading_function(
-    standard_group: Any, standards: list[Any], chat_id: uuid.UUID
+    standard_group: Any, standards: list[Any], chat_id: uuid.UUID, total_standard_groups: int
 ) -> Any:
     """Create a function tool for grading a specific standard group."""
     safe_name = create_safe_field_name(standard_group["short_name"])
@@ -105,6 +105,11 @@ def create_grading_function(
         grading_results[safe_name] = {"score": score, "feedback": feedback}
         grading_progress[safe_name] = True
 
+        # Count completed standard groups (exclude "summary" from count)
+        completed_count = sum(
+            1 for k, v in grading_progress.items() if v and k != "summary"
+        )
+
         # Emit progress event
         await _emit_grading_progress(
             {
@@ -116,8 +121,8 @@ def create_grading_function(
                 "feedback_preview": feedback[:100] + "..."
                 if len(feedback) > 100
                 else feedback,
-                "completed_count": sum(1 for v in grading_progress.values() if v),
-                "total_count": len(grading_progress),
+                "completed_count": completed_count,
+                "total_count": total_standard_groups,
             }
         )
 
@@ -175,9 +180,10 @@ def create_grading_tools(
 ) -> list[Any]:
     """Create all grading function tools for the standard groups."""
     tools = []
+    total_standard_groups = len(standard_groups)
 
     for group in standard_groups:
-        tool = create_grading_function(group, standards, chat_id)
+        tool = create_grading_function(group, standards, chat_id, total_standard_groups)
         tools.append(tool)
         logger.info(f"Created grading tool for: {group['name']}")
 

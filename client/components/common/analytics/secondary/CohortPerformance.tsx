@@ -60,7 +60,7 @@ export interface CohortPerformanceProps {
   cohortFacts: CohortFact[];
   dailyFacts: DailyFact[];
   /** Simulation mapping object */
-  simulationMapping: Record<string, { name: string; description: string, department_ids: string[] | null }>;
+  simulationMapping: Record<string, { name: string; description: string, department_ids?: string[] | null, time_limit?: number | null }>;
   /** Valid simulation IDs */
   validSimulationIds: string[];
   isLoading: boolean;

@@ -1319,15 +1319,33 @@ class SimulationService(BaseService):
             str(row["scenario_id"]) for row in scenarios_with_grades
         }
         
+        # Get current chat's scenario_id to exclude it from next scenario selection
+        # (for normal grading, we don't want to create another chat for the current scenario)
+        current_chat_scenario_id = str(chat.get("scenario_id"))
+        
+        # Also get scenarios that already have chats (even without grades) to avoid duplicates
+        # This prevents creating multiple chats for the same scenario in the same attempt
+        existing_scenario_ids = {
+            str(ec.get("scenario_id")) for ec in existing_chats if ec.get("scenario_id")
+        }
+        
         # Find the next scenario index that doesn't have a graded chat
+        # Exclude the current chat's scenario (it will be graded but doesn't have a grade yet)
+        # Also exclude scenarios that already have chats (to prevent duplicates)
         next_index = None
         for idx, scenario_link in enumerate(scenario_links):
             scenario_id_str = str(scenario_link["scenario_id"])
-            if scenario_id_str not in scenarios_with_grades_set:
+            # Skip scenarios that:
+            # 1. Already have grades (completed with grade)
+            # 2. Are the current chat's scenario (will be graded)
+            # 3. Already have a chat in this attempt (prevent duplicates)
+            if (scenario_id_str not in scenarios_with_grades_set 
+                and scenario_id_str != current_chat_scenario_id
+                and scenario_id_str not in existing_scenario_ids):
                 next_index = idx
                 break
         
-        # If all scenarios have graded chats, use the length for infinite mode cycling
+        # If all scenarios have graded chats or only current scenario remains, use the length for infinite mode cycling
         if next_index is None:
             next_index = len(scenario_links)
 
@@ -1434,24 +1452,36 @@ class SimulationService(BaseService):
             if is_infinite_mode:
                 # Cycle through the configured scenarios indefinitely
                 # Find the next scenario without a graded chat, cycling if needed
+                # Exclude the current chat's scenario (it will be graded but doesn't have a grade yet)
+                # Also exclude scenarios that already have chats (to prevent duplicates)
                 num_scenarios = len(scenario_links)
                 if num_scenarios > 0:
                     # Start from next_index and cycle until we find one without a graded chat
                     for offset in range(num_scenarios):
                         cycling_index = (next_index + offset) % num_scenarios
                         scenario_id_str = str(scenario_links[cycling_index]["scenario_id"])
-                        if scenario_id_str not in scenarios_with_grades_set:
+                        # Skip scenarios that:
+                        # 1. Already have grades OR
+                        # 2. Are the current chat's scenario OR
+                        # 3. Already have a chat in this attempt
+                        if (scenario_id_str not in scenarios_with_grades_set 
+                            and scenario_id_str != current_chat_scenario_id
+                            and scenario_id_str not in existing_scenario_ids):
                             next_scenario_id = scenario_links[cycling_index]["scenario_id"]
                             break
             elif next_index is not None and next_index < len(scenario_links):
                 # Use the next scenario that doesn't have a graded chat
+                # (next_index already excludes current_chat_scenario_id)
                 next_scenario_id = scenario_links[next_index]["scenario_id"]
 
             if next_scenario_id is not None:
-                # Double-check that this scenario doesn't already have a graded chat
+                # Double-check that this scenario doesn't already have a graded chat,
+                # is not the current chat's scenario, and doesn't already have a chat
                 # (it might have been created between the query and now)
                 scenario_id_str = str(next_scenario_id)
-                if scenario_id_str not in scenarios_with_grades_set:
+                if (scenario_id_str not in scenarios_with_grades_set 
+                    and scenario_id_str != current_chat_scenario_id
+                    and scenario_id_str not in existing_scenario_ids):
                     created_next_chat = await self._create_chat_for_scenario(
                         scenario_id_str,
                         attempt_id,
@@ -1483,6 +1513,25 @@ class SimulationService(BaseService):
                 simulation_grade_id = await run_grade_agent(
                     UUID(chat_id), UUID(department_id), self.conn, sio_instance
                 )  # type: ignore
+                
+                # After grading completes, add current chat's scenario to scenarios_with_grades_set
+                # and recalculate next_index (similar to previous_chat_id handling)
+                # This is mainly for tracking purposes - the next chat was already created correctly
+                # because we excluded current_chat_scenario_id and existing_scenario_ids when creating it
+                graded_chat_scenario_id = str(chat.get("scenario_id"))
+                if graded_chat_scenario_id:
+                    scenarios_with_grades_set.add(graded_chat_scenario_id)
+                    # Recalculate next_index since we now have a new scenario with a grade
+                    # This is for consistency and future operations, but shouldn't affect next_chat_id
+                    # since it was already created with proper exclusions
+                    next_index = None
+                    for idx, scenario_link in enumerate(scenario_links):
+                        scenario_id_str = str(scenario_link["scenario_id"])
+                        if scenario_id_str not in scenarios_with_grades_set:
+                            next_index = idx
+                            break
+                    if next_index is None:
+                        next_index = len(scenario_links)
 
             # Mark the current chat as completed (if not already marked by previous_chat_map handling)
             if not (end_all and previous_chat_map):

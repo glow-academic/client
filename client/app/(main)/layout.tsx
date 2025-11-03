@@ -108,10 +108,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     return pathname === "/home";
   }, [pathname]);
 
-  const isSystemPage = useMemo(() => {
-    return pathname.startsWith("/system");
-  }, [pathname]);
-
   const canShowAnalyticsFilters = useMemo(() => {
     const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
@@ -128,7 +124,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     isLoading,
     isHomePage,
   ]);
-
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 
