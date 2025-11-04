@@ -1,0 +1,269 @@
+"""Persona detail-default endpoint - v3 API following DHH principles."""
+
+import json
+from typing import Annotated, Any
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from app.db import get_db
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ModelMapping,
+    ModelMappingItem,
+    ReasoningMapping,
+    ReasoningMappingItem,
+)
+from app.utils.sql_helper import load_sql
+
+# Inline request/response schemas
+class PersonaDetailDefaultRequest(BaseModel):
+    """Request to get default persona details."""
+
+    profileId: str
+
+
+class PromptInfo(BaseModel):
+    """Prompt information."""
+
+    system_prompt: str
+    created_at: str
+    updated_at: str
+    department_ids: list[str] | None
+    can_delete: bool
+
+
+class DebugInfoItem(BaseModel):
+    """Debug info item."""
+
+    timestamp: str
+    message: str
+
+
+class PersonaDetailResponse(BaseModel):
+    """Detailed persona response with all fields and metadata."""
+
+    # Basic persona fields
+    name: str
+    description: str | None
+    department_ids: list[str] | None
+    active: bool
+    color: str
+    icon: str
+    model_id: str
+    reasoning: str | None
+    temperature: float
+    system_prompt: str
+    prompt_id: str | None
+
+    # Usage and permissions
+    in_use: bool
+    scenario_count: int
+    can_edit: bool
+    can_duplicate: bool
+    can_delete: bool
+
+    # Metadata/Options
+    preset_colors: list[str]
+    suggested_icons: list[str]
+    valid_icons: list[str]
+    valid_model_ids: list[str]
+    reasoning_options: list[str]
+    valid_department_ids: list[str]
+    temperature_lower: float
+    temperature_upper: float
+
+    # Prompt version history
+    prompt_mapping: dict[str, PromptInfo]
+    department_prompt_links: dict[str, str]
+
+    # Mappings
+    model_mapping: ModelMapping
+    reasoning_mapping: ReasoningMapping
+    department_mapping: DepartmentMapping
+
+    # Debug info
+    debug_info: list[DebugInfoItem]
+
+
+router = APIRouter()
+
+
+def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
+    """Parse JSONB data with type safety."""
+    if isinstance(data, str):
+        try:
+            return json.loads(data)
+        except json.JSONDecodeError:
+            return {}
+    return data or {}
+
+
+@router.post("/detail-default", response_model=PersonaDetailResponse)
+async def get_persona_detail_default(
+    request: PersonaDetailDefaultRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> PersonaDetailResponse:
+    """Get default persona structure for creation mode."""
+    try:
+        # Load SQL query
+        sql = load_sql("sql/v3/personas/get_persona_detail_default_complete.sql")
+
+        # Execute query
+        result = await conn.fetchrow(sql, request.profileId)
+
+        if not result:
+            raise HTTPException(
+                status_code=404, detail="Failed to fetch default persona data"
+            )
+
+        valid_department_ids = result.get("valid_department_ids", [])
+        valid_model_ids = result.get("valid_model_ids", [])
+
+        if not valid_department_ids:
+            raise HTTPException(
+                status_code=400, detail="No accessible departments found for user"
+            )
+
+        # Parse department_mapping
+        department_mapping_data = parse_jsonb(result.get("dept_mapping"))
+        department_mapping: DepartmentMapping = {}
+        if isinstance(department_mapping_data, dict):
+            for dept_id, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
+
+        # Parse model_mapping
+        model_mapping_data = parse_jsonb(result.get("model_mapping"))
+        model_mapping: ModelMapping = {}
+        if isinstance(model_mapping_data, dict):
+            for model_id, mdata in model_mapping_data.items():
+                if isinstance(mdata, dict):
+                    model_mapping[model_id] = ModelMappingItem(
+                        name=mdata.get("name", ""),
+                        description=mdata.get("description", ""),
+                    )
+
+        # Hardcoded metadata
+        preset_colors = [
+            "#EF4444",
+            "#F97316",
+            "#F59E0B",
+            "#10B981",
+            "#3B82F6",
+            "#6366F1",
+            "#8B5CF6",
+            "#EC4899",
+        ]
+
+        suggested_icons = ["Sparkles", "Zap", "Star", "Heart", "Users"]
+
+        valid_icons = [
+            "Activity",
+            "Anchor",
+            "Award",
+            "Bell",
+            "Book",
+            "Briefcase",
+            "Calendar",
+            "Camera",
+            "ChevronRight",
+            "Clock",
+            "Cloud",
+            "Code",
+            "Compass",
+            "Database",
+            "FileText",
+            "Globe",
+            "Mail",
+            "Mic",
+            "Monitor",
+            "Phone",
+            "Radio",
+            "Search",
+            "Settings",
+            "Shield",
+            "Video",
+            "Wifi",
+        ]
+
+        reasoning_options = ["minimal", "low", "medium", "high"]
+
+        reasoning_mapping: ReasoningMapping = {
+            "none": ReasoningMappingItem(
+                name="None", description="No extended reasoning"
+            ),
+            "minimal": ReasoningMappingItem(
+                name="Minimal", description="Basic reasoning for straightforward tasks"
+            ),
+            "low": ReasoningMappingItem(
+                name="Low", description="Light reasoning for simple problem-solving"
+            ),
+            "medium": ReasoningMappingItem(
+                name="Medium",
+                description="Balanced reasoning for moderate complexity",
+            ),
+            "high": ReasoningMappingItem(
+                name="High",
+                description="Deep reasoning for complex, multi-step problems",
+            ),
+        }
+
+        # Get default model ID (first valid model)
+        default_model_id = valid_model_ids[0] if valid_model_ids else None
+        if not default_model_id:
+            raise HTTPException(status_code=400, detail="No valid models found")
+
+        # Debug info (empty for now)
+        debug_info: list[DebugInfoItem] = []
+
+        return PersonaDetailResponse(
+            # Basic fields (empty defaults for creation)
+            name="",
+            description="",
+            department_ids=None,  # None = cross-department (user can select)
+            active=True,
+            color=preset_colors[0] if preset_colors else "#3B82F6",
+            icon=suggested_icons[0] if suggested_icons else "Sparkles",
+            model_id=default_model_id,
+            reasoning="none",
+            temperature=0.0,
+            system_prompt="",
+            prompt_id=None,
+            # Usage and permissions
+            in_use=False,
+            scenario_count=0,
+            can_edit=True,
+            can_duplicate=False,
+            can_delete=False,
+            # Metadata
+            preset_colors=preset_colors,
+            suggested_icons=suggested_icons,
+            valid_icons=valid_icons,
+            valid_model_ids=valid_model_ids,
+            reasoning_options=reasoning_options,
+            valid_department_ids=valid_department_ids,
+            temperature_lower=0.0,
+            temperature_upper=2.0,
+            # Prompt mappings (empty for create mode)
+            prompt_mapping={},
+            department_prompt_links={},
+            # Mappings
+            model_mapping=model_mapping,
+            reasoning_mapping=reasoning_mapping,
+            department_mapping=department_mapping,
+            # Debug info
+            debug_info=debug_info,
+        )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

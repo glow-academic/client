@@ -1,4 +1,4 @@
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { FeedbackListRequestSchema } from "@/lib/api/v2/schemas/feedback";
 import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";

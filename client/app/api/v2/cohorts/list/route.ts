@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { CohortsFiltersSchema } from "@/lib/api/v2/schemas/cohorts";
 import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";

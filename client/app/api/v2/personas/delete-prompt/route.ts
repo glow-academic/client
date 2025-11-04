@@ -1,21 +1,24 @@
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { DeletePersonaPromptRequestSchema } from "@/lib/api/v2/schemas/personas";
-import { NextRequest, NextResponse } from "next/server";
 import { log } from "@/lib/api/v2/server/logs";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const request = DeletePersonaPromptRequestSchema.parse(body);
 
-    const response = await fetch(`${getApiBase()}/api/v2/personas/delete-prompt`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(request),
-    });
+    const response = await fetch(
+      `${getApiBase()}/api/v2/personas/delete-prompt`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(request),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -35,4 +38,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-

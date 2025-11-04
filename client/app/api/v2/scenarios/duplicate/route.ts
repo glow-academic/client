@@ -1,7 +1,7 @@
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { DuplicateScenarioRequestSchema } from "@/lib/api/v2/schemas/scenarios";
-import { NextRequest, NextResponse } from "next/server";
 import { log } from "@/lib/api/v2/server/logs";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {

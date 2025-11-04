@@ -4,7 +4,7 @@
  * Proxies requests to FastAPI backend
  */
 
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import type { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {

@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import type { HealthCheckItem } from "@/lib/api/v2/schemas/health";
 import {

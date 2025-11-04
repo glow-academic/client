@@ -1,0 +1,137 @@
+"""Cohort detail with profiles endpoint - v3 API."""
+
+import json
+import os
+from typing import Annotated
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+import uuid
+
+from app.db import get_db
+from app.utils.schema import DepartmentMappingItem
+from app.utils.sql_helper import load_sql
+
+# Reuse StaffItem from detail.py
+from app.api.v3.cohorts.detail import StaffItem
+
+
+class CohortDetailWithProfilesRequest(BaseModel):
+    """Request for cohort detail with available profiles."""
+
+    cohortId: str
+    departmentIds: list[str]
+    currentProfileId: str
+
+
+class CohortDetailWithProfilesResponse(BaseModel):
+    """Response for cohort detail with available profiles."""
+
+    cohort_id: str
+    title: str
+    description: str | None
+    active: bool
+    current_profile_ids: list[str]
+    available_profiles: list[StaffItem]
+    department_mapping: dict[str, DepartmentMappingItem]
+    cohort_mapping: dict[str, dict[str, str]]  # Simplified cohort mapping
+
+
+router = APIRouter()
+
+
+@router.post("/detail-with-profiles", response_model=CohortDetailWithProfilesResponse)
+async def get_cohort_detail_with_profiles(
+    request: CohortDetailWithProfilesRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> CohortDetailWithProfilesResponse:
+    """Get cohort detail with available profiles in one call."""
+    try:
+        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
+        sql = load_sql("sql/v3/cohorts/get_cohort_with_profiles_complete.sql")
+        row = await conn.fetchrow(
+            sql,
+            request.cohortId,
+            [uuid.UUID(did) for did in request.departmentIds],
+            request.currentProfileId,
+            campus_domain,
+        )
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Cohort not found")
+
+        # Parse available profiles from JSONB
+        available_profiles: list[StaffItem] = []
+        if row.get("available_profiles"):
+            prof_data = row["available_profiles"]
+            if isinstance(prof_data, str):
+                prof_data = json.loads(prof_data)
+            if isinstance(prof_data, list):
+                for p in prof_data:
+                    if isinstance(p, dict):
+                        available_profiles.append(
+                            StaffItem(
+                                profile_id=p.get("profile_id", ""),
+                                first_name=p.get("first_name", ""),
+                                last_name=p.get("last_name", ""),
+                                alias=p.get("alias", ""),
+                                name=p.get("name", ""),
+                                role=p.get("role", ""),
+                                email=p.get("email", ""),
+                                initials=p.get("initials", ""),
+                                active=p.get("active", False),
+                                lastActive=p.get("lastActive").isoformat() if p.get("lastActive") is not None else None,
+                                cohort_ids=p.get("cohort_ids", []),
+                                department_ids=[],  # Not included in this query
+                                requests_per_day=p.get("requests_per_day"),
+                                total_requests=0,  # Not included in this query
+                                default_profile=p.get("default_profile", False),
+                                requests_in_last_day=p.get("requests_in_last_day", 0),
+                                can_edit=p.get("can_edit", False),
+                                can_delete=p.get("can_delete", False),
+                                can_remove=False,  # Not included in this query
+                            )
+                        )
+
+        # Parse department mapping
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        if row.get("department_mapping"):
+            dept_data = row["department_mapping"]
+            if isinstance(dept_data, str):
+                dept_data = json.loads(dept_data)
+            if isinstance(dept_data, dict):
+                for did, ddata in dept_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
+        # Build cohort mapping (just this cohort)
+        cohort_mapping: dict[str, dict[str, str]] = {
+            row["cohort_id"]: {
+                "name": row["title"],
+                "description": row["description"] or "",
+            }
+        }
+
+        # Convert UUID arrays to string arrays
+        current_profile_ids = [str(pid) for pid in (row.get("current_profile_ids") or [])]
+
+        return CohortDetailWithProfilesResponse(
+            cohort_id=row["cohort_id"],
+            title=row["title"],
+            description=row["description"],
+            active=row["active"],
+            current_profile_ids=current_profile_ids,
+            available_profiles=available_profiles,
+            department_mapping=department_mapping,
+            cohort_mapping=cohort_mapping,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

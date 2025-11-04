@@ -1,6 +1,7 @@
 # server/app/main.py
 import asyncio
 import contextlib
+import json
 import logging
 import os
 import platform
@@ -9,6 +10,7 @@ import time
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs
 
@@ -17,6 +19,7 @@ from app.db import close_db_pool, init_db_pool
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
 # Redis is nice in production, but optional in dev
@@ -581,6 +584,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         await stack.enter_async_context(server.session_manager.run())
 
+        # Generate OpenAPI schema and write to disk
+        schema = get_openapi(
+            title=app.title,
+            version="0.1.0",
+            routes=app.routes,
+            description="Auto-generated OpenAPI schema from FastAPI v3 API",
+        )
+        openapi_path = Path(__file__).parent.parent / "openapi.json"
+        openapi_path.write_text(json.dumps(schema, indent=2))
+        logger.info(f"✅ OpenAPI schema written to {openapi_path}")
+
         yield
 
         # Clean up database pool
@@ -608,6 +622,11 @@ fastapi_app.add_middleware(
 from app.api.v2.router import router as api_v2_router  # noqa: E402
 
 fastapi_app.include_router(api_v2_router)
+
+# Include API v3 router (DHH-style)
+from app.api.v3.router import router as api_v3_router  # noqa: E402
+
+fastapi_app.include_router(api_v3_router)
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 from app.mcp.server import server  # noqa: E402

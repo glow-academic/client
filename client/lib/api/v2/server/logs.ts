@@ -4,7 +4,7 @@
  * Flows through /api/v2/logs/create endpoint
  */
 
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 
 export type LogEntry = {
   event: string;

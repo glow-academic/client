@@ -4,7 +4,7 @@
  * Proxies requests to FastAPI backend while preserving server context
  */
 
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { log } from "@/lib/api/v2/server/logs";
 import type { NextRequest } from "next/server";
 

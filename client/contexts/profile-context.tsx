@@ -7,7 +7,7 @@
  */
 "use client";
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { layoutContextKeys } from "@/lib/api/v2/keys";
 import { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { ProfileItem } from "@/lib/api/v2/schemas/profile";

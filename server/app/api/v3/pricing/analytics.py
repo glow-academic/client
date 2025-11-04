@@ -1,0 +1,228 @@
+"""Pricing analytics endpoint - POST /pricing"""
+
+import json
+from datetime import datetime
+from typing import Annotated, Any
+
+import asyncpg  # type: ignore
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from app.db import get_db
+from app.utils.analytics_query_builder import get_profile_role_query
+from app.utils.schema import AnalyticsFilters
+from app.utils.sql_helper import load_sql
+
+router = APIRouter()
+
+# Inline schemas (moved from app.schemas.pricing)
+class DebugInfoItem(BaseModel):
+    """Debug information item."""
+
+    id: str
+    created_at: str
+    content: str
+
+
+class ModelRunItem(BaseModel):
+    """Model run item with aggregated metrics."""
+
+    model_run_id: str
+    created_at: str
+    input_tokens: int
+    output_tokens: int
+    model_id: str | None = None
+    profile_id: str | None = None
+    agent_id: str | None = None
+    persona_id: str | None = None
+    debug_info: list[DebugInfoItem] | None = None
+
+
+class ModelMappingWithPricing(BaseModel):
+    """Model mapping with pricing information."""
+
+    name: str
+    description: str
+    input_ppm: float
+    output_ppm: float
+
+
+class PricingAnalyticsResponse(BaseModel):
+    """Response for pricing analytics."""
+
+    model_runs: list[ModelRunItem]
+    model_mapping: dict[str, ModelMappingWithPricing]
+    profile_mapping: dict[str, str]
+    agent_mapping: dict[str, str]
+    persona_mapping: dict[str, str]
+
+
+def _parse_json_strings_recursive(obj: Any) -> Any:
+    """Recursively parse JSON strings in nested structures."""
+    if isinstance(obj, str):
+        try:
+            return json.loads(obj)
+        except (json.JSONDecodeError, ValueError):
+            return obj
+    elif isinstance(obj, dict):
+        return {k: _parse_json_strings_recursive(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_parse_json_strings_recursive(item) for item in obj]
+    else:
+        return obj
+
+
+@router.post("/")
+async def get_pricing(
+    filters: AnalyticsFilters,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> PricingAnalyticsResponse:
+    """Get pricing metrics with model usage and cost analysis."""
+    try:
+        # Determine effective profile ID based on role
+        effective_profile_id = None
+        if filters.profileId:
+            # Fetch profile role to determine if we should use profileId
+            role_query, role_params = get_profile_role_query(filters.profileId)
+            role_row = await conn.fetchrow(role_query, *role_params)
+            if role_row:
+                role = role_row["role"]
+                # Only use profileId for non-admin roles (ta, guest, etc.)
+                if role not in ("admin", "superadmin", "instructional"):
+                    effective_profile_id = filters.profileId
+
+        # Build WHERE clause conditions (similar to PricingQueries logic)
+        where_conditions = [
+            "mr.created_at >= $2",
+            "mr.created_at <= $3",
+        ]
+        
+        params: list[Any] = [
+            filters.departmentIds or [],
+            datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),
+            datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),
+        ]
+        
+        # Add department filter via profile_departments join
+        if filters.departmentIds and len(filters.departmentIds) > 0:
+            where_conditions.append(
+                """EXISTS (
+                    SELECT 1 FROM model_run_profiles mrp2
+                    JOIN profile_departments pd ON pd.profile_id = mrp2.profile_id
+                    WHERE mrp2.model_run_id = mr.id
+                      AND mrp2.active = true
+                      AND pd.department_id = ANY($1)
+                )"""
+            )
+
+        # Profile filter (specific user)
+        if effective_profile_id is not None:
+            param_idx = len(params) + 1
+            where_conditions.append(f"mrp.profile_id = ${param_idx}")
+            params.append(effective_profile_id)
+
+        # Role filter (only if no profile_id specified)
+        if effective_profile_id is None and filters.roles is not None and len(filters.roles) > 0:
+            param_idx = len(params) + 1
+            where_conditions.append(
+                f"""mrp.profile_id IN (
+                    SELECT id FROM profiles WHERE role = ANY(${param_idx})
+                )"""
+            )
+            params.append(filters.roles)
+
+        # Cohort filter via cohort_profiles
+        if filters.cohortIds is not None and len(filters.cohortIds) > 0:
+            param_idx = len(params) + 1
+            where_conditions.append(
+                f"""mrp.profile_id IN (
+                    SELECT profile_id FROM cohort_profiles
+                    WHERE cohort_id = ANY(${param_idx}) AND active = true
+                )"""
+            )
+            params.append(filters.cohortIds)
+
+        where_clause = " AND ".join(where_conditions)
+
+        # Load SQL template
+        sql_template = load_sql("sql/v3/pricing/pricing_analytics.sql")
+        query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
+
+        result = await conn.fetchval(query, *params)
+
+        # Parse JSONB result
+        parsed_result = _parse_json_strings_recursive(result or {})
+
+        # Build model runs list
+        model_runs = []
+        for run_data in parsed_result.get("model_runs", []):
+            debug_info = []
+            if isinstance(run_data.get("debug_info"), list):
+                for debug in run_data["debug_info"]:
+                    if isinstance(debug, dict):
+                        debug_info.append(
+                            DebugInfoItem(
+                                id=debug["id"],
+                                created_at=debug["created_at"],
+                                content=debug["content"],
+                            )
+                        )
+
+            model_runs.append(
+                ModelRunItem(
+                    model_run_id=run_data["model_run_id"],
+                    created_at=run_data["created_at"],
+                    input_tokens=run_data["input_tokens"],
+                    output_tokens=run_data["output_tokens"],
+                    model_id=run_data.get("model_id"),
+                    profile_id=run_data.get("profile_id"),
+                    agent_id=run_data.get("agent_id"),
+                    persona_id=run_data.get("persona_id"),
+                    debug_info=debug_info,
+                )
+            )
+
+        # Build model mapping
+        model_mapping: dict[str, ModelMappingWithPricing] = {}
+        if isinstance(parsed_result.get("model_mapping"), dict):
+            for model_id, model_data in parsed_result["model_mapping"].items():
+                if isinstance(model_data, dict):
+                    model_mapping[model_id] = ModelMappingWithPricing(
+                        name=model_data["name"],
+                        description=model_data["description"],
+                        input_ppm=model_data["input_ppm"],
+                        output_ppm=model_data["output_ppm"],
+                    )
+
+        # Build profile mapping
+        profile_mapping: dict[str, str] = {}
+        if isinstance(parsed_result.get("profile_mapping"), dict):
+            for profile_id, name in parsed_result["profile_mapping"].items():
+                if isinstance(name, str):
+                    profile_mapping[profile_id] = name
+
+        # Build agent mapping
+        agent_mapping: dict[str, str] = {}
+        if isinstance(parsed_result.get("agent_mapping"), dict):
+            for agent_id, name in parsed_result["agent_mapping"].items():
+                if isinstance(name, str):
+                    agent_mapping[agent_id] = name
+
+        # Build persona mapping
+        persona_mapping: dict[str, str] = {}
+        if isinstance(parsed_result.get("persona_mapping"), dict):
+            for persona_id, name in parsed_result["persona_mapping"].items():
+                if isinstance(name, str):
+                    persona_mapping[persona_id] = name
+
+        return PricingAnalyticsResponse(
+            model_runs=model_runs,
+            model_mapping=model_mapping,
+            profile_mapping=profile_mapping,
+            agent_mapping=agent_mapping,
+            persona_mapping=persona_mapping,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

@@ -4,7 +4,7 @@
  * which then proxy to the FastAPI server
  */
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import {
   scenariosDetailDefaultKeys,
   scenariosDetailKeys,

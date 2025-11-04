@@ -5,7 +5,7 @@
  * Proxies to FastAPI backend at /api/v2/documents/upload/{upload_id}
  */
 
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { log } from "@/lib/api/v2/server/logs";
 import type { NextRequest } from "next/server";
 

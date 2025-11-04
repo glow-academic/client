@@ -9,7 +9,7 @@
  * - pricing.ts
  */
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { analyticsRefreshKeys } from "@/lib/api/v2/keys";
 import { RefreshResponseSchema } from "@/lib/api/v2/schemas/analytics";

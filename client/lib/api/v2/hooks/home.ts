@@ -2,7 +2,7 @@
  * Home hooks for v2 API
  */
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { analyticsHomeOverviewKeys } from "@/lib/api/v2/keys";
 import {
   HomeFilters,

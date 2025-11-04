@@ -1,0 +1,144 @@
+"""Cohort list endpoint - v3 API."""
+
+import json
+import os
+from typing import Annotated
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from app.db import get_db
+from app.utils.schema import DepartmentMappingItem, ProfileMappingItem, SimulationMappingItem
+from app.utils.sql_helper import load_sql
+
+
+class CohortsListRequest(BaseModel):
+    """Request for cohorts list."""
+
+    profileId: str
+
+
+class CohortItem(BaseModel):
+    """Cohort item for list view."""
+
+    cohort_id: str
+    name: str
+    description: str
+    active: bool
+    department_ids: list[str] | None = None
+    profile_ids: list[str]
+    simulation_ids: list[str]
+    usage_count: int
+    num_members: int
+    can_edit: bool
+    can_delete: bool
+    can_duplicate: bool
+    can_leave: bool
+
+
+class CohortsListResponse(BaseModel):
+    """Response for cohorts list."""
+
+    cohorts: list[CohortItem]
+    profile_mapping: dict[str, ProfileMappingItem]
+    simulation_mapping: dict[str, SimulationMappingItem]
+    department_mapping: dict[str, DepartmentMappingItem]
+
+
+router = APIRouter()
+
+
+@router.post("/list")
+async def get_cohorts_list(
+    request: CohortsListRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> CohortsListResponse:
+    """Get cohorts list with permissions and relationships."""
+    try:
+        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
+        sql = load_sql("sql/v3/cohorts/list_cohorts.sql")
+        rows = await conn.fetch(sql, request.profileId, campus_domain)
+
+        cohorts = []
+        profile_mapping: dict[str, ProfileMappingItem] = {}
+        simulation_mapping: dict[str, SimulationMappingItem] = {}
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+
+        for row in rows:
+            # Convert UUID arrays to string arrays
+            profile_ids = [str(pid) for pid in (row["profile_ids"] or [])]
+            simulation_ids = [str(sid) for sid in (row["simulation_ids"] or [])]
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
+
+            cohorts.append(
+                CohortItem(
+                    cohort_id=str(row["cohort_id"]),
+                    name=row["name"],
+                    description=row["description"],
+                    active=row["active"],
+                    department_ids=dept_ids,
+                    profile_ids=profile_ids,
+                    simulation_ids=simulation_ids,
+                    usage_count=row["usage_count"],
+                    num_members=row["num_members"],
+                    can_edit=row["can_edit"],
+                    can_delete=row["can_delete"],
+                    can_duplicate=row["can_duplicate"],
+                    can_leave=row["can_leave"],
+                )
+            )
+
+            # Parse mappings from first row (same for all cohorts)
+            if not profile_mapping and row["profile_mapping"]:
+                profile_data = row["profile_mapping"]
+                if isinstance(profile_data, str):
+                    profile_data = json.loads(profile_data)
+                if isinstance(profile_data, dict):
+                    for pid, pdata in profile_data.items():
+                        if isinstance(pdata, dict):
+                            profile_mapping[pid] = ProfileMappingItem(
+                                name=pdata.get("name", ""),
+                                description=pdata.get("description", ""),
+                            )
+
+            if not simulation_mapping and row["simulation_mapping"]:
+                sim_data = row["simulation_mapping"]
+                if isinstance(sim_data, str):
+                    sim_data = json.loads(sim_data)
+                if isinstance(sim_data, dict):
+                    for sid, sdata in sim_data.items():
+                        if isinstance(sdata, dict):
+                            dept_ids_val = sdata.get("department_ids")
+                            if isinstance(dept_ids_val, str):
+                                dept_ids_val = json.loads(dept_ids_val)
+                            simulation_mapping[sid] = SimulationMappingItem(
+                                name=sdata.get("name", ""),
+                                description=sdata.get("description", ""),
+                                time_limit=sdata.get("time_limit"),
+                                department_ids=dept_ids_val if isinstance(dept_ids_val, list) else None,
+                            )
+
+            if not department_mapping and row["department_mapping"]:
+                dept_data = row["department_mapping"]
+                if isinstance(dept_data, str):
+                    dept_data = json.loads(dept_data)
+                if isinstance(dept_data, dict):
+                    for did, ddata in dept_data.items():
+                        if isinstance(ddata, dict):
+                            department_mapping[did] = DepartmentMappingItem(
+                                name=ddata.get("name", ""),
+                                description=ddata.get("description", ""),
+                            )
+
+        return CohortsListResponse(
+            cohorts=cohorts,
+            profile_mapping=profile_mapping,
+            simulation_mapping=simulation_mapping,
+            department_mapping=department_mapping,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

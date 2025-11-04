@@ -5,7 +5,6 @@
  */
 "use client";
 
-import { getApiBase } from "@/lib/api-base";
 import {
   analyticsHomeOverviewKeys,
   analyticsPracticeOverviewKeys,
@@ -15,6 +14,7 @@ import {
 } from "@/lib/api/v2/keys";
 import { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 import { log, type LogEntry } from "@/lib/api/v2/server/logs";
+import { createSocketClient } from "@/lib/ws/socket";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -24,7 +24,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
@@ -863,8 +863,6 @@ export function WebSocketProvider({
           attempt: connectionAttempts.current + 1,
         },
       });
-
-      const socketPath = `${process.env["NEXT_PUBLIC_APP_PREFIX"] || ""}/socket.io`;
       const query: Record<string, string | number | undefined> = {
         timestamp: Date.now(),
         EIO: "4",
@@ -876,19 +874,7 @@ export function WebSocketProvider({
         query["guestId"] = guestIdRef.current!;
       }
 
-      const socket = io(getApiBase(), {
-        path: socketPath,
-        autoConnect: true,
-        timeout: 30000, // Increase timeout
-        reconnection: true,
-        reconnectionAttempts: 3, // Reduce attempts to avoid spam
-        reconnectionDelay: 2000,
-        reconnectionDelayMax: 8000, // Reduced from 10000
-        transports: ["websocket"], // Skip long-polling altogether
-        upgrade: false, // No long-polling probe
-        rememberUpgrade: true, // Cache for future reloads
-        query,
-      });
+      const socket = createSocketClient(false, query);
 
       socketRef.current = socket;
 
@@ -1126,11 +1112,7 @@ export function WebSocketProvider({
   );
 
   const emitSendSimulationMessage = useCallback(
-    (data: {
-      chat_id: string;
-      message: string;
-      isRetry?: boolean;
-    }) => {
+    (data: { chat_id: string; message: string; isRetry?: boolean }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.send.skip_not_connected", {
           context: { function: "emitSendSimulationMessage" },

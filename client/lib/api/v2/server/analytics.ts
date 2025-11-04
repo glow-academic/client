@@ -9,7 +9,7 @@
  * - pricing.ts
  */
 
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { cache } from "react";
 import { RefreshResponseSchema } from "../schemas/analytics";
 

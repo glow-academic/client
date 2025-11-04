@@ -2,7 +2,7 @@
  * Pricing hooks for v2 API
  */
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { analyticsPricingKeys } from "@/lib/api/v2/keys";
 import { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
 import { PricingAnalyticsResponseSchema } from "@/lib/api/v2/schemas/pricing";
@@ -34,4 +34,3 @@ export function usePricing(
     },
   });
 }
-

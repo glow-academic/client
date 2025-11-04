@@ -1,4 +1,4 @@
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { DeleteAgentPromptRequestSchema } from "@/lib/api/v2/schemas/agents";
 import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
@@ -8,12 +8,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const deleteRequest = DeleteAgentPromptRequestSchema.parse(body);
 
-    const response = await fetch(`${getApiBase()}/api/v2/agents/delete-prompt`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(deleteRequest),
-    });
+    const response = await fetch(
+      `${getApiBase()}/api/v2/agents/delete-prompt`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(deleteRequest),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -33,4 +36,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-

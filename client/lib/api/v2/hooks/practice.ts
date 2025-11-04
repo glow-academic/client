@@ -2,7 +2,7 @@
  * Practice hooks for v2 API
  */
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { analyticsPracticeOverviewKeys } from "@/lib/api/v2/keys";
 import {
   PracticeFilters,

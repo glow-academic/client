@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests generate-test-schema stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests generate-test-schema stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -131,6 +131,22 @@ build-client:
 	@cd client && yarn build
 	@echo "✅ Client build complete"
 
+# Generate OpenAPI schema manually
+openapi-gen: check-venv
+	@echo "📝 Generating OpenAPI schema..."
+	@cd server && $(PWD)/$(VENV_PYTHON) -c "import json; \
+from fastapi.openapi.utils import get_openapi; \
+from app.main import fastapi_app; \
+import pathlib; \
+p = pathlib.Path('openapi.json'); \
+p.write_text(json.dumps(get_openapi(title=fastapi_app.title, version='0.1.0', routes=fastapi_app.routes, description='Auto-generated OpenAPI schema'), indent=2)); \
+print('✅ openapi.json written to', p.resolve())"
+
+# Generate client TypeScript types from OpenAPI
+gen-client-types:
+	@echo "📝 Generating client TypeScript types from OpenAPI..."
+	@cd client && yarn gen:types
+	@echo "✅ Client types updated in lib/api-types.ts"
 
 # Start all services in foreground with combined logs
 run: check-venv
@@ -142,10 +158,11 @@ run: check-venv
 	@echo ""
 	@echo "Press Ctrl+C to stop all services"
 	@echo "----------------------------------------"
-	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; echo "✅ All services stopped"; exit 0' INT; \
+	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; echo "✅ All services stopped"; exit 0' INT; \
 	exec 2>/dev/null; \
 	(redis-server --port $(REDIS_PORT) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
-	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT)) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
+	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
+	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
 	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
 	wait
@@ -263,6 +280,8 @@ help:
 	@echo ""
 	@echo "Code generation:"
 	@echo "  generate-tests  - Generate pytest tests"
+	@echo "  openapi-gen      - Generate OpenAPI schema manually"
+	@echo "  gen-client-types - Generate client TypeScript types from OpenAPI"
 	@echo ""
 	@echo "Service URLs:"
 	@echo "  Redis:     localhost:$(REDIS_PORT)"

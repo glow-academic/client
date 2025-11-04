@@ -3,7 +3,7 @@
  * Proxies to server health endpoint for comprehensive system health
  */
 
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { NextResponse } from "next/server";
 
 export async function GET() {

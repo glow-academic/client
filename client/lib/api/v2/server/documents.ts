@@ -4,7 +4,7 @@
  * Memoized with React cache to prevent duplicate requests
  */
 
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { cache } from "react";
 import { DocumentDetailResponseSchema } from "../schemas/documents";
 

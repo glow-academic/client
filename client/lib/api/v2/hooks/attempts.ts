@@ -3,7 +3,7 @@
  * Server-side computed data for simulation attempts
  */
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {

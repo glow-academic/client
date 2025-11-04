@@ -4,7 +4,7 @@
  */
 
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { feedbackListKeys } from "@/lib/api/v2/keys";
 import {
   BulkDeleteFeedbackResponseSchema,

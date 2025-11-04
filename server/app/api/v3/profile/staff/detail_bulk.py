@@ -1,0 +1,120 @@
+"""Staff detail bulk endpoint - get bulk profile detail information."""
+
+import json
+from typing import Annotated
+
+import asyncpg
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from app.db import get_db
+from app.utils.schema import DepartmentMappingItem
+from app.utils.sql_helper import load_sql
+
+router = APIRouter()
+
+
+class StaffDetailBulkRequest(BaseModel):
+    """Request for staff detail bulk."""
+
+    profileIds: list[str]
+    currentProfileId: str
+
+
+class StaffDetailBulkResponse(BaseModel):
+    """Response for staff detail bulk endpoint."""
+
+    # Common editable fields across selected profiles
+    role: str | None  # null if mixed
+    requests_per_day: int | None  # null if mixed
+    department_ids: list[str]
+    valid_department_ids: list[str]
+
+    # Metadata
+    role_options: list[str]
+
+    # Top-level mappings
+    department_mapping: dict[str, DepartmentMappingItem]
+
+
+@router.post("/detail-bulk")
+async def get_profile_detail_bulk(
+    request: StaffDetailBulkRequest,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> StaffDetailBulkResponse:
+    """Get bulk profile detail information."""
+    try:
+        # Get profiles with JSONB department mapping (consolidated query)
+        sql = load_sql("sql/v3/profile/staff/get_profiles_by_ids.sql")
+        profiles = await conn.fetch(sql, request.profileIds)
+
+        if not profiles:
+            raise HTTPException(status_code=404, detail="No profiles found")
+
+        # Check if roles are consistent
+        roles = list(set([p["role"] for p in profiles]))
+        role = roles[0] if len(roles) == 1 else None
+
+        # Check if requests_per_day are consistent
+        req_per_days = list(
+            set([p["requests_per_day"] for p in profiles if p["requests_per_day"] is not None])
+        )
+        requests_per_day = req_per_days[0] if len(req_per_days) == 1 else None
+
+        # Get all department_ids from optimized query result
+        all_dept_ids: list[str] = []
+        for p in profiles:
+            dept_ids = p.get("department_ids") or []
+            all_dept_ids.extend(dept_ids)
+        department_ids = list(set(all_dept_ids))
+
+        # Parse JSONB department mapping from query result (may be string or dict)
+        department_mapping = {}
+        if profiles and len(profiles) > 0:
+            dept_mapping_data = profiles[0].get("department_mapping")
+            if isinstance(dept_mapping_data, str):
+                dept_mapping_data = json.loads(dept_mapping_data)
+            if dept_mapping_data and isinstance(dept_mapping_data, dict):
+                for did, ddata in dept_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
+        # Parse valid departments from consolidated query
+        valid_department_ids = []
+        if profiles and len(profiles) > 0:
+            valid_dept_ids_raw = profiles[0].get("valid_department_ids") or []
+            valid_department_ids = [str(did) for did in valid_dept_ids_raw]
+
+            # Update department_mapping to use department_mapping_full
+            dept_mapping_full = profiles[0].get("department_mapping_full")
+            if isinstance(dept_mapping_full, str):
+                dept_mapping_full = json.loads(dept_mapping_full)
+            if dept_mapping_full and isinstance(dept_mapping_full, dict):
+                # Override with full department mapping
+                department_mapping = {}
+                for did, ddata in dept_mapping_full.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
+        # Role options
+        role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
+
+        return StaffDetailBulkResponse(
+            role=role,
+            requests_per_day=requests_per_day,
+            department_ids=department_ids,
+            valid_department_ids=valid_department_ids,
+            role_options=role_options,
+            department_mapping=department_mapping,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

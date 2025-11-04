@@ -3,7 +3,7 @@
  * Centralized data fetching for assistant chats
  */
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { assistantChatsFullKeys } from "@/lib/api/v2/keys";
 import { useQuery } from "@tanstack/react-query";
 

@@ -2,7 +2,7 @@
  * Dashboard hooks for v2 API
  */
 
-import { api } from "@/lib/api/fetcher";
+import { api } from "@/lib/api/v2/fetcher";
 import { analyticsDashboardBundleKeys } from "@/lib/api/v2/keys";
 import { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
 import { DashboardBundleResponseSchema } from "@/lib/api/v2/schemas/dashboard";
@@ -34,4 +34,3 @@ export function useDashboard(
     },
   });
 }
-

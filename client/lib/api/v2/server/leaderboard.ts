@@ -3,7 +3,7 @@
  * Memoized with React cache to prevent duplicate requests
  */
 
-import { getApiBase } from "@/lib/api-base";
+import { getApiBase } from "@/lib/api/v2/api-base";
 import { cache } from "react";
 import { AnalyticsFilters } from "../schemas/base";
 import { LeaderboardBundleResponseSchema } from "../schemas/leaderboard";
@@ -21,12 +21,9 @@ export const fetchLeaderboard = cache(async (filters: AnalyticsFilters) => {
 
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(
-      `Failed to fetch leaderboard: ${res.status} ${errorText}`
-    );
+    throw new Error(`Failed to fetch leaderboard: ${res.status} ${errorText}`);
   }
 
   const data = await res.json();
   return LeaderboardBundleResponseSchema.parse(data);
 });
-
