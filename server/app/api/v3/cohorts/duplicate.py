@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -31,6 +32,7 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateCohortResponse)
 async def duplicate_cohort(
     request: DuplicateCohortRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateCohortResponse:
     """Duplicate a cohort with relationships."""
@@ -65,11 +67,18 @@ async def duplicate_cohort(
                 copy_simulations_sql, uuid.UUID(new_cohort_id), uuid.UUID(request.cohortId)
             )
 
-        return DuplicateCohortResponse(
+        result_response = DuplicateCohortResponse(
             success=True,
             cohortId=new_cohort_id,
             message=f"Cohort '{result['title']}' duplicated successfully",
         )
+        
+        # Invalidate cache after mutation
+        tags = ["cohorts"]  # From router tags
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_response
     except HTTPException:
         raise
     except Exception as e:

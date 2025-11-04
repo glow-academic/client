@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -25,9 +25,10 @@ class DeleteStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/delete")
+@router.post("/delete", response_model=DeleteStaffResponse)
 async def delete_profile(
     request: DeleteStaffRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteStaffResponse:
     """Delete a profile."""
@@ -57,9 +58,16 @@ async def delete_profile(
         delete_sql = load_sql("sql/v3/profile/staff/delete_profile.sql")
         await conn.execute(delete_sql, request.profileId)
 
-        return DeleteStaffResponse(
+        result_data = DeleteStaffResponse(
             success=True, message=f"Staff '{profile['name']}' deleted successfully"
         )
+        
+        # Invalidate cache after mutation
+        tags = ["staff", "profile"]  # Staff operations also affect profile cache
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

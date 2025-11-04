@@ -6,10 +6,11 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.utils.analytics_query_builder import build_base_filter
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (AnalyticsFilters, MetricResponse,
                               ScenarioMapping, SimulationMapping)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -52,9 +53,24 @@ class ReportsBundleResponse(BaseModel):
 @router.post("/", response_model=ReportsBundleResponse)
 async def get_reports(
     filters: AnalyticsFilters,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ReportsBundleResponse:
     """Get reports bundle with aggregated metrics per profile and entity mappings."""
+    tags = ["reports"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return ReportsBundleResponse.model_validate(cached["data"])
+    
     try:
         # Load SQL template
         sql_template = load_sql("sql/v3/reports/reports_bundle.sql")
@@ -84,6 +100,18 @@ async def get_reports(
             parsed_result = json.loads(parsed_result)
 
         # Validate and return response
-        return ReportsBundleResponse.model_validate(parsed_result)
+        response_data = ReportsBundleResponse.model_validate(parsed_result)
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=300,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

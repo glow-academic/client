@@ -4,10 +4,11 @@ import json
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem, StandardGroupMappingItem, StandardMappingItem
 from app.utils.sql_helper import load_sql
 
@@ -47,15 +48,30 @@ class RubricsListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list")
+@router.post("/list", response_model=RubricsListResponse)
 async def get_rubrics_list(
-    request: RubricsListRequest,
+    filters: RubricsListRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RubricsListResponse:
     """Get rubrics list with hierarchical structure and permissions."""
+    tags = ["rubrics"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return RubricsListResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/rubrics/list_rubrics.sql")
-        rows = await conn.fetch(sql, request.profileId)
+        rows = await conn.fetch(sql, filters.profileId)
 
         rubrics: list[RubricItem] = []
         standard_groups_mapping: dict[str, StandardGroupMappingItem] = {}
@@ -131,12 +147,24 @@ async def get_rubrics_list(
                                 description=ddata.get("description", ""),
                             )
 
-        return RubricsListResponse(
+        response_data = RubricsListResponse(
             rubrics=rubrics,
             standard_groups_mapping=standard_groups_mapping,
             standards_mapping=standards_mapping,
             department_mapping=department_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -33,12 +34,15 @@ class CreateCohortResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create")
+@router.post("/create", response_model=CreateCohortResponse)
 async def create_cohort(
     request: CreateCohortRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateCohortResponse:
     """Create a new cohort."""
+    tags = ["cohorts"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Create cohort
@@ -67,11 +71,17 @@ async def create_cohort(
                 for simulation_id in request.simulation_ids:
                     await conn.execute(sim_sql, uuid.UUID(cohort_id), uuid.UUID(simulation_id))
 
-        return CreateCohortResponse(
+        result = CreateCohortResponse(
             success=True,
             cohortId=cohort_id,
             message="Cohort created successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

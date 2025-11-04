@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from app.db import get_db, transaction
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db, transaction
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class UpdateScenarioRequest(BaseModel):
@@ -124,10 +124,16 @@ async def update_scenario(
                 for param_item_id in parameter_item_ids:
                     await conn.execute(param_sql, request.scenarioId, param_item_id)
 
-            return UpdateScenarioResponse(
+            result_data = UpdateScenarioResponse(
                 success=True,
                 message=f"Scenario '{request.name}' updated successfully",
             )
+            
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            
+            return result_data
     except HTTPException:
         raise
     except ValueError as e:

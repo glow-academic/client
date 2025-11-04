@@ -1,13 +1,14 @@
 """Parameter detail endpoint."""
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -34,19 +35,34 @@ class ParameterDetailResponse(BaseModel):
     practice_parameter: bool
     department_ids: list[str] | None
     parameter_items: list[ParameterItemDetail]
-    department_mapping: dict[str, dict]
+    department_mapping: dict[str, dict[str, Any]]
     valid_department_ids: list[str]
 
 
 router = APIRouter()
 
 
-@router.post("/detail")
+@router.post("/detail", response_model=ParameterDetailResponse)
 async def get_parameter_detail(
     request: ParameterDetailRequest,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ParameterDetailResponse:
     """Get detailed parameter information with nested items."""
+    tags = ["parameters"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return ParameterDetailResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/parameters/get_parameter_detail_complete.sql")
         result = await conn.fetchrow(sql, request.parameterId, request.profileId)
@@ -79,7 +95,7 @@ async def get_parameter_detail(
                     )
 
         # Parse department_mapping from JSONB
-        department_mapping: dict[str, dict] = {}
+        department_mapping: dict[str, dict[str, Any]] = {}
         dept_mapping_data = result.get("department_mapping")
         if isinstance(dept_mapping_data, str):
             dept_mapping_data = json.loads(dept_mapping_data)
@@ -98,7 +114,7 @@ async def get_parameter_detail(
         if dept_ids_raw and isinstance(dept_ids_raw, (list, tuple)):
             department_ids = [str(did) for did in dept_ids_raw if did]
 
-        return ParameterDetailResponse(
+        response_data = ParameterDetailResponse(
             name=result["name"],
             description=result["description"],
             numerical=result["numerical"],
@@ -110,6 +126,18 @@ async def get_parameter_detail(
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

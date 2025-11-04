@@ -5,10 +5,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem, ParameterItemMappingItem
 from app.utils.sql_helper import load_sql
 
@@ -40,13 +41,28 @@ router = APIRouter()
 
 @router.post("/detail", response_model=DocumentDetailResponse)
 async def get_document_detail(
-    request: DocumentDetailRequest,
+    request_body: DocumentDetailRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DocumentDetailResponse:
     """Get document detail information."""
+    tags = ["documents"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request_body.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return DocumentDetailResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/documents/get_document_detail_complete.sql")
-        row = await conn.fetchrow(sql, uuid.UUID(request.documentId), uuid.UUID(request.profileId))
+        row = await conn.fetchrow(sql, uuid.UUID(request_body.documentId), uuid.UUID(request_body.profileId))
 
         if not row:
             raise HTTPException(status_code=404, detail="Document not found")
@@ -95,7 +111,7 @@ async def get_document_detail(
         # Document type options (from v2 - typically ["homework", "exam", "lab", "project"])
         document_type_options = ["homework", "exam", "lab", "project"]
 
-        return DocumentDetailResponse(
+        response_data = DocumentDetailResponse(
             name=row.get("name", ""),
             active=row.get("active", False),
             type=row.get("type", ""),
@@ -107,6 +123,18 @@ async def get_document_detail(
             valid_parameter_item_ids=valid_parameter_item_ids,
             parameter_item_mapping=parameter_item_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

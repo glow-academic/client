@@ -5,10 +5,11 @@ from datetime import UTC, datetime
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas (simplified - actual schemas are more complex)
@@ -69,12 +70,15 @@ def ensure_json(value: Any, default: dict[str, Any]) -> dict[str, Any]:
         return default
 
 
-@router.post("/create")
+@router.post("/create", response_model=CreateLogResponse)
 async def create_log(
     request: CreateLogRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateLogResponse:
     """Create a new log entry."""
+    tags = ["logs"]  # From router tags
+    
     try:
         # Extract correlation_id from correlation object
         correlation_id = "default.correlation"
@@ -110,7 +114,13 @@ async def create_log(
 
         log_id = result["id"] if result else None
 
-        return CreateLogResponse(success=True, log_id=log_id)
+        result_data = CreateLogResponse(success=True, log_id=log_id)
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

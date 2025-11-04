@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (ParameterItemMapping, ParameterItemMappingItem,
                               ParameterMapping, ParameterMappingItem,
                               PersonaMapping, PersonaMappingItem,
@@ -12,7 +13,7 @@ from app.utils.schema import (ParameterItemMapping, ParameterItemMappingItem,
                               SimulationMapping, SimulationMappingItem,
                               StandardGroupsMapping, StandardsMapping)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -116,9 +117,11 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
         return obj
 
 
-@router.post("/")
+@router.post("/", response_model=PracticeOverviewResponse)
 async def get_practice_overview(
     filters: PracticeFilters,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PracticeOverviewResponse:
     """Get practice overview data with history and all entity mappings.
@@ -126,6 +129,19 @@ async def get_practice_overview(
     Practice uses simplified filters: only profileId and departmentIds.
     No cohort/role/date filtering for personal practice.
     """
+    tags = ["practice"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return PracticeOverviewResponse.model_validate(cached["data"])
+    
     try:
         # Validate that profile_id is provided (required for practice)
         if not filters.profileId:
@@ -233,7 +249,7 @@ async def get_practice_overview(
                         value=item_data.get("value", ""),
                     )
 
-        return PracticeOverviewResponse(
+        response_data = PracticeOverviewResponse(
             mode=parsed_result.get("mode", "practice"),
             hasData=parsed_result.get("hasData", False),
             items=parsed_result.get("items", []),
@@ -246,6 +262,18 @@ async def get_practice_overview(
             parameter_mapping=parameter_mapping,  # type: ignore[arg-type]
             parameter_item_mapping=parameter_item_mapping,  # type: ignore[arg-type]
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=300,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

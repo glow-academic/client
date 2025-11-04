@@ -1,13 +1,14 @@
 """Parameters list endpoint."""
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -38,24 +39,39 @@ class ParameterItem(BaseModel):
 
 class ParametersListResponse(BaseModel):
     parameters: list[ParameterItem]
-    department_mapping: dict[str, dict]
+    department_mapping: dict[str, dict[str, Any]]
 
 
 router = APIRouter()
 
 
-@router.post("/list")
+@router.post("/list", response_model=ParametersListResponse)
 async def get_parameters_list(
     filters: ParametersFilters,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ParametersListResponse:
     """Get parameters list with item counts and permissions."""
+    tags = ["parameters"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return ParametersListResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/parameters/list_parameters.sql")
         result = await conn.fetch(sql, filters.profileId)
 
         parameters = []
-        department_mapping: dict[str, dict] = {}
+        department_mapping: dict[str, dict[str, Any]] = {}
 
         for row in result:
             # Parse sample items from JSONB
@@ -104,9 +120,21 @@ async def get_parameters_list(
                 if isinstance(dm, dict):
                     department_mapping = dm
 
-        return ParametersListResponse(
+        response_data = ParametersListResponse(
             parameters=parameters, department_mapping=department_mapping
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

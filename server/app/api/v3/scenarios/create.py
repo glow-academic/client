@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
+from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from app.db import get_db, transaction
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class CreateScenarioRequest(BaseModel):
@@ -44,9 +45,11 @@ router = APIRouter()
 @router.post("/create", response_model=CreateScenarioResponse)
 async def create_scenario(
     request: CreateScenarioRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateScenarioResponse:
     """Create a new scenario."""
+    tags = ["scenarios"]  # From router tags
     try:
         async with transaction(conn):
             # Insert scenario
@@ -118,11 +121,17 @@ async def create_scenario(
                 for param_item_id in parameter_item_ids:
                     await conn.execute(param_sql, scenario_id, param_item_id)
 
-            return CreateScenarioResponse(
+            result_data = CreateScenarioResponse(
                 success=True,
                 scenarioId=scenario_id,
                 message=f"Scenario '{request.name}' created successfully",
             )
+            
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            
+            return result_data
     except HTTPException:
         raise
     except ValueError as e:

@@ -4,23 +4,17 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
+from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+                              DocumentMapping, DocumentMappingItem,
+                              ParameterItemMapping, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem,
+                              PersonaMapping, PersonaMappingItem)
+from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.db import get_db
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    DocumentMapping,
-    DocumentMappingItem,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-)
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class ScenarioDetailDefaultRequest(BaseModel):
@@ -124,16 +118,31 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
 
 @router.post("/detail-default", response_model=ScenarioDetailResponse)
 async def get_scenario_detail_default(
-    request: ScenarioDetailDefaultRequest,
+    request_data: ScenarioDetailDefaultRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ScenarioDetailResponse:
     """Get default scenario structure for creation mode."""
+    tags = ["scenarios"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request_data.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return ScenarioDetailResponse.model_validate(cached["data"])
+    
     try:
         # Load SQL query
         sql = load_sql("sql/v3/scenarios/get_scenario_detail_default_complete.sql")
 
         # Execute query
-        result = await conn.fetchrow(sql, request.profileId)
+        result = await conn.fetchrow(sql, request_data.profileId)
 
         if not result:
             raise ValueError("Failed to fetch default scenario data")
@@ -302,7 +311,7 @@ async def get_scenario_detail_default(
         # Default to first department or None (cross-department if superadmin)
         default_department_ids = [default_dept_id] if default_dept_id else None
 
-        return ScenarioDetailResponse(
+        response_data = ScenarioDetailResponse(
             # Basic fields (empty defaults)
             name="",
             problem_statement="",
@@ -348,6 +357,18 @@ async def get_scenario_detail_default(
             department_mapping=department_mapping,
             problem_statement_mapping=problem_statement_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:

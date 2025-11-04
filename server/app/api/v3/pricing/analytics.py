@@ -5,14 +5,13 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
 from app.utils.analytics_query_builder import get_profile_role_query
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import AnalyticsFilters
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -73,12 +72,27 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
         return obj
 
 
-@router.post("/")
+@router.post("/", response_model=PricingAnalyticsResponse)
 async def get_pricing(
     filters: AnalyticsFilters,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PricingAnalyticsResponse:
     """Get pricing metrics with model usage and cost analysis."""
+    tags = ["pricing"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return PricingAnalyticsResponse.model_validate(cached["data"])
+    
     try:
         # Determine effective profile ID based on role
         effective_profile_id = None
@@ -216,13 +230,25 @@ async def get_pricing(
                 if isinstance(name, str):
                     persona_mapping[persona_id] = name
 
-        return PricingAnalyticsResponse(
+        response_data = PricingAnalyticsResponse(
             model_runs=model_runs,
             model_mapping=model_mapping,
             profile_mapping=profile_mapping,
             agent_mapping=agent_mapping,
             persona_mapping=persona_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=300,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

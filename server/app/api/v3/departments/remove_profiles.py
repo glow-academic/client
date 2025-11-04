@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 
 class RemoveProfilesFromDepartmentRequest(BaseModel):
@@ -27,12 +27,15 @@ class RemoveProfilesFromDepartmentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/remove-profiles")
+@router.post("/remove-profiles", response_model=RemoveProfilesFromDepartmentResponse)
 async def remove_profiles_from_department(
     request: RemoveProfilesFromDepartmentRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RemoveProfilesFromDepartmentResponse:
     """Remove profiles from department (set active = false in junction table)."""
+    tags = ["departments"]  # From router tags
+    
     try:
         # Get department title for message
         basic_sql = load_sql("sql/v3/departments/get_department_basic.sql")
@@ -45,10 +48,16 @@ async def remove_profiles_from_department(
             sql = load_sql("sql/v3/departments/remove_department_profiles.sql")
             await conn.execute(sql, request.departmentId, request.profileIds)
 
-        return RemoveProfilesFromDepartmentResponse(
+        result = RemoveProfilesFromDepartmentResponse(
             success=True,
             message=f"Removed {len(request.profileIds)} profile(s) from department '{dept['title']}' successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

@@ -5,10 +5,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem, ParameterItemMappingItem
 from app.utils.sql_helper import load_sql
 
@@ -38,16 +39,31 @@ router = APIRouter()
 
 @router.post("/detail-bulk", response_model=DocumentDetailBulkResponse)
 async def get_document_detail_bulk(
-    request: DocumentDetailBulkRequest,
+    request_body: DocumentDetailBulkRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DocumentDetailBulkResponse:
     """Get bulk document detail information."""
+    tags = ["documents"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request_body.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return DocumentDetailBulkResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/documents/get_document_detail_bulk_complete.sql")
         row = await conn.fetchrow(
             sql,
-            [uuid.UUID(did) for did in request.documentIds],
-            uuid.UUID(request.profileId),
+            [uuid.UUID(did) for did in request_body.documentIds],
+            uuid.UUID(request_body.profileId),
         )
 
         if not row:
@@ -101,7 +117,7 @@ async def get_document_detail_bulk(
         # Document type options
         document_type_options = ["homework", "exam", "lab", "project"]
 
-        return DocumentDetailBulkResponse(
+        response_data = DocumentDetailBulkResponse(
             document_type_options=document_type_options,
             type=common_type,
             department_ids=department_ids,
@@ -111,6 +127,18 @@ async def get_document_detail_bulk(
             valid_parameter_item_ids=valid_parameter_item_ids,
             parameter_item_mapping=parameter_item_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

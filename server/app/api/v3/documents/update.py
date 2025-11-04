@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -30,12 +31,15 @@ class UpdateDocumentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update")
+@router.post("/update", response_model=UpdateDocumentResponse)
 async def update_document(
     request: UpdateDocumentRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateDocumentResponse:
     """Update a document."""
+    tags = ["documents"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Update document
@@ -51,10 +55,16 @@ async def update_document(
                 for param_item_id in request.parameter_item_ids:
                     await conn.execute(insert_sql, uuid.UUID(request.documentId), uuid.UUID(param_item_id))
 
-        return UpdateDocumentResponse(
+        result = UpdateDocumentResponse(
             success=True,
             message="Document updated successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

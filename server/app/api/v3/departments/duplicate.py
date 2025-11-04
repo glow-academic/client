@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 
 class DuplicateDepartmentRequest(BaseModel):
@@ -27,12 +27,15 @@ class DuplicateDepartmentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/duplicate")
+@router.post("/duplicate", response_model=DuplicateDepartmentResponse)
 async def duplicate_department(
     request: DuplicateDepartmentRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateDepartmentResponse:
     """Duplicate a department."""
+    tags = ["departments"]  # From router tags
+    
     try:
         # Get original department title
         basic_sql = load_sql("sql/v3/departments/get_department_basic.sql")
@@ -52,11 +55,17 @@ async def duplicate_department(
 
             new_department_id = new_dept_row["department_id"]
 
-        return DuplicateDepartmentResponse(
+        result = DuplicateDepartmentResponse(
             success=True,
             departmentId=new_department_id,
             message="Department duplicated successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

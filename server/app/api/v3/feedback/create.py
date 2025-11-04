@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -25,12 +26,15 @@ class CreateFeedbackResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create")
+@router.post("/create", response_model=CreateFeedbackResponse)
 async def create_feedback(
     request: CreateFeedbackRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateFeedbackResponse:
     """Create new app feedback entry."""
+    tags = ["feedback"]  # From router tags
+    
     try:
         # Validate feedback type
         valid_types = ["feature", "bug", "question", "other"]
@@ -51,11 +55,17 @@ async def create_feedback(
         if not result:
             raise HTTPException(status_code=500, detail="Failed to create feedback")
 
-        return CreateFeedbackResponse(
+        result_data = CreateFeedbackResponse(
             feedback_id=result["feedback_id"],
             success=True,
             message="Feedback created successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

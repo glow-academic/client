@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -22,16 +22,26 @@ class RefreshResponse(BaseModel):
 
 @router.post("/refresh")
 async def refresh_analytics(
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
     """Refresh the analytics materialized view."""
+    tags = ["analytics"]  # From router tags
+    
     try:
         sql = load_sql("sql/v3/analytics/refresh_materialized_view.sql")
         await conn.execute(sql)
-        return RefreshResponse(
+        
+        result_data = RefreshResponse(
             success=True,
             message="Analytics materialized view refreshed successfully",
             status="success",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

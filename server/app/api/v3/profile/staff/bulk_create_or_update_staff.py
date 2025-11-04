@@ -4,12 +4,13 @@ import uuid
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
-from app.api.v3.profile.staff.create_or_update_staff import CreateOrUpdateStaffRequest
+from app.api.v3.profile.staff.create_or_update_staff import \
+    CreateOrUpdateStaffRequest
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -31,9 +32,10 @@ class BulkCreateOrUpdateStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/bulk-create-or-update-staff")
+@router.post("/bulk-create-or-update-staff", response_model=BulkCreateOrUpdateStaffResponse)
 async def bulk_create_or_update_staff(
     request: BulkCreateOrUpdateStaffRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkCreateOrUpdateStaffResponse:
     """Bulk create or update staff members."""
@@ -182,13 +184,20 @@ async def bulk_create_or_update_staff(
 
                 profile_ids.append(str(profile_id))
 
-        return BulkCreateOrUpdateStaffResponse(
+        result_data = BulkCreateOrUpdateStaffResponse(
             success=True,
             profileIds=profile_ids,
             created_count=created_count,
             updated_count=updated_count,
             message=f"{created_count} created, {updated_count} updated successfully",
         )
+        
+        # Invalidate cache after mutation
+        tags = ["staff", "profile"]  # Staff operations also affect profile cache
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

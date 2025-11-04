@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from app.db import get_db, transaction
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db, transaction
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class ScenarioInRequest(BaseModel):
@@ -111,11 +111,17 @@ async def create_simulation(
                     idx,
                 )
 
-            return CreateSimulationResponse(
+            result_data = CreateSimulationResponse(
                 success=True,
                 simulationId=simulation_id,
                 message=f"Simulation '{request.title}' created successfully",
             )
+            
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            
+            return result_data
     except HTTPException:
         raise
     except ValueError as e:

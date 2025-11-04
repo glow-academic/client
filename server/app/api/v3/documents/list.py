@@ -4,10 +4,11 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem, ParameterItemMappingItem, ParameterMappingItem
 from app.utils.sql_helper import load_sql
 
@@ -51,15 +52,30 @@ class DocumentsListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list")
+@router.post("/list", response_model=DocumentsListResponse)
 async def get_documents_list(
-    request: DocumentsListRequest,
+    filters: DocumentsListRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DocumentsListResponse:
     """Get documents list with tags and scenarios."""
+    tags = ["documents"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return DocumentsListResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/documents/list_documents.sql")
-        rows = await conn.fetch(sql, request.profileId)
+        rows = await conn.fetch(sql, filters.profileId)
 
         documents: list[DocumentItem] = []
         scenario_mapping: dict[str, Any] = {}  # Complex nested structure
@@ -144,13 +160,25 @@ async def get_documents_list(
                                 document_parameter=pdata.get("document_parameter", False),
                             )
 
-        return DocumentsListResponse(
+        response_data = DocumentsListResponse(
             documents=documents,
             scenario_mapping=scenario_mapping,
             parameter_item_mapping=parameter_item_mapping,
             department_mapping=department_mapping,
             parameter_mapping=parameter_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

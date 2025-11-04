@@ -5,8 +5,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -21,13 +22,28 @@ class AssistantChatFullResponse(BaseModel):
     allChats: list[dict[str, Any]]
 
 
-@router.get("/chats/{chat_id}/full")
+@router.get("/chats/{chat_id}/full", response_model=AssistantChatFullResponse)
 async def get_assistant_chat_full(
     chat_id: UUID,
     profile_id: Annotated[UUID, Query()],
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> AssistantChatFullResponse:
     """Get complete assistant chat data with all related entities."""
+    tags = ["assistant"]  # From router tags
+    
+    # Generate cache key from path and parameters
+    body_dict = {"chat_id": str(chat_id), "profile_id": str(profile_id)}
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return AssistantChatFullResponse.model_validate(cached["data"])
+    
     try:
         chat_id_str = str(chat_id)
         profile_id_str = str(profile_id)
@@ -103,7 +119,19 @@ async def get_assistant_chat_full(
             for row in tool_calls_result
         ]
 
-        return AssistantChatFullResponse(**result)
+        response_data = AssistantChatFullResponse(**result)
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

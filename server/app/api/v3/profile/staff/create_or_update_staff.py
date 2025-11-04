@@ -4,11 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -33,9 +33,10 @@ class CreateOrUpdateStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/create-or-update-staff")
+@router.post("/create-or-update-staff", response_model=CreateOrUpdateStaffResponse)
 async def create_or_update_staff(
     request: CreateOrUpdateStaffRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateOrUpdateStaffResponse:
     """Create or update a staff member based on alias."""
@@ -149,9 +150,16 @@ async def create_or_update_staff(
                 created = True
                 message = f"Staff '{request.firstName} {request.lastName}' created successfully"
 
-        return CreateOrUpdateStaffResponse(
+        result_data = CreateOrUpdateStaffResponse(
             success=True, profileId=profile_id, created=created, message=message
         )
+        
+        # Invalidate cache after mutation
+        tags = ["staff", "profile"]  # Staff operations also affect profile cache
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

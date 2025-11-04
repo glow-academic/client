@@ -5,13 +5,13 @@ import os
 from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.api.v3.profile.staff.list import StaffItem
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -34,12 +34,27 @@ class SearchStaffResponse(BaseModel):
     department_mapping: dict[str, DepartmentMappingItem]
 
 
-@router.post("/search-staff")
+@router.post("/search-staff", response_model=SearchStaffResponse)
 async def search_staff(
     request: SearchStaffRequest,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SearchStaffResponse:
     """Search staff with query and filters."""
+    tags = ["staff"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return SearchStaffResponse.model_validate(cached["data"])
+    
     try:
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
@@ -237,11 +252,23 @@ async def search_staff(
 
         if not result:
             # Return empty mappings if no data
-            return SearchStaffResponse(
+            response_data = SearchStaffResponse(
                 staff=[],
                 department_mapping={},
                 cohort_mapping={},
             )
+            
+            # Cache response
+            await set_cached(
+                cache_key_val,
+                {"data": response_data.model_dump()},
+                ttl=60,
+                tags=tags,
+            )
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "0"
+            
+            return response_data
 
         # Parse staff JSONB array
         staff = []
@@ -304,11 +331,23 @@ async def search_staff(
                         description=ddata.get("description", ""),
                     )
 
-        return SearchStaffResponse(
+        response_data = SearchStaffResponse(
             staff=staff,
             department_mapping=department_mapping,
             cohort_mapping=cohort_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

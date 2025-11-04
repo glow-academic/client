@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from app.db import get_db
+from app.utils.http_cache import invalidate_tags
+from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from app.db import get_db
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class UpdateAgentRequest(BaseModel):
@@ -34,12 +35,15 @@ class UpdateAgentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update")
+@router.post("/update", response_model=UpdateAgentResponse)
 async def update_agent(
     request: UpdateAgentRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateAgentResponse:
     """Update an agent."""
+    tags = ["agents"]  # From router tags
+    
     try:
         async with conn.transaction():
             # Update agent
@@ -91,7 +95,13 @@ async def update_agent(
                 insert_sql = load_sql("sql/v3/agents/create_agent_departments.sql")
                 await conn.execute(insert_sql, request.agentId, request.department_ids)
 
-        return UpdateAgentResponse(success=True, message="Agent updated successfully")
+        result_data = UpdateAgentResponse(success=True, message="Agent updated successfully")
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

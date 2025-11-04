@@ -5,6 +5,7 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               DocumentMapping, DocumentMappingItem,
                               ObjectiveMapping, ObjectiveMappingItem,
@@ -13,7 +14,7 @@ from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               PersonaMapping, PersonaMappingItem,
                               SimulationMapping, SimulationMappingItem)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -125,24 +126,39 @@ class ScenarioDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail")
+@router.post("/detail", response_model=ScenarioDetailResponse)
 async def get_scenario_detail(
-    request: ScenarioDetailRequest,
+    request_data: ScenarioDetailRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ScenarioDetailResponse:
     """Get detailed scenario information."""
+    tags = ["scenarios"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request_data.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return ScenarioDetailResponse.model_validate(cached["data"])
+    
     try:
         # Load SQL string
         sql = load_sql("sql/v3/scenarios/get_scenario_detail_complete.sql")
         persona_sql = load_sql("sql/v3/scenarios/get_scenario_personas.sql")
 
         # Execute queries
-        scenario = await conn.fetchrow(sql, request.scenarioId, request.profileId)
+        scenario = await conn.fetchrow(sql, request_data.scenarioId, request_data.profileId)
         if not scenario:
-            raise HTTPException(status_code=404, detail=f"Scenario not found: {request.scenarioId}")
+            raise HTTPException(status_code=404, detail=f"Scenario not found: {request_data.scenarioId}")
 
         # Get persona_ids from database (source of truth)
-        persona_result = await conn.fetchrow(persona_sql, request.scenarioId)
+        persona_result = await conn.fetchrow(persona_sql, request_data.scenarioId)
         persona_ids = persona_result.get("persona_ids", []) if persona_result else []
         if persona_ids and not isinstance(persona_ids, list):
             persona_ids = [str(persona_ids)] if persona_ids else []
@@ -360,7 +376,7 @@ async def get_scenario_detail(
         dept_ids_raw = scenario["valid_department_ids"] or []
         dept_ids = [str(did) for did in dept_ids_raw]
 
-        return ScenarioDetailResponse(
+        response_data = ScenarioDetailResponse(
             name=scenario["name"],
             problem_statement=scenario["problem_statement"],
             problem_statement_id=scenario.get("problem_statement_id"),
@@ -397,6 +413,18 @@ async def get_scenario_detail(
             department_mapping=department_mapping,
             problem_statement_mapping=problem_statement_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:

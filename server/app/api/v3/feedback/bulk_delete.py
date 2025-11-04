@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -24,12 +25,15 @@ class BulkDeleteFeedbackResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/bulk-delete")
+@router.post("/bulk-delete", response_model=BulkDeleteFeedbackResponse)
 async def bulk_delete_feedback(
     request: BulkDeleteFeedbackRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkDeleteFeedbackResponse:
     """Bulk delete feedback. Only superadmin can delete feedback."""
+    tags = ["feedback"]  # From router tags
+    
     try:
         # Check if user is superadmin
         check_sql = load_sql("sql/v3/feedback/check_profile_role.sql")
@@ -53,11 +57,17 @@ async def bulk_delete_feedback(
         deleted_rows = await conn.fetch(delete_sql, request.ids)
         deleted_count = len(deleted_rows)
 
-        return BulkDeleteFeedbackResponse(
+        result_data = BulkDeleteFeedbackResponse(
             success=True,
             deleted_count=deleted_count,
             message=f"Successfully deleted {deleted_count} feedback item(s)",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

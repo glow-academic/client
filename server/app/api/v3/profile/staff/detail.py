@@ -5,12 +5,12 @@ import os
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -43,12 +43,27 @@ class StaffDetailResponse(BaseModel):
     department_mapping: dict[str, DepartmentMappingItem]
 
 
-@router.post("/detail")
+@router.post("/detail", response_model=StaffDetailResponse)
 async def get_profile_detail_staff(
     request: StaffDetailRequest,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> StaffDetailResponse:
     """Get detailed profile information (staff version with permissions)."""
+    tags = ["staff"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return StaffDetailResponse.model_validate(cached["data"])
+    
     try:
         # Get campus email domain from environment
         campus_email = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
@@ -102,7 +117,7 @@ async def get_profile_detail_staff(
         # Role options
         role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
 
-        return StaffDetailResponse(
+        response_data = StaffDetailResponse(
             name=profile["name"],
             email=email,
             role=profile["role"],
@@ -115,6 +130,18 @@ async def get_profile_detail_staff(
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

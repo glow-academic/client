@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -31,9 +32,12 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateRubricResponse)
 async def duplicate_rubric(
     request: DuplicateRubricRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateRubricResponse:
     """Duplicate a rubric with entire hierarchy."""
+    tags = ["rubrics"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Get original rubric data
@@ -96,11 +100,17 @@ async def duplicate_rubric(
                         standard["points"],
                     )
 
-        return DuplicateRubricResponse(
+        result = DuplicateRubricResponse(
             success=True,
             rubricId=new_rubric_id,
             message=f"Rubric '{rubric['name']}' duplicated successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

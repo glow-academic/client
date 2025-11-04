@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -25,9 +25,10 @@ class BulkDeleteStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/bulk-delete")
+@router.post("/bulk-delete", response_model=BulkDeleteStaffResponse)
 async def bulk_delete_profile(
     request: BulkDeleteStaffRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkDeleteStaffResponse:
     """Bulk delete profiles."""
@@ -54,7 +55,14 @@ async def bulk_delete_profile(
         if default_ids:
             message += f" ({len(default_ids)} default profiles skipped)"
 
-        return BulkDeleteStaffResponse(success=True, message=message)
+        result_data = BulkDeleteStaffResponse(success=True, message=message)
+        
+        # Invalidate cache after mutation
+        tags = ["staff", "profile"]  # Staff operations also affect profile cache
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

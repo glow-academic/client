@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -26,9 +26,10 @@ class AuthorizeEmulationResponse(BaseModel):
     reason: str | None = None
 
 
-@router.post("/authorize-emulation")
+@router.post("/authorize-emulation", response_model=AuthorizeEmulationResponse)
 async def authorize_emulation(
     request: AuthorizeEmulationRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> AuthorizeEmulationResponse:
     """Check if emulation is authorized."""
@@ -44,9 +45,16 @@ async def authorize_emulation(
     target_ids = {str(row["id"]) for row in simulatable_rows}
 
     if request.targetProfileId in target_ids:
-        return AuthorizeEmulationResponse(allowed=True, reason=None)
+        result_data = AuthorizeEmulationResponse(allowed=True, reason=None)
     else:
-        return AuthorizeEmulationResponse(
+        result_data = AuthorizeEmulationResponse(
             allowed=False, reason="You do not have permission to emulate this profile"
         )
+    
+    # Invalidate cache after authorization check (may affect profile context)
+    tags = ["profile"]  # From router tags
+    await invalidate_tags(tags)
+    response.headers["X-Invalidate-Tags"] = ",".join(tags)
+    
+    return result_data
 

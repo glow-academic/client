@@ -5,13 +5,13 @@ import os
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (CohortMappingItem, DepartmentMappingItem,
                               TrendData)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -54,12 +54,27 @@ class StaffListResponse(BaseModel):
     trend_data: dict[str, list[TrendData]]  # Keys: active, admin, instructional, ta, total_requests
 
 
-@router.post("/list")
+@router.post("/list", response_model=StaffListResponse)
 async def get_profile_list(
     filters: StaffFilters,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> StaffListResponse:
     """Get profile/staff list with permissions and relationships."""
+    tags = ["staff"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return StaffListResponse.model_validate(cached["data"])
+    
     try:
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
@@ -157,12 +172,24 @@ async def get_profile_list(
                             if isinstance(item, dict)
                         ]
 
-        return StaffListResponse(
+        response_data = StaffListResponse(
             staff=staff,
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
             trend_data=trend_data,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

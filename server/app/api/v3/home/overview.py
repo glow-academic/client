@@ -5,12 +5,12 @@ from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.utils.analytics_query_builder import build_base_filter
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.profile_utils import get_default_guest_profile_query
 from app.utils.schema import (SimulationMapping, SimulationMappingItem,
                               StandardGroupsMapping, StandardsMapping)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -111,15 +111,30 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
         return obj
 
 
-@router.post("/")
+@router.post("/", response_model=HomeOverviewResponse)
 async def get_home_overview(
     filters: HomeFilters,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> HomeOverviewResponse:
     """Get home overview with items, history, and mappings.
     
     Home always shows general simulations only (no simulationFilters parameter).
     """
+    tags = ["home"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return HomeOverviewResponse.model_validate(cached["data"])
+    
     try:
         # Resolve "guest-profile-id" to actual default guest profile
         profile_id = filters.profileId
@@ -204,7 +219,7 @@ async def get_home_overview(
                         department_ids=dept_ids,
                     )
 
-        return HomeOverviewResponse(
+        response_data = HomeOverviewResponse(
             mode=parsed_result.get("mode", "empty"),
             hasData=parsed_result.get("hasData", False),
             items=parsed_result.get("items", []),
@@ -213,6 +228,18 @@ async def get_home_overview(
             standards_mapping=parsed_result.get("standards_mapping", {}),
             simulation_mapping=simulation_mapping,  # type: ignore[arg-type]
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=300,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from app.db import get_db, transaction
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db, transaction
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class DuplicateSimulationRequest(BaseModel):
@@ -60,11 +60,17 @@ async def duplicate_simulation(
             copy_scenarios_sql = load_sql("sql/v3/simulations/copy_simulation_scenarios.sql")
             await conn.execute(copy_scenarios_sql, new_simulation_id, request.simulationId)
 
-            return DuplicateSimulationResponse(
+            result_data = DuplicateSimulationResponse(
                 success=True,
                 simulationId=new_simulation_id,
                 message=f"Simulation '{result['title']}' duplicated successfully",
             )
+            
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            
+            return result_data
     except HTTPException:
         raise
     except ValueError as e:

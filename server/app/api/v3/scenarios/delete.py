@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from app.db import get_db, transaction
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db, transaction
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class DeleteScenarioRequest(BaseModel):
@@ -55,10 +55,16 @@ async def delete_scenario(
             delete_sql = load_sql("sql/v3/scenarios/delete_scenario.sql")
             await conn.execute(delete_sql, request.scenarioId)
 
-            return DeleteScenarioResponse(
+            result_data = DeleteScenarioResponse(
                 success=True,
                 message=f"Scenario '{scenario['name']}' deleted successfully",
             )
+            
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            
+            return result_data
     except HTTPException:
         raise
     except ValueError as e:

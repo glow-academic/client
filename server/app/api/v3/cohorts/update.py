@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -33,12 +34,15 @@ class UpdateCohortResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/update")
+@router.post("/update", response_model=UpdateCohortResponse)
 async def update_cohort(
     request: UpdateCohortRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateCohortResponse:
     """Update an existing cohort."""
+    tags = ["cohorts"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Update cohort
@@ -56,10 +60,16 @@ async def update_cohort(
             # Note: Profile and simulation associations are not updated in this endpoint.
             # Use dedicated endpoints (add-profiles, remove-profiles) for managing these relationships.
 
-        return UpdateCohortResponse(
+        result = UpdateCohortResponse(
             success=True,
             message="Cohort updated successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

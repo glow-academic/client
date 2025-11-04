@@ -6,10 +6,11 @@ from datetime import datetime
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (
     CohortMappingItem,
     DepartmentMappingItem,
@@ -37,14 +38,29 @@ router = APIRouter()
 
 @router.post("/detail-default", response_model=CohortDetailResponse)
 async def get_cohort_detail_default(
-    request: CohortDetailDefaultRequest,
+    request_body: CohortDetailDefaultRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CohortDetailResponse:
     """Get default cohort detail with staff, simulations, and mappings."""
+    tags = ["cohorts"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request_body.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return CohortDetailResponse.model_validate(cached["data"])
+    
     try:
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
         sql = load_sql("sql/v3/cohorts/get_cohort_detail_default_complete.sql")
-        row = await conn.fetchrow(sql, request.profileId, campus_domain)
+        row = await conn.fetchrow(sql, request_body.profileId, campus_domain)
 
         if not row:
             raise HTTPException(status_code=404, detail="No cohort found for user's departments")
@@ -191,7 +207,7 @@ async def get_cohort_detail_default(
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]
 
-        return CohortDetailResponse(
+        response_data = CohortDetailResponse(
             title=row.get("title", ""),
             description=row.get("description"),
             department_ids=dept_ids,
@@ -209,6 +225,18 @@ async def get_cohort_detail_default(
             cohort_mapping=cohort_mapping,
             department_mapping_for_staff=department_mapping_for_staff,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

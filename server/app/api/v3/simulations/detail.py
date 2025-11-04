@@ -134,12 +134,12 @@ async def get_simulation_detail(
         sql = load_sql("sql/v3/simulations/get_simulation_detail_complete.sql")
 
         # Execute query
-        result = await conn.fetchrow(sql, request.simulationId, request.profileId)
+        result = await conn.fetchrow(sql, request_data.simulationId, request_data.profileId)
 
         if not result:
             raise HTTPException(
                 status_code=404,
-                detail=f"Simulation not found: {request.simulationId}",
+                detail=f"Simulation not found: {request_data.simulationId}",
             )
 
         # Extract user role and cohort count for permissions
@@ -345,7 +345,7 @@ async def get_simulation_detail(
         if department_ids:
             department_ids = [str(d) for d in department_ids]
 
-        return SimulationDetailResponse(
+        response_data = SimulationDetailResponse(
             name=result.get("title", ""),
             description=result.get("description", ""),
             department_ids=department_ids,
@@ -371,6 +371,18 @@ async def get_simulation_detail(
             department_mapping=department_mapping,
             parameter_item_mapping=parameter_item_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:

@@ -5,12 +5,12 @@ import os
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class DepartmentDetailRequest(BaseModel):
@@ -63,19 +63,34 @@ class DepartmentDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail")
+@router.post("/detail", response_model=DepartmentDetailResponse)
 async def get_department_detail(
-    request: DepartmentDetailRequest,
+    request_body: DepartmentDetailRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DepartmentDetailResponse:
     """Get department detail with permissions, stats, and staff list."""
+    tags = ["departments"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request_body.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return DepartmentDetailResponse.model_validate(cached["data"])
+    
     try:
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
         sql = load_sql("sql/v3/departments/get_department_detail_with_staff.sql")
-        dept_row = await conn.fetchrow(sql, request.departmentId, request.profileId, campus_domain)
+        dept_row = await conn.fetchrow(sql, request_body.departmentId, request_body.profileId, campus_domain)
 
         if not dept_row:
-            raise HTTPException(status_code=404, detail=f"Department {request.departmentId} not found")
+            raise HTTPException(status_code=404, detail=f"Department {request_body.departmentId} not found")
 
         # Parse staff list from JSONB
         staff_list: list[StaffItem] = []
@@ -147,7 +162,7 @@ async def get_department_detail(
                         description=ddata.get("description", ""),
                     )
 
-        return DepartmentDetailResponse(
+        response_data = DepartmentDetailResponse(
             title=dept_row["title"],
             description=dept_row["description"],
             active=dept_row["active"],
@@ -161,6 +176,18 @@ async def get_department_detail(
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

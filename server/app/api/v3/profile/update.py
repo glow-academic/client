@@ -4,12 +4,12 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
-from app.api.v3.profile.detail import ProfileItem, ProfileDetailResponse
+from app.api.v3.profile.detail import ProfileDetailResponse, ProfileItem
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -29,9 +29,10 @@ class UpdateProfileRequest(BaseModel):
     lastActive: str | None = None  # ISO datetime
 
 
-@router.post("/update")
+@router.post("/update", response_model=ProfileDetailResponse)
 async def update_profile(
     request: UpdateProfileRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProfileDetailResponse:
     """Update profile fields (simple auth version)."""
@@ -172,10 +173,17 @@ async def update_profile(
         lastActive=row["last_active"].isoformat() if row["last_active"] else None,
         createdAt=row["created_at"].isoformat() if row["created_at"] else "",
         updatedAt=row["updated_at"].isoformat() if row["updated_at"] else "",
-        primaryDepartmentId=str(row["primary_department_id"])
-        if row.get("primary_department_id")
-        else None,
+                primaryDepartmentId=str(row["primary_department_id"])
+            if row.get("primary_department_id")
+            else None,
     )
 
-    return ProfileDetailResponse(profile=profile)
+    result_data = ProfileDetailResponse(profile=profile)
+    
+    # Invalidate cache after mutation
+    tags = ["profile"]  # From router tags
+    await invalidate_tags(tags)
+    response.headers["X-Invalidate-Tags"] = ",".join(tags)
+    
+    return result_data
 

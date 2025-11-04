@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from app.db import get_db, transaction
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db, transaction
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class DuplicateScenarioRequest(BaseModel):
@@ -84,11 +84,17 @@ async def duplicate_scenario(
             copy_params_sql = load_sql("sql/v3/scenarios/copy_scenario_parameters.sql")
             await conn.execute(copy_params_sql, new_scenario_id, request.scenarioId)
 
-            return DuplicateScenarioResponse(
+            result_data = DuplicateScenarioResponse(
                 success=True,
                 scenarioId=new_scenario_id,
                 message=f"Scenario '{original['name']}' duplicated successfully",
             )
+            
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            
+            return result_data
     except HTTPException:
         raise
     except ValueError as e:

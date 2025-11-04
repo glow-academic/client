@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -27,12 +28,15 @@ class DeleteCohortResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/delete")
+@router.post("/delete", response_model=DeleteCohortResponse)
 async def delete_cohort(
     request: DeleteCohortRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteCohortResponse:
     """Delete a cohort."""
+    tags = ["cohorts"]  # From router tags
+    
     try:
         # Check usage
         usage_sql = load_sql("sql/v3/cohorts/check_cohort_usage.sql")
@@ -48,10 +52,16 @@ async def delete_cohort(
         sql = load_sql("sql/v3/cohorts/delete_cohort.sql")
         await conn.execute(sql, uuid.UUID(request.cohortId))
 
-        return DeleteCohortResponse(
+        result = DeleteCohortResponse(
             success=True,
             message="Cohort deleted successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

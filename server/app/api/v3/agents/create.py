@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from app.db import get_db
+from app.utils.http_cache import invalidate_tags
+from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from app.db import get_db
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class CreateAgentRequest(BaseModel):
@@ -32,12 +33,15 @@ class CreateAgentResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create")
+@router.post("/create", response_model=CreateAgentResponse)
 async def create_agent(
     request: CreateAgentRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateAgentResponse:
     """Create a new agent."""
+    tags = ["agents"]  # From router tags
+    
     try:
         async with conn.transaction():
             # Create agent
@@ -80,11 +84,17 @@ async def create_agent(
                 dept_sql = load_sql("sql/v3/agents/create_agent_departments.sql")
                 await conn.execute(dept_sql, agent_id, request.department_ids)
 
-        return CreateAgentResponse(
+        result_data = CreateAgentResponse(
             success=True,
             agentId=agent_id,
             message="Agent created successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

@@ -5,10 +5,11 @@ import os
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem, ProfileMappingItem, SimulationMappingItem
 from app.utils.sql_helper import load_sql
 
@@ -49,16 +50,31 @@ class CohortsListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list")
+@router.post("/list", response_model=CohortsListResponse)
 async def get_cohorts_list(
-    request: CohortsListRequest,
+    filters: CohortsListRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CohortsListResponse:
     """Get cohorts list with permissions and relationships."""
+    tags = ["cohorts"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return CohortsListResponse.model_validate(cached["data"])
+    
     try:
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
         sql = load_sql("sql/v3/cohorts/list_cohorts.sql")
-        rows = await conn.fetch(sql, request.profileId, campus_domain)
+        rows = await conn.fetch(sql, filters.profileId, campus_domain)
 
         cohorts = []
         profile_mapping: dict[str, ProfileMappingItem] = {}
@@ -133,12 +149,24 @@ async def get_cohorts_list(
                                 description=ddata.get("description", ""),
                             )
 
-        return CohortsListResponse(
+        response_data = CohortsListResponse(
             cohorts=cohorts,
             profile_mapping=profile_mapping,
             simulation_mapping=simulation_mapping,
             department_mapping=department_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

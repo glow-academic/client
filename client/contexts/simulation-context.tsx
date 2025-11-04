@@ -869,18 +869,8 @@ export function SimulationProvider({
       const { type, chat_id, completed_count, total_count } =
         customEvent.detail;
 
-      console.log("[Grading Event] Received:", {
-        type,
-        chat_id,
-        currentChatId: currentChat?.id,
-        completed_count,
-        total_count,
-        matches: chat_id === currentChat?.id,
-      });
-
       // Only process events for current chat
       if (chat_id !== currentChat?.id) {
-        console.log("[Grading Event] Chat ID mismatch, ignoring");
         // Clean up if this is a different chat and we're currently grading
         if (isGrading && gradingProgress) {
           isGradingRef.current = false;
@@ -893,7 +883,6 @@ export function SimulationProvider({
 
       if (type === "start") {
         // Initialize grading state when grading starts
-        console.log("[Grading Event] Start event - setting isGrading to true");
         isGradingRef.current = true;
         setIsGrading(true);
         // Note: start event may not have total_count, but standards_count might be available
@@ -901,10 +890,6 @@ export function SimulationProvider({
         const initialTotal =
           total_count ??
           (customEvent.detail.standards_count as number | undefined);
-        console.log(
-          "[Grading Event] Start event - initialTotal:",
-          initialTotal
-        );
         if (initialTotal !== undefined) {
           const initialProgress = {
             completed: 0,
@@ -914,14 +899,6 @@ export function SimulationProvider({
           };
           gradingProgressRef.current = initialProgress;
           setGradingProgress(initialProgress);
-          console.log(
-            "[Grading Event] Start event - initialized progress:",
-            initialProgress
-          );
-        } else {
-          console.log(
-            "[Grading Event] Start event - no total_count or standards_count"
-          );
         }
         log.debug("grading.start", {
           context: {
@@ -934,12 +911,6 @@ export function SimulationProvider({
         completed_count !== undefined &&
         total_count !== undefined
       ) {
-        console.log(
-          "[Grading Event] Standard graded - completed:",
-          completed_count,
-          "total:",
-          total_count
-        );
         isGradingRef.current = true;
         setIsGrading(true);
         setGradingProgress((prev) => {

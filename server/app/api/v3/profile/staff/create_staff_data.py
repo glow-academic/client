@@ -4,13 +4,13 @@ import json
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.api.v3.profile.staff.list import StaffItem
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -31,12 +31,27 @@ class CreateStaffDataResponse(BaseModel):
     role_options: list[str]
 
 
-@router.post("/create-staff-data")
+@router.post("/create-staff-data", response_model=CreateStaffDataResponse)
 async def get_create_staff_data(
     request: CreateStaffDataRequest,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateStaffDataResponse:
     """Get all data needed for create staff UI (mappings, etc.)."""
+    tags = ["staff"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return CreateStaffDataResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/profile/staff/get_create_staff_data.sql")
         result = await conn.fetchrow(sql, request.departmentIds, request.profileId)
@@ -110,12 +125,24 @@ async def get_create_staff_data(
                         description=cdata.get("description", ""),
                     )
 
-        return CreateStaffDataResponse(
+        response_data = CreateStaffDataResponse(
             staff=staff,
             department_mapping=department_mapping,
             cohort_mapping=cohort_mapping,
             role_options=["superadmin", "admin", "instructional", "ta", "guest"],
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

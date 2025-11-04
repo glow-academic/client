@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -53,12 +54,15 @@ class CreateRubricResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/create")
+@router.post("/create", response_model=CreateRubricResponse)
 async def create_rubric(
     request: CreateRubricRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateRubricResponse:
     """Create a new rubric with nested structure."""
+    tags = ["rubrics"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Create rubric
@@ -107,11 +111,17 @@ async def create_rubric(
                             standard.points,
                         )
 
-        return CreateRubricResponse(
+        result = CreateRubricResponse(
             success=True,
             rubricId=rubric_id,
             message="Rubric created successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

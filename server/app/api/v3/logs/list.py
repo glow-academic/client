@@ -4,10 +4,11 @@ import json
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -81,12 +82,27 @@ def _parse_jsonb_to_model(
     return model_class()
 
 
-@router.post("/list")
+@router.post("/list", response_model=LogsListResponse)
 async def list_logs(
     request: LogsListRequest,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> LogsListResponse:
     """Get list of logs with actor information and all JSONB fields."""
+    tags = ["logs"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return LogsListResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/logs/get_logs_list.sql")
         rows = await conn.fetch(sql)
@@ -115,7 +131,19 @@ async def list_logs(
                 )
             )
 
-        return LogsListResponse(logs=log_items)
+        response_data = LogsListResponse(logs=log_items)
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

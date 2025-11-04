@@ -4,19 +4,14 @@ import json
 from typing import Annotated
 
 import asyncpg  # type: ignore
+from app.db import get_db
+from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+                              RubricMapping, RubricMappingItem,
+                              ScenarioMapping, ScenarioMappingItem)
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-)
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class SimulationsFilters(BaseModel):
@@ -145,12 +140,24 @@ async def get_simulations_list(
                 )
             )
 
-        return SimulationsListResponse(
+        response_data = SimulationsListResponse(
             simulations=simulations,
             scenario_mapping=scenario_mapping,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

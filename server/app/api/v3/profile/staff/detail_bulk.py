@@ -4,12 +4,12 @@ import json
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -37,12 +37,27 @@ class StaffDetailBulkResponse(BaseModel):
     department_mapping: dict[str, DepartmentMappingItem]
 
 
-@router.post("/detail-bulk")
+@router.post("/detail-bulk", response_model=StaffDetailBulkResponse)
 async def get_profile_detail_bulk(
     request: StaffDetailBulkRequest,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> StaffDetailBulkResponse:
     """Get bulk profile detail information."""
+    tags = ["staff"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return StaffDetailBulkResponse.model_validate(cached["data"])
+    
     try:
         # Get profiles with JSONB department mapping (consolidated query)
         sql = load_sql("sql/v3/profile/staff/get_profiles_by_ids.sql")
@@ -105,7 +120,7 @@ async def get_profile_detail_bulk(
         # Role options
         role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
 
-        return StaffDetailBulkResponse(
+        response_data = StaffDetailBulkResponse(
             role=role,
             requests_per_day=requests_per_day,
             department_ids=department_ids,
@@ -113,6 +128,18 @@ async def get_profile_detail_bulk(
             role_options=role_options,
             department_mapping=department_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

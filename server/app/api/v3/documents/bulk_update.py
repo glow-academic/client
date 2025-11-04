@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -33,9 +34,12 @@ router = APIRouter()
 @router.post("/bulk-update", response_model=BulkUpdateDocumentsResponse)
 async def bulk_update_documents(
     request: BulkUpdateDocumentsRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkUpdateDocumentsResponse:
     """Bulk update documents."""
+    tags = ["documents"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Bulk update documents
@@ -62,10 +66,16 @@ async def bulk_update_documents(
                             uuid.UUID(param_item_id),
                         )
 
-        return BulkUpdateDocumentsResponse(
+        result = BulkUpdateDocumentsResponse(
             success=True,
             message=f"Updated {len(request.documentIds)} document(s) successfully",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

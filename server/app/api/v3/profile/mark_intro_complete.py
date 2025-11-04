@@ -3,11 +3,11 @@
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -25,9 +25,10 @@ class MarkTourStepResponse(BaseModel):
     message: str
 
 
-@router.post("/mark-intro-complete")
+@router.post("/mark-intro-complete", response_model=MarkTourStepResponse)
 async def mark_intro_complete(
     request: MarkIntroCompleteRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MarkTourStepResponse:
     """Mark intro tour step as complete."""
@@ -56,10 +57,17 @@ async def mark_intro_complete(
         if result == "UPDATE 0":
             raise HTTPException(status_code=404, detail="Profile not found")
 
-        return MarkTourStepResponse(
+        result_data = MarkTourStepResponse(
             success=True,
             message=f"Profile {profile_id} intro marked complete",
         )
+        
+        # Invalidate cache after mutation
+        tags = ["profile"]  # From router tags
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

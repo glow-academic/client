@@ -3,12 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class DepartmentDetailDefaultRequest(BaseModel):
@@ -60,22 +60,37 @@ class DepartmentDetailResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/detail-default")
+@router.post("/detail-default", response_model=DepartmentDetailResponse)
 async def get_department_detail_default(
-    request: DepartmentDetailDefaultRequest,
+    request_body: DepartmentDetailDefaultRequest,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DepartmentDetailResponse:
     """Get default department detail for creation mode."""
+    tags = ["departments"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request_body.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return DepartmentDetailResponse.model_validate(cached["data"])
+    
     try:
         sql = load_sql("sql/v3/departments/get_department_default_complete.sql")
-        result = await conn.fetchrow(sql, request.profileId)
+        result = await conn.fetchrow(sql, request_body.profileId)
 
         if not result:
-            raise HTTPException(status_code=404, detail=f"Profile {request.profileId} not found")
+            raise HTTPException(status_code=404, detail=f"Profile {request_body.profileId} not found")
 
         is_superadmin = result["profile_role"] == "superadmin"
 
-        return DepartmentDetailResponse(
+        response_data = DepartmentDetailResponse(
             title="",
             description="",
             active=True,
@@ -89,6 +104,18 @@ async def get_department_detail_default(
             cohort_mapping={},
             department_mapping={},
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except Exception as e:

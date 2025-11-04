@@ -5,10 +5,10 @@ from io import StringIO
 from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -56,12 +56,27 @@ class ProcessCSVResponse(BaseModel):
     headers: list[str]
 
 
-@router.post("/process-csv")
+@router.post("/process-csv", response_model=ProcessCSVResponse)
 async def process_csv(
     request: ProcessCSVRequest,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProcessCSVResponse:
     """Process CSV file and map columns to target fields."""
+    tags = ["staff"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return ProcessCSVResponse.model_validate(cached["data"])
+    
     try:
         # Parse CSV content
         csv_file = StringIO(request.csv_content)
@@ -151,7 +166,19 @@ async def process_csv(
                 )
             )
 
-        return ProcessCSVResponse(success=True, rows=rows, headers=list(headers))
+        response_data = ProcessCSVResponse(success=True, rows=rows, headers=list(headers))
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

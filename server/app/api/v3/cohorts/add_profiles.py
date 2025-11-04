@@ -4,10 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 
@@ -31,9 +32,12 @@ router = APIRouter()
 @router.post("/add-profiles", response_model=AddProfilesToCohortResponse)
 async def add_profiles_to_cohort(
     request: AddProfilesToCohortRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> AddProfilesToCohortResponse:
     """Add profiles to cohort."""
+    tags = ["cohorts"]  # From router tags
+    
     try:
         # Add all profiles to cohort
         sql = load_sql("sql/v3/cohorts/insert_cohort_profile.sql")
@@ -42,10 +46,16 @@ async def add_profiles_to_cohort(
                 sql, uuid.UUID(request.cohortId), uuid.UUID(profile_id)
             )
 
-        return AddProfilesToCohortResponse(
+        result = AddProfilesToCohortResponse(
             success=True,
             message=f"Added {len(request.profileIds)} profile(s) to cohort",
         )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
