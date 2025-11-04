@@ -20,11 +20,15 @@ import { v4 as uuidv4 } from "uuid";
 type ParameterItemMappingItem = {
   name: string;
   description: string;
+  parameter_id: string;
+  parameter_name: string;
+  value: string;
 };
 
 type ParameterMappingItem = {
   name: string;
   description: string;
+  document_parameter: boolean;
 };
 
 interface DocumentUploadDialogProps {

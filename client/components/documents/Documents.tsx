@@ -1158,28 +1158,44 @@ export default function Documents() {
   const renderDocumentCard = (document: (typeof documents)[number]) => {
     const canDelete = canDeleteDocument(document.document_id);
 
-    // Map API response to DocumentItem format
+    // Map API response to DocumentItem format with proper defaults
     const documentItem = {
-      ...document,
+      document_id: document.document_id,
+      name: document.name,
+      type: document.type,
       updatedAt: document.updated_at,
       extension: document.extension || "",
-      scenario_ids: document.scenario_ids,
+      scenario_ids: document.scenario_ids || [],
       can_edit: document.can_edit,
       can_delete: document.can_delete,
       active: document.active,
-      department_ids: document.department_ids,
-      file_path: document.file_path,
-      mime_type: document.mime_type,
-      parameter_item_ids: document.parameter_item_ids,
+      department_ids: document.department_ids ?? null,
+      file_path: document.file_path || "",
+      mime_type: document.mime_type || "",
+      parameter_item_ids: document.parameter_item_ids || [],
+    };
+
+    // Wrapper functions to convert DocumentItem back to API format for callbacks
+    // Since we already have the document in closure, we use it directly instead of the parameter
+    const handleEditWrapper = (_doc: typeof documentItem) => {
+      handleEdit(document);
+    };
+
+    const handlePreviewWrapper = (_doc: typeof documentItem) => {
+      handlePreview(document);
+    };
+
+    const handleDeleteWrapper = (_doc: typeof documentItem) => {
+      handleSingleDelete(document);
     };
 
     return (
       <DocumentPreviewCard
         key={document.document_id}
         document={documentItem}
-        onEdit={handleEdit}
-        onPreview={handlePreview}
-        onDelete={handleSingleDelete}
+        onEdit={handleEditWrapper}
+        onPreview={handlePreviewWrapper}
+        onDelete={handleDeleteWrapper}
         canDelete={canDelete}
         showActions={true}
       />

@@ -58,6 +58,7 @@ import { DataTablePagination } from "@/components/common/history/DataTablePagina
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
+import type { ParameterSampleItem } from "@/lib/api/v2/schemas/parameters";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -121,7 +122,7 @@ export default function Parameters() {
     const mapping = parametersData?.department_mapping || {};
     return Object.entries(mapping).map(([id, obj]) => ({
       value: id,
-      label: obj.name,
+      label: obj["name"] as string,
     }));
   }, [parametersData?.department_mapping]);
 
@@ -267,7 +268,7 @@ export default function Parameters() {
     setShowDeleteDialog(true);
   };
 
-  const getParameterIcon = (parameter: ParameterItem) => {
+  const getParameterIcon = (parameter: (typeof parameters)[number]) => {
     // Return different icons based on parameter name or type
     const name = parameter.name.toLowerCase();
     if (name.includes("class") || name.includes("course"))

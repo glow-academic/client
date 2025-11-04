@@ -68,6 +68,7 @@ import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import type { components } from "@/lib/api-types";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import {
@@ -296,9 +297,20 @@ export default function Scenario({
     clearEntityMetadata,
   ]);
 
+  // Explicit types from API schema
+  type CreateScenarioRequest = components["schemas"]["CreateScenarioRequest"];
+  type UpdateScenarioRequest = components["schemas"]["UpdateScenarioRequest"];
+  type RandomizeScenarioRequest =
+    components["schemas"]["RandomizeScenarioRequest"];
+  type GenerateAIScenarioRequest =
+    components["schemas"]["GenerateScenarioAIRequest"];
+
   // V3 API - create mutation
   const createScenarioMutation = useMutation({
-    mutationFn: (body) => api.post("/scenarios/create", { body }),
+    mutationFn: (body: CreateScenarioRequest) =>
+      api.post("/scenarios/create", { body } as Parameters<
+        typeof api.post<"/scenarios/create">
+      >[1]),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
     },
@@ -306,7 +318,10 @@ export default function Scenario({
 
   // V3 API - update mutation
   const updateScenarioMutation = useMutation({
-    mutationFn: (body: unknown) => api.post("/scenarios/update", { body }),
+    mutationFn: (body: UpdateScenarioRequest) =>
+      api.post("/scenarios/update", { body } as Parameters<
+        typeof api.post<"/scenarios/update">
+      >[1]),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
     },
@@ -314,7 +329,10 @@ export default function Scenario({
 
   // V3 API - generate AI mutation
   const generateAIMutation = useMutation({
-    mutationFn: (body: unknown) => api.post("/scenarios/generate-ai", { body }),
+    mutationFn: (body: GenerateAIScenarioRequest) =>
+      api.post("/scenarios/generate-ai", { body } as Parameters<
+        typeof api.post<"/scenarios/generate-ai">
+      >[1]),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
     },
@@ -322,15 +340,18 @@ export default function Scenario({
 
   // V3 API - randomize mutation
   const randomizeMutation = useMutation({
-    mutationFn: (body: unknown) => api.post("/scenarios/randomize", { body }),
+    mutationFn: (body: RandomizeScenarioRequest) =>
+      api.post("/scenarios/randomize", { body } as Parameters<
+        typeof api.post<"/scenarios/randomize">
+      >[1]),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
     },
   });
 
   // Extract mutate functions for compatibility
-  const createScenario = createScenarioMutation.mutate;
-  const updateScenario = updateScenarioMutation.mutate;
+  const createScenario = createScenarioMutation.mutateAsync;
+  const updateScenario = updateScenarioMutation.mutateAsync;
 
   // Form data state
   const initialFormData = useMemo(
@@ -870,7 +891,10 @@ export default function Scenario({
       setCurrentObjectives(
         getObjectivesFromMapping(
           scenarioData.objective_ids,
-          scenarioData.objective_mapping
+          (scenarioData.objective_mapping || {}) as Record<
+            string,
+            { name: string }
+          >
         )
       );
       // Store originals for change tracking
@@ -893,7 +917,10 @@ export default function Scenario({
       setOriginalObjectives(
         getObjectivesFromMapping(
           scenarioData.objective_ids,
-          scenarioData.objective_mapping
+          (scenarioData.objective_mapping || {}) as Record<
+            string,
+            { name: string }
+          >
         )
       );
       formDataInitializedRef.current = true;
@@ -981,11 +1008,14 @@ export default function Scenario({
   // Get affected simulations from V2 data
   const affectedSimulations = useMemo(() => {
     if (!scenarioData?.active_simulation_ids) return [];
-    return scenarioData.active_simulation_ids.map((id) => ({
-      id,
-      name: simulationMapping[id]?.name || "",
-      active: true, // These are active simulations from server
-    }));
+    return scenarioData.active_simulation_ids.map((id) => {
+      const sim = simulationMapping[id] as { name?: string } | undefined;
+      return {
+        id,
+        name: sim?.name || "",
+        active: true, // These are active simulations from server
+      };
+    });
   }, [scenarioData, simulationMapping]);
 
   // Calculate step status
@@ -1069,18 +1099,17 @@ export default function Scenario({
       setIsRandomizingParameters(true);
       const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaIds:
-          selectedPersonaIds.length > 0 ? selectedPersonaIds : undefined,
+        personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
-        departmentIds: formData.departmentIds || undefined,
+        departmentIds: formData.departmentIds || null,
         targets: ["parameters"],
       });
       if (!resp.success) throw new Error(resp.message);
       // Overwrite (not merge) parameter items - completely replace existing selection
       setCurrentParameterItemIds(resp.parameterItemIds || []);
       toast.success("Parameter suggestions applied");
-    } catch (error) {
+    } catch {
       toast.error("Failed to randomize parameters");
     } finally {
       setIsRandomizingParameters(false);
@@ -1091,7 +1120,7 @@ export default function Scenario({
     try {
       setCurrentParameterItemIds([]);
       toast.success("Parameters reset");
-    } catch (error) {
+    } catch {
       toast.error("Failed to reset parameters");
     }
   };
@@ -1102,11 +1131,10 @@ export default function Scenario({
       setIsRandomizingPersona(true);
       const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaIds:
-          selectedPersonaIds.length > 0 ? selectedPersonaIds : undefined,
+        personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
-        departmentIds: formData.departmentIds || undefined,
+        departmentIds: formData.departmentIds || null,
         targets: ["persona"],
       });
       if (!resp.success) throw new Error(resp.message);
@@ -1139,11 +1167,10 @@ export default function Scenario({
       }
       const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaIds:
-          selectedPersonaIds.length > 0 ? selectedPersonaIds : undefined,
+        personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
-        departmentIds: formData.departmentIds || undefined,
+        departmentIds: formData.departmentIds || null,
         targets: ["documents"],
       });
       if (!resp.success) throw new Error(resp.message);
@@ -1248,12 +1275,12 @@ export default function Scenario({
 
       const result = await generateAIMutation.mutateAsync({
         departmentId,
-        personaIds:
-          selectedPersonaIds.length > 0 ? selectedPersonaIds : undefined,
-        documentIds: currentDocumentIds,
-        parameterItemIds: currentParameterItemIds,
-        profileId: effectiveProfile?.id || undefined,
-        userInstructions: userInstructions || undefined,
+        personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
+        documentIds: currentDocumentIds.length > 0 ? currentDocumentIds : null,
+        parameterItemIds:
+          currentParameterItemIds.length > 0 ? currentParameterItemIds : null,
+        profileId: effectiveProfile?.id || null,
+        userInstructions: userInstructions || null,
         objectivesEnabled: formData.objectivesEnabled,
       });
 
@@ -1298,8 +1325,8 @@ export default function Scenario({
           // Clear selected version temporarily - it will be set by the refetch after save
           setSelectedProblemStatementId(null);
           // Save immediately to create new version in database
-          updateScenario(
-            {
+          try {
+            await updateScenario({
               scenarioId: scenarioId,
               name: formData.name,
               problem_statement: newProblemStatement,
@@ -1322,20 +1349,15 @@ export default function Scenario({
               input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
               output_guardrail_enabled:
                 formData.outputGuardrailEnabled ?? false,
-            },
-            {
-              onSuccess: () => {
-                // Query will refetch automatically via mutation's onSuccess invalidation
-                // The useEffect watching problem_statement_id will update selectedProblemStatementId
-                toast.success("Problem statement regenerated and saved!");
-              },
-              onError: (error) => {
-                toast.error(
-                  `Failed to save regenerated problem statement: ${error.message}`
-                );
-              },
-            }
-          );
+            });
+            // Query will refetch automatically via mutation's onSuccess invalidation
+            // The useEffect watching problem_statement_id will update selectedProblemStatementId
+            toast.success("Problem statement regenerated and saved!");
+          } catch (error) {
+            toast.error(
+              `Failed to save regenerated problem statement: ${error instanceof Error ? error.message : "Unknown error"}`
+            );
+          }
         }
         // Update objectives only if regenerateObjectives is true and objectives are enabled
         if (
@@ -1424,36 +1446,33 @@ export default function Scenario({
 
       if (isEditMode) {
         // UPDATE mode - V2 handles all junction tables automatically
-        updateScenario(
-          {
+        try {
+          await updateScenario({
             scenarioId: scenarioId!,
             ...payload,
-          },
-          {
-            onSuccess: () => {
-              toast.success("Scenario updated successfully!");
-              router.push("/create/scenarios");
-            },
-            onError: (error) => {
-              toast.error(`Failed to update scenario: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+          });
+          toast.success("Scenario updated successfully!");
+          router.push("/create/scenarios");
+        } catch (error) {
+          toast.error(
+            `Failed to update scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+          setIsSubmitting(false);
+        }
       } else {
         // CREATE mode - V2 handles all junction tables automatically
-        createScenario(payload, {
-          onSuccess: () => {
-            // Clear local versions after successful creation
-            setLocalProblemStatementVersions([]);
-            toast.success("Scenario created successfully!");
-            router.push("/create/scenarios");
-          },
-          onError: (error) => {
-            toast.error(`Failed to create scenario: ${error.message}`);
-            setIsSubmitting(false);
-          },
-        });
+        try {
+          await createScenario(payload);
+          // Clear local versions after successful creation
+          setLocalProblemStatementVersions([]);
+          toast.success("Scenario created successfully!");
+          router.push("/create/scenarios");
+        } catch (error) {
+          toast.error(
+            `Failed to create scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+          setIsSubmitting(false);
+        }
       }
     } catch (error) {
       toast.error(
