@@ -4,12 +4,11 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.db import get_db
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -17,16 +16,200 @@ class AttemptFullRequest(BaseModel):
     attemptId: str
 
 
+# Strongly typed nested models
+class AttemptItem(BaseModel):
+    id: str
+    createdAt: str
+    simulationId: str
+    infiniteMode: bool
+    archived: bool
+
+
+class SimulationItem(BaseModel):
+    id: str
+    title: str
+    description: str
+    departmentId: str
+    active: bool
+    defaultSimulation: bool
+    practiceSimulation: bool
+    hintsEnabled: bool
+    objectivesEnabled: bool
+    inputGuardrailActive: bool
+    outputGuardrailActive: bool
+    imageInputActive: bool
+    copyPasteAllowed: bool
+    timeLimit: int | None
+    rubricId: str | None
+    createdAt: str
+    updatedAt: str
+
+
+class AttemptProfileItem(BaseModel):
+    profileId: str
+    attemptId: str
+    active: bool
+
+
+class ChatItem(BaseModel):
+    id: str
+    createdAt: str
+    updatedAt: str
+    title: str
+    scenarioId: str
+    attemptId: str
+    completed: bool
+    completedAt: str | None
+    traceId: str | None
+    documentIds: list[str]
+
+
+class ScenarioItem(BaseModel):
+    id: str
+    name: str
+    problemStatement: str
+    departmentId: str
+    active: bool
+    personaId: str | None
+    createdAt: str
+    updatedAt: str
+    generated: bool
+    defaultScenario: bool
+    copyPasteAllowed: bool
+    objectives: list[str] | None = None
+
+
+class MessageItem(BaseModel):
+    id: str
+    createdAt: str
+    updatedAt: str
+    chatId: str
+    content: str
+    type: str  # "query" | "response"
+    completed: bool
+
+
+class HintItem(BaseModel):
+    simulationMessageId: str
+    hint: str
+    idx: int
+    createdAt: str
+
+
+class HintsByMessage(BaseModel):
+    messageId: str
+    hints: list[HintItem]
+
+
+class GradingState(BaseModel):
+    achievedStandards: dict[str, bool]
+    passedStandards: dict[str, bool]
+    gradeDescription: str | None = None
+    feedbackByStandardId: dict[str, str] | None = None
+
+
+class DynamicRubric(BaseModel):
+    chatId: str
+    score: float
+    passed: bool
+    timeTaken: float
+    skillScores: dict[str, float]
+    skillFeedbacks: dict[str, str]
+    totalPossiblePoints: float
+
+
+class PreviousChat(BaseModel):
+    chatId: str
+    attemptId: str
+    score: float | None
+    passed: bool | None
+    createdAt: str
+    title: str
+    timeTaken: float | None
+    totalPossiblePoints: float | None
+    percentage: float | None
+
+
+class ChatData(BaseModel):
+    chat: ChatItem
+    scenario: ScenarioItem | None
+    messages: list[MessageItem]
+    hints: list[HintsByMessage]
+    gradingState: GradingState | None = None
+    dynamicRubric: DynamicRubric | None = None
+    previousChats: list[PreviousChat]
+
+
+class ScenarioDocumentItem(BaseModel):
+    document_id: str
+    name: str
+    type: str
+    updatedAt: str
+    extension: str
+    scenario_ids: list[str]
+    can_edit: bool
+    can_delete: bool
+    active: bool
+    department_ids: list[str] | None
+    file_path: str
+    mime_type: str
+    parameter_item_ids: list[str]
+
+
+class StandardGroupMappingItem(BaseModel):
+    name: str
+    description: str
+    points: float
+    passPoints: float
+
+
+class RubricStructure(BaseModel):
+    standardGroups: dict[str, list[str]]
+    standardGroupsMapping: dict[str, StandardGroupMappingItem]
+    standardsMapping: dict[str, dict[str, Any]]  # Can be complex nested structure
+
+
+class AllSimulationScenarioItem(BaseModel):
+    id: str
+    name: str
+    problemStatement: str
+    departmentId: str
+    active: bool
+    personaId: str | None
+    createdAt: str
+    updatedAt: str
+    generated: bool
+    defaultScenario: bool
+    copyPasteAllowed: bool
+    objectives: list[str] | None = None
+
+
+class TimerItem(BaseModel):
+    elapsed: int
+    limit: int | None
+    exceeded: bool
+    formatted: str
+
+
+class AggregatedResults(BaseModel):
+    totalScore: float
+    totalPossiblePoints: float
+    percentage: float
+    passed: bool
+    chatsCompleted: int
+    totalChats: int
+
+
 class AttemptFullResponse(BaseModel):
     """Response containing complete attempt data with all nested structures."""
     
-    attempt: dict[str, Any]
-    simulation: dict[str, Any]
-    attemptProfiles: list[dict[str, Any]]
-    chats: list[dict[str, Any]]
-    scenarioDocuments: list[dict[str, Any]]
-    aggregatedResults: dict[str, Any] | None
-    timer: dict[str, Any]
+    attempt: AttemptItem
+    simulation: SimulationItem
+    attemptProfiles: list[AttemptProfileItem]
+    chats: list[ChatData]
+    scenarioDocuments: list[ScenarioDocumentItem]
+    aggregatedResults: AggregatedResults | None = None
+    timer: TimerItem
     currentChatIndex: int
     expectedChatCount: int
     isSingleChatAttempt: bool
@@ -34,8 +217,8 @@ class AttemptFullResponse(BaseModel):
     showResults: bool
     shouldShowControls: bool
     isActive: bool
-    rubricStructure: dict[str, Any] | None
-    allSimulationScenarios: list[dict[str, Any]]
+    rubricStructure: RubricStructure | None = None
+    allSimulationScenarios: list[AllSimulationScenarioItem]
 
 
 router = APIRouter()
@@ -78,15 +261,61 @@ async def get_attempt_full(
                 return json.loads(data)
             return data
 
-        attempt = parse_jsonb(result["attempt"])
-        simulation = parse_jsonb(result["simulation"])
-        attempt_profiles = parse_jsonb(result["attemptProfiles"])
-        chats = parse_jsonb(result["chats"])
-        scenario_documents = parse_jsonb(result["scenarioDocuments"])
-        aggregated_results = parse_jsonb(result["aggregatedResults"]) if result.get("aggregatedResults") else None
-        timer = parse_jsonb(result["timer"])
-        rubric_structure = parse_jsonb(result["rubricStructure"]) if result.get("rubricStructure") else None
-        all_simulation_scenarios = parse_jsonb(result["allSimulationScenarios"])
+        # Parse JSONB fields and construct strongly typed models
+        attempt_data = parse_jsonb(result["attempt"])
+        simulation_data = parse_jsonb(result["simulation"])
+        attempt_profiles_data = parse_jsonb(result["attemptProfiles"])
+        chats_data = parse_jsonb(result["chats"])
+        scenario_documents_data = parse_jsonb(result["scenarioDocuments"])
+        aggregated_results_data = parse_jsonb(result["aggregatedResults"]) if result.get("aggregatedResults") else None
+        timer_data = parse_jsonb(result["timer"])
+        rubric_structure_data = parse_jsonb(result["rubricStructure"]) if result.get("rubricStructure") else None
+        all_simulation_scenarios_data = parse_jsonb(result["allSimulationScenarios"])
+
+        # Construct strongly typed models
+        attempt = AttemptItem(**attempt_data)
+        simulation = SimulationItem(**simulation_data)
+        attempt_profiles = [AttemptProfileItem(**ap) for ap in attempt_profiles_data]
+        
+        # Construct chats with nested structures
+        chats = []
+        for chat_data in chats_data:
+            chat_item = ChatItem(**chat_data["chat"])
+            scenario = ScenarioItem(**chat_data["scenario"]) if chat_data.get("scenario") else None
+            messages = [MessageItem(**m) for m in chat_data.get("messages", [])]
+            hints = [HintsByMessage(**h) for h in chat_data.get("hints", [])]
+            grading_state = GradingState(**chat_data["gradingState"]) if chat_data.get("gradingState") else None
+            dynamic_rubric = DynamicRubric(**chat_data["dynamicRubric"]) if chat_data.get("dynamicRubric") else None
+            previous_chats = [PreviousChat(**pc) for pc in chat_data.get("previousChats", [])]
+            
+            chats.append(ChatData(
+                chat=chat_item,
+                scenario=scenario,
+                messages=messages,
+                hints=hints,
+                gradingState=grading_state,
+                dynamicRubric=dynamic_rubric,
+                previousChats=previous_chats,
+            ))
+        
+        scenario_documents = [ScenarioDocumentItem(**sd) for sd in scenario_documents_data]
+        aggregated_results = AggregatedResults(**aggregated_results_data) if aggregated_results_data else None
+        timer = TimerItem(**timer_data)
+        
+        rubric_structure = None
+        if rubric_structure_data:
+            # Handle nested mappings for rubric structure
+            standard_groups_mapping = {
+                k: StandardGroupMappingItem(**v)
+                for k, v in rubric_structure_data.get("standardGroupsMapping", {}).items()
+            }
+            rubric_structure = RubricStructure(
+                standardGroups=rubric_structure_data.get("standardGroups", {}),
+                standardGroupsMapping=standard_groups_mapping,
+                standardsMapping=rubric_structure_data.get("standardsMapping", {}),
+            )
+        
+        all_simulation_scenarios = [AllSimulationScenarioItem(**s) for s in all_simulation_scenarios_data]
 
         response_data = AttemptFullResponse(
             attempt=attempt,

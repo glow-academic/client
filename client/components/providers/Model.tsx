@@ -18,12 +18,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useCreateModel,
-  useModelDetail,
-  useProviderDetail,
-  useUpdateModel,
-} from "@/lib/api/v2/hooks/providers";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Power, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 interface FormErrors {
@@ -69,26 +66,76 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
+  const queryClient = useQueryClient();
 
-  // V2 API hooks
-  const { data: providerDetail } = useProviderDetail(
-    providerId,
-    effectiveProfile?.id || "",
-    true
-  );
+  // V3 API - fetch provider detail
+  const { data: providerDetail } = useQuery({
+    queryKey: keys.providers.with({
+      providerId: providerId,
+      profileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/providers/detail", {
+        body: {
+          providerId: providerId,
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!providerId && !!effectiveProfile?.id,
+  });
 
-  const { data: modelDetail, isLoading: isLoadingModelDetail } = useModelDetail(
-    modelId || "",
-    providerId,
-    effectiveProfile?.id || "",
-    !!modelId && isEditMode
-  );
+  // V3 API - fetch model detail when editing
+  const { data: modelDetail, isLoading: isLoadingModelDetail } = useQuery({
+    queryKey: keys.providers.with({
+      modelId: modelId || "",
+      providerId: providerId,
+      profileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/providers/models/detail", {
+        body: {
+          modelId: modelId || "",
+          providerId: providerId,
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!modelId && !!providerId && isEditMode && !!effectiveProfile?.id,
+  });
 
   const isLoading = isLoadingModelDetail;
 
-  // Mutation hooks
-  const { mutate: createModel } = useCreateModel();
-  const { mutate: updateModel } = useUpdateModel();
+  // V3 API mutations
+  const createModelMutation = useMutation({
+    mutationFn: (body: {
+      provider_id: string;
+      name: string;
+      description: string;
+      active: boolean;
+      custom_model: boolean;
+      image_model: boolean;
+      input_ppm: number;
+      output_ppm: number;
+    }) => api.post("/providers/models/create", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.providers.all });
+    },
+  });
+
+  const updateModelMutation = useMutation({
+    mutationFn: (body: {
+      modelId: string;
+      name: string;
+      description: string;
+      active: boolean;
+      custom_model: boolean;
+      image_model: boolean;
+      input_ppm: number;
+      output_ppm: number;
+    }) => api.post("/providers/models/update", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.providers.all });
+    },
+  });
 
   // Set breadcrumb context for provider
   useEffect(() => {
@@ -142,6 +189,9 @@ export default function Model({ modelId, providerId }: ModelProps) {
     }
   }, [isEditMode, modelDetail, initialFormData]);
 
+  // Store image_model from modelDetail for mutations
+  const imageModel = modelDetail?.image_model ?? false;
+
   const handleInputChange = (
     field: keyof FormData,
     value: string | boolean | undefined
@@ -192,51 +242,33 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
     try {
       if (isEditMode && modelId) {
-        updateModel(
-          {
-            modelId: modelId,
-            name: formData.name!,
-            description: formData.description!,
-            active: formData.active ?? true,
-            custom_model: formData.customModel ?? false,
-            input_ppm: inputPpmNum,
-            output_ppm: outputPpmNum,
-          },
-          {
-            onSuccess: () => {
-              resetFormAndState();
-              toast.success("Model updated successfully!");
-              router.push(`/system/providers`);
-            },
-            onError: (error) => {
-              toast.error(`Failed to update model: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+        await updateModelMutation.mutateAsync({
+          modelId: modelId,
+          name: formData.name!,
+          description: formData.description!,
+          active: formData.active ?? true,
+          custom_model: formData.customModel ?? false,
+          image_model: imageModel,
+          input_ppm: inputPpmNum,
+          output_ppm: outputPpmNum,
+        });
+        resetFormAndState();
+        toast.success("Model updated successfully!");
+        router.push(`/system/providers`);
       } else {
-        createModel(
-          {
-            provider_id: providerId,
-            name: formData.name!,
-            description: formData.description!,
-            active: formData.active ?? true,
-            custom_model: formData.customModel ?? false,
-            input_ppm: inputPpmNum,
-            output_ppm: outputPpmNum,
-          },
-          {
-            onSuccess: () => {
-              resetFormAndState();
-              toast.success("Model created successfully!");
-              router.push(`/system/providers`);
-            },
-            onError: (error) => {
-              toast.error(`Failed to create model: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+        await createModelMutation.mutateAsync({
+          provider_id: providerId,
+          name: formData.name!,
+          description: formData.description!,
+          active: formData.active ?? true,
+          custom_model: formData.customModel ?? false,
+          image_model: false, // Default to false for new models
+          input_ppm: inputPpmNum,
+          output_ppm: outputPpmNum,
+        });
+        resetFormAndState();
+        toast.success("Model created successfully!");
+        router.push(`/system/providers`);
       }
     } catch (error) {
       toast.error(
@@ -410,10 +442,17 @@ export default function Model({ modelId, providerId }: ModelProps) {
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isLoading}
+            disabled={
+              isSubmitting ||
+              isLoading ||
+              createModelMutation.isPending ||
+              updateModelMutation.isPending
+            }
             className="min-w-[120px]"
           >
-            {isSubmitting ? (
+            {isSubmitting ||
+            createModelMutation.isPending ||
+            updateModelMutation.isPending ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                 {isEditMode && modelId ? "Updating..." : "Creating..."}

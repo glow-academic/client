@@ -31,11 +31,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
-import {
-  useDeleteProfile,
-  useProfileSimple,
-  useUpdateProfileSimple,
-} from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
 
 type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
@@ -71,12 +69,41 @@ const useStaffEditBusinessLogic = (
   const [hasChanges, setHasChanges] = useState(false);
   const { effectiveProfile } = useEffectiveProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const queryClient = useQueryClient();
+  
   // Mutation hooks
-  const updateProfileMutation = useUpdateProfileSimple();
-  const deleteProfileMutation = useDeleteProfile();
+  const updateProfileMutation = useMutation({
+    mutationFn: (req: {
+      profileId: string;
+      firstName?: string;
+      lastName?: string;
+      alias?: string;
+      role?: string;
+      reqPerDay?: number | "";
+      unlimited?: boolean;
+      defaultProfile?: boolean;
+    }) => api.post("/profile/staff/update", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
+  
+  const deleteProfileMutation = useMutation({
+    mutationFn: (req: { profileId: string }) =>
+      api.post("/profile/staff/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
 
-  const { data: profileData, isLoading: isProfileLoading } =
-    useProfileSimple(profileId);
+  const { data: profileData, isLoading: isProfileLoading } = useQuery({
+    queryKey: keys.profile.detail({ profileId }),
+    queryFn: () =>
+      api.post("/profile/staff/detail", {
+        body: { profileId },
+      }),
+    enabled: !!profileId,
+  });
   const targetUser = profileData?.profile;
 
   const isCurrentUserAdmin =

@@ -69,7 +69,9 @@ import { Progress } from "@/components/ui/progress";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
@@ -84,7 +86,15 @@ export default function AttemptChat() {
     NonNullable<typeof simulationContext>["chats"][number]
   >;
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
+  const queryClient = useQueryClient();
+  const updateChatCreatedAtMutation = useMutation({
+    mutationFn: async (request: { chatId: string; createdAt: string }) =>
+      api.post("/attempts/chats/update-created-at", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.attempts.all });
+    },
+  });
+  const updateChatCreatedAt = updateChatCreatedAtMutation.mutateAsync;
   const isMobile = useIsMobile();
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
@@ -1322,7 +1332,6 @@ export default function AttemptChat() {
                                 (chatData) => {
                                   if (
                                     chatData.chat.completed &&
-                                    chatData.grade !== null &&
                                     chatData.scenario?.id
                                   ) {
                                     scenariosWithGrades.add(

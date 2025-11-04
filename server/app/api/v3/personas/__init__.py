@@ -2,6 +2,7 @@
 
 from app.api.v3.personas.create import router as create_router
 from app.api.v3.personas.delete import router as delete_router
+from app.api.v3.personas.delete_prompt import router as delete_prompt_router
 from app.api.v3.personas.detail import router as detail_router
 from app.api.v3.personas.detail_default import router as detail_default_router
 from app.api.v3.personas.duplicate import router as duplicate_router
@@ -19,4 +20,5 @@ router.include_router(create_router)
 router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
+router.include_router(delete_prompt_router)
 

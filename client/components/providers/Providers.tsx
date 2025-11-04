@@ -66,13 +66,8 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api/client";
-import {
-  useDeleteModel,
-  useDeleteProvider,
-  useDuplicateModel,
-  useDuplicateProvider,
-} from "@/lib/api/v2/hooks/providers";
 import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 type ModelItem = {
   model_id: string;
@@ -93,7 +88,6 @@ type ProviderWithModels = {
   can_delete: boolean;
   models: ModelItem[];
 };
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function Providers() {
   const router = useRouter();
@@ -128,17 +122,38 @@ export default function Providers() {
     enabled: !!effectiveProfile?.id,
   });
 
-  // Mutation hooks - using v2 hooks temporarily until v3 endpoints are available
-  // Note: Provider/model mutation endpoints not yet available in v3 API
-  const deleteModelMutation = useDeleteModel();
-  const deleteProviderMutation = useDeleteProvider();
-  const duplicateProviderMutation = useDuplicateProvider();
-  const duplicateModelMutation = useDuplicateModel();
+  // V3 API mutations
+  const deleteModelMutation = useMutation({
+    mutationFn: (req: { modelId: string }) =>
+      api.post("/providers/models/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.providers.all });
+    },
+  });
 
-  // Invalidate queries after mutations
-  const invalidateProviders = () => {
-    queryClient.invalidateQueries({ queryKey: keys.providers.all });
-  };
+  const deleteProviderMutation = useMutation({
+    mutationFn: (req: { providerId: string }) =>
+      api.post("/providers/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.providers.all });
+    },
+  });
+
+  const duplicateProviderMutation = useMutation({
+    mutationFn: (req: { providerId: string }) =>
+      api.post("/providers/duplicate", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.providers.all });
+    },
+  });
+
+  const duplicateModelMutation = useMutation({
+    mutationFn: (req: { modelId: string }) =>
+      api.post("/providers/models/duplicate", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.providers.all });
+    },
+  });
   const providers = useMemo(
     () => providersData?.providers || [],
     [providersData]
@@ -370,7 +385,6 @@ export default function Providers() {
     setIsDeleting(true);
     try {
       await deleteModelMutation.mutateAsync({ modelId: deleteItem.id });
-      invalidateProviders();
       toast.success("Model deleted successfully");
     } catch {
       toast.error("Failed to delete model");
@@ -407,7 +421,6 @@ export default function Providers() {
       await deleteProviderMutation.mutateAsync({
         providerId: deleteProviderItem.id,
       });
-      invalidateProviders();
       toast.success("Provider deleted successfully");
     } catch {
       toast.error("Failed to delete provider");
@@ -423,7 +436,6 @@ export default function Providers() {
       await duplicateProviderMutation.mutateAsync({
         providerId: provider.provider_id,
       });
-      invalidateProviders();
       toast.success(`Provider '${provider.name}' duplicated successfully`);
     } catch {
       toast.error("Failed to duplicate provider");
@@ -435,7 +447,6 @@ export default function Providers() {
       await duplicateModelMutation.mutateAsync({
         modelId: model.model_id,
       });
-      invalidateProviders();
       toast.success(`Model '${model.name}' duplicated successfully`);
     } catch {
       toast.error("Failed to duplicate model");

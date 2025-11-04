@@ -1393,7 +1393,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeletePersonaPromptRequest"
+                "$ref": "#/components/schemas/app__schemas__personas__DeletePersonaPromptRequest"
               }
             }
           },
@@ -1405,7 +1405,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeletePersonaPromptResponse"
+                  "$ref": "#/components/schemas/app__schemas__personas__DeletePersonaPromptResponse"
                 }
               }
             }
@@ -2249,7 +2249,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScenariosListResponse"
+                  "$ref": "#/components/schemas/app__schemas__scenarios__ScenariosListResponse"
                 }
               }
             }
@@ -6957,7 +6957,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ScenariosListResponse"
+                  "$ref": "#/components/schemas/app__api__v3__scenarios__list__ScenariosListResponse"
                 }
               }
             }
@@ -7992,6 +7992,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/app__api__v3__personas__delete__DeletePersonaResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
+      }
+    },
+    "/api/v3/personas/delete-prompt": {
+      "post": {
+        "tags": [
+          "v3",
+          "personas"
+        ],
+        "summary": "Delete Persona Prompt",
+        "description": "Delete a persona prompt.",
+        "operationId": "delete_persona_prompt_api_v3_personas_delete_prompt_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v3__personas__delete_prompt__DeletePersonaPromptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__personas__delete_prompt__DeletePersonaPromptResponse"
                 }
               }
             }
@@ -9214,6 +9261,147 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/app__api__v3__documents__update__UpdateDocumentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
+    "/api/v3/documents/upload/init": {
+      "post": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Upload Init",
+        "description": "Initialize a document upload.",
+        "operationId": "upload_init_api_v3_documents_upload_init_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadInitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadInitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
+    "/api/v3/documents/upload/chunk": {
+      "post": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Upload Chunk",
+        "description": "Upload a chunk of data.",
+        "operationId": "upload_chunk_api_v3_documents_upload_chunk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadChunkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadChunkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
+    "/api/v3/documents/upload/finalize": {
+      "post": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Upload Finalize",
+        "description": "Finalize a document upload and process the file.",
+        "operationId": "upload_finalize_api_v3_documents_upload_finalize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadFinalizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadFinalizeResponse"
                 }
               }
             }
@@ -10915,6 +11103,149 @@
         ]
       }
     },
+    "/api/v3/parameters/duplicate": {
+      "post": {
+        "tags": [
+          "v3",
+          "parameters"
+        ],
+        "summary": "Duplicate Parameter",
+        "description": "Duplicate a parameter with all items and their department associations.",
+        "operationId": "duplicate_parameter_api_v3_parameters_duplicate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateParameterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateParameterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
+      }
+    },
+    "/api/v3/parameters/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "parameters"
+        ],
+        "summary": "Delete Parameter",
+        "description": "Delete a parameter if items not in use.",
+        "operationId": "delete_parameter_api_v3_parameters_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteParameterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteParameterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
+      }
+    },
+    "/api/v3/parameters/items/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "parameters",
+          "parameters"
+        ],
+        "summary": "Create Parameter Item",
+        "description": "Create a single parameter item (for inline creation from pickers).",
+        "operationId": "create_parameter_item_api_v3_parameters_items_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateParameterItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateParameterItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters",
+          "parameters"
+        ]
+      }
+    },
     "/api/v3/feedback/list": {
       "post": {
         "tags": [
@@ -11291,6 +11622,53 @@
         ]
       }
     },
+    "/api/v3/attempts/chats/update-completed-at": {
+      "post": {
+        "tags": [
+          "v3",
+          "attempts"
+        ],
+        "summary": "Update Chat Completed At",
+        "description": "Update simulation chat completedAt timestamp.",
+        "operationId": "update_chat_completed_at_api_v3_attempts_chats_update_completed_at_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChatCompletedAtRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__attempts__update_chat_completed_at__UpdateChatTimestampResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
+      }
+    },
     "/api/v3/attempts/full": {
       "post": {
         "tags": [
@@ -11479,37 +11857,25 @@
         ]
       }
     },
-    "/api/v3/assistant/chats/{chat_id}/full": {
-      "get": {
+    "/api/v3/assistant/chats/full": {
+      "post": {
         "tags": [
           "v3",
           "assistant"
         ],
         "summary": "Get Assistant Chat Full",
         "description": "Get complete assistant chat data with all related entities.",
-        "operationId": "get_assistant_chat_full_api_v3_assistant_chats__chat_id__full_get",
-        "parameters": [
-          {
-            "name": "chat_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Chat Id"
+        "operationId": "get_assistant_chat_full_api_v3_assistant_chats_full_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantChatFullRequest"
+              }
             }
           },
-          {
-            "name": "profile_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Profile Id"
-            }
-          }
-        ],
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -11538,27 +11904,25 @@
         ]
       }
     },
-    "/api/v3/assistant/chats/list/{profile_id}": {
-      "get": {
+    "/api/v3/assistant/chats/list": {
+      "post": {
         "tags": [
           "v3",
           "assistant"
         ],
         "summary": "Get Assistant Chats List",
         "description": "Get all chats for a profile (for new chat state without chat_id).",
-        "operationId": "get_assistant_chats_list_api_v3_assistant_chats_list__profile_id__get",
-        "parameters": [
-          {
-            "name": "profile_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Profile Id"
+        "operationId": "get_assistant_chats_list_api_v3_assistant_chats_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantChatListRequest"
+              }
             }
-          }
-        ],
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -11692,6 +12056,128 @@
         "title": "ActorData",
         "description": "Actor JSONB data."
       },
+      "AggregatedResults": {
+        "properties": {
+          "totalScore": {
+            "type": "number",
+            "title": "Totalscore"
+          },
+          "totalPossiblePoints": {
+            "type": "number",
+            "title": "Totalpossiblepoints"
+          },
+          "percentage": {
+            "type": "number",
+            "title": "Percentage"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          },
+          "chatsCompleted": {
+            "type": "integer",
+            "title": "Chatscompleted"
+          },
+          "totalChats": {
+            "type": "integer",
+            "title": "Totalchats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "totalScore",
+          "totalPossiblePoints",
+          "percentage",
+          "passed",
+          "chatsCompleted",
+          "totalChats"
+        ],
+        "title": "AggregatedResults"
+      },
+      "AllSimulationScenarioItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "problemStatement": {
+            "type": "string",
+            "title": "Problemstatement"
+          },
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "defaultScenario": {
+            "type": "boolean",
+            "title": "Defaultscenario"
+          },
+          "copyPasteAllowed": {
+            "type": "boolean",
+            "title": "Copypasteallowed"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "problemStatement",
+          "departmentId",
+          "active",
+          "personaId",
+          "createdAt",
+          "updatedAt",
+          "generated",
+          "defaultScenario",
+          "copyPasteAllowed"
+        ],
+        "title": "AllSimulationScenarioItem"
+      },
       "AnalyticsFilters": {
         "properties": {
           "startDate": {
@@ -11778,6 +12264,25 @@
         "title": "AnalyticsFilters",
         "description": "Analytics filter request schema."
       },
+      "AssistantChatFullRequest": {
+        "properties": {
+          "chatId": {
+            "type": "string",
+            "title": "Chatid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chatId",
+          "profileId"
+        ],
+        "title": "AssistantChatFullRequest",
+        "description": "Request schema for assistant chat full data."
+      },
       "AssistantChatFullResponse": {
         "properties": {
           "chat": {
@@ -11827,6 +12332,20 @@
         "title": "AssistantChatFullResponse",
         "description": "Response schema for assistant chat full data."
       },
+      "AssistantChatListRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "AssistantChatListRequest",
+        "description": "Request schema for assistant chats list."
+      },
       "AssistantChatListResponse": {
         "properties": {
           "allChats": {
@@ -11861,35 +12380,28 @@
       "AttemptFullResponse": {
         "properties": {
           "attempt": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Attempt"
+            "$ref": "#/components/schemas/AttemptItem"
           },
           "simulation": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Simulation"
+            "$ref": "#/components/schemas/app__api__v3__attempts__full__SimulationItem"
           },
           "attemptProfiles": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/AttemptProfileItem"
             },
             "type": "array",
             "title": "Attemptprofiles"
           },
           "chats": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/ChatData"
             },
             "type": "array",
             "title": "Chats"
           },
           "scenarioDocuments": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/ScenarioDocumentItem"
             },
             "type": "array",
             "title": "Scenariodocuments"
@@ -11897,19 +12409,15 @@
           "aggregatedResults": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/AggregatedResults"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Aggregatedresults"
+            ]
           },
           "timer": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Timer"
+            "$ref": "#/components/schemas/TimerItem"
           },
           "currentChatIndex": {
             "type": "integer",
@@ -11942,19 +12450,16 @@
           "rubricStructure": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/RubricStructure"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Rubricstructure"
+            ]
           },
           "allSimulationScenarios": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/AllSimulationScenarioItem"
             },
             "type": "array",
             "title": "Allsimulationscenarios"
@@ -11967,7 +12472,6 @@
           "attemptProfiles",
           "chats",
           "scenarioDocuments",
-          "aggregatedResults",
           "timer",
           "currentChatIndex",
           "expectedChatCount",
@@ -11976,7 +12480,6 @@
           "showResults",
           "shouldShowControls",
           "isActive",
-          "rubricStructure",
           "allSimulationScenarios"
         ],
         "title": "AttemptFullResponse",
@@ -12077,6 +12580,62 @@
         ],
         "title": "AttemptImprovementResponse",
         "description": "Attempt improvement response."
+      },
+      "AttemptItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "simulationId": {
+            "type": "string",
+            "title": "Simulationid"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "simulationId",
+          "infiniteMode",
+          "archived"
+        ],
+        "title": "AttemptItem"
+      },
+      "AttemptProfileItem": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId",
+          "attemptId",
+          "active"
+        ],
+        "title": "AttemptProfileItem"
       },
       "AuthorizeEmulationRequest": {
         "properties": {
@@ -12453,6 +13012,148 @@
         ],
         "title": "CSVRowError",
         "description": "Error for a specific CSV row."
+      },
+      "ChatData": {
+        "properties": {
+          "chat": {
+            "$ref": "#/components/schemas/ChatItem"
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__api__v3__attempts__full__ScenarioItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/MessageItem"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "hints": {
+            "items": {
+              "$ref": "#/components/schemas/HintsByMessage"
+            },
+            "type": "array",
+            "title": "Hints"
+          },
+          "gradingState": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradingState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dynamicRubric": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DynamicRubric"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previousChats": {
+            "items": {
+              "$ref": "#/components/schemas/PreviousChat"
+            },
+            "type": "array",
+            "title": "Previouschats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat",
+          "scenario",
+          "messages",
+          "hints",
+          "previousChats"
+        ],
+        "title": "ChatData"
+      },
+      "ChatItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "scenarioId": {
+            "type": "string",
+            "title": "Scenarioid"
+          },
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "completedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completedat"
+          },
+          "traceId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traceid"
+          },
+          "documentIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Documentids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "title",
+          "scenarioId",
+          "attemptId",
+          "completed",
+          "completedAt",
+          "traceId",
+          "documentIds"
+        ],
+        "title": "ChatItem"
       },
       "CohortDailyFact": {
         "properties": {
@@ -13828,55 +14529,6 @@
         "title": "DeleteParameterResponse",
         "description": "Response from delete parameter."
       },
-      "DeletePersonaPromptRequest": {
-        "properties": {
-          "personaId": {
-            "type": "string",
-            "title": "Personaid"
-          },
-          "promptId": {
-            "type": "string",
-            "title": "Promptid"
-          },
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "personaId",
-          "promptId"
-        ],
-        "title": "DeletePersonaPromptRequest",
-        "description": "Request to delete a persona prompt."
-      },
-      "DeletePersonaPromptResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeletePersonaPromptResponse",
-        "description": "Response from delete prompt operation."
-      },
       "DeleteProviderRequest": {
         "properties": {
           "providerId": {
@@ -14731,6 +15383,55 @@
         "title": "DuplicateSimulationResponse",
         "description": "Response from duplicate simulation."
       },
+      "DynamicRubric": {
+        "properties": {
+          "chatId": {
+            "type": "string",
+            "title": "Chatid"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          },
+          "timeTaken": {
+            "type": "number",
+            "title": "Timetaken"
+          },
+          "skillScores": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Skillscores"
+          },
+          "skillFeedbacks": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Skillfeedbacks"
+          },
+          "totalPossiblePoints": {
+            "type": "number",
+            "title": "Totalpossiblepoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chatId",
+          "score",
+          "passed",
+          "timeTaken",
+          "skillScores",
+          "skillFeedbacks",
+          "totalPossiblePoints"
+        ],
+        "title": "DynamicRubric"
+      },
       "ErrorData-Input": {
         "properties": {
           "code": {
@@ -15197,6 +15898,55 @@
         "title": "GenerateScenarioAIResponse",
         "description": "Response from AI scenario generation."
       },
+      "GradingState": {
+        "properties": {
+          "achievedStandards": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Achievedstandards"
+          },
+          "passedStandards": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Passedstandards"
+          },
+          "gradeDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gradedescription"
+          },
+          "feedbackByStandardId": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbackbystandardid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "achievedStandards",
+          "passedStandards"
+        ],
+        "title": "GradingState"
+      },
       "GrowthDataPoint": {
         "properties": {
           "date": {
@@ -15540,6 +16290,55 @@
         ],
         "title": "HealthResponse",
         "description": "Overall system health response."
+      },
+      "HintItem": {
+        "properties": {
+          "simulationMessageId": {
+            "type": "string",
+            "title": "Simulationmessageid"
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint"
+          },
+          "idx": {
+            "type": "integer",
+            "title": "Idx"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulationMessageId",
+          "hint",
+          "idx",
+          "createdAt"
+        ],
+        "title": "HintItem"
+      },
+      "HintsByMessage": {
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "title": "Messageid"
+          },
+          "hints": {
+            "items": {
+              "$ref": "#/components/schemas/HintItem"
+            },
+            "type": "array",
+            "title": "Hints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "messageId",
+          "hints"
+        ],
+        "title": "HintsByMessage"
       },
       "HomeFilters": {
         "properties": {
@@ -15958,6 +16757,49 @@
         ],
         "title": "MarkTourStepResponse",
         "description": "Response from marking a tour step complete."
+      },
+      "MessageItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "chatId": {
+            "type": "string",
+            "title": "Chatid"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "chatId",
+          "content",
+          "type",
+          "completed"
+        ],
+        "title": "MessageItem"
       },
       "Method": {
         "type": "string",
@@ -16898,6 +17740,94 @@
         "title": "PracticeSimulationItem",
         "description": "Practice simulation item."
       },
+      "PreviousChat": {
+        "properties": {
+          "chatId": {
+            "type": "string",
+            "title": "Chatid"
+          },
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "timeTaken": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timetaken"
+          },
+          "totalPossiblePoints": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totalpossiblepoints"
+          },
+          "percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chatId",
+          "attemptId",
+          "score",
+          "passed",
+          "createdAt",
+          "title",
+          "timeTaken",
+          "totalPossiblePoints",
+          "percentage"
+        ],
+        "title": "PreviousChat"
+      },
       "ProcessCSVRequest": {
         "properties": {
           "csv_content": {
@@ -17520,6 +18450,42 @@
         "title": "RubricMatrixPackage",
         "description": "Per-rubric matrix package."
       },
+      "RubricStructure": {
+        "properties": {
+          "standardGroups": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Standardgroups"
+          },
+          "standardGroupsMapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__attempts__full__StandardGroupMappingItem"
+            },
+            "type": "object",
+            "title": "Standardgroupsmapping"
+          },
+          "standardsMapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Standardsmapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standardGroups",
+          "standardGroupsMapping",
+          "standardsMapping"
+        ],
+        "title": "RubricStructure"
+      },
       "RubricsFilters": {
         "properties": {
           "profileId": {
@@ -17649,6 +18615,95 @@
         "title": "ScenarioDetailRequest",
         "description": "Request to get scenario details."
       },
+      "ScenarioDocumentItem": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "extension": {
+            "type": "string",
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "name",
+          "type",
+          "updatedAt",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
+          "active",
+          "department_ids",
+          "file_path",
+          "mime_type",
+          "parameter_item_ids"
+        ],
+        "title": "ScenarioDocumentItem"
+      },
       "ScenarioFact": {
         "properties": {
           "simulationId": {
@@ -17761,127 +18816,6 @@
         ],
         "title": "ScenarioInSimulation",
         "description": "Scenario with position in simulation."
-      },
-      "ScenarioItem": {
-        "properties": {
-          "scenario_id": {
-            "type": "string",
-            "title": "Scenario Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "problem_statement": {
-            "type": "string",
-            "title": "Problem Statement"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "generated": {
-            "type": "boolean",
-            "title": "Generated"
-          },
-          "parent_scenario_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Scenario Id"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "objective_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objective Ids"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids"
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids"
-          },
-          "simulation_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Simulation Ids"
-          },
-          "num_simulations": {
-            "type": "integer",
-            "title": "Num Simulations"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenario_id",
-          "title",
-          "problem_statement",
-          "active",
-          "generated",
-          "parent_scenario_id",
-          "department_ids",
-          "objective_ids",
-          "persona_ids",
-          "parameter_item_ids",
-          "simulation_ids",
-          "num_simulations",
-          "can_edit",
-          "can_delete",
-          "can_duplicate",
-          "cohort_ids"
-        ],
-        "title": "ScenarioItem",
-        "description": "Individual scenario item in the response."
       },
       "ScenarioMappingItem": {
         "properties": {
@@ -18029,71 +18963,6 @@
         ],
         "title": "ScenariosFilters",
         "description": "Filters for scenarios list request."
-      },
-      "ScenariosListResponse": {
-        "properties": {
-          "scenarios": {
-            "items": {
-              "$ref": "#/components/schemas/ScenarioItem"
-            },
-            "type": "array",
-            "title": "Scenarios"
-          },
-          "objective_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ObjectiveMappingItem"
-            },
-            "type": "object",
-            "title": "Objective Mapping"
-          },
-          "parameter_item_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Item Mapping"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          },
-          "simulation_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/SimulationMappingItem"
-            },
-            "type": "object",
-            "title": "Simulation Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenarios",
-          "objective_mapping",
-          "parameter_item_mapping",
-          "cohort_mapping",
-          "persona_mapping",
-          "simulation_mapping",
-          "department_mapping"
-        ],
-        "title": "ScenariosListResponse",
-        "description": "Response for scenarios list endpoint."
       },
       "SearchStaffRequest": {
         "properties": {
@@ -18394,100 +19263,6 @@
         ],
         "title": "SimulationInRequest",
         "description": "Simulation with active state for create/update requests."
-      },
-      "SimulationItem": {
-        "properties": {
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "practice_simulation": {
-            "type": "boolean",
-            "title": "Practice Simulation"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id"
-          },
-          "num_cohorts": {
-            "type": "integer",
-            "title": "Num Cohorts"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulation_id",
-          "name",
-          "description",
-          "department_ids",
-          "time_limit",
-          "active",
-          "practice_simulation",
-          "can_edit",
-          "can_delete",
-          "can_duplicate",
-          "scenario_ids",
-          "rubric_id",
-          "num_cohorts"
-        ],
-        "title": "SimulationItem",
-        "description": "Simulation item in list response."
       },
       "SimulationMappingItem": {
         "properties": {
@@ -19299,6 +20074,41 @@
         "title": "Thresholds",
         "description": "Performance thresholds for analytics metrics."
       },
+      "TimerItem": {
+        "properties": {
+          "elapsed": {
+            "type": "integer",
+            "title": "Elapsed"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "exceeded": {
+            "type": "boolean",
+            "title": "Exceeded"
+          },
+          "formatted": {
+            "type": "string",
+            "title": "Formatted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "elapsed",
+          "limit",
+          "exceeded",
+          "formatted"
+        ],
+        "title": "TimerItem"
+      },
       "TrendData": {
         "properties": {
           "date": {
@@ -19322,6 +20132,24 @@
         ],
         "title": "TrendData",
         "description": "Trend data point."
+      },
+      "UpdateChatCompletedAtRequest": {
+        "properties": {
+          "chatId": {
+            "type": "string",
+            "title": "Chatid"
+          },
+          "completedAt": {
+            "type": "string",
+            "title": "Completedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chatId",
+          "completedAt"
+        ],
+        "title": "UpdateChatCompletedAtRequest"
       },
       "UpdateDepartmentRequest": {
         "properties": {
@@ -19770,6 +20598,299 @@
         ],
         "title": "UpdateStaffResponse",
         "description": "Response from update staff."
+      },
+      "UploadChunkRequest": {
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "title": "Uploadid"
+          },
+          "chunk": {
+            "type": "string",
+            "title": "Chunk"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uploadId",
+          "chunk",
+          "offset"
+        ],
+        "title": "UploadChunkRequest",
+        "description": "Request to upload a chunk."
+      },
+      "UploadChunkResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "offset",
+          "message"
+        ],
+        "title": "UploadChunkResponse",
+        "description": "Response from upload chunk."
+      },
+      "UploadFinalizeRequest": {
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "title": "Uploadid"
+          },
+          "fileId": {
+            "type": "string",
+            "title": "Fileid"
+          },
+          "zip": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zip",
+            "default": false
+          },
+          "autoClassify": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autoclassify",
+            "default": false
+          },
+          "csv": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csv",
+            "default": false
+          },
+          "test": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test",
+            "default": false
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "parameterItemIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameteritemids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uploadId",
+          "fileId"
+        ],
+        "title": "UploadFinalizeRequest",
+        "description": "Request to finalize upload."
+      },
+      "UploadFinalizeResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentid"
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents"
+          },
+          "usersCreated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userscreated"
+          },
+          "usersSkipped": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usersskipped"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "status"
+        ],
+        "title": "UploadFinalizeResponse",
+        "description": "Response from finalize upload."
+      },
+      "UploadInitRequest": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "contentType": {
+            "type": "string",
+            "title": "Contenttype"
+          },
+          "uploadLength": {
+            "type": "integer",
+            "title": "Uploadlength"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "contentType",
+          "uploadLength"
+        ],
+        "title": "UploadInitRequest",
+        "description": "Request to initialize document upload."
+      },
+      "UploadInitResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "uploadId": {
+            "type": "string",
+            "title": "Uploadid"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "uploadId",
+          "location",
+          "message"
+        ],
+        "title": "UploadInitResponse",
+        "description": "Response from upload init."
       },
       "ValidationError": {
         "properties": {
@@ -20738,6 +21859,243 @@
           "count"
         ],
         "title": "BulkArchiveAttemptsResponse"
+      },
+      "app__api__v3__attempts__full__ScenarioItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "problemStatement": {
+            "type": "string",
+            "title": "Problemstatement"
+          },
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "defaultScenario": {
+            "type": "boolean",
+            "title": "Defaultscenario"
+          },
+          "copyPasteAllowed": {
+            "type": "boolean",
+            "title": "Copypasteallowed"
+          },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "problemStatement",
+          "departmentId",
+          "active",
+          "personaId",
+          "createdAt",
+          "updatedAt",
+          "generated",
+          "defaultScenario",
+          "copyPasteAllowed"
+        ],
+        "title": "ScenarioItem"
+      },
+      "app__api__v3__attempts__full__SimulationItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "defaultSimulation": {
+            "type": "boolean",
+            "title": "Defaultsimulation"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "hintsEnabled": {
+            "type": "boolean",
+            "title": "Hintsenabled"
+          },
+          "objectivesEnabled": {
+            "type": "boolean",
+            "title": "Objectivesenabled"
+          },
+          "inputGuardrailActive": {
+            "type": "boolean",
+            "title": "Inputguardrailactive"
+          },
+          "outputGuardrailActive": {
+            "type": "boolean",
+            "title": "Outputguardrailactive"
+          },
+          "imageInputActive": {
+            "type": "boolean",
+            "title": "Imageinputactive"
+          },
+          "copyPasteAllowed": {
+            "type": "boolean",
+            "title": "Copypasteallowed"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "rubricId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubricid"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "departmentId",
+          "active",
+          "defaultSimulation",
+          "practiceSimulation",
+          "hintsEnabled",
+          "objectivesEnabled",
+          "inputGuardrailActive",
+          "outputGuardrailActive",
+          "imageInputActive",
+          "copyPasteAllowed",
+          "timeLimit",
+          "rubricId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "SimulationItem"
+      },
+      "app__api__v3__attempts__full__StandardGroupMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "points": {
+            "type": "number",
+            "title": "Points"
+          },
+          "passPoints": {
+            "type": "number",
+            "title": "Passpoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "points",
+          "passPoints"
+        ],
+        "title": "StandardGroupMappingItem"
+      },
+      "app__api__v3__attempts__update_chat_completed_at__UpdateChatTimestampResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "UpdateChatTimestampResponse"
       },
       "app__api__v3__attempts__update_chat_created_at__UpdateChatCreatedAtRequest": {
         "properties": {
@@ -23993,6 +25351,55 @@
         ],
         "title": "DeletePersonaResponse",
         "description": "Response from delete persona."
+      },
+      "app__api__v3__personas__delete_prompt__DeletePersonaPromptRequest": {
+        "properties": {
+          "personaId": {
+            "type": "string",
+            "title": "Personaid"
+          },
+          "promptId": {
+            "type": "string",
+            "title": "Promptid"
+          },
+          "departmentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "personaId",
+          "promptId"
+        ],
+        "title": "DeletePersonaPromptRequest",
+        "description": "Request to delete persona prompt."
+      },
+      "app__api__v3__personas__delete_prompt__DeletePersonaPromptResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeletePersonaPromptResponse",
+        "description": "Response from delete persona prompt."
       },
       "app__api__v3__personas__detail__DebugInfoItem": {
         "properties": {
@@ -27743,6 +29150,192 @@
         "title": "ScenarioDetailResponse",
         "description": "Response for scenario detail."
       },
+      "app__api__v3__scenarios__list__ScenarioItem": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "problem_statement": {
+            "type": "string",
+            "title": "Problem Statement"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "parent_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Scenario Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objective Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
+          },
+          "simulation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulation Ids"
+          },
+          "num_simulations": {
+            "type": "integer",
+            "title": "Num Simulations"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "title",
+          "problem_statement",
+          "active",
+          "generated",
+          "parent_scenario_id",
+          "department_ids",
+          "objective_ids",
+          "persona_ids",
+          "parameter_item_ids",
+          "simulation_ids",
+          "num_simulations",
+          "can_edit",
+          "can_delete",
+          "can_duplicate",
+          "cohort_ids"
+        ],
+        "title": "ScenarioItem",
+        "description": "Individual scenario item in the response."
+      },
+      "app__api__v3__scenarios__list__ScenariosListResponse": {
+        "properties": {
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__scenarios__list__ScenarioItem"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "objective_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ObjectiveMappingItem"
+            },
+            "type": "object",
+            "title": "Objective Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterItemMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PersonaMappingItem"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          },
+          "simulation_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SimulationMappingItem"
+            },
+            "type": "object",
+            "title": "Simulation Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenarios",
+          "objective_mapping",
+          "parameter_item_mapping",
+          "cohort_mapping",
+          "persona_mapping",
+          "simulation_mapping",
+          "department_mapping"
+        ],
+        "title": "ScenariosListResponse",
+        "description": "Response for scenarios list endpoint."
+      },
       "app__api__v3__simulations__create__CreateSimulationRequest": {
         "properties": {
           "title": {
@@ -28382,11 +29975,105 @@
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."
       },
+      "app__api__v3__simulations__list__SimulationItem": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "practice_simulation": {
+            "type": "boolean",
+            "title": "Practice Simulation"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "num_cohorts": {
+            "type": "integer",
+            "title": "Num Cohorts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "department_ids",
+          "time_limit",
+          "active",
+          "practice_simulation",
+          "can_edit",
+          "can_delete",
+          "can_duplicate",
+          "scenario_ids",
+          "rubric_id",
+          "num_cohorts"
+        ],
+        "title": "SimulationItem",
+        "description": "Simulation item in list response."
+      },
       "app__api__v3__simulations__list__SimulationsListResponse": {
         "properties": {
           "simulations": {
             "items": {
-              "$ref": "#/components/schemas/SimulationItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__list__SimulationItem"
             },
             "type": "array",
             "title": "Simulations"
@@ -32116,6 +33803,55 @@
         "title": "DebugInfoItem",
         "description": "Debug information item."
       },
+      "app__schemas__personas__DeletePersonaPromptRequest": {
+        "properties": {
+          "personaId": {
+            "type": "string",
+            "title": "Personaid"
+          },
+          "promptId": {
+            "type": "string",
+            "title": "Promptid"
+          },
+          "departmentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "personaId",
+          "promptId"
+        ],
+        "title": "DeletePersonaPromptRequest",
+        "description": "Request to delete a persona prompt."
+      },
+      "app__schemas__personas__DeletePersonaPromptResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeletePersonaPromptResponse",
+        "description": "Response from delete prompt operation."
+      },
       "app__schemas__personas__DeletePersonaRequest": {
         "properties": {
           "personaId": {
@@ -34617,6 +36353,192 @@
         "title": "ScenarioDetailResponse",
         "description": "Detailed scenario response with all fields and metadata."
       },
+      "app__schemas__scenarios__ScenarioItem": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "problem_statement": {
+            "type": "string",
+            "title": "Problem Statement"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "parent_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Scenario Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objective Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
+          },
+          "simulation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulation Ids"
+          },
+          "num_simulations": {
+            "type": "integer",
+            "title": "Num Simulations"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "title",
+          "problem_statement",
+          "active",
+          "generated",
+          "parent_scenario_id",
+          "department_ids",
+          "objective_ids",
+          "persona_ids",
+          "parameter_item_ids",
+          "simulation_ids",
+          "num_simulations",
+          "can_edit",
+          "can_delete",
+          "can_duplicate",
+          "cohort_ids"
+        ],
+        "title": "ScenarioItem",
+        "description": "Individual scenario item in the response."
+      },
+      "app__schemas__scenarios__ScenariosListResponse": {
+        "properties": {
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/app__schemas__scenarios__ScenarioItem"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "objective_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ObjectiveMappingItem"
+            },
+            "type": "object",
+            "title": "Objective Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterItemMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PersonaMappingItem"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          },
+          "simulation_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SimulationMappingItem"
+            },
+            "type": "object",
+            "title": "Simulation Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenarios",
+          "objective_mapping",
+          "parameter_item_mapping",
+          "cohort_mapping",
+          "persona_mapping",
+          "simulation_mapping",
+          "department_mapping"
+        ],
+        "title": "ScenariosListResponse",
+        "description": "Response for scenarios list endpoint."
+      },
       "app__schemas__simulations__CreateSimulationRequest": {
         "properties": {
           "title": {
@@ -35002,11 +36924,105 @@
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."
       },
+      "app__schemas__simulations__SimulationItem": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "practice_simulation": {
+            "type": "boolean",
+            "title": "Practice Simulation"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "num_cohorts": {
+            "type": "integer",
+            "title": "Num Cohorts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "department_ids",
+          "time_limit",
+          "active",
+          "practice_simulation",
+          "can_edit",
+          "can_delete",
+          "can_duplicate",
+          "scenario_ids",
+          "rubric_id",
+          "num_cohorts"
+        ],
+        "title": "SimulationItem",
+        "description": "Simulation item in list response."
+      },
       "app__schemas__simulations__SimulationsListResponse": {
         "properties": {
           "simulations": {
             "items": {
-              "$ref": "#/components/schemas/SimulationItem"
+              "$ref": "#/components/schemas/app__schemas__simulations__SimulationItem"
             },
             "type": "array",
             "title": "Simulations"

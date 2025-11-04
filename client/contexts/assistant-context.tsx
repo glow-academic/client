@@ -4,24 +4,64 @@
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
-import {
-    useAssistantChatFull,
-    type AssistantChatFullResponse,
-} from "@/lib/api/v2/hooks/assistant";
-import { useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
 
 type ChatUIState = "closed" | "open" | "minimized" | "widget" | "expanded";
+
+// Type matching the API response structure
+export type AssistantChatFullResponse = {
+  chat: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    profileId: string;
+    title: string;
+    traceId: string | null;
+  } | null;
+  messages: Array<{
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    completedAt: string | null;
+    chatId: string;
+    role: "user" | "assistant";
+    content: string;
+    completed: boolean;
+  }>;
+  toolCalls: Array<{
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    completedAt: string | null;
+    chatId: string;
+    toolName: string;
+    toolType: "create" | "read" | "update" | "delete";
+    toolArguments: unknown;
+    toolResult: unknown;
+    completed: boolean;
+  }>;
+  allChats: Array<{
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    profileId: string;
+    title: string;
+    traceId: string | null;
+  }>;
+};
 
 export interface AssistantContextType {
   // UI State
@@ -40,7 +80,7 @@ export interface AssistantContextType {
   selectChat: (chatId: string) => void;
   startBlankChat: () => void;
 
-  // Chat Data (from v2 hook)
+  // Chat Data (from API)
   chat: AssistantChatFullResponse["chat"];
   messages: AssistantChatFullResponse["messages"];
   toolCalls: AssistantChatFullResponse["toolCalls"];
@@ -94,44 +134,69 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
   const { activeProfile } = useProfile();
 
-  // V2: Single hook to fetch all assistant chat data
+  // V3 API: Fetch assistant chat data
   // Only fetch when user has interacted with chat (lazy loading)
-  const { data: assistantData, isLoading: isLoadingChats } =
-    useAssistantChatFull(
-      currentChatId,
-      activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || "",
-      hasEverOpened &&
-        activeProfile?.id !== "guest-profile-id" &&
-        !!activeProfile?.id
-    );
+  const enabled =
+    hasEverOpened &&
+    activeProfile?.id !== "guest-profile-id" &&
+    !!activeProfile?.id;
+  const profileId =
+    activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || "";
 
-  // Extract data from v2 response
+  // Fetch chat list when no chatId (for dropdown)
+  const { data: chatListData, isLoading: isLoadingChatList } = useQuery({
+    queryKey: keys.assistant.with({ profileId, list: true }),
+    queryFn: () =>
+      api.post("/assistant/chats/list", {
+        body: { profileId },
+      }),
+    enabled: enabled && !currentChatId && !!profileId && profileId !== "",
+    staleTime: 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch full chat data when chatId is present
+  const { data: chatFullData, isLoading: isLoadingChatFull } = useQuery({
+    queryKey: keys.assistant.with({ chatId: currentChatId || "", profileId }),
+    queryFn: () =>
+      api.post("/assistant/chats/full", {
+        body: {
+          chatId: currentChatId || "",
+          profileId,
+        },
+      }),
+    enabled: enabled && !!currentChatId && !!profileId && profileId !== "",
+    staleTime: 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Combine data from both queries
+  const assistantData = currentChatId ? chatFullData : chatListData;
+  const isLoadingChats = currentChatId ? isLoadingChatFull : isLoadingChatList;
+
+  // Extract data from API response
   const chats = useMemo(
     () =>
-      (assistantData?.allChats || []) as NonNullable<
-        AssistantChatFullResponse["chat"]
-      >[],
+      ((assistantData as AssistantChatFullResponse)?.allChats ||
+        []) as NonNullable<AssistantChatFullResponse["chat"]>[],
     [assistantData]
   );
   const chat = useMemo(
     () =>
-      (assistantData?.chat || null) as NonNullable<
-        AssistantChatFullResponse["chat"]
-      > | null,
+      ((assistantData as AssistantChatFullResponse)?.chat ||
+        null) as NonNullable<AssistantChatFullResponse["chat"]> | null,
     [assistantData]
   );
   const messages = useMemo(
     () =>
-      (assistantData?.messages || []) as NonNullable<
-        AssistantChatFullResponse["messages"]
-      >,
+      ((assistantData as AssistantChatFullResponse)?.messages ||
+        []) as NonNullable<AssistantChatFullResponse["messages"]>,
     [assistantData]
   );
   const toolCalls = useMemo(
     () =>
-      (assistantData?.toolCalls || []) as NonNullable<
-        AssistantChatFullResponse["toolCalls"]
-      >,
+      ((assistantData as AssistantChatFullResponse)?.toolCalls ||
+        []) as NonNullable<AssistantChatFullResponse["toolCalls"]>,
     [assistantData]
   );
 
@@ -145,7 +210,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       if (data.chat_id) {
         setCurrentChatId(data.chat_id);
         // Invalidate queries to refetch chat list with new chat
-        queryClient.invalidateQueries({ queryKey: ["assistant"] });
+        queryClient.invalidateQueries({ queryKey: keys.assistant.all });
       }
     };
 
@@ -306,7 +371,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
         if (chatId) {
         } else {
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to send message");
         setIsSendingMessage(false);
       }
@@ -341,7 +406,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
     try {
       emitStopAssistant({ chat_id: currentChatId });
-    } catch (error) {
+    } catch {
       toast.error("Failed to stop message");
       setIsStoppingMessage(false);
     }

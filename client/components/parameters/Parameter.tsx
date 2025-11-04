@@ -32,12 +32,9 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useCreateParameter,
-  useParameterDetail,
-  useParameterDetailDefault,
-  useUpdateParameter,
-} from "@/lib/api/v2/hooks/parameters";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Calculator,
   FileText,
@@ -101,16 +98,37 @@ export default function Parameter({
     ParameterItemFormData[]
   >([]);
 
-  // V2 API hooks - single hook for all data
-  const { data: parameterDetail, isLoading: isLoadingParameterDetail } =
-    useParameterDetail(
-      parameterId || "",
-      effectiveProfile?.id || "",
-      !!parameterId && isEditMode
-    );
+  const queryClient = useQueryClient();
 
+  // V3 API - detail query for edit mode
+  const { data: parameterDetail, isLoading: isLoadingParameterDetail } =
+    useQuery({
+      queryKey: keys.parameters.with({
+        parameterId: parameterId || "",
+        profileId: effectiveProfile?.id || "",
+      }),
+      queryFn: () =>
+        api.post("/parameters/detail", {
+          body: {
+            parameterId: parameterId || "",
+            profileId: effectiveProfile?.id || "",
+          },
+        }),
+      enabled: !!parameterId && isEditMode && !!effectiveProfile?.id,
+    });
+
+  // V3 API - detail-default query for create mode
   const { data: parameterDetailDefault, isLoading: isLoadingParameterDefault } =
-    useParameterDetailDefault(effectiveProfile?.id || "", !isEditMode);
+    useQuery({
+      queryKey: keys.parameters.with({
+        profileId: effectiveProfile?.id || "",
+      }),
+      queryFn: () =>
+        api.post("/parameters/detail-default", {
+          body: { profileId: effectiveProfile?.id || "" },
+        }),
+      enabled: !isEditMode && !!effectiveProfile?.id,
+    });
 
   // Use edit detail when editing, default detail when creating
   const parameterData = isEditMode ? parameterDetail : parameterDetailDefault;
@@ -153,15 +171,55 @@ export default function Parameter({
     [parameterData]
   );
 
-  // V2 Mutation hooks
-  const createParameterMutation = useCreateParameter();
-  const updateParameterMutation = useUpdateParameter();
+  // V3 API mutations
+  const createParameterMutation = useMutation({
+    mutationFn: (req: {
+      name: string;
+      description: string;
+      numerical: boolean;
+      active: boolean;
+      document_parameter: boolean;
+      practice_parameter: boolean;
+      department_ids: string[] | null;
+      parameter_items: Array<{
+        name: string;
+        description: string;
+        value: string;
+        department_ids: string[] | null;
+      }>;
+    }) => api.post("/parameters/create", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
+    },
+  });
+
+  const updateParameterMutation = useMutation({
+    mutationFn: (req: {
+      parameterId: string;
+      name: string;
+      description: string;
+      numerical: boolean;
+      active: boolean;
+      document_parameter: boolean;
+      practice_parameter: boolean;
+      department_ids: string[] | null;
+      parameter_items: Array<{
+        name: string;
+        description: string;
+        value: string;
+        department_ids: string[] | null;
+      }>;
+    }) => api.post("/parameters/update", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
+    },
+  });
 
   const isLoading = isLoadingData;
 
   const [initiallySorted, setInitiallySorted] = useState(false);
 
-  // Initialize form data from v2 response
+  // Initialize form data from v3 response
   useEffect(() => {
     if (isEditMode && parameterData) {
       setFormData({
@@ -182,7 +240,7 @@ export default function Parameter({
     }
   }, [parameterData, isEditMode, initialFormData]);
 
-  // Initialize parameter items from v2 nested data
+  // Initialize parameter items from v3 nested data
   useEffect(() => {
     if (!initiallySorted && parameterItems && parameterItems.length > 0) {
       const sorted = parameterItems
@@ -193,7 +251,8 @@ export default function Parameter({
         name: item.name,
         description: item.description,
         value: item.value,
-        canDelete: item.can_delete,
+        // V3 response has usage_count, derive canDelete from it
+        canDelete: (item.usage_count ?? 0) === 0,
         departmentIds: item.department_ids ?? null,
         isNew: false,
         isDeleted: false,
@@ -218,7 +277,8 @@ export default function Parameter({
         name: item.name,
         description: item.description,
         value: item.value,
-        canDelete: item.can_delete,
+        // V3 response has usage_count, derive canDelete from it
+        canDelete: (item.usage_count ?? 0) === 0,
         departmentIds: item.department_ids ?? null,
         isNew: false,
         isDeleted: false,
@@ -708,7 +768,7 @@ export default function Parameter({
                         name: item.name,
                         description: item.description,
                         value: item.value,
-                        canDelete: item.can_delete,
+                        canDelete: (item.usage_count ?? 0) === 0,
                         departmentIds: item.department_ids ?? null,
                         isNew: false,
                         isDeleted: false,

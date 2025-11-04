@@ -1,7 +1,6 @@
-"""Assistant chats list endpoint - GET /assistant/chats/list/{profile_id}"""
+"""Assistant chats list endpoint - POST /assistant/chats/list"""
 
 from typing import Annotated, Any
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.db import get_db
@@ -13,25 +12,31 @@ from pydantic import BaseModel
 router = APIRouter()
 
 
+class AssistantChatListRequest(BaseModel):
+    """Request schema for assistant chats list."""
+
+    profileId: str
+
+
 class AssistantChatListResponse(BaseModel):
     """Response schema for assistant chats list."""
 
     allChats: list[dict[str, Any]]
 
 
-@router.get("/chats/list/{profile_id}", response_model=AssistantChatListResponse)
+@router.post("/chats/list", response_model=AssistantChatListResponse)
 async def get_assistant_chats_list(
-    profile_id: UUID,
-    request: Request,
+    request_body: AssistantChatListRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> AssistantChatListResponse:
     """Get all chats for a profile (for new chat state without chat_id)."""
     tags = ["assistant"]  # From router tags
     
-    # Generate cache key from path and parameters
-    body_dict = {"profile_id": str(profile_id)}
-    cache_key_val = cache_key(request.url.path, body_dict)
+    # Generate cache key from path and body
+    body_dict = request_body.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
     
     # Try cache
     cached = await get_cached(cache_key_val)
@@ -41,7 +46,7 @@ async def get_assistant_chats_list(
         return AssistantChatListResponse.model_validate(cached["data"])
     
     try:
-        profile_id_str = str(profile_id)
+        profile_id_str = request_body.profileId
 
         # Get all chats for this profile
         all_chats_sql = load_sql("sql/v3/assistant/get_all_chats.sql")

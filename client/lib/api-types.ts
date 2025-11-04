@@ -3506,6 +3506,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/personas/delete-prompt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Persona Prompt
+         * @description Delete a persona prompt.
+         */
+        post: operations["delete_persona_prompt_api_v3_personas_delete_prompt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/departments/list": {
         parameters: {
             query?: never;
@@ -4020,6 +4040,66 @@ export interface paths {
          * @description Update a document.
          */
         post: operations["update_document_api_v3_documents_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/documents/upload/init": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Init
+         * @description Initialize a document upload.
+         */
+        post: operations["upload_init_api_v3_documents_upload_init_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/documents/upload/chunk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Chunk
+         * @description Upload a chunk of data.
+         */
+        post: operations["upload_chunk_api_v3_documents_upload_chunk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/documents/upload/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Finalize
+         * @description Finalize a document upload and process the file.
+         */
+        post: operations["upload_finalize_api_v3_documents_upload_finalize_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4746,6 +4826,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/parameters/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate Parameter
+         * @description Duplicate a parameter with all items and their department associations.
+         */
+        post: operations["duplicate_parameter_api_v3_parameters_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/parameters/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Parameter
+         * @description Delete a parameter if items not in use.
+         */
+        post: operations["delete_parameter_api_v3_parameters_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/parameters/items/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Parameter Item
+         * @description Create a single parameter item (for inline creation from pickers).
+         */
+        post: operations["create_parameter_item_api_v3_parameters_items_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/feedback/list": {
         parameters: {
             query?: never;
@@ -4906,6 +5046,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/attempts/chats/update-completed-at": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Chat Completed At
+         * @description Update simulation chat completedAt timestamp.
+         */
+        post: operations["update_chat_completed_at_api_v3_attempts_chats_update_completed_at_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/attempts/full": {
         parameters: {
             query?: never;
@@ -4991,40 +5151,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/assistant/chats/{chat_id}/full": {
+    "/api/v3/assistant/chats/full": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Get Assistant Chat Full
          * @description Get complete assistant chat data with all related entities.
          */
-        get: operations["get_assistant_chat_full_api_v3_assistant_chats__chat_id__full_get"];
-        put?: never;
-        post?: never;
+        post: operations["get_assistant_chat_full_api_v3_assistant_chats_full_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/assistant/chats/list/{profile_id}": {
+    "/api/v3/assistant/chats/list": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Get Assistant Chats List
          * @description Get all chats for a profile (for new chat state without chat_id).
          */
-        get: operations["get_assistant_chats_list_api_v3_assistant_chats_list__profile_id__get"];
-        put?: never;
-        post?: never;
+        post: operations["get_assistant_chats_list_api_v3_assistant_chats_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5094,6 +5254,48 @@ export interface components {
             /** Profilename */
             profileName?: string | null;
         };
+        /** AggregatedResults */
+        AggregatedResults: {
+            /** Totalscore */
+            totalScore: number;
+            /** Totalpossiblepoints */
+            totalPossiblePoints: number;
+            /** Percentage */
+            percentage: number;
+            /** Passed */
+            passed: boolean;
+            /** Chatscompleted */
+            chatsCompleted: number;
+            /** Totalchats */
+            totalChats: number;
+        };
+        /** AllSimulationScenarioItem */
+        AllSimulationScenarioItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Problemstatement */
+            problemStatement: string;
+            /** Departmentid */
+            departmentId: string;
+            /** Active */
+            active: boolean;
+            /** Personaid */
+            personaId: string | null;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Generated */
+            generated: boolean;
+            /** Defaultscenario */
+            defaultScenario: boolean;
+            /** Copypasteallowed */
+            copyPasteAllowed: boolean;
+            /** Objectives */
+            objectives?: string[] | null;
+        };
         /**
          * AnalyticsFilters
          * @description Analytics filter request schema.
@@ -5113,6 +5315,16 @@ export interface components {
             profileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
+        };
+        /**
+         * AssistantChatFullRequest
+         * @description Request schema for assistant chat full data.
+         */
+        AssistantChatFullRequest: {
+            /** Chatid */
+            chatId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * AssistantChatFullResponse
@@ -5137,6 +5349,14 @@ export interface components {
             }[];
         };
         /**
+         * AssistantChatListRequest
+         * @description Request schema for assistant chats list.
+         */
+        AssistantChatListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
          * AssistantChatListResponse
          * @description Response schema for assistant chats list.
          */
@@ -5156,34 +5376,16 @@ export interface components {
          * @description Response containing complete attempt data with all nested structures.
          */
         AttemptFullResponse: {
-            /** Attempt */
-            attempt: {
-                [key: string]: unknown;
-            };
-            /** Simulation */
-            simulation: {
-                [key: string]: unknown;
-            };
+            attempt: components["schemas"]["AttemptItem"];
+            simulation: components["schemas"]["app__api__v3__attempts__full__SimulationItem"];
             /** Attemptprofiles */
-            attemptProfiles: {
-                [key: string]: unknown;
-            }[];
+            attemptProfiles: components["schemas"]["AttemptProfileItem"][];
             /** Chats */
-            chats: {
-                [key: string]: unknown;
-            }[];
+            chats: components["schemas"]["ChatData"][];
             /** Scenariodocuments */
-            scenarioDocuments: {
-                [key: string]: unknown;
-            }[];
-            /** Aggregatedresults */
-            aggregatedResults: {
-                [key: string]: unknown;
-            } | null;
-            /** Timer */
-            timer: {
-                [key: string]: unknown;
-            };
+            scenarioDocuments: components["schemas"]["ScenarioDocumentItem"][];
+            aggregatedResults?: components["schemas"]["AggregatedResults"] | null;
+            timer: components["schemas"]["TimerItem"];
             /** Currentchatindex */
             currentChatIndex: number;
             /** Expectedchatcount */
@@ -5198,14 +5400,9 @@ export interface components {
             shouldShowControls: boolean;
             /** Isactive */
             isActive: boolean;
-            /** Rubricstructure */
-            rubricStructure: {
-                [key: string]: unknown;
-            } | null;
+            rubricStructure?: components["schemas"]["RubricStructure"] | null;
             /** Allsimulationscenarios */
-            allSimulationScenarios: {
-                [key: string]: unknown;
-            }[];
+            allSimulationScenarios: components["schemas"]["AllSimulationScenarioItem"][];
         };
         /**
          * AttemptImprovementData
@@ -5257,6 +5454,28 @@ export interface components {
             facts: components["schemas"]["AttemptImprovementFact"][];
             /** Validsimulationids */
             validSimulationIds: string[];
+        };
+        /** AttemptItem */
+        AttemptItem: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Simulationid */
+            simulationId: string;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Archived */
+            archived: boolean;
+        };
+        /** AttemptProfileItem */
+        AttemptProfileItem: {
+            /** Profileid */
+            profileId: string;
+            /** Attemptid */
+            attemptId: string;
+            /** Active */
+            active: boolean;
         };
         /**
          * AuthorizeEmulationRequest
@@ -5419,6 +5638,42 @@ export interface components {
             field: string;
             /** Message */
             message: string;
+        };
+        /** ChatData */
+        ChatData: {
+            chat: components["schemas"]["ChatItem"];
+            scenario: components["schemas"]["app__api__v3__attempts__full__ScenarioItem"] | null;
+            /** Messages */
+            messages: components["schemas"]["MessageItem"][];
+            /** Hints */
+            hints: components["schemas"]["HintsByMessage"][];
+            gradingState?: components["schemas"]["GradingState"] | null;
+            dynamicRubric?: components["schemas"]["DynamicRubric"] | null;
+            /** Previouschats */
+            previousChats: components["schemas"]["PreviousChat"][];
+        };
+        /** ChatItem */
+        ChatItem: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Title */
+            title: string;
+            /** Scenarioid */
+            scenarioId: string;
+            /** Attemptid */
+            attemptId: string;
+            /** Completed */
+            completed: boolean;
+            /** Completedat */
+            completedAt: string | null;
+            /** Traceid */
+            traceId: string | null;
+            /** Documentids */
+            documentIds: string[];
         };
         /**
          * CohortDailyFact
@@ -6006,28 +6261,6 @@ export interface components {
             message: string;
         };
         /**
-         * DeletePersonaPromptRequest
-         * @description Request to delete a persona prompt.
-         */
-        DeletePersonaPromptRequest: {
-            /** Personaid */
-            personaId: string;
-            /** Promptid */
-            promptId: string;
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /**
-         * DeletePersonaPromptResponse
-         * @description Response from delete prompt operation.
-         */
-        DeletePersonaPromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
          * DeleteProviderRequest
          * @description Request to delete provider.
          */
@@ -6389,6 +6622,27 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** DynamicRubric */
+        DynamicRubric: {
+            /** Chatid */
+            chatId: string;
+            /** Score */
+            score: number;
+            /** Passed */
+            passed: boolean;
+            /** Timetaken */
+            timeTaken: number;
+            /** Skillscores */
+            skillScores: {
+                [key: string]: number;
+            };
+            /** Skillfeedbacks */
+            skillFeedbacks: {
+                [key: string]: string;
+            };
+            /** Totalpossiblepoints */
+            totalPossiblePoints: number;
+        };
         /** ErrorData */
         "ErrorData-Input": {
             /** Code */
@@ -6536,6 +6790,23 @@ export interface components {
             /** Objectives */
             objectives: string[];
         };
+        /** GradingState */
+        GradingState: {
+            /** Achievedstandards */
+            achievedStandards: {
+                [key: string]: boolean;
+            };
+            /** Passedstandards */
+            passedStandards: {
+                [key: string]: boolean;
+            };
+            /** Gradedescription */
+            gradeDescription?: string | null;
+            /** Feedbackbystandardid */
+            feedbackByStandardId?: {
+                [key: string]: string;
+            } | null;
+        };
         /**
          * GrowthDataPoint
          * @description Growth data point.
@@ -6650,6 +6921,24 @@ export interface components {
             timestamp: string;
             /** Overall Response Time */
             overall_response_time: number;
+        };
+        /** HintItem */
+        HintItem: {
+            /** Simulationmessageid */
+            simulationMessageId: string;
+            /** Hint */
+            hint: string;
+            /** Idx */
+            idx: number;
+            /** Createdat */
+            createdAt: string;
+        };
+        /** HintsByMessage */
+        HintsByMessage: {
+            /** Messageid */
+            messageId: string;
+            /** Hints */
+            hints: components["schemas"]["HintItem"][];
         };
         /**
          * HomeFilters
@@ -6781,6 +7070,23 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /** MessageItem */
+        MessageItem: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Chatid */
+            chatId: string;
+            /** Content */
+            content: string;
+            /** Type */
+            type: string;
+            /** Completed */
+            completed: boolean;
         };
         /**
          * Method
@@ -7122,6 +7428,27 @@ export interface components {
             /** Hasactivity */
             hasActivity?: boolean | null;
         };
+        /** PreviousChat */
+        PreviousChat: {
+            /** Chatid */
+            chatId: string;
+            /** Attemptid */
+            attemptId: string;
+            /** Score */
+            score: number | null;
+            /** Passed */
+            passed: boolean | null;
+            /** Createdat */
+            createdAt: string;
+            /** Title */
+            title: string;
+            /** Timetaken */
+            timeTaken: number | null;
+            /** Totalpossiblepoints */
+            totalPossiblePoints: number | null;
+            /** Percentage */
+            percentage: number | null;
+        };
         /**
          * ProcessCSVRequest
          * @description Request to process CSV file.
@@ -7373,6 +7700,23 @@ export interface components {
             /** Hasdata */
             hasData: boolean;
         };
+        /** RubricStructure */
+        RubricStructure: {
+            /** Standardgroups */
+            standardGroups: {
+                [key: string]: string[];
+            };
+            /** Standardgroupsmapping */
+            standardGroupsMapping: {
+                [key: string]: components["schemas"]["app__api__v3__attempts__full__StandardGroupMappingItem"];
+            };
+            /** Standardsmapping */
+            standardsMapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
         /**
          * RubricsFilters
          * @description Filters for rubrics list.
@@ -7439,6 +7783,35 @@ export interface components {
             /** Profileid */
             profileId: string;
         };
+        /** ScenarioDocumentItem */
+        ScenarioDocumentItem: {
+            /** Document Id */
+            document_id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Extension */
+            extension: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** File Path */
+            file_path: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+        };
         /**
          * ScenarioFact
          * @description Scenario fact.
@@ -7484,44 +7857,6 @@ export interface components {
             last_used: string | null;
             /** Can Remove */
             can_remove: boolean;
-        };
-        /**
-         * ScenarioItem
-         * @description Individual scenario item in the response.
-         */
-        ScenarioItem: {
-            /** Scenario Id */
-            scenario_id: string;
-            /** Title */
-            title: string;
-            /** Problem Statement */
-            problem_statement: string;
-            /** Active */
-            active: boolean;
-            /** Generated */
-            generated: boolean;
-            /** Parent Scenario Id */
-            parent_scenario_id: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Objective Ids */
-            objective_ids: string[];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Simulation Ids */
-            simulation_ids: string[];
-            /** Num Simulations */
-            num_simulations: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Cohort Ids */
-            cohort_ids: string[];
         };
         /**
          * ScenarioMappingItem
@@ -7582,38 +7917,6 @@ export interface components {
         ScenariosFilters: {
             /** Profileid */
             profileId: string;
-        };
-        /**
-         * ScenariosListResponse
-         * @description Response for scenarios list endpoint.
-         */
-        ScenariosListResponse: {
-            /** Scenarios */
-            scenarios: components["schemas"]["ScenarioItem"][];
-            /** Objective Mapping */
-            objective_mapping: {
-                [key: string]: components["schemas"]["ObjectiveMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
         };
         /**
          * SearchStaffRequest
@@ -7730,38 +8033,6 @@ export interface components {
              * @default true
              */
             active: boolean;
-        };
-        /**
-         * SimulationItem
-         * @description Simulation item in list response.
-         */
-        SimulationItem: {
-            /** Simulation Id */
-            simulation_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Rubric Id */
-            rubric_id: string;
-            /** Num Cohorts */
-            num_cohorts: number;
         };
         /**
          * SimulationMappingItem
@@ -8098,6 +8369,17 @@ export interface components {
             /** Success */
             success: number;
         };
+        /** TimerItem */
+        TimerItem: {
+            /** Elapsed */
+            elapsed: number;
+            /** Limit */
+            limit: number | null;
+            /** Exceeded */
+            exceeded: boolean;
+            /** Formatted */
+            formatted: string;
+        };
         /**
          * TrendData
          * @description Trend data point.
@@ -8109,6 +8391,13 @@ export interface components {
             value: number;
             /** Count */
             count: number;
+        };
+        /** UpdateChatCompletedAtRequest */
+        UpdateChatCompletedAtRequest: {
+            /** Chatid */
+            chatId: string;
+            /** Completedat */
+            completedAt: string;
         };
         /**
          * UpdateDepartmentRequest
@@ -8316,6 +8605,116 @@ export interface components {
         UpdateStaffResponse: {
             /** Success */
             success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * UploadChunkRequest
+         * @description Request to upload a chunk.
+         */
+        UploadChunkRequest: {
+            /** Uploadid */
+            uploadId: string;
+            /** Chunk */
+            chunk: string;
+            /** Offset */
+            offset: number;
+        };
+        /**
+         * UploadChunkResponse
+         * @description Response from upload chunk.
+         */
+        UploadChunkResponse: {
+            /** Success */
+            success: boolean;
+            /** Offset */
+            offset: number;
+            /** Message */
+            message: string;
+        };
+        /**
+         * UploadFinalizeRequest
+         * @description Request to finalize upload.
+         */
+        UploadFinalizeRequest: {
+            /** Uploadid */
+            uploadId: string;
+            /** Fileid */
+            fileId: string;
+            /**
+             * Zip
+             * @default false
+             */
+            zip: boolean | null;
+            /**
+             * Autoclassify
+             * @default false
+             */
+            autoClassify: boolean | null;
+            /**
+             * Csv
+             * @default false
+             */
+            csv: boolean | null;
+            /**
+             * Test
+             * @default false
+             */
+            test: boolean | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Parameteritemids */
+            parameterItemIds?: string[] | null;
+        };
+        /**
+         * UploadFinalizeResponse
+         * @description Response from finalize upload.
+         */
+        UploadFinalizeResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+            /** Documentid */
+            documentId?: string | null;
+            /** Documents */
+            documents?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Userscreated */
+            usersCreated?: number | null;
+            /** Usersskipped */
+            usersSkipped?: number | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /**
+         * UploadInitRequest
+         * @description Request to initialize document upload.
+         */
+        UploadInitRequest: {
+            /** Filename */
+            filename: string;
+            /** Contenttype */
+            contentType: string;
+            /** Uploadlength */
+            uploadLength: number;
+        };
+        /**
+         * UploadInitResponse
+         * @description Response from upload init.
+         */
+        UploadInitResponse: {
+            /** Success */
+            success: boolean;
+            /** Uploadid */
+            uploadId: string;
+            /** Location */
+            location: string;
             /** Message */
             message: string;
         };
@@ -8652,6 +9051,88 @@ export interface components {
             message: string;
             /** Count */
             count: number;
+        };
+        /** ScenarioItem */
+        app__api__v3__attempts__full__ScenarioItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Problemstatement */
+            problemStatement: string;
+            /** Departmentid */
+            departmentId: string;
+            /** Active */
+            active: boolean;
+            /** Personaid */
+            personaId: string | null;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Generated */
+            generated: boolean;
+            /** Defaultscenario */
+            defaultScenario: boolean;
+            /** Copypasteallowed */
+            copyPasteAllowed: boolean;
+            /** Objectives */
+            objectives?: string[] | null;
+        };
+        /** SimulationItem */
+        app__api__v3__attempts__full__SimulationItem: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Departmentid */
+            departmentId: string;
+            /** Active */
+            active: boolean;
+            /** Defaultsimulation */
+            defaultSimulation: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Hintsenabled */
+            hintsEnabled: boolean;
+            /** Objectivesenabled */
+            objectivesEnabled: boolean;
+            /** Inputguardrailactive */
+            inputGuardrailActive: boolean;
+            /** Outputguardrailactive */
+            outputGuardrailActive: boolean;
+            /** Imageinputactive */
+            imageInputActive: boolean;
+            /** Copypasteallowed */
+            copyPasteAllowed: boolean;
+            /** Timelimit */
+            timeLimit: number | null;
+            /** Rubricid */
+            rubricId: string | null;
+            /** Createdat */
+            createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
+        };
+        /** StandardGroupMappingItem */
+        app__api__v3__attempts__full__StandardGroupMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+        };
+        /** UpdateChatTimestampResponse */
+        app__api__v3__attempts__update_chat_completed_at__UpdateChatTimestampResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /** UpdateChatCreatedAtRequest */
         app__api__v3__attempts__update_chat_created_at__UpdateChatCreatedAtRequest: {
@@ -9918,6 +10399,28 @@ export interface components {
          * @description Response from delete persona.
          */
         app__api__v3__personas__delete__DeletePersonaResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeletePersonaPromptRequest
+         * @description Request to delete persona prompt.
+         */
+        app__api__v3__personas__delete_prompt__DeletePersonaPromptRequest: {
+            /** Personaid */
+            personaId: string;
+            /** Promptid */
+            promptId: string;
+            /** Departmentid */
+            departmentId?: string | null;
+        };
+        /**
+         * DeletePersonaPromptResponse
+         * @description Response from delete persona prompt.
+         */
+        app__api__v3__personas__delete_prompt__DeletePersonaPromptResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -11340,6 +11843,76 @@ export interface components {
             };
         };
         /**
+         * ScenarioItem
+         * @description Individual scenario item in the response.
+         */
+        app__api__v3__scenarios__list__ScenarioItem: {
+            /** Scenario Id */
+            scenario_id: string;
+            /** Title */
+            title: string;
+            /** Problem Statement */
+            problem_statement: string;
+            /** Active */
+            active: boolean;
+            /** Generated */
+            generated: boolean;
+            /** Parent Scenario Id */
+            parent_scenario_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Objective Ids */
+            objective_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Simulation Ids */
+            simulation_ids: string[];
+            /** Num Simulations */
+            num_simulations: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Cohort Ids */
+            cohort_ids: string[];
+        };
+        /**
+         * ScenariosListResponse
+         * @description Response for scenarios list endpoint.
+         */
+        app__api__v3__scenarios__list__ScenariosListResponse: {
+            /** Scenarios */
+            scenarios: components["schemas"]["app__api__v3__scenarios__list__ScenarioItem"][];
+            /** Objective Mapping */
+            objective_mapping: {
+                [key: string]: components["schemas"]["ObjectiveMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: components["schemas"]["PersonaMappingItem"];
+            };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+        };
+        /**
          * CreateSimulationRequest
          * @description Request to create a simulation.
          */
@@ -11577,12 +12150,44 @@ export interface components {
             };
         };
         /**
+         * SimulationItem
+         * @description Simulation item in list response.
+         */
+        app__api__v3__simulations__list__SimulationItem: {
+            /** Simulation Id */
+            simulation_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Active */
+            active: boolean;
+            /** Practice Simulation */
+            practice_simulation: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Rubric Id */
+            rubric_id: string;
+            /** Num Cohorts */
+            num_cohorts: number;
+        };
+        /**
          * SimulationsListResponse
          * @description Response for simulations list endpoint.
          */
         app__api__v3__simulations__list__SimulationsListResponse: {
             /** Simulations */
-            simulations: components["schemas"]["SimulationItem"][];
+            simulations: components["schemas"]["app__api__v3__simulations__list__SimulationItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
@@ -13101,6 +13706,28 @@ export interface components {
             content: string;
         };
         /**
+         * DeletePersonaPromptRequest
+         * @description Request to delete a persona prompt.
+         */
+        app__schemas__personas__DeletePersonaPromptRequest: {
+            /** Personaid */
+            personaId: string;
+            /** Promptid */
+            promptId: string;
+            /** Departmentid */
+            departmentId?: string | null;
+        };
+        /**
+         * DeletePersonaPromptResponse
+         * @description Response from delete prompt operation.
+         */
+        app__schemas__personas__DeletePersonaPromptResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * DeletePersonaRequest
          * @description Request to delete a persona.
          */
@@ -14086,6 +14713,76 @@ export interface components {
             };
         };
         /**
+         * ScenarioItem
+         * @description Individual scenario item in the response.
+         */
+        app__schemas__scenarios__ScenarioItem: {
+            /** Scenario Id */
+            scenario_id: string;
+            /** Title */
+            title: string;
+            /** Problem Statement */
+            problem_statement: string;
+            /** Active */
+            active: boolean;
+            /** Generated */
+            generated: boolean;
+            /** Parent Scenario Id */
+            parent_scenario_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Objective Ids */
+            objective_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Simulation Ids */
+            simulation_ids: string[];
+            /** Num Simulations */
+            num_simulations: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Cohort Ids */
+            cohort_ids: string[];
+        };
+        /**
+         * ScenariosListResponse
+         * @description Response for scenarios list endpoint.
+         */
+        app__schemas__scenarios__ScenariosListResponse: {
+            /** Scenarios */
+            scenarios: components["schemas"]["app__schemas__scenarios__ScenarioItem"][];
+            /** Objective Mapping */
+            objective_mapping: {
+                [key: string]: components["schemas"]["ObjectiveMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: components["schemas"]["PersonaMappingItem"];
+            };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+        };
+        /**
          * CreateSimulationRequest
          * @description Request to create simulation.
          */
@@ -14231,12 +14928,44 @@ export interface components {
             };
         };
         /**
+         * SimulationItem
+         * @description Simulation item in list response.
+         */
+        app__schemas__simulations__SimulationItem: {
+            /** Simulation Id */
+            simulation_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Active */
+            active: boolean;
+            /** Practice Simulation */
+            practice_simulation: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Rubric Id */
+            rubric_id: string;
+            /** Num Cohorts */
+            num_cohorts: number;
+        };
+        /**
          * SimulationsListResponse
          * @description Response for simulations list endpoint.
          */
         app__schemas__simulations__SimulationsListResponse: {
             /** Simulations */
-            simulations: components["schemas"]["SimulationItem"][];
+            simulations: components["schemas"]["app__schemas__simulations__SimulationItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
@@ -15436,7 +16165,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeletePersonaPromptRequest"];
+                "application/json": components["schemas"]["app__schemas__personas__DeletePersonaPromptRequest"];
             };
         };
         responses: {
@@ -15446,7 +16175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeletePersonaPromptResponse"];
+                    "application/json": components["schemas"]["app__schemas__personas__DeletePersonaPromptResponse"];
                 };
             };
             /** @description Validation Error */
@@ -16072,7 +16801,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScenariosListResponse"];
+                    "application/json": components["schemas"]["app__schemas__scenarios__ScenariosListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -19460,7 +20189,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScenariosListResponse"];
+                    "application/json": components["schemas"]["app__api__v3__scenarios__list__ScenariosListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20187,6 +20916,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["app__api__v3__personas__delete__DeletePersonaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_persona_prompt_api_v3_personas_delete_prompt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__api__v3__personas__delete_prompt__DeletePersonaPromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__personas__delete_prompt__DeletePersonaPromptResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21045,6 +21807,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["app__api__v3__documents__update__UpdateDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_init_api_v3_documents_upload_init_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadInitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadInitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_chunk_api_v3_documents_upload_chunk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadChunkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadChunkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_finalize_api_v3_documents_upload_finalize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadFinalizeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadFinalizeResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22233,6 +23094,105 @@ export interface operations {
             };
         };
     };
+    duplicate_parameter_api_v3_parameters_duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateParameterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicateParameterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_parameter_api_v3_parameters_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteParameterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteParameterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_parameter_item_api_v3_parameters_items_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateParameterItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateParameterItemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_feedback_api_v3_feedback_list_post: {
         parameters: {
             query?: never;
@@ -22497,6 +23457,39 @@ export interface operations {
             };
         };
     };
+    update_chat_completed_at_api_v3_attempts_chats_update_completed_at_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateChatCompletedAtRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__attempts__update_chat_completed_at__UpdateChatTimestampResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_attempt_full_api_v3_attempts_full_post: {
         parameters: {
             query?: never;
@@ -22629,18 +23622,18 @@ export interface operations {
             };
         };
     };
-    get_assistant_chat_full_api_v3_assistant_chats__chat_id__full_get: {
+    get_assistant_chat_full_api_v3_assistant_chats_full_post: {
         parameters: {
-            query: {
-                profile_id: string;
-            };
+            query?: never;
             header?: never;
-            path: {
-                chat_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantChatFullRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -22662,16 +23655,18 @@ export interface operations {
             };
         };
     };
-    get_assistant_chats_list_api_v3_assistant_chats_list__profile_id__get: {
+    get_assistant_chats_list_api_v3_assistant_chats_list_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                profile_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantChatListRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

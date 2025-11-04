@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAssistant } from "@/contexts/assistant-context";
-import type { AssistantChatFullResponse } from "@/lib/api/v2/hooks/assistant";
+import {
+  useAssistant,
+  type AssistantChatFullResponse,
+} from "@/contexts/assistant-context";
 import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChatStarterPrompts from "./ChatStarterPrompts";

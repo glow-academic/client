@@ -89,15 +89,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useBulkDeleteDocuments,
-  useBulkUpdateDocuments,
-  useDeleteDocument,
-  useDocumentDetail,
-  useDocumentDetailBulk,
-  useDocumentsList,
-  useUpdateDocument,
-} from "@/lib/api/v2/hooks/documents";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";
 
 // Helper function to truncate text
@@ -109,11 +103,48 @@ const truncateText = (text: string, maxLength: number = 30): string => {
 export default function Documents() {
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
 
+  const queryClient = useQueryClient();
+  
   // Mutation hooks
-  const deleteDocumentMutation = useDeleteDocument();
-  const bulkDeleteDocumentsMutation = useBulkDeleteDocuments();
-  const updateDocumentMutation = useUpdateDocument();
-  const bulkUpdateDocumentsMutation = useBulkUpdateDocuments();
+  const deleteDocumentMutation = useMutation({
+    mutationFn: (req: { documentId: string }) =>
+      api.post("/documents/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.documents.all });
+    },
+  });
+  
+  const bulkDeleteDocumentsMutation = useMutation({
+    mutationFn: (req: { documentIds: string[] }) =>
+      api.post("/documents/bulk-delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.documents.all });
+    },
+  });
+  
+  const updateDocumentMutation = useMutation({
+    mutationFn: (req: {
+      documentId: string;
+      type: string;
+      department_ids: string[] | null;
+      parameter_item_ids: string[];
+    }) => api.post("/documents/update", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.documents.all });
+    },
+  });
+  
+  const bulkUpdateDocumentsMutation = useMutation({
+    mutationFn: (req: {
+      documentIds: string[];
+      type: string;
+      department_ids: string[] | null;
+      parameter_item_ids: string[];
+    }) => api.post("/documents/bulk-update", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.documents.all });
+    },
+  });
 
   // State management
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -173,7 +204,7 @@ export default function Documents() {
       window.removeEventListener("openDocumentUpload", handleOpenUpload);
   }, []);
 
-  // V2 API: Build filters
+  // V3 API: Build filters
   const filters = useMemo(
     () => ({
       profileId: effectiveProfile?.id || "",
@@ -181,10 +212,14 @@ export default function Documents() {
     [effectiveProfile?.id]
   );
 
-  // V2 API: Fetch documents list
-  const { data: documentsData, isLoading } = useDocumentsList(filters);
+  // V3 API: Fetch documents list
+  const { data: documentsData, isLoading } = useQuery({
+    queryKey: keys.documents.list(filters),
+    queryFn: () => api.post("/documents/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
 
-  // Extract data from V2 response
+  // Extract data from V3 response
   const documents = useMemo(
     () => documentsData?.documents || [],
     [documentsData]
@@ -212,19 +247,40 @@ export default function Documents() {
     [effectiveDepartmentIds]
   );
 
-  // V2 API: Fetch single document detail for editing
-  const { data: documentDetail } = useDocumentDetail(
-    editingDocument?.document_id || "",
-    effectiveProfile?.id || "",
-    !!editingDocument && !!effectiveProfile?.id
-  );
+  // V3 API: Fetch single document detail for editing
+  const { data: documentDetail } = useQuery({
+    queryKey: keys.documents.detail({
+      documentId: editingDocument?.document_id || "",
+      profileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/documents/detail", {
+        body: {
+          documentId: editingDocument?.document_id || "",
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!editingDocument && !!effectiveProfile?.id,
+  });
 
-  // V2 API: Fetch bulk document detail for bulk editing
-  const { data: bulkDocumentDetail } = useDocumentDetailBulk(
-    selectedDocuments,
-    effectiveProfile?.id || "",
-    showBulkEditDialog && selectedDocuments.length > 0 && !!effectiveProfile?.id
-  );
+  // V3 API: Fetch bulk document detail for bulk editing
+  const { data: bulkDocumentDetail } = useQuery({
+    queryKey: keys.documents.detailBulk({
+      documentIds: selectedDocuments,
+      profileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/documents/detail-bulk", {
+        body: {
+          documentIds: selectedDocuments,
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled:
+      showBulkEditDialog &&
+      selectedDocuments.length > 0 &&
+      !!effectiveProfile?.id,
+  });
 
   // Filter valid parameter item IDs for edit dialog based on selected departments
   const validParameterItemIdsForEdit = useMemo(() => {

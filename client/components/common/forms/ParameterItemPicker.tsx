@@ -11,7 +11,9 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { useCreateParameterItemV2 } from "@/lib/api/v2/hooks/parameters";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -105,7 +107,18 @@ export function ParameterItemPicker<
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const createParameterItemMutation = useCreateParameterItemV2();
+  const queryClient = useQueryClient();
+  const createParameterItemMutation = useMutation({
+    mutationFn: (req: {
+      parameterId: string;
+      name: string;
+      description: string;
+      value: string;
+    }) => api.post("/parameters/items/create", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
+    },
+  });
 
   // Build items from mapping
   const items = useMemo(() => {
@@ -197,12 +210,12 @@ export function ParameterItemPicker<
       return;
     }
     try {
-      const created = await createParameterItemMutation.mutateAsync({
+      const created = (await createParameterItemMutation.mutateAsync({
         parameterId: parameterId,
         name: newName.trim(),
         description: newDescription.trim(),
         value: proposedValue,
-      });
+      })) as { parameterItemId: string };
 
       toast.success("Parameter item created");
       setShowCreateDialog(false);

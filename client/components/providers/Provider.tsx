@@ -17,13 +17,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useCreateProvider,
-  useDecryptProviderKey,
-  useProviderDetail,
-  useUpdateProvider,
-} from "@/lib/api/v2/hooks/providers";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { maskApiKey } from "@/utils/model-utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface ProviderProps {
   providerId?: string;
@@ -66,21 +63,58 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
+  const queryClient = useQueryClient();
 
-  // V2 API hooks
-  const { data: providerDetail, isLoading: isLoadingProviderDetail } =
-    useProviderDetail(
-      providerId || "",
-      effectiveProfile?.id || "",
-      !!providerId && isEditMode
-    );
+  // V3 API - fetch provider detail when editing
+  const { data: providerDetail, isLoading: isLoadingProviderDetail } = useQuery(
+    {
+      queryKey: keys.providers.with({
+        providerId: providerId || "",
+        profileId: effectiveProfile?.id || "",
+      }),
+      queryFn: () =>
+        api.post("/providers/detail", {
+          body: {
+            providerId: providerId || "",
+            profileId: effectiveProfile?.id || "",
+          },
+        }),
+      enabled: !!providerId && isEditMode && !!effectiveProfile?.id,
+    }
+  );
 
   const isLoading = isLoadingProviderDetail;
 
-  // Mutation hooks
-  const { mutate: createProvider } = useCreateProvider();
-  const { mutate: updateProvider } = useUpdateProvider();
-  const { mutateAsync: decryptProviderKey } = useDecryptProviderKey();
+  // V3 API mutations
+  const createProviderMutation = useMutation({
+    mutationFn: (body: {
+      name: string;
+      description: string;
+      api_key: string;
+      base_url: string | null;
+    }) => api.post("/providers/create", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.providers.all });
+    },
+  });
+
+  const updateProviderMutation = useMutation({
+    mutationFn: (body: {
+      providerId: string;
+      name: string;
+      description: string;
+      api_key?: string;
+      base_url?: string | null;
+    }) => api.post("/providers/update", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.providers.all });
+    },
+  });
+
+  const decryptProviderKeyMutation = useMutation({
+    mutationFn: (body: { providerId: string; profileId: string }) =>
+      api.post("/providers/decrypt-key", { body }),
+  });
 
   // Set breadcrumb context when provider data is loaded
   useEffect(() => {
@@ -162,52 +196,40 @@ export default function Provider({ providerId }: ProviderProps) {
     try {
       if (isEditMode && providerId && providerDetail) {
         // For updates, we use the updateProvider mutation
-        updateProvider(
-          {
-            providerId: providerId,
-            name: formData.name!,
-            description: formData.description!,
-            api_key:
-              isEditingApiKey &&
-              formData.apiKey &&
-              formData.apiKey.trim() !== ""
-                ? formData.apiKey
-                : undefined,
-            base_url: formData.baseUrl || null,
-          },
-          {
-            onSuccess: () => {
-              resetFormAndState();
-              toast.success("Provider updated successfully!");
-              router.push(`/system/providers`);
-            },
-            onError: (error) => {
-              toast.error(`Failed to update provider: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+        const updateBody: {
+          providerId: string;
+          name: string;
+          description: string;
+          api_key?: string;
+          base_url?: string | null;
+        } = {
+          providerId: providerId,
+          name: formData.name!,
+          description: formData.description!,
+          base_url: formData.baseUrl || null,
+        };
+        if (
+          isEditingApiKey &&
+          formData.apiKey &&
+          formData.apiKey.trim() !== ""
+        ) {
+          updateBody.api_key = formData.apiKey;
+        }
+        await updateProviderMutation.mutateAsync(updateBody);
+        resetFormAndState();
+        toast.success("Provider updated successfully!");
+        router.push(`/system/providers`);
       } else {
         // For creates
-        createProvider(
-          {
-            name: formData.name!,
-            description: formData.description!,
-            api_key: formData.apiKey!,
-            base_url: formData.baseUrl || null,
-          },
-          {
-            onSuccess: () => {
-              resetFormAndState();
-              toast.success("Provider created successfully!");
-              router.push(`/system/providers`);
-            },
-            onError: (error) => {
-              toast.error(`Failed to create provider: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+        await createProviderMutation.mutateAsync({
+          name: formData.name!,
+          description: formData.description!,
+          api_key: formData.apiKey!,
+          base_url: formData.baseUrl || null,
+        });
+        resetFormAndState();
+        toast.success("Provider created successfully!");
+        router.push(`/system/providers`);
       }
     } catch (error) {
       toast.error(
@@ -223,12 +245,14 @@ export default function Provider({ providerId }: ProviderProps) {
     if (!showApiKey) {
       setIsDecrypting(true);
       try {
-        const result = await decryptProviderKey({
+        const result = await decryptProviderKeyMutation.mutateAsync({
           providerId: providerId || "",
           profileId: effectiveProfile.id,
         });
-        setDecryptedApiKey(result.api_key);
-        setShowApiKey(true);
+        if (result && typeof result === "object" && "api_key" in result) {
+          setDecryptedApiKey(result.api_key as string);
+          setShowApiKey(true);
+        }
       } catch {
         toast.error("Failed to decrypt API key");
       } finally {
@@ -410,10 +434,17 @@ export default function Provider({ providerId }: ProviderProps) {
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isLoading}
+            disabled={
+              isSubmitting ||
+              isLoading ||
+              createProviderMutation.isPending ||
+              updateProviderMutation.isPending
+            }
             className="min-w-[120px]"
           >
-            {isSubmitting ? (
+            {isSubmitting ||
+            createProviderMutation.isPending ||
+            updateProviderMutation.isPending ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                 {isEditMode ? "Updating..." : "Creating..."}

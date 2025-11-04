@@ -8,7 +8,9 @@
 
 import UploadClassificationDialog from "@/components/documents/UploadClassificationDialog";
 import { useProfile } from "@/contexts/profile-context";
-import { useFinalizeDocumentUpload } from "@/lib/api/v2/hooks/documents";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { inferMimeFromName } from "@/utils/mime-map";
 
 type ParameterItemMappingItem = {
@@ -45,7 +47,36 @@ export function DocumentUploadDialog({
   validParameterItemIds,
 }: DocumentUploadDialogProps) {
   const { effectiveProfile } = useProfile();
-  const finalizeMutation = useFinalizeDocumentUpload();
+  const queryClient = useQueryClient();
+  const finalizeMutation = useMutation({
+    mutationFn: async (req: {
+      uploadId: string;
+      fileId: string;
+      zip?: boolean;
+      autoClassify?: boolean;
+      csv?: boolean;
+      test?: boolean;
+      profileId?: string;
+      departmentIds?: string[] | null;
+      parameterItemIds?: string[];
+    }) =>
+      api.post("/documents/upload/finalize", {
+        body: {
+          uploadId: "", // Will be derived from fileId on server
+          fileId: req.fileId,
+          zip: req.zip,
+          autoClassify: req.autoClassify,
+          csv: req.csv,
+          test: req.test,
+          profileId: req.profileId,
+          departmentIds: req.departmentIds,
+          parameterItemIds: req.parameterItemIds,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.documents.all });
+    },
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -187,12 +218,13 @@ export function DocumentUploadDialog({
 
             // Call finalize using mutation hook
             const result = await finalizeMutation.mutateAsync({
+              uploadId: "", // Server will find by fileId
               fileId,
               zip: isZipFile,
               autoClassify: shouldAutoClassify,
-              profile_id: effectiveProfile?.id,
-              department_ids: classification?.departmentIds || null,
-              parameter_item_ids: classification?.parameterItemIds || [],
+              profileId: effectiveProfile?.id,
+              departmentIds: classification?.departmentIds || null,
+              parameterItemIds: classification?.parameterItemIds || [],
             });
 
             if (result.success) {

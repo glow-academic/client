@@ -1,16 +1,22 @@
-"""Assistant chat full data endpoint - GET /assistant/chats/{chat_id}/full"""
+"""Assistant chat full data endpoint - POST /assistant/chats/full"""
 
 from typing import Annotated, Any
-from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
+
+
+class AssistantChatFullRequest(BaseModel):
+    """Request schema for assistant chat full data."""
+
+    chatId: str
+    profileId: str
 
 
 class AssistantChatFullResponse(BaseModel):
@@ -22,20 +28,19 @@ class AssistantChatFullResponse(BaseModel):
     allChats: list[dict[str, Any]]
 
 
-@router.get("/chats/{chat_id}/full", response_model=AssistantChatFullResponse)
+@router.post("/chats/full", response_model=AssistantChatFullResponse)
 async def get_assistant_chat_full(
-    chat_id: UUID,
-    profile_id: Annotated[UUID, Query()],
-    request: Request,
+    request_body: AssistantChatFullRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> AssistantChatFullResponse:
     """Get complete assistant chat data with all related entities."""
     tags = ["assistant"]  # From router tags
     
-    # Generate cache key from path and parameters
-    body_dict = {"chat_id": str(chat_id), "profile_id": str(profile_id)}
-    cache_key_val = cache_key(request.url.path, body_dict)
+    # Generate cache key from path and body
+    body_dict = request_body.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
     
     # Try cache
     cached = await get_cached(cache_key_val)
@@ -45,8 +50,8 @@ async def get_assistant_chat_full(
         return AssistantChatFullResponse.model_validate(cached["data"])
     
     try:
-        chat_id_str = str(chat_id)
-        profile_id_str = str(profile_id)
+        chat_id_str = request_body.chatId
+        profile_id_str = request_body.profileId
 
         result: dict[str, Any] = {
             "chat": None,
@@ -74,7 +79,7 @@ async def get_assistant_chat_full(
         chat_sql = load_sql("sql/v3/assistant/get_chat.sql")
         chat_result = await conn.fetchrow(chat_sql, chat_id_str)
         if not chat_result:
-            raise HTTPException(status_code=404, detail=f"Assistant chat {chat_id} not found")
+            raise HTTPException(status_code=404, detail=f"Assistant chat {chat_id_str} not found")
 
         result["chat"] = {
             "id": str(chat_result["id"]),
