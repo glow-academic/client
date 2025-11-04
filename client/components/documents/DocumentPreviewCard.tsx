@@ -18,9 +18,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { Edit, Eye, Trash2 } from "lucide-react";
 import * as React from "react";
+
+type DocumentItem = {
+  document_id: string;
+  name: string;
+  type: string;
+  updatedAt: string;
+  extension: string;
+  scenario_ids: string[];
+  can_edit: boolean;
+  can_delete: boolean;
+  active: boolean;
+  department_ids: string[] | null;
+  file_path: string;
+  mime_type: string;
+  parameter_item_ids: string[];
+};
 
 export interface DocumentPreviewCardProps {
   document: DocumentItem;

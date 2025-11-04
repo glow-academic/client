@@ -1,12 +1,67 @@
-import { PracticeSimulationItem } from "@/lib/api/v2/schemas/practice";
-import { ProfileItem } from "@/lib/api/v2/schemas/profile";
-import type {
-  StandardGroupsMapping,
-  StandardsMapping,
-} from "@/lib/api/v2/schemas/rubrics";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 import SimulationCard from "@/components/common/layout/SimulationCard";
+
+type ProfileItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  alias: string;
+  role: "superadmin" | "admin" | "instructional" | "ta" | "guest";
+  active: boolean;
+  viewedIntro: boolean;
+  viewedChat: boolean;
+  defaultProfile: boolean;
+  reqPerDay: number | null;
+  lastLogin: string;
+  lastActive: string | null;
+  createdAt: string;
+  updatedAt: string;
+  primaryDepartmentId: string | null;
+};
+
+type PracticeSimulationItem = {
+  viewMode: "practice";
+  id: string;
+  simulationTitle: string;
+  simulationDescription: string | null;
+  simulationName: string;
+  timeLimit?: number | null;
+  numSessions: number;
+  highestScore?: number | null;
+  standard_groups: Record<string, string[]>;
+  rubric_id?: string | null;
+  color?: string | null;
+  icon?: string | null;
+  hasPassed?: boolean | null;
+  passRate?: number | null;
+  status?: "not-started" | "in-progress" | "passed" | null;
+  completionPct?: number | null;
+  passedCount?: number | null;
+  inProgressCount?: number | null;
+  notStartedCount?: number | null;
+  passPct?: number | null;
+  cohortName?: string | null;
+  updatedAt?: string | null;
+  lastActivityTs?: string | null;
+  hasActivity?: boolean | null;
+};
+
+type StandardGroupMappingItem = {
+  name: string;
+  description: string;
+  points: number;
+  passPoints: number;
+};
+
+type StandardMappingItem = {
+  name: string;
+  description: string;
+  points: number;
+};
+
+type StandardGroupsMapping = Record<string, StandardGroupMappingItem>;
+type StandardsMapping = Record<string, StandardMappingItem>;
 
 interface PracticeZoneProps {
   simulations: PracticeSimulationItem[];

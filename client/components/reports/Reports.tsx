@@ -9,12 +9,16 @@ import { useRouter } from "next/navigation";
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  type ScenarioMapping,
-  type SimulationMapping,
-} from "@/lib/api/v2/schemas/base";
 import { useMemo } from "react";
 import { ReportsDataTable } from "./ReportsDataTable";
+
+type MappingItem = {
+  name: string;
+  description: string;
+};
+
+type ScenarioMapping = Record<string, MappingItem>;
+type SimulationMapping = Record<string, MappingItem>;
 
 // Complete reports data type - follows fast/dumb UI principle with inline hover data and thresholds
 interface ReportsDataItem {

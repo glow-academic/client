@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { getApiBase } from "@/lib/api/v2/api-base";
-import type { HealthCheckItem } from "@/lib/api/v2/schemas/health";
 import {
   AlertCircle,
   CheckCircle,
@@ -43,6 +42,17 @@ import {
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+type HealthCheckItem = {
+  id: string;
+  name: string;
+  description: string;
+  status: "healthy" | "unhealthy" | "warning" | "n/a";
+  response_time: number | null;
+  last_checked: string;
+  message?: string | null;
+  error?: string | null;
+};
 
 interface HealthCheck {
   id: string;
@@ -218,7 +228,7 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
           `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`
         );
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to run health checks");
     }
   }, []);

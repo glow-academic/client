@@ -40,11 +40,20 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useProfile } from "@/contexts/profile-context";
-import type {
-  DebugInfoItem,
-  ModelMappingWithPricing,
-} from "@/lib/api/v2/schemas/pricing";
 import { format } from "date-fns";
+
+type DebugInfoItem = {
+  id: string;
+  created_at: string;
+  content: string;
+};
+
+type ModelMappingWithPricing = {
+  name: string;
+  description: string;
+  input_ppm: number;
+  output_ppm: number;
+};
 
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {

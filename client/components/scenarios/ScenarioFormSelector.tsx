@@ -33,9 +33,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { MappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 import { ModelType } from "@/utils/scenario-helpers";
+
+type MappingItem = {
+  name: string;
+  description: string;
+};
 
 // Extended mapping item for scenarios/models with type grouping
 export interface ScenarioModelMappingItem extends MappingItem {

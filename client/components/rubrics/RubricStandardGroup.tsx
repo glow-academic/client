@@ -34,10 +34,24 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useRubricUnifiedUpdate } from "@/lib/api/v2/hooks/rubrics";
-import {
-  StandardGroupUpdate,
-  StandardUpdate,
-} from "@/lib/api/v2/schemas/rubrics";
+type StandardUpdate = {
+  id?: string | undefined;
+  name: string;
+  description: string;
+  points: number;
+  deleted: boolean;
+};
+
+type StandardGroupUpdate = {
+  id?: string | undefined;
+  name: string;
+  short_name: string;
+  description: string;
+  points: number;
+  passPoints: number;
+  standards: StandardUpdate[];
+  deleted: boolean;
+};
 
 import {
   Award,
@@ -464,7 +478,7 @@ export default function RubricStandardGroup({
         name: standard.name,
         description: standard.description,
         points: parseInt(standard.points),
-        deleted: standard.isDeleted || false,
+        deleted: standard.isDeleted ?? false,
       }));
 
       const groupUpdate: StandardGroupUpdate = {

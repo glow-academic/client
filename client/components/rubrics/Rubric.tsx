@@ -18,9 +18,21 @@ import {
   useRubricDetail,
   useRubricDetailDefault,
 } from "@/lib/api/v2/hooks/rubrics";
-import { RubricItem } from "@/lib/api/v2/schemas/rubrics";
 import RubricDetails from "./RubricDetails";
 import RubricStandardGroup from "./RubricStandardGroup";
+
+type RubricItem = {
+  rubric_id: string;
+  name: string;
+  description: string;
+  department_ids: string[] | null;
+  points: number;
+  passPoints: number;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_duplicate: boolean;
+  standard_groups: Record<string, string[]>;
+};
 
 export interface RubricProps {
   rubricId?: string;

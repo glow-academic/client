@@ -51,11 +51,27 @@ import {
   useBulkCreateOrUpdateStaff,
   useProcessCSV,
 } from "@/lib/api/v2/hooks/profile";
-import {
-  CSVColumnMapping,
-  ProcessedCSVRow,
-} from "@/lib/api/v2/schemas/profile";
 import { cn } from "@/lib/utils";
+
+type CSVColumnMapping = {
+  csv_column: string;
+  target_field: string | null;
+};
+
+type ProcessedCSVRow = {
+  row_index: number;
+  firstName: string | null;
+  lastName: string | null;
+  alias: string | null;
+  role: string | null;
+  department_ids: string[];
+  cohort_ids: string[];
+  errors: Array<{
+    row_index: number;
+    field: string;
+    message: string;
+  }>;
+};
 
 export interface CSVImportStaffModalProps {
   open: boolean;

@@ -15,8 +15,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import { Clock, Shield, User as UserIcon } from "lucide-react";
+
+type ProfileListItem = {
+  profile_id: string;
+  first_name: string;
+  last_name: string;
+  alias: string;
+  name: string;
+  role: string;
+  email: string;
+  initials: string;
+  active: boolean;
+  last_active: string | null;
+  cohort_ids: string[];
+  department_ids: string[];
+  requests_per_day: number | null;
+  total_requests: number;
+  default_profile: boolean;
+  requests_in_last_day: number;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_remove?: boolean;
+};
 
 export interface StaffFilterDialogProps {
   open: boolean;

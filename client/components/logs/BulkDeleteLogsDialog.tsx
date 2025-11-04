@@ -16,7 +16,38 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { useBulkDeleteLogs } from "@/lib/api/v2/hooks/logs";
-import type { LogItem } from "@/lib/api/v2/schemas/logs";
+
+type LogItem = {
+  log_id: number;
+  event: string;
+  level: string;
+  message: string;
+  correlation_id: string;
+  actor: {
+    userId?: string | null;
+    profileId?: string | null;
+    profileName?: string | null;
+  } | null;
+  subject: {
+    entityId?: string | null;
+    entityType?: string | null;
+  } | null;
+  context: {
+    route?: string | null;
+    function?: string | null;
+    component?: string | null;
+    provider?: string | null;
+    model?: string | null;
+  } | null;
+  error: {
+    code?: string | null;
+    name?: string | null;
+    stack?: string | null;
+    message?: string | null;
+  } | null;
+  created_at: string;
+  actor_name: string | null;
+};
 
 export interface BulkDeleteLogsDialogProps {
   open: boolean;

@@ -5,11 +5,9 @@
  * 06/27/2025
  */
 "use client";
-import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 
 import { useAttemptFull } from "@/lib/api/v2/hooks/attempts";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
-import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -22,6 +20,184 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
+
+// Type extracted from useAttemptFull hook response
+// Note: This matches the structure returned by /api/v2/attempts/{attemptId}/full
+type AttemptFullResponse = {
+  attempt: {
+    id: string;
+    createdAt: string;
+    simulationId: string;
+    infiniteMode: boolean;
+    archived: boolean;
+  };
+  simulation: {
+    id: string;
+    title: string;
+    description: string;
+    departmentId: string;
+    active: boolean;
+    defaultSimulation: boolean;
+    practiceSimulation: boolean;
+    hintsEnabled: boolean;
+    objectivesEnabled: boolean;
+    inputGuardrailActive: boolean;
+    outputGuardrailActive: boolean;
+    imageInputActive: boolean;
+    copyPasteAllowed: boolean;
+    timeLimit: number | null;
+    rubricId: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  attemptProfiles: Array<{
+    profileId: string;
+    attemptId: string;
+    active: boolean;
+  }>;
+  chats: Array<{
+    chat: {
+      id: string;
+      createdAt: string;
+      updatedAt: string;
+      title: string;
+      scenarioId: string;
+      attemptId: string;
+      completed: boolean;
+      completedAt: string | null;
+      traceId: string | null;
+      documentIds: string[];
+    };
+    scenario: {
+      id: string;
+      name: string;
+      problemStatement: string;
+      departmentId: string;
+      active: boolean;
+      personaId: string | null;
+      createdAt: string;
+      updatedAt: string;
+      generated: boolean;
+      defaultScenario: boolean;
+      copyPasteAllowed: boolean;
+      objectives?: string[] | undefined;
+    } | null;
+    messages: Array<{
+      id: string;
+      createdAt: string;
+      updatedAt: string;
+      chatId: string;
+      content: string;
+      type: "query" | "response";
+      completed: boolean;
+    }>;
+    hints: Array<{
+      messageId: string;
+      hints: Array<{
+        simulationMessageId: string;
+        hint: string;
+        idx: number;
+        createdAt: string;
+      }>;
+    }>;
+    gradingState: {
+      achievedStandards: Record<string, boolean>;
+      passedStandards: Record<string, boolean>;
+      gradeDescription?: string | undefined;
+      feedbackByStandardId?: Record<string, string> | undefined;
+    } | null;
+    dynamicRubric: {
+      chatId: string;
+      score: number;
+      passed: boolean;
+      timeTaken: number;
+      skillScores: Record<string, number>;
+      skillFeedbacks: Record<string, string>;
+      totalPossiblePoints: number;
+    } | null;
+    previousChats: Array<{
+      chatId: string;
+      attemptId: string;
+      score: number | null;
+      passed: boolean | null;
+      createdAt: string;
+      title: string;
+      timeTaken: number | null;
+      totalPossiblePoints: number | null;
+      percentage: number | null;
+    }>;
+  }>;
+  scenarioDocuments: Array<{
+    document_id: string;
+    name: string;
+    type: string;
+    updatedAt: string;
+    extension: string;
+    scenario_ids: string[];
+    can_edit: boolean;
+    can_delete: boolean;
+    active: boolean;
+    department_ids: string[] | null;
+    file_path: string;
+    mime_type: string;
+    parameter_item_ids: string[];
+  }>;
+  rubricStructure: {
+    standardGroups: Record<string, string[]>;
+    standardGroupsMapping: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        points: number;
+        passPoints: number;
+      }
+    >;
+    standardsMapping: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        points: number;
+      }
+    >;
+  } | null;
+  aggregatedResults: {
+    totalChats: number;
+    passedChats: number;
+    averageScore: number;
+    totalTime: number;
+    overallPassed: boolean;
+  } | null;
+  timer: {
+    elapsed: number;
+    remaining: number | null;
+    expired: boolean;
+  };
+  currentChatIndex: number;
+  expectedChatCount: number;
+  isSingleChatAttempt: boolean;
+  isLastAttempt: boolean;
+  showResults: boolean;
+  shouldShowControls: boolean;
+  isActive: boolean;
+};
+
+type SimulationItem = {
+  simulation_id: string;
+  name: string;
+  description: string;
+  department_ids: string[] | null;
+  time_limit: number | null;
+  active: boolean;
+  practice_simulation: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_duplicate: boolean;
+  scenario_ids: string[];
+  rubric_id: string;
+  num_cohorts: number;
+};
 
 export interface SimulationContextType {
   // Raw attempt data for lookups
@@ -43,8 +219,8 @@ export interface SimulationContextType {
     AttemptFullResponse["chats"][number]["scenario"]
   >;
 
-  // Rubric structure (exact type from AttemptFullResponse)
-  rubricStructure: AttemptFullResponse["rubricStructure"];
+  // Rubric structure (exact type from AttemptFullResponse - can be null)
+  rubricStructure: AttemptFullResponse["rubricStructure"] | null;
 
   // Grading states (exact type from AttemptFullResponse)
   gradingStatesByChatId: Record<
@@ -70,7 +246,7 @@ export interface SimulationContextType {
   allDynamicRubrics: NonNullable<
     AttemptFullResponse["chats"][number]["dynamicRubric"]
   >[];
-  aggregatedResults: AttemptFullResponse["aggregatedResults"];
+  aggregatedResults: AttemptFullResponse["aggregatedResults"] | null;
 
   // Grading progress
   gradingProgress: {

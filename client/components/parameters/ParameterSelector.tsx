@@ -13,11 +13,25 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
-import type {
-  ParameterItemMapping,
-  ParameterMapping,
-} from "@/lib/api/v2/schemas/base";
 import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
+
+type ParameterMappingItem = {
+  name: string;
+  description: string;
+  numerical: boolean;
+  document_parameter: boolean;
+};
+
+type ParameterItemMappingItem = {
+  name: string;
+  description: string;
+  parameter_id: string;
+  parameter_name: string;
+  value: string;
+};
+
+type ParameterItemMapping = Record<string, ParameterItemMappingItem>;
+type ParameterMapping = Record<string, ParameterMappingItem>;
 
 // Component for slider with precisely aligned labels
 function SliderLabelContainer({

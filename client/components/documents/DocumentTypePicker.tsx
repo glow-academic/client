@@ -29,8 +29,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import { type DocumentType } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type DocumentType =
+  | "homework"
+  | "project"
+  | "quiz"
+  | "midterm"
+  | "lab"
+  | "lecture"
+  | "syllabus";
 
 export interface DocumentTypePickerProps {
   selectedType?: DocumentType;

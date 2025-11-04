@@ -8,8 +8,6 @@
 "use client";
 
 import { api } from "@/lib/api/client";
-import { ProfileRole } from "@/lib/api/v2/schemas/base";
-import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { keys } from "@/lib/query/keys";
 import {
   getFirstAvailableSectionForRole,
@@ -27,6 +25,26 @@ import React, {
   useState,
 } from "react";
 import { z } from "zod";
+
+type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
+
+type ProfileItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  alias: string;
+  role: ProfileRole;
+  active: boolean;
+  viewedIntro: boolean;
+  viewedChat: boolean;
+  defaultProfile: boolean;
+  reqPerDay: number | null;
+  lastLogin: string;
+  lastActive: string | null;
+  createdAt: string;
+  updatedAt: string;
+  primaryDepartmentId: string | null;
+};
 
 // ============================================================================
 // INTERNAL TYPES (for consolidated API)
@@ -72,8 +90,24 @@ const SimulationsDataSchema = z.object({
   items: z.array(SimulationContextItemSchema),
 });
 
-// Import ProfileItemSchema from centralized location
-import { ProfileItemSchema } from "@/lib/api/v2/schemas/profile";
+// ProfileItemSchema for Zod validation (inline to avoid v2 schema dependency)
+const ProfileItemSchema = z.object({
+  id: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  alias: z.string(),
+  role: z.enum(["superadmin", "admin", "instructional", "ta", "guest"]),
+  active: z.boolean(),
+  viewedIntro: z.boolean(),
+  viewedChat: z.boolean(),
+  defaultProfile: z.boolean(),
+  reqPerDay: z.number().nullable(),
+  lastLogin: z.string(),
+  lastActive: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  primaryDepartmentId: z.string().nullable(),
+});
 
 const LayoutContextResponseSchema = z.object({
   actualProfile: ProfileItemSchema,

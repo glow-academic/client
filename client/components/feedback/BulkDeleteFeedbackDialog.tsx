@@ -16,7 +16,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { useBulkDeleteFeedback } from "@/lib/api/v2/hooks/feedback";
-import type { FeedbackItem } from "@/lib/api/v2/schemas/feedback";
+
+type FeedbackItem = {
+  feedback_id: number;
+  type: string;
+  message: string;
+  created_at: string;
+  author_name: string;
+  author_alias: string;
+  author_profile_id: string;
+};
 
 export interface BulkDeleteFeedbackDialogProps {
   open: boolean;

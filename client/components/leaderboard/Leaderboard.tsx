@@ -10,9 +10,35 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import type { ProfileRole } from "@/lib/api/v2/schemas/base";
-import { type LeaderboardRow } from "@/lib/api/v2/schemas/leaderboard";
 import { keys } from "@/lib/query/keys";
+
+type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
+
+type LeaderboardMetric = {
+  hasData: boolean;
+  method: string;
+  currentValue: number;
+  keyField: string | null | undefined;
+  trendData: any[];
+  dataPoints: any[];
+  hover: Record<string, any>;
+};
+
+type LeaderboardRow = {
+  profileId: string;
+  firstName: string;
+  lastName: string;
+  metrics: {
+    totalAttempts: LeaderboardMetric;
+    highestScoreAvg: LeaderboardMetric;
+    messagesPerSession: LeaderboardMetric;
+    personaResponseSeconds: LeaderboardMetric;
+    timeSpentMinutes: LeaderboardMetric;
+    improvementRatePerDay: LeaderboardMetric;
+    perfectScoreCount: LeaderboardMetric;
+    quickestPassMinutes: LeaderboardMetric;
+  };
+};
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {

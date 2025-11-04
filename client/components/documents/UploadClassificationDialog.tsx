@@ -16,12 +16,26 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  DocumentType,
-  type ParameterItemMappingItem,
-  type ParameterMappingItem,
-} from "@/lib/api/v2/schemas/base";
 import { toast } from "sonner";
+
+type DocumentType =
+  | "homework"
+  | "project"
+  | "quiz"
+  | "midterm"
+  | "lab"
+  | "lecture"
+  | "syllabus";
+
+type ParameterItemMappingItem = {
+  name: string;
+  description: string;
+};
+
+type ParameterMappingItem = {
+  name: string;
+  description: string;
+};
 
 export type FileClassification = {
   type: DocumentType;

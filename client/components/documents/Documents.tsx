@@ -58,8 +58,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DocumentType } from "@/lib/api/v2/schemas/base";
 import { Edit, Eye, Grid3X3, List, Trash2, UploadCloud, X } from "lucide-react";
+
+type DocumentType =
+  | "homework"
+  | "project"
+  | "quiz"
+  | "midterm"
+  | "lab"
+  | "lecture"
+  | "syllabus";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";

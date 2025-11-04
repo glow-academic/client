@@ -7,7 +7,6 @@
 
 "use client";
 
-import { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { subDays } from "date-fns";
 import { usePathname } from "next/navigation";
 import React, {
@@ -18,6 +17,8 @@ import React, {
   useState,
 } from "react";
 import { useProfile } from "./profile-context";
+
+type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
 export type SimulationFilter = "practice" | "general" | "archived";
 
@@ -69,7 +70,8 @@ interface AnalyticsProviderProps {
 
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Get profile context to check user role and ID
-  const { effectiveProfile, earliestAttemptDate, cohortIds, departmentIds } = useProfile();
+  const { effectiveProfile, earliestAttemptDate, cohortIds, departmentIds } =
+    useProfile();
   const pathname = usePathname();
 
   // Calculate the earliest date to use as default start date
@@ -116,7 +118,9 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Cohort filtering - empty array means all cohorts
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
   // Department filtering - empty array means all departments
-  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>([]);
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
+    []
+  );
   // Document filtering - empty array means all documents
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
@@ -134,7 +138,8 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
   // Compute effective department IDs (all user departments if none selected)
   const effectiveDepartmentIds = useMemo(
-    () => (selectedDepartmentIds.length > 0 ? selectedDepartmentIds : departmentIds),
+    () =>
+      selectedDepartmentIds.length > 0 ? selectedDepartmentIds : departmentIds,
     [selectedDepartmentIds, departmentIds]
   );
 
@@ -205,7 +210,10 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setHasUserSetDateRange(false); // Reset user-set date range
   }, [earliestDate]);
 
-  const hasActiveFilters = selectedCohortIds.length > 0 || selectedDepartmentIds.length > 0 || selectedDocumentIds.length > 0;
+  const hasActiveFilters =
+    selectedCohortIds.length > 0 ||
+    selectedDepartmentIds.length > 0 ||
+    selectedDocumentIds.length > 0;
 
   const value: AnalyticsContextType = useMemo(
     () => ({

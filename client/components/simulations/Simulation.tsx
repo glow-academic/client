@@ -28,12 +28,12 @@ import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import type { SimulationDetailResponse } from "@/lib/api/v2/schemas/simulations";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -45,7 +45,6 @@ import {
   Power,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
 
 export interface SimulationProps {
   simulationId?: string;
@@ -157,7 +156,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
   });
 
   // Use edit detail when editing, default detail when creating
-  const simulationData: SimulationDetailResponse | undefined = isEditMode
+  // Infer type directly from API response
+  const simulationData = isEditMode
     ? simulationDetail
     : simulationDetailDefault;
   const isLoadingData = isEditMode

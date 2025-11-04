@@ -5,6 +5,9 @@
  * 06/07/2025
  */
 "use client";
+import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
+import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
+import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,19 +21,37 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { toast } from "sonner";
-import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
-import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
-import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import ActiveUsersKPI from "./kpis/ActiveUsersKPI";
 import AdminUsersKPI from "./kpis/AdminUsersKPI";
 import InstructionalUsersKPI from "./kpis/InstructionalUsersKPI";
 import TAUsersKPI from "./kpis/TAUsersKPI";
 import TotalRequestsKPI from "./kpis/TotalRequestsKPI";
+
+type ProfileListItem = {
+  profile_id: string;
+  first_name: string;
+  last_name: string;
+  alias: string;
+  name: string;
+  role: string;
+  email: string;
+  initials: string;
+  active: boolean;
+  last_active: string | null;
+  cohort_ids: string[];
+  department_ids: string[];
+  requests_per_day: number | null;
+  total_requests: number;
+  default_profile: boolean;
+  requests_in_last_day: number;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_remove?: boolean;
+};
 
 export default function Staff() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);

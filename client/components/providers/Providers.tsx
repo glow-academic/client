@@ -72,11 +72,27 @@ import {
   useDuplicateModel,
   useDuplicateProvider,
 } from "@/lib/api/v2/hooks/providers";
-import type {
-  ModelItem,
-  ProviderWithModels,
-} from "@/lib/api/v2/schemas/providers";
 import { keys } from "@/lib/query/keys";
+
+type ModelItem = {
+  model_id: string;
+  name: string;
+  description: string;
+  active: boolean;
+  custom_model: boolean;
+  updated_at: string;
+  can_edit: boolean;
+  can_delete: boolean;
+};
+
+type ProviderWithModels = {
+  provider_id: string;
+  name: string;
+  description: string;
+  can_edit: boolean;
+  can_delete: boolean;
+  models: ModelItem[];
+};
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function Providers() {

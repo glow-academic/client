@@ -25,7 +25,11 @@ import {
   YAxis,
 } from "recharts";
 
-import type { TrendData } from "@/lib/api/v2/schemas/base";
+type TrendData = {
+  date: string;
+  value: number;
+  count: number;
+};
 
 export interface AdminUsersKPIProps {
   currentValue: number;
@@ -112,7 +116,8 @@ export default function AdminUsersKPI({
           <DialogHeader>
             <DialogTitle>Admin Users Growth Trend</DialogTitle>
             <DialogDescription hidden>
-              This chart shows the growth of admin and superadmin users over time.
+              This chart shows the growth of admin and superadmin users over
+              time.
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
@@ -150,4 +155,3 @@ export default function AdminUsersKPI({
     </>
   );
 }
-

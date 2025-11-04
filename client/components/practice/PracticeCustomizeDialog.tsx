@@ -15,15 +15,36 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type {
-  ParameterItemMapping,
-  ParameterMapping,
-  PersonaMapping,
-  ScenarioMapping,
-  SimulationMapping,
-} from "@/lib/api/v2/schemas/base";
-import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { Infinity, Target } from "lucide-react";
+
+type ProfileItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  alias: string;
+  role: "superadmin" | "admin" | "instructional" | "ta" | "guest";
+  active: boolean;
+  viewedIntro: boolean;
+  viewedChat: boolean;
+  defaultProfile: boolean;
+  reqPerDay: number | null;
+  lastLogin: string;
+  lastActive: string | null;
+  createdAt: string;
+  updatedAt: string;
+  primaryDepartmentId: string | null;
+};
+
+type MappingItem = {
+  name: string;
+  description: string;
+};
+
+type ParameterItemMapping = Record<string, MappingItem>;
+type ParameterMapping = Record<string, MappingItem>;
+type PersonaMapping = Record<string, MappingItem>;
+type ScenarioMapping = Record<string, MappingItem>;
+type SimulationMapping = Record<string, MappingItem>;
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 

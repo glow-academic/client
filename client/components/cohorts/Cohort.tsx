@@ -35,11 +35,32 @@ import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+type ProfileListItem = {
+  profile_id: string;
+  first_name: string;
+  last_name: string;
+  alias: string;
+  name: string;
+  role: string;
+  email: string;
+  initials: string;
+  active: boolean;
+  last_active: string | null;
+  cohort_ids: string[];
+  department_ids: string[];
+  requests_per_day: number | null;
+  total_requests: number;
+  default_profile: boolean;
+  requests_in_last_day: number;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_remove?: boolean;
+};
 
 export interface CohortProps {
   cohortId?: string;

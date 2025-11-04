@@ -20,9 +20,21 @@ import {
   useCreateRubric,
   useRubricUnifiedUpdate,
 } from "@/lib/api/v2/hooks/rubrics";
-import { RubricItem } from "@/lib/api/v2/schemas/rubrics";
 import { Edit, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+type RubricItem = {
+  rubric_id: string;
+  name: string;
+  description: string;
+  department_ids: string[] | null;
+  points: number;
+  passPoints: number;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_duplicate: boolean;
+  standard_groups: Record<string, string[]>;
+};
 
 export interface RubricDetailsProps {
   rubric: RubricItem;
@@ -107,7 +119,7 @@ export default function RubricDetails({
         );
         setIsEditing(false);
       }
-    } catch (error) {
+    } catch {
       toast.error(
         isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
       );

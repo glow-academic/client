@@ -5,7 +5,6 @@
  */
 "use client";
 
-import { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 import { keys } from "@/lib/query/keys";
 import { createSocketClient } from "@/lib/ws/socket";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,6 +19,30 @@ import React, {
 import { Socket } from "socket.io-client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
+
+type Chat = {
+  chat: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    title: string;
+    scenarioId: string;
+    attemptId: string;
+    completed: boolean;
+    completedAt: string | null;
+    traceId: string | null;
+    documentIds: string[];
+  };
+  messages: Array<{
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    chatId: string;
+    content: string;
+    type: "query" | "response";
+    completed: boolean;
+  }>;
+};
 
 export interface WebSocketContextType {
   // Connection state
@@ -224,28 +247,23 @@ export function WebSocketProvider({
           // This updates ALL attempt queries to find the right message
           queryClient.setQueriesData(
             { queryKey: keys.attempts.all },
-            (oldData: AttemptFullResponse) => {
+            (oldData: { chats: Chat[] } | undefined) => {
               if (!oldData?.chats) return oldData;
 
               return {
                 ...oldData,
-                chats: oldData.chats.map(
-                  (chat: AttemptFullResponse["chats"][number]) => {
-                    if (chat.chat.id !== data.chat_id) return chat;
+                chats: oldData.chats.map((chat: Chat) => {
+                  if (chat.chat.id !== data.chat_id) return chat;
 
-                    return {
-                      ...chat,
-                      messages: chat.messages.map(
-                        (
-                          msg: AttemptFullResponse["chats"][number]["messages"][number]
-                        ) =>
-                          msg.id === data.message_id
-                            ? { ...msg, content: data.accumulated_content }
-                            : msg
-                      ),
-                    };
-                  }
-                ),
+                  return {
+                    ...chat,
+                    messages: chat.messages.map((msg) =>
+                      msg.id === data.message_id
+                        ? { ...msg, content: data.accumulated_content }
+                        : msg
+                    ),
+                  };
+                }),
               };
             }
           );

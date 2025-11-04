@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import { ProfileRole } from "@/lib/api/v2/schemas/base";
+type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {

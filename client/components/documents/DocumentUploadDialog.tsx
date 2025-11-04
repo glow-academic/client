@@ -9,11 +9,17 @@
 import UploadClassificationDialog from "@/components/documents/UploadClassificationDialog";
 import { useProfile } from "@/contexts/profile-context";
 import { useFinalizeDocumentUpload } from "@/lib/api/v2/hooks/documents";
-import {
-  type ParameterItemMappingItem,
-  type ParameterMappingItem,
-} from "@/lib/api/v2/schemas/base";
 import { inferMimeFromName } from "@/utils/mime-map";
+
+type ParameterItemMappingItem = {
+  name: string;
+  description: string;
+};
+
+type ParameterMappingItem = {
+  name: string;
+  description: string;
+};
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
