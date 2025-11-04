@@ -1,5 +1,6 @@
 import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
 import { cookies as getCookies, headers as getHeaders } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND = INTERNAL_HTTP_BASE;
 
@@ -13,10 +14,11 @@ async function forwardHeaders() {
 }
 
 async function handler(
-  req: Request,
-  { params }: { params: { path?: string[] } }
+  req: NextRequest,
+  { params }: { params: Promise<{ path?: string[] }> }
 ) {
-  const segs = params.path ?? [];
+  const { path } = await params;
+  const segs = path ?? [];
   const incoming = new URL(req.url);
   const upstream = new URL("/" + segs.join("/"), BACKEND);
   upstream.search = incoming.search;
@@ -36,7 +38,7 @@ async function handler(
 
   const out = new Headers(res.headers);
   out.delete("transfer-encoding");
-  return new Response(res.body, {
+  return new NextResponse(res.body, {
     status: res.status,
     statusText: res.statusText,
     headers: out,

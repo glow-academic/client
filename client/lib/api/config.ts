@@ -10,9 +10,9 @@ const APP_PREFIX = env("NEXT_PUBLIC_APP_PREFIX", ""); // e.g. "" or "/glow"
 // --- HTTP bases ---
 /**
  * Browser/RSC → call the Next.js BFF proxy (same-origin, cookies, no CORS)
- * This lives under /api/_proxy (keeps /api/* free for NextAuth & legacy v2).
+ * This lives under /api/proxy (keeps /api/* free for NextAuth & legacy v2).
  */
-export const BFF_HTTP_BASE = join(APP_PREFIX, "/api/_proxy");
+export const BFF_HTTP_BASE = join(APP_PREFIX, "/api/proxy");
 
 /**
  * Server (Route Handlers / Server Actions) → call FastAPI directly.

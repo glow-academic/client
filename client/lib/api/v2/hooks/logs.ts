@@ -5,13 +5,13 @@
 
 import { useProfile } from "@/contexts/profile-context";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "../../fetcher";
 import { logsListKeys } from "../keys";
 import { HealthResponseSchema } from "../schemas/health";
 import {
   BulkDeleteLogsResponseSchema,
   LogsListResponseSchema,
 } from "../schemas/logs";
+import { api } from "../fetcher";
 
 /**
  * Create log mutation hook
