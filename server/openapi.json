@@ -3902,7 +3902,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProviderRequest"
+                "$ref": "#/components/schemas/app__schemas__providers__UpdateProviderRequest"
               }
             }
           },
@@ -10247,6 +10247,194 @@
         ]
       }
     },
+    "/api/v3/providers/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers"
+        ],
+        "summary": "Update Provider",
+        "description": "Update an existing provider.",
+        "operationId": "update_provider_api_v3_providers_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v3__providers__update__UpdateProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateProviderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
+      }
+    },
+    "/api/v3/providers/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers"
+        ],
+        "summary": "Delete Provider",
+        "description": "Delete a provider if no models are in use.",
+        "operationId": "delete_provider_api_v3_providers_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteProviderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
+      }
+    },
+    "/api/v3/providers/duplicate": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers"
+        ],
+        "summary": "Duplicate Provider",
+        "description": "Duplicate a provider with all its models.",
+        "operationId": "duplicate_provider_api_v3_providers_duplicate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateProviderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
+      }
+    },
+    "/api/v3/providers/decrypt-key": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers"
+        ],
+        "summary": "Decrypt Provider Key",
+        "description": "Decrypt provider API key for authorized users.",
+        "operationId": "decrypt_provider_key_api_v3_providers_decrypt_key_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecryptProviderKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecryptProviderKeyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
+      }
+    },
     "/api/v3/providers/models/detail": {
       "post": {
         "tags": [
@@ -10274,6 +10462,202 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/app__api__v3__providers__models__detail__ModelDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers",
+          "providers"
+        ]
+      }
+    },
+    "/api/v3/providers/models/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers",
+          "providers"
+        ],
+        "summary": "Create Model",
+        "description": "Create a new model.",
+        "operationId": "create_model_api_v3_providers_models_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateModelRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateModelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers",
+          "providers"
+        ]
+      }
+    },
+    "/api/v3/providers/models/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers",
+          "providers"
+        ],
+        "summary": "Update Model",
+        "description": "Update an existing model.",
+        "operationId": "update_model_api_v3_providers_models_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateModelRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateModelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers",
+          "providers"
+        ]
+      }
+    },
+    "/api/v3/providers/models/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers",
+          "providers"
+        ],
+        "summary": "Delete Model",
+        "description": "Delete a model if not in use.",
+        "operationId": "delete_model_api_v3_providers_models_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteModelRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteModelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers",
+          "providers"
+        ]
+      }
+    },
+    "/api/v3/providers/models/duplicate": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers",
+          "providers"
+        ],
+        "summary": "Duplicate Model",
+        "description": "Duplicate a model.",
+        "operationId": "duplicate_model_api_v3_providers_models_duplicate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateModelRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateModelResponse"
                 }
               }
             }
@@ -10416,6 +10800,100 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/app__api__v3__parameters__detail__ParameterDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
+      }
+    },
+    "/api/v3/parameters/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "parameters"
+        ],
+        "summary": "Create Parameter",
+        "description": "Create a new parameter with nested items.",
+        "operationId": "create_parameter_api_v3_parameters_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateParameterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateParameterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
+      }
+    },
+    "/api/v3/parameters/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "parameters"
+        ],
+        "summary": "Update Parameter",
+        "description": "Update an existing parameter (replace all items).",
+        "operationId": "update_parameter_api_v3_parameters_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateParameterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateParameterResponse"
                 }
               }
             }
@@ -19060,53 +19538,6 @@
         "title": "UpdateProfileResponse",
         "description": "Response containing updated profile."
       },
-      "UpdateProviderRequest": {
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "api_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Api Key"
-          },
-          "base_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providerId",
-          "name",
-          "description",
-          "base_url"
-        ],
-        "title": "UpdateProviderRequest",
-        "description": "Request to update provider.\n\nNote: Providers are global (not department-specific)."
-      },
       "UpdateProviderResponse": {
         "properties": {
           "success": {
@@ -25708,6 +26139,52 @@
           "description"
         ],
         "title": "ProviderMappingItem"
+      },
+      "app__api__v3__providers__update__UpdateProviderRequest": {
+        "properties": {
+          "providerId": {
+            "type": "string",
+            "title": "Providerid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "providerId",
+          "name",
+          "description"
+        ],
+        "title": "UpdateProviderRequest",
+        "description": "Request to update provider.\n\nNote: Providers are global (not department-specific)."
       },
       "app__api__v3__reports__bundle__ProfileDataEnhanced": {
         "properties": {
@@ -33060,6 +33537,53 @@
         ],
         "title": "ProvidersListResponse",
         "description": "Response for providers list endpoint."
+      },
+      "app__schemas__providers__UpdateProviderRequest": {
+        "properties": {
+          "providerId": {
+            "type": "string",
+            "title": "Providerid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "providerId",
+          "name",
+          "description",
+          "base_url"
+        ],
+        "title": "UpdateProviderRequest",
+        "description": "Request to update provider.\n\nNote: Providers are global (not department-specific)."
       },
       "app__schemas__reports__ProfileDataEnhanced": {
         "properties": {
