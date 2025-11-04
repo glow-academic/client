@@ -6,7 +6,20 @@
  */
 
 "use client";
-import { type ColumnDef } from "@tanstack/react-table";
+import {
+  type ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -48,10 +61,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DocumentType } from "@/lib/api/v2/schemas/base";
-import { UploadCloud } from "lucide-react";
+import { Edit, Eye, Grid3X3, List, Trash2, UploadCloud, X } from "lucide-react";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import ParameterItemPicker from "@/components/common/scenario/ParameterItemPicker";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useBulkDeleteDocuments,
@@ -62,8 +92,6 @@ import {
   useDocumentsList,
   useUpdateDocument,
 } from "@/lib/api/v2/hooks/documents";
-import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
-import { DocumentsDataTable } from "./DocumentsDataTable";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";
 
 // Helper function to truncate text
@@ -85,17 +113,24 @@ export default function Documents() {
   // State management
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+
+  // Table state
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "updatedAt", desc: true },
+  ]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [editingDocument, setEditingDocument] = useState<DocumentItem | null>(
-    null
-  );
-  const [previewDocument, setPreviewDocument] = useState<DocumentItem | null>(
-    null
-  );
+  const [editingDocument, setEditingDocument] = useState<
+    (typeof documents)[number] | null
+  >(null);
+  const [previewDocument, setPreviewDocument] = useState<
+    (typeof documents)[number] | null
+  >(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
@@ -254,7 +289,7 @@ export default function Documents() {
     // Skip if no change (initial load or same selection)
     if (
       currentDeptIds.length === prevDeptIds.length &&
-      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
+      currentDeptIds.every((id: string, idx: number) => id === prevDeptIds[idx])
     ) {
       // Initialize on first load
       if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
@@ -265,20 +300,20 @@ export default function Documents() {
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id)
+      (id: string) => !currentDeptIds.includes(id)
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id)
+      (id: string) => !prevDeptIds.includes(id)
     );
 
     // Save selections for deselected departments
     if (deselectedDepts.length > 0) {
       const currentParamIds = editingDocument.parameter_item_ids || [];
-      setStagedSelectionsEdit((prev) => {
+      setStagedSelectionsEdit((prev: Record<string, StagedSelections>) => {
         const updated = { ...prev };
-        deselectedDepts.forEach((deptId) => {
+        deselectedDepts.forEach((deptId: string) => {
           updated[deptId] = {
             parameter_item_ids: [...currentParamIds],
           };
@@ -289,8 +324,8 @@ export default function Documents() {
 
     // Restore selections for newly selected departments
     if (newlySelectedDepts.length > 0) {
-      setStagedSelectionsEdit((prev) => {
-        newlySelectedDepts.forEach((deptId) => {
+      setStagedSelectionsEdit((prev: Record<string, StagedSelections>) => {
+        newlySelectedDepts.forEach((deptId: string) => {
           const staged = prev[deptId];
           if (
             staged?.parameter_item_ids &&
@@ -301,17 +336,19 @@ export default function Documents() {
               validParamSet.has(id)
             );
             if (validParams.length > 0) {
-              setEditingDocument((prevDoc) => {
-                if (!prevDoc) return null;
-                const combined = new Set([
-                  ...(prevDoc.parameter_item_ids || []),
-                  ...validParams,
-                ]);
-                return {
-                  ...prevDoc,
-                  parameter_item_ids: Array.from(combined),
-                };
-              });
+              setEditingDocument(
+                (prevDoc: (typeof documents)[number] | null) => {
+                  if (!prevDoc) return null;
+                  const combined = new Set([
+                    ...(prevDoc.parameter_item_ids || []),
+                    ...validParams,
+                  ]);
+                  return {
+                    ...prevDoc,
+                    parameter_item_ids: Array.from(combined),
+                  };
+                }
+              );
             }
           }
         });
@@ -344,7 +381,7 @@ export default function Documents() {
 
     // Save selections for deselected department
     if (prevDeptId !== null && currentDeptId !== prevDeptId) {
-      setStagedSelectionsBulk((prev) => {
+      setStagedSelectionsBulk((prev: Record<string, StagedSelections>) => {
         const updated = { ...prev };
         updated[prevDeptId] = {
           parameter_item_ids: [...bulkParameterItemIds],
@@ -355,7 +392,7 @@ export default function Documents() {
 
     // Restore selections for newly selected department
     if (currentDeptId !== null && currentDeptId !== prevDeptId) {
-      setStagedSelectionsBulk((prev) => {
+      setStagedSelectionsBulk((prev: Record<string, StagedSelections>) => {
         const staged = prev[currentDeptId];
         if (
           staged?.parameter_item_ids &&
@@ -366,7 +403,7 @@ export default function Documents() {
             validParamSet.has(id)
           );
           if (validParams.length > 0) {
-            setBulkParameterItemIds((prevParams) => {
+            setBulkParameterItemIds((prevParams: string[]) => {
               const combined = new Set([...prevParams, ...validParams]);
               return Array.from(combined);
             });
@@ -405,7 +442,7 @@ export default function Documents() {
   useEffect(() => {
     if (!bulkDocumentDetail) return;
     const validDeptIds = new Set(bulkDocumentDetail.valid_department_ids || []);
-    setStagedSelectionsBulk((prev) => {
+    setStagedSelectionsBulk((prev: Record<string, StagedSelections>) => {
       const cleaned: Record<string, StagedSelections> = {};
       Object.keys(prev).forEach((deptId) => {
         const staged = prev[deptId];
@@ -425,7 +462,7 @@ export default function Documents() {
         validSet.has(id)
       );
       if (filtered.length !== documentDetail.parameter_item_ids.length) {
-        setEditingDocument((prev) =>
+        setEditingDocument((prev: (typeof documents)[number] | null) =>
           prev ? { ...prev, parameter_item_ids: filtered } : null
         );
       }
@@ -492,13 +529,13 @@ export default function Documents() {
   }, [documents]);
 
   // Handle document preview (for table view)
-  const handlePreview = useCallback((document: DocumentItem) => {
+  const handlePreview = useCallback((document: (typeof documents)[number]) => {
     setPreviewDocument(document);
     setShowPreviewDialog(true);
   }, []);
 
   // Define columns inline using useMemo
-  const columns = useMemo<ColumnDef<DocumentItem>[]>(
+  const columns = useMemo<ColumnDef<(typeof documents)[number]>[]>(
     () => [
       {
         id: "select",
@@ -668,7 +705,8 @@ export default function Documents() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: DocumentItem) => row.department_ids ?? [],
+        accessorFn: (row: (typeof documents)[number]) =>
+          row.department_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -730,37 +768,177 @@ export default function Documents() {
   );
 
   // Handle document selection (for bulk operations in list view only)
-  const handleDocumentSelect = (documentId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedDocuments((prev) => [...prev, documentId]);
-    } else {
-      setSelectedDocuments((prev) => prev.filter((id) => id !== documentId));
-    }
-  };
+  const handleDocumentSelect = useCallback(
+    (documentId: string, checked: boolean) => {
+      if (checked) {
+        setSelectedDocuments((prev) => [...prev, documentId]);
+      } else {
+        setSelectedDocuments((prev) => prev.filter((id) => id !== documentId));
+      }
+    },
+    []
+  );
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedDocuments(documents.map((doc) => doc.document_id));
-    } else {
-      setSelectedDocuments([]);
-    }
-  };
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        setSelectedDocuments(documents.map((doc) => doc.document_id));
+      } else {
+        setSelectedDocuments([]);
+      }
+    },
+    [documents]
+  );
 
   // Handle document edit
-  const handleEdit = (document: DocumentItem) => {
+  const handleEdit = useCallback((document: (typeof documents)[number]) => {
     setEditingDocument({ ...document });
     // Initialize previousDepartmentIdsEdit when opening edit dialog
     setPreviousDepartmentIdsEdit((prev) =>
       prev.length === 0 ? document.department_ids || [] : prev
     );
     setShowEditDialog(true);
-  };
+  }, []);
 
   // Handle single document delete
-  const handleSingleDelete = (document: DocumentItem) => {
-    setEditingDocument(document);
-    setShowDeleteDialog(true);
-  };
+  const handleSingleDelete = useCallback(
+    (document: (typeof documents)[number]) => {
+      setEditingDocument(document);
+      setShowDeleteDialog(true);
+    },
+    []
+  );
+
+  // Add checkbox and actions columns to the columns array
+  const columnsWithActions = useMemo(() => {
+    const checkboxColumn: ColumnDef<(typeof documents)[number]> = {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => {
+            table.toggleAllPageRowsSelected(!!value);
+            handleSelectAll(!!value);
+          }}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={selectedDocuments.includes(row.original.document_id)}
+          onCheckedChange={(value) =>
+            handleDocumentSelect(row.original.document_id, !!value)
+          }
+          aria-label="Select row"
+          className="translate-y-[2px]"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    };
+
+    const actionsColumn: ColumnDef<(typeof documents)[number]> = {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const document = row.original;
+        return (
+          <div className="flex items-center justify-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => handlePreview(document)}
+            >
+              <Eye className="h-3 w-3" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => handleEdit(document)}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            {canDeleteDocument(document.document_id) && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                onClick={() => handleSingleDelete(document)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    };
+
+    // Filter out the existing select and actions columns and add our custom ones
+    const filteredColumns = columns.filter(
+      (col) => col.id !== "select" && col.id !== "actions"
+    );
+    return [checkboxColumn, ...filteredColumns, actionsColumn];
+  }, [
+    columns,
+    selectedDocuments,
+    handleDocumentSelect,
+    handleSelectAll,
+    handleEdit,
+    handlePreview,
+    handleSingleDelete,
+    canDeleteDocument,
+  ]);
+
+  // Create table instance
+  const table = useReactTable({
+    data: documents,
+    columns: columnsWithActions,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+    },
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  });
+
+  // Switch page size based on view mode
+  useEffect(() => {
+    if (viewMode === "grid") {
+      if (table.getState().pagination.pageSize !== 12) {
+        table.setPageSize(12);
+        table.setPageIndex(0);
+      }
+    } else {
+      if (table.getState().pagination.pageSize !== 10) {
+        table.setPageSize(10);
+        table.setPageIndex(0);
+      }
+    }
+  }, [viewMode, table]);
 
   // Handle bulk document delete (from list view selection)
   const handleBulkDelete = () => {
@@ -959,7 +1137,7 @@ export default function Documents() {
   };
 
   // Render document card for grid view
-  const renderDocumentCard = (document: DocumentItem) => {
+  const renderDocumentCard = (document: (typeof documents)[number]) => {
     const canDelete = canDeleteDocument(document.document_id);
 
     return (
@@ -1004,28 +1182,210 @@ export default function Documents() {
           </div>
         </div>
       ) : (
-        <DocumentsDataTable
-          columns={columns}
-          data={documents}
-          scenarioMapping={scenarioMapping}
-          parameterItemMapping={parameterItemMapping}
-          typeOptions={typeOptions}
-          scenarioOptions={scenarioOptions}
-          extensionOptions={extensionOptions}
-          departmentOptions={departmentOptions}
-          renderDocumentCard={renderDocumentCard}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onEdit={handleEdit}
-          onPreview={handlePreview}
-          onDelete={handleSingleDelete}
-          canDelete={canDeleteDocument}
-          selectedDocuments={selectedDocuments}
-          onDocumentSelect={handleDocumentSelect}
-          onSelectAll={handleSelectAll}
-          onBulkDelete={handleBulkDelete}
-          onBulkEdit={handleBulkEdit}
-        />
+        <div className="space-y-4">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-1 items-center space-x-2">
+              <Input
+                placeholder="Filter documents..."
+                value={
+                  (table.getColumn("name")?.getFilterValue() as string) ?? ""
+                }
+                onChange={(event) =>
+                  table.getColumn("name")?.setFilterValue(event.target.value)
+                }
+                className="h-8 w-[150px] lg:w-[250px]"
+              />
+              {table.getColumn("type") && (
+                <DataTableFacetedFilter
+                  column={table.getColumn("type")!}
+                  title="Type"
+                  options={typeOptions}
+                />
+              )}
+              {table.getColumn("scenario_ids") && (
+                <DataTableFacetedFilter
+                  column={table.getColumn("scenario_ids")!}
+                  title="Scenarios"
+                  options={scenarioOptions}
+                />
+              )}
+              {table.getColumn("extension") && (
+                <DataTableFacetedFilter
+                  column={table.getColumn("extension")!}
+                  title="Extension"
+                  options={extensionOptions}
+                />
+              )}
+              {table.getColumn("departments") &&
+                departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={table.getColumn("departments")!}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+              {table.getState().columnFilters.length > 0 && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              {/* Bulk edit & delete - only show in list view where selection is available */}
+              {viewMode === "list" && selectedDocuments.length > 0 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkEdit}
+                    className="h-8"
+                  >
+                    <Grid3X3 className="mr-2 h-4 w-4" />
+                    Edit {selectedDocuments.length}
+                  </Button>
+                  {selectedDocuments.filter((documentId) =>
+                    canDeleteDocument(documentId)
+                  ).length === 0 ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8"
+                            disabled={true}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete 0 of {selectedDocuments.length}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>All documents are currently in use</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBulkDelete}
+                      className="h-8"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete{" "}
+                      {
+                        selectedDocuments.filter((documentId) =>
+                          canDeleteDocument(documentId)
+                        ).length
+                      }{" "}
+                      of {selectedDocuments.length}
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {/* View mode toggle */}
+              <div className="flex items-center space-x-1 border rounded-md">
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="h-8 px-3"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="h-8 px-3"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <DataTableViewOptions table={table} />
+            </div>
+          </div>
+
+          {/* Content based on view mode */}
+          {viewMode === "list" ? (
+            <div className="space-y-4">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => {
+                          return (
+                            <TableHead key={header.id}>
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                            </TableHead>
+                          );
+                        })}
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {table.getRowModel().rows?.length ? (
+                      table.getRowModel().rows.map((row) => (
+                        <TableRow
+                          key={row.id}
+                          data-state={row.getIsSelected() && "selected"}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columnsWithActions.length}
+                          className="h-24 text-center"
+                        >
+                          No results.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <DataTablePagination table={table} />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {table.getRowModel().rows.length > 0 ? (
+                  table
+                    .getRowModel()
+                    .rows.map((row) => renderDocumentCard(row.original))
+                ) : (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    No documents match the current filters.
+                  </div>
+                )}
+              </div>
+              <DataTablePagination table={table} card={true} />
+            </div>
+          )}
+        </div>
       )}
 
       {/* Edit Document Dialog */}
@@ -1045,8 +1405,9 @@ export default function Documents() {
                   id="name"
                   value={editingDocument.name}
                   onChange={(e) =>
-                    setEditingDocument((prev) =>
-                      prev ? { ...prev, name: e.target.value } : null
+                    setEditingDocument(
+                      (prev: (typeof documents)[number] | null) =>
+                        prev ? { ...prev, name: e.target.value } : null
                     )
                   }
                 />
@@ -1071,8 +1432,9 @@ export default function Documents() {
                   defaultValue={documentDetail.type}
                   onValueChange={(value) => {
                     // Update in temporary state for submission
-                    setEditingDocument((prev) =>
-                      prev ? { ...prev, type: value as DocumentType } : null
+                    setEditingDocument(
+                      (prev: (typeof documents)[number] | null) =>
+                        prev ? { ...prev, type: value as DocumentType } : null
                     );
                   }}
                 >
@@ -1098,8 +1460,9 @@ export default function Documents() {
                   validIds={documentDetail.valid_department_ids}
                   selectedIds={documentDetail.department_ids || []}
                   onSelect={(ids) =>
-                    setEditingDocument((prev) =>
-                      prev ? { ...prev, department_ids: ids } : null
+                    setEditingDocument(
+                      (prev: (typeof documents)[number] | null) =>
+                        prev ? { ...prev, department_ids: ids } : null
                     )
                   }
                   multiSelect={true}
@@ -1112,10 +1475,11 @@ export default function Documents() {
                   mapping={documentDetail["parameter_item_mapping"]}
                   selectedIds={documentDetail.parameter_item_ids}
                   onSelect={(ids) =>
-                    setEditingDocument((prev) =>
-                      prev
-                        ? { ...prev, parameter_item_ids: ids as string[] }
-                        : null
+                    setEditingDocument(
+                      (prev: (typeof documents)[number] | null) =>
+                        prev
+                          ? { ...prev, parameter_item_ids: ids as string[] }
+                          : null
                     )
                   }
                   validIds={validParameterItemIdsForEdit}

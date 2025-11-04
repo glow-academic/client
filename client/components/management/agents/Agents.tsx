@@ -5,24 +5,47 @@
  * 07/20/2025
  */
 "use client";
-import { Brain, Copy, Edit, Thermometer } from "lucide-react";
+import { Brain, Copy, Edit, Thermometer, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AgentsDataTable } from "./AgentsDataTable";
 
 export default function Agents() {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const queryClient = useQueryClient();
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "updated_at", desc: true },
+  ]);
 
   // V3 API with generated keys
   const filters = { profileId: effectiveProfile?.id || "" };
@@ -105,6 +128,89 @@ export default function Agents() {
       label: obj?.name || id,
     }));
   }, [departmentMapping]);
+
+  // Define table columns inline
+  const columns: ColumnDef<(typeof agents)[number]>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "model_id",
+        header: "Model",
+        cell: ({ row }) => {
+          const modelId = row.getValue("model_id") as string;
+          return modelMapping[modelId]?.name || modelId;
+        },
+      },
+      {
+        accessorKey: "reasoning",
+        header: "Reasoning",
+      },
+      {
+        accessorKey: "temperature",
+        header: "Temperature",
+      },
+      // Hidden faceting column for Role
+      {
+        id: "role",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof agents)[number]) => row.role || "",
+        filterFn: (row, _id, value: string[]) => {
+          const role = String(row.getValue("role"));
+          return value.includes(role);
+        },
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof agents)[number]) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+    ],
+    [modelMapping]
+  );
+
+  // Create table instance
+  const table = useReactTable({
+    data: agents,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12,
+      },
+    },
+  });
 
   const handleEdit = (id: string) => {
     router.push(`/management/agents/a/${id}`);
@@ -199,18 +305,106 @@ export default function Agents() {
     );
   }
 
+  // Get column references for toolbar
+  const nameColumn = table.getColumn("name");
+  const reasoningColumn = table.getColumn("reasoning");
+  const modelColumn = table.getColumn("model_id");
+  const temperatureColumn = table.getColumn("temperature");
+  const roleColumn = table.getColumn("role");
+  const departmentsColumn = table.getColumn("departments");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
   return (
     <div className="space-y-8">
-      <AgentsDataTable
-        data={agents}
-        modelMapping={modelMapping}
-        reasoningOptions={reasoningOptions}
-        modelOptions={modelOptions}
-        temperatureOptions={temperatureOptions}
-        roleOptions={roleOptions}
-        departmentOptions={departmentOptions}
-        renderAgentCard={renderAgentCard}
-      />
+      <div className="space-y-4">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="mb-2">
+              <Input
+                placeholder="Search system agents..."
+                value={(nameColumn?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  nameColumn?.setFilterValue(event.target.value)
+                }
+                className="h-8 w-[150px] lg:w-[250px]"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2 flex-wrap mb-2">
+              {/* Reasoning Filter */}
+              {reasoningColumn && reasoningOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={reasoningColumn}
+                  title="Reasoning"
+                  options={reasoningOptions}
+                />
+              )}
+
+              {/* Model Filter */}
+              {modelColumn && modelOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={modelColumn}
+                  title="Model"
+                  options={modelOptions}
+                />
+              )}
+
+              {/* Temperature Filter */}
+              {temperatureColumn && temperatureOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={temperatureColumn}
+                  title="Temperature"
+                  options={temperatureOptions}
+                />
+              )}
+
+              {/* Role Filter */}
+              {roleColumn && roleOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={roleColumn}
+                  title="Role"
+                  options={roleOptions}
+                />
+              )}
+
+              {/* Department Filter */}
+              {departmentsColumn && departmentOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={departmentsColumn}
+                  title="Department"
+                  options={departmentOptions}
+                />
+              )}
+
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Cards Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => renderAgentCard(row.original))
+          ) : (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              No system agents match the current filters.
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <DataTablePagination table={table} card={true} />
+      </div>
     </div>
   );
 }

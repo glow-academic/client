@@ -18,6 +18,7 @@ import {
   Plus,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -38,17 +39,27 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { ColumnDef } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import type {
-  ParameterItem,
-  ParameterSampleItem,
-} from "@/lib/api/v2/schemas/parameters";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ParametersDataTable } from "./ParametersDataTable";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { Input } from "@/components/ui/input";
 
 export default function Parameters() {
   const router = useRouter();
@@ -59,6 +70,14 @@ export default function Parameters() {
     id: string;
     name: string;
   } | null>(null);
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "updated_at", desc: true },
+  ]);
 
   const queryClient = useQueryClient();
 
@@ -107,7 +126,7 @@ export default function Parameters() {
   }, [parametersData?.department_mapping]);
 
   // Column definitions for TanStack Table
-  const columns = useMemo<ColumnDef<ParameterItem>[]>(
+  const columns = useMemo<ColumnDef<(typeof parameters)[number]>[]>(
     () => [
       {
         accessorKey: "name",
@@ -163,7 +182,7 @@ export default function Parameters() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: ParameterItem) => row.department_ids ?? [],
+        accessorFn: (row: (typeof parameters)[number]) => row.department_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -175,7 +194,35 @@ export default function Parameters() {
     []
   );
 
-  const handleDuplicate = async (parameter: ParameterItem) => {
+  // Create table instance
+  const table = useReactTable({
+    data: parameters,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12,
+      },
+    },
+  });
+
+  const handleDuplicate = async (parameter: (typeof parameters)[number]) => {
     if (!parameter.can_duplicate) {
       toast.error("This parameter cannot be duplicated");
       return;
@@ -294,7 +341,7 @@ export default function Parameters() {
     }
   };
 
-  const renderParameterCard = (parameter: ParameterItem) => {
+  const renderParameterCard = (parameter: (typeof parameters)[number]) => {
     const count = parameter.num_items; // Pre-calculated from server
 
     return (
@@ -458,17 +505,112 @@ export default function Parameters() {
     );
   }
 
+  // Get column references for toolbar
+  const nameColumn = table.getColumn("name");
+  const typeColumn = table.getColumn("numerical");
+  const itemCountColumn = table.getColumn("num_items");
+  const statusColumn = table.getColumn("active");
+  const departmentsColumn = table.getColumn("departments");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
+  const typeOptions = [
+    { value: "true", label: "Numerical" },
+    { value: "false", label: "Text" },
+  ];
+
+  const itemCountOptions = [
+    { value: "0", label: "0 items" },
+    { value: "1-3", label: "1-3 items" },
+    { value: "4-6", label: "4-6 items" },
+    { value: "7+", label: "7+ items" },
+  ];
+
+  const statusOptions = [
+    { value: "true", label: "Active" },
+    { value: "false", label: "Inactive" },
+  ];
+
   return (
     <div className="space-y-6">
       {parameters.length === 0 ? (
         renderEmptyState()
       ) : (
-        <ParametersDataTable
-          columns={columns}
-          parameters={parameters}
-          renderParameterCard={renderParameterCard}
-          departmentOptions={departmentOptions}
-        />
+        <div className="space-y-4">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+              <div className="mb-2">
+                <Input
+                  placeholder="Search parameters..."
+                  value={(nameColumn?.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    nameColumn?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 w-[150px] lg:w-[250px]"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap mb-2">
+                {typeColumn && (
+                  <DataTableFacetedFilter
+                    column={typeColumn}
+                    title="Type"
+                    options={typeOptions}
+                  />
+                )}
+
+                {itemCountColumn && (
+                  <DataTableFacetedFilter
+                    column={itemCountColumn}
+                    title="Items"
+                    options={itemCountOptions}
+                  />
+                )}
+
+                {statusColumn && (
+                  <DataTableFacetedFilter
+                    column={statusColumn}
+                    title="Status"
+                    options={statusOptions}
+                  />
+                )}
+
+                {departmentsColumn && departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => renderParameterCard(row.original))
+            ) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No parameters match the current filters.
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <DataTablePagination table={table} card={true} />
+        </div>
       )}
 
       {/* Delete Confirmation Dialog */}

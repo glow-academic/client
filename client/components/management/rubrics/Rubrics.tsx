@@ -13,13 +13,28 @@ import {
   Loader2,
   Star,
   Trash2,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { ColumnDef } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import {
   AlertDialog,
@@ -33,12 +48,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import type { RubricItem } from "@/lib/api/v2/schemas/rubrics";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RubricsDataTable } from "./RubricsDataTable";
 
 export default function Rubrics() {
   const router = useRouter();
@@ -51,6 +65,14 @@ export default function Rubrics() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
   const queryClient = useQueryClient();
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "name", desc: false },
+  ]);
 
   // V3 API: Single fetch with hierarchical data and permissions
   const filters = useMemo(
@@ -132,7 +154,7 @@ export default function Rubrics() {
   ];
 
   // Column definitions for TanStack Table
-  const columns = useMemo<ColumnDef<RubricItem>[]>(
+  const columns = useMemo<ColumnDef<(typeof rubrics)[number]>[]>(
     () => [
       {
         accessorKey: "name",
@@ -152,7 +174,7 @@ export default function Rubrics() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: RubricItem) => row.passPoints,
+        accessorFn: (row: (typeof rubrics)[number]) => row.passPoints,
         filterFn: (row, _id, value: string[]) => {
           const passPoints = Number(row.getValue("passPoints"));
           return value.some((range) => {
@@ -174,7 +196,7 @@ export default function Rubrics() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: RubricItem) => row.points,
+        accessorFn: (row: (typeof rubrics)[number]) => row.points,
         filterFn: (row, _id, value: string[]) => {
           const points = Number(row.getValue("points"));
           return value.some((range) => {
@@ -196,7 +218,7 @@ export default function Rubrics() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: RubricItem) => {
+        accessorFn: (row: (typeof rubrics)[number]) => {
           const points = row.points;
           if (!points || points === 0) return 0;
           return Math.round((row.passPoints / points) * 100);
@@ -226,7 +248,7 @@ export default function Rubrics() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: RubricItem) => row.department_ids ?? [],
+        accessorFn: (row: (typeof rubrics)[number]) => row.department_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -238,6 +260,34 @@ export default function Rubrics() {
     []
   );
 
+  // Create table instance
+  const table = useReactTable({
+    data: rubrics,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12,
+      },
+    },
+  });
+
   const handleDelete = async () => {
     if (!deleteItem) return;
 
@@ -245,7 +295,7 @@ export default function Rubrics() {
     try {
       await deleteRubricMutation.mutateAsync({ rubricId: deleteItem.id });
       toast.success("Rubric deleted successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete rubric");
     } finally {
       setIsDeleting(false);
@@ -254,7 +304,7 @@ export default function Rubrics() {
     }
   };
 
-  const handleDuplicate = async (rubric: RubricItem) => {
+  const handleDuplicate = async (rubric: (typeof rubrics)[number]) => {
     if (!rubric.can_duplicate) {
       toast.error("This rubric cannot be duplicated");
       return;
@@ -266,7 +316,7 @@ export default function Rubrics() {
         rubricId: rubric.rubric_id,
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to duplicate rubric");
     } finally {
       setIsDuplicating(null);
@@ -282,12 +332,12 @@ export default function Rubrics() {
     router.push(`/management/rubrics/r/${id}`);
   };
 
-  const getPassPercentage = (rubric: RubricItem) => {
+  const getPassPercentage = (rubric: (typeof rubrics)[number]) => {
     if (!rubric.points || rubric.points === 0) return 0;
     return Math.round((rubric.passPoints / rubric.points) * 100);
   };
 
-  const renderRubricCard = (rubric: RubricItem) => {
+  const renderRubricCard = (rubric: (typeof rubrics)[number]) => {
     const passPercentage = getPassPercentage(rubric);
 
     return (
@@ -375,6 +425,14 @@ export default function Rubrics() {
     );
   };
 
+  // Get column references for toolbar
+  const nameColumn = table.getColumn("name");
+  const passPointsColumn = table.getColumn("passPoints");
+  const pointsColumn = table.getColumn("points");
+  const passPercentageColumn = table.getColumn("passPercentage");
+  const departmentsColumn = table.getColumn("departments");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
   return (
     <div className="space-y-6">
       {isLoading ? (
@@ -382,17 +440,84 @@ export default function Rubrics() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <RubricsDataTable
-          columns={columns}
-          rubrics={rubrics}
-          standardGroupsMapping={standardGroupsMapping}
-          standardsMapping={standardsMapping}
-          departmentOptions={departmentOptions}
-          passPointsOptions={passPointsOptions}
-          totalPointsOptions={totalPointsOptions}
-          passPercentageOptions={passPercentageOptions}
-          renderRubricCard={renderRubricCard}
-        />
+        <div className="space-y-4" data-testid="rubrics-data-table">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+              <div className="mb-2">
+                <Input
+                  placeholder="Search rubrics..."
+                  value={(nameColumn?.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    nameColumn?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 w-[150px] lg:w-[250px]"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap mb-2">
+                {passPointsColumn && passPointsOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={passPointsColumn}
+                    title="Pass Points"
+                    options={passPointsOptions}
+                  />
+                )}
+
+                {pointsColumn && totalPointsOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={pointsColumn}
+                    title="Total Points"
+                    options={totalPointsOptions}
+                  />
+                )}
+
+                {passPercentageColumn && passPercentageOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={passPercentageColumn}
+                    title="Pass %"
+                    options={passPercentageOptions}
+                  />
+                )}
+
+                {departmentsColumn && departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Rubrics cards */}
+          <div className="space-y-4">
+            {table.getRowModel().rows.length ? (
+              table
+                .getRowModel()
+                .rows.map((row) => renderRubricCard(row.original))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No rubrics match the current filters.
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <DataTablePagination table={table} card={true} />
+        </div>
       )}
 
       {/* Delete Confirmation Dialog */}
