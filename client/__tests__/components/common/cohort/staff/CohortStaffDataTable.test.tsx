@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   CohortStaffDataTable,
   CohortStaffDataTableProps,
-} from "@/components/common/cohort/staff/CohortStaffDataTable";
+} from "@/components/cohorts/staff/CohortStaffDataTable";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

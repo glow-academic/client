@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Simulation from "@/components/common/simulation/Simulation";
+import Simulation from "@/components/simulations/Simulation";
 
 import type { Metadata } from "next";
 

@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 08/10/2025
  */
-import Pricing from "@/components/analytics/pricing/Pricing";
+import Pricing from "@/components/pricing/Pricing";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

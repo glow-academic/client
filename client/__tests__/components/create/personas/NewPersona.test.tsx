@@ -3,10 +3,10 @@ import { screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import NewPersona from "@/components/create/personas/NewPersona";
+import NewPersona from "@/components/personas/NewPersona";
 
 // Mock the Persona component
-vi.mock("@/components/common/agent/Persona", () => ({
+vi.mock("@/components/agents/Persona", () => ({
   default: ({ mode }: { mode: string }) => (
     <div data-testid="persona-component" data-mode={mode}>
       Persona Component (Mode: {mode})

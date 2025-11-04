@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import AddStaffToCohort, { SelectedProfile, AddStaffToCohortProps } from '@/components/common/staff/AddStaffToCohort';
+import AddStaffToCohort, { SelectedProfile, AddStaffToCohortProps } from '@/components/staff/AddStaffToCohort';
 
 
 

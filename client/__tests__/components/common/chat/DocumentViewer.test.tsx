@@ -2,7 +2,7 @@ import { act, render, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import DocumentViewer from "@/components/common/chat/DocumentViewer";
+import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 
 // Mock fetch globally
 global.fetch = vi.fn();

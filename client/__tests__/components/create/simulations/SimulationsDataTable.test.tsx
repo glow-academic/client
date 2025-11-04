@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   SimulationsDataTable,
   SimulationsDataTableProps,
-} from "@/components/create/simulations/SimulationsDataTable";
+} from "@/components/simulations/SimulationsDataTable";
 import { Simulation } from "@/types";
 
 // ------------------------------------------------------------------

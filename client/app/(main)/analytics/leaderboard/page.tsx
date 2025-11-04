@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Leaderboard from "@/components/analytics/Leaderboard";
+import Leaderboard from "@/components/leaderboard/Leaderboard";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

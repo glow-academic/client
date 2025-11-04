@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import Persona from "@/components/common/agent/Persona";
+import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

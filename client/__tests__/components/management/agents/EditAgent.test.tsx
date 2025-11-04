@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 // ——————————————————————————————————————————
 import EditAgent, {
   EditSystemAgentProps,
-} from "@/components/management/agents/EditAgent";
+} from "@/components/agents/EditAgent";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

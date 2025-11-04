@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import Department from "@/components/common/department/Department";
+import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

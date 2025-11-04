@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 import React from "react";
-import { Simulations } from "@/components/create/simulations/Simulations";
+import { Simulations } from "@/components/simulations/Simulations";
 
 import type { Metadata } from "next";
 

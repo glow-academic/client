@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 // ——————————————————————————————————————————
 import ScenarioEdit, {
   ScenarioEditProps,
-} from "@/components/create/scenarios/ScenarioEdit";
+} from "@/components/scenarios/ScenarioEdit";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

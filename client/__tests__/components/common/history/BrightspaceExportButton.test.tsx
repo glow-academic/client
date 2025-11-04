@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   BrightspaceExportButton,
   BrightspaceExportButtonProps,
-} from "@/components/common/history/BrightspaceExportButton";
+} from "@/components/reports/BrightspaceExportButton";
 
 // ------------------------------------------------------------------
 // Create a comprehensive mock table with all required methods

@@ -3,7 +3,7 @@ import { screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import MarkdownImage from "@/components/common/chat/MarkdownImage";
+import MarkdownImage from "@/components/common/chat/markdown/MarkdownImage";
 
 describe("MarkdownImage", () => {
   describe("basic render smoke-test", () => {

@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import ModelEdit from "@/components/system/providers/ModelEdit";
+import Model from "@/components/providers/Model";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -63,7 +63,7 @@ export default async function ModelEditPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <ModelEdit modelId={modelId} providerId={providerId} />
+        <Model modelId={modelId} providerId={providerId} />
       </div>
     </HydrationBoundary>
   );

@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   CohortStaffDataTableToolbar,
   CohortStaffDataTableToolbarProps,
-} from "@/components/common/cohort/staff/CohortStaffDataTableToolbar";
+} from "@/components/cohorts/staff/CohortStaffDataTableToolbar";
 import { Profile } from "@/types";
 
 // ------------------------------------------------------------------

@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
-  SimulationScenarioPicker,
-  SimulationScenarioPickerProps,
-} from "@/components/common/simulation/SimulationScenarioPicker";
+  SimulationScenarioFormPicker,
+  SimulationScenarioFormPickerProps,
+} from "@/components/simulations/SimulationScenarioFormPicker";
 
 // ------------------------------------------------------------------
 // Mock data for testing
@@ -82,7 +82,7 @@ const mockScenarioMapping: Record<string, ScenarioMappingItem> = {
   },
 };
 
-const defaultProps: SimulationScenarioPickerProps = {
+const defaultProps: SimulationScenarioFormPickerProps = {
   scenarioMapping: mockScenarioMapping,
   validScenarioIds: ["scenario-1", "scenario-2", "scenario-3"],
   selectedScenarioIds: [],
@@ -90,10 +90,10 @@ const defaultProps: SimulationScenarioPickerProps = {
 };
 
 // ------------------------------------------------------------------
-describe("SimulationScenarioPicker", () => {
+describe("SimulationScenarioFormPicker", () => {
   describe("Basic Rendering", () => {
     it("renders without crashing", () => {
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
       expect(
         screen.getByRole("button", { name: /select scenarios/i })
       ).toBeInTheDocument();
@@ -101,14 +101,14 @@ describe("SimulationScenarioPicker", () => {
 
     it("renders with custom label", () => {
       render(
-        <SimulationScenarioPicker {...defaultProps} label="Custom Label" />
+        <SimulationScenarioFormPicker {...defaultProps} label="Custom Label" />
       );
       expect(screen.getByText("Custom Label")).toBeInTheDocument();
     });
 
     it("renders with custom placeholder", () => {
       render(
-        <SimulationScenarioPicker
+        <SimulationScenarioFormPicker
           {...defaultProps}
           placeholder="Custom placeholder"
         />
@@ -120,7 +120,7 @@ describe("SimulationScenarioPicker", () => {
 
     it("shows selected scenario count when multiple selected", () => {
       render(
-        <SimulationScenarioPicker
+        <SimulationScenarioFormPicker
           {...defaultProps}
           selectedScenarioIds={["scenario-1", "scenario-2"]}
         />
@@ -132,7 +132,7 @@ describe("SimulationScenarioPicker", () => {
   describe("Filter Options Building", () => {
     it("opens popover when clicked", async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -144,7 +144,7 @@ describe("SimulationScenarioPicker", () => {
 
     it("opens filter popover when filter button clicked", async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -164,7 +164,7 @@ describe("SimulationScenarioPicker", () => {
   describe("Persona Filtering", () => {
     it("filters scenarios by persona", async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -190,7 +190,7 @@ describe("SimulationScenarioPicker", () => {
 
     it('shows "No Persona" option when scenarios without personas exist', async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -207,7 +207,7 @@ describe("SimulationScenarioPicker", () => {
   describe("Document Filtering", () => {
     it("filters scenarios by document", async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -231,7 +231,7 @@ describe("SimulationScenarioPicker", () => {
 
     it('shows "No Documents" option when scenarios without documents exist', async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -248,7 +248,7 @@ describe("SimulationScenarioPicker", () => {
   describe("Parameter Item Filtering", () => {
     it("filters scenarios by parameter items", async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -272,7 +272,7 @@ describe("SimulationScenarioPicker", () => {
 
     it('shows "No Parameter Items" option when scenarios without params exist', async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -289,7 +289,7 @@ describe("SimulationScenarioPicker", () => {
   describe("AND Filter Logic", () => {
     it("applies AND logic across filter groups", async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -318,7 +318,7 @@ describe("SimulationScenarioPicker", () => {
   describe("Filter Badge Indicator", () => {
     it("shows active filter badge when filters are applied", async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -346,7 +346,7 @@ describe("SimulationScenarioPicker", () => {
   describe("Clear Filters", () => {
     it("clears all filters when Clear All is clicked", async () => {
       const user = userEvent.setup();
-      render(<SimulationScenarioPicker {...defaultProps} />);
+      render(<SimulationScenarioFormPicker {...defaultProps} />);
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
       await user.click(button);
@@ -379,7 +379,7 @@ describe("SimulationScenarioPicker", () => {
       const onSelectMock = vi.fn();
       const user = userEvent.setup();
       render(
-        <SimulationScenarioPicker {...defaultProps} onSelect={onSelectMock} />
+        <SimulationScenarioFormPicker {...defaultProps} onSelect={onSelectMock} />
       );
 
       const button = screen.getByRole("button", { name: /select scenarios/i });
@@ -395,7 +395,7 @@ describe("SimulationScenarioPicker", () => {
       const onSelectMock = vi.fn();
       const user = userEvent.setup();
       render(
-        <SimulationScenarioPicker
+        <SimulationScenarioFormPicker
           {...defaultProps}
           selectedScenarioIds={["scenario-1"]}
           onSelect={onSelectMock}
@@ -415,7 +415,7 @@ describe("SimulationScenarioPicker", () => {
   describe("Edge Cases", () => {
     it("handles empty scenario mapping", () => {
       render(
-        <SimulationScenarioPicker
+        <SimulationScenarioFormPicker
           {...defaultProps}
           scenarioMapping={{}}
           validScenarioIds={[]}
@@ -441,7 +441,7 @@ describe("SimulationScenarioPicker", () => {
       };
 
       render(
-        <SimulationScenarioPicker
+        <SimulationScenarioFormPicker
           {...defaultProps}
           scenarioMapping={incompleteMapping}
           validScenarioIds={["scenario-x"]}
@@ -455,8 +455,8 @@ describe("SimulationScenarioPicker", () => {
 });
 
 /*
- * Component Analysis for SimulationScenarioPicker:
- * Path: common/simulation/SimulationScenarioPicker.tsx
+ * Component Analysis for SimulationScenarioFormPicker:
+ * Path: common/simulation/SimulationScenarioFormPicker.tsx
  *
  * Features:
  * - Uses ScenarioMappingItem from schemas with nested persona, document, parameter mappings

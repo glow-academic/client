@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import { Scenarios } from "@/components/create/scenarios/Scenarios";
+import { Scenarios } from "@/components/scenarios/Scenarios";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

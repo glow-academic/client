@@ -1,11 +1,11 @@
-import { RubricsDataTable } from "@/components/management/rubrics/RubricsDataTable";
+import { RubricsDataTable } from "@/components/rubrics/RubricsDataTable";
 import { render, screen } from "@/test/custom-render";
 import { Rubric } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock the RubricsDataTableToolbar component
-vi.mock("@/components/management/rubrics/RubricsDataTableToolbar", () => ({
+vi.mock("@/components/rubrics/RubricsDataTableToolbar", () => ({
   RubricsDataTableToolbar: () => (
     <div data-testid="rubrics-data-table-toolbar">Toolbar</div>
   ),

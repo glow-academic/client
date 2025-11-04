@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ReportsDataTableToolbar,
   ReportsDataTableToolbarProps,
-} from "@/components/analytics/report/ReportsDataTableToolbar";
+} from "@/components/reports/ReportsDataTableToolbar";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

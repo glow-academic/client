@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DocumentsDataTableToolbar,
   DocumentsDataTableToolbarProps,
-} from "@/components/create/documents/DocumentsDataTableToolbar";
+} from "@/components/documents/DocumentsDataTableToolbar";
 import { getMockTable } from "@/mocks/navigation";
 import { Document } from "@/types";
 

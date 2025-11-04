@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import {
   DocumentPicker,
   DocumentPickerProps,
-} from "@/components/common/scenario/DocumentPicker";
+} from "@/components/scenarios/DocumentPicker";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

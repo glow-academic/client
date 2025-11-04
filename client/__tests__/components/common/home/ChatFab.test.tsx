@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import ChatFab from "@/components/common/home/ChatFab";
+import ChatFab from "@/components/assistant/ChatFab";
 
 // Mock the assistant context
 vi.mock("@/contexts/assistant-context", () => ({
@@ -27,7 +27,7 @@ vi.mock("next/navigation", () => ({
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { ChatFabProps } from "@/components/common/home/ChatFab";
+import type { ChatFabProps } from "@/components/assistant/ChatFab";
 const mockProps: ChatFabProps = {
   up: false,
 };

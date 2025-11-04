@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import TATour from "@/components/home/TATour";
+import TATour from "@/components/common/layout/TATour";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

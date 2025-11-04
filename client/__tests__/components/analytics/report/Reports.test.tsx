@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import Reports from "@/components/analytics/report/Reports";
+import Reports from "@/components/reports/Reports";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import NewModel from "@/components/system/providers/NewModel";
+import Model from "@/components/providers/Model";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -63,7 +63,7 @@ export default async function NewModelPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <NewModel providerId={providerId} />
+        <Model providerId={providerId} />
       </div>
     </HydrationBoundary>
   );

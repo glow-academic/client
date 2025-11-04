@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 // ——————————————————————————————————————————
 import StaffManager, {
   StaffManagerProps,
-} from "@/components/common/staff/StaffManager";
+} from "@/components/staff/StaffManager";
 
 // ✨ Import testing mocks
 import "@/mocks/api";

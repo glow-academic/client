@@ -6,7 +6,7 @@ import { describe, it } from "vitest";
 import {
   PersonaPicker,
   PersonaPickerProps,
-} from "@/components/common/scenario/PersonaPicker";
+} from "@/components/scenarios/PersonaPicker";
 import type { PersonaMappingItem } from "@/lib/api/v2/schemas/base";
 
 // ------------------------------------------------------------------

@@ -253,7 +253,7 @@ vi.mock("@/utils/drizzle/db", () => ({
 // --- Component Mocks ---
 
 // Markdown component
-vi.mock("@/components/common/chat/Markdown", () => ({
+vi.mock("@/components/common/chat/markdown/Markdown", () => ({
   default: ({ children }: { children: string }) => {
     return React.createElement("div", {
       className: "markdown-mock",

@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import ProviderEdit from "@/components/system/providers/ProviderEdit";
+import ProviderEdit from "@/components/providers/ProviderEdit";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

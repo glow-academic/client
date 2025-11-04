@@ -2,13 +2,13 @@ import { render, screen, waitFor } from '@/test/custom-render';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 // ——————————————————————————————————————————
-import HintDisplay from '@/components/practice/HintDisplay';
+import HintDisplay from '@/components/common/chat/HintDisplay';
 
 
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { HintDisplayProps } from '@/components/practice/HintDisplay';
+import type { HintDisplayProps } from '@/components/common/chat/HintDisplay';
 const mockProps: HintDisplayProps = {
   hints: [],
   onSelectHint: vi.fn(),

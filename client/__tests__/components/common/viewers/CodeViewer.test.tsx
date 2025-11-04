@@ -4,7 +4,7 @@ import { render } from "@/test/custom-render";
 // ——————————————————————————————————————————
 import CodeViewer, {
   CodeViewerProps,
-} from "@/components/common/viewers/CodeViewer";
+} from "@/components/common/chat/viewers/CodeViewer";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

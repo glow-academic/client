@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ScenariosDataTable,
   ScenariosDataTableProps,
-} from "@/components/create/scenarios/ScenariosDataTable";
+} from "@/components/scenarios/ScenariosDataTable";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

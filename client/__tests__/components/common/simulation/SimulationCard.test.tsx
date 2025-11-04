@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import SimulationCard, {
   SimulationCardProps,
-} from "@/components/common/simulation/SimulationCard";
+} from "@/components/common/chat/SimulationCard";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

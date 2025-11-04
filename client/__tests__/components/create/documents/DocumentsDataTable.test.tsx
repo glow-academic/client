@@ -8,11 +8,11 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DocumentsDataTable,
   DocumentsDataTableProps,
-} from "@/components/create/documents/DocumentsDataTable";
+} from "@/components/documents/DocumentsDataTable";
 import { Document } from "@/types";
 
 // Mock the DocumentsDataTableToolbar component
-vi.mock("@/components/create/documents/DocumentsDataTableToolbar", () => ({
+vi.mock("@/components/documents/DocumentsDataTableToolbar", () => ({
   DocumentsDataTableToolbar: () => (
     <div data-testid="documents-data-table-toolbar">Toolbar</div>
   ),

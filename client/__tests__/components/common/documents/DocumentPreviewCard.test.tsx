@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import {
   DocumentPreviewCard,
   DocumentPreviewCardProps,
-} from "@/components/common/documents/DocumentPreviewCard";
+} from "@/components/documents/DocumentPreviewCard";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

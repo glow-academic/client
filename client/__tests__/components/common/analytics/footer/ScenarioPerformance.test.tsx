@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import the component
-import ScenarioPerformance from "@/components/common/analytics/footer/ScenarioPerformance";
+import ScenarioPerformance from "@/components/dashboard/footer/ScenarioPerformance";
 
 // Mock all query functions
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";

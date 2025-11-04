@@ -3,14 +3,14 @@ import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import RubricStandardGroup from "@/components/common/rubric/RubricStandardGroup";
+import RubricStandardGroup from "@/components/rubrics/RubricStandardGroup";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { RubricStandardGroupProps } from "@/components/common/rubric/RubricStandardGroup";
+import type { RubricStandardGroupProps } from "@/components/rubrics/RubricStandardGroup";
 const mockProps: RubricStandardGroupProps = {
   group: {
     id: "test-group-id",

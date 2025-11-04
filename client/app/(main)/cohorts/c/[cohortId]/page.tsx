@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import Leaderboard from "@/components/analytics/Leaderboard";
+import Leaderboard from "@/components/leaderboard/Leaderboard";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

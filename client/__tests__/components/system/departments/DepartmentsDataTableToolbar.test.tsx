@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import type { Table } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import { DepartmentsDataTableToolbar, DepartmentsDataTableToolbarProps } from '@/components/system/departments/DepartmentsDataTableToolbar';
+import { DepartmentsDataTableToolbar, DepartmentsDataTableToolbarProps } from '@/components/departments/DepartmentsDataTableToolbar';
 
 
 

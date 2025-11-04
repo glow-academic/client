@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import StagnationRate, {
   StagnationRateProps,
-} from "@/components/common/analytics/header/StagnationRate";
+} from "@/components/dashboard/header/StagnationRate";
 
 // Mock the utility function
 vi.mock("@/utils/analytics/header", () => ({

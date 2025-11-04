@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   LogsDataTable,
   LogsDataTableProps,
-} from "@/components/system/logs/LogsDataTable";
+} from "@/components/logs/LogsDataTable";
 import { AppLog } from "@/hooks/use-log-columns";
 
 // ------------------------------------------------------------------

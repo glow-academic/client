@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 // ——————————————————————————————————————————
 import MarkdownRenderer, {
   MarkdownRendererProps,
-} from "@/components/common/viewers/MarkdownRenderer";
+} from "@/components/common/chat/viewers/MarkdownRenderer";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

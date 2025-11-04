@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { DocumentUploadDialog } from '@/components/create/documents/DocumentUploadDialog';
+import { DocumentUploadDialog } from '@/components/documents/DocumentUploadDialog';
 
 
 
@@ -13,7 +13,7 @@ import '@/mocks/auth';
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { DocumentUploadDialogProps } from '@/components/create/documents/DocumentUploadDialog';
+import type { DocumentUploadDialogProps } from '@/components/documents/DocumentUploadDialog';
 const mockProps: DocumentUploadDialogProps = {
   open: false,
   onClose: vi.fn(),

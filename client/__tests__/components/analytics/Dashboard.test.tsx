@@ -3,7 +3,7 @@ import { screen, waitFor } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import Dashboard from "@/components/analytics/Dashboard";
+import Dashboard from "@/components/dashboard/Dashboard";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

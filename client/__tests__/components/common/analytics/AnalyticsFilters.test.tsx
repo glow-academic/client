@@ -3,7 +3,7 @@ import { screen, waitFor } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 
 describe("AnalyticsFilters", () => {
   describe("basic render smoke-test", () => {

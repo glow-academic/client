@@ -5,7 +5,7 @@
  * 07/23/2025
  */
 
-import SimulationComposition from "@/components/common/analytics/footer/SimulationComposition";
+import SimulationComposition from "@/components/dashboard/footer/SimulationComposition";
 import { render } from "@/test/custom-render";
 import { calculateSimulationComposition } from "@/utils/analytics/footer";
 import { screen, waitFor } from "@/test/custom-render";

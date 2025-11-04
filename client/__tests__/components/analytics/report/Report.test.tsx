@@ -3,7 +3,7 @@ import { screen, waitFor } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import Report, { ReportProps } from "@/components/analytics/report/Report";
+import Report, { ReportProps } from "@/components/reports/Report";
 
 // Import mocks
 import "@/mocks/api";

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
-} from "@/components/common/analytics/SimulationCompositionPicker";
+} from "@/components/dashboard/SimulationCompositionPicker";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

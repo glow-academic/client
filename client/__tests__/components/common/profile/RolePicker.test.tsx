@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import {
   RolePicker,
   RolePickerProps,
-} from "@/components/common/profile/RolePicker";
+} from "@/components/common/forms/ProfileRolePicker";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

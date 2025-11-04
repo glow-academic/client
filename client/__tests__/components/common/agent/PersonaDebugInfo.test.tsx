@@ -5,7 +5,7 @@ import { render } from "@/test/custom-render";
 import PersonaDebugInfo, {
   PersonaDebugInfo,
   PersonaDebugInfoProps,
-} from "@/components/common/agent/PersonaDebugInfo";
+} from "@/components/agents/PersonaDebugInfo";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

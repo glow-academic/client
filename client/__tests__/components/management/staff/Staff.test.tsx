@@ -2,7 +2,7 @@ import { render } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import Staff from "@/components/management/staff/Staff";
+import Staff from "@/components/staff/Staff";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

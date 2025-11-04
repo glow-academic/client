@@ -2,11 +2,11 @@ import { render } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import AccoladeCard from "@/components/common/cohort/AccoladeCard";
+import AccoladeCard from "@/components/leaderboard/AccoladeCard";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { AccoladeCardProps } from "@/components/common/cohort/AccoladeCard";
+import type { AccoladeCardProps } from "@/components/leaderboard/AccoladeCard";
 const mockProps: AccoladeCardProps = {
   icon: <div>test-icon</div>,
   title: "test-title",

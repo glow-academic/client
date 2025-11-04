@@ -6,7 +6,7 @@ import type { Table } from "@tanstack/react-table";
 import AgentDebugInfoDataTableToolbar, {
   AgentDebugInfoDataTableToolbar,
   AgentDebugInfoDataTableToolbarProps,
-} from "@/components/common/agent/AgentDebugInfoDataTableToolbar";
+} from "@/components/agents/AgentDebugInfoDataTableToolbar";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

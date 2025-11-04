@@ -2,7 +2,7 @@ import { render, screen } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import Markdown from "@/components/common/chat/Markdown";
+import Markdown from "@/components/common/chat/markdown/Markdown";
 
 // ------------------------------------------------------------------
 describe("Markdown", () => {

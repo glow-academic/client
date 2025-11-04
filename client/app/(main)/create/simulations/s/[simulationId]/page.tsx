@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import Simulation from "@/components/common/simulation/Simulation";
+import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

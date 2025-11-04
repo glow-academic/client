@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   FeedbackDataTable,
   FeedbackDataTableProps,
-} from "@/components/system/feedback/FeedbackDataTable";
+} from "@/components/feedback/FeedbackDataTable";
 import { FeedbackData } from "@/hooks/use-feedback-columns";
 
 // ------------------------------------------------------------------

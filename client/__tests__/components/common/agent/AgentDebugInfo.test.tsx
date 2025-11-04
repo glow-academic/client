@@ -5,7 +5,7 @@ import { render } from "@/test/custom-render";
 import AgentDebugInfo, {
   AgentDebugInfo,
   AgentDebugInfoProps,
-} from "@/components/common/agent/AgentDebugInfo";
+} from "@/components/agents/AgentDebugInfo";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

@@ -3,7 +3,7 @@ import { screen, waitFor } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import GlowHeader from "@/components/common/home/GlowHeader";
+import GlowHeader from "@/components/assistant/GlowHeader";
 
 describe("GlowHeader", () => {
   describe("basic render smoke-test", () => {

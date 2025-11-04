@@ -8,7 +8,7 @@ import "@/mocks/navigation";
 import * as mockSchema from "@/mocks/schema";
 
 // ——————————————————————————————————————————
-import Logs from "@/components/system/logs/Logs";
+import Logs from "@/components/logs/Logs";
 
 // Mock the query client
 const mockInvalidateQueries = vi.fn();

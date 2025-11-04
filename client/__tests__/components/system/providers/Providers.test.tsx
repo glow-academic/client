@@ -8,7 +8,7 @@ import "@/mocks/auth";
 import "@/mocks/navigation";
 
 // ——————————————————————————————————————————
-import Providers from "@/components/system/providers/Providers";
+import Providers from "@/components/providers/Providers";
 
 // Mock the query client
 const mockInvalidateQueries = vi.fn();

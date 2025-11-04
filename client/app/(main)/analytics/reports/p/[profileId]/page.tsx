@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Report from "@/components/analytics/report/Report";
+import Report from "@/components/reports/Report";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

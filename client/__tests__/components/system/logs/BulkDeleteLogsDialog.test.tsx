@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { BulkDeleteLogsDialog, BulkDeleteLogsDialogProps } from '@/components/system/logs/BulkDeleteLogsDialog';
+import { BulkDeleteLogsDialog, BulkDeleteLogsDialogProps } from '@/components/logs/BulkDeleteLogsDialog';
 
 
 

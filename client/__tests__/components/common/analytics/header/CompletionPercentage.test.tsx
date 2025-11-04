@@ -15,7 +15,7 @@ import { calculateCompletionPercentage } from "@/utils/analytics/header";
 // ——————————————————————————————————————————
 import CompletionPercentage, {
   CompletionPercentageProps,
-} from "@/components/common/analytics/header/CompletionPercentage";
+} from "@/components/dashboard/header/CompletionPercentage";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

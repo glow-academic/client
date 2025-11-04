@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import SystemAgent, {
   SystemAgentProps,
-} from "@/components/common/agent/SystemAgent";
+} from "@/components/agents/SystemAgent";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

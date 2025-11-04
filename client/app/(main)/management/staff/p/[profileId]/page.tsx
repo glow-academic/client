@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import StaffEdit from "@/components/management/staff/StaffEdit";
+import StaffEdit from "@/components/staff/StaffEdit";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

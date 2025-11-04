@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import CohortStaff, {
   CohortStaffProps,
-} from "@/components/common/cohort/staff/CohortStaff";
+} from "@/components/cohorts/staff/CohortStaff";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

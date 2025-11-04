@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import type {  } from '@tanstack/react-table';
 
 // ——————————————————————————————————————————
-import { DepartmentsDataTable, DepartmentsDataTableProps } from '@/components/system/departments/DepartmentsDataTable';
+import { DepartmentsDataTable, DepartmentsDataTableProps } from '@/components/departments/DepartmentsDataTable';
 
 
 

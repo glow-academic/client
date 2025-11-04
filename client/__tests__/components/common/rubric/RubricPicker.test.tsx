@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   RubricPicker,
   RubricPickerProps,
-} from "@/components/common/rubric/RubricPicker";
+} from "@/components/common/forms/RubricPicker";
 import type { MappingItem } from "@/lib/api/v2/schemas/base";
 
 // ------------------------------------------------------------------

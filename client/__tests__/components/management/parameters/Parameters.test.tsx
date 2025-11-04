@@ -8,7 +8,7 @@ import "@/mocks/auth";
 import "@/mocks/navigation";
 
 // ——————————————————————————————————————————
-import Parameters from "@/components/management/parameters/Parameters";
+import Parameters from "@/components/parameters/Parameters";
 
 // Mock the query client
 const mockInvalidateQueries = vi.fn();

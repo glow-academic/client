@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Import the component
 import ScenarioStats, {
   ScenarioStatsProps,
-} from "@/components/common/analytics/footer/ScenarioStats";
+} from "@/components/dashboard/footer/ScenarioStats";
 
 // Mock the utility function
 import { calculateScenarioPerformance } from "@/utils/analytics/footer";

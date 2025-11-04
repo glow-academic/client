@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { DepartmentsFilters } from '@/components/common/analytics/DepartmentsFilters';
+import { DepartmentsFilters } from '@/components/common/layout/analytics/DepartmentsFilters';
 
 
 

@@ -7,7 +7,7 @@ import { describe, it } from "vitest";
 import {
   RunsDataTable,
   RunsDataTableProps,
-} from "@/components/analytics/pricing/RunsDataTable";
+} from "@/components/pricing/RunsDataTable";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

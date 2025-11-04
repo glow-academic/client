@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Scenario from "@/components/common/scenario/Scenario";
+import Scenario from "@/components/scenarios/Scenario";
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";

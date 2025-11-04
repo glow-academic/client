@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Rubric from "@/components/common/rubric/Rubric";
+import Rubric from "@/components/rubrics/Rubric";
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";

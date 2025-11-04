@@ -26,9 +26,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import SimulationProgress, {
   ViewMode,
-} from "../common/cohort/SimulationProgress";
+} from "./SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
-import SimulationCard from "../common/simulation/SimulationCard";
+import SimulationCard from "../simulations/SimulationCard";
 
 export default function Home() {
   const { effectiveProfile, activeProfile, effectiveDepartmentIds } =

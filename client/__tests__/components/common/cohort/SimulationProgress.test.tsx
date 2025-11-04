@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 
-import SimulationProgress from "@/components/common/cohort/SimulationProgress";
+import SimulationProgress from "@/components/home/SimulationProgress";
 import { render, screen } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 

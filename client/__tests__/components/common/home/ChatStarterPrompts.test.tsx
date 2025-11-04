@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import ChatStarterPrompts, {
   ChatStarterPromptsProps,
-} from "@/components/common/home/ChatStarterPrompts";
+} from "@/components/assistant/ChatStarterPrompts";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

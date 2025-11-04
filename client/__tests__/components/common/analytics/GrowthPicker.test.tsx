@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import GrowthPicker, {
   GrowthPickerProps,
   type GrowthMetric,
-} from "@/components/common/analytics/GrowthPicker";
+} from "@/components/dashboard/GrowthPicker";
 
 // ------------------------------------------------------------------
 // Enhanced props factory with realistic test data

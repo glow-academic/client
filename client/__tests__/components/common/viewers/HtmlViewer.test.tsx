@@ -4,7 +4,7 @@ import { render } from "@/test/custom-render";
 // ——————————————————————————————————————————
 import HtmlViewer, {
   HtmlViewerProps,
-} from "@/components/common/viewers/HtmlViewer";
+} from "@/components/common/chat/viewers/HtmlViewer";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

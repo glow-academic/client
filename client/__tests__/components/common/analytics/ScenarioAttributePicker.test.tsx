@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import ScenarioAttributePicker, {
   ScenarioAttributePickerProps,
-} from "@/components/common/analytics/ScenarioAttributePicker";
+} from "@/components/dashboard/ScenarioAttributePicker";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

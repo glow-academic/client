@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import ProviderEdit, {
   ProviderEditProps,
-} from "@/components/system/providers/ProviderEdit";
+} from "@/components/providers/ProviderEdit";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

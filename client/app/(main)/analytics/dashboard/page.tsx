@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Dashboard from "@/components/analytics/Dashboard";
+import Dashboard from "@/components/dashboard/Dashboard";
 
 import type { Metadata } from "next";
 

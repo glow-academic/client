@@ -5,7 +5,7 @@ import type { Table } from "@tanstack/react-table";
 // ——————————————————————————————————————————
 import PersonaDebugInfoDataTableToolbar, {
   PersonaDebugInfoDataTableToolbarProps,
-} from "@/components/common/agent/PersonaDebugInfoDataTableToolbar";
+} from "@/components/agents/PersonaDebugInfoDataTableToolbar";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ReportsDataTable,
   ReportsDataTableProps,
-} from "@/components/analytics/report/ReportsDataTable";
+} from "@/components/reports/ReportsDataTable";
 import { TAPerformanceData } from "@/hooks/use-report-columns";
 
 // ✨ Import comprehensive mock data from our centralized mock system

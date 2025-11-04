@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import RubricHeatmap, { RubricHeatmapProps } from '@/components/common/analytics/primary/RubricHeatmap';
+import RubricHeatmap, { RubricHeatmapProps } from '@/components/dashboard/primary/RubricHeatmap';
 
 
 

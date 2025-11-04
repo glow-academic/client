@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Cohort from "@/components/common/cohort/Cohort";
+import Cohort from "@/components/cohorts/Cohort";
 
 import type { Metadata } from "next";
 

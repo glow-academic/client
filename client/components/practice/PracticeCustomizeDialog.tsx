@@ -1,8 +1,8 @@
 "use client";
 
-import { SimulationPicker } from "@/components/common/cohort/SimulationPicker";
-import { ParameterSelector } from "@/components/common/scenario/ParameterSelector";
-import { PersonaPicker } from "@/components/common/scenario/PersonaPicker";
+import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
+import { ParameterSelector } from "@/components/parameters/ParameterSelector";
+import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

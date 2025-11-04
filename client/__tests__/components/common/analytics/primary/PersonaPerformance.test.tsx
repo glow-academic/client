@@ -1,12 +1,12 @@
 import PersonaPerformance, {
   PersonaPerformanceProps,
-} from "@/components/common/analytics/primary/PersonaPerformance";
+} from "@/components/dashboard/primary/PersonaPerformance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock SimulationPicker component
-vi.mock("@/components/common/cohort/SimulationPicker", () => ({
+vi.mock("@/components/cohorts/SimulationPicker", () => ({
   SimulationPicker: vi.fn(({ placeholder, onSelect }) => (
     <button data-testid="simulation-picker" onClick={() => onSelect([])}>
       {placeholder}

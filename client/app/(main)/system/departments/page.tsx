@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Departments from "@/components/system/departments/Departments";
+import Departments from "@/components/departments/Departments";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

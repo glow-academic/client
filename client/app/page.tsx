@@ -5,7 +5,7 @@
  * 05/14/2025
  */
 import type { Metadata } from "next";
-import Login from "@/components/common/login/Login";
+import Login from "@/components/auth/Login";
 
 export const metadata: Metadata = {
   title: "Login | GLOW",

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import SimulationPerformance, {
   SimulationPerformanceProps,
-} from "@/components/common/analytics/footer/SimulationPerformance";
+} from "@/components/dashboard/footer/SimulationPerformance";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

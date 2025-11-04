@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import Logs from "@/components/system/logs/Logs";
+import Logs from "@/components/logs/Logs";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

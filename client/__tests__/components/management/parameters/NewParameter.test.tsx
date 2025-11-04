@@ -3,7 +3,7 @@ import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import NewParameter from "@/components/management/parameters/NewParameter";
+import NewParameter from "@/components/parameters/NewParameter";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

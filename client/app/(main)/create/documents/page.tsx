@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Documents from "@/components/create/documents/Documents";
+import Documents from "@/components/documents/Documents";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

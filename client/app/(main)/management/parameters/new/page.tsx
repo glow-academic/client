@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import Parameter from "@/components/common/parameter/Parameter";
+import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

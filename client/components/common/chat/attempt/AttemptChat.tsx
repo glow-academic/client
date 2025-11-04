@@ -60,7 +60,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import DocumentSelect from "@/components/common/chat/DocumentSelect";
-import DocumentViewer from "@/components/common/chat/DocumentViewer";
+import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { useSimulation } from "@/contexts/simulation-context";
 import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 import { formatTime } from "@/utils/time";
@@ -71,7 +71,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
 import { useRouter } from "next/navigation";
-import TableRubric from "../../rubric/TableRubric";
+import TableRubric from "@/components/common/rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 

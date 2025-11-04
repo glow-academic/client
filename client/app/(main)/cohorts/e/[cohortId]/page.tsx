@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import Cohort from "@/components/common/cohort/Cohort";
+import Cohort from "@/components/cohorts/Cohort";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";

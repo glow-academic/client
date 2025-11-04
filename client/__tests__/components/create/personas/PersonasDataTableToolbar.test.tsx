@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   PersonasDataTableToolbar,
   PersonasDataTableToolbarProps,
-} from "@/components/create/personas/PersonasDataTableToolbar";
+} from "@/components/personas/PersonasDataTableToolbar";
 import { getMockTable } from "@/mocks/navigation";
 import { Persona } from "@/types";
 

@@ -7,11 +7,11 @@ import { describe, expect, it, vi } from "vitest";
 import {
   PersonasDataTable,
   PersonasDataTableProps,
-} from "@/components/create/personas/PersonasDataTable";
+} from "@/components/personas/PersonasDataTable";
 import { Persona, Scenario } from "@/types";
 
 // Mock the PersonasDataTableToolbar component
-vi.mock("@/components/create/personas/PersonasDataTableToolbar", () => ({
+vi.mock("@/components/personas/PersonasDataTableToolbar", () => ({
   PersonasDataTableToolbar: () => (
     <div data-testid="personas-data-table-toolbar">Toolbar</div>
   ),

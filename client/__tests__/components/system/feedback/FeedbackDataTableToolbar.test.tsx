@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   FeedbackDataTableToolbar,
   FeedbackDataTableToolbarProps,
-} from "@/components/system/feedback/FeedbackDataTableToolbar";
+} from "@/components/feedback/FeedbackDataTableToolbar";
 import { FeedbackData } from "@/hooks/use-feedback-columns";
 import { getMockTable } from "@/mocks/navigation";
 

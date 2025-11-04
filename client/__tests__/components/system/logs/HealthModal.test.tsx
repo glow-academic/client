@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { HealthModal } from '@/components/system/logs/HealthModal';
+import { HealthModal } from '@/components/logs/HealthModal';
 
 global.fetch = vi.fn();
 
@@ -13,7 +13,7 @@ import '@/mocks/auth';
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { HealthModalProps } from '@/components/system/logs/HealthModal';
+import type { HealthModalProps } from '@/components/logs/HealthModal';
 const mockProps: HealthModalProps = {
   open: false,
   onOpenChange: vi.fn(),

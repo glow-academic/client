@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Staff from "@/components/management/staff/Staff";
+import Staff from "@/components/staff/Staff";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

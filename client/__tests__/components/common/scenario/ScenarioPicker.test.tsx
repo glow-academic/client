@@ -5,13 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
-  ScenarioPicker,
-  ScenarioPickerProps,
-} from "@/components/common/scenario/ScenarioPicker";
+  ScenarioFormPicker,
+  ScenarioFormPickerProps,
+} from "@/components/scenarios/ScenarioFormSelector";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-const mockProps: ScenarioPickerProps = {
+const mockProps: ScenarioFormPickerProps = {
   types: ["Personas", "Documents"],
   models: [
     {
@@ -39,17 +39,17 @@ const mockProps: ScenarioPickerProps = {
   // modal: false, /* optional */
 };
 // ------------------------------------------------------------------
-describe("ScenarioPicker", () => {
+describe("ScenarioFormPicker", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      render(<ScenarioPicker {...mockProps} />);
+      render(<ScenarioFormPicker {...mockProps} />);
 
       // Component should render with default label
       expect(screen.getByText("Model")).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      const props: ScenarioPickerProps = {
+      const props: ScenarioFormPickerProps = {
         ...mockProps,
         label: "Custom Label",
         placeholder: "Custom placeholder...",
@@ -57,7 +57,7 @@ describe("ScenarioPicker", () => {
         multiSelect: true,
       };
 
-      render(<ScenarioPicker {...props} />);
+      render(<ScenarioFormPicker {...props} />);
 
       // Should render with custom label
       expect(screen.getByText("Custom Label")).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("ScenarioPicker", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      render(<ScenarioPicker {...mockProps} />);
+      render(<ScenarioFormPicker {...mockProps} />);
 
       // Test for proper combobox accessibility
       const combobox = screen.getByRole("combobox");
@@ -88,7 +88,7 @@ describe("ScenarioPicker", () => {
       const user = userEvent.setup();
       const onSelect = vi.fn();
 
-      render(<ScenarioPicker {...mockProps} onSelect={onSelect} />);
+      render(<ScenarioFormPicker {...mockProps} onSelect={onSelect} />);
 
       // Component should render with initial state
       const button = screen.getByRole("combobox");
@@ -103,7 +103,7 @@ describe("ScenarioPicker", () => {
       const user = userEvent.setup();
       const onSelect = vi.fn();
 
-      render(<ScenarioPicker {...mockProps} onSelect={onSelect} />);
+      render(<ScenarioFormPicker {...mockProps} onSelect={onSelect} />);
 
       // Open the picker
       const button = screen.getByRole("combobox");
@@ -125,12 +125,12 @@ describe("ScenarioPicker", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with empty models array
-      const emptyProps: ScenarioPickerProps = {
+      const emptyProps: ScenarioFormPickerProps = {
         types: [],
         models: [],
       };
 
-      render(<ScenarioPicker {...emptyProps} />);
+      render(<ScenarioFormPicker {...emptyProps} />);
 
       // Should still render with default label
       expect(screen.getByText("Model")).toBeInTheDocument();
@@ -142,25 +142,25 @@ describe("ScenarioPicker", () => {
 
     it("should handle missing or invalid props", () => {
       // Test with minimal props
-      const minimalProps: ScenarioPickerProps = {
+      const minimalProps: ScenarioFormPickerProps = {
         types: ["Personas"],
         models: [],
       };
 
-      render(<ScenarioPicker {...minimalProps} />);
+      render(<ScenarioFormPicker {...minimalProps} />);
 
       // Should render with default values
       expect(screen.getByText("Model")).toBeInTheDocument();
       expect(screen.getAllByRole("combobox").length).toBeGreaterThan(0);
 
       // Test multi-select mode
-      const multiSelectProps: ScenarioPickerProps = {
+      const multiSelectProps: ScenarioFormPickerProps = {
         ...mockProps,
         multiSelect: true,
         selectedModels: [mockProps.models[0]!],
       };
 
-      render(<ScenarioPicker {...multiSelectProps} />);
+      render(<ScenarioFormPicker {...multiSelectProps} />);
 
       // Should show selected model name
       const buttons = screen.getAllByRole("combobox");
@@ -172,14 +172,14 @@ describe("ScenarioPicker", () => {
 });
 
 /*
- * Component Analysis for ScenarioPicker:
- * Path: common/scenario/ScenarioPicker.tsx
+ * Component Analysis for ScenarioFormPicker:
+ * Path: common/scenario/ScenarioFormPicker.tsx
  *
  * Features detected:
  * - Default export: false
- * - Named exports: ScenarioPicker, ScenarioPickerProps
+ * - Named exports: ScenarioFormPicker, ScenarioFormPickerProps
  * - Has props: true
- * - Props interface: ScenarioPickerProps
+ * - Props interface: ScenarioFormPickerProps
  * - Client component: true
  * - Uses hooks: useMutationObserver, useState, useRef
  * - Uses router: false
@@ -194,12 +194,12 @@ describe("ScenarioPicker", () => {
  * Example implementations:
  *
  * Basic rendering:
- * render(<ScenarioPicker {...mockProps} />);
+ * render(<ScenarioFormPicker {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  *
  * Props testing:
  * const props = { ... };
- * render(<ScenarioPicker {...props} />);
+ * render(<ScenarioFormPicker {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  *
  * User interaction:

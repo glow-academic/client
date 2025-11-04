@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import { ParameterSelector } from "@/components/common/scenario/ParameterSelector";
+import { ParameterSelector } from "@/components/scenarios/ParameterSelector";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

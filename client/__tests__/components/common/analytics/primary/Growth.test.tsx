@@ -1,4 +1,4 @@
-import Growth from "@/components/common/analytics/primary/Growth";
+import Growth from "@/components/dashboard/primary/Growth";
 import { calculatePlatformGrowth } from "@/utils/analytics/primary";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";

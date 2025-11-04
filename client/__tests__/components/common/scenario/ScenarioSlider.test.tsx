@@ -5,13 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
 import {
-  ScenarioSlider,
-  ScenarioSliderProps,
-} from "@/components/common/scenario/ScenarioSlider";
+  ScenarioFormSlider,
+  ScenarioFormSliderProps,
+} from "@/components/scenarios/ScenarioFormSlider";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-const mockProps: ScenarioSliderProps = {
+const mockProps: ScenarioFormSliderProps = {
   // leftContent: <div>test-leftContent</div>, /* optional */
   // rightContent: <div>test-rightContent</div>, /* optional */
   defaultValue: [0.5],
@@ -26,17 +26,17 @@ const mockProps: ScenarioSliderProps = {
   // inlineTitle: false, /* optional */
 };
 // ------------------------------------------------------------------
-describe("ScenarioSlider", () => {
+describe("ScenarioFormSlider", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      render(<ScenarioSlider {...mockProps} />);
+      render(<ScenarioFormSlider {...mockProps} />);
 
       // Component should render with default label
       expect(screen.getByText("Temperature")).toBeInTheDocument();
     });
 
     it("should render with props", () => {
-      const props: ScenarioSliderProps = {
+      const props: ScenarioFormSliderProps = {
         defaultValue: [0.7],
         label: "Custom Label",
         description: "Custom description",
@@ -46,7 +46,7 @@ describe("ScenarioSlider", () => {
         inlineTitle: true,
       };
 
-      render(<ScenarioSlider {...props} />);
+      render(<ScenarioFormSlider {...props} />);
 
       // Should render with custom label
       expect(screen.getByText("Custom Label")).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("ScenarioSlider", () => {
     });
 
     it("should have correct accessibility attributes", () => {
-      render(<ScenarioSlider {...mockProps} />);
+      render(<ScenarioFormSlider {...mockProps} />);
 
       // Test for proper slider accessibility
       const slider = screen.getByRole("slider");
@@ -82,7 +82,7 @@ describe("ScenarioSlider", () => {
       const onValueChange = vi.fn();
 
       render(
-        <ScenarioSlider
+        <ScenarioFormSlider
           {...mockProps}
           onValueChange={onValueChange}
           defaultValue={[0.5]}
@@ -103,7 +103,7 @@ describe("ScenarioSlider", () => {
       const onReset = vi.fn();
 
       render(
-        <ScenarioSlider
+        <ScenarioFormSlider
           {...mockProps}
           onValueChange={onValueChange}
           onReset={onReset}
@@ -130,7 +130,7 @@ describe("ScenarioSlider", () => {
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
       // Test with disabled state
-      render(<ScenarioSlider {...mockProps} disabled={true} />);
+      render(<ScenarioFormSlider {...mockProps} disabled={true} />);
 
       // Should show disabled state
       expect(screen.getByText("N/A")).toBeInTheDocument();
@@ -142,37 +142,37 @@ describe("ScenarioSlider", () => {
 
     it("should handle missing or invalid props", () => {
       // Test with minimal props
-      const minimalProps: ScenarioSliderProps = {
+      const minimalProps: ScenarioFormSliderProps = {
         defaultValue: [0.5], // Need a valid value for slider to render
       };
 
-      render(<ScenarioSlider {...minimalProps} />);
+      render(<ScenarioFormSlider {...minimalProps} />);
 
       // Should render with default values
       expect(screen.getByText("Temperature")).toBeInTheDocument();
       expect(screen.getAllByRole("slider").length).toBeGreaterThan(0);
 
       // Test with empty array value - should still render
-      const emptyValueProps: ScenarioSliderProps = {
+      const emptyValueProps: ScenarioFormSliderProps = {
         defaultValue: [],
         value: [0.5], // Provide a value to ensure slider renders
       };
 
-      render(<ScenarioSlider {...emptyValueProps} />);
+      render(<ScenarioFormSlider {...emptyValueProps} />);
       expect(screen.getAllByRole("slider").length).toBeGreaterThan(0);
     });
   });
 });
 
 /*
- * Component Analysis for ScenarioSlider:
- * Path: common/scenario/ScenarioSlider.tsx
+ * Component Analysis for ScenarioFormSlider:
+ * Path: common/scenario/ScenarioFormSlider.tsx
  *
  * Features detected:
  * - Default export: false
- * - Named exports: ScenarioSlider, ScenarioSliderProps
+ * - Named exports: ScenarioFormSlider, ScenarioFormSliderProps
  * - Has props: true
- * - Props interface: ScenarioSliderProps
+ * - Props interface: ScenarioFormSliderProps
  * - Client component: true
  * - Uses hooks: useState
  * - Uses router: false
@@ -187,12 +187,12 @@ describe("ScenarioSlider", () => {
  * Example implementations:
  *
  * Basic rendering:
- * render(<ScenarioSlider {...mockProps} />);
+ * render(<ScenarioFormSlider {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  *
  * Props testing:
  * const props = { ... };
- * render(<ScenarioSlider {...props} />);
+ * render(<ScenarioFormSlider {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  *
  * User interaction:

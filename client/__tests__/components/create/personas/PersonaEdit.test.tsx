@@ -5,10 +5,10 @@ import { describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import PersonaEdit, {
   PersonaEditProps,
-} from "@/components/create/personas/PersonaEdit";
+} from "@/components/personas/PersonaEdit";
 
 // Mock the Persona component
-vi.mock("@/components/common/agent/Persona", () => ({
+vi.mock("@/components/agents/Persona", () => ({
   default: ({ personaId, mode }: { personaId: string; mode: string }) => (
     <div
       data-testid="persona-component"

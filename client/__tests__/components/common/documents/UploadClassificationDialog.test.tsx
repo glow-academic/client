@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import UploadClassificationDialog, {
   UploadClassificationDialog,
   UploadClassificationDialogProps,
-} from "@/components/common/documents/UploadClassificationDialog";
+} from "@/components/documents/UploadClassificationDialog";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

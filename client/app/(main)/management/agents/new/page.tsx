@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import SystemAgent from "@/components/common/agent/SystemAgent";
+import SystemAgent from "@/components/agents/SystemAgent";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

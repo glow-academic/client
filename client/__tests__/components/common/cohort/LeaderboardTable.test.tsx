@@ -2,11 +2,11 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import LeaderboardTable from "@/components/common/cohort/LeaderboardTable";
+import LeaderboardTable from "@/components/leaderboard/LeaderboardTable";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { LeaderboardTableProps } from "@/components/common/cohort/LeaderboardTable";
+import type { LeaderboardTableProps } from "@/components/leaderboard/LeaderboardTable";
 const mockProps: LeaderboardTableProps = {
   data: [],
   currentUserId: "test-currentUserId",

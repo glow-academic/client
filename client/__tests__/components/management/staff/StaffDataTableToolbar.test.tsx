@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   StaffDataTableToolbar,
   StaffDataTableToolbarProps,
-} from "@/components/management/staff/StaffDataTableToolbar";
+} from "@/components/common/staff/StaffDataTableToolbar";
 import { StaffData } from "@/hooks/use-staff-columns";
 
 // ------------------------------------------------------------------

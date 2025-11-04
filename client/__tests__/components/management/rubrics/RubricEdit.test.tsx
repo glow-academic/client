@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 // ——————————————————————————————————————————
 import RubricEdit, {
   RubricEditProps,
-} from "@/components/management/rubrics/RubricEdit";
+} from "@/components/rubrics/RubricEdit";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

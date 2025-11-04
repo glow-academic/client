@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@/test/custom-render';
 import { describe, it, expect } from 'vitest';
 
 // ——————————————————————————————————————————
-import ReportsPage from '@/components/analytics/report/ReportsPage';
+import ReportsPage from '@/components/reports/ReportsPage';
 
 describe('ReportsPage', () => {
   

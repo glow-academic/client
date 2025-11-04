@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 // ——————————————————————————————————————————
 import PersonaResponseTimes, {
   PersonaResponseTimesProps,
-} from "@/components/common/analytics/header/PersonaResponseTimes";
+} from "@/components/dashboard/header/PersonaResponseTimes";
 
 // Mock the utility function
 vi.mock("@/utils/analytics/header", () => ({

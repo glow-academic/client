@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 07/21/2025
  */
-import Parameters from "@/components/management/parameters/Parameters";
+import Parameters from "@/components/parameters/Parameters";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import Login from "@/components/common/login/Login";
+import Login from "@/components/auth/Login";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

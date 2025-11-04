@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import ParameterItemPicker, {
   ParameterItemPicker,
   ParameterItemPickerProps,
-} from "@/components/common/scenario/ParameterItemPicker";
+} from "@/components/scenarios/ParameterItemPicker";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

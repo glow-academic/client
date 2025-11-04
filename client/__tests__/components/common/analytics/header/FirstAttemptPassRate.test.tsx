@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import FirstAttemptPassRate, {
   FirstAttemptPassRateProps,
-} from "@/components/common/analytics/header/FirstAttemptPassRate";
+} from "@/components/dashboard/header/FirstAttemptPassRate";
 
 // Mock the utility function
 vi.mock("@/utils/analytics/header", () => ({

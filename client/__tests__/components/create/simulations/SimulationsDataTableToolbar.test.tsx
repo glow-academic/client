@@ -5,11 +5,11 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import { SimulationsDataTableToolbar } from "@/components/create/simulations/SimulationsDataTableToolbar";
+import { SimulationsDataTableToolbar } from "@/components/simulations/SimulationsDataTableToolbar";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { SimulationsDataTableToolbarProps } from "@/components/create/simulations/SimulationsDataTableToolbar";
+import type { SimulationsDataTableToolbarProps } from "@/components/simulations/SimulationsDataTableToolbar";
 
 const mockTitleColumn = getMockColumn<
   {

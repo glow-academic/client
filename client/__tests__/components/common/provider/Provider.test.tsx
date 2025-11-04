@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import Provider from "@/components/common/provider/Provider";
+import Provider from "@/components/providers/Provider";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

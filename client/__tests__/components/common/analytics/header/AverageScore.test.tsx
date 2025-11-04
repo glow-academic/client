@@ -15,7 +15,7 @@ import { calculateAverageScore } from "@/utils/analytics/header";
 // ——————————————————————————————————————————
 import AverageScore, {
   AverageScoreProps,
-} from "@/components/common/analytics/header/AverageScore";
+} from "@/components/dashboard/header/AverageScore";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

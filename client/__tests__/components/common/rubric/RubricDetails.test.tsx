@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import RubricDetails from "@/components/common/rubric/RubricDetails";
+import RubricDetails from "@/components/rubrics/RubricDetails";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";
@@ -30,7 +30,7 @@ vi.mock("next/navigation", () => ({
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { RubricDetailsProps } from "@/components/common/rubric/RubricDetails";
+import type { RubricDetailsProps } from "@/components/rubrics/RubricDetails";
 const mockProps: RubricDetailsProps = {
   rubric: {
     id: "1",

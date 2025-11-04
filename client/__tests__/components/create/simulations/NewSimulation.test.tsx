@@ -3,10 +3,10 @@ import { screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import NewSimulation from "@/components/create/simulations/NewSimulation";
+import NewSimulation from "@/components/simulations/NewSimulation";
 
 // Mock the Simulation component since NewSimulation is just a wrapper
-vi.mock("@/components/common/simulation/Simulation", () => ({
+vi.mock("@/components/simulations/Simulation", () => ({
   default: vi.fn(() => (
     <div data-testid="simulation-component">Simulation Component</div>
   )),

@@ -5,7 +5,7 @@
 import { render, screen, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import Rubrics from "@/components/management/rubrics/Rubrics";
+import Rubrics from "@/components/rubrics/Rubrics";
 
 // Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

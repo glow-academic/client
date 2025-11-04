@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ProvidersDataTable,
   ProvidersDataTableProps,
-} from "@/components/system/providers/ProvidersDataTable";
+} from "@/components/providers/ProvidersDataTable";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

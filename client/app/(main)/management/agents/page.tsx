@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import Agents from "@/components/management/agents/Agents";
+import Agents from "@/components/agents/Agents";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

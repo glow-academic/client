@@ -2,10 +2,10 @@ import { render, screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import NewRubric from "@/components/management/rubrics/NewRubric";
+import NewRubric from "@/components/rubrics/NewRubric";
 
 // Mock the Rubric component since NewRubric is just a wrapper
-vi.mock("@/components/common/rubric/Rubric", () => ({
+vi.mock("@/components/rubrics/Rubric", () => ({
   default: vi.fn(() => (
     <div data-testid="rubric-component">Rubric Component</div>
   )),

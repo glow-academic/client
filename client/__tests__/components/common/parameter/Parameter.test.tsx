@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import Parameter, {
   ParameterProps,
-} from "@/components/common/parameter/Parameter";
+} from "@/components/parameters/Parameter";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

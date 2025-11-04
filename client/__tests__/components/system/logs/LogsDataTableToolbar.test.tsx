@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   LogsDataTableToolbar,
   LogsDataTableToolbarProps,
-} from "@/components/system/logs/LogsDataTableToolbar";
+} from "@/components/logs/LogsDataTableToolbar";
 import { AppLog } from "@/hooks/use-log-columns";
 import { getMockColumn, getMockTable } from "@/mocks/navigation";
 

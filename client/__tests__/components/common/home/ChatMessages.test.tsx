@@ -6,17 +6,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import ChatMessages, {
   ChatMessagesProps,
-} from "@/components/common/home/ChatMessages";
+} from "@/components/assistant/ChatMessages";
 
 // Mock the Markdown component
-vi.mock("@/components/common/chat/Markdown", () => ({
+vi.mock("@/components/common/chat/markdown/Markdown", () => ({
   default: ({ children }: { children: string }) => (
     <div data-testid="markdown">{children}</div>
   ),
 }));
 
 // Mock the ChatStarterPrompts component
-vi.mock("@/components/common/home/ChatStarterPrompts", () => ({
+vi.mock("@/components/assistant/ChatStarterPrompts", () => ({
   default: ({
     onPromptClick,
     variant,

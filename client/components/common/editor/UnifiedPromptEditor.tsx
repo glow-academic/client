@@ -15,7 +15,7 @@ const Monaco = dynamic(() => import("@monaco-editor/react"), {
 
 // Dynamically import markdown renderer to avoid SSR issues
 const MarkdownRenderer = dynamic(
-  () => import("@/components/common/viewers/MarkdownRenderer"),
+  () => import("@/components/common/chat/markdown/MarkdownRenderer"),
   {
     ssr: false,
     loading: () => (

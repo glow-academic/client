@@ -5,7 +5,7 @@
  * 10/25/2025
  */
 
-import { SimulationPicker } from "@/components/common/cohort/SimulationPicker";
+import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
 import type { SimulationMappingItem } from "@/lib/api/v2/schemas/base";
 import { fireEvent, render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";

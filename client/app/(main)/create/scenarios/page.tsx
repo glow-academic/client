@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 import React from "react";
-import { Scenarios } from "@/components/create/scenarios/Scenarios";
+import { Scenarios } from "@/components/scenarios/Scenarios";
 
 import type { Metadata } from "next";
 

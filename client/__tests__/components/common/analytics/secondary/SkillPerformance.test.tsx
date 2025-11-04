@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
-import SkillPerformance from "@/components/common/analytics/secondary/SkillPerformance";
+import SkillPerformance from "@/components/dashboard/secondary/SkillPerformance";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -19,7 +19,7 @@ import { render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the RubricPicker component
-vi.mock("@/components/common/rubric/RubricPicker", () => ({
+vi.mock("@/components/common/forms/RubricPicker", () => ({
   RubricPicker: ({
     onSelect,
     selectedRubrics,

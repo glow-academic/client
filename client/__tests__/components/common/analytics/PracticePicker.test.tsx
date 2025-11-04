@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import {
   PracticePicker,
   PracticePickerProps,
-} from "@/components/common/analytics/PracticePicker";
+} from "@/components/common/layout/analytics/PracticeSelector";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

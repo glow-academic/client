@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 // ——————————————————————————————————————————
-import { CohortSelector, Cohort, CohortSelectorProps } from '@/components/common/analytics/CohortSelector';
+import { CohortSelector, Cohort, CohortSelectorProps } from '@/components/common/layout/analytics/CohortSelector';
 
 
 

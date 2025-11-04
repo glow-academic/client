@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import Rubrics from "@/components/management/rubrics/Rubrics";
+import Rubrics from "@/components/rubrics/Rubrics";
 
 import type { Metadata } from "next";
 

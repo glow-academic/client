@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   StaffDataTable,
   StaffDataTableProps,
-} from "@/components/management/staff/StaffDataTable";
+} from "@/components/common/staff/StaffDataTable";
 import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
 
 // Import mocks

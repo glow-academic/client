@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   StaffFilterDialog,
   StaffFilterDialogProps,
-} from "@/components/management/staff/StaffFilterDialog";
+} from "@/components/staff/StaffFilterDialog";
 import { StaffData } from "@/hooks/use-staff-columns";
 
 // Mock staff data

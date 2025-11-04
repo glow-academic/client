@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
-import CohortPerformance from "@/components/common/analytics/secondary/CohortPerformance";
+import CohortPerformance from "@/components/dashboard/secondary/CohortPerformance";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -37,7 +37,7 @@ vi.mock(
 vi.mock("@/utils/queries/simulations/get-all-simulations");
 
 // Mock the SimulationPicker component
-vi.mock("@/components/common/cohort/SimulationPicker", () => ({
+vi.mock("@/components/cohorts/SimulationPicker", () => ({
   SimulationPicker: ({
     onSelect,
     selectedSimulations,

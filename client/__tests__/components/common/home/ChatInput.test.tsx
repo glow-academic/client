@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import ChatInput, { ChatInputProps } from "@/components/common/home/ChatInput";
+import ChatInput, { ChatInputProps } from "@/components/assistant/ChatInput";
 
 // Mock the assistant context
 vi.mock("@/contexts/assistant-context", () => ({

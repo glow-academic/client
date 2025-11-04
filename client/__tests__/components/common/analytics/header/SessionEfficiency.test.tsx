@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import SessionEfficiency, {
   SessionEfficiencyProps,
-} from "@/components/common/analytics/header/SessionEfficiency";
+} from "@/components/dashboard/header/SessionEfficiency";
 
 // Mock the utility function
 vi.mock("@/utils/analytics/header", () => ({

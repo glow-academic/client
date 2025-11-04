@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import Providers from "@/components/system/providers/Providers";
+import Providers from "@/components/providers/Providers";
 
 import type { Metadata } from "next";
 

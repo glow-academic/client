@@ -1,4 +1,4 @@
-import { ParametersDataTable } from "@/components/management/parameters/ParametersDataTable";
+import { ParametersDataTable } from "@/components/parameters/ParametersDataTable";
 import { render } from "@/test/custom-render";
 import { Parameter } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 
 // Mock the toolbar component
 vi.mock(
-  "@/components/management/parameters/ParametersDataTableToolbar",
+  "@/components/parameters/ParametersDataTableToolbar",
   () => ({
     ParametersDataTableToolbar: () => (
       <div data-testid="parameters-toolbar">Toolbar</div>

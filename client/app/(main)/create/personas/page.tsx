@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import Personas from "@/components/create/personas/Personas";
+import Personas from "@/components/personas/Personas";
 
 import type { Metadata } from "next";
 

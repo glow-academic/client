@@ -8,7 +8,7 @@ import "@/mocks/auth";
 import "@/mocks/navigation";
 
 // ——————————————————————————————————————————
-import Feedback from "@/components/system/feedback/Feedback";
+import Feedback from "@/components/feedback/Feedback";
 
 // Mock the query client
 const mockInvalidateQueries = vi.fn();

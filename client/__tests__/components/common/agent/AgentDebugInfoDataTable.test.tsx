@@ -7,7 +7,7 @@ import type {} from "@tanstack/react-table";
 import AgentDebugInfoDataTable, {
   AgentDebugInfoDataTable,
   AgentDebugInfoDataTableProps,
-} from "@/components/common/agent/AgentDebugInfoDataTable";
+} from "@/components/agents/AgentDebugInfoDataTable";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed

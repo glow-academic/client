@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import ReportsPage from "@/components/analytics/report/ReportsPage";
+import ReportsPage from "@/components/reports/ReportsPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

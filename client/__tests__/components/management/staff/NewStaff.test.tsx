@@ -8,7 +8,7 @@ import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import NewStaff from "@/components/management/staff/NewStaff";
+import NewStaff from "@/components/staff/NewStaff";
 
 // ✨ Import comprehensive mock data from our centralized mock system
 import "@/mocks/api";

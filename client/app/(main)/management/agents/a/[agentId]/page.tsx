@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import SystemAgent from "@/components/common/agent/SystemAgent";
+import SystemAgent from "@/components/agents/SystemAgent";
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";

@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ScenariosDataTableToolbar,
   ScenariosDataTableToolbarProps,
-} from "@/components/create/scenarios/ScenariosDataTableToolbar";
+} from "@/components/scenarios/ScenariosDataTableToolbar";
 import { Scenario } from "@/types";
 
 // ------------------------------------------------------------------

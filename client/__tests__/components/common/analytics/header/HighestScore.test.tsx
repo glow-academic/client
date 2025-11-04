@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // ——————————————————————————————————————————
 import HighestScore, {
   HighestScoreProps,
-} from "@/components/common/analytics/header/HighestScore";
+} from "@/components/dashboard/header/HighestScore";
 
 // Mock the utility function
 vi.mock("@/utils/analytics/header", () => ({
