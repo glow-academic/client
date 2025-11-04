@@ -7,8 +7,8 @@
 
 import { auth } from "@/auth";
 import ModelEdit from "@/components/system/providers/ModelEdit";
-import { modelsDetailKeys } from "@/lib/api/v2/keys";
-import { fetchModelDetail } from "@/lib/api/v2/server/models";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -23,7 +23,9 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const model = await fetchModelDetail(modelId, providerId, profileId);
+    const model = await api.post("/providers/models/detail", {
+      body: { modelId, providerId, profileId },
+    });
     return {
       title: `${model?.name || "Model"}`,
       description:
@@ -51,8 +53,11 @@ export default async function ModelEditPage({
 
   // Prefetch model detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: modelsDetailKeys.detail(modelId, providerId, profileId),
-    queryFn: () => fetchModelDetail(modelId, providerId, profileId),
+    queryKey: keys.providers.with({ modelId, providerId, profileId }),
+    queryFn: () =>
+      api.post("/providers/models/detail", {
+        body: { modelId, providerId, profileId },
+      }),
   });
 
   return (

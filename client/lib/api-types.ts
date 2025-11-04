@@ -4466,6 +4466,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/providers/models/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Model Detail
+         * @description Get detailed model information.
+         */
+        post: operations["get_model_detail_api_v3_providers_models_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/parameters/list": {
         parameters: {
             query?: never;
@@ -4500,6 +4520,26 @@ export interface paths {
          * @description Get detailed parameter information with nested items.
          */
         post: operations["get_parameter_detail_api_v3_parameters_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/parameters/detail-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Parameter Detail Default
+         * @description Get default parameter detail for creation mode.
+         */
+        post: operations["get_parameter_detail_default_api_v3_parameters_detail_default_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4660,6 +4700,26 @@ export interface paths {
          * @description Update simulation chat createdAt timestamp.
          */
         post: operations["update_chat_created_at_api_v3_attempts_chats_update_created_at_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/attempts/full": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Attempt Full
+         * @description Get complete attempt data with all related entities and computed values.
+         */
+        post: operations["get_attempt_full_api_v3_attempts_full_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4883,6 +4943,67 @@ export interface components {
         AssistantChatListResponse: {
             /** Allchats */
             allChats: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** AttemptFullRequest */
+        AttemptFullRequest: {
+            /** Attemptid */
+            attemptId: string;
+        };
+        /**
+         * AttemptFullResponse
+         * @description Response containing complete attempt data with all nested structures.
+         */
+        AttemptFullResponse: {
+            /** Attempt */
+            attempt: {
+                [key: string]: unknown;
+            };
+            /** Simulation */
+            simulation: {
+                [key: string]: unknown;
+            };
+            /** Attemptprofiles */
+            attemptProfiles: {
+                [key: string]: unknown;
+            }[];
+            /** Chats */
+            chats: {
+                [key: string]: unknown;
+            }[];
+            /** Scenariodocuments */
+            scenarioDocuments: {
+                [key: string]: unknown;
+            }[];
+            /** Aggregatedresults */
+            aggregatedResults: {
+                [key: string]: unknown;
+            } | null;
+            /** Timer */
+            timer: {
+                [key: string]: unknown;
+            };
+            /** Currentchatindex */
+            currentChatIndex: number;
+            /** Expectedchatcount */
+            expectedChatCount: number;
+            /** Issinglechatattempt */
+            isSingleChatAttempt: boolean;
+            /** Islastattempt */
+            isLastAttempt: boolean;
+            /** Showresults */
+            showResults: boolean;
+            /** Shouldshowcontrols */
+            shouldShowControls: boolean;
+            /** Isactive */
+            isActive: boolean;
+            /** Rubricstructure */
+            rubricStructure: {
+                [key: string]: unknown;
+            } | null;
+            /** Allsimulationscenarios */
+            allSimulationScenarios: {
                 [key: string]: unknown;
             }[];
         };
@@ -6493,46 +6614,6 @@ export interface components {
             } | null;
         };
         /**
-         * ModelDetailRequest
-         * @description Request for model detail.
-         */
-        ModelDetailRequest: {
-            /** Modelid */
-            modelId: string;
-            /** Providerid */
-            providerId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * ModelDetailResponse
-         * @description Response for model detail endpoint.
-         */
-        ModelDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
-            /** Image Model */
-            image_model: boolean;
-            /** Input Ppm */
-            input_ppm: number;
-            /** Output Ppm */
-            output_ppm: number;
-            /** Provider Id */
-            provider_id: string;
-            /** Valid Provider Ids */
-            valid_provider_ids: string[];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: components["schemas"]["ProviderMappingItem"];
-            };
-        };
-        /**
          * ModelMappingItem
          * @description Model mapping item - extends MappingItem
          */
@@ -6619,14 +6700,6 @@ export interface components {
             parameter_item_ids: string[];
             /** Valid Parameter Item Ids */
             valid_parameter_item_ids: string[];
-        };
-        /**
-         * ParameterDetailDefaultRequest
-         * @description Request for default parameter detail.
-         */
-        ParameterDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
         };
         /**
          * ParameterItemCreate
@@ -6963,16 +7036,6 @@ export interface components {
          * @description Profile mapping item - extends MappingItem
          */
         ProfileMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * ProviderMappingItem
-         * @description Provider mapping item - extends MappingItem
-         */
-        ProviderMappingItem: {
             /** Name */
             name: string;
             /** Description */
@@ -9563,6 +9626,11 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
+        /** ParameterDetailDefaultRequest */
+        app__api__v3__parameters__detail_default__ParameterDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
         /** ParameterItem */
         app__api__v3__parameters__list__ParameterItem: {
             /** Parameter Id */
@@ -10405,6 +10473,47 @@ export interface components {
         app__api__v3__providers__list__ProvidersListResponse: {
             /** Providers */
             providers: components["schemas"]["app__api__v3__providers__list__ProviderWithModels"][];
+        };
+        /** ModelDetailRequest */
+        app__api__v3__providers__models__detail__ModelDetailRequest: {
+            /** Modelid */
+            modelId: string;
+            /** Providerid */
+            providerId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /** ModelDetailResponse */
+        app__api__v3__providers__models__detail__ModelDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Custom Model */
+            custom_model: boolean;
+            /** Image Model */
+            image_model: boolean;
+            /** Input Ppm */
+            input_ppm: number;
+            /** Output Ppm */
+            output_ppm: number;
+            /** Provider Id */
+            provider_id: string;
+            /** Valid Provider Ids */
+            valid_provider_ids: string[];
+            /** Provider Mapping */
+            provider_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__providers__models__detail__ProviderMappingItem"];
+            };
+        };
+        /** ProviderMappingItem */
+        app__api__v3__providers__models__detail__ProviderMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * ProfileDataEnhanced
@@ -11665,6 +11774,16 @@ export interface components {
             message: string;
         };
         /**
+         * ProviderMappingItem
+         * @description Provider mapping item - extends MappingItem
+         */
+        app__schemas__base__ProviderMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * StandardGroupMappingItem
          * @description Standard group mapping item with rubric context
          */
@@ -12601,6 +12720,14 @@ export interface components {
             logs: components["schemas"]["app__schemas__logs__LogItem"][];
         };
         /**
+         * ParameterDetailDefaultRequest
+         * @description Request for default parameter detail.
+         */
+        app__schemas__parameters__ParameterDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
          * ParameterDetailRequest
          * @description Request for parameter detail.
          */
@@ -13199,6 +13326,46 @@ export interface components {
             providerId: string;
             /** Message */
             message: string;
+        };
+        /**
+         * ModelDetailRequest
+         * @description Request for model detail.
+         */
+        app__schemas__providers__ModelDetailRequest: {
+            /** Modelid */
+            modelId: string;
+            /** Providerid */
+            providerId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * ModelDetailResponse
+         * @description Response for model detail endpoint.
+         */
+        app__schemas__providers__ModelDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Custom Model */
+            custom_model: boolean;
+            /** Image Model */
+            image_model: boolean;
+            /** Input Ppm */
+            input_ppm: number;
+            /** Output Ppm */
+            output_ppm: number;
+            /** Provider Id */
+            provider_id: string;
+            /** Valid Provider Ids */
+            valid_provider_ids: string[];
+            /** Provider Mapping */
+            provider_mapping: {
+                [key: string]: components["schemas"]["app__schemas__base__ProviderMappingItem"];
+            };
         };
         /**
          * ModelItem
@@ -17030,7 +17197,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ModelDetailRequest"];
+                "application/json": components["schemas"]["app__schemas__providers__ModelDetailRequest"];
             };
         };
         responses: {
@@ -17040,7 +17207,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ModelDetailResponse"];
+                    "application/json": components["schemas"]["app__schemas__providers__ModelDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -17261,7 +17428,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ParameterDetailDefaultRequest"];
+                "application/json": components["schemas"]["app__schemas__parameters__ParameterDetailDefaultRequest"];
             };
         };
         responses: {
@@ -21386,6 +21553,39 @@ export interface operations {
             };
         };
     };
+    get_model_detail_api_v3_providers_models_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__api__v3__providers__models__detail__ModelDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__providers__models__detail__ModelDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_parameters_list_api_v3_parameters_list_post: {
         parameters: {
             query?: never;
@@ -21429,6 +21629,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["app__api__v3__parameters__detail__ParameterDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__parameters__detail__ParameterDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_parameter_detail_default_api_v3_parameters_detail_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__api__v3__parameters__detail_default__ParameterDetailDefaultRequest"];
             };
         };
         responses: {
@@ -21703,6 +21936,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["app__api__v3__attempts__update_chat_created_at__UpdateChatTimestampResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_attempt_full_api_v3_attempts_full_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptFullRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptFullResponse"];
                 };
             };
             /** @description Validation Error */

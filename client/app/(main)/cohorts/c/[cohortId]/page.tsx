@@ -7,9 +7,8 @@
 
 import { auth } from "@/auth";
 import Leaderboard from "@/components/analytics/Leaderboard";
-import { analyticsLeaderboardBundleKeys } from "@/lib/api/v2/keys";
-import { fetchLeaderboard } from "@/lib/api/v2/server/leaderboard";
-import { fetchCohortDetail } from "@/lib/api/v2/server/cohorts";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -24,10 +23,12 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const cohort = await fetchCohortDetail(cohortId, profileId);
+    const cohort = await api.post("/cohorts/detail", {
+      body: { cohortId, profileId },
+    });
     return {
       title: `${cohort?.title || "Cohort"}`,
-      description: `${cohort ? `${cohort.title} ${cohort.description}` : "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `${cohort ? `${cohort.title} ${cohort.description || ""}` : "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {
@@ -61,8 +62,8 @@ export default async function CohortDashboardPage({
   };
 
   await queryClient.prefetchQuery({
-    queryKey: analyticsLeaderboardBundleKeys.list(filters),
-    queryFn: () => fetchLeaderboard(filters),
+    queryKey: keys.leaderboard.with(filters),
+    queryFn: () => api.post("/leaderboard", { body: filters }),
   });
 
   return (

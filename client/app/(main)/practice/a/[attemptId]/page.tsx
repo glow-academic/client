@@ -6,8 +6,8 @@
  */
 
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-import { attemptsFullKeys } from "@/lib/api/v2/keys";
-import { fetchAttemptFull } from "@/lib/api/v2/server/attempts";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Metadata, ResolvingMetadata } from "next";
@@ -20,8 +20,10 @@ export async function generateMetadata(
   const { attemptId } = await params;
 
   try {
-    const attemptData = await fetchAttemptFull(attemptId);
-    const simulationTitle = attemptData?.simulation?.title;
+    const attemptData = await api.post("/attempts/full", {
+      body: { attemptId },
+    });
+    const simulationTitle = attemptData?.simulation?.["title"];
     return {
       title: `Practice ${simulationTitle || "Attempt"}`,
       description: `Practice ${simulationTitle || "Attempt"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -45,8 +47,11 @@ export default async function PracticeAttemptPage({
 
   // Prefetch attempt full data for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: attemptsFullKeys.detail(attemptId),
-    queryFn: () => fetchAttemptFull(attemptId),
+    queryKey: keys.attempts.with({ attemptId }),
+    queryFn: () =>
+      api.post("/attempts/full", {
+        body: { attemptId },
+      }),
   });
 
   return (

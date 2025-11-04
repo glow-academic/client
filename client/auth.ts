@@ -1,10 +1,5 @@
 // auth.ts
-import { log } from "@/lib/api/v2/server/logs";
-import {
-  createProfile,
-  fetchProfileByAlias,
-  updateProfileSimple,
-} from "@/lib/api/v2/server/profile";
+import { api } from "@/lib/api/client";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 
@@ -29,69 +24,52 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async createUser({ user }) {
       try {
         if (!user.email) {
-          log.error("auth.create_user.precheck.failed", {
-            message: "Missing email for new user",
-            context: { file: "client/auth.ts", function: "events.createUser" },
-          });
           return;
         }
         const alias = user.email.split("@")[0];
-        const existingProfile = await fetchProfileByAlias(alias || "");
+
+        // V3 API - fetch profile by alias
+        let existingProfile = null;
+        try {
+          const profileResponse = await api.post("/profile/by-alias", {
+            body: { alias: alias || "" },
+          });
+          existingProfile = profileResponse.profile;
+        } catch {
+          // Profile not found, will create new one
+          existingProfile = null;
+        }
 
         if (existingProfile) {
-          // Update existing profile lastLogin
-          await updateProfileSimple(existingProfile.id, {
-            lastLogin: new Date().toISOString(),
-          });
-
-          await log.info("auth.profile.found", {
-            subject: { entityType: "profile", entityId: existingProfile.id },
-            actor: { profileId: existingProfile.id },
-            context: {
-              file: "client/auth.ts",
-              function: "events.createUser",
+          // V3 API - update existing profile lastLogin
+          await api.post("/profile/update", {
+            body: {
+              profileId: existingProfile.id,
+              lastLogin: new Date().toISOString(),
             },
-            message: "Found existing profile for user",
           });
         } else {
           const nameParts = user.name?.split(" ") || [];
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
 
-          // Create new profile via server API
-          await createProfile({
-            firstName,
-            lastName,
-            alias: alias || "",
-            role: "guest",
-          });
-
-          await log.info("auth.profile.created", {
-            subject: { entityType: "profile" },
-            context: {
-              file: "client/auth.ts",
-              function: "events.createUser",
-              email: user.email,
-              alias,
+          // V3 API - create new profile via staff endpoint
+          await api.post("/profile/staff/create", {
+            body: {
+              firstName,
+              lastName,
+              alias: alias || "",
+              role: "guest",
             },
-            message: "Created new profile for user",
           });
         }
-      } catch (error) {
-        await log.error("auth.create_user.failed", {
-          message: "Error handling new user",
-          context: { file: "client/auth.ts", function: "events.createUser" },
-          error,
-        });
+      } catch {
+        // Server handles logging - no client-side logging needed
       }
     },
     async signIn({ user, profile, isNewUser }) {
       try {
         if (!user.email) {
-          await log.error("auth.sign_in.precheck.failed", {
-            message: "Missing email during sign in",
-            context: { file: "client/auth.ts", function: "events.signIn" },
-          });
           return;
         }
 
@@ -102,51 +80,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const lastName = nameParts[nameParts.length - 1] || "User";
           const alias = user.email.split("@")[0] || "";
           if (!alias) {
-            await log.error("auth.sign_in.alias.failed", {
-              message: "Failed to extract alias from email",
-              context: { file: "client/auth.ts", function: "events.signIn" },
-            });
             return;
           }
 
-          await log.info("auth.profile.update.start", {
-            subject: { entityType: "profile" },
-            context: {
-              file: "client/auth.ts",
-              function: "events.signIn",
-              email: user.email,
-              alias,
-            },
-            message: "Updating existing user profile",
-          });
-
-          const existingProfile = await fetchProfileByAlias(alias);
-          if (existingProfile) {
-            await updateProfileSimple(existingProfile.id, {
-              firstName,
-              lastName,
-              lastLogin: new Date().toISOString(),
+          // V3 API - fetch profile by alias
+          let existingProfile = null;
+          try {
+            const profileResponse = await api.post("/profile/by-alias", {
+              body: { alias },
             });
-            await log.info("auth.profile.updated", {
-              subject: {
-                entityType: "profile",
-                entityId: existingProfile.id,
+            existingProfile = profileResponse.profile;
+          } catch {
+            // Profile not found
+            existingProfile = null;
+          }
+
+          if (existingProfile) {
+            // V3 API - update profile
+            await api.post("/profile/update", {
+              body: {
+                profileId: existingProfile.id,
+                firstName,
+                lastName,
+                lastLogin: new Date().toISOString(),
               },
-              context: {
-                file: "client/auth.ts",
-                function: "events.signIn",
-                email: user.email,
-              },
-              message: "Updated existing user profile",
             });
           }
         }
-      } catch (error) {
-        await log.error("auth.sign_in.failed", {
-          message: "Error in signIn event",
-          context: { file: "client/auth.ts", function: "events.signIn" },
-          error,
-        });
+      } catch {
+        // Server handles logging - no client-side logging needed
       }
     },
   },
@@ -158,14 +120,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const aliasParts = user.email.split("@");
         const alias = aliasParts[0];
         if (alias && alias.length > 0) {
-          const profile = await fetchProfileByAlias(alias);
+          // V3 API - fetch profile by alias
+          try {
+            const profileResponse = await api.post("/profile/by-alias", {
+              body: { alias },
+            });
+            const profile = profileResponse.profile;
 
-          if (profile) {
-            token["profileId"] = profile.id;
-            token["role"] = profile.role;
-            // initialize effectiveProfileId to self
-            token["effectiveProfileId"] =
-              token["effectiveProfileId"] ?? profile.id;
+            if (profile) {
+              token["profileId"] = profile.id;
+              token["role"] = profile.role;
+              // initialize effectiveProfileId to self
+              token["effectiveProfileId"] =
+                token["effectiveProfileId"] ?? profile.id;
+            }
+          } catch {
+            // Profile not found - will be created in createUser event
           }
         }
       }

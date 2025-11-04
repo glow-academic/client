@@ -5,11 +5,10 @@
  * 06/08/2025
  */
 
-import PersonaEdit from "@/components/create/personas/PersonaEdit";
-
 import { auth } from "@/auth";
-import { personasDetailKeys } from "@/lib/api/v2/keys";
-import { fetchPersonaDetail } from "@/lib/api/v2/server/personas";
+import PersonaEdit from "@/components/create/personas/PersonaEdit";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -23,10 +22,12 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const persona = await fetchPersonaDetail(personaId, profileId);
+    const persona = await api.post("/personas/detail", {
+      body: { personaId, profileId },
+    });
     return {
       title: `${persona?.name || "Persona"} Persona`,
-      description: `${persona?.name + " " + persona?.description || "Persona"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `${persona ? `${persona.name} ${persona.description || ""}` : "Persona"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {
@@ -49,8 +50,11 @@ export default async function PersonaEditPage({
 
   // Prefetch persona detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: personasDetailKeys.detail(personaId, profileId),
-    queryFn: () => fetchPersonaDetail(personaId, profileId),
+    queryKey: keys.personas.with({ personaId, profileId }),
+    queryFn: () =>
+      api.post("/personas/detail", {
+        body: { personaId, profileId },
+      }),
   });
 
   return (

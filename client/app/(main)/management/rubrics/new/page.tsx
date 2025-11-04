@@ -6,10 +6,9 @@
  */
 
 import NewRubric from "@/components/management/rubrics/NewRubric";
-
 import { auth } from "@/auth";
-import { rubricsDetailDefaultKeys } from "@/lib/api/v2/keys";
-import { fetchRubricDetailDefault } from "@/lib/api/v2/server/rubrics";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
@@ -27,8 +26,11 @@ export default async function NewRubricPage() {
 
   // Prefetch default rubric detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: rubricsDetailDefaultKeys.detail(profileId),
-    queryFn: () => fetchRubricDetailDefault(profileId),
+    queryKey: keys.rubrics.with({ profileId }),
+    queryFn: () =>
+      api.post("/rubrics/detail-default", {
+        body: { profileId },
+      }),
   });
 
   return (

@@ -5,11 +5,10 @@
  * 06/08/2025
  */
 
-import NewPersona from "@/components/create/personas/NewPersona";
-
 import { auth } from "@/auth";
-import { personasDetailDefaultKeys } from "@/lib/api/v2/keys";
-import { fetchPersonaDetailDefault } from "@/lib/api/v2/server/personas";
+import NewPersona from "@/components/create/personas/NewPersona";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
@@ -27,8 +26,11 @@ export default async function NewPersonaPage() {
 
   // Prefetch default persona detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: personasDetailDefaultKeys.detail(profileId),
-    queryFn: () => fetchPersonaDetailDefault(profileId),
+    queryKey: keys.personas.with({ profileId }),
+    queryFn: () =>
+      api.post("/personas/detail-default", {
+        body: { profileId },
+      }),
   });
 
   return (

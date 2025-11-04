@@ -5,11 +5,10 @@
  * 06/09/2025
  */
 
-import SimulationEdit from "@/components/create/simulations/SimulationEdit";
-
 import { auth } from "@/auth";
-import { simulationsDetailKeys } from "@/lib/api/v2/keys";
-import { fetchSimulationDetail } from "@/lib/api/v2/server/simulations";
+import SimulationEdit from "@/components/create/simulations/SimulationEdit";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -23,7 +22,9 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const simulation = await fetchSimulationDetail(simulationId, profileId);
+    const simulation = await api.post("/simulations/detail", {
+      body: { simulationId, profileId },
+    });
     return {
       title: `${simulation?.name || "Simulation"}`,
       description: `${simulation?.name || "Simulation"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -49,8 +50,11 @@ export default async function EditSimulationPage({
 
   // Prefetch simulation detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: simulationsDetailKeys.detail(simulationId, profileId),
-    queryFn: () => fetchSimulationDetail(simulationId, profileId),
+    queryKey: keys.simulations.with({ simulationId, profileId }),
+    queryFn: () =>
+      api.post("/simulations/detail", {
+        body: { simulationId, profileId },
+      }),
   });
 
   return (

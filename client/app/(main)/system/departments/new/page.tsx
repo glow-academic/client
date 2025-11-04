@@ -7,8 +7,8 @@
 
 import { auth } from "@/auth";
 import Department from "@/components/common/department/Department";
-import { departmentsDetailDefaultKeys } from "@/lib/api/v2/keys";
-import { fetchDepartmentDetailDefault } from "@/lib/api/v2/server/departments";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
@@ -26,8 +26,11 @@ export default async function NewDepartmentPage() {
 
   // Prefetch default department detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: departmentsDetailDefaultKeys.detail(profileId),
-    queryFn: () => fetchDepartmentDetailDefault(profileId),
+    queryKey: keys.departments.with({ profileId }),
+    queryFn: () =>
+      api.post("/departments/detail-default", {
+        body: { profileId },
+      }),
   });
 
   return (

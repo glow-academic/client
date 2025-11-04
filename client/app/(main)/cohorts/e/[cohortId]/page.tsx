@@ -5,11 +5,10 @@
  * 07/20/2025
  */
 
-import CohortEdit from "@/components/cohorts/CohortEdit";
-
 import { auth } from "@/auth";
-import { cohortsDetailKeys } from "@/lib/api/v2/keys";
-import { fetchCohortDetail } from "@/lib/api/v2/server/cohorts";
+import CohortEdit from "@/components/cohorts/CohortEdit";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -24,10 +23,12 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const cohort = await fetchCohortDetail(cohortId, profileId);
+    const cohort = await api.post("/cohorts/detail", {
+      body: { cohortId, profileId },
+    });
     return {
       title: `${cohort?.title || "Cohort"} Edit`,
-      description: `${cohort ? `${cohort.title} ${cohort.description}` : "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `${cohort ? `${cohort.title} ${cohort.description || ""}` : "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {
@@ -50,8 +51,11 @@ export default async function CohortEditPage({
 
   // Prefetch cohort detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: cohortsDetailKeys.detail(cohortId, profileId),
-    queryFn: () => fetchCohortDetail(cohortId, profileId),
+    queryKey: keys.cohorts.with({ cohortId, profileId }),
+    queryFn: () =>
+      api.post("/cohorts/detail", {
+        body: { cohortId, profileId },
+      }),
   });
 
   return (

@@ -7,8 +7,8 @@
 
 import { auth } from "@/auth";
 import EditParameter from "@/components/common/parameter/Parameter";
-import { parametersDetailKeys } from "@/lib/api/v2/keys";
-import { fetchParameterDetail } from "@/lib/api/v2/server/parameters";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -22,10 +22,12 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const parameter = await fetchParameterDetail(parameterId, profileId);
+    const parameter = await api.post("/parameters/detail", {
+      body: { parameterId, profileId },
+    });
     return {
       title: `${parameter?.name || "Parameter"} Parameter`,
-      description: `${parameter?.name + " " + parameter?.description || "Parameter"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `${parameter ? `${parameter.name} ${parameter.description || ""}` : "Parameter"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {
@@ -45,13 +47,13 @@ export default async function ParameterEditPage({
   const queryClient = getQueryClient();
 
   // Prefetch parameter detail data
+  const profileId = session?.effectiveProfileId || "";
   await queryClient.prefetchQuery({
-    queryKey: parametersDetailKeys.detail(
-      parameterId,
-      session?.effectiveProfileId || ""
-    ),
+    queryKey: keys.parameters.with({ parameterId, profileId }),
     queryFn: () =>
-      fetchParameterDetail(parameterId, session?.effectiveProfileId || ""),
+      api.post("/parameters/detail", {
+        body: { parameterId, profileId },
+      }),
   });
 
   return (

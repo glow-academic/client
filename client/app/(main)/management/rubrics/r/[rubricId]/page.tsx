@@ -6,10 +6,9 @@
  */
 
 import RubricEdit from "@/components/management/rubrics/RubricEdit";
-
 import { auth } from "@/auth";
-import { rubricsDetailKeys } from "@/lib/api/v2/keys";
-import { fetchRubricDetail } from "@/lib/api/v2/server/rubrics";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -23,10 +22,12 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const rubric = await fetchRubricDetail(rubricId, profileId);
+    const rubric = await api.post("/rubrics/detail", {
+      body: { rubricId, profileId },
+    });
     return {
       title: `${rubric?.name || "Rubric"}`,
-      description: `${rubric?.name + " " + rubric?.description || "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `${rubric ? `${rubric.name} ${rubric.description || ""}` : "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {
@@ -49,8 +50,11 @@ export default async function EditRubricPage({
 
   // Prefetch rubric detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: rubricsDetailKeys.detail(rubricId, profileId),
-    queryFn: () => fetchRubricDetail(rubricId, profileId),
+    queryKey: keys.rubrics.with({ rubricId, profileId }),
+    queryFn: () =>
+      api.post("/rubrics/detail", {
+        body: { rubricId, profileId },
+      }),
   });
 
   return (

@@ -7,8 +7,8 @@
 
 import { auth } from "@/auth";
 import ProviderEdit from "@/components/system/providers/ProviderEdit";
-import { providersDetailKeys } from "@/lib/api/v2/keys";
-import { fetchProviderDetail } from "@/lib/api/v2/server/providers";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -23,7 +23,9 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const provider = await fetchProviderDetail(providerId, profileId);
+    const provider = await api.post("/providers/detail", {
+      body: { providerId, profileId },
+    });
     return {
       title: `${provider?.name || "Provider"}`,
       description:
@@ -51,8 +53,11 @@ export default async function ProviderEditPage({
 
   // Prefetch provider detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: providersDetailKeys.detail(providerId, profileId),
-    queryFn: () => fetchProviderDetail(providerId, profileId),
+    queryKey: keys.providers.with({ providerId, profileId }),
+    queryFn: () =>
+      api.post("/providers/detail", {
+        body: { providerId, profileId },
+      }),
   });
 
   return (

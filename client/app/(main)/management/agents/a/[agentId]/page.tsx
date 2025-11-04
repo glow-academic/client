@@ -6,10 +6,9 @@
  */
 
 import EditSystemAgent from "@/components/management/agents/EditAgent";
-
 import { auth } from "@/auth";
-import { agentsDetailKeys } from "@/lib/api/v2/keys";
-import { fetchAgentDetail } from "@/lib/api/v2/server/agents";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -23,10 +22,12 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const agent = await fetchAgentDetail(agentId, profileId);
+    const agent = await api.post("/agents/detail", {
+      body: { agentId, profileId },
+    });
     return {
       title: `${agent?.name || "Agent"} Agent`,
-      description: `${agent?.name + " " + agent?.description || "Agent"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `${agent ? `${agent.name} ${agent.description}` : "Agent"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {
@@ -49,8 +50,11 @@ export default async function AgentEditPage({
 
   // Prefetch agent detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: agentsDetailKeys.detail(agentId, profileId),
-    queryFn: () => fetchAgentDetail(agentId, profileId),
+    queryKey: keys.agents.with({ agentId, profileId }),
+    queryFn: () =>
+      api.post("/agents/detail", {
+        body: { agentId, profileId },
+      }),
   });
 
   return (

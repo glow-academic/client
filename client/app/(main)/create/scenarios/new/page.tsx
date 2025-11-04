@@ -6,10 +6,9 @@
  */
 
 import NewScenario from "@/components/create/scenarios/NewScenario";
-
 import { auth } from "@/auth";
-import { scenariosDetailDefaultKeys } from "@/lib/api/v2/keys";
-import { fetchScenarioDetailDefault } from "@/lib/api/v2/server/scenarios";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
@@ -27,8 +26,11 @@ export default async function NewScenarioPage() {
 
   // Prefetch default scenario detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: scenariosDetailDefaultKeys.detail(profileId),
-    queryFn: () => fetchScenarioDetailDefault(profileId),
+    queryKey: keys.scenarios.with({ profileId }),
+    queryFn: () =>
+      api.post("/scenarios/detail-default", {
+        body: { profileId },
+      }),
   });
 
   return (

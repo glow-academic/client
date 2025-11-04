@@ -5,11 +5,10 @@
  * 06/09/2025
  */
 
-import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
-
 import { auth } from "@/auth";
-import { scenariosDetailKeys } from "@/lib/api/v2/keys";
-import { fetchScenarioDetail } from "@/lib/api/v2/server/scenarios";
+import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -23,10 +22,12 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const scenario = await fetchScenarioDetail(scenarioId, profileId);
+    const scenario = await api.post("/scenarios/detail", {
+      body: { scenarioId, profileId },
+    });
     return {
       title: `${scenario?.name || "Scenario"}`,
-      description: `${scenario?.name + " " + scenario?.problem_statement || "Scenario"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `${scenario ? `${scenario.name} ${scenario.problem_statement || ""}` : "Scenario"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {
@@ -49,8 +50,11 @@ export default async function EditScenarioPage({
 
   // Prefetch scenario detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: scenariosDetailKeys.detail(scenarioId, profileId),
-    queryFn: () => fetchScenarioDetail(scenarioId, profileId),
+    queryKey: keys.scenarios.with({ scenarioId, profileId }),
+    queryFn: () =>
+      api.post("/scenarios/detail", {
+        body: { scenarioId, profileId },
+      }),
   });
 
   return (

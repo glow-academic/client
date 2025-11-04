@@ -4082,7 +4082,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ModelDetailRequest"
+                "$ref": "#/components/schemas/app__schemas__providers__ModelDetailRequest"
               }
             }
           },
@@ -4094,7 +4094,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelDetailResponse"
+                  "$ref": "#/components/schemas/app__schemas__providers__ModelDetailResponse"
                 }
               }
             }
@@ -4397,7 +4397,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ParameterDetailDefaultRequest"
+                "$ref": "#/components/schemas/app__schemas__parameters__ParameterDetailDefaultRequest"
               }
             }
           },
@@ -10247,6 +10247,55 @@
         ]
       }
     },
+    "/api/v3/providers/models/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "providers",
+          "providers"
+        ],
+        "summary": "Get Model Detail",
+        "description": "Get detailed model information.",
+        "operationId": "get_model_detail_api_v3_providers_models_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v3__providers__models__detail__ModelDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__providers__models__detail__ModelDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers",
+          "providers"
+        ]
+      }
+    },
     "/api/v3/parameters/list": {
       "post": {
         "tags": [
@@ -10308,6 +10357,53 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/app__api__v3__parameters__detail__ParameterDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__parameters__detail__ParameterDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
+      }
+    },
+    "/api/v3/parameters/detail-default": {
+      "post": {
+        "tags": [
+          "v3",
+          "parameters"
+        ],
+        "summary": "Get Parameter Detail Default",
+        "description": "Get default parameter detail for creation mode.",
+        "operationId": "get_parameter_detail_default_api_v3_parameters_detail_default_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v3__parameters__detail_default__ParameterDetailDefaultRequest"
               }
             }
           },
@@ -10696,6 +10792,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/app__api__v3__attempts__update_chat_created_at__UpdateChatTimestampResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
+      }
+    },
+    "/api/v3/attempts/full": {
+      "post": {
+        "tags": [
+          "v3",
+          "attempts"
+        ],
+        "summary": "Get Attempt Full",
+        "description": "Get complete attempt data with all related entities and computed values.",
+        "operationId": "get_attempt_full_api_v3_attempts_full_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptFullRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptFullResponse"
                 }
               }
             }
@@ -11223,6 +11366,143 @@
         ],
         "title": "AssistantChatListResponse",
         "description": "Response schema for assistant chats list."
+      },
+      "AttemptFullRequest": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId"
+        ],
+        "title": "AttemptFullRequest"
+      },
+      "AttemptFullResponse": {
+        "properties": {
+          "attempt": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Attempt"
+          },
+          "simulation": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Simulation"
+          },
+          "attemptProfiles": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Attemptprofiles"
+          },
+          "chats": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Chats"
+          },
+          "scenarioDocuments": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenariodocuments"
+          },
+          "aggregatedResults": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregatedresults"
+          },
+          "timer": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Timer"
+          },
+          "currentChatIndex": {
+            "type": "integer",
+            "title": "Currentchatindex"
+          },
+          "expectedChatCount": {
+            "type": "integer",
+            "title": "Expectedchatcount"
+          },
+          "isSingleChatAttempt": {
+            "type": "boolean",
+            "title": "Issinglechatattempt"
+          },
+          "isLastAttempt": {
+            "type": "boolean",
+            "title": "Islastattempt"
+          },
+          "showResults": {
+            "type": "boolean",
+            "title": "Showresults"
+          },
+          "shouldShowControls": {
+            "type": "boolean",
+            "title": "Shouldshowcontrols"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive"
+          },
+          "rubricStructure": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubricstructure"
+          },
+          "allSimulationScenarios": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Allsimulationscenarios"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt",
+          "simulation",
+          "attemptProfiles",
+          "chats",
+          "scenarioDocuments",
+          "aggregatedResults",
+          "timer",
+          "currentChatIndex",
+          "expectedChatCount",
+          "isSingleChatAttempt",
+          "isLastAttempt",
+          "showResults",
+          "shouldShowControls",
+          "isActive",
+          "rubricStructure",
+          "allSimulationScenarios"
+        ],
+        "title": "AttemptFullResponse",
+        "description": "Response containing complete attempt data with all nested structures."
       },
       "AttemptImprovementData": {
         "properties": {
@@ -15299,95 +15579,6 @@
         "title": "MetricResponse",
         "description": "Standard metric response."
       },
-      "ModelDetailRequest": {
-        "properties": {
-          "modelId": {
-            "type": "string",
-            "title": "Modelid"
-          },
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "modelId",
-          "providerId",
-          "profileId"
-        ],
-        "title": "ModelDetailRequest",
-        "description": "Request for model detail."
-      },
-      "ModelDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "custom_model": {
-            "type": "boolean",
-            "title": "Custom Model"
-          },
-          "image_model": {
-            "type": "boolean",
-            "title": "Image Model"
-          },
-          "input_ppm": {
-            "type": "number",
-            "title": "Input Ppm"
-          },
-          "output_ppm": {
-            "type": "number",
-            "title": "Output Ppm"
-          },
-          "provider_id": {
-            "type": "string",
-            "title": "Provider Id"
-          },
-          "valid_provider_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Provider Ids"
-          },
-          "provider_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ProviderMappingItem"
-            },
-            "type": "object",
-            "title": "Provider Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "active",
-          "custom_model",
-          "image_model",
-          "input_ppm",
-          "output_ppm",
-          "provider_id",
-          "valid_provider_ids",
-          "provider_mapping"
-        ],
-        "title": "ModelDetailResponse",
-        "description": "Response for model detail endpoint."
-      },
       "ModelMappingItem": {
         "properties": {
           "name": {
@@ -15571,20 +15762,6 @@
         ],
         "title": "ParameterDetail",
         "description": "Parameter detail structure."
-      },
-      "ParameterDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "ParameterDetailDefaultRequest",
-        "description": "Request for default parameter detail."
       },
       "ParameterItemCreate": {
         "properties": {
@@ -16539,25 +16716,6 @@
         ],
         "title": "ProfileMappingItem",
         "description": "Profile mapping item - extends MappingItem"
-      },
-      "ProviderMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ProviderMappingItem",
-        "description": "Provider mapping item - extends MappingItem"
       },
       "RandomizeScenarioRequest": {
         "properties": {
@@ -23091,6 +23249,19 @@
         ],
         "title": "ParameterItemDetail"
       },
+      "app__api__v3__parameters__detail_default__ParameterDetailDefaultRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ParameterDetailDefaultRequest"
+      },
       "app__api__v3__parameters__list__ParameterItem": {
         "properties": {
           "parameter_id": {
@@ -25432,6 +25603,111 @@
           "providers"
         ],
         "title": "ProvidersListResponse"
+      },
+      "app__api__v3__providers__models__detail__ModelDetailRequest": {
+        "properties": {
+          "modelId": {
+            "type": "string",
+            "title": "Modelid"
+          },
+          "providerId": {
+            "type": "string",
+            "title": "Providerid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "modelId",
+          "providerId",
+          "profileId"
+        ],
+        "title": "ModelDetailRequest"
+      },
+      "app__api__v3__providers__models__detail__ModelDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "custom_model": {
+            "type": "boolean",
+            "title": "Custom Model"
+          },
+          "image_model": {
+            "type": "boolean",
+            "title": "Image Model"
+          },
+          "input_ppm": {
+            "type": "integer",
+            "title": "Input Ppm"
+          },
+          "output_ppm": {
+            "type": "integer",
+            "title": "Output Ppm"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "valid_provider_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Provider Ids"
+          },
+          "provider_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__providers__models__detail__ProviderMappingItem"
+            },
+            "type": "object",
+            "title": "Provider Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "active",
+          "custom_model",
+          "image_model",
+          "input_ppm",
+          "output_ppm",
+          "provider_id",
+          "valid_provider_ids",
+          "provider_mapping"
+        ],
+        "title": "ModelDetailResponse"
+      },
+      "app__api__v3__providers__models__detail__ProviderMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ProviderMappingItem"
       },
       "app__api__v3__reports__bundle__ProfileDataEnhanced": {
         "properties": {
@@ -28605,6 +28881,25 @@
         "title": "UpdateChatTimestampResponse",
         "description": "Response from chat timestamp update."
       },
+      "app__schemas__base__ProviderMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ProviderMappingItem",
+        "description": "Provider mapping item - extends MappingItem"
+      },
       "app__schemas__base__StandardGroupMappingItem": {
         "properties": {
           "name": {
@@ -30896,6 +31191,20 @@
         "title": "LogsListResponse",
         "description": "Response for logs list."
       },
+      "app__schemas__parameters__ParameterDetailDefaultRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ParameterDetailDefaultRequest",
+        "description": "Request for default parameter detail."
+      },
       "app__schemas__parameters__ParameterDetailRequest": {
         "properties": {
           "parameterId": {
@@ -32485,6 +32794,95 @@
         ],
         "title": "CreateProviderResponse",
         "description": "Response from create provider."
+      },
+      "app__schemas__providers__ModelDetailRequest": {
+        "properties": {
+          "modelId": {
+            "type": "string",
+            "title": "Modelid"
+          },
+          "providerId": {
+            "type": "string",
+            "title": "Providerid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "modelId",
+          "providerId",
+          "profileId"
+        ],
+        "title": "ModelDetailRequest",
+        "description": "Request for model detail."
+      },
+      "app__schemas__providers__ModelDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "custom_model": {
+            "type": "boolean",
+            "title": "Custom Model"
+          },
+          "image_model": {
+            "type": "boolean",
+            "title": "Image Model"
+          },
+          "input_ppm": {
+            "type": "number",
+            "title": "Input Ppm"
+          },
+          "output_ppm": {
+            "type": "number",
+            "title": "Output Ppm"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "valid_provider_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Provider Ids"
+          },
+          "provider_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__schemas__base__ProviderMappingItem"
+            },
+            "type": "object",
+            "title": "Provider Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "active",
+          "custom_model",
+          "image_model",
+          "input_ppm",
+          "output_ppm",
+          "provider_id",
+          "valid_provider_ids",
+          "provider_mapping"
+        ],
+        "title": "ModelDetailResponse",
+        "description": "Response for model detail endpoint."
       },
       "app__schemas__providers__ModelItem": {
         "properties": {
