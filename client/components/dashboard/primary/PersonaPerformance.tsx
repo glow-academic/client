@@ -23,6 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,

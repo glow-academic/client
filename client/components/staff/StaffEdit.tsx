@@ -35,11 +35,11 @@ import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
-
-type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
 type FormData = {
   firstName?: string;
@@ -70,7 +70,7 @@ const useStaffEditBusinessLogic = (
   const { effectiveProfile } = useEffectiveProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const queryClient = useQueryClient();
-  
+
   // Mutation hooks
   const updateProfileMutation = useMutation({
     mutationFn: (req: {
@@ -79,15 +79,19 @@ const useStaffEditBusinessLogic = (
       lastName?: string;
       alias?: string;
       role?: string;
-      reqPerDay?: number | "";
-      unlimited?: boolean;
-      defaultProfile?: boolean;
-    }) => api.post("/profile/staff/update", { body: req }),
+      reqPerDay?: number | null;
+    }) => api.post("/profile/staff/update", { body: {
+      profileId: req.profileId,
+      role: req.role || "",
+      requests_per_day: req.reqPerDay || null,
+      department_id: effectiveProfile?.primaryDepartmentId || "",
+      active: true,
+    } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.profile.all });
     },
   });
-  
+
   const deleteProfileMutation = useMutation({
     mutationFn: (req: { profileId: string }) =>
       api.post("/profile/staff/delete", { body: req }),
@@ -97,14 +101,14 @@ const useStaffEditBusinessLogic = (
   });
 
   const { data: profileData, isLoading: isProfileLoading } = useQuery({
-    queryKey: keys.profile.detail({ profileId }),
+    queryKey: keys.profile.with({ profileId }),
     queryFn: () =>
       api.post("/profile/staff/detail", {
-        body: { profileId },
+        body: { profileId, currentProfileId: effectiveProfile?.id || "" },
       }),
     enabled: !!profileId,
   });
-  const targetUser = profileData?.profile;
+  const targetUser = profileData;
 
   const isCurrentUserAdmin =
     effectiveProfile?.role === "admin" ||
@@ -113,8 +117,8 @@ const useStaffEditBusinessLogic = (
 
   // Set breadcrumb context when profile data is loaded
   useEffect(() => {
-    if (targetUser?.firstName && targetUser?.lastName && profileId) {
-      const fullName = `${targetUser.firstName} ${targetUser.lastName}`;
+    if (targetUser?.name && profileId) {
+      const fullName = targetUser.name;
       setEntityMetadata({
         entityId: profileId,
         entityName: fullName,
@@ -140,9 +144,9 @@ const useStaffEditBusinessLogic = (
             : Number(formData.reqPerDay);
         await updateProfileMutation.mutateAsync({
           profileId: profileId,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          role: formData.role,
+          firstName: formData.firstName || "",
+          lastName: formData.lastName || "",
+          role: formData.role || "",
           reqPerDay: parsedReqPerDay,
         });
         setHasChanges(false);
@@ -220,14 +224,14 @@ export default function StaffEdit({
   useEffect(() => {
     if (targetUser) {
       setFormData({
-        firstName: targetUser.firstName,
-        lastName: targetUser.lastName,
-        alias: targetUser.alias,
+        firstName: targetUser.name?.split(" ")[0] || "",
+        lastName: targetUser.name?.split(" ").slice(1).join(" ") || "",
+        alias: targetUser.email?.split("@")[0] || "",
         role: targetUser.role,
-        reqPerDay: targetUser.reqPerDay ?? "",
+        reqPerDay: targetUser.requests_per_day ?? "",
       });
-      setUnlimited(targetUser.reqPerDay == null);
-      setToggleDefault(targetUser.defaultProfile ?? null);
+      setUnlimited(targetUser.requests_per_day == null);
+      setToggleDefault(false); // TODO: Add default profile logic
     }
   }, [targetUser]);
 
@@ -239,7 +243,7 @@ export default function StaffEdit({
       if (
         canToggleDefault &&
         targetUser &&
-        !(targetUser.role === "guest" && targetUser.defaultProfile)
+        !(targetUser.role === "guest" && false) // TODO: Add default profile logic
       ) {
         if (toggleDefault !== null) payload.defaultProfile = toggleDefault;
       }
@@ -466,7 +470,7 @@ export default function StaffEdit({
           <div className="flex justify-end gap-2">
             {canToggleDefault &&
               targetUser &&
-              !(targetUser.role === "guest" && targetUser.defaultProfile) && (
+              !(targetUser.role === "guest" && false) && ( // TODO: Add default profile logic
                 <div className="mr-auto flex items-center gap-2">
                   <Label htmlFor="defaultProfile">Default Profile</Label>
                   <Checkbox

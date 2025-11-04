@@ -619,8 +619,7 @@ export default function AttemptChat() {
                                           ? "bg-red-100 dark:bg-red-900/30"
                                           : simulationContext?.aggregatedResults
                                             ? simulationContext
-                                                ?.aggregatedResults
-                                                .overallPassed
+                                                ?.aggregatedResults.passed
                                               ? "bg-green-100 dark:bg-green-900/30"
                                               : "bg-red-100 dark:bg-red-900/30"
                                             : "bg-muted"

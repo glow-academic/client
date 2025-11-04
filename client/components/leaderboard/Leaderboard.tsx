@@ -11,34 +11,6 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-
-type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
-
-type LeaderboardMetric = {
-  hasData: boolean;
-  method: string;
-  currentValue: number;
-  keyField: string | null | undefined;
-  trendData: any[];
-  dataPoints: any[];
-  hover: Record<string, any>;
-};
-
-type LeaderboardRow = {
-  profileId: string;
-  firstName: string;
-  lastName: string;
-  metrics: {
-    totalAttempts: LeaderboardMetric;
-    highestScoreAvg: LeaderboardMetric;
-    messagesPerSession: LeaderboardMetric;
-    personaResponseSeconds: LeaderboardMetric;
-    timeSpentMinutes: LeaderboardMetric;
-    improvementRatePerDay: LeaderboardMetric;
-    perfectScoreCount: LeaderboardMetric;
-    quickestPassMinutes: LeaderboardMetric;
-  };
-};
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -57,6 +29,34 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AccoladeCard from "./AccoladeCard";
 import LeaderboardTable from "./LeaderboardTable";
+
+type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
+
+type LeaderboardMetric = {
+  hasData: boolean;
+  method: string;
+  currentValue: number;
+  keyField?: string | null;
+  trendData: unknown[];
+  dataPoints: unknown[];
+  hover: Record<string, unknown>;
+};
+
+type LeaderboardRow = {
+  profileId: string;
+  firstName: string;
+  lastName: string;
+  metrics: {
+    totalAttempts: LeaderboardMetric;
+    highestScoreAvg: LeaderboardMetric;
+    messagesPerSession: LeaderboardMetric;
+    personaResponseSeconds: LeaderboardMetric;
+    timeSpentMinutes: LeaderboardMetric;
+    improvementRatePerDay: LeaderboardMetric;
+    perfectScoreCount: LeaderboardMetric;
+    quickestPassMinutes: LeaderboardMetric;
+  };
+};
 
 // Helper function to get initials from name
 const getInitials = (firstName: string, lastName: string): string => {

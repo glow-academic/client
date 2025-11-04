@@ -10,8 +10,12 @@ import UploadClassificationDialog from "@/components/documents/UploadClassificat
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { inferMimeFromName } from "@/utils/mime-map";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import * as tus from "tus-js-client";
+import { v4 as uuidv4 } from "uuid";
 
 type ParameterItemMappingItem = {
   name: string;
@@ -22,10 +26,6 @@ type ParameterMappingItem = {
   name: string;
   description: string;
 };
-import React, { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import * as tus from "tus-js-client";
-import { v4 as uuidv4 } from "uuid";
 
 interface DocumentUploadDialogProps {
   open: boolean;
@@ -64,13 +64,13 @@ export function DocumentUploadDialog({
         body: {
           uploadId: "", // Will be derived from fileId on server
           fileId: req.fileId,
-          zip: req.zip,
-          autoClassify: req.autoClassify,
-          csv: req.csv,
-          test: req.test,
-          profileId: req.profileId,
-          departmentIds: req.departmentIds,
-          parameterItemIds: req.parameterItemIds,
+          zip: req.zip || false,
+          autoClassify: req.autoClassify || false,
+          csv: req.csv || false,
+          test: req.test || false,
+          profileId: req.profileId || null,
+          departmentIds: req.departmentIds || null,
+          parameterItemIds: req.parameterItemIds || null,
         },
       }),
     onSuccess: () => {
@@ -222,7 +222,7 @@ export function DocumentUploadDialog({
               fileId,
               zip: isZipFile,
               autoClassify: shouldAutoClassify,
-              profileId: effectiveProfile?.id,
+              profileId: effectiveProfile?.id || "",
               departmentIds: classification?.departmentIds || null,
               parameterItemIds: classification?.parameterItemIds || [],
             });
@@ -230,9 +230,10 @@ export function DocumentUploadDialog({
             if (result.success) {
               const isZipFile = file.name.toLowerCase().endsWith(".zip");
               const classificationSuccess =
-                result.classification_result ?? false;
+                result.documents?.some((doc) => doc["classification_result"]) ??
+                false;
               const description = isZipFile
-                ? `Extracted ${result.extracted_count || 0} documents${classificationSuccess ? " and auto-classified" : ""}`
+                ? `Extracted ${result.documents?.length || 0} documents${classificationSuccess ? " and auto-classified" : ""}`
                 : "File uploaded and processed successfully";
 
               toast.success(`Upload completed: ${file.name}!`, {
@@ -371,8 +372,18 @@ export function DocumentUploadDialog({
           }
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
-          parameterItemMapping={parameterItemMapping}
-          parameterMapping={parameterMapping}
+          parameterItemMapping={Object.fromEntries(
+            Object.entries(parameterItemMapping).map(([key, value]) => [
+              key,
+              { name: value.name, description: value.description },
+            ])
+          )}
+          parameterMapping={Object.fromEntries(
+            Object.entries(parameterMapping).map(([key, value]) => [
+              key,
+              { name: value.name, description: value.description },
+            ])
+          )}
           validParameterItemIds={validParameterItemIds}
         />
       )}

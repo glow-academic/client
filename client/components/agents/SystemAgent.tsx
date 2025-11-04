@@ -44,11 +44,20 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import type { components } from "@/lib/api-types";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bug, Copy, Eye, Power, Trash2 } from "lucide-react";
 import AgentDebugInfo from "./AgentDebugInfo";
+
+// Explicit types from API schema
+type CreateAgentRequest =
+  components["schemas"]["app__schemas__agents__CreateAgentRequest"];
+type UpdateAgentRequest =
+  components["schemas"]["app__schemas__agents__UpdateAgentRequest"];
+type DeleteAgentPromptRequest =
+  components["schemas"]["app__schemas__agents__DeleteAgentPromptRequest"];
 
 interface SystemAgentFormData {
   name?: string;
@@ -123,7 +132,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     });
 
   const createAgentMutation = useMutation({
-    mutationFn: (req: Record<string, unknown>) =>
+    mutationFn: (req: CreateAgentRequest) =>
       api.post("/agents/create", { body: req }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.agents.all });
@@ -131,7 +140,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   });
 
   const updateAgentMutation = useMutation({
-    mutationFn: (req: Record<string, unknown>) =>
+    mutationFn: (req: UpdateAgentRequest) =>
       api.post("/agents/update", { body: req }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.agents.all });
@@ -139,7 +148,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   });
 
   const deleteAgentPromptMutation = useMutation({
-    mutationFn: (req: Record<string, unknown>) =>
+    mutationFn: (req: DeleteAgentPromptRequest) =>
       api.post("/agents/delete-prompt", { body: req }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.agents.all });
