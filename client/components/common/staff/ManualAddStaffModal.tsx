@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { useBulkCreateOrUpdateStaff } from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type RoleValue = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
@@ -63,7 +65,28 @@ export default function ManualAddStaffModal({
   onStagedProfiles,
 }: ManualAddStaffModalProps) {
   const { effectiveProfile } = useProfile();
-  const bulkCreateOrUpdateMutation = useBulkCreateOrUpdateStaff();
+  const queryClient = useQueryClient();
+
+  // V3 API mutation
+  const bulkCreateOrUpdateMutation = useMutation({
+    mutationFn: (request: {
+      profiles: Array<{
+        firstName: string;
+        lastName: string;
+        alias: string;
+        role: string;
+        department_ids: string[];
+        cohort_ids: string[];
+      }>;
+      currentProfileId: string;
+    }) =>
+      api.post("/profile/staff/bulk-create-or-update-staff", {
+        body: request,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
 
   const [inputText, setInputText] = useState("");
   const [parsedEntries, setParsedEntries] = useState<ParsedStaffEntry[]>([]);

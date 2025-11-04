@@ -43,8 +43,9 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-import { useAuthorizeEmulation } from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
+import { useMutation } from "@tanstack/react-query";
 import {
   Brain,
   ChartBar,
@@ -208,8 +209,16 @@ export function UnifiedSidebar({
   } = useProfile();
   const { update } = useSession();
 
-  // Mutation for emulation authorization
-  const authorizeMutation = useAuthorizeEmulation();
+  // V3 API: Authorize emulation mutation
+  const authorizeMutation = useMutation({
+    mutationFn: (request: {
+      requesterProfileId: string;
+      targetProfileId: string;
+    }) =>
+      api.post("/profile/authorize-emulation", {
+        body: request,
+      }),
+  });
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts || !effectiveProfile) return [];

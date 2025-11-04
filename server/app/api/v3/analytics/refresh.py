@@ -12,6 +12,11 @@ from pydantic import BaseModel
 router = APIRouter()
 
 
+class RefreshRequest(BaseModel):
+    """Request to refresh analytics (no parameters needed)."""
+    pass
+
+
 class RefreshResponse(BaseModel):
     """Materialized view refresh response."""
 
@@ -22,6 +27,7 @@ class RefreshResponse(BaseModel):
 
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh_analytics(
+    request: RefreshRequest,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:

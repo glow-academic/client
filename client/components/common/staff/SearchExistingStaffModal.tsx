@@ -23,7 +23,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import { useSearchStaff } from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 
 type ProfileListItem = {
   profile_id: string;
@@ -91,19 +93,27 @@ export default function SearchExistingStaffModal({
     Map<string, ProfileListItem>
   >(new Map());
 
-  // Use server-side search hook
-  const { data: searchData, isLoading } = useSearchStaff(
-    {
-      query: searchQuery || undefined,
+  // V3 API: Server-side search
+  const { data: searchData, isLoading } = useQuery({
+    queryKey: keys.profile.with({
+      query: searchQuery || null,
       cohortIds: scopedCohortIds || undefined,
       departmentIds: _scopedDepartmentIds || undefined,
       limit: 200,
       profileId: effectiveProfile?.id || "",
-    },
-    {
-      enabled: open && !!effectiveProfile?.id,
-    }
-  );
+    }),
+    queryFn: () =>
+      api.post("/profile/staff/search-staff", {
+        body: {
+          query: searchQuery || null,
+          cohortIds: scopedCohortIds || null,
+          departmentIds: _scopedDepartmentIds || null,
+          limit: 200,
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: open && !!effectiveProfile?.id,
+  });
 
   // Get search results from API response
   const searchResults = React.useMemo(() => {

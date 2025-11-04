@@ -15,7 +15,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { useBulkDeleteLogs } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useProfile } from "@/contexts/profile-context";
 
 type LogItem = {
   log_id: number;
@@ -67,7 +70,17 @@ export function BulkDeleteLogsDialog({
   const [selectedPercentage, setSelectedPercentage] =
     useState<DeletePercentage>("10");
   const [isDeleting, setIsDeleting] = useState(false);
-  const deleteLogsMutation = useBulkDeleteLogs();
+  const queryClient = useQueryClient();
+  const { effectiveProfile } = useProfile();
+
+  // V3 API: Bulk delete logs mutation
+  const deleteLogsMutation = useMutation({
+    mutationFn: (request: { ids: number[] }) =>
+      api.post("/logs/bulk-delete", { body: { profileId: effectiveProfile?.id || "", ...request } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.logs.all });
+    },
+  });
 
   const getLogsToDelete = (percentage: DeletePercentage): LogItem[] => {
     const totalLogs = logs.length;

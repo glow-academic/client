@@ -29,10 +29,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useBulkUpdateProfile,
-  useProfileDetailBulk,
-} from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -50,14 +49,38 @@ export default function StaffBulkEditModal({
   onDone,
 }: StaffBulkEditModalProps) {
   const { effectiveProfile } = useProfile();
-  const bulkUpdateMutation = useBulkUpdateProfile();
+  const queryClient = useQueryClient();
 
-  // Fetch bulk detail to get common values
-  const { data: bulkDetail } = useProfileDetailBulk(
-    profileIds,
-    effectiveProfile?.id || "",
-    open && profileIds.length > 0 && !!effectiveProfile?.id
-  );
+  // V3 API: Fetch bulk detail
+  const { data: bulkDetail } = useQuery({
+    queryKey: keys.profile.with({
+      profileIds,
+      currentProfileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/profile/staff/detail-bulk", {
+        body: {
+          profileIds,
+          currentProfileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: open && profileIds.length > 0 && !!effectiveProfile?.id,
+  });
+
+  // V3 API: Bulk update mutation
+  const bulkUpdateMutation = useMutation({
+    mutationFn: (request: {
+      profileIds: string[];
+      role?: string | null;
+      requests_per_day?: number | null | string;
+      default_profile?: boolean | null;
+      currentProfileId: string;
+      active?: boolean | null;
+    }) => api.post("/profile/staff/bulk-update", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
 
   const [bulkRole, setBulkRole] = useState<string>("__keep__");
   const [bulkReqPerDay, setBulkReqPerDay] = useState<string>("");

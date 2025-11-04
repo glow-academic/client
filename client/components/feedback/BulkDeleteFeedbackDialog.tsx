@@ -15,7 +15,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { useBulkDeleteFeedback } from "@/lib/api/v2/hooks/feedback";
+import { useProfile } from "@/contexts/profile-context";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type FeedbackItem = {
   feedback_id: number;
@@ -45,7 +48,17 @@ export function BulkDeleteFeedbackDialog({
   const [selectedPercentage, setSelectedPercentage] =
     useState<DeletePercentage>("10");
   const [isDeleting, setIsDeleting] = useState(false);
-  const deleteFeedbackMutation = useBulkDeleteFeedback();
+  const { effectiveProfile } = useProfile();
+  const queryClient = useQueryClient();
+
+  // V3 API: Bulk delete feedback mutation
+  const deleteFeedbackMutation = useMutation({
+    mutationFn: (request: { ids: number[] }) =>
+      api.post("/feedback/bulk-delete", { body: { profileId: effectiveProfile?.id || "", ...request } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.feedback.all });
+    },
+  });
 
   const getFeedbackToDelete = (
     percentage: DeletePercentage

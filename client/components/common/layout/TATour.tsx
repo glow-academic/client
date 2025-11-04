@@ -15,12 +15,9 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-import {
-  useMarkChatComplete,
-  useMarkIntroComplete,
-} from "@/lib/api/v2/hooks/profile";
-import { attemptsFullKeys, layoutContextKeys } from "@/lib/api/v2/keys";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component
@@ -100,9 +97,56 @@ export default function TATour() {
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
   const queryClient = useQueryClient();
-  const markIntroCompleteMutation = useMarkIntroComplete();
-  const markChatCompleteMutation = useMarkChatComplete();
-  const { info, error, debug } = useLogger();
+
+  // V3 API: Mark intro complete mutation
+  const markIntroCompleteMutation = useMutation({
+    mutationFn: (request: { profileId: string }) =>
+      api.post("/profile/mark-intro-complete", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
+
+  // V3 API: Mark chat complete mutation
+  const markChatCompleteMutation = useMutation({
+    mutationFn: (request: { profileId: string }) =>
+      api.post("/profile/mark-chat-complete", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
+
+  // V3 API: Logger helper functions
+  const logToApi = async (
+    level: "info" | "warn" | "error" | "debug",
+    event: string,
+    rest: {
+      message?: string;
+      subject?: { entityType?: string; entityId?: string };
+      context?: Record<string, unknown>;
+      error?: unknown;
+    }
+  ) => {
+    try {
+      await api.post("/logs/create", {
+        body: {
+          event,
+          level,
+          actor: { profileId: effectiveProfile?.id || "" },
+          ...rest,
+        },
+      });
+    } catch {
+      // Silently fail logging - don't break the app if logging fails
+    }
+  };
+
+  const info = (event: string, rest: Parameters<typeof logToApi>[2]) =>
+    logToApi("info", event, rest);
+  const error = (event: string, rest: Parameters<typeof logToApi>[2]) =>
+    logToApi("error", event, rest);
+  const debug = (event: string, rest: Parameters<typeof logToApi>[2]) =>
+    logToApi("debug", event, rest);
 
   // Comprehensive debug logging on every render
   useEffect(() => {
@@ -224,7 +268,7 @@ export default function TATour() {
         if (profileUpdated) {
           // Invalidate layout context (includes profile data)
           queryClient.invalidateQueries({
-            queryKey: layoutContextKeys.all,
+            queryKey: keys.profile.all,
           });
 
           debug("tour.profile.invalidate_queries", {
@@ -1021,7 +1065,7 @@ export default function TATour() {
 
         // Invalidate v2 layout context (for updated simulations list)
         queryClient.invalidateQueries({
-          queryKey: layoutContextKeys.all,
+          queryKey: keys.profile.all,
         });
       }
 
@@ -1295,7 +1339,7 @@ export default function TATour() {
 
         // Invalidate v2 layout context (for updated simulations list)
         queryClient.invalidateQueries({
-          queryKey: layoutContextKeys.all,
+          queryKey: keys.profile.all,
         });
       }
     };
@@ -1429,12 +1473,12 @@ export default function TATour() {
 
           // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
           queryClient.invalidateQueries({
-            queryKey: attemptsFullKeys.all,
+            queryKey: keys.attempts.all,
           });
 
           // Invalidate v2 layout context (for updated simulations list)
           queryClient.invalidateQueries({
-            queryKey: layoutContextKeys.all,
+            queryKey: keys.profile.all,
           });
 
           // Dispatch existingSimulationNavigation event to set navigating to false

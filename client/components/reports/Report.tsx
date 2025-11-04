@@ -10,7 +10,9 @@ import Dashboard from "@/components/dashboard/Dashboard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useProfileSimple } from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 // Helper function to get initials
@@ -53,10 +55,28 @@ export interface ReportProps {
 export default function Report({ profileId }: ReportProps) {
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
-  // Fetch profile data
-  const { data: profileData, isLoading: isLoadingProfile } =
-    useProfileSimple(profileId);
-  const profile = profileData?.profile;
+  // V3 API: Fetch profile detail
+  const { data: profileData, isLoading: isLoadingProfile } = useQuery({
+    queryKey: keys.profile.with({ profileId }),
+    queryFn: () =>
+      api.post("/profile/staff/detail", {
+        body: {
+          profileId,
+          currentProfileId: profileId, // Use same ID for permissions
+        },
+      }),
+    enabled: !!profileId,
+  });
+
+  // V3 response structure: fields are directly on the response object
+  const profile = profileData
+    ? {
+        firstName: profileData.name?.split(" ")[0] || "",
+        lastName: profileData.name?.split(" ").slice(1).join(" ") || "",
+        alias: profileData.email?.split("@")[0] || "",
+        role: profileData.role || "",
+      }
+    : null;
 
   // Set breadcrumb context when profile data is loaded
   useEffect(() => {

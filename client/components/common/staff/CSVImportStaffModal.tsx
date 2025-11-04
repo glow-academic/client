@@ -47,11 +47,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useBulkCreateOrUpdateStaff,
-  useProcessCSV,
-} from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type CSVColumnMapping = {
   csv_column: string;
@@ -314,8 +313,41 @@ export default function CSVImportStaffModal({
   onStagedProfiles,
 }: CSVImportStaffModalProps) {
   const { effectiveProfile } = useProfile();
-  const processCSVMutation = useProcessCSV();
-  const bulkCreateOrUpdateMutation = useBulkCreateOrUpdateStaff();
+  const queryClient = useQueryClient();
+
+  // V3 API mutations
+  const processCSVMutation = useMutation({
+    mutationFn: (request: {
+      csv_content: string;
+      column_mappings: Array<{
+        csv_column: string;
+        target_field: string | null;
+      }>;
+    }) =>
+      api.post("/profile/staff/process-csv", {
+        body: request,
+      }),
+  });
+
+  const bulkCreateOrUpdateMutation = useMutation({
+    mutationFn: (request: {
+      profiles: Array<{
+        firstName: string;
+        lastName: string;
+        alias: string;
+        role: string;
+        department_ids: string[];
+        cohort_ids: string[];
+      }>;
+      currentProfileId: string;
+    }) =>
+      api.post("/profile/staff/bulk-create-or-update-staff", {
+        body: request,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
 
   const [stage, setStage] = useState<Stage>("upload");
   const [csvContent, setCsvContent] = useState<string>("");

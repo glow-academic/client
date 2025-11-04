@@ -7,6 +7,7 @@
 "use client";
 
 import { api } from "@/lib/api/client";
+import type { OutputOf } from "@/lib/api/types";
 import { keys } from "@/lib/query/keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, {
@@ -21,9 +22,94 @@ import React, {
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
 
-// Context type will be inferred from the value in SimulationProvider
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SimulationContext = createContext<any>(null);
+// Infer the API response type
+type AttemptFullResponse = OutputOf<"/api/v3/attempts/full", "post">;
+type ChatData = AttemptFullResponse["chats"][number];
+
+// Define the context value type based on the actual value structure
+interface SimulationContextType {
+  // Raw attempt data for lookups
+  attemptData: AttemptFullResponse | null;
+  // Data (from v3)
+  attemptId: string;
+  attempt: AttemptFullResponse["attempt"] | null;
+  simulation: AttemptFullResponse["simulation"] | null;
+  scenario: ChatData["scenario"] | null;
+  scenarioDocuments: AttemptFullResponse["scenarioDocuments"];
+  // Attempt profiles (from v3)
+  attemptProfiles: AttemptFullResponse["attemptProfiles"];
+  attemptProfileId: string | null;
+  // Scenarios map (from v3)
+  scenariosByChatId: Record<string, ChatData["scenario"]>;
+  // Rubric structure (from v3)
+  rubricStructure: AttemptFullResponse["rubricStructure"];
+  // Grading states (from v3)
+  gradingStatesByChatId: Record<string, NonNullable<ChatData["gradingState"]>>;
+  // Current chat management
+  currentChatIndex: number;
+  setCurrentChatIndex: (index: number | ((prev: number) => number)) => void;
+  currentChat: ChatData["chat"] | null;
+  chats: ChatData["chat"][];
+  isLoadingChats: boolean;
+  // Messages and hints (from v3)
+  currentMessages: ChatData["messages"];
+  currentChatHints: ChatData["hints"];
+  // Results and grading (from v3 server-side computations)
+  currentDynamicRubric: ChatData["dynamicRubric"] | null;
+  allDynamicRubrics: NonNullable<ChatData["dynamicRubric"]>[];
+  aggregatedResults: AttemptFullResponse["aggregatedResults"];
+  gradingProgress: {
+    completed: number;
+    total: number;
+    displayedProgress: number;
+    phase: "tools" | "summary" | null;
+  } | null;
+  isGrading: boolean;
+  // Timer state (from v3 server-side computation)
+  timer: {
+    elapsed: number;
+    remaining: number | null;
+    expired: boolean;
+  };
+  // isActive: true if timer hasn't expired and results aren't showing
+  isActive: boolean;
+  // UI state (from v3 metadata)
+  showResults: boolean;
+  isSingleChatAttempt: boolean;
+  isLastAttempt: boolean;
+  expectedChatCount: number;
+  shouldShowControls: boolean;
+  freshlyCompletedChats: Set<string>;
+  setFreshlyCompletedChats: (
+    value: Set<string> | ((prev: Set<string>) => Set<string>)
+  ) => void;
+  // UI preferences that persist across chat switches
+  showGrades: boolean;
+  setShowGrades: (value: boolean) => void;
+  showDocuments: boolean;
+  setShowDocuments: (value: boolean) => void;
+  userHasManuallyToggledGrades: boolean;
+  setUserHasManuallyToggledGrades: (value: boolean) => void;
+  // Connection
+  isConnected: boolean;
+  // WebSocket operations
+  sendMessage: (message: string, isRetry?: boolean) => Promise<void>;
+  stopMessage: () => Promise<void>;
+  endChat: (chatId?: string, previousChatId?: string) => Promise<void>;
+  endAllChats: (
+    previousChatMap?: Record<string, string | null>
+  ) => Promise<void>;
+  // Loading states
+  isSendingMessage: boolean;
+  isStoppingMessage: boolean;
+  endChatLoading: boolean;
+  // Event handlers
+  onSimulationFinished?: () => void;
+  // Watch mode
+  readOnly: boolean;
+}
+
+const SimulationContext = createContext<SimulationContextType | null>(null);
 
 export const useSimulation = () => {
   return useContext(SimulationContext);
@@ -902,7 +988,7 @@ export function SimulationProvider({
     }
   }, [chats]);
 
-  const value = {
+  const value: SimulationContextType = {
     // Raw attempt data for lookups
     attemptData: attemptData ?? null,
     // Data (from v3)
@@ -981,7 +1067,7 @@ export function SimulationProvider({
     endChatLoading,
 
     // Event handlers
-    onSimulationFinished,
+    ...(onSimulationFinished ? { onSimulationFinished } : {}),
 
     // Watch mode
     readOnly,

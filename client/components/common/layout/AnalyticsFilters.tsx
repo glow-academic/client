@@ -12,8 +12,12 @@ import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useRefreshAnalytics } from "@/lib/api/v2/hooks/analytics";
-import { useIsFetching } from "@tanstack/react-query";
+import { api } from "@/lib/api/client";
+import {
+  useIsFetching,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -52,8 +56,24 @@ export function AnalyticsFilters({
   const { cohorts, cohortMemberCounts, departments } = useProfile();
   const getCohortMemberCount = (cohortId: string) =>
     cohortMemberCounts[cohortId] ?? 0;
-  const { mutate: refreshAnalytics, isPending: isRefreshing } =
-    useRefreshAnalytics();
+  const queryClient = useQueryClient();
+
+  // V3 API: Refresh analytics mutation
+  const refreshAnalyticsMutation = useMutation({
+    mutationFn: () => api.post("/analytics/refresh", { body: {} }),
+    onSuccess: () => {
+      // Invalidate all analytics queries
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey?.[0];
+          return typeof key === "string" && key.startsWith("analytics:");
+        },
+      });
+    },
+  });
+
+  const refreshAnalytics = refreshAnalyticsMutation.mutate;
+  const isRefreshing = refreshAnalyticsMutation.isPending;
 
   // Count all in-flight analytics queries (after invalidation)
   const isFetchingAnalytics = useIsFetching({

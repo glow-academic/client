@@ -4246,7 +4246,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/refresh": {
+    "/api/v3/analytics/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4259,7 +4259,7 @@ export interface paths {
          * Refresh Analytics
          * @description Refresh the analytics materialized view.
          */
-        post: operations["refresh_analytics_api_v3_refresh_post"];
+        post: operations["refresh_analytics_api_v3_analytics_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7626,6 +7626,11 @@ export interface components {
             /** Description */
             description: string;
         };
+        /**
+         * RefreshRequest
+         * @description Request to refresh analytics (no parameters needed).
+         */
+        RefreshRequest: Record<string, never>;
         /**
          * RefreshResponse
          * @description Materialized view refresh response.
@@ -22150,14 +22155,18 @@ export interface operations {
             };
         };
     };
-    refresh_analytics_api_v3_refresh_post: {
+    refresh_analytics_api_v3_analytics_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -22166,6 +22175,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

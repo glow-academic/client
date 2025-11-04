@@ -22,7 +22,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { getApiBase } from "@/lib/api/v2/api-base";
 import {
   AlertCircle,
   CheckCircle,
@@ -396,7 +395,7 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">API Base:</span>
                     <span className="font-mono">
-                      {getApiBase() || "localhost"}
+                      {process.env["NEXT_PUBLIC_API_BASE"] || "localhost"}
                     </span>
                   </div>
                   <div className="flex justify-between">

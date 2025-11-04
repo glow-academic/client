@@ -9752,14 +9752,25 @@
         ]
       }
     },
-    "/api/v3/refresh": {
+    "/api/v3/analytics/refresh": {
       "post": {
         "tags": [
-          "v3"
+          "v3",
+          "analytics"
         ],
         "summary": "Refresh Analytics",
         "description": "Refresh the analytics materialized view.",
-        "operationId": "refresh_analytics_api_v3_refresh_post",
+        "operationId": "refresh_analytics_api_v3_analytics_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -9770,10 +9781,21 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         },
         "x-cache-tags": [
-          "v3"
+          "v3",
+          "analytics"
         ]
       }
     },
@@ -18279,6 +18301,12 @@
         ],
         "title": "ReasoningMappingItem",
         "description": "Reasoning mapping item - extends MappingItem"
+      },
+      "RefreshRequest": {
+        "properties": {},
+        "type": "object",
+        "title": "RefreshRequest",
+        "description": "Request to refresh analytics (no parameters needed)."
       },
       "RefreshResponse": {
         "properties": {

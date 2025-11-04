@@ -11,7 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useProfile } from "@/contexts/profile-context";
-import { useCreateStaffData } from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 import CSVImportStaffModal from "./CSVImportStaffModal";
 import ManualAddStaffModal from "./ManualAddStaffModal";
 import SearchExistingStaffModal from "./SearchExistingStaffModal";
@@ -42,14 +44,21 @@ export default function CreateStaffButton({
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
-  // Fetch create staff data
-  const { data: createStaffData, isLoading } = useCreateStaffData(
-    {
-      departmentIds: departmentIds,
+  // V3 API: Fetch create staff data
+  const { data: createStaffData, isLoading } = useQuery({
+    queryKey: keys.profile.with({
+      departmentIds,
       profileId: effectiveProfile?.id || "",
-    },
-    !!effectiveProfile?.id
-  );
+    }),
+    queryFn: () =>
+      api.post("/profile/staff/create-staff-data", {
+        body: {
+          departmentIds: departmentIds,
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!effectiveProfile?.id,
+  });
 
   // Transform mappings for pickers
   const departmentMapping = useMemo(() => {

@@ -28,11 +28,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useBulkCreateProfile,
-  useProfileList,
-} from "@/lib/api/v2/hooks/profile";
+
 import { Download, Shield, Upload, User, UserPlus, X } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 
 // Helper to extract alias from email
 const extractAliasFromEmail = (email: string): string => {
@@ -138,9 +138,16 @@ export interface CreateStaffProps {
 export default function CreateStaff({ onDone }: CreateStaffProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
-  // Fetch all data with single v2 call
-  const { data: profileListResponse } = useProfileList({
-    profileId: effectiveProfile?.id || "",
+  const queryClient = useQueryClient();
+
+  // V3 API: Fetch profile list
+  const { data: profileListResponse } = useQuery({
+    queryKey: keys.profile.list({ profileId: effectiveProfile?.id || "" }),
+    queryFn: () =>
+      api.post("/profile/staff/list", {
+        body: { profileId: effectiveProfile?.id || "" },
+      }),
+    enabled: !!effectiveProfile?.id,
   });
 
   const allProfiles = useMemo(
@@ -169,8 +176,21 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
     return Object.keys(departmentMapping);
   }, [departmentMapping]);
 
-  // Mutation
-  const bulkCreateProfileMutation = useBulkCreateProfile();
+  // V3 API mutation
+  const bulkCreateProfileMutation = useMutation({
+    mutationFn: (request: {
+      profiles: Array<{
+        firstName: string;
+        lastName: string;
+        alias: string;
+        role: string;
+        department_id?: string;
+      }>;
+    }) => api.post("/profile/staff/bulk-create", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
 
   // State
   const [csvPreview, setCsvPreview] = useState<PreviewProfile[]>([]);
@@ -371,7 +391,6 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
       errors.role = "Role is required";
     }
 
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   }, [manualProfile]);
@@ -437,7 +456,7 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
           lastName: p.lastName,
           alias: p.alias,
           role: p.role,
-          department_id: p.departmentId || undefined,
+          department_ids: p.departmentId ? [p.departmentId] : [],
         })),
       });
 
@@ -627,9 +646,7 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
                 mapping={departmentPickerMapping}
                 validIds={validDepartmentIds}
                 selectedIds={
-                  manualProfile.departmentId
-                    ? [manualProfile.departmentId]
-                    : []
+                  manualProfile.departmentId ? [manualProfile.departmentId] : []
                 }
                 onSelect={(ids) =>
                   setManualProfile((p) => ({

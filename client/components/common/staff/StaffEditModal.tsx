@@ -30,11 +30,10 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useProfileSimple,
-  useUpdateProfileSimple,
-} from "@/lib/api/v2/hooks/profile";
-import { useCallback, useEffect, useState } from "react";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export interface StaffEditModalProps {
@@ -51,13 +50,52 @@ export default function StaffEditModal({
   onDone,
 }: StaffEditModalProps) {
   const { effectiveProfile } = useProfile();
-  const updateProfileMutation = useUpdateProfileSimple();
+  const queryClient = useQueryClient();
 
-  const { data: profileData, isLoading } = useProfileSimple(
-    profileId || "",
-    !!profileId
-  );
-  const targetUser = profileData?.profile;
+  // V3 API: Fetch profile detail
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: keys.profile.with({
+      profileId: profileId || "",
+      currentProfileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/profile/staff/detail", {
+        body: {
+          profileId: profileId || "",
+          currentProfileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!profileId && !!effectiveProfile?.id,
+  });
+
+  // V3 response structure: fields are directly on the response object
+  // Extract name into firstName/lastName (assuming format "FirstName LastName")
+  const targetUser = useMemo(() => {
+    if (!profileData) return null;
+    return {
+      firstName: profileData.name?.split(" ")[0] || "",
+      lastName: profileData.name?.split(" ").slice(1).join(" ") || "",
+      alias: profileData.email?.split("@")[0] || "",
+      role: profileData.role || "",
+      reqPerDay: profileData.requests_per_day ?? null,
+      defaultProfile: false, // Not in v3 response, default to false
+    };
+  }, [profileData]);
+
+  // V3 API: Update profile mutation
+  // Note: v3 update endpoint only accepts role, requests_per_day, department_id, and active
+  const updateProfileMutation = useMutation({
+    mutationFn: (request: {
+      profileId: string;
+      role: string;
+      requests_per_day: number | null;
+      department_id: string;
+      active: boolean;
+    }) => api.post("/profile/staff/update", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -116,15 +154,20 @@ export default function StaffEditModal({
           ? null
           : Number(formData.reqPerDay);
 
+      // V3 update endpoint requires department_id and active
+      // Get department_id from profileData or use first valid department
+      const departmentId =
+        profileData?.department_id ||
+        (profileData?.valid_department_ids &&
+          profileData.valid_department_ids[0]) ||
+        "";
+
       await updateProfileMutation.mutateAsync({
         profileId: profileId,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        // Note: alias is not editable via this endpoint - managed separately
         role: formData.role,
-        reqPerDay: parsedReqPerDay,
-        // Note: defaultProfile update may need to be handled via separate endpoint
-        // For now, only include if the schema supports it
+        requests_per_day: parsedReqPerDay,
+        department_id: departmentId,
+        active: profileData?.active ?? true,
       });
 
       toast.success("Staff updated successfully");
@@ -142,6 +185,9 @@ export default function StaffEditModal({
     profileId,
     formData,
     unlimited,
+    profileData?.active,
+    profileData?.department_id,
+    profileData?.valid_department_ids,
     updateProfileMutation,
     onOpenChange,
     onDone,

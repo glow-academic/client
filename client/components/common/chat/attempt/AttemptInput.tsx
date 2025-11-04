@@ -35,7 +35,7 @@ import HintDisplay from "@/components/common/chat/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { attemptsFullKeys } from "@/lib/api/v2/keys";
+import { keys } from "@/lib/query/keys";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 
@@ -102,7 +102,7 @@ export default function AttemptInput({
         if (data.type === "complete" && data.hint_ids) {
           // Invalidate the attempts query cache to trigger a refetch (includes hints)
           queryClient.invalidateQueries({
-            queryKey: attemptsFullKeys.all,
+            queryKey: keys.attempts.all,
           });
         }
       }
