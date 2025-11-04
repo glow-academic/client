@@ -23,6 +23,9 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DocumentPreviewCard } from "@/components/documents/DocumentPreviewCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,8 +36,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -46,18 +58,6 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
-import { DocumentPreviewCard } from "@/components/documents/DocumentPreviewCard";
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Edit, Eye, Grid3X3, List, Trash2, UploadCloud, X } from "lucide-react";
 
 type DocumentType =
@@ -70,10 +70,10 @@ type DocumentType =
   | "syllabus";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
-import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import {
   Table,
   TableBody,
@@ -104,7 +104,7 @@ export default function Documents() {
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
 
   const queryClient = useQueryClient();
-  
+
   // Mutation hooks
   const deleteDocumentMutation = useMutation({
     mutationFn: (req: { documentId: string }) =>
@@ -113,7 +113,7 @@ export default function Documents() {
       queryClient.invalidateQueries({ queryKey: keys.documents.all });
     },
   });
-  
+
   const bulkDeleteDocumentsMutation = useMutation({
     mutationFn: (req: { documentIds: string[] }) =>
       api.post("/documents/bulk-delete", { body: req }),
@@ -121,7 +121,7 @@ export default function Documents() {
       queryClient.invalidateQueries({ queryKey: keys.documents.all });
     },
   });
-  
+
   const updateDocumentMutation = useMutation({
     mutationFn: (req: {
       documentId: string;
@@ -133,7 +133,7 @@ export default function Documents() {
       queryClient.invalidateQueries({ queryKey: keys.documents.all });
     },
   });
-  
+
   const bulkUpdateDocumentsMutation = useMutation({
     mutationFn: (req: {
       documentIds: string[];
@@ -249,7 +249,7 @@ export default function Documents() {
 
   // V3 API: Fetch single document detail for editing
   const { data: documentDetail } = useQuery({
-    queryKey: keys.documents.detail({
+    queryKey: keys.documents.with({
       documentId: editingDocument?.document_id || "",
       profileId: effectiveProfile?.id || "",
     }),
@@ -265,7 +265,7 @@ export default function Documents() {
 
   // V3 API: Fetch bulk document detail for bulk editing
   const { data: bulkDocumentDetail } = useQuery({
-    queryKey: keys.documents.detailBulk({
+    queryKey: keys.documents.with({
       documentIds: selectedDocuments,
       profileId: effectiveProfile?.id || "",
     }),
@@ -559,7 +559,7 @@ export default function Documents() {
     () =>
       Object.entries(scenarioMapping).map(([id, item]) => ({
         value: id,
-        label: item.name,
+        label: item["name"] as string,
       })),
     [scenarioMapping]
   );
@@ -585,9 +585,9 @@ export default function Documents() {
     const extensions = new Set(documents.map((d) => d.extension));
     return Array.from(extensions).map((ext) => ({
       value: ext,
-      label: ext.toUpperCase(),
-    }));
-  }, [documents]);
+      label: (ext?.toUpperCase() as string) || "",
+    })) as { value: string; label: string }[];
+  }, [documents]) as { value: string; label: string }[];
 
   // Handle document preview (for table view)
   const handlePreview = useCallback((document: (typeof documents)[number]) => {
@@ -644,15 +644,15 @@ export default function Documents() {
                       document_id: row.original.document_id,
                       name: row.original.name,
                       type: row.original.type,
-                      updatedAt: row.original.updatedAt,
-                      extension: row.original.extension,
+                      updatedAt: row.original.updated_at,
+                      extension: row.original.extension || "",
                       scenario_ids: row.original.scenario_ids,
                       can_edit: row.original.can_edit,
                       can_delete: row.original.can_delete,
                       active: row.original.active,
-                      department_ids: row.original.department_ids,
-                      file_path: row.original.file_path,
-                      mime_type: row.original.mime_type,
+                      department_ids: row.original.department_ids || [],
+                      file_path: row.original.file_path || "",
+                      mime_type: row.original.mime_type || "",
                       parameter_item_ids: row.original.parameter_item_ids,
                     }}
                     bare={true}
@@ -736,10 +736,10 @@ export default function Documents() {
           return (
             <div className="max-w-[200px] flex flex-wrap gap-1">
               {scenarioIds.slice(0, 3).map((id) => {
-                const name = scenarioMapping[id]?.name || id;
+                const name = scenarioMapping[id]?.["name"] || id;
                 return (
                   <Badge key={id} variant="outline" className="text-xs">
-                    {truncateText(name, 15)}
+                    {truncateText(name as string, 15)}
                   </Badge>
                 );
               })}
@@ -795,13 +795,13 @@ export default function Documents() {
         },
       },
       {
-        accessorKey: "updatedAt",
+        accessorKey: "updated_at",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Updated" />
         ),
         cell: ({ row }) => {
-          const date = new Date(row.getValue("updatedAt"));
-          const active = row.original.active;
+          const date = new Date(row.getValue("updated_at"));
+          const active = row.original.active || false;
           return (
             <div className="text-xs text-muted-foreground">
               {date.toLocaleDateString()}
@@ -1045,7 +1045,9 @@ export default function Documents() {
         setShowDeleteDialog(false);
         setEditingDocument(null);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to delete document");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to delete document"
+        );
       } finally {
         setIsDeleting(false);
       }
@@ -1082,7 +1084,9 @@ export default function Documents() {
         setSelectedDocuments([]);
         setShowDeleteDialog(false);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Failed to delete documents");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to delete documents"
+        );
       } finally {
         setIsDeleting(false);
       }
@@ -1106,7 +1110,9 @@ export default function Documents() {
       setShowEditDialog(false);
       setEditingDocument(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update document");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update document"
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -1140,7 +1146,9 @@ export default function Documents() {
       setShowBulkEditDialog(false);
       setSelectedDocuments([]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update documents");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update documents"
+      );
     } finally {
       setIsBulkUpdating(false);
     }
@@ -1765,15 +1773,15 @@ export default function Documents() {
                   document_id: previewDocument.document_id,
                   name: previewDocument.name,
                   type: previewDocument.type,
-                  updatedAt: previewDocument.updatedAt,
-                  extension: previewDocument.extension,
+                  updatedAt: previewDocument.updated_at,
+                  extension: previewDocument.extension || "",
                   scenario_ids: previewDocument.scenario_ids,
                   can_edit: previewDocument.can_edit,
                   can_delete: previewDocument.can_delete,
                   active: previewDocument.active,
-                  department_ids: previewDocument.department_ids,
-                  file_path: previewDocument.file_path,
-                  mime_type: previewDocument.mime_type,
+                  department_ids: previewDocument.department_ids || [],
+                  file_path: previewDocument.file_path || "",
+                  mime_type: previewDocument.mime_type || "",
                   parameter_item_ids: previewDocument.parameter_item_ids,
                 }}
                 bare={true}

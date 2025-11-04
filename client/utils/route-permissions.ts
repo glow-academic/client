@@ -4,7 +4,14 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
-import { ProfileRole } from "@/lib/api/v2/schemas/base";
+
+// ProfileRole type (matches v3 API)
+export type ProfileRole =
+  | "superadmin"
+  | "admin"
+  | "instructional"
+  | "ta"
+  | "guest";
 
 export interface RoutePermission {
   path: string;

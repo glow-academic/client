@@ -1,10 +1,17 @@
-import { ProfileRole } from "@/lib/api/v2/schemas/base";
 import {
   getAvailableSectionsForRole,
   getFirstAvailableSectionForRole,
   isSectionAvailableForRole,
 } from "@/utils/route-permissions";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
+// ProfileRole type (matches v3 API)
+export type ProfileRole =
+  | "superadmin"
+  | "admin"
+  | "instructional"
+  | "ta"
+  | "guest";
 
 // Re-export the functions from route-permissions for backward compatibility
 export {

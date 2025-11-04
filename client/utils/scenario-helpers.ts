@@ -1,9 +1,13 @@
 /**
  * Helper utilities for scenario data transformations
- * Used to convert between v2 API format and component state
+ * Used to work with parameter structures from v3 API
  */
 
-import type { ParameterDetail } from "@/lib/api/v2/schemas/scenarios";
+// ParameterDetail type (matches v3 API structure from scenarios/detail)
+export interface ParameterDetail {
+  parameter_item_ids: string[];
+  valid_parameter_item_ids: string[];
+}
 
 // Type definitions (merged from scenario.ts)
 export type ModelType = "Personas" | "Documents" | "Classes" | "Seniority";

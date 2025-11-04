@@ -14,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { attachFormatters } from "@/utils/analytics-adapters";
 
 type GrowthDataPoint = {
   date: string;
@@ -105,8 +104,27 @@ export default function Growth({
 
   // Transform availableMetrics to include formatter functions
   const metricsWithFormatters = useMemo(() => {
-    const result = attachFormatters({ availableMetrics });
-    return result["availableMetrics"] as GrowthMetricWithFormatter[];
+    const fmt = {
+      percent: (v: number) => `${Math.round(v)}%`,
+      int: (v: number) => `${Math.round(v)}`,
+      sec: (v: number) => `${Math.round(v)} sec`,
+      min: (v: number) => `${Math.round(v)} min`,
+      hours: (v: number) => `${Math.round(v)}h`,
+      minutes: (v: number) => {
+        const totalMinutes = Math.round(v);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (hours > 0) {
+          return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+        }
+        return `${minutes}m`;
+      },
+    };
+
+    return availableMetrics.map(({ formatterId, ...rest }) => ({
+      ...rest,
+      formatter: fmt[formatterId],
+    })) as GrowthMetricWithFormatter[];
   }, [availableMetrics]);
 
   // Ensure at least one metric is always selected
