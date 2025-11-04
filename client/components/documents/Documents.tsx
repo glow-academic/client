@@ -981,7 +981,7 @@ export default function Documents() {
         setShowDeleteDialog(false);
         setEditingDocument(null);
       } catch (error) {
-        toast.error("Failed to delete document");
+        toast.error(error instanceof Error ? error.message : "Failed to delete document");
       } finally {
         setIsDeleting(false);
       }
@@ -1018,7 +1018,7 @@ export default function Documents() {
         setSelectedDocuments([]);
         setShowDeleteDialog(false);
       } catch (error) {
-        toast.error("Failed to delete documents");
+        toast.error(error instanceof Error ? error.message : "Failed to delete documents");
       } finally {
         setIsDeleting(false);
       }
@@ -1042,7 +1042,7 @@ export default function Documents() {
       setShowEditDialog(false);
       setEditingDocument(null);
     } catch (error) {
-      toast.error("Failed to update document");
+      toast.error(error instanceof Error ? error.message : "Failed to update document");
     } finally {
       setIsUpdating(false);
     }
@@ -1076,7 +1076,7 @@ export default function Documents() {
       setShowBulkEditDialog(false);
       setSelectedDocuments([]);
     } catch (error) {
-      toast.error("Failed to update documents");
+      toast.error(error instanceof Error ? error.message : "Failed to update documents");
     } finally {
       setIsBulkUpdating(false);
     }
