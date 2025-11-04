@@ -5,11 +5,13 @@
  * 06/07/2025
  */
 "use client";
-import { Copy, Edit, Eye, Timer, Trash2, Users } from "lucide-react";
+import { Copy, Edit, Eye, Search, Timer, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,13 +25,25 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { SimulationsDataTable } from "./SimulationsDataTable";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 export function Simulations() {
   const router = useRouter();
@@ -42,6 +56,14 @@ export function Simulations() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
   const queryClient = useQueryClient();
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "updatedAt", desc: true },
+  ]);
 
   // V3 API - Query with generated keys
   const filters = { profileId: effectiveProfile?.id || "" };
@@ -153,6 +175,100 @@ export function Simulations() {
     }));
   }, [departmentMapping]);
 
+  // Define table columns inline
+  const columns: ColumnDef<(typeof simulations)[number]>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      // Hidden faceting column for Scenarios (array of IDs)
+      {
+        id: "scenario_ids",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) =>
+          row.scenario_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("scenario_ids") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Rubric (single ID)
+      {
+        id: "rubric_id",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorKey: "rubric_id",
+      },
+      // Hidden faceting column for Time Limit (categorical)
+      {
+        id: "time_limit_category",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) => {
+          const seconds = row.time_limit;
+          if (seconds === null) return "no-limit";
+          if (seconds <= 1800) return "0-30";
+          if (seconds <= 3600) return "30-60";
+          if (seconds <= 7200) return "60-120";
+          return "120+";
+        },
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof simulations)[number]) =>
+          row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+    ],
+    []
+  );
+
+  // Create table instance
+  const table = useReactTable({
+    data: simulations,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12,
+      },
+    },
+  });
+
   // Permissions now come from server-side in V2 API
   // No need for client-side permission logic
 
@@ -198,7 +314,7 @@ export function Simulations() {
     }
   };
 
-  const renderSimulationCard = (simulation: SimulationItem) => (
+  const renderSimulationCard = (simulation: (typeof simulations)[number]) => (
     <Card
       key={simulation.simulation_id}
       aria-label={simulation.name}
@@ -363,18 +479,100 @@ export function Simulations() {
     );
   }
 
+  // Get column references for toolbar
+  const nameColumn = table.getColumn("name");
+  const scenarioColumn = table.getColumn("scenario_ids");
+  const rubricColumn = table.getColumn("rubric_id");
+  const timeLimitColumn = table.getColumn("time_limit_category");
+  const departmentsColumn = table.getColumn("departments");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
   return (
     <div className="space-y-6">
-      <SimulationsDataTable
-        data={simulations}
-        scenarioMapping={scenarioMapping}
-        rubricMapping={rubricMapping}
-        scenarioOptions={scenarioOptions}
-        rubricOptions={rubricOptions}
-        timeLimitOptions={timeLimitOptions}
-        departmentOptions={departmentOptions}
-        renderSimulationCard={renderSimulationCard}
-      />
+      <div className="space-y-4">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="mb-2">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search simulations..."
+                  value={(nameColumn?.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    nameColumn?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 w-[150px] lg:w-[250px] pl-8"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 flex-wrap mb-2">
+              {/* Scenario Filter */}
+              {scenarioColumn && scenarioOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={scenarioColumn}
+                  title="Scenario"
+                  options={scenarioOptions}
+                />
+              )}
+
+              {/* Rubric Filter */}
+              {rubricColumn && rubricOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={rubricColumn}
+                  title="Rubric"
+                  options={rubricOptions}
+                />
+              )}
+
+              {/* Time Limit Filter */}
+              {timeLimitColumn && timeLimitOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={timeLimitColumn}
+                  title="Time Limit"
+                  options={timeLimitOptions}
+                />
+              )}
+
+              {/* Department Filter */}
+              {departmentsColumn && departmentOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={departmentsColumn}
+                  title="Department"
+                  options={departmentOptions}
+                />
+              )}
+
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Cards Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {table.getRowModel().rows.map((row) => (
+            <div key={row.id}>{renderSimulationCard(row.original)}</div>
+          ))}
+          {table.getRowModel().rows.length === 0 && (
+            <div className="col-span-full text-center py-8">
+              <p className="text-muted-foreground">No simulations found.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <DataTablePagination table={table} card={true} />
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

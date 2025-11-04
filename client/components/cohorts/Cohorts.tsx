@@ -14,19 +14,34 @@ import {
   Sparkles,
   Trash2,
   Users,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { Input } from "@/components/ui/input";
 import {
   useCohortsList,
   useDeleteCohort,
   useDuplicateCohort,
   useLeaveCohort,
 } from "@/lib/api/v2/hooks/cohorts";
-import { CohortItem } from "@/lib/api/v2/schemas/cohorts";
-import { CohortsDataTable } from "./CohortsDataTable";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 import {
   AlertDialog,
@@ -47,10 +62,7 @@ import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export default function Cohorts() {
   const router = useRouter();
-  const {
-    effectiveProfile,
-    isLoading: isProfileLoading,
-  } = useProfile();
+  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
   const log = useLogger();
   // V2 API hooks - single fetch with all data (pre-filtered by role)
   const { data: cohortsData, isLoading: loadingCohorts } = useCohortsList(
@@ -93,6 +105,14 @@ export default function Cohorts() {
   } | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "updatedAt", desc: true },
+  ]);
+
   // Create filter options from mappings
   const profileOptions = useMemo(() => {
     return Object.entries(profileMapping).map(([id, profile]) => ({
@@ -110,7 +130,11 @@ export default function Cohorts() {
 
   // Build department options from mapping
   const departmentMapping = useMemo(
-    () => (cohortsData?.department_mapping as Record<string, { name: string; description: string }>) || {},
+    () =>
+      (cohortsData?.department_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
     [cohortsData?.department_mapping]
   );
 
@@ -120,6 +144,68 @@ export default function Cohorts() {
       label: obj?.name || id,
     }));
   }, [departmentMapping]);
+
+  // Define table columns inline
+  const columns: ColumnDef<(typeof cohorts)[number]>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "profile_ids",
+        header: "Profiles",
+      },
+      {
+        accessorKey: "simulation_ids",
+        header: "Simulations",
+      },
+      // Hidden faceting column for Departments (array of IDs)
+      {
+        id: "departments",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof cohorts)[number]) => row.department_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("departments") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+    ],
+    []
+  );
+
+  // Create table instance
+  const table = useReactTable({
+    data: cohorts,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12,
+      },
+    },
+  });
 
   const isLoading = isProfileLoading || !effectiveProfile || loadingCohorts;
 
@@ -287,7 +373,7 @@ export default function Cohorts() {
     router.push("/cohorts/new");
   };
 
-  const renderCohortCard = (cohort: CohortItem) => (
+  const renderCohortCard = (cohort: (typeof cohorts)[number]) => (
     <Card
       key={cohort.cohort_id}
       aria-label={cohort.name}
@@ -407,20 +493,91 @@ export default function Cohorts() {
     </div>
   );
 
+  // Get column references for toolbar
+  const nameColumn = table.getColumn("name");
+  const profileColumn = table.getColumn("profile_ids");
+  const simulationColumn = table.getColumn("simulation_ids");
+  const departmentsColumn = table.getColumn("departments");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
   return (
     <div className="space-y-6">
       {cohorts.length === 0 ? (
         renderEmptyState()
       ) : (
-        <CohortsDataTable
-          data={cohorts}
-          profileMapping={profileMapping}
-          simulationMapping={simulationMapping}
-          profileOptions={profileOptions}
-          simulationOptions={simulationOptions}
-          departmentOptions={departmentOptions}
-          renderCohortCard={renderCohortCard}
-        />
+        <div className="space-y-4">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+              <div className="mb-2">
+                <Input
+                  placeholder="Search cohorts..."
+                  value={(nameColumn?.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    nameColumn?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 w-[150px] lg:w-[250px]"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap mb-2">
+                {/* Profile Filter */}
+                {profileColumn && profileOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={profileColumn}
+                    title="Profile"
+                    options={profileOptions}
+                  />
+                )}
+
+                {/* Simulation Filter */}
+                {simulationColumn && simulationOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={simulationColumn}
+                    title="Simulation"
+                    options={simulationOptions}
+                  />
+                )}
+
+                {/* Department Filter */}
+                {departmentsColumn && departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {table.getRowModel().rows.length ? (
+              table
+                .getRowModel()
+                .rows.map((row) => renderCohortCard(row.original))
+            ) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No cohorts match the current filters.
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <DataTablePagination table={table} card={true} />
+        </div>
       )}
 
       {/* Delete Confirmation Dialog */}

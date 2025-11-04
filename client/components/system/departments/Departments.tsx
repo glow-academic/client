@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 "use client";
-import { Copy, DollarSign, Edit, Eye, Trash2, Users } from "lucide-react";
+import { Copy, DollarSign, Edit, Eye, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -25,10 +25,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import type { DepartmentItem } from "@/lib/api/v2/schemas/departments";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DepartmentsDataTable } from "./DepartmentsDataTable";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { Input } from "@/components/ui/input";
 
 export default function Departments() {
   const router = useRouter();
@@ -39,6 +53,14 @@ export default function Departments() {
     id: string;
     name: string;
   } | null>(null);
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "updated_at", desc: true },
+  ]);
 
   const queryClient = useQueryClient();
 
@@ -101,11 +123,86 @@ export default function Departments() {
     []
   );
 
+  // Define table columns inline
+  const columns: ColumnDef<(typeof departments)[number]>[] = useMemo(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Title",
+      },
+      // Hidden faceting column for Price Spent (categorical)
+      {
+        id: "total_price_spent",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof departments)[number]) => {
+          const price = row.total_price_spent ?? 0;
+          if (price === 0) return "0-10";
+          if (price <= 10) return "0-10";
+          if (price <= 50) return "10-50";
+          if (price <= 100) return "50-100";
+          return "100+";
+        },
+      },
+      // Hidden faceting column for Staff Count (categorical)
+      {
+        id: "staff_count",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof departments)[number]) => {
+          const count = row.staff_count ?? 0;
+          if (count === 0) return "1-5";
+          if (count <= 5) return "1-5";
+          if (count <= 10) return "6-10";
+          if (count <= 20) return "11-20";
+          return "20+";
+        },
+      },
+      {
+        accessorKey: "active",
+        header: "Active",
+      },
+    ],
+    []
+  );
+
+  // Create table instance
+  const table = useReactTable({
+    data: departments,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12,
+      },
+    },
+  });
+
   const handleEdit = (id: string) => {
     router.push(`/system/departments/d/${id}`);
   };
 
-  const handleDuplicate = async (department: DepartmentItem) => {
+  const handleDuplicate = async (department: (typeof departments)[number]) => {
     if (!department.can_duplicate) {
       toast.error("This department cannot be duplicated");
       return;
@@ -247,14 +344,76 @@ export default function Departments() {
     );
   }
 
+  // Get column references for toolbar
+  const nameColumn = table.getColumn("title");
+  const priceSpentColumn = table.getColumn("total_price_spent");
+  const staffCountColumn = table.getColumn("staff_count");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
   return (
     <div className="space-y-8">
-      <DepartmentsDataTable
-        data={departments}
-        priceSpentOptions={priceSpentOptions}
-        staffCountOptions={staffCountOptions}
-        renderDepartmentCard={renderDepartmentCard}
-      />
+      <div className="space-y-4">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="mb-2">
+              <Input
+                placeholder="Search departments..."
+                value={(nameColumn?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  nameColumn?.setFilterValue(event.target.value)
+                }
+                className="h-8 w-[150px] lg:w-[250px]"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2 flex-wrap mb-2">
+              {/* Price Spent Filter */}
+              {priceSpentColumn && priceSpentOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={priceSpentColumn}
+                  title="Price Spent"
+                  options={priceSpentOptions}
+                />
+              )}
+
+              {/* Staff Count Filter */}
+              {staffCountColumn && staffCountOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={staffCountColumn}
+                  title="Staff Count"
+                  options={staffCountOptions}
+                />
+              )}
+
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Cards Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => renderDepartmentCard(row.original))
+          ) : (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              No departments match the current filters.
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <DataTablePagination table={table} card={true} />
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

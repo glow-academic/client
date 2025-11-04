@@ -5,18 +5,31 @@
  * 06/07/2025
  */
 "use client";
-import { Brain, Copy, Edit, Eye, Thermometer, Trash2 } from "lucide-react";
+import { Brain, Copy, Edit, Eye, Thermometer, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "@/lib/api/client";
-import { PersonaItem } from "@/lib/api/v2/schemas/personas";
 import { keys } from "@/lib/query/keys";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ColumnDef } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +43,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -38,7 +52,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { PersonasDataTable } from "./PersonasDataTable";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -72,6 +85,14 @@ export default function Personas() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
   const qc = useQueryClient();
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "updatedAt", desc: true },
+  ]);
 
   // V3 API - Proof of Concept with generated keys
   const filters = { profileId: effectiveProfile?.id || "" };
@@ -198,7 +219,7 @@ export default function Personas() {
   };
 
   // Define table columns
-  const columns: ColumnDef<PersonaItem>[] = useMemo(() => {
+  const columns: ColumnDef<(typeof personas)[number]>[] = useMemo(() => {
     return [
       {
         accessorKey: "name",
@@ -232,7 +253,7 @@ export default function Personas() {
         enableHiding: true,
         enableSorting: false,
         // Return the array of scenario IDs for this row
-        accessorFn: (row: PersonaItem) => row.scenario_ids ?? [],
+        accessorFn: (row: (typeof personas)[number]) => row.scenario_ids ?? [],
         // Let filtering check membership - show if persona is used in ANY selected scenario
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("scenarios") as string[]) ?? [];
@@ -263,7 +284,8 @@ export default function Personas() {
         enableHiding: true,
         enableSorting: false,
         // Return the temperature category for faceting and filtering
-        accessorFn: (row: PersonaItem) => getTemperatureRange(row.temperature),
+        accessorFn: (row: (typeof personas)[number]) =>
+          getTemperatureRange(row.temperature),
       },
       // Display column for Temperature - shows actual value
       {
@@ -309,7 +331,8 @@ export default function Personas() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: PersonaItem) => row.department_ids ?? [],
+        accessorFn: (row: (typeof personas)[number]) =>
+          row.department_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -319,6 +342,34 @@ export default function Personas() {
       },
     ];
   }, [modelMapping]);
+
+  // Create table instance
+  const table = useReactTable({
+    data: personas,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12,
+      },
+    },
+  });
 
   // Permissions now come from server-side in V2 API
   // No need for client-side permission logic
@@ -330,7 +381,7 @@ export default function Personas() {
     try {
       await deletePersonaMutation.mutateAsync({ personaId: deleteItem.id });
       toast.success("Persona deleted successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete persona");
     } finally {
       setIsDeleting(false);
@@ -344,7 +395,7 @@ export default function Personas() {
     try {
       await duplicatePersonaMutation.mutateAsync({ personaId });
       toast.success(`Persona "${personaName}" duplicated successfully`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to duplicate persona");
     } finally {
       setIsDuplicating(null);
@@ -578,21 +629,109 @@ export default function Personas() {
     );
   }
 
+  // Get column references for toolbar
+  const nameColumn = table.getColumn("name");
+  const reasoningColumn = table.getColumn("reasoning");
+  const modelColumn = table.getColumn("modelId");
+  const temperatureColumn = table.getColumn("temperature");
+  const scenarioColumn = table.getColumn("scenarios");
+  const departmentsColumn = table.getColumn("departments");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
-        <PersonasDataTable
-          columns={columns}
-          data={personas}
-          scenarioMapping={scenarioMapping}
-          modelMapping={modelMapping}
-          scenarioOptions={scenarioOptions}
-          reasoningOptions={reasoningOptions}
-          modelOptions={modelOptions}
-          temperatureOptions={temperatureOptions}
-          departmentOptions={departmentOptions}
-          renderPersonaCard={renderPersonaCard}
-        />
+        <div className="space-y-4">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+              <div className="mb-2">
+                <Input
+                  placeholder="Search personas..."
+                  value={(nameColumn?.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    nameColumn?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 w-[150px] lg:w-[250px]"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap mb-2">
+                {/* Scenario Filter */}
+                {scenarioColumn && scenarioOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={scenarioColumn}
+                    title="Scenario"
+                    options={scenarioOptions}
+                  />
+                )}
+
+                {/* Reasoning Filter */}
+                {reasoningColumn && reasoningOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={reasoningColumn}
+                    title="Reasoning"
+                    options={reasoningOptions}
+                  />
+                )}
+
+                {/* Model Filter */}
+                {modelColumn && modelOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={modelColumn}
+                    title="Model"
+                    options={modelOptions}
+                  />
+                )}
+
+                {/* Temperature Filter */}
+                {temperatureColumn && temperatureOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={temperatureColumn}
+                    title="Temperature"
+                    options={temperatureOptions}
+                  />
+                )}
+
+                {/* Department Filter */}
+                {departmentsColumn && departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {table.getRowModel().rows.length ? (
+              table
+                .getRowModel()
+                .rows.map((row) => renderPersonaCard(row.original))
+            ) : (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No personas match the current filters.
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <DataTablePagination table={table} card={true} />
+        </div>
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

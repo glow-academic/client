@@ -13,11 +13,14 @@ import {
   Eye,
   Trash2,
   Users,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -40,16 +44,21 @@ import {
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import { ScenarioItem } from "@/lib/api/v2/schemas/scenarios";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ColumnDef } from "@tanstack/react-table";
-import { ScenariosDataTable } from "./ScenariosDataTable";
-
-interface GroupedScenario {
-  parent: ScenarioItem;
-  children: ScenarioItem[];
-}
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 export function Scenarios() {
   const router = useRouter();
@@ -65,6 +74,14 @@ export function Scenarios() {
   );
   const { effectiveProfile } = useProfile();
   const queryClient = useQueryClient();
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "updatedAt", desc: true },
+  ]);
 
   // V3 API - Query with generated keys
   const filters = { profileId: effectiveProfile?.id || "" };
@@ -108,10 +125,12 @@ export function Scenarios() {
     () => scenariosData?.simulation_mapping || {},
     [scenariosData?.simulation_mapping]
   );
-  const parameterItemMapping = useMemo(
-    () => scenariosData?.parameter_item_mapping || {},
-    [scenariosData?.parameter_item_mapping]
-  );
+
+  // Define GroupedScenario type based on scenarios
+  type GroupedScenario = {
+    parent: (typeof scenarios)[number];
+    children: (typeof scenarios)[number][];
+  };
 
   // Group scenarios using parent_scenario_id from V2 API
   const groupedScenarios = useMemo(() => {
@@ -170,7 +189,7 @@ export function Scenarios() {
   }, [departmentMapping]);
 
   // Define table columns inline
-  const columns: ColumnDef<ScenarioItem>[] = useMemo(() => {
+  const columns: ColumnDef<(typeof scenarios)[number]>[] = useMemo(() => {
     return [
       {
         accessorKey: "title",
@@ -201,7 +220,7 @@ export function Scenarios() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: ScenarioItem) => row.cohort_ids ?? [],
+        accessorFn: (row: (typeof scenarios)[number]) => row.cohort_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("cohort_ids") as string[]) ?? [];
           return value.some((v) => rowIds.includes(v));
@@ -214,7 +233,7 @@ export function Scenarios() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: ScenarioItem) => row.persona_ids ?? [],
+        accessorFn: (row: (typeof scenarios)[number]) => row.persona_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("persona_id") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -229,7 +248,8 @@ export function Scenarios() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: ScenarioItem) => row.simulation_ids ?? [],
+        accessorFn: (row: (typeof scenarios)[number]) =>
+          row.simulation_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("simulation_ids") as string[]) ?? [];
           return value.some((v) => rowIds.includes(v));
@@ -242,7 +262,8 @@ export function Scenarios() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: ScenarioItem) => row.department_ids ?? [],
+        accessorFn: (row: (typeof scenarios)[number]) =>
+          row.department_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -252,7 +273,8 @@ export function Scenarios() {
       },
       {
         id: "persona_display",
-        accessorFn: (row: ScenarioItem) => row.persona_ids?.[0] ?? null,
+        accessorFn: (row: (typeof scenarios)[number]) =>
+          row.persona_ids?.[0] ?? null,
         header: "Persona",
         cell: ({ row }) => {
           const personaIds = row.original.persona_ids ?? [];
@@ -272,6 +294,67 @@ export function Scenarios() {
       },
     ];
   }, [personaMapping]);
+
+  // Create parent scenarios for table (root scenarios only)
+  const parentScenarios = useMemo(() => {
+    return scenarios.filter((scenario) => !scenario.parent_scenario_id);
+  }, [scenarios]);
+
+  // Create table instance
+  const table = useReactTable({
+    data: parentScenarios,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  });
+
+  // Get the current page's parent scenario IDs
+  const currentPageRows = table.getRowModel().rows;
+  const orderedParentIds = useMemo(() => {
+    return currentPageRows.map((row) => row.original.scenario_id);
+  }, [currentPageRows]);
+
+  // Group the current page scenarios in the exact order of the table's sorting
+  const currentPageGroupedScenarios = useMemo(() => {
+    const groups: GroupedScenario[] = [];
+
+    for (const parentId of orderedParentIds) {
+      const parent = scenarios.find(
+        (scenario) =>
+          !scenario.parent_scenario_id && scenario.scenario_id === parentId
+      );
+      if (!parent) continue;
+
+      // Find children using parent_scenario_id from V2 API
+      const children = scenarios.filter(
+        (s) => s.parent_scenario_id === parentId
+      );
+
+      groups.push({ parent, children });
+    }
+
+    return groups;
+  }, [scenarios, orderedParentIds]);
 
   // Permissions now come from server-side in V2 API
   // No need for client-side permission logic
@@ -330,7 +413,7 @@ export function Scenarios() {
   };
 
   const renderScenarioCard = (
-    scenario: ScenarioItem,
+    scenario: (typeof scenarios)[number],
     isChild: boolean = false,
     showDropdown?: boolean,
     isCollapsed?: boolean,
@@ -571,22 +654,97 @@ export function Scenarios() {
     );
   }
 
+  // Get column references for toolbar
+  const titleColumn = table.getColumn("title");
+  const cohortColumn = table.getColumn("cohort_ids");
+  const personaColumn = table.getColumn("persona_id");
+  const simulationColumn = table.getColumn("simulation_ids");
+  const departmentsColumn = table.getColumn("departments");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        <ScenariosDataTable
-          columns={columns}
-          data={scenarios}
-          personaMapping={personaMapping}
-          cohortMapping={cohortMapping}
-          simulationMapping={simulationMapping}
-          parameterItemMapping={parameterItemMapping}
-          personaOptions={personaOptions}
-          cohortOptions={cohortOptions}
-          simulationOptions={simulationOptions}
-          departmentOptions={departmentOptions}
-          renderGroupedScenarios={renderGroupedScenarios}
-        />
+        <div className="space-y-4">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+              <div className="mb-2">
+                <Input
+                  placeholder="Search scenarios..."
+                  value={(titleColumn?.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    titleColumn?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 w-[150px] lg:w-[250px]"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap mb-2">
+                {/* Simulation Filter */}
+                {simulationColumn && simulationOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={simulationColumn}
+                    title="Simulation"
+                    options={simulationOptions}
+                  />
+                )}
+
+                {/* Cohort Filter */}
+                {cohortColumn && cohortOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={cohortColumn}
+                    title="Cohort"
+                    options={cohortOptions}
+                  />
+                )}
+
+                {/* Persona Filter */}
+                {personaColumn && personaOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={personaColumn}
+                    title="Persona"
+                    options={personaOptions}
+                  />
+                )}
+
+                {/* Department Filter */}
+                {departmentsColumn && departmentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={departmentsColumn}
+                    title="Department"
+                    options={departmentOptions}
+                  />
+                )}
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Grouped Scenarios */}
+          <div className="space-y-4">
+            {table.getRowModel().rows.length ? (
+              renderGroupedScenarios(currentPageGroupedScenarios)
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No scenarios match the current filters.
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <DataTablePagination table={table} />
+        </div>
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
