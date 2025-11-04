@@ -22,10 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { type PersonaPerformanceData } from "@/lib/api/v2/schemas/dashboard";
-import { type SimulationMapping } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -39,6 +36,24 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
+type PersonaTrendData = {
+  date: string;
+  score: number | null;
+  timestamp: number;
+  simulationId?: string;
+};
+
+type PersonaPerformanceData = {
+  name: string;
+  score: number;
+  sessions: number;
+  color: string;
+  simulationIds?: string[];
+  trendData: PersonaTrendData[];
+};
+
+type SimulationMapping = Record<string, { name: string; description: string }>;
 
 export interface PersonaPerformanceProps {
   chartData: PersonaPerformanceData[];

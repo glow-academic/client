@@ -6,9 +6,7 @@
  */
 "use client";
 
-import {
-  RubricPicker,
-} from "@/components/common/forms/RubricPicker";
+import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import {
   Card,
   CardContent,
@@ -30,9 +28,34 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { RubricMatrixPackage } from "@/lib/api/v2/schemas/dashboard";
-import { type RubricMapping } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type RubricHeatmapCell = {
+  rubricId: string;
+  correlation: number;
+  pValue: number | null;
+  color: string;
+  strength: string;
+  dataPoints: number;
+};
+
+type StandardGroup = {
+  id: string;
+  name: string;
+  shortName: string | null;
+  rubricId: string;
+};
+
+type RubricMatrixPackage = {
+  rubricId: string;
+  standardGroups: StandardGroup[];
+  matrix: RubricHeatmapCell[][];
+  insights: string | null;
+  hasData: boolean;
+};
+
+type RubricMapping = Record<string, { name: string; description: string }>;
+
 import { Info, Loader2, TrendingUp } from "lucide-react";
 import {
   useCallback,
@@ -67,9 +90,7 @@ export default function RubricHeatmap({
   actionableInsight,
   thresholds,
 }: RubricHeatmapProps) {
-  const [selectedRubrics, setSelectedRubrics] = useState<string[]>(
-    []
-  );
+  const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
 
   // State to track hovered cell for highlighting
   const [hoveredCell, setHoveredCell] = useState<{

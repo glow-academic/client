@@ -30,12 +30,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type {
-  SimulationFact,
-  SimulationParameterFactCategorical,
-  SimulationParameterFactNumeric,
-} from "@/lib/api/v2/schemas/dashboard";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
+
+type SimulationFact = {
+  simulationId: string;
+  title: string;
+  avgScore: number;
+  completionRate: number;
+  totalAttempts: number;
+  scenarioCount: number;
+};
+
+type SimulationParameterFactCategorical = {
+  simulationId: string;
+  parameterId: string;
+  parameterItemId: string;
+  scenarioCount: number;
+};
+
+type SimulationParameterFactNumeric = {
+  simulationId: string;
+  parameterId: string;
+  avgLevel: number;
+  levelLabel: string;
+  scenarioCount: number;
+};
+
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,

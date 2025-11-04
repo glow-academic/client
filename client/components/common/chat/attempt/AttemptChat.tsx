@@ -62,16 +62,15 @@ import {
 import DocumentSelect from "@/components/common/chat/DocumentSelect";
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { useSimulation } from "@/contexts/simulation-context";
-import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 import { formatTime } from "@/utils/time";
 
+import TableRubric from "@/components/common/rubric/TableRubric";
 import { Progress } from "@/components/ui/progress";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
 import { useRouter } from "next/navigation";
-import TableRubric from "@/components/common/rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 
@@ -79,6 +78,11 @@ export default function AttemptChat() {
   const router = useRouter();
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
+
+  // Infer types directly from simulation context
+  type Chat = NonNullable<
+    NonNullable<typeof simulationContext>["chats"][number]
+  >;
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
   const isMobile = useIsMobile();
@@ -165,40 +169,36 @@ export default function AttemptChat() {
           <SelectValue placeholder="Select chat to view results" />
         </SelectTrigger>
         <SelectContent>
-          {simulationContext?.chats?.map(
-            (chat: AttemptFullResponse["chats"][number]["chat"]) => {
-              // Find rubric result for this chat
-              const rubricResult = simulationContext?.allDynamicRubrics.find(
-                (rubric) => rubric.chatId === chat.id
-              );
+          {simulationContext?.chats?.map((chat: Chat) => {
+            // Find rubric result for this chat
+            const rubricResult = simulationContext?.allDynamicRubrics.find(
+              (rubric) => rubric.chatId === chat.id
+            );
 
-              return (
-                <SelectItem key={chat.id} value={chat.id}>
-                  <div className="flex items-center gap-2">
-                    {chat.completed && !rubricResult ? (
-                      <Badge variant="secondary" className="text-xs">
-                        Incomplete
-                      </Badge>
-                    ) : rubricResult ? (
-                      <Badge
-                        variant={
-                          rubricResult.passed ? "default" : "destructive"
-                        }
-                        className={`text-xs ${
-                          rubricResult.passed
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                        }`}
-                      >
-                        {rubricResult.passed ? "Pass" : "Fail"}
-                      </Badge>
-                    ) : null}
-                    <span>{chat.title}</span>
-                  </div>
-                </SelectItem>
-              );
-            }
-          )}
+            return (
+              <SelectItem key={chat.id} value={chat.id}>
+                <div className="flex items-center gap-2">
+                  {chat.completed && !rubricResult ? (
+                    <Badge variant="secondary" className="text-xs">
+                      Incomplete
+                    </Badge>
+                  ) : rubricResult ? (
+                    <Badge
+                      variant={rubricResult.passed ? "default" : "destructive"}
+                      className={`text-xs ${
+                        rubricResult.passed
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                      }`}
+                    >
+                      {rubricResult.passed ? "Pass" : "Fail"}
+                    </Badge>
+                  ) : null}
+                  <span>{chat.title}</span>
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
     );
@@ -220,22 +220,19 @@ export default function AttemptChat() {
   ]);
 
   // Helper function to calculate time taken from chat timestamps
-  const calculateChatTimeTaken = useCallback(
-    (chat: AttemptFullResponse["chats"][number]["chat"] | null): number => {
-      if (!chat?.completed || !chat.completedAt) return 0;
+  const calculateChatTimeTaken = useCallback((chat: Chat | null): number => {
+    if (!chat?.completed || !chat.completedAt) return 0;
 
-      const startTime = new Date(chat.createdAt).getTime();
-      const endTime = new Date(chat.completedAt).getTime();
-      const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
+    const startTime = new Date(chat.createdAt).getTime();
+    const endTime = new Date(chat.completedAt).getTime();
+    const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
 
-      return timeTakenSeconds;
-    },
-    []
-  );
+    return timeTakenSeconds;
+  }, []);
 
   // Helper function to calculate adjusted time limit for multi-simulation attempts
   const calculateAdjustedTimeLimit = useCallback(
-    (_chat: AttemptFullResponse["chats"][number]["chat"] | null): number => {
+    (_chat: Chat | null): number => {
       if (
         !simulationContext?.simulation?.timeLimit ||
         !simulationContext?.chats
@@ -259,7 +256,7 @@ export default function AttemptChat() {
 
   // Helper function to calculate how much time was exceeded for a chat
   const calculateTimeExceeded = useCallback(
-    (chat: AttemptFullResponse["chats"][number]["chat"] | null): number => {
+    (chat: Chat | null): number => {
       if (!chat?.completed) return 0;
 
       const timeTaken = calculateChatTimeTaken(chat);
@@ -332,7 +329,7 @@ export default function AttemptChat() {
 
       // If all chats are completed, default to showing rubric (only if user hasn't manually toggled)
       const completedChats = simulationContext?.chats.filter(
-        (chat: AttemptFullResponse["chats"][number]["chat"]) => chat.completed
+        (chat: Chat) => chat.completed
       );
       if (
         completedChats.length === simulationContext?.chats.length &&
@@ -799,9 +796,9 @@ export default function AttemptChat() {
                             }
                             gradingState={
                               displayChat?.id
-                                ? simulationContext.gradingStatesByChatId[
+                                ? (simulationContext.gradingStatesByChatId[
                                     displayChat.id
-                                  ] || null
+                                  ] ?? null)
                                 : null
                             }
                           />
@@ -1069,9 +1066,7 @@ export default function AttemptChat() {
                                 simulationContext?.currentChat?.completed &&
                                 simulationContext?.expectedChatCount ===
                                   simulationContext?.chats.filter(
-                                    (
-                                      chat: AttemptFullResponse["chats"][number]["chat"]
-                                    ) => chat.completed
+                                    (chat: Chat) => chat.completed
                                   ).length && (
                                   <Badge variant="default">Completed</Badge>
                                 )}
@@ -1180,9 +1175,7 @@ export default function AttemptChat() {
                                       simulationContext?.currentDynamicRubric &&
                                       simulationContext?.expectedChatCount ===
                                         simulationContext?.chats.filter(
-                                          (
-                                            chat: AttemptFullResponse["chats"][number]["chat"]
-                                          ) => chat.completed
+                                          (chat: Chat) => chat.completed
                                         ).length
                                         ? simulationContext
                                             ?.currentDynamicRubric.passed
@@ -1244,9 +1237,7 @@ export default function AttemptChat() {
                                   simulationContext?.currentDynamicRubric &&
                                   simulationContext?.expectedChatCount ===
                                     simulationContext?.chats.filter(
-                                      (
-                                        chat: AttemptFullResponse["chats"][number]["chat"]
-                                      ) => chat.completed
+                                      (chat: Chat) => chat.completed
                                     ).length && (
                                     <TooltipContent>
                                       <p>

@@ -31,7 +31,6 @@ import Markdown from "@/components/common/chat/markdown/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
-import { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -43,6 +42,11 @@ export default function AttemptMessages({
   isAttemptOwner = true,
 }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
+
+  // Infer types directly from simulation context
+  type Message = NonNullable<
+    NonNullable<typeof simulationContext.attemptData>["chats"][number]["messages"][number]
+  >;
 
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -75,15 +79,13 @@ export default function AttemptMessages({
     );
 
     const groups: Array<{
-      userMessage: AttemptFullResponse["chats"][number]["messages"][number];
-      responses: AttemptFullResponse["chats"][number]["messages"];
+      userMessage: Message;
+      responses: Message[];
       groupId: string;
     }> = [];
 
-    let currentUserMessage:
-      | AttemptFullResponse["chats"][number]["messages"][number]
-      | null = null;
-    let currentResponses: AttemptFullResponse["chats"][number]["messages"] = [];
+    let currentUserMessage: Message | null = null;
+    let currentResponses: Message[] = [];
 
     for (const message of sortedMessages) {
       if (message.type === "query") {

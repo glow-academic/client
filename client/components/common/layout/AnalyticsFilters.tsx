@@ -7,24 +7,25 @@
 
 "use client";
 
-import {
-  CohortSelector,
-  Cohort as CohortSelectorCohort,
-} from "./analytics/CohortSelector";
-import { DepartmentSelector } from "./analytics/DepartmentSelector";
-import PracticeSelector from "./analytics/PracticeSelector";
 import { ProfileRolePicker } from "@/components/common/forms/ProfileRolePicker";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useRefreshAnalytics } from "@/lib/api/v2/hooks/analytics";
-import type { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { useIsFetching } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
+import {
+  CohortSelector,
+  Cohort as CohortSelectorCohort,
+} from "./analytics/CohortSelector";
+import { DepartmentSelector } from "./analytics/DepartmentSelector";
+import PracticeSelector from "./analytics/PracticeSelector";
+
+type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;

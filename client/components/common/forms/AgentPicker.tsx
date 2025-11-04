@@ -32,8 +32,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { AgentMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type AgentMappingItem = {
+  name: string;
+  description: string;
+  roles: string[];
+};
 
 export interface AgentPickerProps extends PopoverProps {
   mapping: Record<string, AgentMappingItem>;

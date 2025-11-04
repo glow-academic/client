@@ -24,8 +24,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { PROFILE_ROLES, ProfileRole } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
+
+const PROFILE_ROLES: ProfileRole[] = [
+  "superadmin",
+  "admin",
+  "instructional",
+  "ta",
+  "guest",
+];
 
 export interface ProfileRolePickerProps {
   roles?: ProfileRole[];

@@ -38,8 +38,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type ParameterItemMappingItem = {
+  name: string;
+  description: string;
+  parameter_id: string;
+  parameter_name: string;
+  value: string;
+};
 
 export interface ParameterItemPickerProps<
   T extends ParameterItemMappingItem = ParameterItemMappingItem,

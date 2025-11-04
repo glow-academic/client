@@ -42,9 +42,28 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { MappingItem } from "@/lib/api/v2/schemas/base";
-import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { cn } from "@/lib/utils";
+
+type MappingItem = {
+  name: string;
+  description: string;
+};
+
+type DocumentItem = {
+  document_id: string;
+  name: string;
+  type: string;
+  updatedAt: string;
+  extension: string;
+  scenario_ids: string[];
+  can_edit: boolean;
+  can_delete: boolean;
+  active: boolean;
+  department_ids: string[] | null;
+  file_path: string;
+  mime_type: string;
+  parameter_item_ids: string[];
+};
 
 // Extended mapping item for documents with tags
 export interface DocumentMappingItem extends MappingItem {

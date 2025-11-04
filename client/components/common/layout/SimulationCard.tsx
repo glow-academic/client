@@ -25,14 +25,43 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import type {
-  StandardGroupsMapping,
-  StandardsMapping,
-} from "@/lib/api/v2/schemas/rubrics";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "@/components/common/rubric/TableRubric";
-import { ProfileItem } from "@/lib/api/v2/schemas/profile";
+
+type StandardGroupMappingItem = {
+  name: string;
+  description: string;
+  points: number;
+  passPoints: number;
+};
+
+type StandardMappingItem = {
+  name: string;
+  description: string;
+  points: number;
+};
+
+type StandardGroupsMapping = Record<string, StandardGroupMappingItem>;
+type StandardsMapping = Record<string, StandardMappingItem>;
+
+type ProfileItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  alias: string;
+  role: "superadmin" | "admin" | "instructional" | "ta" | "guest";
+  active: boolean;
+  viewedIntro: boolean;
+  viewedChat: boolean;
+  defaultProfile: boolean;
+  reqPerDay: number | null;
+  lastLogin: string;
+  lastActive: string | null;
+  createdAt: string;
+  updatedAt: string;
+  primaryDepartmentId: string | null;
+};
 
 const generateGradientFromHex = (hexColor: string): string => {
   // Remove # if present

@@ -14,12 +14,47 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-import type {
-  GrowthDataResponse,
-  GrowthMetric,
-} from "@/lib/api/v2/schemas/dashboard";
 import { attachFormatters } from "@/utils/analytics-adapters";
+
+type GrowthDataPoint = {
+  date: string;
+  averageScore: number | null;
+  passRate: number | null;
+  completionRate: number | null;
+  firstAttemptPassRate: number | null;
+  messagesPerSession: number | null;
+  personaResponseTimes: number | null;
+  sessionEfficiency: number | null;
+  stagnationRate: number | null;
+  timeSpent: number | null;
+  totalAttempts: number | null;
+};
+
+type GrowthMetric = {
+  id: string;
+  name: string;
+  color: string;
+  unit: string;
+  description: string;
+  formatterId: "percent" | "int" | "sec" | "min" | "hours" | "minutes";
+};
+
+type GrowthWindowAverage = {
+  n: number;
+  last: number | null;
+  prev: number | null;
+};
+
+type GrowthWindowAverages = {
+  averageScore: GrowthWindowAverage;
+};
+
+type GrowthDataResponse = {
+  chartData: GrowthDataPoint[];
+  availableMetrics: GrowthMetric[];
+  windowAverages: GrowthWindowAverages;
+};
+
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {

@@ -50,8 +50,39 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { ScenarioMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type PersonaMappingItem = {
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+  image_model?: boolean | null;
+};
+
+type MappingItem = {
+  name: string;
+  description: string;
+};
+
+type ParameterItemMappingItem = {
+  name: string;
+  description: string;
+  parameter_id: string;
+  parameter_name: string;
+  value: string;
+};
+
+type ScenarioMappingItem = {
+  name: string;
+  description: string;
+  persona_ids: string[];
+  persona_mapping: Record<string, PersonaMappingItem>;
+  document_mapping: Record<string, MappingItem>;
+  parameter_item_mapping: Record<string, ParameterItemMappingItem>;
+  parameter_item_ids: string[];
+  document_ids: string[];
+};
 
 // Filter key constants
 const NO_PERSONA_KEY = "__no_persona__";
@@ -119,7 +150,8 @@ export function ScenarioPicker<
     >();
     let hasNoPersona = false;
 
-    baseScenarios.forEach((sc) => { // TODO: Handle multiple personas
+    baseScenarios.forEach((sc) => {
+      // TODO: Handle multiple personas
       if (!sc.persona_ids || sc.persona_ids.length === 0) {
         hasNoPersona = true;
       } else {
@@ -152,7 +184,9 @@ export function ScenarioPicker<
         name: "No Persona",
         color: "#gray",
         icon: "user-x",
-        count: baseScenarios.filter((sc) => !sc.persona_ids || sc.persona_ids.length === 0).length,
+        count: baseScenarios.filter(
+          (sc) => !sc.persona_ids || sc.persona_ids.length === 0
+        ).length,
       });
     }
 
@@ -271,9 +305,16 @@ export function ScenarioPicker<
       if (filterPersonaIds.length > 0) {
         const hasNoPersona = filterPersonaIds.includes(NO_PERSONA_KEY);
         const matchesPersona =
-          scenario.persona_ids && scenario.persona_ids.length > 0 && filterPersonaIds.includes(scenario.persona_ids?.[0] || "");
+          scenario.persona_ids &&
+          scenario.persona_ids.length > 0 &&
+          filterPersonaIds.includes(scenario.persona_ids?.[0] || "");
         if (!hasNoPersona && !matchesPersona) return false;
-        if (hasNoPersona && scenario.persona_ids && scenario.persona_ids.length > 0 && !matchesPersona)
+        if (
+          hasNoPersona &&
+          scenario.persona_ids &&
+          scenario.persona_ids.length > 0 &&
+          !matchesPersona
+        )
           return false;
       }
 

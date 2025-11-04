@@ -26,7 +26,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-import type { CreateFeedbackResponse } from "@/lib/api/v2/schemas/feedback";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -97,7 +96,7 @@ export default function ReportProblem({
   }, [isOpen, initialMessage]);
 
   // Handle successful feedback creation
-  const handleSuccess = async (_data: CreateFeedbackResponse) => {
+  const handleSuccess = async () => {
     toast.success("Feedback submitted successfully! Thank you for your input.");
     setIsOpen(false);
     resetForm();

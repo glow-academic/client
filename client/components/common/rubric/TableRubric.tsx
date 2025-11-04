@@ -16,7 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 
 type StandardGroupMappingItem = {
   name: string;
@@ -31,6 +30,13 @@ type StandardMappingItem = {
   points: number;
 };
 
+type GradingState = {
+  achievedStandards: Record<string, boolean>;
+  passedStandards: Record<string, boolean>;
+  gradeDescription?: string | undefined;
+  feedbackByStandardId?: Record<string, string> | undefined;
+} | null;
+
 export interface TableRubricProps {
   // Core rubric structure (from V2 API)
   standardGroups: Record<string, string[]>; // group_id -> [standard_ids]
@@ -38,7 +44,7 @@ export interface TableRubricProps {
   standardsMapping: Record<string, StandardMappingItem>;
 
   // Optional: grading state for visualization (from v2 server-side)
-  gradingState?: AttemptFullResponse["chats"][number]["gradingState"] | null;
+  gradingState?: GradingState;
 }
 
 export default function TableRubric({
@@ -187,10 +193,7 @@ export default function TableRubric({
                           );
 
                           return isFlipped ? (
-                            <div
-                              className={`flip3d is-flipped`}
-                              data-dir={1}
-                            >
+                            <div className={`flip3d is-flipped`} data-dir={1}>
                               <div className="face front">{frontContent}</div>
                               <div className="face back">{backContent}</div>
                             </div>

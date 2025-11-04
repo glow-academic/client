@@ -34,8 +34,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { SimulationMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type SimulationMappingItem = {
+  name: string;
+  description: string;
+  time_limit?: number | null;
+  department_ids?: string[] | null;
+};
 
 export interface SimulationPickerProps extends PopoverProps {
   simulationMapping: Record<string, SimulationMappingItem>;

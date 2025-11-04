@@ -24,8 +24,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ProblemStatementInfo } from "@/lib/api/v2/schemas/scenarios";
 import { cn } from "@/lib/utils";
+
+type ProblemStatementInfo = {
+  problem_statement: string;
+  created_at: string;
+  updated_at: string;
+};
 
 export interface ProblemStatementPickerProps extends PopoverProps {
   problemStatementMapping: Record<string, ProblemStatementInfo>;

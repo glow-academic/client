@@ -5,8 +5,24 @@ import HtmlViewer from "@/components/common/chat/viewers/HtmlViewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { isCodeByName } from "@/utils/mime-map";
+
+type DocumentItem = {
+  document_id: string;
+  name: string;
+  type: string;
+  updatedAt: string;
+  extension: string;
+  scenario_ids: string[];
+  can_edit: boolean;
+  can_delete: boolean;
+  active: boolean;
+  department_ids: string[] | null;
+  file_path: string;
+  mime_type: string;
+  parameter_item_ids: string[];
+};
+
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -139,11 +155,7 @@ export default function DocumentViewer({
         return (
           <div className="p-2">
             <Button asChild variant="default" className="w-full">
-              <a
-                href={content ?? ""}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={content ?? ""} target="_blank" rel="noopener noreferrer">
                 Open PDF
               </a>
             </Button>

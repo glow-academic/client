@@ -32,8 +32,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { MappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type MappingItem = {
+  name: string;
+  description: string;
+};
 
 export interface CohortPickerProps<T extends MappingItem = MappingItem>
   extends PopoverProps {
@@ -264,4 +268,3 @@ function CohortItem<T extends MappingItem>({
     </CommandItem>
   );
 }
-

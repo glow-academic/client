@@ -24,7 +24,21 @@ import {
 // Icons
 import { Check, ChevronsUpDown } from "lucide-react";
 
-import { DocumentItem } from "@/lib/api/v2/schemas/documents";
+type DocumentItem = {
+  document_id: string;
+  name: string;
+  type: string;
+  updatedAt: string;
+  extension: string;
+  scenario_ids: string[];
+  can_edit: boolean;
+  can_delete: boolean;
+  active: boolean;
+  department_ids: string[] | null;
+  file_path: string;
+  mime_type: string;
+  parameter_item_ids: string[];
+};
 
 export interface DocumentSelectProps {
   documents: DocumentItem[];

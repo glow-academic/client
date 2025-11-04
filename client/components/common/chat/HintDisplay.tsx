@@ -2,10 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, X } from "lucide-react";
 
-import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
+type Hint = {
+  simulationMessageId: string;
+  hint: string;
+  idx: number;
+  createdAt: string;
+};
 
 interface HintDisplayProps {
-  hints: AttemptFullResponse["chats"][number]["hints"][number]["hints"];
+  hints: Hint[];
   isLoading?: boolean;
   onClose?: () => void;
 }

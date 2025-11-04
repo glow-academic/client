@@ -35,11 +35,24 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type {
-  ScenarioAttributeAttemptFact,
-  ScenarioAttributeScenarioFact,
-} from "@/lib/api/v2/schemas/dashboard";
 import { cn } from "@/lib/utils";
+
+type ScenarioAttributeAttemptFact = {
+  parameterId: string;
+  parameterItemId: string;
+  date: string;
+  timestamp: number;
+  avgScore: number;
+  attempts: number;
+  passedAttempts: number;
+};
+
+type ScenarioAttributeScenarioFact = {
+  parameterId: string;
+  parameterItemId: string;
+  scenarioId: string;
+};
+
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";

@@ -25,7 +25,11 @@ import {
   YAxis,
 } from "recharts";
 
-import type { TrendData } from "@/lib/api/v2/schemas/base";
+type TrendData = {
+  date: string;
+  value: number;
+  count: number;
+};
 
 export interface TotalAttemptsProps {
   totalAttempts: number;

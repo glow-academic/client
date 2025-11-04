@@ -33,8 +33,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { PersonaMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
+
+type PersonaMappingItem = {
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+  image_model?: boolean | null;
+};
+
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
 // Utility function to generate gradient from hex color

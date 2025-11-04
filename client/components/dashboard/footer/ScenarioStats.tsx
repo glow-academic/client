@@ -32,10 +32,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type {
-  NumericAttemptFact,
-  NumericScenarioFact,
-} from "@/lib/api/v2/schemas/dashboard";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -50,6 +46,21 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
+type NumericAttemptFact = {
+  parameterId: string;
+  levelLabel: string;
+  levelValue: number;
+  score: number;
+  attempts: number;
+};
+
+type NumericScenarioFact = {
+  parameterId: string;
+  scenarioId: string;
+  levelLabel: string;
+  levelValue: number;
+};
 
 // Static chart palette for reliable colors
 const CHART_PALETTE = [
@@ -103,7 +114,6 @@ function CustomBarTooltip({
     </div>
   );
 }
-
 
 export interface ScenarioStatsProps {
   numericAttemptFacts: NumericAttemptFact[];
