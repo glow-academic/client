@@ -25,7 +25,6 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;
@@ -50,7 +49,6 @@ export function AnalyticsFilters({
   } = useAnalytics();
 
   const { cohorts, cohortMemberCounts, departments } = useProfile();
-  const log = useLogger();
   const getCohortMemberCount = (cohortId: string) =>
     cohortMemberCounts[cohortId] ?? 0;
   const { mutate: refreshAnalytics, isPending: isRefreshing } =
@@ -82,12 +80,7 @@ export function AnalyticsFilters({
     }
 
     refreshAnalytics(undefined, {
-      onError: (error) => {
-        log.error("analytics.refresh.component.failed", {
-          message: "Failed to refresh analytics data",
-          error,
-          context: { component: "AnalyticsFilters", function: "handleRefresh" },
-        });
+      onError: () => {
         toast.error("Failed to refresh analytics data");
       },
     });

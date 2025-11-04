@@ -28,7 +28,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useBulkCreateProfile,
   useProfileList,
@@ -139,7 +138,6 @@ export interface CreateStaffProps {
 export default function CreateStaff({ onDone }: CreateStaffProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
   // Fetch all data with single v2 call
   const { data: profileListResponse } = useProfileList({
     profileId: effectiveProfile?.id || "",
@@ -455,15 +453,10 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
           ? error.message
           : "Failed to create some staff members.";
       toast.error(errorMessage);
-      log.error("staff.bulk_create.failed", {
-        message: "Error creating staff members",
-        error,
-        context: { component: "CreateStaff", function: "handleCreateSubmit" },
-      });
     } finally {
       setIsSubmitting(false);
     }
-  }, [csvPreview, bulkCreateProfileMutation, onDone, router, log]);
+  }, [csvPreview, bulkCreateProfileMutation, onDone, router]);
 
   const removeFromPreview = useCallback(
     (id: string) => setCsvPreview((prev) => prev.filter((p) => p.id !== id)),

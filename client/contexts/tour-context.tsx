@@ -21,7 +21,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { TourStep } from "@/utils/tour-steps";
 import { useRouter } from "next/navigation";
@@ -183,7 +182,6 @@ export function TourProvider({ children }: TourProviderProps) {
   const { effectiveProfile } = useProfile();
   const router = useRouter();
   const lastKeyPressRef = useRef<number>(0);
-  const log = useLogger();
   // Actions
   const openTour = useCallback(
     (steps: TourStep[], profile: ProfileItem, initialStep?: number) => {
@@ -570,13 +568,6 @@ export function TourProvider({ children }: TourProviderProps) {
                             detail: { stepIndex: state.currentStep },
                           })
                         );
-                        log.info("tour.next.clicked", {
-                          message: "Tour Next button clicked",
-                          context: {
-                            component: "TourContext",
-                            stepIndex: state.currentStep,
-                          },
-                        });
                       }}
                       disabled={nextDisabled}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"

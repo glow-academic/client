@@ -18,8 +18,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-
 // TAPerformanceData interface for Reports page
 interface TAPerformanceData {
   id: string;
@@ -88,7 +86,6 @@ export function BrightspaceExportButton<TData>({
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string>("");
-  const log = useLogger();
   // Use simulations prop directly
   const availableSimulations = simulations || [];
 
@@ -213,12 +210,7 @@ export function BrightspaceExportButton<TData>({
 
       toast?.success(`Exported ${selectedData.length} rows to Brightspace CSV`);
       setExportPopoverOpen(false);
-    } catch (error) {
-      log.error("export.brightspace.failed", {
-        message: "Error exporting to Brightspace CSV",
-        error,
-        context: { component: "BrightspaceExportButton" },
-      });
+    } catch {
       toast?.error("Failed to export data");
     }
   };

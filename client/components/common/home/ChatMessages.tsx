@@ -12,7 +12,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssistant } from "@/contexts/assistant-context";
 import type { AssistantChatFullResponse } from "@/lib/api/v2/hooks/assistant";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChatStarterPrompts from "./ChatStarterPrompts";
@@ -235,24 +234,13 @@ export default function ChatMessages({
     useAssistant();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
-  const log = useLogger();
   // Track if user is scrolled to bottom
   const [isAtBottom, setIsAtBottom] = useState(true);
   // Track if there are new messages after user scrolled up
   const [showScrollDown, setShowScrollDown] = useState(false);
 
-  useEffect(() => {
-    log.debug("chat.messages.debug", {
-      message: "ChatMessages state",
-      context: {
-        component: "ChatMessages",
-        currentChatId: currentChatId ?? undefined,
-        messagesCount: messages.length,
-        toolCallsCount: toolCalls.length,
-        isConnected,
-      },
-    });
-  }, [currentChatId, messages.length, toolCalls.length, isConnected, log]);
+  // Debug logging removed - no client-side logging
+  // useEffect(() => { ... }, [currentChatId, messages.length, toolCalls.length, isConnected]);
 
   const createTimeline = useCallback((): TimelineItem[] => {
     const timeline: TimelineItem[] = [];

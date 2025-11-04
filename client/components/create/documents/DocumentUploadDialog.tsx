@@ -9,7 +9,6 @@
 import UploadClassificationDialog from "@/components/common/documents/UploadClassificationDialog";
 import { useProfile } from "@/contexts/profile-context";
 import { useFinalizeDocumentUpload } from "@/lib/api/v2/hooks/documents";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   type ParameterItemMappingItem,
   type ParameterMappingItem,
@@ -55,7 +54,6 @@ export function DocumentUploadDialog({
       }
     >
   >(new Map());
-  const { error: logError } = useLogger();
 
   // Listen for upload:remove-file events
   useEffect(() => {
@@ -125,14 +123,6 @@ export function DocumentUploadDialog({
           fileId: fileId,
         },
         onError: (error) => {
-          logError("upload.tus.failed", {
-            message: "Upload failed",
-            error,
-            context: {
-              component: "DocumentUploadDialog",
-              function: "uploadFile",
-            },
-          });
           toast.error(`Upload failed: ${file.name}`, {
             description: error.message || "An error occurred during upload",
             id: toastId,
@@ -247,12 +237,7 @@ export function DocumentUploadDialog({
                 return newMap;
               });
             }
-          } catch (finalizeError) {
-            logError("upload.finalize.failed", {
-              message: "Finalization failed",
-              error: finalizeError,
-              context: { component: "DocumentUploadDialog" },
-            });
+          } catch {
             toast.error(`Upload processing failed: ${file.name}`, {
               description: "Failed to process uploaded file",
               id: toastId,
@@ -275,17 +260,9 @@ export function DocumentUploadDialog({
 
       // Start the upload
       await upload.start();
-    } catch (error) {
-      logError("upload.error", {
-        message: "Upload error",
-        error,
-        context: { component: "DocumentUploadDialog" },
-      });
+    } catch {
       toast.error(`Upload failed: ${file.name}`, {
-        description:
-          error instanceof Error
-            ? error.message
-            : "An error occurred during upload",
+        description: "An error occurred during upload",
         id: toastId,
       });
 

@@ -43,7 +43,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useAuthorizeEmulation } from "@/lib/api/v2/hooks/profile";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
@@ -190,7 +189,6 @@ export function UnifiedSidebar({
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const log = useLogger();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
@@ -569,15 +567,7 @@ export function UnifiedSidebar({
 
       // Reload so server-rendered pages pick up the new session
       window.location.reload();
-    } catch (error) {
-      log.error("profile.switch.failed", {
-        message: "Failed to switch profile",
-        error,
-        context: {
-          component: "UnifiedSidebar",
-          function: "handleProfileSelect",
-        },
-      });
+    } catch {
       toast.error("Failed to switch profile");
     }
   };
@@ -623,14 +613,6 @@ export function UnifiedSidebar({
           await signOut({ redirectTo: `${appPrefix}/` });
           return "Logged out successfully";
         } catch (error) {
-          log.error("auth.logout.failed", {
-            message: "Error logging out",
-            error,
-            context: {
-              component: "UnifiedSidebar",
-              function: "handleLoginOrLogout",
-            },
-          });
           throw new Error(
             typeof error === "string" ? error : "Failed to log out"
           );
@@ -1035,15 +1017,7 @@ export function UnifiedSidebar({
 
                   // Reload to pick up the new session
                   window.location.reload();
-                } catch (error) {
-                  log.error("emulation.enable.failed", {
-                    message: "Failed to enable emulation",
-                    error,
-                    context: {
-                      component: "UnifiedSidebar",
-                      function: "emulateButton",
-                    },
-                  });
+                } catch {
                   toast.error("Failed to enable emulation");
                 }
                 setIsEmulateDialogOpen(false);

@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { getApiBase } from "@/lib/api/v2/api-base";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import type { HealthCheckItem } from "@/lib/api/v2/schemas/health";
 import {
   AlertCircle,
@@ -65,7 +64,6 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
   const { isConnected } = useWebSocket();
   const { data: session, status: authStatus } = useSession();
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([]);
-  const log = useLogger();
   // Initialize health checks
   useEffect(() => {
     const initialChecks: HealthCheck[] = [
@@ -177,11 +175,6 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
   }, [authStatus]);
 
   const runAllHealthChecks = useCallback(async () => {
-    log.info("health.checks.start", {
-      message: "Starting comprehensive health checks",
-      context: { component: "HealthModal" },
-    });
-
     try {
       const response = await fetch("/api/v2/logs/health");
 
@@ -225,25 +218,10 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
           `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`
         );
       }
-
-      log.info("health.checks.complete", {
-        message: "Health checks completed",
-        context: {
-          component: "HealthModal",
-          status: healthData.status,
-          healthyCount,
-          totalCount,
-        },
-      });
     } catch (error) {
-      log.error("health.checks.failed", {
-        message: "Failed to run health checks",
-        error,
-        context: { component: "HealthModal" },
-      });
       toast.error("Failed to run health checks");
     }
-  }, [log]);
+  }, []);
 
   // Run health checks when modal opens
   useEffect(() => {

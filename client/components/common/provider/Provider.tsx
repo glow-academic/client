@@ -17,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useCreateProvider,
   useDecryptProviderKey,
@@ -47,7 +46,6 @@ export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const { error: logError } = useLogger();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -212,12 +210,6 @@ export default function Provider({ providerId }: ProviderProps) {
         );
       }
     } catch (error) {
-      const message = `Error ${isEditMode ? "updating" : "creating"} provider:`;
-      logError("provider.save.failed", {
-        message,
-        error,
-        context: { component: "Provider", isEditMode, providerId },
-      });
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
       );
@@ -237,16 +229,7 @@ export default function Provider({ providerId }: ProviderProps) {
         });
         setDecryptedApiKey(result.api_key);
         setShowApiKey(true);
-      } catch (error) {
-        logError("provider.api_key.decrypt.failed", {
-          message: "Error decrypting API key",
-          error,
-          context: {
-            component: "Provider",
-            function: "handleToggleApiKey",
-            providerId,
-          },
-        });
+      } catch {
         toast.error("Failed to decrypt API key");
       } finally {
         setIsDecrypting(false);

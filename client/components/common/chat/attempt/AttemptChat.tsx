@@ -70,7 +70,6 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
@@ -81,7 +80,6 @@ export default function AttemptChat() {
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const log = useLogger();
   const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
   const isMobile = useIsMobile();
 
@@ -302,17 +300,8 @@ export default function AttemptChat() {
             chatId: chat.id,
             createdAt: now.toISOString(),
           });
-        } catch (error) {
-          log.error("chat.timestamp.reset.failed", {
-            message: "Failed to reset chat timestamp",
-            subject: { entityType: "simulation_chat", entityId: chat.id },
-            context: {
-              component: "AttemptChat",
-              function: "resetChatTimestamp",
-              attemptId: simulationContext?.attemptId,
-            },
-            error,
-          });
+        } catch {
+          // Error handling - timestamp reset failed silently
         }
       }
     };
@@ -323,7 +312,6 @@ export default function AttemptChat() {
     isAttemptOwner,
     simulationContext?.attemptId,
     updateChatCreatedAt,
-    log,
   ]);
 
   // Auto-select first chat when results show and default to showing rubric if all chats completed

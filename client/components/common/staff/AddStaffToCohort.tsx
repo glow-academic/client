@@ -15,7 +15,6 @@ import {
   useAddProfilesToCohort,
   useCohortDetailWithProfiles,
 } from "@/lib/api/v2/hooks/cohorts";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { Check, Download, Search, Upload, UserPlus, X } from "lucide-react";
 
 // Helper function to extract alias from email
@@ -77,7 +76,6 @@ export default function AddStaffToCohort({
   onDone,
 }: AddStaffToCohortProps) {
   const { effectiveProfile, departmentIds } = useProfile();
-  const log = useLogger();
   // Fetch all data with single unified v2 call
   const { data, isLoading: isLoadingProfiles } = useCohortDetailWithProfiles({
     cohortId,
@@ -213,14 +211,6 @@ export default function AddStaffToCohort({
                   ? error.message
                   : "Failed to add profiles to cohort.";
               toast.error(errorMessage);
-              log.error("cohort.add_profiles.failed", {
-                message: "Error adding profiles to cohort",
-                error,
-                context: {
-                  component: "AddStaffToCohort",
-                  function: "handleCsvUpload",
-                },
-              });
             }
           } else {
             toast.error("No valid profiles found in CSV.");
@@ -430,14 +420,6 @@ export default function AddStaffToCohort({
           ? error.message
           : "Failed to add profiles to cohort.";
       toast.error(errorMessage);
-      log.error("cohort.add_profiles.failed", {
-        message: "Error adding profiles to cohort",
-        error,
-        context: {
-          component: "AddStaffToCohort",
-          function: "confirmAndAddToCohort",
-        },
-      });
     }
   }, [
     selectedProfiles,

@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useCreateRubric,
   useRubricUnifiedUpdate,
@@ -46,7 +45,6 @@ export default function RubricDetails({
 }: RubricDetailsProps) {
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
-  const log = useLogger();
   // V2 mutation hooks
   const createRubricMutation = useCreateRubric();
   const { updateRubric, isPending: isUpdating } = useRubricUnifiedUpdate();
@@ -110,13 +108,6 @@ export default function RubricDetails({
         setIsEditing(false);
       }
     } catch (error) {
-      log.error("rubric.save.failed", {
-        message: isCreateMode
-          ? "Error creating rubric"
-          : "Error updating rubric",
-        error: error instanceof Error ? error.message : String(error),
-        context: { component: "RubricDetails", rubricId },
-      });
       toast.error(
         isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
       );

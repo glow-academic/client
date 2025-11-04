@@ -7,8 +7,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { toast } from "sonner";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-
 interface CohortData {
   name: string;
   passed: boolean;
@@ -41,7 +39,6 @@ export function SingleProfileCertificateButton<TData>({
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [isGenerating, setIsGenerating] = useState(false);
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
   // Function to generate certificate
   const handleCertificateGeneration = async () => {
     try {
@@ -58,17 +55,6 @@ export function SingleProfileCertificateButton<TData>({
 
       // Use the pre-computed cohort data
       const finalCohortData: CohortData[] = cohortData;
-
-      log.info("certificate.generate.start", {
-        message: "Generating certificate",
-        context: {
-          component: "SingleProfileCertificateButton",
-          profileName,
-          cohortCount: cohortData.length,
-          selectedRows,
-          profileOptionsLength: profileOptions.length,
-        },
-      });
 
       // Call the certificate generation API
       const response = await fetch("/api/v2/documents/certificate", {
@@ -111,12 +97,7 @@ export function SingleProfileCertificateButton<TData>({
       window.URL.revokeObjectURL(url);
 
       toast?.success(`Certificate generated for ${profileName}`);
-    } catch (error) {
-      log.error("certificate.generate.failed", {
-        message: "Error generating certificate",
-        error,
-        context: { component: "SingleProfileCertificateButton" },
-      });
+    } catch {
       toast?.error("Failed to generate certificate");
     } finally {
       setIsGenerating(false);

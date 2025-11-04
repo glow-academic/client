@@ -47,7 +47,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useBulkCreateOrUpdateStaff,
   useProcessCSV,
@@ -299,7 +298,6 @@ export default function CSVImportStaffModal({
   onStagedProfiles,
 }: CSVImportStaffModalProps) {
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
   const processCSVMutation = useProcessCSV();
   const bulkCreateOrUpdateMutation = useBulkCreateOrUpdateStaff();
 
@@ -603,18 +601,10 @@ export default function CSVImportStaffModal({
       const errorMessage =
         error instanceof Error ? error.message : "Failed to process CSV file.";
       toast.error(errorMessage);
-      log.error("csv.process.failed", {
-        message: "Error processing CSV",
-        error,
-        context: {
-          component: "CSVImportStaffModal",
-          function: "handleProcessCSV",
-        },
-      });
     } finally {
       setIsProcessing(false);
     }
-  }, [csvContent, columnMappings, includedColumns, processCSVMutation, log]);
+  }, [csvContent, columnMappings, includedColumns, processCSVMutation]);
 
   // Check for duplicate aliases in review stage
   const duplicateAliasMap = React.useMemo(() => {
@@ -655,7 +645,7 @@ export default function CSVImportStaffModal({
         if (field === "department_ids" || field === "cohort_ids") {
           updated[field] = Array.isArray(value) ? value : [];
         } else {
-        updated[field] = value;
+          updated[field] = value;
         }
 
         // Revalidate errors
@@ -765,18 +755,18 @@ export default function CSVImportStaffModal({
             .filter((id): id is string => id !== null);
         } else {
           // Staff page: no staging - use both directly
-        // Resolve department/cohort IDs from names if needed
+          // Resolve department/cohort IDs from names if needed
           const rowDeptIds = row.department_ids || [];
           deptIds = rowDeptIds
             .map((deptIdOrName) => {
               if (validDepartmentIds.includes(deptIdOrName)) {
                 return deptIdOrName;
               }
-          // Try to find by name
-          const found = Object.entries(departmentMapping).find(
+              // Try to find by name
+              const found = Object.entries(departmentMapping).find(
                 ([_, dept]) =>
                   dept.name.toLowerCase() === deptIdOrName.toLowerCase()
-          );
+              );
               return found ? found[0] : null;
             })
             .filter((id): id is string => id !== null);
@@ -787,15 +777,15 @@ export default function CSVImportStaffModal({
               if (validCohortIds.includes(cohortIdOrName)) {
                 return cohortIdOrName;
               }
-            // Try to find by name
-            const found = Object.entries(cohortMapping).find(
-              ([_, cohort]) =>
+              // Try to find by name
+              const found = Object.entries(cohortMapping).find(
+                ([_, cohort]) =>
                   cohort.name.toLowerCase() === cohortIdOrName.toLowerCase()
-            );
+              );
               return found ? found[0] : null;
             })
             .filter((id): id is string => id !== null);
-          }
+        }
 
         return {
           firstName: row.firstName!,
@@ -846,11 +836,6 @@ export default function CSVImportStaffModal({
           ? error.message
           : "Failed to create or update staff members.";
       toast.error(errorMessage);
-      log.error("csv.bulk_create_or_update.failed", {
-        message: "Error creating or updating staff from CSV",
-        error,
-        context: { component: "CSVImportStaffModal", function: "handleSubmit" },
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -870,7 +855,6 @@ export default function CSVImportStaffModal({
     onOpenChange,
     onDone,
     onStagedProfiles,
-    log,
   ]);
 
   const validRowCount = processedRows.filter(
@@ -961,7 +945,7 @@ export default function CSVImportStaffModal({
                       onClick={(e) => {
                         e.stopPropagation();
                         openFileDialog();
-                  }}
+                      }}
                       className="text-primary hover:underline font-medium"
                     >
                       browse
@@ -981,18 +965,18 @@ export default function CSVImportStaffModal({
                   </div>
                   {/* Download Template Button - grouped with instructions */}
                   <div className="pt-2 flex justify-center">
-                  <Button
+                    <Button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         downloadTemplate();
                       }}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
                       Download CSV Template
-                  </Button>
-                </div>
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -1145,10 +1129,10 @@ export default function CSVImportStaffModal({
                       <TableHead>Alias</TableHead>
                       <TableHead>Role</TableHead>
                       {(!departmentIds || departmentIds.length === 0) && (
-                      <TableHead>Department</TableHead>
+                        <TableHead>Department</TableHead>
                       )}
                       {(!cohortIds || cohortIds.length === 0) && (
-                      <TableHead>Cohort</TableHead>
+                        <TableHead>Cohort</TableHead>
                       )}
                     </TableRow>
                   </TableHeader>
@@ -1184,14 +1168,14 @@ export default function CSVImportStaffModal({
                             (e) =>
                               e.field === "department_ids" ||
                               e.field === "department_id"
-                        );
+                          );
                         const hasCohortError =
                           (!cohortIds || cohortIds.length === 0) &&
                           editableRow.errors.some(
                             (e) =>
                               e.field === "cohort_ids" ||
                               e.field === "cohort_id"
-                        );
+                          );
 
                         return (
                           <TableRow key={index}>
@@ -1269,11 +1253,11 @@ export default function CSVImportStaffModal({
                               />
                             </TableCell>
                             {(!departmentIds || departmentIds.length === 0) && (
-                            <TableCell
-                              className={
-                                hasDepartmentError ? "bg-destructive/10" : ""
-                              }
-                            >
+                              <TableCell
+                                className={
+                                  hasDepartmentError ? "bg-destructive/10" : ""
+                                }
+                              >
                                 <DepartmentPicker
                                   mapping={departmentMapping}
                                   validIds={validDepartmentIds}
@@ -1293,14 +1277,14 @@ export default function CSVImportStaffModal({
                                   multiSelect={true}
                                   compact={true}
                                 />
-                            </TableCell>
+                              </TableCell>
                             )}
                             {(!cohortIds || cohortIds.length === 0) && (
-                            <TableCell
-                              className={
-                                hasCohortError ? "bg-destructive/10" : ""
-                              }
-                            >
+                              <TableCell
+                                className={
+                                  hasCohortError ? "bg-destructive/10" : ""
+                                }
+                              >
                                 <CohortPicker
                                   mapping={cohortMapping}
                                   validIds={validCohortIds}
@@ -1315,7 +1299,7 @@ export default function CSVImportStaffModal({
                                   placeholder="Select cohorts"
                                   multiSelect={true}
                                 />
-                            </TableCell>
+                              </TableCell>
                             )}
                           </TableRow>
                         );

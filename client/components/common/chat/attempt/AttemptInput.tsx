@@ -35,7 +35,6 @@ import HintDisplay from "@/components/practice/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -53,7 +52,6 @@ export default function AttemptInput({
   const simulationContext = useSimulation();
   const { isConnected } = useWebSocket();
   const queryClient = useQueryClient();
-  const log = useLogger();
   const [newMessage, setNewMessage] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -150,14 +148,7 @@ export default function AttemptInput({
   const pastePrevention = useNoPasteTextarea(textareaRef, {
     enabled: !copyPasteAllowed, // Disable paste prevention if copyPasteAllowed is true
     onPasteAttempt: () => {
-      // Optional: Add toast notification here
-      log.info("paste.attempt.blocked", {
-        message: "Paste attempt blocked",
-        context: {
-          component: "AttemptInput",
-          function: "onPasteAttempt",
-        },
-      });
+      // Paste attempt blocked - no logging needed
     },
     enableBurstDetection: true,
     maxBurstSize: 1,

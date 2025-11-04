@@ -39,7 +39,6 @@ import {
   StandardUpdate,
 } from "@/lib/api/v2/schemas/rubrics";
 
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   Award,
   BookOpen,
@@ -291,7 +290,6 @@ export default function RubricStandardGroup({
 
   // Use unified update hook
   const { updateRubric, isPending } = useRubricUnifiedUpdate();
-  const log = useLogger();
   // Form state for standard group
   const [groupFormData, setGroupFormData] = useState<StandardGroupFormData>({
     name: group?.name || "",
@@ -497,16 +495,7 @@ export default function RubricStandardGroup({
           ? `Standard group created successfully. Total points: ${result.points}`
           : `Changes saved successfully. Total points: ${result.points}`
       );
-    } catch (error) {
-      log.error("rubric.standard_group.save.failed", {
-        message: "Error saving standard group changes",
-        error: error instanceof Error ? error.message : String(error),
-        context: {
-          component: "RubricStandardGroup",
-          rubricId,
-          mode,
-        },
-      });
+    } catch {
       toast.error("Failed to save changes");
     }
   };
@@ -585,17 +574,7 @@ export default function RubricStandardGroup({
       toast.success(
         `Standard group deleted successfully. Total points: ${result.points}`
       );
-    } catch (error) {
-      log.error("rubric.standard_group.delete.failed", {
-        message: "Error deleting standard group",
-        error: error instanceof Error ? error.message : String(error),
-        context: {
-          component: "RubricStandardGroup",
-          rubricId,
-          groupId: group!.id,
-          mode,
-        },
-      });
+    } catch {
       toast.error("Failed to delete standard group");
     }
   };

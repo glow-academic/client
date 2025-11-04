@@ -58,12 +58,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-
 export default function Cohorts() {
   const router = useRouter();
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  const log = useLogger();
   // V2 API hooks - single fetch with all data (pre-filtered by role)
   const { data: cohortsData, isLoading: loadingCohorts } = useCohortsList(
     {
@@ -260,23 +257,8 @@ export default function Cohorts() {
     setIsDeleting(true);
     try {
       await deleteCohortMutation.mutateAsync({ cohortId: deleteItem.id });
-      await log.info("cohort.delete.success", {
-        message: "Cohort deleted successfully",
-        subject: { entityType: "cohort", entityId: deleteItem.id },
-        context: {
-          component: "Cohorts",
-          function: "handleDelete",
-          name: deleteItem.name,
-        },
-      });
       toast.success("Cohort deleted successfully");
-    } catch (error) {
-      await log.error("cohort.delete.failed", {
-        message: "Error deleting cohort",
-        subject: { entityType: "cohort", entityId: deleteItem?.id },
-        context: { component: "Cohorts", function: "handleDelete" },
-        error,
-      });
+    } catch {
       toast.error("Failed to delete cohort");
     } finally {
       setIsDeleting(false);
@@ -295,23 +277,8 @@ export default function Cohorts() {
         profileId: effectiveProfile?.id || "",
       });
 
-      await log.info("cohort.leave.success", {
-        message: "Left cohort successfully",
-        subject: { entityType: "cohort", entityId: leaveItem.id },
-        context: {
-          component: "Cohorts",
-          function: "handleLeave",
-          name: leaveItem.name,
-        },
-      });
       toast.success("Left cohort successfully");
-    } catch (error) {
-      await log.error("cohort.leave.failed", {
-        message: "Error leaving cohort",
-        subject: { entityType: "cohort", entityId: leaveItem?.id },
-        context: { component: "Cohorts", function: "handleLeave" },
-        error,
-      });
+    } catch {
       toast.error("Failed to leave cohort");
     } finally {
       setIsLeaving(false);
@@ -324,27 +291,8 @@ export default function Cohorts() {
     setIsDuplicating(cohortId);
     try {
       await duplicateCohortMutation.mutateAsync({ cohortId });
-      await log.info("cohort.duplicate.success", {
-        message: "Cohort duplicated successfully",
-        subject: { entityType: "cohort", entityId: cohortId },
-        context: {
-          component: "Cohorts",
-          function: "handleDuplicate",
-          originalTitle: cohortName,
-        },
-      });
       toast.success(`Cohort "${cohortName}" duplicated successfully`);
-    } catch (error) {
-      await log.error("cohort.duplicate.failed", {
-        message: "Error duplicating cohort",
-        subject: { entityType: "cohort", entityId: cohortId },
-        context: {
-          component: "Cohorts",
-          function: "handleDuplicate",
-          originalTitle: cohortName,
-        },
-        error,
-      });
+    } catch {
       toast.error("Failed to duplicate cohort");
     } finally {
       setIsDuplicating(null);

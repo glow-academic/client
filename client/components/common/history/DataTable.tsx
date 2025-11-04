@@ -41,8 +41,6 @@ import { useBulkArchiveAttempts } from "@/lib/api/v2/hooks/attempts";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-
 // Legacy interface - no longer used
 
 export interface DataTableProps<TData, TValue> {
@@ -102,7 +100,6 @@ export function DataTable<TData, TValue>({
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
   const bulkArchiveMutation = useBulkArchiveAttempts();
-  const log = useLogger();
   // Helper functions to normalize id and archived fields
   const getRowId = (item: unknown) => {
     const obj = item as Record<string, unknown>;
@@ -248,18 +245,6 @@ export function DataTable<TData, TValue>({
         archived: archiveAction,
       });
 
-      // Log success for bulk operation (single log entry instead of individual ones)
-      await log.info("simulation_attempt.bulk_archive.success", {
-        message: `${attemptsToUpdate.length} simulation attempts ${archiveAction ? "archived" : "unarchived"}`,
-        subject: { entityType: "simulation_attempts" },
-        context: {
-          component: "DataTable",
-          function: "executeBulkArchive",
-          action: archiveAction ? "archive" : "unarchive",
-          count: attemptsToUpdate.length,
-        },
-      });
-
       toast.success(
         `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
       );
@@ -268,23 +253,12 @@ export function DataTable<TData, TValue>({
       table.resetRowSelection();
       setShowArchiveDialog(false);
       setArchiveAction(null);
-    } catch (error) {
-      await log.error("simulation_attempt.bulk_archive.failed", {
-        message: "Error bulk archiving simulation attempts",
-        subject: { entityType: "simulation_attempt" },
-        context: {
-          component: "DataTable",
-          function: "executeBulkArchive",
-          action: archiveAction ? "archive" : "unarchive",
-          count: attemptsToUpdate.length,
-        },
-        error,
-      });
+    } catch {
       toast.error("Failed to update simulation archive status");
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveAction, table, bulkArchiveMutation, log]);
+  }, [archiveAction, table, bulkArchiveMutation]);
 
   return (
     <div className="space-y-4">

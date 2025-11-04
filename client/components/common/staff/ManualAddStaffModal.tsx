@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useBulkCreateOrUpdateStaff } from "@/lib/api/v2/hooks/profile";
 
 type RoleValue = "superadmin" | "admin" | "instructional" | "ta" | "guest";
@@ -64,7 +63,6 @@ export default function ManualAddStaffModal({
   onStagedProfiles,
 }: ManualAddStaffModalProps) {
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
   const bulkCreateOrUpdateMutation = useBulkCreateOrUpdateStaff();
 
   const [inputText, setInputText] = useState("");
@@ -340,11 +338,6 @@ export default function ManualAddStaffModal({
           ? error.message
           : "Failed to create or update staff members.";
       toast.error(errorMessage);
-      log.error("staff.bulk_create_or_update.failed", {
-        message: "Error creating or updating staff members",
-        error,
-        context: { component: "ManualAddStaffModal", function: "handleSubmit" },
-      });
     } finally {
       setIsSubmitting(false);
     }

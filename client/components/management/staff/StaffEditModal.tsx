@@ -30,7 +30,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useProfileSimple,
   useUpdateProfileSimple,
@@ -52,7 +51,6 @@ export default function StaffEditModal({
   onDone,
 }: StaffEditModalProps) {
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
   const updateProfileMutation = useUpdateProfileSimple();
 
   const { data: profileData, isLoading } = useProfileSimple(
@@ -135,16 +133,7 @@ export default function StaffEditModal({
       if (onDone) {
         onDone();
       }
-    } catch (error) {
-      log.error("staff.update.failed", {
-        message: "Error updating staff",
-        error,
-        context: {
-          component: "StaffEditModal",
-          function: "handleConfirm",
-          profileId,
-        },
-      });
+    } catch {
       toast.error("Failed to update staff");
     } finally {
       setIsSubmitting(false);

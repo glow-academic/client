@@ -38,7 +38,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import type { ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 
@@ -100,7 +99,6 @@ export function ParameterItemPicker<
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const createParameterItemMutation = useCreateParameterItemV2();
-  const log = useLogger();
 
   // Build items from mapping
   const items = useMemo(() => {
@@ -210,15 +208,7 @@ export function ParameterItemPicker<
       } else {
         onSelect([created.parameterItemId]);
       }
-    } catch (error) {
-      log.error("parameter_item.create.failed", {
-        message: "Failed to create parameter item",
-        error,
-        context: {
-          component: "ParameterItemPicker",
-          parameterId: parameterId,
-        },
-      });
+    } catch {
       toast.error("Failed to create parameter item");
     }
   };

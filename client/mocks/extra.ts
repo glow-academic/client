@@ -180,15 +180,7 @@ vi.mock("@/lib/api/v2/server/logs", () => ({
   },
 }));
 
-// V2 Client-side Logger Hook (used in components)
-vi.mock("@/lib/api/v2/hooks/logs", () => ({
-  useLogger: vi.fn(() => ({
-    info: vi.fn().mockResolvedValue(undefined),
-    warn: vi.fn().mockResolvedValue(undefined),
-    error: vi.fn().mockResolvedValue(undefined),
-    debug: vi.fn().mockResolvedValue(undefined),
-  })),
-}));
+// V2 Client-side Logger Hook - removed (no client-side logging)
 
 // API base for sockets and fetch base URLs
 vi.mock("@/lib/api-base", async (importOriginal) => {

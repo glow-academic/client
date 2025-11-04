@@ -29,7 +29,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useBulkUpdateProfile,
   useProfileDetailBulk,
@@ -51,7 +50,6 @@ export default function StaffBulkEditModal({
   onDone,
 }: StaffBulkEditModalProps) {
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
   const bulkUpdateMutation = useBulkUpdateProfile();
 
   // Fetch bulk detail to get common values
@@ -164,16 +162,7 @@ export default function StaffBulkEditModal({
       if (onDone) {
         onDone();
       }
-    } catch (error) {
-      log.error("staff.bulk-update.failed", {
-        message: "Error bulk updating staff",
-        error,
-        context: {
-          component: "StaffBulkEditModal",
-          function: "handleConfirm",
-          count: profileIds.length,
-        },
-      });
+    } catch {
       toast.error("Failed to update staff");
     } finally {
       setIsSubmitting(false);

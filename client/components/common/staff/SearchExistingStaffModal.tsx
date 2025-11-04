@@ -23,7 +23,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useSearchStaff } from "@/lib/api/v2/hooks/profile";
 import { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 
@@ -62,7 +61,6 @@ export default function SearchExistingStaffModal({
   onDone,
   onStagedProfiles,
 }: SearchExistingStaffModalProps) {
-  const log = useLogger();
   const { effectiveProfile } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileIds, setSelectedProfileIds] = useState<Set<string>>(
@@ -179,14 +177,6 @@ export default function SearchExistingStaffModal({
       const errorMessage =
         error instanceof Error ? error.message : "Failed to stage profiles.";
       toast.error(errorMessage);
-      log.error("staff.search_stage.failed", {
-        message: "Error staging profiles from search",
-        error,
-        context: {
-          component: "SearchExistingStaffModal",
-          function: "handleSubmit",
-        },
-      });
     }
   }, [
     selectedProfileIds,

@@ -46,8 +46,6 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { DocumentPreviewCard } from "@/components/common/documents/DocumentPreviewCard";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
@@ -102,7 +100,6 @@ const truncateText = (text: string, maxLength: number = 30): string => {
 
 export default function Documents() {
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
-  const log = useLogger();
 
   // Mutation hooks
   const deleteDocumentMutation = useDeleteDocument();
@@ -980,27 +977,10 @@ export default function Documents() {
         await deleteDocumentMutation.mutateAsync({
           documentId: editingDocument.document_id,
         });
-        await log.info("document.delete.success", {
-          message: "Document deleted",
-          subject: {
-            entityType: "document",
-            entityId: editingDocument.document_id,
-          },
-          context: { component: "Documents", function: "handleDelete" },
-        });
         toast.success("Document deleted successfully");
         setShowDeleteDialog(false);
         setEditingDocument(null);
       } catch (error) {
-        await log.error("document.delete.failed", {
-          message: "Error deleting document",
-          subject: {
-            entityType: "document",
-            entityId: editingDocument.document_id,
-          },
-          context: { component: "Documents", function: "handleDelete" },
-          error,
-        });
         toast.error("Failed to delete document");
       } finally {
         setIsDeleting(false);
@@ -1027,15 +1007,6 @@ export default function Documents() {
           documentIds: deletableDocuments,
         });
 
-        // Log success for each document
-        for (const documentId of deletableDocuments) {
-          await log.info("document.delete.success", {
-            message: "Document deleted",
-            subject: { entityType: "document", entityId: documentId },
-            context: { component: "Documents", function: "handleDelete.bulk" },
-          });
-        }
-
         const nonDeletableCount =
           selectedDocuments.length - deletableDocuments.length;
         const message =
@@ -1047,12 +1018,6 @@ export default function Documents() {
         setSelectedDocuments([]);
         setShowDeleteDialog(false);
       } catch (error) {
-        await log.error("document.delete_many.failed", {
-          message: "Error deleting documents",
-          subject: { entityType: "document" },
-          context: { component: "Documents", function: "handleDelete.bulk" },
-          error,
-        });
         toast.error("Failed to delete documents");
       } finally {
         setIsDeleting(false);
@@ -1077,15 +1042,6 @@ export default function Documents() {
       setShowEditDialog(false);
       setEditingDocument(null);
     } catch (error) {
-      await log.error("document.update.failed", {
-        message: "Error updating document",
-        subject: {
-          entityType: "document",
-          entityId: editingDocument.document_id,
-        },
-        context: { component: "Documents", function: "handleUpdate" },
-        error,
-      });
       toast.error("Failed to update document");
     } finally {
       setIsUpdating(false);
@@ -1120,16 +1076,6 @@ export default function Documents() {
       setShowBulkEditDialog(false);
       setSelectedDocuments([]);
     } catch (error) {
-      await log.error("document.update_many.failed", {
-        message: "Error bulk updating documents",
-        subject: { entityType: "document" },
-        context: {
-          component: "Documents",
-          function: "handleBulkUpdate",
-          count: selectedDocuments.length,
-        },
-        error,
-      });
       toast.error("Failed to update documents");
     } finally {
       setIsBulkUpdating(false);

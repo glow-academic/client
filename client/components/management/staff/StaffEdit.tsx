@@ -31,7 +31,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useDeleteProfile,
   useProfileSimple,
@@ -71,7 +70,6 @@ const useStaffEditBusinessLogic = (
   const [hasChanges, setHasChanges] = useState(false);
   const { effectiveProfile } = useEffectiveProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const log = useLogger();
   // Mutation hooks
   const updateProfileMutation = useUpdateProfileSimple();
   const deleteProfileMutation = useDeleteProfile();
@@ -127,21 +125,12 @@ const useStaffEditBusinessLogic = (
         if (onDone) {
           onDone();
         }
-      } catch (error) {
-        log.error("staff.update.failed", {
-          message: "Error updating user",
-          error,
-          context: {
-            component: "StaffEdit",
-            function: "handleSubmit",
-            profileId,
-          },
-        });
+      } catch {
       } finally {
         setIsSubmitting(false);
       }
     },
-    [profileId, router, redirectOnSuccess, onDone, updateProfileMutation, log]
+    [profileId, router, redirectOnSuccess, onDone, updateProfileMutation]
   );
 
   const handleDelete = useCallback(async () => {
@@ -150,20 +139,11 @@ const useStaffEditBusinessLogic = (
       await deleteProfileMutation.mutateAsync({ profileId });
       toast.success("User deleted successfully");
       router.push("/management/staff");
-    } catch (error) {
-      log.error("staff.delete.failed", {
-        message: "Error deleting user",
-        error,
-        context: {
-          component: "StaffEdit",
-          function: "handleDelete",
-          profileId,
-        },
-      });
+    } catch {
     } finally {
       setIsSubmitting(false);
     }
-  }, [profileId, router, deleteProfileMutation, log]);
+  }, [profileId, router, deleteProfileMutation]);
 
   const handleBackNavigation = useCallback(() => {
     router.push("/management/staff");
