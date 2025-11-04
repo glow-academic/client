@@ -17,10 +17,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Power, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 interface FormErrors {
@@ -39,14 +35,35 @@ interface FormData {
   outputPpm?: string; // USD per 1M output tokens
 }
 
+// Type-only import from server page (for edit mode)
+import type {
+  CreateModelIn,
+  CreateModelOut,
+  ModelDetailOut,
+  ProviderDetailOut,
+  UpdateModelIn,
+  UpdateModelOut,
+} from "@/app/(main)/system/providers/p/[providerId]/m/[modelId]/page";
+
 export interface ModelProps {
   modelId?: string;
   providerId: string;
+  // Optional server-provided data and actions (for server-side rendering)
+  modelDetail?: ModelDetailOut;
+  providerDetail?: ProviderDetailOut;
+  createModelAction?: (input: CreateModelIn) => Promise<CreateModelOut>;
+  updateModelAction?: (input: UpdateModelIn) => Promise<UpdateModelOut>;
 }
 
-export default function Model({ modelId, providerId }: ModelProps) {
+export default function Model({
+  modelId,
+  providerId,
+  modelDetail: serverModelDetail,
+  providerDetail: serverProviderDetail,
+  createModelAction,
+  updateModelAction,
+}: ModelProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,76 +83,30 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
-  const queryClient = useQueryClient();
 
-  // V3 API - fetch provider detail
-  const { data: providerDetail } = useQuery({
-    queryKey: keys.providers.with({
-      providerId: providerId,
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/providers/detail", {
-        body: {
-          providerId: providerId,
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !!providerId && !!effectiveProfile?.id,
-  });
+  // Use server-provided data (no React Query needed when server data is provided)
+  const providerDetail = serverProviderDetail;
+  const modelDetail = serverModelDetail;
+  const isLoading = false; // No loading state when using server data
 
-  // V3 API - fetch model detail when editing
-  const { data: modelDetail, isLoading: isLoadingModelDetail } = useQuery({
-    queryKey: keys.providers.with({
-      modelId: modelId || "",
-      providerId: providerId,
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/providers/models/detail", {
-        body: {
-          modelId: modelId || "",
-          providerId: providerId,
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !!modelId && !!providerId && isEditMode && !!effectiveProfile?.id,
-  });
+  // Extract body types from server action types for type safety
+  type CreateModelBody = CreateModelIn extends { body: infer B } ? B : never;
+  type UpdateModelBody = UpdateModelIn extends { body: infer B } ? B : never;
 
-  const isLoading = isLoadingModelDetail;
+  // Use server actions directly (no mutations needed)
+  const handleCreateModel = async (body: CreateModelBody) => {
+    if (!createModelAction) {
+      throw new Error("createModelAction is required");
+    }
+    await createModelAction({ body });
+  };
 
-  // V3 API mutations
-  const createModelMutation = useMutation({
-    mutationFn: (body: {
-      provider_id: string;
-      name: string;
-      description: string;
-      active: boolean;
-      custom_model: boolean;
-      image_model: boolean;
-      input_ppm: number;
-      output_ppm: number;
-    }) => api.post("/providers/models/create", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.providers.all });
-    },
-  });
-
-  const updateModelMutation = useMutation({
-    mutationFn: (body: {
-      modelId: string;
-      name: string;
-      description: string;
-      active: boolean;
-      custom_model: boolean;
-      image_model: boolean;
-      input_ppm: number;
-      output_ppm: number;
-    }) => api.post("/providers/models/update", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.providers.all });
-    },
-  });
+  const handleUpdateModel = async (body: UpdateModelBody) => {
+    if (!updateModelAction) {
+      throw new Error("updateModelAction is required");
+    }
+    await updateModelAction({ body });
+  };
 
   // Set breadcrumb context for provider
   useEffect(() => {
@@ -242,7 +213,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
     try {
       if (isEditMode && modelId) {
-        await updateModelMutation.mutateAsync({
+        await handleUpdateModel({
           modelId: modelId,
           name: formData.name!,
           description: formData.description!,
@@ -256,7 +227,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
         toast.success("Model updated successfully!");
         router.push(`/system/providers`);
       } else {
-        await createModelMutation.mutateAsync({
+        await handleCreateModel({
           provider_id: providerId,
           name: formData.name!,
           description: formData.description!,
@@ -442,17 +413,10 @@ export default function Model({ modelId, providerId }: ModelProps) {
           </Button>
           <Button
             type="submit"
-            disabled={
-              isSubmitting ||
-              isLoading ||
-              createModelMutation.isPending ||
-              updateModelMutation.isPending
-            }
+            disabled={isSubmitting || isLoading}
             className="min-w-[120px]"
           >
-            {isSubmitting ||
-            createModelMutation.isPending ||
-            updateModelMutation.isPending ? (
+            {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                 {isEditMode && modelId ? "Updating..." : "Creating..."}
