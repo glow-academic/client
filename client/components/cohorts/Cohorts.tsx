@@ -23,12 +23,9 @@ import { toast } from "sonner";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Input } from "@/components/ui/input";
-import {
-  useCohortsList,
-  useDeleteCohort,
-  useDuplicateCohort,
-  useLeaveCohort,
-} from "@/lib/api/v2/hooks/cohorts";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -61,20 +58,44 @@ import { useProfile } from "@/contexts/profile-context";
 export default function Cohorts() {
   const router = useRouter();
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  // V2 API hooks - single fetch with all data (pre-filtered by role)
-  const { data: cohortsData, isLoading: loadingCohorts } = useCohortsList(
-    {
-      profileId: effectiveProfile?.id || "",
+  const queryClient = useQueryClient();
+
+  // V3 API: Fetch cohorts list
+  const { data: cohortsData, isLoading: loadingCohorts } = useQuery({
+    queryKey: keys.cohorts.list({ profileId: effectiveProfile?.id || "" }),
+    queryFn: () =>
+      api.post("/cohorts/list", {
+        body: { profileId: effectiveProfile?.id || "" },
+      }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  // Mutation hooks - V3 API
+  const duplicateCohortMutation = useMutation({
+    mutationFn: (request: { cohortId: string }) =>
+      api.post("/cohorts/duplicate", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
     },
-    { enabled: !!effectiveProfile?.id }
-  );
+  });
 
-  // Mutation hooks
-  const duplicateCohortMutation = useDuplicateCohort();
-  const deleteCohortMutation = useDeleteCohort();
-  const leaveCohortMutation = useLeaveCohort();
+  const deleteCohortMutation = useMutation({
+    mutationFn: (request: { cohortId: string }) =>
+      api.post("/cohorts/delete", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
+    },
+  });
 
-  // Extract data from V2 response
+  const leaveCohortMutation = useMutation({
+    mutationFn: (request: { cohortId: string; profileId: string }) =>
+      api.post("/cohorts/leave", { body: request }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
+    },
+  });
+
+  // Extract data from V3 response
   const cohorts = useMemo(
     () => cohortsData?.cohorts || [],
     [cohortsData?.cohorts]
@@ -247,7 +268,7 @@ export default function Cohorts() {
     );
   }
 
-  // Permissions now come from server-side in V2 API
+  // Permissions now come from server-side in V3 API
   // Cohorts are pre-filtered by role on the server
   // No need for client-side permission or filtering logic
 

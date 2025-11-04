@@ -11,10 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useAddProfilesToCohort,
-  useCohortDetailWithProfiles,
-} from "@/lib/api/v2/hooks/cohorts";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Download, Search, Upload, UserPlus, X } from "lucide-react";
 
 // Helper function to extract alias from email
@@ -76,14 +75,27 @@ export default function AddStaffToCohort({
   onDone,
 }: AddStaffToCohortProps) {
   const { effectiveProfile, departmentIds } = useProfile();
-  // Fetch all data with single unified v2 call
-  const { data, isLoading: isLoadingProfiles } = useCohortDetailWithProfiles({
-    cohortId,
-    departmentIds: departmentIds,
-    currentProfileId: effectiveProfile?.id || "",
+  const queryClient = useQueryClient();
+
+  // V3 API: Fetch cohort detail with profiles
+  const { data, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: keys.cohorts.with({
+      cohortId,
+      departmentIds,
+      currentProfileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/cohorts/detail-with-profiles", {
+        body: {
+          cohortId,
+          departmentIds: departmentIds,
+          currentProfileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!cohortId && !!effectiveProfile?.id && departmentIds.length > 0,
   });
 
-  // Extract data from unified response
+  // Extract data from V3 response
   const allProfiles = useMemo(
     () => data?.available_profiles || [],
     [data?.available_profiles]
@@ -94,8 +106,61 @@ export default function AddStaffToCohort({
     [data?.current_profile_ids]
   );
 
-  // Mutation hook
-  const addProfilesToCohortMutation = useAddProfilesToCohort();
+  // Mutation hook - V3 API
+  // Note: V3 endpoint only accepts profileIds, so we need to create new profiles first
+  const addProfilesToCohortMutation = useMutation({
+    mutationFn: async (request: {
+      cohortId: string;
+      departmentIds: string[];
+      existingProfileIds?: string[];
+      newProfiles?: Array<{
+        firstName: string;
+        lastName: string;
+        alias: string;
+        role: "ta" | "instructional";
+      }>;
+    }) => {
+      const profileIdsToAdd: string[] = [...(request.existingProfileIds || [])];
+
+      // Create new profiles if needed
+      if (request.newProfiles && request.newProfiles.length > 0) {
+        // Use bulk-create-or-update to create new profiles
+        const createResponse = await api.post(
+          "/profile/staff/bulk-create-or-update-staff",
+          {
+            body: {
+              profiles: request.newProfiles.map((p) => ({
+                firstName: p.firstName,
+                lastName: p.lastName,
+                alias: p.alias,
+                role: p.role,
+                department_ids: request.departmentIds,
+                cohort_ids: [], // Will be added below
+              })),
+              currentProfileId: effectiveProfile?.id || "",
+            },
+          }
+        );
+        profileIdsToAdd.push(...createResponse.profileIds);
+      }
+
+      // Add all profiles to cohort
+      if (profileIdsToAdd.length > 0) {
+        await api.post("/cohorts/add-profiles", {
+          body: {
+            cohortId: request.cohortId,
+            profileIds: profileIdsToAdd,
+          },
+        });
+      }
+
+      return { success: true, message: "Profiles added successfully" };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
 
   // State
   const [selectedProfiles, setSelectedProfiles] = useState<SelectedProfile[]>(
@@ -164,7 +229,7 @@ export default function AddStaffToCohort({
               continue;
             }
 
-            // Check if profile exists (using profile_id from v2 response)
+            // Check if profile exists (using profile_id from v3 response)
             const existing = allProfiles.find(
               (p) => p.alias.toLowerCase() === alias.toLowerCase()
             );
@@ -193,13 +258,27 @@ export default function AddStaffToCohort({
           // Add all profiles to cohort in one operation
           if (existingIds.length > 0 || newProfiles.length > 0) {
             try {
-              await addProfilesToCohortMutation.mutateAsync({
+              const request: {
+                cohortId: string;
+                departmentIds: string[];
+                existingProfileIds?: string[];
+                newProfiles?: Array<{
+                  firstName: string;
+                  lastName: string;
+                  alias: string;
+                  role: "ta" | "instructional";
+                }>;
+              } = {
                 cohortId,
                 departmentIds: departmentIds,
-                existingProfileIds:
-                  existingIds.length > 0 ? existingIds : undefined,
-                newProfiles: newProfiles.length > 0 ? newProfiles : undefined,
-              });
+              };
+              if (existingIds.length > 0) {
+                request.existingProfileIds = existingIds;
+              }
+              if (newProfiles.length > 0) {
+                request.newProfiles = newProfiles;
+              }
+              await addProfilesToCohortMutation.mutateAsync(request);
 
               const total = existingIds.length + newProfiles.length;
               toast.success(
@@ -399,12 +478,27 @@ export default function AddStaffToCohort({
       }));
 
     try {
-      await addProfilesToCohortMutation.mutateAsync({
+      const request: {
+        cohortId: string;
+        departmentIds: string[];
+        existingProfileIds?: string[];
+        newProfiles?: Array<{
+          firstName: string;
+          lastName: string;
+          alias: string;
+          role: "ta" | "instructional";
+        }>;
+      } = {
         cohortId: cohortId,
         departmentIds: departmentIds,
-        existingProfileIds: existingIds.length > 0 ? existingIds : undefined,
-        newProfiles: newProfiles.length > 0 ? newProfiles : undefined,
-      });
+      };
+      if (existingIds.length > 0) {
+        request.existingProfileIds = existingIds;
+      }
+      if (newProfiles.length > 0) {
+        request.newProfiles = newProfiles;
+      }
+      await addProfilesToCohortMutation.mutateAsync(request);
 
       toast.success(
         `Successfully added ${selectedProfiles.length} profile(s) to the cohort.`
