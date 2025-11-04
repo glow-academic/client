@@ -33,7 +33,7 @@ export interface SingleProfileCertificateButtonProps<TData> {
 
 export function SingleProfileCertificateButton<TData>({
   table,
-  profileOptions,
+  profileOptions: _profileOptions,
   cohortData = [],
 }: SingleProfileCertificateButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;

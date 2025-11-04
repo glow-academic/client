@@ -605,7 +605,7 @@ export function TourProvider({ children }: TourProviderProps) {
         </div>
       </aside>
     );
-  }, [state, closeTour, prevStep, effectiveProfile, setAttemptId, router, log]);
+  }, [state, closeTour, prevStep, effectiveProfile, setAttemptId, router]);
 
   return (
     <TourContext.Provider value={value}>

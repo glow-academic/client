@@ -56,10 +56,13 @@ import {
 } from "@/components/ui/tooltip";
 
 // Custom Components
-import { ProblemStatementPicker } from "@/components/common/forms/ProblemStatementPicker";
-import { DocumentPicker, type DocumentMappingItem } from "@/components/common/forms/DocumentPicker";
-import { ParameterSelector } from "@/components/parameters/ParameterSelector";
+import {
+  DocumentPicker,
+  type DocumentMappingItem,
+} from "@/components/common/forms/DocumentPicker";
 import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
+import { ProblemStatementPicker } from "@/components/common/forms/ProblemStatementPicker";
+import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 
 // Types and API functions
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
@@ -67,12 +70,12 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getObjectivesFromMapping,
   getParameterItemIdsFromStructure,
   groupParameterItemsByParameterId,
 } from "@/utils/scenario-helpers";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Component for objective input with autocomplete
 function ObjectiveInputWithAutocomplete({
@@ -236,8 +239,8 @@ export default function Scenario({
   const isEditMode = mode === "edit" && !!scenarioId;
 
   // V3 API - fetch scenario detail when editing
-  const { data: scenarioDetail, isLoading: isLoadingScenarioDetail } =
-    useQuery({
+  const { data: scenarioDetail, isLoading: isLoadingScenarioDetail } = useQuery(
+    {
       queryKey: keys.scenarios.with({
         scenarioId: scenarioId || "",
         profileId: effectiveProfile?.id || "",
@@ -250,7 +253,8 @@ export default function Scenario({
           },
         }),
       enabled: !!scenarioId && isEditMode && !!effectiveProfile?.id,
-    });
+    }
+  );
 
   // V3 API - fetch default scenario detail when creating
   const { data: scenarioDetailDefault, isLoading: isLoadingScenarioDefault } =

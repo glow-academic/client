@@ -143,7 +143,6 @@ export default function StaffEditModal({
     formData,
     unlimited,
     updateProfileMutation,
-    log,
     onOpenChange,
     onDone,
   ]);

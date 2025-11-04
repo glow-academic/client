@@ -187,7 +187,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       );
       window.removeEventListener("assistant_error", handleAssistantError);
     };
-  }, [isConnected, queryClient, log]);
+  }, [isConnected, queryClient]);
 
   // Join/leave chat rooms when currentChatId changes - with connection check
   useEffect(() => {
@@ -211,7 +211,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     return () => {
       // Cleanup handled by main useEffect
     };
-  }, [currentChatId, isConnected, joinRoom, leaveRoom, log]);
+  }, [currentChatId, isConnected, joinRoom, leaveRoom]);
 
   // UI state management methods
   const openWidget = useCallback(() => {
@@ -323,7 +323,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       emitStartAssistant,
       emitSendAssistantMessage,
       departmentIds,
-      log,
     ]
   );
 
@@ -346,7 +345,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       toast.error("Failed to stop message");
       setIsStoppingMessage(false);
     }
-  }, [currentChatId, isConnected, emitStopAssistant, log]);
+  }, [currentChatId, isConnected, emitStopAssistant]);
 
   const value: AssistantContextType = {
     uiState,

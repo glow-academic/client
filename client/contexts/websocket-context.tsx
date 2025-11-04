@@ -133,7 +133,7 @@ export function WebSocketProvider({
       // Assistant-specific message events
       socket.on(
         "assistant_new_message",
-        (data: {
+        (_data: {
           message_id: string;
           chat_id: string;
           role: string;
@@ -197,7 +197,7 @@ export function WebSocketProvider({
       // Assistant message token updates
       socket.on(
         "assistant_message_token",
-        (data: {
+        (_data: {
           message_id: string;
           chat_id: string;
           accumulated_content: string;
@@ -466,7 +466,7 @@ export function WebSocketProvider({
 
       socket.on(
         "message_cancelled",
-        (data: { message_id: string; chat_id: string }) => {
+        (_data: { message_id: string; chat_id: string }) => {
           // Invalidate v2 queries (for both assistant and simulation)
           setTimeout(() => {
             queryClient.invalidateQueries({
@@ -479,22 +479,25 @@ export function WebSocketProvider({
         }
       );
 
-      socket.on("title_updated", (data: { chat_id: string; title: string }) => {
-        // Invalidate v2 assistant chat query (will refetch all data with updated title)
-        queryClient.invalidateQueries({
-          queryKey: keys.assistant.all,
-        });
-      });
+      socket.on(
+        "title_updated",
+        (_data: { chat_id: string; title: string }) => {
+          // Invalidate v2 assistant chat query (will refetch all data with updated title)
+          queryClient.invalidateQueries({
+            queryKey: keys.assistant.all,
+          });
+        }
+      );
 
       socket.on(
         "joined_chat",
-        (data: { chat_type: string; chat_id: string }) => {}
+        (_data: { chat_type: string; chat_id: string }) => {}
       );
 
       // Tool call events
       socket.on(
         "tool_call_created",
-        (data: { tool_name: string; chat_id: string }) => {
+        (_data: { tool_name: string; chat_id: string }) => {
           // Invalidate v2 assistant chat query (will refetch all data)
           queryClient.invalidateQueries({
             queryKey: keys.assistant.all,
@@ -504,7 +507,7 @@ export function WebSocketProvider({
 
       socket.on(
         "tool_call_completed",
-        (data: { tool_name: string; chat_id: string }) => {
+        (_data: { tool_name: string; chat_id: string }) => {
           // Invalidate v2 assistant chat query (will refetch all data)
           queryClient.invalidateQueries({
             queryKey: keys.assistant.all,
@@ -557,7 +560,7 @@ export function WebSocketProvider({
 
       socket.on(
         "simulation_message_processing",
-        (data: { chat_id: string; status: string; message: string }) => {}
+        (_data: { chat_id: string; status: string; message: string }) => {}
       );
 
       socket.on(
@@ -709,7 +712,7 @@ export function WebSocketProvider({
 
       socket.on(
         "assistant_message_processing",
-        (data: { chat_id: string; status: string; message: string }) => {}
+        (_data: { chat_id: string; status: string; message: string }) => {}
       );
 
       socket.on(
@@ -780,17 +783,28 @@ export function WebSocketProvider({
       socket.on("connect", () => {
         setIsConnected(true);
         connectionAttempts.current = 0;
-        const payload: Omit<LogEntry, "event" | "level"> = {
+        const payload: {
+          message: string;
+          context: {
+            component: string;
+            function: string;
+            profileId: string | null;
+            transport: string;
+            guestId?: string | null;
+          };
+          correlation?: { sessionId: string };
+        } = {
           message: "Global WebSocket connected successfully",
           context: {
             component: "WebSocketContext",
             function: "onConnect",
             profileId,
             transport: socket.io.engine.transport.name,
-            guestId: !profileId ? guestIdRef.current : undefined,
+            guestId: !profileId ? guestIdRef.current : null,
           },
         };
-        if (socket.id) payload.correlation = { sessionId: socket.id };
+        if (socket.id)
+          payload["correlation"] = { sessionId: socket.id as string };
       });
 
       // Handle connection confirmation from server
@@ -802,24 +816,44 @@ export function WebSocketProvider({
           guest_id?: string;
           server_time: number;
         }) => {
-          const payload2: Omit<LogEntry, "event" | "level"> = {
+          const payload2: {
+            message: string;
+            context: {
+              component: string;
+              function: string;
+              profileId: string | null;
+              guestId?: string | null;
+              serverTime: number;
+              clientTime: number;
+            };
+            correlation?: { sessionId: string };
+          } = {
             message: "Server confirmed WebSocket connection",
             context: {
               component: "WebSocketContext",
               function: "onConnectionConfirmed",
               profileId: data.profile_id,
-              guestId: data.guest_id,
+              guestId: data.guest_id ?? null,
               serverTime: data.server_time,
               clientTime: Date.now(),
             },
           };
-          if (data.sid) payload2.correlation = { sessionId: data.sid };
+          if (data.sid)
+            payload2["correlation"] = { sessionId: data.sid as string };
         }
       );
 
       socket.on("disconnect", (reason: string) => {
         setIsConnected(false);
-        const payload3: Omit<LogEntry, "event" | "level"> = {
+        const payload3: {
+          message: string;
+          context: {
+            component: string;
+            function: string;
+            profileId: string | null;
+          };
+          correlation?: { sessionId: string };
+        } = {
           message: `Global WebSocket disconnected: ${reason}`,
           context: {
             component: "WebSocketContext",
@@ -827,12 +861,24 @@ export function WebSocketProvider({
             profileId,
           },
         };
-        if (socket.id) payload3.correlation = { sessionId: socket.id };
+        if (socket.id)
+          payload3["correlation"] = { sessionId: socket.id as string };
       });
 
       socket.on("connect_error", (error: Error) => {
         connectionAttempts.current++;
-        const payload4: Omit<LogEntry, "event" | "level"> = {
+        const payload4: {
+          message: string;
+          error: Error;
+          context: {
+            component: string;
+            function: string;
+            attempt: number;
+            maxAttempts: number;
+            profileId: string | null;
+          };
+          correlation?: { sessionId: string };
+        } = {
           message: "Global WebSocket connection error",
           error,
           context: {
@@ -843,7 +889,8 @@ export function WebSocketProvider({
             profileId,
           },
         };
-        if (socket.id) payload4.correlation = { sessionId: socket.id };
+        if (socket.id)
+          payload4["correlation"] = { sessionId: socket.id as string };
         setIsConnected(false);
 
         if (connectionAttempts.current >= maxConnectionAttempts) {
@@ -855,8 +902,15 @@ export function WebSocketProvider({
 
       socket.on("reconnect", (attemptNumber: number) => {
         setIsConnected(true);
-        const payload5: Omit<LogEntry, "event" | "level"> = {
-          message: "Global WebSocket reconnected",
+        const payload5: {
+          context: {
+            component: string;
+            function: string;
+            profileId: string | null;
+            attemptNumber: number;
+          };
+          correlation?: { sessionId: string };
+        } = {
           context: {
             component: "WebSocketContext",
             function: "onReconnect",
@@ -864,13 +918,21 @@ export function WebSocketProvider({
             attemptNumber,
           },
         };
-        if (socket.id) payload5.correlation = { sessionId: socket.id };
+        if (socket.id)
+          payload5["correlation"] = { sessionId: socket.id as string };
         toast.success("Connection restored!");
       });
 
       socket.on("reconnect_error", (error: Error) => {
-        const payload6: Omit<LogEntry, "event" | "level"> = {
-          message: "Global WebSocket reconnection failed",
+        const payload6: {
+          error: Error;
+          context: {
+            component: string;
+            function: string;
+            profileId: string | null;
+          };
+          correlation?: { sessionId: string };
+        } = {
           error,
           context: {
             component: "WebSocketContext",
@@ -878,12 +940,21 @@ export function WebSocketProvider({
             profileId,
           },
         };
-        if (socket.id) payload6.correlation = { sessionId: socket.id };
+        if (socket.id)
+          payload6["correlation"] = { sessionId: socket.id as string };
       });
 
       socket.on("reconnect_failed", () => {
         setIsConnected(false);
-        const payload7: Omit<LogEntry, "event" | "level"> = {
+        const payload7: {
+          message: string;
+          context: {
+            component: string;
+            function: string;
+            profileId: string | null;
+          };
+          correlation?: { sessionId: string };
+        } = {
           message: "Global WebSocket reconnection failed permanently",
           context: {
             component: "WebSocketContext",
@@ -891,7 +962,8 @@ export function WebSocketProvider({
             profileId,
           },
         };
-        if (socket.id) payload7.correlation = { sessionId: socket.id };
+        if (socket.id)
+          payload7["correlation"] = { sessionId: socket.id as string };
         toast.error("Connection lost. Please refresh the page to reconnect.");
       });
 
@@ -903,12 +975,26 @@ export function WebSocketProvider({
 
     return () => {
       if (socketRef.current) {
-        const payload8: Omit<LogEntry, "event" | "level"> = {
+        const payload8: {
+          message: string;
+          context: {
+            component: string;
+            function: string;
+            profileId: string | null;
+          };
+          correlation?: { sessionId: string };
+        } = {
           message: "Cleaning up global WebSocket connection",
-          context: { component: "WebSocketContext", function: "cleanup" },
+          context: {
+            component: "WebSocketContext",
+            function: "cleanup",
+            profileId,
+          },
         };
         if (socketRef.current?.id)
-          payload8.correlation = { sessionId: socketRef.current.id };
+          payload8["correlation"] = {
+            sessionId: socketRef.current.id as string,
+          };
         // Leave all rooms before disconnecting using captured rooms
         roomsToCleanup.forEach((roomId) => {
           socketRef.current?.emit("leave_chat", {

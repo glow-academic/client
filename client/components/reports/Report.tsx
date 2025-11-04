@@ -6,12 +6,12 @@
  */
 "use client";
 
+import Dashboard from "@/components/dashboard/Dashboard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfileSimple } from "@/lib/api/v2/hooks/profile";
 import { useEffect } from "react";
-import Dashboard from "../Dashboard";
 
 // Helper function to get initials
 const getInitials = (firstName: string, lastName: string): string => {

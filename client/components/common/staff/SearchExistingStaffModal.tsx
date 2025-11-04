@@ -184,7 +184,6 @@ export default function SearchExistingStaffModal({
     onStagedProfiles,
     onOpenChange,
     onDone,
-    log,
   ]);
 
   return (

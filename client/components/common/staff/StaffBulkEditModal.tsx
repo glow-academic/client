@@ -176,7 +176,6 @@ export default function StaffBulkEditModal({
     isSuperadmin,
     effectiveProfile?.id,
     bulkUpdateMutation,
-    log,
     onOpenChange,
     onDone,
   ]);

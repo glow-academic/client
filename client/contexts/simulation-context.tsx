@@ -835,7 +835,6 @@ export function SimulationProvider({
     attemptId,
     onSimulationFinished,
     handleSimulationCompletion,
-    log,
   ]); // Add queryClient, attemptId, onSimulationFinished, and handleSimulationCompletion to the dependency array
 
   // Listen for grading progress events
@@ -965,7 +964,7 @@ export function SimulationProvider({
       );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentChat?.id, log]);
+  }, [currentChat?.id]);
 
   // Update ref when grading state changes
   useEffect(() => {
@@ -987,7 +986,7 @@ export function SimulationProvider({
       setCurrentChatIndex(idx);
       pendingNextChatIdRef.current = null;
     }
-  }, [chats, log]);
+  }, [chats]);
 
   const value: SimulationContextType = {
     // Raw attempt data for lookups

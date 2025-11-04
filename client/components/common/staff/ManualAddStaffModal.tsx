@@ -353,7 +353,6 @@ export default function ManualAddStaffModal({
     onOpenChange,
     onDone,
     onStagedProfiles,
-    log,
   ]);
 
   return (

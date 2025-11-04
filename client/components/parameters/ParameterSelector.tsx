@@ -17,7 +17,7 @@ import type {
   ParameterItemMapping,
   ParameterMapping,
 } from "@/lib/api/v2/schemas/base";
-import { ParameterItemPicker } from "./ParameterItemPicker";
+import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
 
 // Component for slider with precisely aligned labels
 function SliderLabelContainer({

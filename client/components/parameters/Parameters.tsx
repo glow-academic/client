@@ -53,13 +53,13 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { Input } from "@/components/ui/input";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { Input } from "@/components/ui/input";
 
 export default function Parameters() {
   const router = useRouter();
@@ -182,7 +182,8 @@ export default function Parameters() {
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof parameters)[number]) => row.department_ids ?? [],
+        accessorFn: (row: (typeof parameters)[number]) =>
+          row.department_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("departments") as string[]) ?? [];
           if (value.length === 0) return true;
@@ -235,7 +236,9 @@ export default function Parameters() {
       });
       toast.success(`Parameter "${parameter.name}" duplicated successfully`);
     } catch (error) {
-      toast.error("Failed to duplicate parameter");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to duplicate parameter"
+      );
     } finally {
       setIsDuplicating(null);
     }
@@ -600,7 +603,9 @@ export default function Parameters() {
           {/* Cards Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => renderParameterCard(row.original))
+              table
+                .getRowModel()
+                .rows.map((row) => renderParameterCard(row.original))
             ) : (
               <div className="col-span-full text-center py-8 text-muted-foreground">
                 No parameters match the current filters.

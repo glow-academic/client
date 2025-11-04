@@ -20,15 +20,13 @@ import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useQuery } from "@tanstack/react-query";
 
+import SimulationCard from "@/components/common/layout/SimulationCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import SimulationProgress, {
-  ViewMode,
-} from "./SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
-import SimulationCard from "../simulations/SimulationCard";
+import SimulationProgress, { ViewMode } from "./SimulationProgress";
 
 export default function Home() {
   const { effectiveProfile, activeProfile, effectiveDepartmentIds } =
@@ -57,7 +55,7 @@ export default function Home() {
   // V3 API - Single optimized bundle call with items, history, and mappings
   const { data: bundle, isLoading: isHomeOverviewLoading } = useQuery({
     queryKey: keys.home.with(filters),
-    queryFn: () => api.post("/home/", { body: filters }),
+    queryFn: () => api.post("/home", { body: filters }),
     enabled: !!effectiveProfile?.id,
   });
 
@@ -203,14 +201,14 @@ export default function Home() {
       // 1) incomplete first (hasPassed false first)
       if (!!a?.hasPassed !== !!b?.hasPassed) return a?.hasPassed ? 1 : -1;
 
-      // 2) use cohort array order when available (especially TA)
-      const ai = Number.isFinite(a?.orderIndex)
-        ? a.orderIndex!
-        : Number.POSITIVE_INFINITY;
-      const bi = Number.isFinite(b?.orderIndex)
-        ? b.orderIndex!
-        : Number.POSITIVE_INFINITY;
-      if (ai !== bi) return ai - bi;
+      // // 2) use cohort array order when available (especially TA)
+      // const ai = Number.isFinite(a?.orderIndex)
+      //   ? a.orderIndex!
+      //   : Number.POSITIVE_INFINITY;
+      // const bi = Number.isFinite(b?.orderIndex)
+      //   ? b.orderIndex!
+      //   : Number.POSITIVE_INFINITY;
+      // if (ai !== bi) return ai - bi;
 
       // 3) cohort name alpha as a softer signal
       const ca = (a?.cohortName || "").toLowerCase();
@@ -240,14 +238,14 @@ export default function Home() {
       // 1) incomplete first (hasPassed false first)
       if (!!a?.hasPassed !== !!b?.hasPassed) return a?.hasPassed ? 1 : -1;
 
-      // 2) use cohort array order when available (especially TA)
-      const ai = Number.isFinite(a?.orderIndex)
-        ? a.orderIndex!
-        : Number.POSITIVE_INFINITY;
-      const bi = Number.isFinite(b?.orderIndex)
-        ? b.orderIndex!
-        : Number.POSITIVE_INFINITY;
-      if (ai !== bi) return ai - bi;
+      // // 2) use cohort array order when available (especially TA)
+      // const ai = Number.isFinite(a?.orderIndex)
+      //   ? a.orderIndex!
+      //   : Number.POSITIVE_INFINITY;
+      // const bi = Number.isFinite(b?.orderIndex)
+      //   ? b.orderIndex!
+      //   : Number.POSITIVE_INFINITY;
+      // if (ai !== bi) return ai - bi;
 
       // 3) cohort name alpha as a softer signal
       const ca = (a?.cohortName || "").toLowerCase();
@@ -681,14 +679,14 @@ export default function Home() {
                   profileId: item.profileId,
                   profileName: item.profileName,
                   simulationName: item.simulationName,
-                  numScenarios: item.numScenarios,
+                  numScenarios: item.numScenarios ?? null,
                   numScenariosCompleted: item.numScenariosCompleted,
                   infiniteMode: item.infiniteMode,
                   timeLimit: item.timeLimit ?? null, // timeLimit comes from server in seconds
                   personaNames: item.personaNames,
                   personaColors: item.personaColors,
                   scenario_titles: item.scenario_titles,
-                  score: item.score,
+                  score: item.score ?? null,
                   simulation_id: item.simulation_id,
                   department_id: item.department_ids?.[0] ?? "",
                   scenario_ids: item.scenario_ids,

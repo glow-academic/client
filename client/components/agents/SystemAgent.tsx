@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
+import { RolePicker } from "@/components/common/forms/AgentRolePicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
 import {
@@ -17,7 +19,6 @@ import {
   PromptPicker,
 } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
-import { RolePicker } from "@/components/common/forms/AgentRolePicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +48,6 @@ import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bug, Copy, Eye, Power, Trash2 } from "lucide-react";
-import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
 
 interface SystemAgentFormData {

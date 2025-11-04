@@ -24,7 +24,7 @@ import ChatWidget from "@/components/assistant/ChatWidget";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
-import { DocumentUploadButton } from "@/components/create/DocumentUploadButton";
+import { DocumentUploadButton } from "@/components/documents/DocumentUploadButton";
 import TATour from "@/components/common/layout/TATour";
 import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { AnalyticsProvider } from "@/contexts/analytics-context";

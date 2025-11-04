@@ -97,14 +97,14 @@ export default function ReportProblem({
   }, [isOpen, initialMessage]);
 
   // Handle successful feedback creation
-  const handleSuccess = async (data: CreateFeedbackResponse) => {
+  const handleSuccess = async (_data: CreateFeedbackResponse) => {
     toast.success("Feedback submitted successfully! Thank you for your input.");
     setIsOpen(false);
     resetForm();
   };
 
   // Handle feedback creation errors
-  const handleError = async (error: Error) => {
+  const handleError = async (_error: Error) => {
     toast.error("Failed to submit feedback. Please try again.");
   };
 

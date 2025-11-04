@@ -28,18 +28,18 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import StaffBulkEditModal from "@/components/staff/StaffBulkEditModal";
+import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
+import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
-import StaffEditModal from "@/components/staff/StaffEditModal";
+import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
 import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
+import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { SimulationPicker } from "./SimulationPicker";
 
 export interface CohortProps {
   cohortId?: string;

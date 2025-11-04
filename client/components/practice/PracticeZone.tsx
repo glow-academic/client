@@ -6,7 +6,7 @@ import type {
 } from "@/lib/api/v2/schemas/rubrics";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
-import SimulationCard from "../simulations/SimulationCard";
+import SimulationCard from "@/components/common/layout/SimulationCard";
 
 interface PracticeZoneProps {
   simulations: PracticeSimulationItem[];

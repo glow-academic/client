@@ -51,7 +51,7 @@ export function ProfileRolePicker({
   placeholder = "Select roles...",
   className,
   hideSelectedChips = true,
-}: RolePickerProps) {
+}: ProfileRolePickerProps) {
   const [open, setOpen] = React.useState(false);
 
   const handleSelect = (role: ProfileRole) => {

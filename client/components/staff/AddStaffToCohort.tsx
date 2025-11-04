@@ -229,7 +229,6 @@ export default function AddStaffToCohort({
       addProfilesToCohortMutation,
       cohortId,
       departmentIds,
-      log,
     ]
   );
 
@@ -427,7 +426,6 @@ export default function AddStaffToCohort({
     departmentIds,
     addProfilesToCohortMutation,
     onDone,
-    log,
   ]);
 
   return (

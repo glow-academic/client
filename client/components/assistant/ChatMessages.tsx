@@ -230,8 +230,7 @@ export default function ChatMessages({
   showPrompts,
   variant = "expanded",
 }: ChatMessagesProps = {}) {
-  const { currentChatId, isConnected, messages, toolCalls, isLoadingChats } =
-    useAssistant();
+  const { currentChatId, messages, toolCalls, isLoadingChats } = useAssistant();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   // Track if user is scrolled to bottom
@@ -385,7 +384,8 @@ export default function ChatMessages({
         >
           {timeline.map((item) => {
             if (item.type === "message") {
-              const message = item.data as AssistantChatFullResponse["messages"][number];
+              const message =
+                item.data as AssistantChatFullResponse["messages"][number];
               return (
                 <div
                   key={message.id}
@@ -438,7 +438,8 @@ export default function ChatMessages({
                 </div>
               );
             } else {
-              const toolCall = item.data as AssistantChatFullResponse["toolCalls"][number];
+              const toolCall =
+                item.data as AssistantChatFullResponse["toolCalls"][number];
               return (
                 <div key={toolCall.id} className="flex justify-start">
                   <div className="max-w-[80%] w-full">
