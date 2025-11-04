@@ -45,7 +45,9 @@ export default function AttemptMessages({
 
   // Infer types directly from simulation context
   type Message = NonNullable<
-    NonNullable<typeof simulationContext.attemptData>["chats"][number]["messages"][number]
+    NonNullable<
+      NonNullable<typeof simulationContext>["attemptData"]
+    >["chats"][number]["messages"][number]
   >;
 
   const [showScrollButton, setShowScrollButton] = useState(false);

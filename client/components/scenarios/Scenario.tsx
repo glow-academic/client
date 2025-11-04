@@ -298,7 +298,7 @@ export default function Scenario({
 
   // V3 API - create mutation
   const createScenarioMutation = useMutation({
-    mutationFn: (body: unknown) => api.post("/scenarios/create", { body }),
+    mutationFn: (body) => api.post("/scenarios/create", { body }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
     },

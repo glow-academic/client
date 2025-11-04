@@ -34,6 +34,7 @@ import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import type { components } from "@/lib/api-types";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -204,9 +205,18 @@ export default function Cohort({ cohortId }: CohortProps) {
     clearEntityMetadata,
   ]);
 
+  // Explicit types from API schema
+  type CreateCohortRequest =
+    components["schemas"]["app__schemas__cohorts__CreateCohortRequest"];
+  type UpdateCohortRequest =
+    components["schemas"]["app__schemas__cohorts__UpdateCohortRequest"];
+
   // V3 API - create mutation
   const createCohortMutation = useMutation({
-    mutationFn: (body: unknown) => api.post("/cohorts/create", { body }),
+    mutationFn: (body: CreateCohortRequest) =>
+      api.post("/cohorts/create", { body } as Parameters<
+        typeof api.post<"/cohorts/create">
+      >[1]),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
     },
@@ -214,7 +224,10 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   // V3 API - update mutation
   const updateCohortMutation = useMutation({
-    mutationFn: (body: unknown) => api.post("/cohorts/update", { body }),
+    mutationFn: (body: UpdateCohortRequest) =>
+      api.post("/cohorts/update", { body } as Parameters<
+        typeof api.post<"/cohorts/update">
+      >[1]),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
     },
@@ -620,18 +633,21 @@ export default function Cohort({ cohortId }: CohortProps) {
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
         // UPDATE mode - V2 API handles junction tables with active states
-        await updateCohortMutation.mutateAsync({
+        const updateRequest: UpdateCohortRequest = {
           cohortId: targetCohortId,
           title: formData.title || "",
-          description: formData.description || "",
-          department_ids: formData.departmentIds || null,
+          description: formData.description || null,
+          department_ids: formData.departmentIds?.length
+            ? formData.departmentIds
+            : null,
           active: formData.active ?? true,
           simulation_ids: currentSimulationIds.map((simId) => ({
             simulation_id: simId,
             active: simulationActiveStates[simId] ?? true,
-          })),
+          })) as UpdateCohortRequest["simulation_ids"],
           profile_ids: profileIds,
-        });
+        };
+        await updateCohortMutation.mutateAsync(updateRequest);
 
         toast.success("Cohort updated successfully!");
         // Clear staged profiles after successful update
@@ -639,17 +655,20 @@ export default function Cohort({ cohortId }: CohortProps) {
         setStagedProfilesToRemove([]);
       } else {
         // CREATE mode - V2 API handles junction tables with active states
-        await createCohortMutation.mutateAsync({
+        const createRequest: CreateCohortRequest = {
           title: formData.title || "",
-          description: formData.description || "",
-          department_ids: formData.departmentIds || null,
+          description: formData.description || null,
+          department_ids: formData.departmentIds?.length
+            ? formData.departmentIds
+            : null,
           active: formData.active || true,
           simulation_ids: currentSimulationIds.map((simId) => ({
             simulation_id: simId,
             active: simulationActiveStates[simId] ?? true,
-          })),
+          })) as CreateCohortRequest["simulation_ids"],
           profile_ids: profileIds,
-        });
+        };
+        await createCohortMutation.mutateAsync(createRequest);
 
         toast.success("Cohort created successfully!");
         // Clear staged profiles after successful create
@@ -1064,9 +1083,11 @@ export default function Cohort({ cohortId }: CohortProps) {
             );
 
             // Combine existing staff with staged profiles (staged profiles first)
-            const mergedStaff = [
+            const mergedStaff: (ProfileListItem & {
+              isStaged?: boolean;
+            })[] = [
               ...stagedWithDetails,
-              ...filteredExistingStaff,
+              ...(filteredExistingStaff as ProfileListItem[]),
             ];
 
             return (
@@ -1371,27 +1392,59 @@ export default function Cohort({ cohortId }: CohortProps) {
                     const existingStaffIds = new Set(
                       existingStaff.map((s) => s.profile_id)
                     );
-                    const stagedWithDetails = stagedProfilesToAdd.map(
-                      (staged) => ({
+                    const stagedWithDetails: (ProfileListItem & {
+                      isStaged?: boolean;
+                    })[] = stagedProfilesToAdd.map((staged) => {
+                      // Create minimal ProfileListItem from staged data
+                      const firstName = staged.firstName || "";
+                      const lastName = staged.lastName || "";
+                      const alias = staged.alias || "";
+                      return {
                         profile_id: staged.profileId,
+                        first_name: firstName,
+                        last_name: lastName,
+                        alias: alias,
+                        name: `${firstName} ${lastName}`.trim() || alias,
+                        role: staged.role || "ta",
+                        email: alias
+                          ? `${alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`
+                          : "",
+                        initials:
+                          `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
+                          "??",
+                        active: true,
+                        last_active: null,
+                        cohort_ids: cohortId ? [cohortId] : [],
+                        department_ids:
+                          formData.departmentIds &&
+                          formData.departmentIds.length > 0
+                            ? formData.departmentIds
+                            : [],
+                        requests_per_day: staged.requestsPerDay ?? null,
+                        total_requests: staged.totalRequests ?? 0,
+                        default_profile: false,
+                        requests_in_last_day: 0,
+                        can_edit: false,
+                        can_delete: false,
                         can_remove: true, // Staged profiles can always be removed
                         isStaged: true,
-                      })
-                    );
+                      };
+                    });
                     const stagedRemovalsSet = new Set(stagedProfilesToRemove);
                     const filteredExistingStaff = existingStaff.filter(
                       (s) => !stagedRemovalsSet.has(s.profile_id)
                     );
-                    const mergedStaffForCheck = [
+                    const mergedStaffForCheck: (ProfileListItem & {
+                      isStaged?: boolean;
+                    })[] = [
                       ...stagedWithDetails,
-                      ...filteredExistingStaff,
+                      ...(filteredExistingStaff as ProfileListItem[]),
                     ];
 
                     // Filter to only removable profiles (use server-side can_remove)
                     const removableIds = selectedStaffIds.filter((id) => {
                       const staff = mergedStaffForCheck.find(
-                        (s: ProfileListItem & { isStaged?: boolean }) =>
-                          s.profile_id === id
+                        (s) => s.profile_id === id
                       );
                       if (!staff) return false;
                       const isStaged = (

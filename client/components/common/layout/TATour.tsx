@@ -5,7 +5,7 @@
  * 01/15/2025
  */
 "use client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { HelpCircle, Play } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -17,7 +17,6 @@ import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component
@@ -116,42 +115,6 @@ export default function TATour() {
     },
   });
 
-  // V3 API: Logger helper functions
-  const logToApi = async (
-    level: "info" | "warn" | "error" | "debug",
-    event: string,
-    rest: {
-      message?: string;
-      subject?: { entityType?: string; entityId?: string };
-      context?: Record<string, unknown>;
-      error?: unknown;
-    }
-  ) => {
-    try {
-      await api.post("/logs/create", {
-        body: {
-          event,
-          level,
-          actor: { profileId: effectiveProfile?.id || "" },
-          ...rest,
-        },
-      });
-    } catch {
-      // Silently fail logging - don't break the app if logging fails
-    }
-  };
-
-  const info = (event: string, rest: Parameters<typeof logToApi>[2]) =>
-    logToApi("info", event, rest);
-  const error = (event: string, rest: Parameters<typeof logToApi>[2]) =>
-    logToApi("error", event, rest);
-  const debug = (event: string, rest: Parameters<typeof logToApi>[2]) =>
-    logToApi("debug", event, rest);
-
-  // Comprehensive debug logging on every render
-  useEffect(() => {
-    // Removed logInfo call to prevent Next.js 15 server function error
-  });
   const {
     state: tourState,
     openTour,
@@ -188,29 +151,9 @@ export default function TATour() {
   const handleStepComplete = useCallback(
     async (stepIndex: number) => {
       if (!effectiveProfile) {
-        error("tour.step.complete.failed", {
-          message: "No effective profile",
-          context: {
-            component: "TATour",
-            function: "handleStepComplete",
-            stepIndex,
-          },
-        });
         return;
       }
 
-      info("tour.step.complete", {
-        message: "Completing tour step",
-        subject: { entityType: "tour", entityId: "ta" },
-        context: {
-          component: "TATour",
-          function: "handleStepComplete",
-          stepIndex,
-          stepTitle: tourState.steps[stepIndex]?.title,
-          currentViewedIntro: effectiveProfile.viewedIntro,
-          currentViewedChat: effectiveProfile.viewedChat,
-        },
-      });
       completeStep(stepIndex);
 
       // Get current steps from tour state ref to avoid dependency issues
@@ -234,32 +177,12 @@ export default function TATour() {
           await markIntroCompleteMutation.mutateAsync({
             profileId: effectiveProfile.id,
           });
-          info("tour.profile.flag.updated", {
-            message: "Updated profile viewedIntro",
-            subject: { entityType: "profile", entityId: effectiveProfile.id },
-            context: {
-              component: "TATour",
-              function: "handleStepComplete",
-              flag: "viewedIntro",
-              value: true,
-            },
-          });
           profileUpdated = true;
         }
 
         if (chatStepsComplete && !effectiveProfile.viewedChat) {
           await markChatCompleteMutation.mutateAsync({
             profileId: effectiveProfile.id,
-          });
-          info("tour.profile.flag.updated", {
-            message: "Updated profile viewedChat",
-            subject: { entityType: "profile", entityId: effectiveProfile.id },
-            context: {
-              component: "TATour",
-              function: "handleStepComplete",
-              flag: "viewedChat",
-              value: true,
-            },
           });
           profileUpdated = true;
         }
@@ -270,39 +193,19 @@ export default function TATour() {
           queryClient.invalidateQueries({
             queryKey: keys.profile.all,
           });
-
-          debug("tour.profile.invalidate_queries", {
-            message: "Invalidated layout context after profile update",
-            context: {
-              component: "TATour",
-              function: "handleStepComplete",
-              viewedIntro: introStepsComplete,
-              viewedChat: chatStepsComplete,
-            },
-          });
         }
       } catch (err) {
-        error("tour.profile.update.failed", {
-          message: "Error updating profile for tour completion",
-          error: err,
-          context: {
-            component: "TATour",
-            function: "handleStepComplete",
-            stepIndex,
-          },
+        toast.error("Failed to complete step. Please try again.", {
+          description: (err as Error).message ?? "Unknown error",
         });
       }
     },
     [
       effectiveProfile,
       completeStep,
-      tourState.steps,
       markIntroCompleteMutation,
       markChatCompleteMutation,
       queryClient,
-      error,
-      info,
-      debug,
     ]
   );
 
@@ -324,34 +227,17 @@ export default function TATour() {
     const targetPath = `/cohorts/c/${firstCohort.id}`;
     expectedPathnameRef.current = targetPath;
 
-    debug("tour.navigate.start", {
-      message: "Navigating to cohort leaderboard",
-      subject: { entityType: "cohort", entityId: firstCohort.id },
-      context: {
-        component: "TATour",
-        function: "handleNavigateToCohortLeaderboard",
-        targetPath,
-      },
-    });
     router.push(targetPath);
 
     // Set a fallback timeout in case navigation fails
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       if (expectedPathnameRef.current === targetPath) {
-        debug("tour.navigate.timeout", {
-          message: "Navigation timeout",
-          context: {
-            component: "TATour",
-            function: "handleNavigateToCohortLeaderboard",
-            targetPath,
-          },
-        });
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
     }, 5000); // 5 second fallback timeout
-  }, [taCohorts, router, setNavigating, debug]);
+  }, [taCohorts, router, setNavigating]);
 
   const handleStartPracticeSimulation = useCallback(
     async (simulationId: string) => {
@@ -367,10 +253,6 @@ export default function TATour() {
 
       // // Use stored attemptId if available
       // if (tourState.attemptId) {
-      //   info("tour.simulation.use_stored_attempt", {
-      //     message: "Using stored attemptId for tour",
-      //     context: { component: "TATour", attemptId: tourState.attemptId },
-      //   });
       //   router.push(`/practice/a/${tourState.attemptId}`);
       //   return;
       // }
@@ -381,15 +263,6 @@ export default function TATour() {
       });
 
       try {
-        info("tour.simulation.start", {
-          message: "Starting practice simulation for tour",
-          subject: { entityType: "simulation", entityId: simulationId },
-          context: {
-            component: "TATour",
-            function: "handleStartPracticeSimulation",
-          },
-        });
-
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: String(effectiveProfile.id),
@@ -403,17 +276,10 @@ export default function TATour() {
           setLoadingSimulation(null);
         }, 30000);
       } catch (err) {
-        error("tour.simulation.start.failed", {
-          message: "Error starting simulation",
-          error: err,
-          subject: { entityType: "simulation", entityId: simulationId },
-          context: {
-            component: "TATour",
-            function: "handleStartPracticeSimulation",
-          },
-        });
         toast.dismiss(toastId);
-        toast.error("Failed to start simulation. Please try again.");
+        toast.error("Failed to start simulation. Please try again.", {
+          description: (err as Error).message ?? "Unknown error",
+        });
         setLoadingSimulation(null);
       }
     },
@@ -422,8 +288,6 @@ export default function TATour() {
       effectiveProfile?.id,
       emitStartSimulation,
       setLoadingSimulation,
-      info,
-      error,
     ]
   );
 
@@ -432,15 +296,6 @@ export default function TATour() {
     const targetPath = "/practice";
     expectedPathnameRef.current = targetPath;
 
-    debug("tour.navigate.start", {
-      message: "Navigating to practice page",
-      context: {
-        component: "TATour",
-        function: "handleNavigateToPractice",
-        targetPath,
-      },
-    });
-
     // Navigate to practice page
     router.push(targetPath);
 
@@ -448,34 +303,17 @@ export default function TATour() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       if (expectedPathnameRef.current === targetPath) {
-        debug("tour.navigate.timeout", {
-          message: "Navigation timeout",
-          context: {
-            component: "TATour",
-            function: "handleNavigateToPractice",
-            targetPath,
-          },
-        });
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
     }, 5000); // 5 second fallback timeout
-  }, [router, setNavigating, debug]);
+  }, [router, setNavigating]);
 
   // Back navigation handlers
   const handleNavigateBackToPractice = useCallback(async () => {
     setNavigating(true);
     const targetPath = "/practice";
     expectedPathnameRef.current = targetPath;
-
-    debug("tour.navigate.back", {
-      message: "Navigating back to practice page",
-      context: {
-        component: "TATour",
-        function: "handleNavigateBackToPractice",
-        targetPath,
-      },
-    });
 
     // Navigate back to practice page
     router.push(targetPath);
@@ -484,33 +322,16 @@ export default function TATour() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       if (expectedPathnameRef.current === targetPath) {
-        debug("tour.navigate.timeout", {
-          message: "Back navigation timeout",
-          context: {
-            component: "TATour",
-            function: "handleNavigateBackToPractice",
-            targetPath,
-          },
-        });
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
     }, 3000); // 3 second fallback timeout for back navigation
-  }, [router, setNavigating, debug]);
+  }, [router, setNavigating]);
 
   const handleNavigateBackToHome = useCallback(async () => {
     setNavigating(true);
     const targetPath = "/home";
     expectedPathnameRef.current = targetPath;
-
-    debug("tour.navigate.back", {
-      message: "Navigating back to home page",
-      context: {
-        component: "TATour",
-        function: "handleNavigateBackToHome",
-        targetPath,
-      },
-    });
 
     // Navigate back to home page
     router.push(targetPath);
@@ -519,19 +340,11 @@ export default function TATour() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       if (expectedPathnameRef.current === targetPath) {
-        debug("tour.navigate.timeout", {
-          message: "Back navigation timeout",
-          context: {
-            component: "TATour",
-            function: "handleNavigateBackToHome",
-            targetPath,
-          },
-        });
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
     }, 5000); // 5 second fallback timeout for back navigation
-  }, [router, setNavigating, debug]);
+  }, [router, setNavigating]);
 
   const handleNavigateBackToCohortLeaderboard = useCallback(async () => {
     if (taCohorts.length === 0) {
@@ -551,34 +364,17 @@ export default function TATour() {
     const targetPath = `/cohorts/c/${firstCohort.id}`;
     expectedPathnameRef.current = targetPath;
 
-    debug("tour.navigate.back", {
-      message: "Navigating back to cohort leaderboard",
-      subject: { entityType: "cohort", entityId: firstCohort.id },
-      context: {
-        component: "TATour",
-        function: "handleNavigateBackToCohortLeaderboard",
-        targetPath,
-      },
-    });
     router.push(targetPath);
 
     // Set a fallback timeout in case navigation fails
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       if (expectedPathnameRef.current === targetPath) {
-        debug("tour.navigate.timeout", {
-          message: "Back navigation timeout",
-          context: {
-            component: "TATour",
-            function: "handleNavigateBackToCohortLeaderboard",
-            targetPath,
-          },
-        });
         setNavigating(false);
         expectedPathnameRef.current = null;
       }
     }, 5000); // 5 second fallback timeout for back navigation
-  }, [taCohorts, router, setNavigating, debug]);
+  }, [taCohorts, router, setNavigating]);
 
   // Initialize tour steps and launch tour
   useEffect(() => {
@@ -586,25 +382,6 @@ export default function TATour() {
     if (isFullEmulation) {
       return;
     }
-
-    const evt1: {
-      message: string;
-      context: Record<string, unknown>;
-    } = {
-      message: "TATour effect",
-      context: {
-        component: "TATour",
-        role: effectiveProfile?.role,
-        viewedIntro: effectiveProfile?.viewedIntro,
-        viewedChat: effectiveProfile?.viewedChat,
-        isOpen: tourState.isOpen,
-        currentStep: tourState.currentStep,
-        stepsLength: tourState.steps.length,
-        tourProfileId: tourState.profile?.id,
-        attemptId: tourState.attemptId ?? undefined,
-      },
-    };
-    debug("tour.effect", evt1);
 
     const isEmulatingAnother = Boolean(
       effectiveProfile?.id &&
@@ -621,22 +398,11 @@ export default function TATour() {
     }
 
     if (!effectiveProfile || effectiveProfile.role !== "ta") {
-      const evt2: {
-        message: string;
-        context: Record<string, unknown>;
-      } = {
-        message: "Skipping initialization",
-        context: { component: "TATour", role: effectiveProfile?.role },
-      };
-      debug("tour.init.skip", evt2);
       return;
     }
 
     // If TA has no cohorts, don't initialize or show the tour at all
     if (taCohorts.length === 0) {
-      info("tour.init.no_cohorts", {
-        message: "TA has no cohorts; not initializing or showing tour",
-      });
       setShowGuideButton(false);
       closeTour();
       setAttemptId(null);
@@ -648,18 +414,6 @@ export default function TATour() {
       tourState.steps.length > 0 &&
       tourState.profile?.id === effectiveProfile.id
     ) {
-      debug("tour.init.already_initialized", {
-        message: "Already initialized for this profile",
-        context: {
-          component: "TATour",
-          stepsLength: tourState.steps.length,
-          isOpen: tourState.isOpen,
-          viewedIntro: effectiveProfile.viewedIntro,
-          viewedChat: effectiveProfile.viewedChat,
-          attemptId: tourState.attemptId ?? undefined,
-        },
-      });
-
       // Check if tour should be closed based on completion status
       // Note: We no longer auto-close completed tours - they show completion screen
       if (
@@ -667,10 +421,6 @@ export default function TATour() {
         effectiveProfile.viewedChat &&
         tourState.isOpen
       ) {
-        info("tour.completed", {
-          message: "User completed tour, keeping open for completion screen",
-          context: { component: "TATour" },
-        });
         // Don't close - let the completion screen show
       }
       return;
@@ -682,19 +432,6 @@ export default function TATour() {
       effectiveProfile.viewedChat &&
       !tourState.attemptId
     ) {
-      const evt3: {
-        message: string;
-        context: Record<string, unknown>;
-      } = {
-        message: "User has officially completed tour, not initializing",
-        context: {
-          component: "TATour",
-          viewedIntro: effectiveProfile.viewedIntro,
-          viewedChat: effectiveProfile.viewedChat,
-          attemptId: tourState.attemptId ?? undefined,
-        },
-      };
-      info("tour.completed", evt3);
       return;
     }
 
@@ -721,45 +458,20 @@ export default function TATour() {
       initialStep = 4;
     }
 
-    debug("tour.steps.created", {
-      message: "Created steps",
-      context: { component: "TATour", stepsLength: steps.length, initialStep },
-    });
-
     // Always initialize the tour with steps (this sets up the guide button)
     openTour(steps, effectiveProfile, initialStep);
-    info("tour.opened", {
-      context: { component: "TATour" },
-    });
 
     // Navigate to the correct page for the initial step
     if (initialStep >= 0 && initialStep < steps.length) {
       const targetStep = steps[initialStep];
       if (targetStep && targetStep.page && targetStep.page !== pathname) {
         const targetPage = targetStep.page;
-        debug("tour.navigate.start", {
-          message: "Navigating to correct page for tour step",
-          context: {
-            component: "TATour",
-            stepIndex: initialStep,
-            targetPage,
-            currentPath: pathname,
-          },
-        });
         router.push(targetPage);
       }
     }
 
     // If user has completed the tour, show completion screen instead of closing
     if (effectiveProfile.viewedIntro && effectiveProfile.viewedChat) {
-      const evt4: {
-        message: string;
-        context: Record<string, unknown>;
-      } = {
-        message: "User completed tour, showing completion screen",
-        context: { component: "TATour" },
-      };
-      info("tour.completed", evt4);
       // Don't close the tour - let it show the completion screen
     }
   }, [
@@ -779,8 +491,6 @@ export default function TATour() {
     router, // Add router back as it's needed
     taCohorts, // Add taCohorts dependency
     pathname, // Add pathname dependency
-    debug,
-    info,
   ]);
 
   // Function to navigate to the correct page for the current step
@@ -791,15 +501,6 @@ export default function TATour() {
         if (step && step.page && step.page !== pathname) {
           // For steps 3-4 (send-message and end-chat), check if we need to wait for attemptId
           if ((stepIndex === 3 || stepIndex === 4) && !tourState.attemptId) {
-            info("tour.navigate.skip_no_attempt", {
-              message: "Skipping navigation to attempt page - no attemptId yet",
-              context: {
-                component: "TATour",
-                stepIndex,
-                targetPage: step.page,
-                attemptId: tourState.attemptId,
-              },
-            });
             return;
           }
 
@@ -813,21 +514,12 @@ export default function TATour() {
             targetPage = `/practice/a/${tourState.attemptId}`;
           }
 
-          debug("tour.navigate.to_step", {
-            message: "Navigating to page for tour step",
-            context: {
-              component: "TATour",
-              stepIndex,
-              targetPage,
-              currentPath: pathname,
-            },
-          });
           expectedPathnameRef.current = targetPage;
           router.push(targetPage);
         }
       }
     },
-    [tourState.steps, pathname, router, tourState.attemptId, debug, info]
+    [tourState.steps, pathname, router, tourState.attemptId]
   );
 
   // Navigate to correct page when tour is opened
@@ -848,31 +540,12 @@ export default function TATour() {
 
     if (tourState.isOpen && tourState.attemptId && tourState.steps.length > 0) {
       const currentStep = tourState.steps[tourState.currentStep];
-      debug("tour.attempt.available", {
-        message: "AttemptId available",
-        context: {
-          component: "TATour",
-          attemptId: tourState.attemptId,
-          currentStep: tourState.currentStep,
-          currentStepPage: currentStep?.page,
-          pathname,
-        },
-      });
 
       if (
         currentStep &&
         (tourState.currentStep === 3 || tourState.currentStep === 4) &&
         currentStep.page === "/practice"
       ) {
-        debug("tour.navigate.start", {
-          message: "Navigating to attempt page",
-          context: {
-            component: "TATour",
-            attemptId: tourState.attemptId,
-            currentStep: tourState.currentStep,
-            targetPage: `/practice/a/${tourState.attemptId}`,
-          },
-        });
         router.push(`/practice/a/${tourState.attemptId}`);
       }
     }
@@ -884,36 +557,16 @@ export default function TATour() {
     tourState.steps,
     router,
     pathname,
-    debug,
   ]);
 
   // Monitor pathname changes to set navigating to false when we reach expected destination
   useEffect(() => {
     if (isFullEmulation) return; // Skip during full emulation
 
-    debug("tour.path.monitor", {
-      message: "Pathname monitoring",
-      context: {
-        component: "TATour",
-        expectedPath: expectedPathnameRef.current ?? undefined,
-        currentPath: pathname,
-        isNavigating: tourState.isNavigating,
-        tourOpen: tourState.isOpen,
-      },
-    });
-
     if (
       expectedPathnameRef.current &&
       pathname === expectedPathnameRef.current
     ) {
-      debug("tour.navigate.reached", {
-        message: "Reached expected destination",
-        context: {
-          component: "TATour",
-          expectedPath: expectedPathnameRef.current ?? undefined,
-          currentPath: pathname,
-        },
-      });
       setNavigating(false);
       expectedPathnameRef.current = null;
 
@@ -929,7 +582,6 @@ export default function TATour() {
     setNavigating,
     tourState.isNavigating,
     tourState.isOpen,
-    debug,
   ]);
 
   // Fallback mechanism: set navigating to false after a delay if it's still true
@@ -938,14 +590,6 @@ export default function TATour() {
 
     if (tourState.isNavigating) {
       const fallbackTimeout = setTimeout(() => {
-        debug("tour.navigate.timeout", {
-          message: "Fallback timeout setting navigating false",
-          context: {
-            component: "TATour",
-            currentPath: pathname,
-            expectedPath: expectedPathnameRef.current ?? undefined,
-          },
-        });
         setNavigating(false);
         expectedPathnameRef.current = null;
         if (timeoutRef.current) {
@@ -957,7 +601,7 @@ export default function TATour() {
       return () => clearTimeout(fallbackTimeout);
     }
     return undefined;
-  }, [isFullEmulation, tourState.isNavigating, pathname, setNavigating, debug]);
+  }, [isFullEmulation, tourState.isNavigating, pathname, setNavigating]);
 
   // Handle automatic step completion based on current location
   useEffect(() => {
@@ -967,28 +611,12 @@ export default function TATour() {
     const currentStep = tourState.steps[tourState.currentStep];
     if (!currentStep || currentStep.isCompleted) return;
 
-    debug("tour.step.check_auto_complete", {
-      message: "Checking auto-completion for step",
-      context: {
-        component: "TATour",
-        stepIndex: tourState.currentStep,
-        pathname,
-        stepId: currentStep.id,
-        stepPage: currentStep.page,
-        attemptId: tourState.attemptId ?? undefined,
-      },
-    });
-
     // Step 0: Home overview - auto-complete when on home page
     if (
       tourState.currentStep === 0 &&
       pathname === "/home" &&
       !tourState.steps[0]?.isCompleted
     ) {
-      info("tour.step.auto_complete", {
-        message: "Auto-completing home step",
-        context: { component: "TATour", function: "autoComplete", step: 0 },
-      });
       handleStepComplete(0);
       // Don't auto-advance - let user control progression
     }
@@ -999,10 +627,6 @@ export default function TATour() {
       pathname.includes("/cohorts/c/") &&
       !tourState.steps[1]?.isCompleted
     ) {
-      info("tour.step.auto_complete", {
-        message: "Auto-completing cohort leaderboard step",
-        context: { component: "TATour", function: "autoComplete", step: 1 },
-      });
       handleStepComplete(1);
       // Don't auto-advance - let user control progression
     }
@@ -1026,8 +650,6 @@ export default function TATour() {
     tourState.isOpen,
     handleStepComplete,
     tourState.attemptId,
-    debug,
-    info,
   ]);
 
   // Set up WebSocket event listeners for tour progression
@@ -1039,10 +661,6 @@ export default function TATour() {
         clearTimeout(timeoutRef.current);
       }
       const { attemptId } = event.detail;
-      info("tour.simulation.started", {
-        message: "Simulation started for tour",
-        context: { component: "TATour", attemptId },
-      });
 
       // Only store attemptId for persistence if user hasn't completed the tour
       // This prevents the tour from showing when users have already completed it
@@ -1053,14 +671,9 @@ export default function TATour() {
 
       // Invalidate simulation context queries to ensure fresh data when navigating to step 3
       if (attemptId) {
-        debug("tour.simulation.invalidate_queries", {
-          message: "Invalidating simulation context queries for new attempt",
-          context: { component: "TATour", attemptId },
-        });
-
         // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
         queryClient.invalidateQueries({
-          queryKey: attemptsFullKeys.all,
+          queryKey: keys.attempts.all,
         });
 
         // Invalidate v2 layout context (for updated simulations list)
@@ -1075,29 +688,15 @@ export default function TATour() {
         tourState.currentStep === 2 &&
         !tourState.steps[2]?.isCompleted
       ) {
-        info("tour.step.advance", {
-          message:
-            "Simulation started - completing step 2 and advancing to step 3",
-          context: { component: "TATour" },
-        });
         handleStepComplete(2);
         nextStep();
         // Don't set navigating to false here - let the pathname monitoring handle it
         // when we actually reach the attempt page
       } else if (tourState.isOpen && tourState.currentStep === 3) {
         // If we're already on step 3, just reset navigating state
-        debug("tour.step.already_advanced", {
-          message:
-            "Simulation started - already on step 3, just resetting navigation",
-          context: { component: "TATour" },
-        });
         setNavigating(false);
       } else if (tourState.isOpen && tourState.currentStep === 2) {
         // Just reset navigating state if step is already completed
-        debug("tour.step.already_completed", {
-          message: "Simulation started - step 2 already completed",
-          context: { component: "TATour" },
-        });
       }
 
       // Let WebSocket events handle step completion - don't auto-advance here
@@ -1112,65 +711,23 @@ export default function TATour() {
     };
 
     // Listen for simulation button press (before server call)
-    const handleSimulationButtonPressed = (event: CustomEvent) => {
-      debug("tour.simulation.button_pressed", {
-        context: {
-          component: "TATour",
-          simulationId: event.detail?.simulationId,
-          tourOpen: tourState.isOpen,
-          currentStep: tourState.currentStep,
-        },
-      });
-
+    const handleSimulationButtonPressed = () => {
       // Set navigating state to true when simulation button is pressed (but don't complete step yet)
       if (tourState.isOpen && tourState.currentStep === 2) {
         setNavigating(true);
-        debug("tour.navigate.set_navigating", {
-          message: "Simulation button pressed - navigating true",
-          context: { component: "TATour" },
-        });
       }
     };
 
     // Listen for message sent events (step 3) - when user sends their first message
-    const handleMessageSent = (event: CustomEvent) => {
-      debug("tour.message.sent_event", {
-        context: {
-          component: "TATour",
-          tourOpen: tourState.isOpen,
-          currentStep: tourState.currentStep,
-          step3Completed: tourState.steps[3]?.isCompleted,
-          messageId: event.detail?.messageId,
-          chatId: event.detail?.chatId,
-          message: event.detail?.message,
-          isTourMessage: event.detail?.isTourMessage,
-          totalSteps: tourState.steps.length,
-          step3Exists: !!tourState.steps[3],
-        },
-      });
-
+    const handleMessageSent = () => {
       // Set navigating to true when a message is sent (but don't complete step yet)
       if (tourState.isOpen && tourState.currentStep === 3) {
         setNavigating(true);
-        debug("tour.navigate.set_navigating", {
-          message: "Message sent - navigating true",
-          context: { component: "TATour" },
-        });
       }
     };
 
     // Listen for response complete events - when we receive the full response from backend
-    const handleResponseComplete = (event: CustomEvent) => {
-      debug("tour.response.complete_event", {
-        context: {
-          component: "TATour",
-          tourOpen: tourState.isOpen,
-          currentStep: tourState.currentStep,
-          chatId: event.detail?.chatId,
-          messageId: event.detail?.messageId,
-        },
-      });
-
+    const handleResponseComplete = () => {
       // Set navigating to false and complete step 3 when response is complete
       if (
         tourState.isOpen &&
@@ -1178,58 +735,24 @@ export default function TATour() {
         !tourState.steps[3]?.isCompleted
       ) {
         setNavigating(false);
-        info("tour.step.advance", {
-          message: "Response complete - navigating false and completing step 3",
-          context: { component: "TATour" },
-        });
         handleStepComplete(3);
         nextStep();
       } else if (tourState.isOpen && tourState.currentStep === 3) {
         // Just reset navigating state if step is already completed
         setNavigating(false);
-        debug("tour.navigate.set_navigating", {
-          message:
-            "Response complete - navigating false (step already completed)",
-          context: { component: "TATour" },
-        });
       }
     };
 
     // Listen for end chat button pressed events (step 4) - when user clicks End Chat button
-    const handleEndChatButtonPressed = (event: CustomEvent) => {
-      debug("tour.chat.end_button_event", {
-        context: {
-          component: "TATour",
-          tourOpen: tourState.isOpen,
-          currentStep: tourState.currentStep,
-          step4Completed: tourState.steps[4]?.isCompleted,
-          chatId: event.detail?.chatId,
-          attemptId: event.detail?.attemptId,
-        },
-      });
-
+    const handleEndChatButtonPressed = () => {
       // Set navigating to true when end chat button is pressed
       if (tourState.isOpen && tourState.currentStep === 4) {
         setNavigating(true);
-        debug("tour.navigate.set_navigating", {
-          message: "End chat button pressed - navigating true",
-          context: { component: "TATour" },
-        });
       }
     };
 
     // Listen for chat ended events (step 4) - when chat is actually ended by backend
-    const handleChatEnded = (event: CustomEvent) => {
-      debug("tour.chat.ended_event", {
-        context: {
-          component: "TATour",
-          tourOpen: tourState.isOpen,
-          currentStep: tourState.currentStep,
-          step4Completed: tourState.steps[4]?.isCompleted,
-          chatId: event.detail?.chatId,
-        },
-      });
-
+    const handleChatEnded = () => {
       // Set navigating to false and complete step 4 when chat is ended
       if (
         tourState.isOpen &&
@@ -1237,104 +760,51 @@ export default function TATour() {
         !tourState.steps[4]?.isCompleted
       ) {
         setNavigating(false);
-        info("tour.step.advance", {
-          message: "Chat ended - navigating false and completing step 4",
-          context: { component: "TATour" },
-        });
         handleStepComplete(4);
         nextStep();
       } else if (tourState.isOpen && tourState.currentStep === 4) {
         // Just reset navigating state if step is already completed
         setNavigating(false);
-        debug("tour.navigate.set_navigating", {
-          message: "Chat ended - navigating false (step already completed)",
-          context: { component: "TATour" },
-        });
       }
     };
 
     // Listen for back navigation events
     const handleBackNavigation = (event: CustomEvent) => {
       const { fromStep, toStep } = event.detail;
-      debug("tour.navigate.back_event", {
-        context: {
-          component: "TATour",
-          tourOpen: tourState.isOpen,
-          fromStep,
-          toStep,
-          currentStep: tourState.currentStep,
-          currentPathname: pathname,
-        },
-      });
 
       // Handle back navigation from step 3 to step 2
       if (tourState.isOpen && fromStep === 3 && toStep === 2) {
         setNavigating(true);
-        debug("tour.navigate.set_navigating", {
-          message: "Back navigation from step 3 to step 2 - navigating true",
-          context: { component: "TATour" },
-        });
         // Clear attemptId when going back from step 3 to step 2
         // This allows the user to create a new simulation when they press next again
         setAttemptId(null);
-        debug("tour.attempt.cleared", {
-          message: "Cleared attemptId for new simulation",
-          context: { component: "TATour" },
-        });
 
         handleNavigateBackToPractice();
       }
       // Handle back navigation from step 2 to step 1
       else if (tourState.isOpen && fromStep === 2 && toStep === 1) {
         setNavigating(true);
-        debug("tour.navigate.set_navigating", {
-          message: "Back navigation from step 2 to step 1 - navigating true",
-          context: { component: "TATour" },
-        });
         handleNavigateBackToCohortLeaderboard();
       }
       // Handle back navigation from step 1 to step 0
       else if (tourState.isOpen && fromStep === 1 && toStep === 0) {
         setNavigating(true);
-        debug("tour.navigate.set_navigating", {
-          message: "Back navigation from step 1 to step 0 - navigating true",
-          context: { component: "TATour" },
-        });
         handleNavigateBackToHome();
       }
     };
 
     // Listen for existing simulation navigation events
     const handleExistingSimulationNavigation = (event: CustomEvent) => {
-      debug("tour.navigate.existing_simulation_event", {
-        context: {
-          component: "TATour",
-          tourOpen: tourState.isOpen,
-          currentStep: tourState.currentStep,
-          attemptId: event.detail?.attemptId,
-        },
-      });
-
       // Set navigating to false when we navigate to an existing simulation
       if (tourState.isOpen && tourState.currentStep === 2) {
         setNavigating(false);
-        debug("tour.navigate.set_navigating", {
-          message: "Existing simulation navigation - navigating false",
-          context: { component: "TATour" },
-        });
       }
 
       // Invalidate simulation context queries when navigating to existing simulation
       if (event.detail?.attemptId) {
-        debug("tour.simulation.invalidate_existing_navigation", {
-          message:
-            "Invalidating simulation context queries for existing simulation navigation",
-          context: { component: "TATour", attemptId: event.detail.attemptId },
-        });
-
         // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
         queryClient.invalidateQueries({
-          queryKey: attemptsFullKeys.all,
+          queryKey: keys.attempts.all,
         });
 
         // Invalidate v2 layout context (for updated simulations list)
@@ -1425,8 +895,6 @@ export default function TATour() {
     effectiveProfile?.viewedIntro,
     effectiveProfile?.viewedChat,
     queryClient,
-    debug,
-    info,
   ]);
 
   // Custom step actions mapping - handles Next button clicks
@@ -1459,17 +927,6 @@ export default function TATour() {
         // Check if we already have an attemptId
         if (tourState.attemptId) {
           // If we have an attemptId, navigate directly to the simulation
-          info("tour.simulation.use_existing_attempt", {
-            message: "Using existing attemptId for tour navigation",
-            context: { component: "TATour", attemptId: tourState.attemptId },
-          });
-
-          // Invalidate simulation context queries to ensure fresh data
-          debug("tour.simulation.invalidate_existing_attempt", {
-            message:
-              "Invalidating simulation context queries for existing attempt",
-            context: { component: "TATour", attemptId: tourState.attemptId },
-          });
 
           // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
           queryClient.invalidateQueries({
@@ -1513,49 +970,19 @@ export default function TATour() {
                   '[data-testid^="start-simulation-"]'
                 ) as HTMLButtonElement;
                 if (startButton && !startButton.disabled) {
-                  debug("tour.simulation.autoclick_start", {
-                    context: {
-                      component: "TATour",
-                      buttonText: startButton.textContent ?? undefined,
-                      cardTitle: firstCard.querySelector(
-                        '[data-testid="simulation-title"]'
-                      )?.textContent,
-                      simulationId: startButton
-                        .getAttribute("data-testid")
-                        ?.replace("start-simulation-", ""),
-                    },
-                  });
                   startButton.click();
                   // Don't auto-advance - let WebSocket events handle progression
                 } else {
-                  error("tour.simulation.autoclick_start_failed", {
-                    message:
-                      "Could not find start button on first practice simulation card",
-                    context: {
-                      component: "TATour",
-                      buttonFound: !!startButton,
-                      buttonText: startButton?.textContent ?? undefined,
-                      buttonDisabled: startButton?.disabled,
-                    },
-                  });
                   toast.error(
                     "Could not start simulation automatically. Please click the Start button manually."
                   );
                 }
               } else {
-                error("tour.simulation.card_null", {
-                  message: "First practice simulation card is null",
-                  context: { component: "TATour" },
-                });
                 toast.error(
                   "Could not start simulation automatically. Please click the Start button manually."
                 );
               }
             } else {
-              error("tour.simulation.cards_not_found", {
-                message: "No practice simulation cards found",
-                context: { component: "TATour" },
-              });
               toast.error("No practice simulations available.");
             }
           };
@@ -1569,10 +996,6 @@ export default function TATour() {
       },
       3: () => {
         // Step 3: User is now in the simulation - click the first starter prompt
-        debug("tour.step3.autoclick_prompt", {
-          message: "Step 3 action triggered - navigating to attempt page",
-          context: { component: "TATour" },
-        });
 
         // If we have an attemptId, navigate to the attempt page first
         // if (tourState.attemptId) {
@@ -1591,32 +1014,13 @@ export default function TATour() {
           if (starterPromptButtons.length > 0) {
             const firstButton = starterPromptButtons[0] as HTMLButtonElement;
             if (firstButton && !firstButton.disabled) {
-              debug("tour.step3.autoclick_prompt_click", {
-                context: {
-                  component: "TATour",
-                  buttonText: firstButton.textContent?.trim(),
-                },
-              });
               firstButton.click();
             } else {
-              error("tour.step3.autoclick_prompt_failed", {
-                message: "First starter prompt button is disabled or not found",
-                context: {
-                  component: "TATour",
-                  buttonFound: !!firstButton,
-                  buttonDisabled: firstButton?.disabled,
-                  buttonText: firstButton?.textContent ?? undefined,
-                },
-              });
               toast.error(
                 "Could not send message automatically. Please click a starter prompt manually."
               );
             }
           } else {
-            error("tour.step3.prompts_not_found", {
-              message: "No starter prompt buttons found",
-              context: { component: "TATour" },
-            });
             toast.error(
               "No starter prompts available. Please type a message manually."
             );
@@ -1627,21 +1031,11 @@ export default function TATour() {
         // Step 4: Check if tour is completed
         if (effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat) {
           // Tour is completed - close it, reset attemptId, and navigate home
-          info("tour.step4.completed", {
-            message:
-              "Step 4 action triggered - tour completed, closing and navigating home",
-            context: { component: "TATour" },
-          });
           setAttemptId(null); // Reset attemptId since tour is complete
           closeTour();
           router.push("/home");
         } else {
           // Tour not completed - click the End Session/End Chat button
-          debug("tour.step4.autoclick_end", {
-            message:
-              "Step 4 action triggered - clicking End Session/End Chat button",
-            context: { component: "TATour" },
-          });
 
           // Dispatch endChatButtonPressed event when Complete button is clicked on step 4
           // This will set the navigating state to true
@@ -1666,23 +1060,8 @@ export default function TATour() {
             ) as HTMLButtonElement;
 
             if (endChatButton && !endChatButton.disabled) {
-              debug("tour.step4.autoclick_end_click", {
-                context: {
-                  component: "TATour",
-                  buttonText: endChatButton.textContent?.trim(),
-                },
-              });
               endChatButton.click();
             } else {
-              error("tour.step4.autoclick_end_failed", {
-                message: "End Session/End Chat button is disabled or not found",
-                context: {
-                  component: "TATour",
-                  buttonFound: !!endChatButton,
-                  buttonDisabled: endChatButton?.disabled,
-                  buttonText: endChatButton?.textContent ?? undefined,
-                },
-              });
               toast.error(
                 "Could not end chat automatically. Please click the End Session button manually."
               );
@@ -1704,9 +1083,6 @@ export default function TATour() {
     setAttemptId,
     startingSimulationId,
     queryClient,
-    debug,
-    error,
-    info,
   ]);
 
   // Set up global action handlers for the tour context
@@ -1715,28 +1091,13 @@ export default function TATour() {
 
     const handleTourAction = (event: CustomEvent) => {
       const { stepIndex } = event.detail;
-      debug("tour.action.triggered", {
-        context: {
-          component: "TATour",
-          stepIndex,
-          currentStep: tourState.currentStep,
-          tourOpen: tourState.isOpen,
-          stepsLength: tourState.steps.length,
-        },
-      });
 
       const action =
         customStepActions[stepIndex as keyof typeof customStepActions];
       if (action) {
-        debug("tour.action.execute", {
-          context: { component: "TATour", stepIndex },
-        });
         action();
       } else {
-        error("tour.action.missing", {
-          message: "No action found for tour step",
-          context: { component: "TATour", stepIndex },
-        });
+        toast.error("No action found for tour step");
       }
     };
 
@@ -1753,8 +1114,6 @@ export default function TATour() {
     tourState.currentStep,
     tourState.isOpen,
     tourState.steps.length,
-    debug,
-    error,
   ]);
 
   // Show guide button when appropriate

@@ -117,23 +117,23 @@ export function SimulationControls() {
       // Find all chats for this scenario in the current attempt
       const scenarioChats =
         attemptData.chats?.filter(
-          (c) => c.scenario?.id === scenarioData.scenarioId
+          (c) => c.scenario?.id === scenarioData.id
         ) || [];
 
       // Check if this scenario has at least one chat with a grade (completed and graded)
       const hasGradedChat = scenarioChats.some(
-        (c) => c.chat.completed && c.grade !== null
+        (c) => c.chat.completed && c.gradingState !== null
       );
 
       // Get the first chat ID if any exist
       const firstChat = scenarioChats[0];
 
       return {
-        scenarioId: scenarioData.scenarioId,
-        scenarioName: scenarioData.scenarioName || "Scenario",
+        scenarioId: scenarioData.id,
+        scenarioName: scenarioData.name || "Scenario",
         chatId: firstChat?.chat.id || null,
         hasCompletedChat: hasGradedChat,
-        previousChats: scenarioData.previousChats || [],
+        previousChats: firstChat?.previousChats || [],
       };
     });
   }, [attemptData?.allSimulationScenarios, attemptData?.chats]);
@@ -253,7 +253,7 @@ export function SimulationControls() {
 
   // Check if there's a better previous attempt (higher score or passed when current failed)
   // Must be before early returns to maintain hook order
-  const currentGrade = currentChatData?.grade;
+  const currentGrade = currentChatData?.dynamicRubric;
   const hasBetterPreviousAttempt = useMemo(() => {
     if (!hasPreviousChats || !currentGrade) return false;
 

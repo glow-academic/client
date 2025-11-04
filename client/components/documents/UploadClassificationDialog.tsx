@@ -30,11 +30,15 @@ type DocumentType =
 type ParameterItemMappingItem = {
   name: string;
   description: string;
+  parameter_id: string;
+  parameter_name: string;
+  value: string;
 };
 
 type ParameterMappingItem = {
   name: string;
   description: string;
+  document_parameter: boolean;
 };
 
 export type FileClassification = {

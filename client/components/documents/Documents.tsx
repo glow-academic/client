@@ -1158,10 +1158,25 @@ export default function Documents() {
   const renderDocumentCard = (document: (typeof documents)[number]) => {
     const canDelete = canDeleteDocument(document.document_id);
 
+    // Map API response to DocumentItem format
+    const documentItem = {
+      ...document,
+      updatedAt: document.updated_at,
+      extension: document.extension || "",
+      scenario_ids: document.scenario_ids,
+      can_edit: document.can_edit,
+      can_delete: document.can_delete,
+      active: document.active,
+      department_ids: document.department_ids,
+      file_path: document.file_path,
+      mime_type: document.mime_type,
+      parameter_item_ids: document.parameter_item_ids,
+    };
+
     return (
       <DocumentPreviewCard
         key={document.document_id}
-        document={document}
+        document={documentItem}
         onEdit={handleEdit}
         onPreview={handlePreview}
         onDelete={handleSingleDelete}

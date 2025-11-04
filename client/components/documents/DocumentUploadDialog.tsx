@@ -372,18 +372,8 @@ export function DocumentUploadDialog({
           }
           departmentMapping={departmentMapping}
           validDepartmentIds={validDepartmentIds}
-          parameterItemMapping={Object.fromEntries(
-            Object.entries(parameterItemMapping).map(([key, value]) => [
-              key,
-              { name: value.name, description: value.description },
-            ])
-          )}
-          parameterMapping={Object.fromEntries(
-            Object.entries(parameterMapping).map(([key, value]) => [
-              key,
-              { name: value.name, description: value.description },
-            ])
-          )}
+          parameterItemMapping={parameterItemMapping}
+          parameterMapping={parameterMapping}
           validParameterItemIds={validParameterItemIds}
         />
       )}

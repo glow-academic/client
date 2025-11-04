@@ -103,7 +103,7 @@ export function DataTable<TData, TValue>({
   const [isArchiving, setIsArchiving] = React.useState(false);
   const queryClient = useQueryClient();
   const bulkArchiveMutation = useMutation({
-    mutationFn: (request: { attemptIds: string[]; archive: boolean }) =>
+    mutationFn: (request: { attemptIds: string[]; archived: boolean }) =>
       api.post("/attempts/bulk-archive", { body: request }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.attempts.all });
@@ -253,7 +253,7 @@ export function DataTable<TData, TValue>({
     try {
       await bulkArchiveMutation.mutateAsync({
         attemptIds: attemptsToUpdate,
-        archive: archiveAction,
+        archived: archiveAction,
       });
 
       toast.success(

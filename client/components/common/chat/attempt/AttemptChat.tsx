@@ -716,14 +716,35 @@ export default function AttemptChat() {
                                 ) : simulationContext?.aggregatedResults ? (
                                   <TooltipContent>
                                     <p>
-                                      {simulationContext?.aggregatedResults
-                                        .overallPassed
+                                      {((
+                                        simulationContext?.aggregatedResults as {
+                                          overallPassed?: boolean;
+                                          passed?: boolean;
+                                        }
+                                      )?.overallPassed ??
+                                      (
+                                        simulationContext?.aggregatedResults as {
+                                          overallPassed?: boolean;
+                                          passed?: boolean;
+                                        }
+                                      )?.passed)
                                         ? "Passed"
                                         : "Failed"}{" "}
                                       (
                                       {Math.round(
-                                        simulationContext?.aggregatedResults
-                                          .averageScore
+                                        (
+                                          simulationContext?.aggregatedResults as {
+                                            averageScore?: number;
+                                            percentage?: number;
+                                          }
+                                        )?.averageScore ??
+                                          (
+                                            simulationContext?.aggregatedResults as {
+                                              averageScore?: number;
+                                              percentage?: number;
+                                            }
+                                          )?.percentage ??
+                                          0
                                       )}
                                       /
                                       {simulationContext?.allDynamicRubrics?.[0]
@@ -801,15 +822,24 @@ export default function AttemptChat() {
                                 .standardGroupsMapping
                             }
                             standardsMapping={
-                              simulationContext.rubricStructure.standardsMapping
+                              simulationContext.rubricStructure
+                                .standardsMapping as Parameters<
+                                typeof TableRubric
+                              >[0]["standardsMapping"]
                             }
-                            gradingState={
-                              displayChat?.id
-                                ? (simulationContext.gradingStatesByChatId[
-                                    displayChat.id
-                                  ] ?? null)
-                                : null
-                            }
+                            {...(displayChat?.id &&
+                              simulationContext.gradingStatesByChatId[
+                                displayChat.id
+                              ] && {
+                                gradingState: simulationContext
+                                  .gradingStatesByChatId[
+                                  displayChat.id
+                                ] as NonNullable<
+                                  Parameters<
+                                    typeof TableRubric
+                                  >[0]["gradingState"]
+                                >,
+                              })}
                           />
                         </div>
                       ) : displayChat ? (

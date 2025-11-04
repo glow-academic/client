@@ -44,6 +44,13 @@ import {
   Trash2,
 } from "lucide-react";
 
+type MappingItem = {
+  name: string;
+  description: string;
+  entity_id: string;
+  entity_type: string;
+};
+
 interface FormData {
   name?: string;
   description?: string;
@@ -156,7 +163,8 @@ export default function Parameter({
 
   // Extract mappings from v2 response
   const departmentMapping = useMemo(
-    () => parameterData?.department_mapping || {},
+    () =>
+      (parameterData?.department_mapping || {}) as Record<string, MappingItem>,
     [parameterData]
   );
 

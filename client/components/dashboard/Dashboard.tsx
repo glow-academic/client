@@ -289,9 +289,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
           date: td.date,
           score: td.score ?? null,
           timestamp: td.timestamp,
-          simulationId: td.simulationId ?? undefined,
+          simulationId: td.simulationId ?? "",
         })),
-        simulationIds: persona.simulationIds ?? undefined,
+        simulationIds: persona.simulationIds ?? [],
       }));
 
     // Normalize RubricHeatmap matrices to ensure required fields

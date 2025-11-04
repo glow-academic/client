@@ -1,8 +1,8 @@
 "use client";
 
+import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
 import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
-import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,16 +35,50 @@ type ProfileItem = {
   primaryDepartmentId: string | null;
 };
 
-type MappingItem = {
+type ScenarioMappingItem = {
+  name: string;
+  description: string;
+  persona_ids: string[];
+};
+type ScenarioMapping = Record<string, ScenarioMappingItem>;
+
+type PersonaMappingItem = {
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+};
+
+type PersonaMapping = Record<string, PersonaMappingItem>;
+
+// Note: These types are simplified - ParameterSelector expects additional fields
+// but we'll cast them appropriately since the API provides the full structure
+type ParameterMappingItem = {
+  name: string;
+  description: string;
+  numerical?: boolean;
+  document_parameter?: boolean;
+};
+
+type ParameterMapping = Record<string, ParameterMappingItem>;
+
+type ParameterItemMappingItem = {
+  name: string;
+  description: string;
+  parameter_id?: string;
+  parameter_name?: string;
+  value?: string;
+};
+
+type ParameterItemMapping = Record<string, ParameterItemMappingItem>;
+
+type SimulationMappingItem = {
   name: string;
   description: string;
 };
 
-type ParameterItemMapping = Record<string, MappingItem>;
-type ParameterMapping = Record<string, MappingItem>;
-type PersonaMapping = Record<string, MappingItem>;
-type ScenarioMapping = Record<string, MappingItem>;
-type SimulationMapping = Record<string, MappingItem>;
+type SimulationMapping = Record<string, SimulationMappingItem>;
+
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -274,8 +308,16 @@ export function PracticeCustomizeDialog({
               </div>
               <div className="grid gap-2">
                 <ParameterSelector
-                  parameterMapping={parameterMapping}
-                  parameterItemMapping={parameterItemMapping}
+                  parameterMapping={
+                    parameterMapping as Parameters<
+                      typeof ParameterSelector
+                    >[0]["parameterMapping"]
+                  }
+                  parameterItemMapping={
+                    parameterItemMapping as Parameters<
+                      typeof ParameterSelector
+                    >[0]["parameterItemMapping"]
+                  }
                   validParameterItemIds={Object.keys(parameterItemMapping)}
                   selectedParameterItemIds={selectedParameterItemIds}
                   onParameterItemIdsChange={setSelectedParameterItemIds}
