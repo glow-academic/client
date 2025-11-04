@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import PersonaEdit from "@/components/create/personas/PersonaEdit";
+import Persona from "@/components/common/agent/Persona";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -60,7 +60,7 @@ export default async function PersonaEditPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <PersonaEdit personaId={personaId} />
+        <Persona personaId={personaId} mode="edit" />
       </div>
     </HydrationBoundary>
   );

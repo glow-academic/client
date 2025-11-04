@@ -7,26 +7,63 @@
 "use client";
 
 import { useProfile } from "@/contexts/profile-context";
-import type { LogItem } from "@/lib/api/v2/schemas/logs";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { BulkDeleteLogsDialog } from "./BulkDeleteLogsDialog";
-import { LogsDataTable } from "./LogsDataTable";
 
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
+import { formatTimestamp, getLogLevelVariant } from "@/utils/logs/log-utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { Activity, FileText, RefreshCw, Trash2, X } from "lucide-react";
+import { HealthModal } from "./HealthModal";
 
 export default function Logs() {
-  const [selectedLog, setSelectedLog] = useState<LogItem | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [showHealthModal, setShowHealthModal] = useState(false);
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    log_id: false,
+    correlation_id: false,
+    context_provider: false,
+    context_model: false,
+    context_function: false,
+    created_time: false,
+  });
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "created_at", desc: true },
+  ]);
+
   const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
 
@@ -73,9 +110,9 @@ export default function Logs() {
     }
   };
 
-  const handleViewLog = (logItem: LogItem) => {
+  const handleViewLog = useCallback((logItem: (typeof logs)[number]) => {
     setSelectedLog(logItem);
-  };
+  }, []);
 
   const handleBulkDelete = () => {
     setShowBulkDeleteDialog(true);
@@ -163,28 +200,501 @@ export default function Logs() {
     };
   }, [logs]);
 
+  const [selectedLog, setSelectedLog] = useState<(typeof logs)[number] | null>(
+    null
+  );
+
+  // Define columns with rich visual styling
+  const columns = useMemo<ColumnDef<(typeof logs)[number]>[]>(
+    () => [
+      {
+        accessorKey: "created_at",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Created At" />
+        ),
+        cell: ({ row }) => (
+          <div className="text-sm">
+            {formatTimestamp(row.getValue("created_at"))}
+          </div>
+        ),
+        enableSorting: true,
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const created = row.getValue(id) as string | null;
+          if (!created) return false;
+          const date = new Date(created);
+          const dateStr = `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+          return value.includes(dateStr);
+        },
+      },
+      {
+        id: "created_time",
+        accessorFn: (row) => {
+          if (!row.created_at) return null;
+          return String(new Date(row.created_at).getHours());
+        },
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Time (Hour)" />
+        ),
+        cell: ({ row }) => {
+          const hour = row.getValue("created_time") as string | null;
+          if (!hour) return <span className="text-muted-foreground">N/A</span>;
+          return <div className="text-sm">{`${hour.padStart(2, "0")}:00`}</div>;
+        },
+        enableSorting: true,
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const hour = row.getValue(id) as string | null;
+          return hour ? value.includes(hour) : false;
+        },
+      },
+      {
+        accessorKey: "log_id",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="ID" />
+        ),
+        cell: ({ row }) => (
+          <div className="font-medium">{row.getValue("log_id")}</div>
+        ),
+        enableSorting: true,
+      },
+      {
+        accessorKey: "event",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Event" />
+        ),
+        cell: ({ row }) => {
+          const event = row.getValue("event") as string;
+          return (
+            <span className="truncate max-w-xs inline-block">{event}</span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const event = (row.getValue(id) as string) ?? "";
+          return value.includes(event);
+        },
+        enableSorting: true,
+      },
+      {
+        accessorKey: "level",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Level" />
+        ),
+        cell: ({ row }) => {
+          const level = row.getValue("level") as string;
+          return (
+            <Badge variant={getLogLevelVariant(level)}>
+              {level.toUpperCase()}
+            </Badge>
+          );
+        },
+        filterFn: (row, id, value) => {
+          return value.includes(row.getValue(id));
+        },
+        enableSorting: true,
+      },
+      {
+        accessorKey: "actor_name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Actor" />
+        ),
+        cell: ({ row }) => {
+          const actorName = row.getValue("actor_name") as string | null;
+          return actorName ? (
+            <span className="font-mono text-xs">{actorName}</span>
+          ) : (
+            <span className="text-muted-foreground">N/A</span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
+      },
+      {
+        id: "context_component",
+        accessorFn: (row) => row.context?.component || null,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Component" />
+        ),
+        cell: ({ row }) => {
+          const v =
+            (row.getValue("context_component") as string | null) ?? null;
+          return v ? v : <span className="text-muted-foreground">N/A</span>;
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
+      },
+      {
+        id: "context_function",
+        accessorFn: (row) => row.context?.function || null,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Function" />
+        ),
+        cell: ({ row }) => {
+          const v = (row.getValue("context_function") as string | null) ?? null;
+          return v ? v : <span className="text-muted-foreground">N/A</span>;
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
+      },
+      {
+        id: "context_provider",
+        accessorFn: (row) => row.context?.provider || null,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Provider" />
+        ),
+        cell: ({ row }) => {
+          const provider =
+            (row.getValue("context_provider") as string | null) ?? null;
+          return provider ? (
+            provider
+          ) : (
+            <span className="text-muted-foreground">N/A</span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
+      },
+      {
+        id: "context_model",
+        accessorFn: (row) => row.context?.model || null,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Model" />
+        ),
+        cell: ({ row }) => {
+          const model =
+            (row.getValue("context_model") as string | null) ?? null;
+          return model ? (
+            model
+          ) : (
+            <span className="text-muted-foreground">N/A</span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const v = (row.getValue(id) as string | null) ?? "";
+          return value.includes(v);
+        },
+        enableSorting: true,
+      },
+      {
+        accessorKey: "correlation_id",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Correlation" />
+        ),
+        cell: ({ row }) => {
+          const corr = (row.getValue("correlation_id") as string | null) ?? "";
+          return (
+            <span className="font-mono text-xs truncate inline-block max-w-[160px]">
+              {corr}
+            </span>
+          );
+        },
+        enableSorting: true,
+      },
+      {
+        id: "context",
+        accessorKey: "context",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Context" />
+        ),
+        cell: ({ row }) => {
+          const context = row.getValue("context");
+          return context ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewLog(row.original)}
+              className="h-8 px-2"
+            >
+              <FileText className="h-3 w-3 mr-1" />
+              View JSON
+            </Button>
+          ) : (
+            <span className="text-muted-foreground">None</span>
+          );
+        },
+        enableSorting: false,
+      },
+    ],
+    [handleViewLog]
+  );
+
+  // Create table instance
+  const table = useReactTable({
+    data: logs,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 20,
+      },
+      columnVisibility: {
+        log_id: false,
+        correlation_id: false,
+        context_provider: false,
+        context_model: false,
+        context_function: false,
+        created_time: false,
+      } as VisibilityState,
+    },
+  });
+
+  // Get column references for toolbar
+  const eventColumn = table.getColumn("event");
+  const levelColumn = table.getColumn("level");
+  const actorColumn = table.getColumn("actor_name");
+  const componentColumn = table.getColumn("context_component");
+  const functionColumn = table.getColumn("context_function");
+  const providerColumn = table.getColumn("context_provider");
+  const modelColumn = table.getColumn("context_model");
+  const createdAtColumn = table.getColumn("created_at");
+  const createdTimeColumn = table.getColumn("created_time");
+  const isFiltered = table.getState().columnFilters.length > 0;
+
   if (isLoading) {
     return <div className="text-center p-6">Loading logs...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <LogsDataTable
-        data={logs}
-        levelOptions={levelOptions}
-        eventOptions={eventOptions}
-        providerOptions={providerOptions}
-        modelOptions={modelOptions}
-        actorOptions={actorOptions}
-        componentOptions={componentOptions}
-        functionOptions={functionOptions}
-        dateOptions={dateOptions}
-        timeOptions={timeOptions}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-        onBulkDelete={handleBulkDelete}
-        onViewLog={handleViewLog}
-      />
+      <div className="space-y-4">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="mb-2">
+              <Input
+                placeholder="Search by event..."
+                value={(eventColumn?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  eventColumn?.setFilterValue(event.target.value)
+                }
+                className="h-8 w-[150px] lg:w-[250px]"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2 flex-wrap mb-2">
+              {/* Level Filter */}
+              {levelColumn && levelOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={levelColumn}
+                  title="Level"
+                  options={levelOptions}
+                />
+              )}
+
+              {/* Event Filter */}
+              {eventColumn && eventOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={eventColumn}
+                  title="Event"
+                  options={eventOptions}
+                />
+              )}
+
+              {/* Provider Filter */}
+              {providerColumn && providerOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={providerColumn}
+                  title="Provider"
+                  options={providerOptions}
+                />
+              )}
+
+              {/* Model Filter */}
+              {modelColumn && modelOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={modelColumn}
+                  title="Model"
+                  options={modelOptions}
+                />
+              )}
+
+              {/* Actor Filter */}
+              {actorColumn && actorOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={actorColumn}
+                  title="Actor"
+                  options={actorOptions}
+                />
+              )}
+
+              {/* Component Filter */}
+              {componentColumn && componentOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={componentColumn}
+                  title="Component"
+                  options={componentOptions}
+                />
+              )}
+
+              {/* Function Filter */}
+              {functionColumn && functionOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={functionColumn}
+                  title="Function"
+                  options={functionOptions}
+                />
+              )}
+
+              {/* Date Filter */}
+              {createdAtColumn && dateOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={createdAtColumn}
+                  title="Date"
+                  options={dateOptions}
+                />
+              )}
+
+              {/* Time Filter */}
+              {createdTimeColumn && timeOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={createdTimeColumn}
+                  title="Hour"
+                  options={timeOptions}
+                />
+              )}
+
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {/* Bulk Delete Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkDelete}
+              className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            {/* Refresh Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="h-8 px-2"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </Button>
+
+            {/* Health Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHealthModal(true)}
+              className="h-8 px-2"
+            >
+              <Activity className="h-4 w-4" />
+            </Button>
+
+            {/* Column Visibility */}
+            <DataTableViewOptions table={table} />
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="border rounded-lg">
+          <table className="w-full">
+            <thead className="bg-muted/50">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-4 py-3 text-left text-sm font-medium"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : typeof header.column.columnDef.header === "string"
+                          ? header.column.columnDef.header
+                          : header.column.columnDef.header?.(
+                              header.getContext()
+                            )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b hover:bg-muted/50 transition-colors"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-4 py-3 text-sm">
+                        {typeof cell.column.columnDef.cell === "function"
+                          ? cell.column.columnDef.cell(cell.getContext())
+                          : cell.getValue()}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    No logs match the current filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <DataTablePagination table={table} />
+      </div>
+
+      {/* Health Modal */}
+      <HealthModal open={showHealthModal} onOpenChange={setShowHealthModal} />
 
       {/* Detail Dialog */}
       <Dialog

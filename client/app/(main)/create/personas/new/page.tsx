@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import NewPersona from "@/components/create/personas/NewPersona";
+import Persona from "@/components/common/agent/Persona";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -36,7 +36,7 @@ export default async function NewPersonaPage() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <NewPersona />
+        <Persona mode="create" />
       </div>
     </HydrationBoundary>
   );

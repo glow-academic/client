@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import EditSystemAgent from "@/components/management/agents/EditAgent";
+import SystemAgent from "@/components/common/agent/SystemAgent";
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
@@ -60,7 +60,7 @@ export default async function AgentEditPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <EditSystemAgent agentId={agentId} />
+        <SystemAgent agentId={agentId} />
       </div>
     </HydrationBoundary>
   );

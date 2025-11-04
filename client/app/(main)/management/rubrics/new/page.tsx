@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import NewRubric from "@/components/management/rubrics/NewRubric";
+import Rubric from "@/components/common/rubric/Rubric";
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
@@ -36,7 +36,7 @@ export default async function NewRubricPage() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <NewRubric />
+        <Rubric />
       </div>
     </HydrationBoundary>
   );

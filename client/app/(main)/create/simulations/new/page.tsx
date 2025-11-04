@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import NewSimulation from "@/components/create/simulations/NewSimulation";
+import Simulation from "@/components/common/simulation/Simulation";
 
 import type { Metadata } from "next";
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function NewSimulationPage() {
   return (
     <div className="space-y-6">
-      <NewSimulation />
+      <Simulation />
     </div>
   );
 }

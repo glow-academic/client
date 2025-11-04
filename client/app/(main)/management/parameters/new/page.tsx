@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import NewParameter from "@/components/common/parameter/Parameter";
+import Parameter from "@/components/common/parameter/Parameter";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -35,7 +35,7 @@ export default async function NewParameterPage() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <NewParameter mode="create" />
+        <Parameter mode="create" />
       </div>
     </HydrationBoundary>
   );

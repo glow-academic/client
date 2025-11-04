@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
+import Scenario from "@/components/common/scenario/Scenario";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -60,7 +60,7 @@ export default async function EditScenarioPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <ScenarioEdit scenarioId={scenarioId} />
+        <Scenario scenarioId={scenarioId} mode="edit" />
       </div>
     </HydrationBoundary>
   );

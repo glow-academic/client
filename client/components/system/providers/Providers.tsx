@@ -14,6 +14,7 @@ import {
   Settings,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -45,10 +46,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ColumnDef } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 import { useProfile } from "@/contexts/profile-context";
 
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api/client";
 import {
   useDeleteModel,
@@ -62,7 +78,6 @@ import type {
 } from "@/lib/api/v2/schemas/providers";
 import { keys } from "@/lib/query/keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ProvidersDataTable } from "./ProvidersDataTable";
 
 export default function Providers() {
   const router = useRouter();
@@ -146,6 +161,51 @@ export default function Providers() {
     provider_can_delete: boolean;
   };
 
+  // Flatten providers/models into rows for table filtering
+  const rows = useMemo<ProviderModelRow[]>(() => {
+    const flattened: ProviderModelRow[] = [];
+    providers.forEach((provider) => {
+      provider.models.forEach((model) => {
+        flattened.push({
+          ...model,
+          provider_id: provider.provider_id,
+          provider_name: provider.name,
+          provider_description: provider.description,
+          provider_can_edit: provider.can_edit,
+          provider_can_delete: provider.can_delete,
+        });
+      });
+      // Also add a row for providers with 0 models (for filtering)
+      if (provider.models.length === 0) {
+        flattened.push({
+          model_id: `${provider.provider_id}-empty`,
+          name: "",
+          description: "",
+          active: false,
+          custom_model: false,
+          updated_at: "",
+          can_edit: false,
+          can_delete: false,
+          provider_id: provider.provider_id,
+          provider_name: provider.name,
+          provider_description: provider.description,
+          provider_can_edit: provider.can_edit,
+          provider_can_delete: provider.can_delete,
+        });
+      }
+    });
+    return flattened;
+  }, [providers]);
+
+  // Table state
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "provider_name", desc: false },
+    { id: "name", desc: false },
+  ]);
+
   const columns = useMemo<ColumnDef<ProviderModelRow>[]>(
     () => [
       {
@@ -202,6 +262,91 @@ export default function Providers() {
     ],
     []
   );
+
+  // Create table instance
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 12,
+      },
+    },
+  });
+
+  // Group filtered rows back by provider for rendering
+  const filteredProviders = useMemo(() => {
+    const providerMap = new Map<string, ProviderWithModels>();
+    const selectedProviderIds =
+      (table.getColumn("provider_id")?.getFilterValue() as string[]) || [];
+
+    // Get all filtered model IDs
+    const filteredModelIds = new Set<string>();
+    table.getRowModel().rows.forEach((row) => {
+      const modelId = row.original.model_id;
+      // Only include actual models, not empty provider placeholders
+      if (!modelId.endsWith("-empty")) {
+        filteredModelIds.add(modelId);
+      }
+    });
+
+    // Process each provider
+    providers.forEach((provider) => {
+      // Filter models for this provider based on filtered rows
+      const filteredModels = provider.models.filter((model) =>
+        filteredModelIds.has(model.model_id)
+      );
+
+      // Include provider if:
+      // 1. It has filtered models, OR
+      // 2. It was explicitly selected (even if 0 models)
+      const isSelected = selectedProviderIds.includes(provider.provider_id);
+      const hasFilteredModels = filteredModels.length > 0;
+
+      // If provider filter is active, only show if selected
+      // If provider filter is not active, show if has filtered models
+      if (selectedProviderIds.length > 0) {
+        if (isSelected) {
+          providerMap.set(provider.provider_id, {
+            ...provider,
+            models: filteredModels,
+          });
+        }
+      } else if (hasFilteredModels || filteredModelIds.size === 0) {
+        // If no filters applied or provider has models, include it
+        providerMap.set(provider.provider_id, {
+          ...provider,
+          models: filteredModels,
+        });
+      }
+    });
+
+    return Array.from(providerMap.values());
+  }, [table, providers]);
+
+  // Get column references for toolbar
+  const nameColumn = table.getColumn("name");
+  const providerColumn = table.getColumn("provider_id");
+  const customModelColumn = table.getColumn("custom_model");
+  const activeColumn = table.getColumn("active");
+  const isFiltered = table.getState().columnFilters.length > 0;
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -456,14 +601,75 @@ export default function Providers() {
         ) : providers.length === 0 ? (
           renderEmptyState()
         ) : (
-          <ProvidersDataTable
-            columns={columns}
-            providers={providers}
-            providerOptions={providerOptions}
-            customModelOptions={customModelOptions}
-            statusOptions={statusOptions}
-            renderProviderGroup={renderProviderGroup}
-          />
+          <div className="space-y-4">
+            {/* Toolbar */}
+            <div className="flex items-center justify-between">
+              <div className="flex flex-1 items-center space-x-2 flex-wrap">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Search models..."
+                    value={(nameColumn?.getFilterValue() as string) ?? ""}
+                    onChange={(event) =>
+                      nameColumn?.setFilterValue(event.target.value)
+                    }
+                    className="h-8 w-[150px] lg:w-[250px]"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 flex-wrap mb-2">
+                  {providerColumn && providerOptions.length > 0 && (
+                    <DataTableFacetedFilter
+                      column={providerColumn}
+                      title="Provider"
+                      options={providerOptions}
+                    />
+                  )}
+
+                  {customModelColumn && customModelOptions.length > 0 && (
+                    <DataTableFacetedFilter
+                      column={customModelColumn}
+                      title="Type"
+                      options={customModelOptions}
+                    />
+                  )}
+
+                  {activeColumn && statusOptions.length > 0 && (
+                    <DataTableFacetedFilter
+                      column={activeColumn}
+                      title="Status"
+                      options={statusOptions}
+                    />
+                  )}
+
+                  {isFiltered && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => table.resetColumnFilters()}
+                      className="h-8 px-2 lg:px-3"
+                    >
+                      Reset
+                      <X className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Provider groups */}
+            {filteredProviders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No models match the current filters.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {filteredProviders.map((provider) =>
+                  renderProviderGroup(provider)
+                )}
+              </div>
+            )}
+
+            <DataTablePagination table={table} card={true} />
+          </div>
         )}
 
         {/* Delete Confirmation Dialog */}

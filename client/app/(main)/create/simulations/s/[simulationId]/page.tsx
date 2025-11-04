@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import SimulationEdit from "@/components/create/simulations/SimulationEdit";
+import Simulation from "@/components/common/simulation/Simulation";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -60,7 +60,7 @@ export default async function EditSimulationPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <SimulationEdit simulationId={simulationId} />
+        <Simulation simulationId={simulationId} />
       </div>
     </HydrationBoundary>
   );

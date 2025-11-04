@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import NewCohort from "@/components/cohorts/NewCohort";
+import Cohort from "@/components/common/cohort/Cohort";
 
 import type { Metadata } from "next";
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function NewCohortPage() {
   return (
     <div className="space-y-6">
-      <NewCohort />
+      <Cohort />
     </div>
   );
 }

@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import RubricEdit from "@/components/management/rubrics/RubricEdit";
+import Rubric from "@/components/common/rubric/Rubric";
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
@@ -60,7 +60,7 @@ export default async function EditRubricPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <RubricEdit rubricId={rubricId} />
+        <Rubric rubricId={rubricId} />
       </div>
     </HydrationBoundary>
   );

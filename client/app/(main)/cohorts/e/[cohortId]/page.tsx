@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import CohortEdit from "@/components/cohorts/CohortEdit";
+import Cohort from "@/components/common/cohort/Cohort";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -61,7 +61,7 @@ export default async function CohortEditPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <CohortEdit cohortId={cohortId} />
+        <Cohort cohortId={cohortId} />
       </div>
     </HydrationBoundary>
   );

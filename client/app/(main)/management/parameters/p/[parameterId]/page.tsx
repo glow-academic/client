@@ -6,7 +6,7 @@
  */
 
 import { auth } from "@/auth";
-import EditParameter from "@/components/common/parameter/Parameter";
+import Parameter from "@/components/common/parameter/Parameter";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { getQueryClient } from "@/utils/queryClient";
@@ -59,7 +59,7 @@ export default async function ParameterEditPage({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <EditParameter parameterId={parameterId} mode="edit" />
+        <Parameter parameterId={parameterId} mode="edit" />
       </div>
     </HydrationBoundary>
   );

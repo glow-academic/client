@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 
-import NewScenario from "@/components/create/scenarios/NewScenario";
+import Scenario from "@/components/common/scenario/Scenario";
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
@@ -36,7 +36,7 @@ export default async function NewScenarioPage() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="space-y-6">
-        <NewScenario />
+        <Scenario mode="create" />
       </div>
     </HydrationBoundary>
   );
