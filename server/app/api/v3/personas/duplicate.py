@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
+from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from app.db import get_db, transaction
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class DuplicatePersonaRequest(BaseModel):
@@ -30,9 +31,12 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicatePersonaResponse)
 async def duplicate_persona(
     request: DuplicatePersonaRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicatePersonaResponse:
     """Duplicate a persona."""
+    tags = ["personas"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Get original persona data
@@ -70,11 +74,17 @@ async def duplicate_persona(
                     persona_prompt_sql = load_sql("sql/v3/personas/create_persona_prompt.sql")
                     await conn.execute(persona_prompt_sql, persona_id, prompt_id)
 
-            return DuplicatePersonaResponse(
+            result_data = DuplicatePersonaResponse(
                 success=True,
                 personaId=persona_id,
                 message=f"Persona '{result['name']}' duplicated successfully",
             )
+            
+            # Invalidate cache after mutation
+            await invalidate_tags(tags)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+            
+            return result_data
     except HTTPException:
         raise
     except ValueError as e:

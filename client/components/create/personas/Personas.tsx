@@ -10,8 +10,11 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { api } from "@/lib/api/client";
 import { PersonaItem } from "@/lib/api/v2/schemas/personas";
+import { keys } from "@/lib/query/keys";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 
 import {
@@ -36,11 +39,6 @@ import {
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
-import {
-  useDeletePersona,
-  useDuplicatePersona,
-  usePersonasList,
-} from "@/lib/api/v2/hooks/personas";
 import { PersonasDataTable } from "./PersonasDataTable";
 
 // Utility function to generate gradient from hex color
@@ -75,18 +73,33 @@ export default function Personas() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
   const log = useLogger();
+  const qc = useQueryClient();
 
-  // V2 API hooks - single fetch with all data
-  const { data: personasData, isLoading } = usePersonasList(
-    {
-      profileId: effectiveProfile?.id || "",
+  // V3 API - Proof of Concept with generated keys
+  const filters = { profileId: effectiveProfile?.id || "" };
+  const { data: personasData, isLoading } = useQuery({
+    queryKey: keys.personas.with(filters),
+    queryFn: () => api.post("/personas/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  // Duplicate mutation with v3 API
+  const duplicatePersonaMutation = useMutation({
+    mutationFn: (req: { personaId: string }) =>
+      api.post("/personas/duplicate", { body: req }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.personas.all });
     },
-    { enabled: !!effectiveProfile?.id }
-  );
+  });
 
-  // Mutation hooks
-  const duplicatePersonaMutation = useDuplicatePersona();
-  const deletePersonaMutation = useDeletePersona();
+  // Delete mutation with v3 API
+  const deletePersonaMutation = useMutation({
+    mutationFn: (req: { personaId: string }) =>
+      api.post("/personas/delete", { body: req }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.personas.all });
+    },
+  });
 
   // Extract data from V2 response
   const personas = personasData?.personas || [];
@@ -164,7 +177,11 @@ export default function Personas() {
 
   // Build department options from mapping
   const departmentMapping = useMemo(
-    () => (personasData?.department_mapping as Record<string, { name: string; description: string }>) || {},
+    () =>
+      (personasData?.department_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
     [personasData?.department_mapping]
   );
 

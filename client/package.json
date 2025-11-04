@@ -20,7 +20,8 @@
     "test:coverage": "vitest run --coverage",
     "test:components": "vitest run __tests__",
     "gen:types": "openapi-typescript ../server/openapi.json -o lib/api-types.ts",
-    "watch:openapi": "chokidar ../server/openapi.json -c \"yarn gen:types\""
+    "gen:keys": "tsx scripts/gen-keys-from-openapi.ts",
+    "watch:openapi": "chokidar ../server/openapi.json -c \"yarn gen:types && yarn gen:keys\""
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",
@@ -110,6 +111,7 @@
     "openapi-typescript": "^7.10.1",
     "tailwindcss": "^4",
     "ts-morph": "^26.0.0",
+    "tsx": "^4.7.0",
     "tw-animate-css": "^1.2.9",
     "typescript": "^5.8.3"
   }

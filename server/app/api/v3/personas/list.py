@@ -4,19 +4,15 @@ import json
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
+from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+                              ModelMapping, ModelMappingItem, ScenarioMapping,
+                              ScenarioMappingItem)
+from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.db import get_db
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ModelMapping,
-    ModelMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-)
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class PersonasFilters(BaseModel):
@@ -57,12 +53,27 @@ class PersonasListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list")
+@router.post("/list", response_model=PersonasListResponse)
 async def get_personas_list(
     filters: PersonasFilters,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PersonasListResponse:
     """Get personas list with permissions and scenario details."""
+    tags = ["personas"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return PersonasListResponse.model_validate(cached["data"])
+    
     try:
         # Load SQL string
         sql = load_sql("sql/v3/personas/list_personas.sql")
@@ -137,12 +148,24 @@ async def get_personas_list(
                 )
             )
 
-        return PersonasListResponse(
+        response_data = PersonasListResponse(
             personas=personas,
             scenario_mapping=scenario_mapping,
             model_mapping=model_mapping,
             department_mapping=department_mapping,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

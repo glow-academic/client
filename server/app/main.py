@@ -591,6 +591,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             routes=app.routes,
             description="Auto-generated OpenAPI schema from FastAPI v3 API",
         )
+        
+        # Add x-cache-tags extension to each operation based on tags
+        for path, path_item in schema.get("paths", {}).items():
+            for method, operation in path_item.items():
+                if isinstance(operation, dict) and "tags" in operation:
+                    # Use tags as cache tags (store all tags)
+                    tags = operation.get("tags", [])
+                    if tags:
+                        operation["x-cache-tags"] = tags
+        
         openapi_path = Path(__file__).parent.parent / "openapi.json"
         openapi_path.write_text(json.dumps(schema, indent=2))
         logger.info(f"✅ OpenAPI schema written to {openapi_path}")

@@ -1,31 +1,43 @@
-// lib/api/client.ts (no signature changes needed)
-import { doRequest } from "./request-core";
+// lib/api/client.ts
+import {
+  API_VERSION,
+  BFF_HTTP_BASE,
+  INTERNAL_HTTP_BASE,
+  type Version,
+} from "./config";
+import { isBrowser } from "./env";
 import { toFull, type ToFull } from "./path";
-import { API_VERSION, BFF_HTTP_BASE, INTERNAL_HTTP_BASE, type Version } from "./config";
-import type { ShortPath, VersionedPath, InputOf, OutputOf } from "./types";
+import { doRequest } from "./request-core";
+import type { InputOf, OutputOf, PathKey, ShortPath } from "./types";
 
-export function createApiForVersion<V extends Version>(ver: V) {
+export function createApi<V extends Version>(ver: V) {
   const full = <P extends ShortPath<V>>(p: P) => toFull(ver, p) as ToFull<V, P>;
+  const pickBase = () => (isBrowser ? BFF_HTTP_BASE : INTERNAL_HTTP_BASE);
 
-  function make(base: string) {
-    return {
-      get   : <P extends ShortPath<V>>(p: P, a?: InputOf<VersionedPath<V> & ToFull<V, P>, "get">,    i?: RequestInit) =>
-        doRequest<OutputOf<VersionedPath<V> & ToFull<V, P>, "get">>   (base, "GET",    full(p), a, i),
-      post  : <P extends ShortPath<V>>(p: P, a:  InputOf<VersionedPath<V> & ToFull<V, P>, "post">,   i?: RequestInit) =>
-        doRequest<OutputOf<VersionedPath<V> & ToFull<V, P>, "post">>  (base, "POST",   full(p), a, i),
-      put   : <P extends ShortPath<V>>(p: P, a:  InputOf<VersionedPath<V> & ToFull<V, P>, "put">,    i?: RequestInit) =>
-        doRequest<OutputOf<VersionedPath<V> & ToFull<V, P>, "put">>   (base, "PUT",    full(p), a, i),
-      patch : <P extends ShortPath<V>>(p: P, a:  InputOf<VersionedPath<V> & ToFull<V, P>, "patch">,  i?: RequestInit) =>
-        doRequest<OutputOf<VersionedPath<V> & ToFull<V, P>, "patch">> (base, "PATCH",  full(p), a, i),
-      delete: <P extends ShortPath<V>>(p: P, a?: InputOf<VersionedPath<V> & ToFull<V, P>, "delete">, i?: RequestInit) =>
-        doRequest<OutputOf<VersionedPath<V> & ToFull<V, P>, "delete">>(base, "DELETE", full(p), a, i),
-    };
+  // Helper type: the exact OpenAPI key for this short path
+  type KeyFor<P extends ShortPath<V>> = Extract<PathKey, ToFull<V, P>>;
+
+  function get<P extends ShortPath<V>>(p: P, a?: InputOf<KeyFor<P>, "get">, i?: RequestInit) {
+    return doRequest<OutputOf<KeyFor<P>, "get">>(pickBase(), "GET", full(p), a, i);
   }
 
-  return {
-    bff:   make(BFF_HTTP_BASE),
-    server: make(INTERNAL_HTTP_BASE),
-  };
+  function post<P extends ShortPath<V>>(p: P, a: InputOf<KeyFor<P>, "post">, i?: RequestInit) {
+    return doRequest<OutputOf<KeyFor<P>, "post">>(pickBase(), "POST", full(p), a, i);
+  }
+
+  function put<P extends ShortPath<V>>(p: P, a: InputOf<KeyFor<P>, "put">, i?: RequestInit) {
+    return doRequest<OutputOf<KeyFor<P>, "put">>(pickBase(), "PUT", full(p), a, i);
+  }
+
+  function patch<P extends ShortPath<V>>(p: P, a: InputOf<KeyFor<P>, "patch">, i?: RequestInit) {
+    return doRequest<OutputOf<KeyFor<P>, "patch">>(pickBase(), "PATCH", full(p), a, i);
+  }
+
+  function del<P extends ShortPath<V>>(p: P, a?: InputOf<KeyFor<P>, "delete">, i?: RequestInit) {
+    return doRequest<OutputOf<KeyFor<P>, "delete">>(pickBase(), "DELETE", full(p), a, i);
+  }
+
+  return { get, post, put, patch, delete: del } as const;
 }
 
-export const api = createApiForVersion(API_VERSION);
+export const api = createApi(API_VERSION);

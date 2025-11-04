@@ -45,7 +45,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/detail": {
@@ -87,7 +90,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/detail-bulk": {
@@ -129,7 +135,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/create": {
@@ -171,7 +180,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/bulk-create": {
@@ -213,7 +225,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/update": {
@@ -255,7 +270,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/bulk-update": {
@@ -297,7 +315,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/delete": {
@@ -339,7 +360,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/bulk-delete": {
@@ -381,7 +405,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/create-staff-data": {
@@ -423,7 +450,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/search-staff": {
@@ -465,7 +495,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/process-csv": {
@@ -507,7 +540,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/create-or-update-staff": {
@@ -549,7 +585,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/bulk-create-or-update-staff": {
@@ -591,7 +630,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/detail-simple": {
@@ -633,7 +675,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/update-simple": {
@@ -675,7 +720,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/authorize-emulation": {
@@ -717,7 +765,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/context": {
@@ -759,7 +810,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/mark-intro-complete": {
@@ -801,7 +855,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/mark-chat-complete": {
@@ -843,7 +900,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/profile/by-alias": {
@@ -885,7 +945,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "profile"
+        ]
       }
     },
     "/api/v2/analytics/refresh": {
@@ -907,7 +970,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "analytics"
+        ]
       }
     },
     "/api/v2/dashboard": {
@@ -949,7 +1015,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "dashboard"
+        ]
       }
     },
     "/api/v2/home": {
@@ -991,7 +1060,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "home"
+        ]
       }
     },
     "/api/v2/practice": {
@@ -1033,7 +1105,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "practice"
+        ]
       }
     },
     "/api/v2/leaderboard": {
@@ -1075,7 +1150,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "leaderboard"
+        ]
       }
     },
     "/api/v2/reports": {
@@ -1117,7 +1195,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "reports"
+        ]
       }
     },
     "/api/v2/pricing": {
@@ -1159,7 +1240,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "pricing"
+        ]
       }
     },
     "/api/v2/personas/list": {
@@ -1201,7 +1285,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "personas"
+        ]
       }
     },
     "/api/v2/personas/duplicate": {
@@ -1243,7 +1330,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "personas"
+        ]
       }
     },
     "/api/v2/personas/delete": {
@@ -1285,7 +1375,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "personas"
+        ]
       }
     },
     "/api/v2/personas/delete-prompt": {
@@ -1327,7 +1420,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "personas"
+        ]
       }
     },
     "/api/v2/personas/detail": {
@@ -1369,7 +1465,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "personas"
+        ]
       }
     },
     "/api/v2/personas/detail-default": {
@@ -1411,7 +1510,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "personas"
+        ]
       }
     },
     "/api/v2/personas/create": {
@@ -1453,7 +1555,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "personas"
+        ]
       }
     },
     "/api/v2/personas/update": {
@@ -1495,7 +1600,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "personas"
+        ]
       }
     },
     "/api/v2/documents/list": {
@@ -1537,7 +1645,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/detail": {
@@ -1579,7 +1690,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/detail-bulk": {
@@ -1621,7 +1735,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/update": {
@@ -1663,7 +1780,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/bulk-update": {
@@ -1705,7 +1825,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/delete": {
@@ -1747,7 +1870,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/bulk-delete": {
@@ -1789,7 +1915,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/upload": {
@@ -1809,7 +1938,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       },
       "options": {
         "tags": [
@@ -1827,7 +1959,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/upload/{upload_id}": {
@@ -1868,7 +2003,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       },
       "patch": {
         "tags": [
@@ -1907,7 +2045,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       },
       "options": {
         "tags": [
@@ -1946,7 +2087,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/upload/finalize": {
@@ -1988,7 +2132,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/download/{document_id}": {
@@ -2029,7 +2176,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/documents/certificate": {
@@ -2069,7 +2219,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "documents"
+        ]
       }
     },
     "/api/v2/scenarios/list": {
@@ -2111,7 +2264,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/scenarios/detail": {
@@ -2153,7 +2309,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/scenarios/detail-default": {
@@ -2195,7 +2354,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/scenarios/create": {
@@ -2237,7 +2399,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/scenarios/update": {
@@ -2279,7 +2444,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/scenarios/duplicate": {
@@ -2321,7 +2489,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/scenarios/delete": {
@@ -2363,7 +2534,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/scenarios/generate-ai": {
@@ -2405,7 +2579,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/scenarios/randomize": {
@@ -2447,7 +2624,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "scenarios"
+        ]
       }
     },
     "/api/v2/simulations/list": {
@@ -2489,7 +2669,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "simulations"
+        ]
       }
     },
     "/api/v2/simulations/detail": {
@@ -2531,7 +2714,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "simulations"
+        ]
       }
     },
     "/api/v2/simulations/detail-default": {
@@ -2573,7 +2759,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "simulations"
+        ]
       }
     },
     "/api/v2/simulations/create": {
@@ -2615,7 +2804,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "simulations"
+        ]
       }
     },
     "/api/v2/simulations/update": {
@@ -2657,7 +2849,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "simulations"
+        ]
       }
     },
     "/api/v2/simulations/duplicate": {
@@ -2699,7 +2894,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "simulations"
+        ]
       }
     },
     "/api/v2/simulations/delete": {
@@ -2741,7 +2939,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "simulations"
+        ]
       }
     },
     "/api/v2/rubrics/list": {
@@ -2783,7 +2984,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "rubrics"
+        ]
       }
     },
     "/api/v2/rubrics/detail": {
@@ -2825,7 +3029,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "rubrics"
+        ]
       }
     },
     "/api/v2/rubrics/detail-default": {
@@ -2867,7 +3074,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "rubrics"
+        ]
       }
     },
     "/api/v2/rubrics/create": {
@@ -2909,7 +3119,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "rubrics"
+        ]
       }
     },
     "/api/v2/rubrics/update": {
@@ -2951,7 +3164,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "rubrics"
+        ]
       }
     },
     "/api/v2/rubrics/duplicate": {
@@ -2993,7 +3209,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "rubrics"
+        ]
       }
     },
     "/api/v2/rubrics/delete": {
@@ -3035,7 +3254,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "rubrics"
+        ]
       }
     },
     "/api/v2/cohorts/list": {
@@ -3077,7 +3299,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/detail": {
@@ -3119,7 +3344,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/detail-default": {
@@ -3161,7 +3389,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/detail-with-profiles": {
@@ -3203,7 +3434,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/create": {
@@ -3245,7 +3479,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/update": {
@@ -3287,7 +3524,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/duplicate": {
@@ -3329,7 +3569,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/delete": {
@@ -3371,7 +3614,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/leave": {
@@ -3413,7 +3659,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/add-profiles": {
@@ -3455,7 +3704,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/cohorts/remove-profiles": {
@@ -3497,7 +3749,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "cohorts"
+        ]
       }
     },
     "/api/v2/providers/list": {
@@ -3539,7 +3794,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/detail": {
@@ -3581,7 +3839,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/create": {
@@ -3623,7 +3884,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/update": {
@@ -3665,7 +3929,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/delete": {
@@ -3707,7 +3974,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/duplicate": {
@@ -3749,7 +4019,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/decrypt-key": {
@@ -3791,7 +4064,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/models/detail": {
@@ -3833,7 +4109,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/models/create": {
@@ -3875,7 +4154,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/models/update": {
@@ -3917,7 +4199,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/models/delete": {
@@ -3959,7 +4244,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/providers/models/duplicate": {
@@ -4001,7 +4289,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "providers"
+        ]
       }
     },
     "/api/v2/parameters/list": {
@@ -4043,7 +4334,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "parameters"
+        ]
       }
     },
     "/api/v2/parameters/detail": {
@@ -4085,7 +4379,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "parameters"
+        ]
       }
     },
     "/api/v2/parameters/detail-default": {
@@ -4127,7 +4424,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "parameters"
+        ]
       }
     },
     "/api/v2/parameters/create": {
@@ -4169,7 +4469,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "parameters"
+        ]
       }
     },
     "/api/v2/parameters/update": {
@@ -4211,7 +4514,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "parameters"
+        ]
       }
     },
     "/api/v2/parameters/duplicate": {
@@ -4253,7 +4559,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "parameters"
+        ]
       }
     },
     "/api/v2/parameters/delete": {
@@ -4295,7 +4604,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "parameters"
+        ]
       }
     },
     "/api/v2/parameters/items/create": {
@@ -4337,7 +4649,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "parameters"
+        ]
       }
     },
     "/api/v2/departments/list": {
@@ -4379,7 +4694,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "departments"
+        ]
       }
     },
     "/api/v2/departments/detail": {
@@ -4421,7 +4739,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "departments"
+        ]
       }
     },
     "/api/v2/departments/detail-default": {
@@ -4463,7 +4784,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "departments"
+        ]
       }
     },
     "/api/v2/departments/create": {
@@ -4505,7 +4829,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "departments"
+        ]
       }
     },
     "/api/v2/departments/update": {
@@ -4547,7 +4874,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "departments"
+        ]
       }
     },
     "/api/v2/departments/duplicate": {
@@ -4589,7 +4919,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "departments"
+        ]
       }
     },
     "/api/v2/departments/delete": {
@@ -4631,7 +4964,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "departments"
+        ]
       }
     },
     "/api/v2/departments/remove-profiles": {
@@ -4673,7 +5009,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "departments"
+        ]
       }
     },
     "/api/v2/agents/list": {
@@ -4715,7 +5054,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "agents"
+        ]
       }
     },
     "/api/v2/agents/detail": {
@@ -4757,7 +5099,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "agents"
+        ]
       }
     },
     "/api/v2/agents/detail-default": {
@@ -4799,7 +5144,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "agents"
+        ]
       }
     },
     "/api/v2/agents/create": {
@@ -4841,7 +5189,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "agents"
+        ]
       }
     },
     "/api/v2/agents/update": {
@@ -4883,7 +5234,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "agents"
+        ]
       }
     },
     "/api/v2/agents/duplicate": {
@@ -4925,7 +5279,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "agents"
+        ]
       }
     },
     "/api/v2/agents/delete": {
@@ -4967,7 +5324,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "agents"
+        ]
       }
     },
     "/api/v2/agents/delete-prompt": {
@@ -5009,7 +5369,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "agents"
+        ]
       }
     },
     "/api/v2/feedback/list": {
@@ -5051,7 +5414,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "feedback"
+        ]
       }
     },
     "/api/v2/feedback/create": {
@@ -5093,7 +5459,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "feedback"
+        ]
       }
     },
     "/api/v2/feedback/bulk-delete": {
@@ -5135,7 +5504,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "feedback"
+        ]
       }
     },
     "/api/v2/logs/list": {
@@ -5177,7 +5549,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "logs"
+        ]
       }
     },
     "/api/v2/logs/create": {
@@ -5219,7 +5594,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "logs"
+        ]
       }
     },
     "/api/v2/logs/bulk-delete": {
@@ -5261,7 +5639,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "logs"
+        ]
       }
     },
     "/api/v2/logs/health": {
@@ -5283,7 +5664,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "logs"
+        ]
       }
     },
     "/api/v2/attempts/{attempt_id}/full": {
@@ -5329,7 +5713,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "attempts"
+        ]
       }
     },
     "/api/v2/attempts/bulk-archive": {
@@ -5371,7 +5758,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "attempts"
+        ]
       }
     },
     "/api/v2/attempts/chats/update-created-at": {
@@ -5413,7 +5803,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "attempts"
+        ]
       }
     },
     "/api/v2/assistant/chats/{chat_id}/full": {
@@ -5469,7 +5862,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "assistant"
+        ]
       }
     },
     "/api/v2/assistant/chats/list/{profile_id}": {
@@ -5515,7 +5911,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "assistant"
+        ]
       }
     },
     "/api/v3/profile/detail": {
@@ -5558,7 +5957,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/update": {
@@ -5601,7 +6004,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/by-alias": {
@@ -5644,7 +6051,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/context": {
@@ -5687,7 +6098,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/authorize-emulation": {
@@ -5730,7 +6145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/mark-intro-complete": {
@@ -5773,7 +6192,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/mark-chat-complete": {
@@ -5816,7 +6239,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
       }
     },
     "/api/v3/profile/staff/list": {
@@ -5860,7 +6287,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/detail": {
@@ -5904,7 +6336,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/detail-bulk": {
@@ -5948,7 +6385,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/create": {
@@ -5992,7 +6434,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/bulk-create": {
@@ -6036,7 +6483,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/update": {
@@ -6080,7 +6532,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/bulk-update": {
@@ -6124,7 +6581,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/delete": {
@@ -6168,7 +6630,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/bulk-delete": {
@@ -6212,7 +6679,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/create-staff-data": {
@@ -6256,7 +6728,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/search-staff": {
@@ -6300,7 +6777,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/process-csv": {
@@ -6344,7 +6826,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/create-or-update-staff": {
@@ -6388,7 +6875,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/profile/staff/bulk-create-or-update-staff": {
@@ -6432,7 +6924,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
       }
     },
     "/api/v3/scenarios/list": {
@@ -6475,7 +6972,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/detail": {
@@ -6518,7 +7019,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/detail-default": {
@@ -6561,7 +7066,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/create": {
@@ -6604,7 +7113,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/update": {
@@ -6647,7 +7160,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/duplicate": {
@@ -6690,7 +7207,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/delete": {
@@ -6733,7 +7254,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/generate-ai": {
@@ -6776,7 +7301,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/scenarios/randomize": {
@@ -6819,7 +7348,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
       }
     },
     "/api/v3/simulations/list": {
@@ -6862,7 +7395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/detail": {
@@ -6905,7 +7442,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/detail-default": {
@@ -6948,7 +7489,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/create": {
@@ -6991,7 +7536,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/update": {
@@ -7034,7 +7583,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/duplicate": {
@@ -7077,7 +7630,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/simulations/delete": {
@@ -7120,7 +7677,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "simulations"
+        ]
       }
     },
     "/api/v3/personas/list": {
@@ -7163,7 +7724,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/detail": {
@@ -7206,7 +7771,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/detail-default": {
@@ -7249,7 +7818,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/create": {
@@ -7292,7 +7865,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/update": {
@@ -7335,7 +7912,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/duplicate": {
@@ -7378,7 +7959,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/personas/delete": {
@@ -7421,7 +8006,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "personas"
+        ]
       }
     },
     "/api/v3/departments/list": {
@@ -7464,7 +8053,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/detail": {
@@ -7507,7 +8100,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/detail-default": {
@@ -7550,7 +8147,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/create": {
@@ -7593,7 +8194,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/update": {
@@ -7636,7 +8241,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/duplicate": {
@@ -7679,7 +8288,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/delete": {
@@ -7722,7 +8335,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/departments/remove-profiles": {
@@ -7765,7 +8382,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
       }
     },
     "/api/v3/cohorts/list": {
@@ -7808,7 +8429,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/detail": {
@@ -7851,7 +8476,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/detail-default": {
@@ -7894,7 +8523,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/detail-with-profiles": {
@@ -7937,7 +8570,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/duplicate": {
@@ -7980,7 +8617,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/leave": {
@@ -8023,7 +8664,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/add-profiles": {
@@ -8066,7 +8711,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/remove-profiles": {
@@ -8109,7 +8758,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/create": {
@@ -8152,7 +8805,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/update": {
@@ -8195,7 +8852,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/cohorts/delete": {
@@ -8238,7 +8899,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
       }
     },
     "/api/v3/documents/list": {
@@ -8281,7 +8946,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/detail": {
@@ -8324,7 +8993,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/detail-bulk": {
@@ -8367,7 +9040,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/delete": {
@@ -8410,7 +9087,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/bulk-update": {
@@ -8453,7 +9134,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/bulk-delete": {
@@ -8496,7 +9181,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/documents/update": {
@@ -8539,7 +9228,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
       }
     },
     "/api/v3/rubrics/list": {
@@ -8582,7 +9275,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/detail": {
@@ -8625,7 +9322,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/detail-default": {
@@ -8668,7 +9369,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/duplicate": {
@@ -8711,7 +9416,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/create": {
@@ -8754,7 +9463,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/update": {
@@ -8797,7 +9510,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/rubrics/delete": {
@@ -8840,7 +9557,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "rubrics"
+        ]
       }
     },
     "/api/v3/refresh": {
@@ -8862,7 +9583,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3"
+        ]
       }
     },
     "/api/v3/": {
@@ -8904,7 +9628,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3"
+        ]
       }
     },
     "/api/v3/agents/list": {
@@ -8947,7 +9674,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/detail": {
@@ -8990,7 +9721,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/detail-default": {
@@ -9033,7 +9768,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/create": {
@@ -9076,7 +9815,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/update": {
@@ -9119,7 +9862,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/duplicate": {
@@ -9162,7 +9909,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/delete": {
@@ -9205,7 +9956,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/agents/delete-prompt": {
@@ -9248,7 +10003,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "agents"
+        ]
       }
     },
     "/api/v3/providers/list": {
@@ -9291,7 +10050,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/detail": {
@@ -9334,7 +10097,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/providers/create": {
@@ -9377,7 +10144,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "providers"
+        ]
       }
     },
     "/api/v3/parameters/list": {
@@ -9420,7 +10191,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/parameters/detail": {
@@ -9463,7 +10238,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "parameters"
+        ]
       }
     },
     "/api/v3/feedback/list": {
@@ -9506,7 +10285,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
       }
     },
     "/api/v3/feedback/create": {
@@ -9549,7 +10332,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
       }
     },
     "/api/v3/feedback/bulk-delete": {
@@ -9592,7 +10379,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "feedback"
+        ]
       }
     },
     "/api/v3/logs/list": {
@@ -9635,7 +10426,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/logs/create": {
@@ -9678,7 +10473,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/logs/bulk-delete": {
@@ -9721,7 +10520,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
       }
     },
     "/api/v3/attempts/bulk-archive": {
@@ -9764,7 +10567,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
       }
     },
     "/api/v3/attempts/chats/update-created-at": {
@@ -9807,7 +10614,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts"
+        ]
       }
     },
     "/api/v3/home/": {
@@ -9850,7 +10661,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "home"
+        ]
       }
     },
     "/api/v3/practice/": {
@@ -9893,7 +10708,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "practice"
+        ]
       }
     },
     "/api/v3/pricing/": {
@@ -9936,7 +10755,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "pricing"
+        ]
       }
     },
     "/api/v3/assistant/chats/{chat_id}/full": {
@@ -9991,7 +10814,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "assistant"
+        ]
       }
     },
     "/api/v3/assistant/chats/list/{profile_id}": {
@@ -10036,7 +10863,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v3",
+          "assistant"
+        ]
       }
     },
     "/": {
