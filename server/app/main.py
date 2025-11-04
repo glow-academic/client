@@ -615,6 +615,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
 
 # Create FastAPI app
+# redirect_slashes=False prevents automatic redirects between /path and /path/
+# This avoids double-slash issues when clients call paths inconsistently
 fastapi_app = FastAPI(title="GLOW API", lifespan=lifespan)
 
 # Add CORS middleware FIRST

@@ -4186,7 +4186,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/": {
+    "/api/v3/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Dashboard
+         * @description Get complete dashboard bundle with all metrics, history, insights, and mappings.
+         */
+        post: operations["get_dashboard_api_v3_dashboard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Reports
+         * @description Get reports bundle with aggregated metrics per profile and entity mappings.
+         */
+        post: operations["get_reports_api_v3_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/leaderboard": {
         parameters: {
             query?: never;
             header?: never;
@@ -4199,7 +4239,7 @@ export interface paths {
          * Get Leaderboard
          * @description Get leaderboard bundle with all metrics and profile data.
          */
-        post: operations["get_leaderboard_api_v3__post"];
+        post: operations["get_leaderboard_api_v3_leaderboard_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4626,7 +4666,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/home/": {
+    "/api/v3/home": {
         parameters: {
             query?: never;
             header?: never;
@@ -4641,14 +4681,14 @@ export interface paths {
          *
          *     Home always shows general simulations only (no simulationFilters parameter).
          */
-        post: operations["get_home_overview_api_v3_home__post"];
+        post: operations["get_home_overview_api_v3_home_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/practice/": {
+    "/api/v3/practice": {
         parameters: {
             query?: never;
             header?: never;
@@ -4664,14 +4704,14 @@ export interface paths {
          *     Practice uses simplified filters: only profileId and departmentIds.
          *     No cohort/role/date filtering for personal practice.
          */
-        post: operations["get_practice_overview_api_v3_practice__post"];
+        post: operations["get_practice_overview_api_v3_practice_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/pricing/": {
+    "/api/v3/pricing": {
         parameters: {
             query?: never;
             header?: never;
@@ -4684,7 +4724,7 @@ export interface paths {
          * Get Pricing
          * @description Get pricing metrics with model usage and cost analysis.
          */
-        post: operations["get_pricing_api_v3_pricing__post"];
+        post: operations["get_pricing_api_v3_pricing_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4845,56 +4885,6 @@ export interface components {
             allChats: {
                 [key: string]: unknown;
             }[];
-        };
-        /**
-         * AttemptHistoryRow
-         * @description Attempt history row.
-         */
-        AttemptHistoryRow: {
-            /** Attemptid */
-            attemptId: string;
-            /** Date */
-            date: string;
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /** Simulationname */
-            simulationName: string;
-            /** Numscenarios */
-            numScenarios?: number | null;
-            /** Numscenarioscompleted */
-            numScenariosCompleted: number;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Personanames */
-            personaNames: string[];
-            /** Personacolors */
-            personaColors: string[];
-            /** Score */
-            score?: number | null;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Titles */
-            scenario_titles: string[];
-            /** Isarchived */
-            isArchived: boolean;
-            /** Showview */
-            showView: boolean;
-            /** Showcontinue */
-            showContinue: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Passpct */
-            passPct?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohortnames */
-            cohortNames: string[];
         };
         /**
          * AttemptImprovementData
@@ -8786,6 +8776,56 @@ export interface components {
             message: string;
         };
         /**
+         * AttemptHistoryRow
+         * @description Attempt history row.
+         */
+        app__api__v3__dashboard__bundle__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Id */
+            department_id?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+        };
+        /**
          * DashboardBundleResponse
          * @description Complete dashboard bundle with all metrics, history, insights, and mappings.
          */
@@ -8795,7 +8835,7 @@ export interface components {
             secondary: components["schemas"]["app__api__v3__dashboard__bundle__DashboardSecondaryMetrics"];
             footer: components["schemas"]["app__api__v3__dashboard__bundle__DashboardFooterMetrics"];
             /** History */
-            history: components["schemas"]["AttemptHistoryRow"][];
+            history: components["schemas"]["app__api__v3__dashboard__bundle__AttemptHistoryRow"][];
             insights: components["schemas"]["DashboardInsights"];
             thresholds: components["schemas"]["Thresholds"];
             /** Simulation Mapping */
@@ -8820,44 +8860,44 @@ export interface components {
          * @description Footer metrics (4 total).
          */
         app__api__v3__dashboard__bundle__DashboardFooterMetrics: {
-            scenario_performance: components["schemas"]["ScenarioPerformanceResponse"];
-            scenario_stats: components["schemas"]["ScenarioStatsResponse"];
-            simulation_performance: components["schemas"]["SimulationPerformanceResponse"];
-            simulation_composition: components["schemas"]["SimulationCompositionResponse"];
+            scenarioPerformance: components["schemas"]["ScenarioPerformanceResponse"];
+            scenarioStats: components["schemas"]["ScenarioStatsResponse"];
+            simulationPerformance: components["schemas"]["SimulationPerformanceResponse"];
+            simulationComposition: components["schemas"]["SimulationCompositionResponse"];
         };
         /**
          * DashboardHeaderMetrics
          * @description Header metrics (10 total).
          */
         app__api__v3__dashboard__bundle__DashboardHeaderMetrics: {
-            average_score: components["schemas"]["MetricResponse"];
-            completion_percentage: components["schemas"]["MetricResponse"];
-            first_attempt_pass_rate: components["schemas"]["MetricResponse"];
-            highest_score: components["schemas"]["MetricResponse"];
-            messages_per_session: components["schemas"]["MetricResponse"];
-            persona_response_times: components["schemas"]["MetricResponse"];
-            session_efficiency: components["schemas"]["MetricResponse"];
-            stagnation_rate: components["schemas"]["MetricResponse"];
-            time_spent: components["schemas"]["MetricResponse"];
-            total_attempts: components["schemas"]["MetricResponse"];
+            averageScore: components["schemas"]["MetricResponse"];
+            completionPercentage: components["schemas"]["MetricResponse"];
+            firstAttemptPassRate: components["schemas"]["MetricResponse"];
+            highestScore: components["schemas"]["MetricResponse"];
+            messagesPerSession: components["schemas"]["MetricResponse"];
+            personaResponseTimes: components["schemas"]["MetricResponse"];
+            sessionEfficiency: components["schemas"]["MetricResponse"];
+            stagnationRate: components["schemas"]["MetricResponse"];
+            timeSpent: components["schemas"]["MetricResponse"];
+            totalAttempts: components["schemas"]["MetricResponse"];
         };
         /**
          * DashboardPrimaryMetrics
          * @description Primary metrics (3 total).
          */
         app__api__v3__dashboard__bundle__DashboardPrimaryMetrics: {
-            growth_data: components["schemas"]["app__api__v3__dashboard__bundle__GrowthDataResponse"];
-            persona_performance: components["schemas"]["app__api__v3__dashboard__bundle__PersonaPerformanceResponse"];
-            rubric_heatmap: components["schemas"]["app__api__v3__dashboard__bundle__RubricHeatmapResponse"];
+            growthData: components["schemas"]["app__api__v3__dashboard__bundle__GrowthDataResponse"];
+            personaPerformance: components["schemas"]["app__api__v3__dashboard__bundle__PersonaPerformanceResponse"];
+            rubricHeatmap: components["schemas"]["app__api__v3__dashboard__bundle__RubricHeatmapResponse"];
         };
         /**
          * DashboardSecondaryMetrics
          * @description Secondary metrics (3 total).
          */
         app__api__v3__dashboard__bundle__DashboardSecondaryMetrics: {
-            attempt_improvement: components["schemas"]["AttemptImprovementResponse"];
-            cohort_performance: components["schemas"]["CohortPerformanceResponse"];
-            skill_performance: components["schemas"]["app__api__v3__dashboard__bundle__SkillPerformanceResponse"];
+            attemptImprovement: components["schemas"]["AttemptImprovementResponse"];
+            cohortPerformance: components["schemas"]["CohortPerformanceResponse"];
+            skillPerformance: components["schemas"]["app__api__v3__dashboard__bundle__SkillPerformanceResponse"];
         };
         /**
          * GrowthDataResponse
@@ -9302,6 +9342,56 @@ export interface components {
             feedback: components["schemas"]["app__api__v3__feedback__list__FeedbackItem"][];
         };
         /**
+         * AttemptHistoryRow
+         * @description Attempt history row.
+         */
+        app__api__v3__home__overview__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+        };
+        /**
          * HomeOverviewResponse
          * @description Home overview response with mappings and history.
          */
@@ -9316,7 +9406,7 @@ export interface components {
             /** Items */
             items: components["schemas"]["HomeSimulationItem"][];
             /** History */
-            history: components["schemas"]["AttemptHistoryRow"][];
+            history: components["schemas"]["app__api__v3__home__overview__AttemptHistoryRow"][];
             /** Standard Groups Mapping */
             standard_groups_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
@@ -9870,6 +9960,56 @@ export interface components {
             message: string;
         };
         /**
+         * AttemptHistoryRow
+         * @description Attempt history row.
+         */
+        app__api__v3__practice__overview__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+        };
+        /**
          * PracticeOverviewResponse
          * @description Practice overview response with mappings and history.
          */
@@ -9884,7 +10024,7 @@ export interface components {
             /** Items */
             items: components["schemas"]["PracticeSimulationItem"][];
             /** History */
-            history: components["schemas"]["AttemptHistoryRow"][];
+            history: components["schemas"]["app__api__v3__practice__overview__AttemptHistoryRow"][];
             /** Standard Groups Mapping */
             standard_groups_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
@@ -11848,7 +11988,7 @@ export interface components {
             secondary: components["schemas"]["app__schemas__dashboard__DashboardSecondaryMetrics"];
             footer: components["schemas"]["app__schemas__dashboard__DashboardFooterMetrics"];
             /** History */
-            history: components["schemas"]["AttemptHistoryRow"][];
+            history: components["schemas"]["app__schemas__home__AttemptHistoryRow"][];
             insights: components["schemas"]["DashboardInsights"];
             thresholds: components["schemas"]["Thresholds"];
             /** Simulation Mapping */
@@ -12222,6 +12362,56 @@ export interface components {
             feedback: components["schemas"]["app__schemas__feedback__FeedbackItem"][];
         };
         /**
+         * AttemptHistoryRow
+         * @description Attempt history row.
+         */
+        app__schemas__home__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+        };
+        /**
          * HomeOverviewResponse
          * @description Home overview response with mappings and history.
          */
@@ -12236,7 +12426,7 @@ export interface components {
             /** Items */
             items: components["schemas"]["HomeSimulationItem"][];
             /** History */
-            history: components["schemas"]["AttemptHistoryRow"][];
+            history: components["schemas"]["app__schemas__home__AttemptHistoryRow"][];
             /** Standard Groups Mapping */
             standard_groups_mapping: {
                 [key: string]: components["schemas"]["app__schemas__base__StandardGroupMappingItem"];
@@ -12792,7 +12982,7 @@ export interface components {
             /** Items */
             items: components["schemas"]["PracticeSimulationItem"][];
             /** History */
-            history: components["schemas"]["AttemptHistoryRow"][];
+            history: components["schemas"]["app__schemas__home__AttemptHistoryRow"][];
             /** Standard Groups Mapping */
             standard_groups_mapping: {
                 [key: string]: components["schemas"]["app__schemas__base__StandardGroupMappingItem"];
@@ -20734,7 +20924,73 @@ export interface operations {
             };
         };
     };
-    get_leaderboard_api_v3__post: {
+    get_dashboard_api_v3_dashboard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyticsFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__dashboard__bundle__DashboardBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reports_api_v3_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyticsFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__reports__bundle__ReportsBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_leaderboard_api_v3_leaderboard_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -21460,7 +21716,7 @@ export interface operations {
             };
         };
     };
-    get_home_overview_api_v3_home__post: {
+    get_home_overview_api_v3_home_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -21493,7 +21749,7 @@ export interface operations {
             };
         };
     };
-    get_practice_overview_api_v3_practice__post: {
+    get_practice_overview_api_v3_practice_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -21526,7 +21782,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_api_v3_pricing__post: {
+    get_pricing_api_v3_pricing_post: {
         parameters: {
             query?: never;
             header?: never;

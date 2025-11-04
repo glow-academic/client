@@ -5,7 +5,6 @@
  * 06/08/2025
  */
 "use client";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -20,7 +19,9 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { usePractice } from "@/lib/api/v2/hooks/practice";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 // Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
 // This functionality needs to be re-implemented or removed
 import SimulationHistory from "../common/history/SimulationHistory";
@@ -43,7 +44,6 @@ export default function Practice() {
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const { effectiveProfile, activeProfile } = useProfile();
-  const { info, error } = useLogger();
   // Practice customize dialog state
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [isStartingAttempt, setIsStartingAttempt] = useState(false);
@@ -67,8 +67,10 @@ export default function Practice() {
   );
 
   // Single optimized bundle call with items, history, and mappings
-  const { data: bundle, isLoading: isPracticeOverviewLoading } =
-    usePractice(filters);
+  const { data: bundle, isLoading: isPracticeOverviewLoading } = useQuery({
+    queryKey: keys.practice.with(filters),
+    queryFn: () => api.post("/practice", { body: filters }),
+  });
 
   // Extract data from bundle
   const practiceOverview = bundle;
@@ -97,9 +99,15 @@ export default function Practice() {
     [bundle?.simulation_mapping]
   );
 
-  // Use data directly from the hook
+  // Normalize simulation items to ensure required fields are present
   const simulationItems = useMemo(() => {
-    return practiceOverview?.items ?? [];
+    if (!practiceOverview?.items) return [];
+
+    return practiceOverview.items.map((item) => ({
+      ...item,
+      // Ensure simulationDescription is always present (string | null, not undefined)
+      simulationDescription: item.simulationDescription ?? null,
+    }));
   }, [practiceOverview?.items]);
 
   // Extract rubric mappings from practice overview data
@@ -124,11 +132,6 @@ export default function Practice() {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
-      info("simulation.navigate.attempt", {
-        message: "Navigating to simulation attempt",
-        subject: { entityType: "attempt", entityId: attemptId },
-        context: { component: "Practice", function: "handleSimulationStarted" },
-      });
       router.push(`/practice/a/${attemptId}`);
     };
 
@@ -160,7 +163,7 @@ export default function Practice() {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId, info, error]);
+  }, [router, loadingToastId]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
@@ -175,18 +178,6 @@ export default function Practice() {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
           );
-          error("simulation.start.precheck.failed", {
-            message: "WebSocket not connected when trying to start simulation",
-            subject: { entityType: "simulation", entityId: simulationId },
-            ...(effectiveProfile?.id
-              ? { actor: { profileId: effectiveProfile.id } }
-              : {}),
-            context: {
-              component: "Practice",
-              function: "handleStartSimulation",
-              isConnected,
-            },
-          });
           return;
         }
 
@@ -198,19 +189,6 @@ export default function Practice() {
         const profileIdForEmit =
           effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
 
-        info("simulation.start", {
-          message: "Starting simulation via global WebSocket",
-          subject: { entityType: "simulation", entityId: simulationId },
-          ...(effectiveProfile?.id
-            ? { actor: { profileId: effectiveProfile.id } }
-            : {}),
-          context: {
-            component: "Practice",
-            function: "handleStartSimulation",
-            isConnected,
-          },
-        });
-
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
@@ -219,31 +197,11 @@ export default function Practice() {
         // timeout...
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
-          error("simulation.start.timeout", {
-            message: "Simulation start timeout - no response from server",
-            subject: { entityType: "simulation", entityId: simulationId },
-            ...(effectiveProfile?.id
-              ? { actor: { profileId: effectiveProfile.id } }
-              : {}),
-            context: {
-              component: "Practice",
-              function: "handleStartSimulation",
-            },
-          });
           toast.dismiss(toastId);
           toast.error("Simulation start timed out. Please try again.");
           setLoadingToastId(null);
         }, 30000);
-      } catch (e) {
-        error("simulation.start.failed", {
-          message: "Error starting simulation",
-          subject: { entityType: "simulation", entityId: simulationId },
-          ...(effectiveProfile?.id
-            ? { actor: { profileId: effectiveProfile.id } }
-            : {}),
-          context: { component: "Practice", function: "handleStartSimulation" },
-          error: e,
-        });
+      } catch {
         if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start simulation. Please try again.");
         setLoadingToastId(null);
@@ -255,8 +213,6 @@ export default function Practice() {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-      info,
-      error,
     ]
   );
 
@@ -442,7 +398,8 @@ export default function Practice() {
             <SimulationHistory
               data={
                 historyData
-                  ? historyData.map((item) => ({
+                  ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    historyData.map((item: any) => ({
                       attemptId: item.attemptId,
                       date: new Date(item.date),
                       profileId: item.profileId,
@@ -553,15 +510,10 @@ export default function Practice() {
                 // } else {
                 //   throw new Error(result.message || "Failed to create practice scenario");
                 // }
-              } catch (e) {
-                error("practice.session.error", {
-                  message: "Error starting practice session",
-                  error: e,
-                  context: { function: "onStartAttempt" },
-                });
+              } catch (error) {
                 toast.error(
-                  e instanceof Error
-                    ? e.message
+                  error instanceof Error
+                    ? error.message
                     : "Failed to start practice session",
                   {
                     id: "start-attempt",

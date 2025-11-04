@@ -9589,14 +9589,109 @@
         ]
       }
     },
-    "/api/v3/": {
+    "/api/v3/dashboard": {
       "post": {
         "tags": [
-          "v3"
+          "v3",
+          "dashboard"
+        ],
+        "summary": "Get Dashboard",
+        "description": "Get complete dashboard bundle with all metrics, history, insights, and mappings.",
+        "operationId": "get_dashboard_api_v3_dashboard_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__DashboardBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v3/reports": {
+      "post": {
+        "tags": [
+          "v3",
+          "reports"
+        ],
+        "summary": "Get Reports",
+        "description": "Get reports bundle with aggregated metrics per profile and entity mappings.",
+        "operationId": "get_reports_api_v3_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__reports__bundle__ReportsBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
+        ]
+      }
+    },
+    "/api/v3/leaderboard": {
+      "post": {
+        "tags": [
+          "v3",
+          "leaderboard"
         ],
         "summary": "Get Leaderboard",
         "description": "Get leaderboard bundle with all metrics and profile data.",
-        "operationId": "get_leaderboard_api_v3__post",
+        "operationId": "get_leaderboard_api_v3_leaderboard_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -9630,7 +9725,8 @@
           }
         },
         "x-cache-tags": [
-          "v3"
+          "v3",
+          "leaderboard"
         ]
       }
     },
@@ -10621,7 +10717,7 @@
         ]
       }
     },
-    "/api/v3/home/": {
+    "/api/v3/home": {
       "post": {
         "tags": [
           "v3",
@@ -10629,7 +10725,7 @@
         ],
         "summary": "Get Home Overview",
         "description": "Get home overview with items, history, and mappings.\n\nHome always shows general simulations only (no simulationFilters parameter).",
-        "operationId": "get_home_overview_api_v3_home__post",
+        "operationId": "get_home_overview_api_v3_home_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -10668,7 +10764,7 @@
         ]
       }
     },
-    "/api/v3/practice/": {
+    "/api/v3/practice": {
       "post": {
         "tags": [
           "v3",
@@ -10676,7 +10772,7 @@
         ],
         "summary": "Get Practice Overview",
         "description": "Get practice overview data with history and all entity mappings.\n\nPractice uses simplified filters: only profileId and departmentIds.\nNo cohort/role/date filtering for personal practice.",
-        "operationId": "get_practice_overview_api_v3_practice__post",
+        "operationId": "get_practice_overview_api_v3_practice_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -10715,7 +10811,7 @@
         ]
       }
     },
-    "/api/v3/pricing/": {
+    "/api/v3/pricing": {
       "post": {
         "tags": [
           "v3",
@@ -10723,7 +10819,7 @@
         ],
         "summary": "Get Pricing",
         "description": "Get pricing metrics with model usage and cost analysis.",
-        "operationId": "get_pricing_api_v3_pricing__post",
+        "operationId": "get_pricing_api_v3_pricing_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -11127,173 +11223,6 @@
         ],
         "title": "AssistantChatListResponse",
         "description": "Response schema for assistant chats list."
-      },
-      "AttemptHistoryRow": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "profileName": {
-            "type": "string",
-            "title": "Profilename"
-          },
-          "simulationName": {
-            "type": "string",
-            "title": "Simulationname"
-          },
-          "numScenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Numscenarios"
-          },
-          "numScenariosCompleted": {
-            "type": "integer",
-            "title": "Numscenarioscompleted"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "personaNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personanames"
-          },
-          "personaColors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personacolors"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Titles"
-          },
-          "isArchived": {
-            "type": "boolean",
-            "title": "Isarchived"
-          },
-          "showView": {
-            "type": "boolean",
-            "title": "Showview"
-          },
-          "showContinue": {
-            "type": "boolean",
-            "title": "Showcontinue"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          },
-          "passPct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passpct"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohortNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohortnames"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId",
-          "date",
-          "profileId",
-          "profileName",
-          "simulationName",
-          "numScenariosCompleted",
-          "infiniteMode",
-          "personaNames",
-          "personaColors",
-          "simulation_id",
-          "scenario_ids",
-          "scenario_titles",
-          "isArchived",
-          "showView",
-          "showContinue",
-          "practiceSimulation",
-          "cohortNames"
-        ],
-        "title": "AttemptHistoryRow",
-        "description": "Attempt history row."
       },
       "AttemptImprovementData": {
         "properties": {
@@ -21086,6 +21015,173 @@
         "title": "UpdateCohortResponse",
         "description": "Response for updating a cohort."
       },
+      "app__api__v3__dashboard__bundle__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row."
+      },
       "app__api__v3__dashboard__bundle__DashboardBundleResponse": {
         "properties": {
           "header": {
@@ -21102,7 +21198,7 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__AttemptHistoryRow"
             },
             "type": "array",
             "title": "History"
@@ -21161,116 +21257,116 @@
       },
       "app__api__v3__dashboard__bundle__DashboardFooterMetrics": {
         "properties": {
-          "scenario_performance": {
+          "scenarioPerformance": {
             "$ref": "#/components/schemas/ScenarioPerformanceResponse"
           },
-          "scenario_stats": {
+          "scenarioStats": {
             "$ref": "#/components/schemas/ScenarioStatsResponse"
           },
-          "simulation_performance": {
+          "simulationPerformance": {
             "$ref": "#/components/schemas/SimulationPerformanceResponse"
           },
-          "simulation_composition": {
+          "simulationComposition": {
             "$ref": "#/components/schemas/SimulationCompositionResponse"
           }
         },
         "type": "object",
         "required": [
-          "scenario_performance",
-          "scenario_stats",
-          "simulation_performance",
-          "simulation_composition"
+          "scenarioPerformance",
+          "scenarioStats",
+          "simulationPerformance",
+          "simulationComposition"
         ],
         "title": "DashboardFooterMetrics",
         "description": "Footer metrics (4 total)."
       },
       "app__api__v3__dashboard__bundle__DashboardHeaderMetrics": {
         "properties": {
-          "average_score": {
+          "averageScore": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "completion_percentage": {
+          "completionPercentage": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "first_attempt_pass_rate": {
+          "firstAttemptPassRate": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "highest_score": {
+          "highestScore": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "messages_per_session": {
+          "messagesPerSession": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "persona_response_times": {
+          "personaResponseTimes": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "session_efficiency": {
+          "sessionEfficiency": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "stagnation_rate": {
+          "stagnationRate": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "time_spent": {
+          "timeSpent": {
             "$ref": "#/components/schemas/MetricResponse"
           },
-          "total_attempts": {
+          "totalAttempts": {
             "$ref": "#/components/schemas/MetricResponse"
           }
         },
         "type": "object",
         "required": [
-          "average_score",
-          "completion_percentage",
-          "first_attempt_pass_rate",
-          "highest_score",
-          "messages_per_session",
-          "persona_response_times",
-          "session_efficiency",
-          "stagnation_rate",
-          "time_spent",
-          "total_attempts"
+          "averageScore",
+          "completionPercentage",
+          "firstAttemptPassRate",
+          "highestScore",
+          "messagesPerSession",
+          "personaResponseTimes",
+          "sessionEfficiency",
+          "stagnationRate",
+          "timeSpent",
+          "totalAttempts"
         ],
         "title": "DashboardHeaderMetrics",
         "description": "Header metrics (10 total)."
       },
       "app__api__v3__dashboard__bundle__DashboardPrimaryMetrics": {
         "properties": {
-          "growth_data": {
+          "growthData": {
             "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__GrowthDataResponse"
           },
-          "persona_performance": {
+          "personaPerformance": {
             "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__PersonaPerformanceResponse"
           },
-          "rubric_heatmap": {
+          "rubricHeatmap": {
             "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__RubricHeatmapResponse"
           }
         },
         "type": "object",
         "required": [
-          "growth_data",
-          "persona_performance",
-          "rubric_heatmap"
+          "growthData",
+          "personaPerformance",
+          "rubricHeatmap"
         ],
         "title": "DashboardPrimaryMetrics",
         "description": "Primary metrics (3 total)."
       },
       "app__api__v3__dashboard__bundle__DashboardSecondaryMetrics": {
         "properties": {
-          "attempt_improvement": {
+          "attemptImprovement": {
             "$ref": "#/components/schemas/AttemptImprovementResponse"
           },
-          "cohort_performance": {
+          "cohortPerformance": {
             "$ref": "#/components/schemas/CohortPerformanceResponse"
           },
-          "skill_performance": {
+          "skillPerformance": {
             "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__SkillPerformanceResponse"
           }
         },
         "type": "object",
         "required": [
-          "attempt_improvement",
-          "cohort_performance",
-          "skill_performance"
+          "attemptImprovement",
+          "cohortPerformance",
+          "skillPerformance"
         ],
         "title": "DashboardSecondaryMetrics",
         "description": "Secondary metrics (3 total)."
@@ -22321,6 +22417,173 @@
         ],
         "title": "FeedbackListResponse"
       },
+      "app__api__v3__home__overview__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row."
+      },
       "app__api__v3__home__overview__HomeOverviewResponse": {
         "properties": {
           "mode": {
@@ -22345,7 +22608,7 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__api__v3__home__overview__AttemptHistoryRow"
             },
             "type": "array",
             "title": "History"
@@ -23924,6 +24187,173 @@
         "title": "UpdatePersonaResponse",
         "description": "Response from update persona."
       },
+      "app__api__v3__practice__overview__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row."
+      },
       "app__api__v3__practice__overview__PracticeOverviewResponse": {
         "properties": {
           "mode": {
@@ -23944,7 +24374,7 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__api__v3__practice__overview__AttemptHistoryRow"
             },
             "type": "array",
             "title": "History"
@@ -29015,7 +29445,7 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__schemas__home__AttemptHistoryRow"
             },
             "type": "array",
             "title": "History"
@@ -29909,6 +30339,173 @@
         "title": "FeedbackListResponse",
         "description": "Response for feedback list."
       },
+      "app__schemas__home__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row."
+      },
       "app__schemas__home__HomeOverviewResponse": {
         "properties": {
           "mode": {
@@ -29933,7 +30530,7 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__schemas__home__AttemptHistoryRow"
             },
             "type": "array",
             "title": "History"
@@ -31276,7 +31873,7 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__schemas__home__AttemptHistoryRow"
             },
             "type": "array",
             "title": "History"

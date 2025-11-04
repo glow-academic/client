@@ -32,13 +32,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useCreateSimulation as useCreateSimulationV2,
-  useSimulationDetail,
-  useSimulationDetailDefault,
-  useUpdateSimulation as useUpdateSimulationV2,
-} from "@/lib/api/v2/hooks/simulations";
+import { api } from "@/lib/api/client";
 import type { SimulationDetailResponse } from "@/lib/api/v2/schemas/simulations";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
   CheckCircle2,
@@ -76,10 +73,7 @@ interface FormErrors {
 export default function Simulation({ simulationId }: SimulationProps) {
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
-  // Mutation hooks (v2)
-  const createSimulationMutation = useCreateSimulationV2();
-  const updateSimulationMutation = useUpdateSimulationV2();
+  const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
@@ -90,18 +84,77 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const router = useRouter();
   const isEditMode = !!simulationId;
 
-  // V2 API hooks - fetch data from server
+  // V3 API - fetch simulation detail when editing
   const { data: simulationDetail, isLoading: isLoadingSimulationDetail } =
-    useSimulationDetail(
-      simulationId || "",
-      effectiveProfile?.id || "",
-      !!simulationId && isEditMode
-    );
+    useQuery({
+      queryKey: keys.simulations.with({
+        simulationId: simulationId || "",
+        profileId: effectiveProfile?.id || "",
+      }),
+      queryFn: () =>
+        api.post("/simulations/detail", {
+          body: {
+            simulationId: simulationId || "",
+            profileId: effectiveProfile?.id || "",
+          },
+        }),
+      enabled: !!simulationId && isEditMode && !!effectiveProfile?.id,
+    });
 
+  // V3 API - fetch default simulation detail when creating
   const {
     data: simulationDetailDefault,
     isLoading: isLoadingSimulationDefault,
-  } = useSimulationDetailDefault(effectiveProfile?.id || "", !isEditMode);
+  } = useQuery({
+    queryKey: keys.simulations.with({
+      profileId: effectiveProfile?.id || "",
+      default: true,
+    }),
+    queryFn: () =>
+      api.post("/simulations/detail-default", {
+        body: {
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !isEditMode && !!effectiveProfile?.id,
+  });
+
+  // V3 API - create mutation
+  const createSimulationMutation = useMutation({
+    mutationFn: (body: {
+      title: string;
+      description: string;
+      department_ids: string[] | null;
+      active: boolean;
+      practice_simulation: boolean;
+      time_limit: number | null;
+      rubric_id: string;
+      scenario_ids: string[] | Array<{ scenario_id: string; active: boolean }>;
+    }) => api.post("/simulations/create", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.simulations.all });
+      router.push("/simulations");
+    },
+  });
+
+  // V3 API - update mutation
+  const updateSimulationMutation = useMutation({
+    mutationFn: (body: {
+      simulationId: string;
+      title: string;
+      description: string;
+      department_ids: string[] | null;
+      active: boolean;
+      practice_simulation: boolean;
+      time_limit: number | null;
+      rubric_id: string;
+      scenario_ids: string[] | Array<{ scenario_id: string; active: boolean }>;
+    }) => api.post("/simulations/update", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.simulations.all });
+      router.push("/simulations");
+    },
+  });
 
   // Use edit detail when editing, default detail when creating
   const simulationData: SimulationDetailResponse | undefined = isEditMode

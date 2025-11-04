@@ -24,13 +24,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useDeleteDepartment,
-  useDepartmentsList,
-  useDuplicateDepartment,
-} from "@/lib/api/v2/hooks/departments";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
 import type { DepartmentItem } from "@/lib/api/v2/schemas/departments";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DepartmentsDataTable } from "./DepartmentsDataTable";
 
 export default function Departments() {
@@ -43,12 +40,9 @@ export default function Departments() {
     name: string;
   } | null>(null);
 
-  // Mutations
-  const duplicateDepartmentMutation = useDuplicateDepartment();
-  const deleteDepartmentMutation = useDeleteDepartment();
-  const log = useLogger();
+  const queryClient = useQueryClient();
 
-  // V2 API hook
+  // V3 API hook
   const filters = useMemo(
     () => ({
       departmentIds: departmentIds,
@@ -57,10 +51,28 @@ export default function Departments() {
     [departmentIds, effectiveProfile?.id]
   );
 
-  const { data: departmentsData, isLoading } = useDepartmentsList(
-    filters,
-    !!effectiveProfile?.id && departmentIds.length > 0
-  );
+  const { data: departmentsData, isLoading } = useQuery({
+    queryKey: keys.departments.list(filters),
+    queryFn: () => api.post("/departments/list", { body: filters }),
+    enabled: !!effectiveProfile?.id && departmentIds.length > 0,
+  });
+
+  // Mutations with V3 API
+  const duplicateDepartmentMutation = useMutation({
+    mutationFn: (req: { departmentId: string }) =>
+      api.post("/departments/duplicate", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.departments.all });
+    },
+  });
+
+  const deleteDepartmentMutation = useMutation({
+    mutationFn: (req: { departmentId: string }) =>
+      api.post("/departments/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.departments.all });
+    },
+  });
 
   // Extract data from V2 response
   const departments = useMemo(
@@ -104,33 +116,8 @@ export default function Departments() {
       await duplicateDepartmentMutation.mutateAsync({
         departmentId: department.department_id,
       });
-      await log.info("department.duplicate.success", {
-        message: "Department duplicated successfully",
-        subject: {
-          entityType: "department",
-          entityId: department.department_id,
-        },
-        context: {
-          component: "Departments",
-          function: "handleDuplicate",
-          originalName: department.title,
-        },
-      });
       toast.success(`Department "${department.title}" duplicated successfully`);
     } catch (error) {
-      await log.error("department.duplicate.failed", {
-        message: "Error duplicating department",
-        subject: {
-          entityType: "department",
-          entityId: department.department_id,
-        },
-        context: {
-          component: "Departments",
-          function: "handleDuplicate",
-          originalName: department.title,
-        },
-        error,
-      });
       toast.error("Failed to duplicate department");
     } finally {
       setIsDuplicating(null);
@@ -144,27 +131,8 @@ export default function Departments() {
       await deleteDepartmentMutation.mutateAsync({
         departmentId: deleteItem.id,
       });
-      await log.info("department.delete.success", {
-        message: "Department deleted successfully",
-        subject: { entityType: "department", entityId: deleteItem.id },
-        context: {
-          component: "Departments",
-          function: "handleDelete",
-          departmentName: deleteItem.name,
-        },
-      });
       toast.success(`Department "${deleteItem.name}" deleted successfully`);
     } catch (error) {
-      await log.error("department.delete.failed", {
-        message: "Error deleting department",
-        subject: { entityType: "department", entityId: deleteItem.id },
-        context: {
-          component: "Departments",
-          function: "handleDelete",
-          departmentName: deleteItem.name,
-        },
-        error,
-      });
       toast.error(
         error instanceof Error ? error.message : "Failed to delete department"
       );

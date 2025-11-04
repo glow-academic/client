@@ -18,15 +18,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useCreateDepartment,
-  useDepartmentDetail,
-  useDepartmentDetailDefault,
-  useRemoveProfilesFromDepartment,
-  useUpdateDepartment,
-} from "@/lib/api/v2/hooks/departments";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
 import { ProfileListItem } from "@/lib/api/v2/schemas/profile";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Power } from "lucide-react";
 
 export interface DepartmentProps {
@@ -49,7 +44,6 @@ export default function Department({ departmentId }: DepartmentProps) {
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const log = useLogger();
   const isEditMode = !!departmentId;
 
   const initialFormData: FormData = useMemo(
@@ -69,20 +63,45 @@ export default function Department({ departmentId }: DepartmentProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // V2 API hooks
+  const queryClient = useQueryClient();
+
+  // V3 API - fetch department detail when editing
   const {
     data: departmentDetail,
     isLoading: isLoadingDepartmentDetail,
     refetch: refetchDepartmentDetail,
-  } = useDepartmentDetail(
-    departmentId || "",
-    effectiveProfile?.id || "",
-    !!departmentId && isEditMode
-  );
+  } = useQuery({
+    queryKey: keys.departments.with({
+      departmentId: departmentId || "",
+      profileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/departments/detail", {
+        body: {
+          departmentId: departmentId || "",
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!departmentId && isEditMode && !!effectiveProfile?.id,
+  });
 
+  // V3 API - fetch default department detail when creating
   const {
     data: departmentDetailDefault,
     isLoading: isLoadingDepartmentDefault,
-  } = useDepartmentDetailDefault(effectiveProfile?.id || "", !isEditMode);
+  } = useQuery({
+    queryKey: keys.departments.with({
+      profileId: effectiveProfile?.id || "",
+      default: true,
+    }),
+    queryFn: () =>
+      api.post("/departments/detail-default", {
+        body: {
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !isEditMode && !!effectiveProfile?.id,
+  });
 
   // Use edit detail when editing, default detail when creating
   const departmentData = isEditMode
@@ -110,11 +129,44 @@ export default function Department({ departmentId }: DepartmentProps) {
     clearEntityMetadata,
   ]);
 
-  // Mutations
-  const { mutate: createDepartment } = useCreateDepartment();
-  const { mutate: updateDepartment } = useUpdateDepartment();
-  const removeProfilesFromDepartmentMutation =
-    useRemoveProfilesFromDepartment();
+  // V3 API - create mutation
+  const createDepartmentMutation = useMutation({
+    mutationFn: (body: {
+      title: string;
+      description: string;
+      active: boolean;
+      profile_id: string;
+    }) => api.post("/departments/create", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.departments.all });
+    },
+  });
+
+  // V3 API - update mutation
+  const updateDepartmentMutation = useMutation({
+    mutationFn: (body: {
+      departmentId: string;
+      title: string;
+      description: string;
+      active: boolean;
+    }) => api.post("/departments/update", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.departments.all });
+    },
+  });
+
+  // V3 API - remove profiles mutation
+  const removeProfilesFromDepartmentMutation = useMutation({
+    mutationFn: (body: { departmentId: string; profileIds: string[] }) =>
+      api.post("/departments/remove-profiles", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.departments.all });
+    },
+  });
+
+  // Extract mutate functions for compatibility
+  const createDepartment = createDepartmentMutation.mutate;
+  const updateDepartment = updateDepartmentMutation.mutate;
 
   const isLoading = isLoadingData;
 
@@ -219,12 +271,6 @@ export default function Department({ departmentId }: DepartmentProps) {
         );
       }
     } catch (error) {
-      const message = `Error ${isEditMode ? "updating" : "creating"} department:`;
-      log.error("department.save.failed", {
-        message,
-        error,
-        context: { component: "Department", isEditMode, departmentId },
-      });
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`
       );

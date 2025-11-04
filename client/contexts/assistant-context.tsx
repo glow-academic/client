@@ -5,19 +5,18 @@
 "use client";
 import { useProfile } from "@/contexts/profile-context";
 import {
-  useAssistantChatFull,
-  type AssistantChatFullResponse,
+    useAssistantChatFull,
+    type AssistantChatFullResponse,
 } from "@/lib/api/v2/hooks/assistant";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
@@ -82,7 +81,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   const [hasEverOpened, setHasEverOpened] = useState(false);
   const queryClient = useQueryClient();
   const currentRoomRef = useRef<string | null>(null);
-  const log = useLogger();
 
   // Use the global WebSocket context
   const {
@@ -145,14 +143,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     const handleAssistantStarted = (event: Event) => {
       const data = (event as CustomEvent).detail as { chat_id?: string };
       if (data.chat_id) {
-        log.info("assistant.started", {
-          message: "Assistant started, received chat_id from server",
-          subject: { entityType: "assistant_chat", entityId: data.chat_id },
-          context: {
-            component: "AssistantContext",
-            function: "handleAssistantStarted",
-          },
-        });
         setCurrentChatId(data.chat_id);
         // Invalidate queries to refetch chat list with new chat
         queryClient.invalidateQueries({ queryKey: ["assistant"] });
@@ -161,35 +151,14 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
     // Listen for assistant message completion to reset loading state
     const handleAssistantMessageComplete = () => {
-      log.debug("assistant.message.complete", {
-        message: "Assistant message completed, resetting sending state",
-        context: {
-          component: "AssistantContext",
-          function: "handleAssistantMessageComplete",
-        },
-      });
       setIsSendingMessage(false);
     };
 
     const handleAssistantMessageCancelled = () => {
-      log.debug("assistant.message.cancelled", {
-        message: "Assistant message cancelled, resetting sending state",
-        context: {
-          component: "AssistantContext",
-          function: "handleAssistantMessageCancelled",
-        },
-      });
       setIsSendingMessage(false);
     };
 
     const handleAssistantError = () => {
-      log.debug("assistant.message.error", {
-        message: "Assistant error occurred, resetting sending state",
-        context: {
-          component: "AssistantContext",
-          function: "handleAssistantError",
-        },
-      });
       setIsSendingMessage(false);
     };
 
@@ -233,14 +202,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       // Join new room
       joinRoom(currentChatId, "assistant");
       currentRoomRef.current = currentChatId;
-      log.info("assistant.room.joined", {
-        message: `Joined assistant chat room: ${currentChatId}`,
-        subject: { entityType: "assistant_chat", entityId: currentChatId },
-        context: {
-          component: "AssistantContext",
-          function: "useEffect(joinRoom)",
-        },
-      });
     } else if (currentRoomRef.current) {
       // Leave current room when no chat is selected
       leaveRoom(currentRoomRef.current, "assistant");
@@ -332,15 +293,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
         if (isFirstMessage) {
           // Server will create the chat and process the initial message
-          log.info("assistant.message.first.start", {
-            message:
-              "Sending first message via emitStartAssistant (server will create chat)",
-            context: {
-              component: "AssistantContext",
-              function: "sendMessage",
-              messageLength: message.length,
-            },
-          });
           emitStartAssistant({
             profile_id: activeProfile.id,
             initial_message: message,
@@ -348,47 +300,13 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
           });
         } else {
           // For subsequent messages, send via WebSocket
-          log.debug("assistant.message.subsequent.start", {
-            message: "Sending subsequent message via WebSocket",
-            subject: { entityType: "assistant_chat", entityId: chatId },
-            context: {
-              component: "AssistantContext",
-              function: "sendMessage",
-              messageLength: message.length,
-            },
-          });
           emitSendAssistantMessage({ chat_id: chatId, message });
         }
 
         if (chatId) {
-          log.info("assistant.message.sent", {
-            message: "Message sent via WebSocket",
-            subject: { entityType: "assistant_chat", entityId: chatId },
-            context: {
-              component: "AssistantContext",
-              function: "sendMessage",
-              isFirstMessage,
-              messageLength: message.length,
-            },
-          });
         } else {
-          log.info("assistant.message.sent", {
-            message:
-              "Message sent via WebSocket (first message, no chatId yet)",
-            context: {
-              component: "AssistantContext",
-              function: "sendMessage",
-              isFirstMessage,
-              messageLength: message.length,
-            },
-          });
         }
       } catch (error) {
-        log.error("assistant.message.send.failed", {
-          message: "Error sending message",
-          context: { component: "AssistantContext", function: "sendMessage" },
-          error,
-        });
         toast.error("Failed to send message");
         setIsSendingMessage(false);
       }
@@ -424,19 +342,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
     try {
       emitStopAssistant({ chat_id: currentChatId });
-
-      log.info("assistant.message.stop.sent", {
-        message: "Stop message sent via WebSocket",
-        subject: { entityType: "assistant_chat", entityId: currentChatId },
-        context: { component: "AssistantContext", function: "stopMessage" },
-      });
     } catch (error) {
-      log.error("assistant.message.stop.failed", {
-        message: "Error stopping message",
-        subject: { entityType: "assistant_chat", entityId: currentChatId },
-        context: { component: "AssistantContext", function: "stopMessage" },
-        error,
-      });
       toast.error("Failed to stop message");
       setIsStoppingMessage(false);
     }

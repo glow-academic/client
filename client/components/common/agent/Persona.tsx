@@ -56,20 +56,24 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  useCreatePersona as useCreatePersonaV2,
-  useDeletePersonaPrompt,
-  usePersonaDetail,
-  usePersonaDetailDefault,
-  useUpdatePersona as useUpdatePersonaV2,
-} from "@/lib/api/v2/hooks/personas";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 // import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { cn } from "@/lib/utils";
 import {
   getPersonaIconComponent,
   PERSONA_ICON_MAP,
 } from "@/utils/persona-icons";
-import { Bug, Check, ChevronsUpDown, Copy, Eye, Power, Trash2 } from "lucide-react";
+import {
+  Bug,
+  Check,
+  ChevronsUpDown,
+  Copy,
+  Eye,
+  Power,
+  Trash2,
+} from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
 
@@ -139,15 +143,39 @@ export default function Persona({
   } | null>(null);
 
   // V2 API hooks
-  const { data: personaDetail, isLoading: isLoadingPersonaDetail } =
-    usePersonaDetail(
-      personaId || "",
-      effectiveProfile?.id || "",
-      !!personaId && isEditMode
-    );
+  const queryClient = useQueryClient();
 
+  // V3 API - fetch persona detail when editing
+  const { data: personaDetail, isLoading: isLoadingPersonaDetail } = useQuery({
+    queryKey: keys.personas.with({
+      personaId: personaId || "",
+      profileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/personas/detail", {
+        body: {
+          personaId: personaId || "",
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!personaId && isEditMode && !!effectiveProfile?.id,
+  });
+
+  // V3 API - fetch default persona detail when creating
   const { data: personaDetailDefault, isLoading: isLoadingPersonaDefault } =
-    usePersonaDetailDefault(effectiveProfile?.id || "", !isEditMode);
+    useQuery({
+      queryKey: keys.personas.with({
+        profileId: effectiveProfile?.id || "",
+        default: true,
+      }),
+      queryFn: () =>
+        api.post("/personas/detail-default", {
+          body: {
+            profileId: effectiveProfile?.id || "",
+          },
+        }),
+      enabled: !isEditMode && !!effectiveProfile?.id,
+    });
 
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
@@ -155,9 +183,75 @@ export default function Persona({
     ? isLoadingPersonaDetail
     : isLoadingPersonaDefault;
 
-  const { mutate: createPersona } = useCreatePersonaV2();
-  const { mutate: updatePersona } = useUpdatePersonaV2();
-  const { mutate: deletePersonaPrompt } = useDeletePersonaPrompt();
+  // V3 API - create mutation
+  const createPersonaMutation = useMutation({
+    mutationFn: (body: {
+      name: string;
+      description: string | null;
+      department_ids: string[] | null;
+      active: boolean;
+      color: string;
+      icon: string;
+      model_id: string;
+      reasoning: string | null;
+      temperature: number;
+      system_prompt: string | null;
+      prompt_id: string | null;
+    }) => api.post("/personas/create", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.personas.all });
+    },
+  });
+
+  // V3 API - update mutation
+  const updatePersonaMutation = useMutation({
+    mutationFn: (body: {
+      personaId: string;
+      name: string;
+      description: string | null;
+      department_ids: string[] | null;
+      active: boolean;
+      color: string;
+      icon: string;
+      model_id: string;
+      reasoning: string | null;
+      temperature: number;
+      system_prompt: string | null;
+      prompt_id: string | null;
+      department_id: string | null;
+    }) => api.post("/personas/update", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.personas.all });
+    },
+  });
+
+  // Extract mutate functions for compatibility
+  const createPersona = createPersonaMutation.mutate;
+  const updatePersona = updatePersonaMutation.mutate;
+
+  // Note: deletePersonaPrompt - v3 endpoint doesn't exist yet, using v2 hook temporarily
+  // TODO: Create v3 endpoint for delete persona prompt
+  const deletePersonaPromptMutation = useMutation({
+    mutationFn: async (body: {
+      personaId: string;
+      promptId: string;
+      departmentId: string | null;
+    }) => {
+      // For now, using v2 API directly until v3 endpoint is created
+      const response = await fetch("/api/v2/personas/delete-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error("Failed to delete prompt");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.personas.all });
+    },
+  });
+
+  const deletePersonaPrompt = deletePersonaPromptMutation.mutate;
 
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
@@ -400,10 +494,6 @@ export default function Persona({
             active: formData.active ?? true,
             department_ids: formData.departmentIds || null,
             department_id: selectedDepartmentId || null,
-            department_prompt_id:
-              selectedDepartmentId && formData.promptId
-                ? formData.promptId
-                : null,
           },
           {
             onSuccess: () => {
@@ -567,7 +657,10 @@ export default function Persona({
             <div className="space-y-2 pt-2">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="active" className="text-sm flex items-center gap-1.5">
+                  <Label
+                    htmlFor="active"
+                    className="text-sm flex items-center gap-1.5"
+                  >
                     <Power className="h-3.5 w-3.5 text-muted-foreground" />
                     Active
                   </Label>
@@ -1160,7 +1253,24 @@ export default function Persona({
                           personaData &&
                           effectiveProfile?.role === "superadmin" ? (
                             <PersonaDebugInfo
-                              debugInfo={personaData.debug_info}
+                              debugInfo={
+                                // Map v3 API format (timestamp, message) to v2 format (created_at, model_id, content)
+                                personaData.debug_info?.map((item) => ({
+                                  created_at:
+                                    (item as { timestamp?: string })
+                                      .timestamp ||
+                                    (item as { created_at?: string })
+                                      .created_at ||
+                                    "",
+                                  model_id:
+                                    (item as { model_id?: string }).model_id ||
+                                    "",
+                                  content:
+                                    (item as { message?: string }).message ||
+                                    (item as { content?: string }).content ||
+                                    "",
+                                })) || []
+                              }
                               modelMapping={personaData.model_mapping}
                             />
                           ) : undefined

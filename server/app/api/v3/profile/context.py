@@ -6,7 +6,8 @@ from typing import Annotated, Any, cast
 import asyncpg
 from app.api.v3.profile.detail import ProfileItem
 from app.db import get_db
-from app.utils.permissions import (ProfileRole, get_available_subsections_for_role,
+from app.utils.permissions import (ProfileRole,
+                                   get_available_subsections_for_role,
                                    get_redirect_path_for_role)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
@@ -88,7 +89,7 @@ class ProfileContextResponse(BaseModel):
     redirectPath: str  # Default redirect path for the effective profile's role
 
 
-@router.post("/context")
+@router.post("/context", response_model=ProfileContextResponse)
 async def get_profile_context(
     request: ProfileContextRequest,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],

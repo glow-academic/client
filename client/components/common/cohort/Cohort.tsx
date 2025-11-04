@@ -33,13 +33,10 @@ import { StaffDataTable } from "@/components/management/staff/StaffDataTable";
 import StaffEditModal from "@/components/management/staff/StaffEditModal";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useCohortDetail,
-  useCohortDetailDefault,
-  useCreateCohort,
-  useUpdateCohort,
-} from "@/lib/api/v2/hooks/cohorts";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
@@ -124,18 +121,43 @@ export default function Cohort({ cohortId }: CohortProps) {
   // Memoize callback functions to prevent unnecessary re-renders
 
   // V2 API hooks
+  const queryClient = useQueryClient();
+
+  // V3 API - fetch cohort detail when editing
   const {
     data: cohortDetail,
     isLoading: isLoadingCohortDetail,
     refetch: refetchCohortDetail,
-  } = useCohortDetail(
-    cohortId || "",
-    effectiveProfile?.id || "",
-    !!cohortId && isEditMode
-  );
+  } = useQuery({
+    queryKey: keys.cohorts.with({
+      cohortId: cohortId || "",
+      profileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/cohorts/detail", {
+        body: {
+          cohortId: cohortId || "",
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled: !!cohortId && isEditMode && !!effectiveProfile?.id,
+  });
 
+  // V3 API - fetch default cohort detail when creating
   const { data: cohortDetailDefault, isLoading: isLoadingCohortDefault } =
-    useCohortDetailDefault(effectiveProfile?.id || "", !isEditMode);
+    useQuery({
+      queryKey: keys.cohorts.with({
+        profileId: effectiveProfile?.id || "",
+        default: true,
+      }),
+      queryFn: () =>
+        api.post("/cohorts/detail-default", {
+          body: {
+            profileId: effectiveProfile?.id || "",
+          },
+        }),
+      enabled: !isEditMode && !!effectiveProfile?.id,
+    });
 
   // Use edit detail when editing, default detail when creating
   const cohortData = isEditMode ? cohortDetail : cohortDetailDefault;
@@ -161,9 +183,21 @@ export default function Cohort({ cohortId }: CohortProps) {
     clearEntityMetadata,
   ]);
 
-  // Mutation hooks
-  const createCohortMutation = useCreateCohort();
-  const updateCohortMutation = useUpdateCohort();
+  // V3 API - create mutation
+  const createCohortMutation = useMutation({
+    mutationFn: (body: unknown) => api.post("/cohorts/create", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
+    },
+  });
+
+  // V3 API - update mutation
+  const updateCohortMutation = useMutation({
+    mutationFn: (body: unknown) => api.post("/cohorts/update", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
+    },
+  });
 
   // State for junction data
   const [currentSimulationIds, setCurrentSimulationIds] = useState<string[]>(

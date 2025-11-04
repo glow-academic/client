@@ -12,7 +12,7 @@ from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
 # Inline schemas (moved from app.schemas.leaderboard)
 class LeaderboardMetric(BaseModel):
@@ -55,7 +55,7 @@ class LeaderboardBundleResponse(BaseModel):
     data: list[LeaderboardRow]
 
 
-@router.post("/", response_model=LeaderboardBundleResponse)
+@router.post("", response_model=LeaderboardBundleResponse)
 async def get_leaderboard(
     filters: AnalyticsFilters,
     request: Request,

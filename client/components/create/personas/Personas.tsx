@@ -38,7 +38,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { PersonasDataTable } from "./PersonasDataTable";
 
 // Utility function to generate gradient from hex color
@@ -72,7 +71,6 @@ export default function Personas() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
   const qc = useQueryClient();
 
   // V3 API - Proof of Concept with generated keys
@@ -331,23 +329,8 @@ export default function Personas() {
     setIsDeleting(true);
     try {
       await deletePersonaMutation.mutateAsync({ personaId: deleteItem.id });
-      await log.info("persona.delete.success", {
-        message: "Persona deleted successfully",
-        subject: { entityType: "persona", entityId: deleteItem.id },
-        context: {
-          component: "Personas",
-          function: "handleDelete",
-          name: deleteItem.name,
-        },
-      });
       toast.success("Persona deleted successfully");
     } catch (error) {
-      await log.error("persona.delete.failed", {
-        message: "Error deleting persona",
-        subject: { entityType: "persona", entityId: deleteItem?.id },
-        context: { component: "Personas", function: "handleDelete" },
-        error,
-      });
       toast.error("Failed to delete persona");
     } finally {
       setIsDeleting(false);
@@ -360,27 +343,8 @@ export default function Personas() {
     setIsDuplicating(personaId);
     try {
       await duplicatePersonaMutation.mutateAsync({ personaId });
-      await log.info("persona.duplicate.success", {
-        message: "Persona duplicated successfully",
-        subject: { entityType: "persona", entityId: personaId },
-        context: {
-          component: "Personas",
-          function: "handleDuplicate",
-          originalName: personaName,
-        },
-      });
       toast.success(`Persona "${personaName}" duplicated successfully`);
     } catch (error) {
-      await log.error("persona.duplicate.failed", {
-        message: "Error duplicating persona",
-        subject: { entityType: "persona", entityId: personaId },
-        context: {
-          component: "Personas",
-          function: "handleDuplicate",
-          originalName: personaName,
-        },
-        error,
-      });
       toast.error("Failed to duplicate persona");
     } finally {
       setIsDuplicating(null);

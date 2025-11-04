@@ -9,9 +9,11 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useLeaderboard } from "@/lib/api/v2/hooks/leaderboard";
-import type { AnalyticsFilters, ProfileRole } from "@/lib/api/v2/schemas/base";
+import { api } from "@/lib/api/client";
+import type { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { type LeaderboardRow } from "@/lib/api/v2/schemas/leaderboard";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
@@ -56,7 +58,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const pathname = usePathname();
 
   // Build the shared filters
-  const filters: AnalyticsFilters = useMemo(
+  const filters = useMemo(
     () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -82,7 +84,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     data: leaderboardResponse,
     isLoading,
     isError,
-  } = useLeaderboard(filters);
+  } = useQuery({
+    queryKey: keys.leaderboard.with(filters),
+    queryFn: () => api.post("/leaderboard", { body: filters }),
+  });
 
   // Use the data directly from the API (no hydration needed)
   const hydratedRows = useMemo(() => {

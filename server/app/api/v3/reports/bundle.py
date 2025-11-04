@@ -13,7 +13,7 @@ from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(prefix="/reports", tags=["reports"])
 
 # Inline schemas (moved from app.schemas.reports)
 class ProfileMetrics(BaseModel):
@@ -50,7 +50,7 @@ class ReportsBundleResponse(BaseModel):
     simulation_mapping: SimulationMapping
 
 
-@router.post("/", response_model=ReportsBundleResponse)
+@router.post("", response_model=ReportsBundleResponse)
 async def get_reports(
     filters: AnalyticsFilters,
     request: Request,

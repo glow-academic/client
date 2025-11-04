@@ -24,9 +24,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { useCreateFeedbackV2 } from "@/lib/api/v2/hooks/feedback";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
 import type { CreateFeedbackResponse } from "@/lib/api/v2/schemas/feedback";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -56,10 +57,17 @@ export default function ReportProblem({
 }: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const createAppFeedbackMutation = useCreateFeedbackV2();
-  const log = useLogger();
-
+  const queryClient = useQueryClient();
   const { activeProfile } = useProfile();
+
+  // V3 API - create feedback mutation
+  const createAppFeedbackMutation = useMutation({
+    mutationFn: (body: { type: string; message: string; profileId: string }) =>
+      api.post("/feedback/create", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.feedback.all });
+    },
+  });
 
   const [formData, setFormData] = useState<FormData>({
     type: initialType || "",
@@ -90,17 +98,6 @@ export default function ReportProblem({
 
   // Handle successful feedback creation
   const handleSuccess = async (data: CreateFeedbackResponse) => {
-    await log.info("feedback.create.success", {
-      message: "Feedback submitted successfully",
-      subject: {
-        entityType: "app_feedback",
-        entityId: String(data?.feedback_id ?? ""),
-      },
-      context: {
-        component: "ReportProblem",
-        function: "handleSuccess",
-      },
-    });
     toast.success("Feedback submitted successfully! Thank you for your input.");
     setIsOpen(false);
     resetForm();
@@ -108,15 +105,6 @@ export default function ReportProblem({
 
   // Handle feedback creation errors
   const handleError = async (error: Error) => {
-    await log.error("feedback.create.failed", {
-      message: "Failed to submit feedback",
-      subject: { entityType: "app_feedback" },
-      context: {
-        component: "ReportProblem",
-        function: "handleError",
-      },
-      error: error.message,
-    });
     toast.error("Failed to submit feedback. Please try again.");
   };
 
@@ -167,13 +155,6 @@ export default function ReportProblem({
       message: formData.message,
       profileId: activeProfile?.id || "",
     };
-
-    await log.info("feedback.create.start", {
-      message: "Submitting feedback",
-      subject: { entityType: "app_feedback" },
-      ...(activeProfile?.id ? { actor: { profileId: activeProfile.id } } : {}),
-      context: { component: "ReportProblem", function: "handleSubmit" },
-    });
 
     createAppFeedbackMutation.mutate(feedbackData, {
       onSuccess: handleSuccess,

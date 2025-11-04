@@ -7,10 +7,10 @@
  */
 "use client";
 
-import { api } from "@/lib/api/v2/fetcher";
-import { layoutContextKeys } from "@/lib/api/v2/keys";
+import { api } from "@/lib/api/client";
 import { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { ProfileItem } from "@/lib/api/v2/schemas/profile";
+import { keys } from "@/lib/query/keys";
 import {
   getFirstAvailableSectionForRole,
   getSectionRoute,
@@ -174,18 +174,22 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const effectiveProfileId = session?.effectiveProfileId ?? "";
 
   const { data: layoutData, isLoading: layoutLoading } = useQuery({
-    queryKey: layoutContextKeys.detail(effectiveProfileId),
+    queryKey: keys.profile.with({
+      pathname: pathname ?? "/",
+      effectiveProfileId, // For cache key uniqueness
+    }),
     queryFn: async () => {
-      const res = await api<unknown>("/api/v2/profile/context", {
-        method: "POST",
-        body: JSON.stringify({
-          // Only send pathname - BFF route derives profile IDs from session
+      const res = await api.post("/profile/context", {
+        body: {
+          // Placeholder values - BFF route overrides these with session values for security
+          actualProfileId: session?.user?.profileId || "",
+          effectiveProfileId: session?.effectiveProfileId || "",
           pathname: pathname ?? "/",
-        }),
+        },
       });
       return LayoutContextResponseSchema.parse(res);
     },
-    enabled: !!effectiveProfileId,
+    enabled: !!effectiveProfileId && !!session?.user?.profileId,
     staleTime: 15 * 60 * 1000, // 15 minutes - stable data persists across page navigation
     structuralSharing: true, // Enable deep equality check
     gcTime: 20 * 60 * 1000, // Cache for 20 minutes

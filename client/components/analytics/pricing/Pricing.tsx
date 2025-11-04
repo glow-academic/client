@@ -24,10 +24,11 @@ import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { usePricing } from "@/lib/api/v2/hooks/pricing";
-import type { AnalyticsFilters } from "@/lib/api/v2/schemas/base";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { RunsDataTable } from "./RunsDataTable";
+import { RunsDataTable, type ModelRunRow } from "./RunsDataTable";
 
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -64,8 +65,8 @@ export default function Pricing() {
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
 
-  // Build filters for V2 API
-  const filters = useMemo<AnalyticsFilters>(
+  // Build filters for V3 API
+  const filters = useMemo(
     () => ({
       departmentIds,
       profileId: effectiveProfile?.id || "",
@@ -86,9 +87,12 @@ export default function Pricing() {
     ]
   );
 
-  const { data: pricingData, isLoading } = usePricing(filters);
+  const { data: pricingData, isLoading } = useQuery({
+    queryKey: keys.pricing.with(filters),
+    queryFn: () => api.post("/pricing", { body: filters }),
+  });
 
-  // Extract data from V2 API response
+  // Extract data from V3 API response
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
   const modelMapping = useMemo(
     () => pricingData?.model_mapping || {},
@@ -238,10 +242,10 @@ export default function Pricing() {
   // Build rows for runs table
   const runRows = useMemo(() => {
     return (filteredRuns || []).map((run) => {
-      const modelId = run.model_id;
-      const agentId = run.agent_id;
-      const personaId = run.persona_id;
-      const profileId = run.profile_id;
+      const modelId = run.model_id ?? null;
+      const agentId = run.agent_id ?? null;
+      const personaId = run.persona_id ?? null;
+      const profileId = run.profile_id ?? null;
 
       const modelInfo = modelId ? modelMapping[modelId] : undefined;
       const inputCost =
@@ -250,24 +254,30 @@ export default function Pricing() {
         (run.output_tokens / 1_000_000) * (modelInfo?.output_ppm || 0);
       const cost = Number((inputCost + outputCost).toFixed(6));
 
-      return {
+      const row: ModelRunRow = {
         id: run.model_run_id,
         createdAt: run.created_at,
         modelId,
         modelName: (modelId && modelMapping[modelId]?.name) || modelId || "",
-        agentId,
+        agentId: agentId ?? null,
         agentName: (agentId && agentMapping[agentId]) || agentId || "",
-        personaId,
+        personaId: personaId ?? null,
         personaName:
           (personaId && personaMapping[personaId]) || personaId || "",
-        profileId,
+        profileId: profileId ?? null,
         profileName:
           (profileId && profileMapping[profileId]) || profileId || "",
         inputTokens: run.input_tokens,
         outputTokens: run.output_tokens,
-        debugInfo: run.debug_info,
         cost,
       };
+
+      // Conditionally include debugInfo if present
+      if (run.debug_info) {
+        row.debugInfo = run.debug_info;
+      }
+
+      return row;
     });
   }, [
     filteredRuns,

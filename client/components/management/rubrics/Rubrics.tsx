@@ -34,13 +34,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-import {
-  useDeleteRubric,
-  useDuplicateRubric,
-  useRubricsList,
-} from "@/lib/api/v2/hooks/rubrics";
+import { api } from "@/lib/api/client";
 import type { RubricItem } from "@/lib/api/v2/schemas/rubrics";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RubricsDataTable } from "./RubricsDataTable";
 
 export default function Rubrics() {
@@ -53,13 +50,9 @@ export default function Rubrics() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
+  const queryClient = useQueryClient();
 
-  // Mutation hooks
-  const deleteRubricMutation = useDeleteRubric();
-  const duplicateRubricMutation = useDuplicateRubric();
-
-  // V2 API: Single fetch with hierarchical data and permissions
+  // V3 API: Single fetch with hierarchical data and permissions
   const filters = useMemo(
     () => ({
       profileId: effectiveProfile?.id || "",
@@ -67,7 +60,28 @@ export default function Rubrics() {
     [effectiveProfile?.id]
   );
 
-  const { data: rubricsData, isLoading } = useRubricsList(filters);
+  const { data: rubricsData, isLoading } = useQuery({
+    queryKey: keys.rubrics.list(filters),
+    queryFn: () => api.post("/rubrics/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  // Mutation hooks with V3 API
+  const deleteRubricMutation = useMutation({
+    mutationFn: (req: { rubricId: string }) =>
+      api.post("/rubrics/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.rubrics.all });
+    },
+  });
+
+  const duplicateRubricMutation = useMutation({
+    mutationFn: (req: { rubricId: string }) =>
+      api.post("/rubrics/duplicate", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.rubrics.all });
+    },
+  });
   const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
   const standardGroupsMapping = useMemo(
     () => rubricsData?.standard_groups_mapping || {},
@@ -230,23 +244,8 @@ export default function Rubrics() {
     setIsDeleting(true);
     try {
       await deleteRubricMutation.mutateAsync({ rubricId: deleteItem.id });
-      await log.info("rubric.delete.success", {
-        message: "Rubric deleted successfully",
-        subject: { entityType: "rubric", entityId: deleteItem.id },
-        context: {
-          component: "Rubrics",
-          function: "handleDelete",
-          name: deleteItem.name,
-        },
-      });
       toast.success("Rubric deleted successfully");
     } catch (error) {
-      await log.error("rubric.delete.failed", {
-        message: "Error deleting rubric",
-        subject: { entityType: "rubric", entityId: deleteItem?.id },
-        context: { component: "Rubrics", function: "handleDelete" },
-        error,
-      });
       toast.error("Failed to delete rubric");
     } finally {
       setIsDeleting(false);
@@ -266,27 +265,8 @@ export default function Rubrics() {
       await duplicateRubricMutation.mutateAsync({
         rubricId: rubric.rubric_id,
       });
-      await log.info("rubric.duplicate.success", {
-        message: "Rubric duplicated successfully",
-        subject: { entityType: "rubric", entityId: rubric.rubric_id },
-        context: {
-          component: "Rubrics",
-          function: "handleDuplicate",
-          originalName: rubric.name,
-        },
-      });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
     } catch (error) {
-      await log.error("rubric.duplicate.failed", {
-        message: "Error duplicating rubric",
-        subject: { entityType: "rubric", entityId: rubric.rubric_id },
-        context: {
-          component: "Rubrics",
-          function: "handleDuplicate",
-          originalName: rubric.name,
-        },
-        error,
-      });
       toast.error("Failed to duplicate rubric");
     } finally {
       setIsDuplicating(null);

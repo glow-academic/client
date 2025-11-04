@@ -41,16 +41,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-import {
-  useDeleteParameter,
-  useDuplicateParameter,
-  useParametersList,
-} from "@/lib/api/v2/hooks/parameters";
+import { api } from "@/lib/api/client";
 import type {
   ParameterItem,
   ParameterSampleItem,
 } from "@/lib/api/v2/schemas/parameters";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ParametersDataTable } from "./ParametersDataTable";
 
 export default function Parameters() {
@@ -63,12 +60,9 @@ export default function Parameters() {
     name: string;
   } | null>(null);
 
-  // Mutations
-  const duplicateParameterMutation = useDuplicateParameter();
-  const deleteParameterMutation = useDeleteParameter();
-  const log = useLogger();
+  const queryClient = useQueryClient();
 
-  // V2 API: Single fetch with pre-calculated counts and permissions
+  // V3 API: Single fetch with pre-calculated counts and permissions
   const filters = useMemo(
     () => ({
       profileId: effectiveProfile?.id || "",
@@ -76,7 +70,28 @@ export default function Parameters() {
     [effectiveProfile?.id]
   );
 
-  const { data: parametersData, isLoading } = useParametersList(filters);
+  const { data: parametersData, isLoading } = useQuery({
+    queryKey: keys.parameters.list(filters),
+    queryFn: () => api.post("/parameters/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  // Mutations with V3 API
+  const duplicateParameterMutation = useMutation({
+    mutationFn: (req: { parameterId: string }) =>
+      api.post("/parameters/duplicate", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
+    },
+  });
+
+  const deleteParameterMutation = useMutation({
+    mutationFn: (req: { parameterId: string }) =>
+      api.post("/parameters/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
+    },
+  });
   const parameters = useMemo(
     () => parametersData?.parameters || [],
     [parametersData]
@@ -171,27 +186,8 @@ export default function Parameters() {
       await duplicateParameterMutation.mutateAsync({
         parameterId: parameter.parameter_id,
       });
-      await log.info("parameter.duplicate.success", {
-        message: "Parameter duplicated successfully",
-        subject: { entityType: "parameter", entityId: parameter.parameter_id },
-        context: {
-          component: "Parameters",
-          function: "handleDuplicate",
-          originalName: parameter.name,
-        },
-      });
       toast.success(`Parameter "${parameter.name}" duplicated successfully`);
     } catch (error) {
-      await log.error("parameter.duplicate.failed", {
-        message: "Error duplicating parameter",
-        subject: { entityType: "parameter", entityId: parameter.parameter_id },
-        context: {
-          component: "Parameters",
-          function: "handleDuplicate",
-          originalName: parameter.name,
-        },
-        error,
-      });
       toast.error("Failed to duplicate parameter");
     } finally {
       setIsDuplicating(null);
@@ -205,27 +201,8 @@ export default function Parameters() {
       await deleteParameterMutation.mutateAsync({
         parameterId: deleteItem.id,
       });
-      await log.info("parameter.delete.success", {
-        message: "Parameter deleted successfully",
-        subject: { entityType: "parameter", entityId: deleteItem.id },
-        context: {
-          component: "Parameters",
-          function: "handleDelete",
-          parameterName: deleteItem.name,
-        },
-      });
       toast.success(`Parameter "${deleteItem.name}" deleted successfully`);
     } catch (error) {
-      await log.error("parameter.delete.failed", {
-        message: "Error deleting parameter",
-        subject: { entityType: "parameter", entityId: deleteItem.id },
-        context: {
-          component: "Parameters",
-          function: "handleDelete",
-          parameterName: deleteItem.name,
-        },
-        error,
-      });
       toast.error(
         error instanceof Error ? error.message : "Failed to delete parameter"
       );

@@ -44,7 +44,7 @@ class ProfileDetailResponse(BaseModel):
     profile: ProfileItem
 
 
-@router.post("/detail")
+@router.post("/detail", response_model=ProfileDetailResponse)
 async def get_profile_detail(
     request: ProfileDetailRequest,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],

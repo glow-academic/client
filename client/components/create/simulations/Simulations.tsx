@@ -25,13 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-import {
-  useDeleteSimulation,
-  useDuplicateSimulation,
-  useSimulationsList,
-} from "@/lib/api/v2/hooks/simulations";
+import { api } from "@/lib/api/client";
 import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SimulationsDataTable } from "./SimulationsDataTable";
 
 export function Simulations() {
@@ -44,18 +41,32 @@ export function Simulations() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
-  // V2 API hooks - single fetch with all data
-  const { data: simulationsData, isLoading } = useSimulationsList(
-    {
-      profileId: effectiveProfile?.id || "",
-    },
-    { enabled: !!effectiveProfile?.id }
-  );
+  const queryClient = useQueryClient();
 
-  // Mutation hooks
-  const duplicateSimulationMutation = useDuplicateSimulation();
-  const deleteSimulationMutation = useDeleteSimulation();
+  // V3 API - Query with generated keys
+  const filters = { profileId: effectiveProfile?.id || "" };
+  const { data: simulationsData, isLoading } = useQuery({
+    queryKey: keys.simulations.list(filters),
+    queryFn: () => api.post("/simulations/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  // Mutation hooks with v3 API
+  const duplicateSimulationMutation = useMutation({
+    mutationFn: (req: { simulationId: string }) =>
+      api.post("/simulations/duplicate", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.simulations.all });
+    },
+  });
+
+  const deleteSimulationMutation = useMutation({
+    mutationFn: (req: { simulationId: string }) =>
+      api.post("/simulations/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.simulations.all });
+    },
+  });
 
   // Extract data from V2 response
   const simulations = useMemo(
@@ -127,7 +138,11 @@ export function Simulations() {
 
   // Build department options from mapping
   const departmentMapping = useMemo(
-    () => (simulationsData?.department_mapping as Record<string, { name: string; description: string }>) || {},
+    () =>
+      (simulationsData?.department_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
     [simulationsData?.department_mapping]
   );
 
@@ -146,32 +161,11 @@ export function Simulations() {
 
     setIsDeleting(true);
     try {
-      await log.info("simulation.delete.start", {
-        message: "Deleting simulation",
-        subject: { entityType: "simulation", entityId: deleteItem.id },
-        context: {
-          component: "Simulations",
-          function: "handleDelete",
-          name: deleteItem.name,
-        },
-      });
       await deleteSimulationMutation.mutateAsync({
         simulationId: deleteItem.id,
       });
-
       toast.success("Simulation deleted successfully");
-      await log.info("simulation.delete.success", {
-        message: "Simulation deleted successfully",
-        subject: { entityType: "simulation", entityId: deleteItem.id },
-        context: { component: "Simulations", function: "handleDelete" },
-      });
-    } catch (error) {
-      await log.error("simulation.delete.failed", {
-        message: "Error deleting simulation",
-        subject: { entityType: "simulation", entityId: deleteItem?.id },
-        context: { component: "Simulations", function: "handleDelete" },
-        error,
-      });
+    } catch {
       toast.error("Failed to delete simulation");
     } finally {
       setIsDeleting(false);
@@ -191,39 +185,13 @@ export function Simulations() {
 
   const handleDuplicate = async (
     simulationId: string,
-    simulationName: string
+    _simulationName: string
   ) => {
     setIsDuplicating(simulationId);
     try {
-      await log.info("simulation.duplicate.start", {
-        message: "Duplicating simulation",
-        subject: { entityType: "simulation", entityId: simulationId },
-        context: {
-          component: "Simulations",
-          function: "handleDuplicate",
-          title: simulationName,
-        },
-      });
-
       await duplicateSimulationMutation.mutateAsync({ simulationId });
-
       toast.success("Simulation duplicated successfully");
-      await log.info("simulation.duplicate.success", {
-        message: "Simulation duplicated successfully",
-        subject: { entityType: "simulation", entityId: simulationId },
-        context: {
-          component: "Simulations",
-          function: "handleDuplicate",
-          title: simulationName,
-        },
-      });
-    } catch (error) {
-      await log.error("simulation.duplicate.failed", {
-        message: "Error duplicating simulation",
-        subject: { entityType: "simulation", entityId: simulationId },
-        context: { component: "Simulations", function: "handleDuplicate" },
-        error,
-      });
+    } catch {
       toast.error("Failed to duplicate simulation");
     } finally {
       setIsDuplicating(null);
@@ -397,16 +365,16 @@ export function Simulations() {
 
   return (
     <div className="space-y-6">
-        <SimulationsDataTable
-          data={simulations}
-          scenarioMapping={scenarioMapping}
-          rubricMapping={rubricMapping}
-          scenarioOptions={scenarioOptions}
-          rubricOptions={rubricOptions}
-          timeLimitOptions={timeLimitOptions}
-          departmentOptions={departmentOptions}
-          renderSimulationCard={renderSimulationCard}
-        />
+      <SimulationsDataTable
+        data={simulations}
+        scenarioMapping={scenarioMapping}
+        rubricMapping={rubricMapping}
+        scenarioOptions={scenarioOptions}
+        rubricOptions={rubricOptions}
+        timeLimitOptions={timeLimitOptions}
+        departmentOptions={departmentOptions}
+        renderSimulationCard={renderSimulationCard}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -13,13 +13,15 @@ from app.utils.schema import (AnalyticsFilters, DataPoint, Method,
                               SimulationFilter, SimulationMapping, TrendData)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-router = APIRouter()
+router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 # AttemptHistoryRow schema (moved from app.schemas.home for dashboard use)
 class AttemptHistoryRow(BaseModel):
     """Attempt history row."""
+    
+    model_config = ConfigDict(populate_by_name=True)
 
     attemptId: str
     date: str
@@ -43,8 +45,20 @@ class AttemptHistoryRow(BaseModel):
     showContinue: bool
     practiceSimulation: bool
     passPct: int | None = None
-    department_ids: list[str] | None = None  # Simulation's department associations
+    department_ids: list[str] | None = Field(None, alias="department_id")  # Simulation's department associations
     cohortNames: list[str]
+    
+    @field_validator("department_ids", mode="before")
+    @classmethod
+    def convert_department_id(cls, v: Any) -> list[str] | None:
+        """Convert single department_id string to list, or return None."""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return [v] if v else None
+        if isinstance(v, list):
+            return v
+        return [str(v)] if v else None
 
 
 AttemptHistoryResponse = list[AttemptHistoryRow]
@@ -166,19 +180,13 @@ class PersonaPerformanceResponse(BaseModel):
 
 class AttemptImprovementData(BaseModel):
     """Attempt improvement data."""
+    
+    model_config = ConfigDict(populate_by_name=True)
 
     attempt: str
     average_score: float = 0
     average_time: float = 0
     pass_rate: float = 0
-
-    class Config:
-        populate_by_name = True
-        fields = {
-            "average_score": {"alias": "Average Score"},
-            "average_time": {"alias": "Average Time"},
-            "pass_rate": {"alias": "Pass Rate"},
-        }
 
 
 class AttemptImprovementFact(BaseModel):
@@ -403,41 +411,49 @@ class SimulationPerformanceResponse(BaseModel):
 class DashboardHeaderMetrics(BaseModel):
     """Header metrics (10 total)."""
 
-    average_score: MetricResponse
-    completion_percentage: MetricResponse
-    first_attempt_pass_rate: MetricResponse
-    highest_score: MetricResponse
-    messages_per_session: MetricResponse
-    persona_response_times: MetricResponse
-    session_efficiency: MetricResponse
-    stagnation_rate: MetricResponse
-    time_spent: MetricResponse
-    total_attempts: MetricResponse
+    model_config = ConfigDict(populate_by_name=True)
+
+    average_score: MetricResponse = Field(alias="averageScore", serialization_alias="averageScore")
+    completion_percentage: MetricResponse = Field(alias="completionPercentage", serialization_alias="completionPercentage")
+    first_attempt_pass_rate: MetricResponse = Field(alias="firstAttemptPassRate", serialization_alias="firstAttemptPassRate")
+    highest_score: MetricResponse = Field(alias="highestScore", serialization_alias="highestScore")
+    messages_per_session: MetricResponse = Field(alias="messagesPerSession", serialization_alias="messagesPerSession")
+    persona_response_times: MetricResponse = Field(alias="personaResponseTimes", serialization_alias="personaResponseTimes")
+    session_efficiency: MetricResponse = Field(alias="sessionEfficiency", serialization_alias="sessionEfficiency")
+    stagnation_rate: MetricResponse = Field(alias="stagnationRate", serialization_alias="stagnationRate")
+    time_spent: MetricResponse = Field(alias="timeSpent", serialization_alias="timeSpent")
+    total_attempts: MetricResponse = Field(alias="totalAttempts", serialization_alias="totalAttempts")
 
 
 class DashboardPrimaryMetrics(BaseModel):
     """Primary metrics (3 total)."""
 
-    growth_data: GrowthDataResponse
-    persona_performance: PersonaPerformanceResponse
-    rubric_heatmap: RubricHeatmapResponse
+    model_config = ConfigDict(populate_by_name=True)
+
+    growth_data: GrowthDataResponse = Field(alias="growthData", serialization_alias="growthData")
+    persona_performance: PersonaPerformanceResponse = Field(alias="personaPerformance", serialization_alias="personaPerformance")
+    rubric_heatmap: RubricHeatmapResponse = Field(alias="rubricHeatmap", serialization_alias="rubricHeatmap")
 
 
 class DashboardSecondaryMetrics(BaseModel):
     """Secondary metrics (3 total)."""
 
-    attempt_improvement: AttemptImprovementResponse
-    cohort_performance: CohortPerformanceResponse
-    skill_performance: SkillPerformanceResponse
+    model_config = ConfigDict(populate_by_name=True)
+
+    attempt_improvement: AttemptImprovementResponse = Field(alias="attemptImprovement", serialization_alias="attemptImprovement")
+    cohort_performance: CohortPerformanceResponse = Field(alias="cohortPerformance", serialization_alias="cohortPerformance")
+    skill_performance: SkillPerformanceResponse = Field(alias="skillPerformance", serialization_alias="skillPerformance")
 
 
 class DashboardFooterMetrics(BaseModel):
     """Footer metrics (4 total)."""
 
-    scenario_performance: ScenarioPerformanceResponse
-    scenario_stats: ScenarioStatsResponse
-    simulation_performance: SimulationPerformanceResponse
-    simulation_composition: SimulationCompositionResponse
+    model_config = ConfigDict(populate_by_name=True)
+
+    scenario_performance: ScenarioPerformanceResponse = Field(alias="scenarioPerformance", serialization_alias="scenarioPerformance")
+    scenario_stats: ScenarioStatsResponse = Field(alias="scenarioStats", serialization_alias="scenarioStats")
+    simulation_performance: SimulationPerformanceResponse = Field(alias="simulationPerformance", serialization_alias="simulationPerformance")
+    simulation_composition: SimulationCompositionResponse = Field(alias="simulationComposition", serialization_alias="simulationComposition")
 
 
 class DashboardInsights(BaseModel):
@@ -481,7 +497,7 @@ class DashboardBundleResponse(BaseModel):
     parameter_item_mapping: ParameterItemMapping
 
 
-@router.post("/", response_model=DashboardBundleResponse)
+@router.post("", response_model=DashboardBundleResponse)
 async def get_dashboard(
     filters: AnalyticsFilters,
     request: Request,

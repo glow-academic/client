@@ -20,7 +20,7 @@ class RefreshResponse(BaseModel):
     status: str
 
 
-@router.post("/refresh")
+@router.post("/refresh", response_model=RefreshResponse)
 async def refresh_analytics(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],

@@ -5,11 +5,12 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               RubricMapping, RubricMappingItem,
                               ScenarioMapping, ScenarioMappingItem)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -50,12 +51,27 @@ class SimulationsListResponse(BaseModel):
 router = APIRouter()
 
 
-@router.post("/list")
+@router.post("/list", response_model=SimulationsListResponse)
 async def get_simulations_list(
     filters: SimulationsFilters,
+    request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SimulationsListResponse:
     """Get simulations list with permissions and relationships."""
+    tags = ["simulations"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return SimulationsListResponse.model_validate(cached["data"])
+    
     try:
         # Load SQL string
         sql = load_sql("sql/v3/simulations/list_simulations.sql")

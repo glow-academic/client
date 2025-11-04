@@ -10,7 +10,9 @@
 
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useReports } from "@/lib/api/v2/hooks/reports";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import Reports from "./Reports";
 
@@ -46,7 +48,15 @@ export default function ReportsPage() {
   const rqOpts = useMemo(() => ({ enabled: true, staleTime: 60_000 }), []);
 
   // Single hook call with all data and entity mappings!
-  const { data: bundle, isLoading, isError } = useReports(filters, rqOpts);
+  const {
+    data: bundle,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: keys.reports.with(filters),
+    queryFn: () => api.post("/reports", { body: filters }),
+    ...rqOpts,
+  });
 
   // Transform bundle data to Reports component format
   const transformedData = useMemo(() => {

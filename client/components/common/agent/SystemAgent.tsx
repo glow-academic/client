@@ -43,14 +43,9 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useAgentDetail,
-  useAgentDetailDefault,
-  useCreateAgent as useCreateAgentV2,
-  useDeleteAgentPrompt,
-  useUpdateAgent as useUpdateAgentV2,
-} from "@/lib/api/v2/hooks/agents";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bug, Copy, Eye, Power, Trash2 } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
@@ -83,7 +78,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const log = useLogger();
+  const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
@@ -104,19 +99,52 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
   const isEditMode = !!agentId;
 
-  // V2 API hooks
-  const { data: agentDetail, isLoading: isLoadingAgentDetail } = useAgentDetail(
-    agentId || "",
-    effectiveProfile?.id || "",
-    isEditMode
-  );
+  // V3 API hooks
+  const { data: agentDetail, isLoading: isLoadingAgentDetail } = useQuery({
+    queryKey: keys.agents.with({
+      agentId: agentId || "",
+      profileId: effectiveProfile?.id || "",
+    }),
+    queryFn: () =>
+      api.post("/agents/detail", {
+        body: { agentId: agentId || "", profileId: effectiveProfile?.id || "" },
+      }),
+    enabled: isEditMode && !!agentId && !!effectiveProfile?.id,
+  });
 
   const { data: agentDetailDefault, isLoading: isLoadingAgentDefault } =
-    useAgentDetailDefault(effectiveProfile?.id || "", !isEditMode);
+    useQuery({
+      queryKey: keys.agents.with({ profileId: effectiveProfile?.id || "" }),
+      queryFn: () =>
+        api.post("/agents/detail-default", {
+          body: { profileId: effectiveProfile?.id || "" },
+        }),
+      enabled: !isEditMode && !!effectiveProfile?.id,
+    });
 
-  const { mutate: createAgent } = useCreateAgentV2();
-  const { mutate: updateAgent } = useUpdateAgentV2();
-  const { mutate: deleteAgentPrompt } = useDeleteAgentPrompt();
+  const createAgentMutation = useMutation({
+    mutationFn: (req: Record<string, unknown>) =>
+      api.post("/agents/create", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.agents.all });
+    },
+  });
+
+  const updateAgentMutation = useMutation({
+    mutationFn: (req: Record<string, unknown>) =>
+      api.post("/agents/update", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.agents.all });
+    },
+  });
+
+  const deleteAgentPromptMutation = useMutation({
+    mutationFn: (req: Record<string, unknown>) =>
+      api.post("/agents/delete-prompt", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.agents.all });
+    },
+  });
 
   // Use edit detail when editing, default detail when creating
   const agentData = isEditMode ? agentDetail : agentDetailDefault;
@@ -386,98 +414,62 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
     try {
       if (isEditMode && agentId && agentDetail) {
-        // Update existing agent using v2 API
-        updateAgent(
-          {
-            agentId,
-            name: formData.name!,
-            description: formData.description!,
-            prompt_id: formData.promptId || null,
-            system_prompt: formData.systemPrompt!,
-            temperature: Number(formData.temperature),
-            model_id: formData.modelId!,
-            reasoning:
-              formData.reasoning && formData.reasoning !== "none"
-                ? formData.reasoning
-                : null,
-            active: formData.active ?? true,
-            role: formData.role || "assistant",
-            department_ids:
-              formData.departmentIds && formData.departmentIds.length > 0
-                ? formData.departmentIds
-                : null,
-            department_id: selectedDepartmentId || null,
-            department_prompt_id:
-              selectedDepartmentId && formData.promptId
-                ? formData.promptId
-                : null,
-          },
-          {
-            onSuccess: () => {
-              toast.success("Agent updated successfully!");
-              resetFormAndState();
-              router.push("/management/agents");
-              setIsSubmitting(false);
-            },
-            onError: (error) => {
-              const msg =
-                error instanceof Error ? error.message : "Unknown error";
-              log.error("agent.update.failed", {
-                error,
-                context: { component: "SystemAgent", agentId },
-              });
-              toast.error(`Failed to update agent: ${msg}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+        // Update existing agent using v3 API
+        await updateAgentMutation.mutateAsync({
+          agentId,
+          name: formData.name!,
+          description: formData.description!,
+          prompt_id: formData.promptId || null,
+          system_prompt: formData.systemPrompt!,
+          temperature: Number(formData.temperature),
+          model_id: formData.modelId!,
+          reasoning:
+            formData.reasoning && formData.reasoning !== "none"
+              ? formData.reasoning
+              : null,
+          active: formData.active ?? true,
+          role: formData.role || "assistant",
+          department_ids:
+            formData.departmentIds && formData.departmentIds.length > 0
+              ? formData.departmentIds
+              : null,
+          department_id: selectedDepartmentId || null,
+          department_prompt_id:
+            selectedDepartmentId && formData.promptId
+              ? formData.promptId
+              : null,
+        });
+        toast.success("Agent updated successfully!");
+        resetFormAndState();
+        router.push("/management/agents");
+        setIsSubmitting(false);
       } else {
-        // Create new agent using v2 API
-        createAgent(
-          {
-            name: formData.name!,
-            description: formData.description!,
-            prompt_id: formData.promptId || null,
-            system_prompt: formData.systemPrompt!,
-            temperature: Number(formData.temperature),
-            model_id: formData.modelId!,
-            reasoning:
-              formData.reasoning && formData.reasoning !== "none"
-                ? formData.reasoning
-                : null,
-            active: formData.active ?? true,
-            role: formData.role || "assistant",
-            department_ids:
-              formData.departmentIds && formData.departmentIds.length > 0
-                ? formData.departmentIds
-                : null,
-          },
-          {
-            onSuccess: (response) => {
-              toast.success("Agent created successfully!");
-              resetFormAndState();
-              router.push(`/management/agents/a/${response.agentId}`);
-              setIsSubmitting(false);
-            },
-            onError: (error) => {
-              const msg =
-                error instanceof Error ? error.message : "Unknown error";
-              log.error("agent.create.failed", {
-                error,
-                context: { component: "SystemAgent" },
-              });
-              toast.error(`Failed to create agent: ${msg}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+        // Create new agent using v3 API
+        const response = await createAgentMutation.mutateAsync({
+          name: formData.name!,
+          description: formData.description!,
+          prompt_id: formData.promptId || null,
+          system_prompt: formData.systemPrompt!,
+          temperature: Number(formData.temperature),
+          model_id: formData.modelId!,
+          reasoning:
+            formData.reasoning && formData.reasoning !== "none"
+              ? formData.reasoning
+              : null,
+          active: formData.active ?? true,
+          role: formData.role || "assistant",
+          department_ids:
+            formData.departmentIds && formData.departmentIds.length > 0
+              ? formData.departmentIds
+              : null,
+        });
+        toast.success("Agent created successfully!");
+        resetFormAndState();
+        router.push(`/management/agents/a/${response.agentId}`);
+        setIsSubmitting(false);
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
-      log.error("agent.save.failed", {
-        error,
-        context: { component: "SystemAgent", isEditMode, agentId },
-      });
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
       );
@@ -1006,8 +998,17 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               >
                 Back
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
+              <Button
+                type="submit"
+                disabled={
+                  isSubmitting ||
+                  createAgentMutation.isPending ||
+                  updateAgentMutation.isPending
+                }
+              >
+                {isSubmitting ||
+                createAgentMutation.isPending ||
+                updateAgentMutation.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                     {isEditMode ? "Updating..." : "Creating..."}
@@ -1055,31 +1056,26 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => {
+                onClick={async () => {
                   if (!promptToDelete || !agentId) return;
 
-                  deleteAgentPrompt(
-                    {
+                  try {
+                    await deleteAgentPromptMutation.mutateAsync({
                       agentId,
                       promptId: promptToDelete.promptId,
                       departmentId: promptToDelete.isDepartmentSpecific
                         ? selectedDepartmentId || null
                         : null,
-                    },
-                    {
-                      onSuccess: () => {
-                        toast.success("Prompt deleted successfully");
-                        setShowDeletePromptDialog(false);
-                        setPromptToDelete(null);
-                        // Refresh agent detail - the query will automatically refetch
-                      },
-                      onError: (error) => {
-                        toast.error(
-                          `Failed to delete prompt: ${error.message}`
-                        );
-                      },
-                    }
-                  );
+                    });
+                    toast.success("Prompt deleted successfully");
+                    setShowDeletePromptDialog(false);
+                    setPromptToDelete(null);
+                    // Refresh agent detail - the query will automatically refetch
+                  } catch (error) {
+                    const msg =
+                      error instanceof Error ? error.message : "Unknown error";
+                    toast.error(`Failed to delete prompt: ${msg}`);
+                  }
                 }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >

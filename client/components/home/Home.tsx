@@ -16,8 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useHome } from "@/lib/api/v2/hooks/home";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -32,7 +33,6 @@ import SimulationCard from "../common/simulation/SimulationCard";
 export default function Home() {
   const { effectiveProfile, activeProfile, effectiveDepartmentIds } =
     useProfile();
-  const log = useLogger();
   const { startDate, endDate, effectiveCohortIds } = useAnalytics();
 
   // Memoized filters for home query (no roles/simulationFilters - always shows general)
@@ -42,7 +42,7 @@ export default function Home() {
       endDate: endDate.toISOString(),
       cohortIds: effectiveCohortIds,
       // Always send profileId - server will decide whether to use it based on role
-      profileId: effectiveProfile?.id || undefined,
+      profileId: effectiveProfile?.id || null,
       departmentIds: effectiveDepartmentIds,
     }),
     [
@@ -54,8 +54,12 @@ export default function Home() {
     ]
   );
 
-  // Single optimized bundle call with items, history, and mappings
-  const { data: bundle, isLoading: isHomeOverviewLoading } = useHome(filters);
+  // V3 API - Single optimized bundle call with items, history, and mappings
+  const { data: bundle, isLoading: isHomeOverviewLoading } = useQuery({
+    queryKey: keys.home.with(filters),
+    queryFn: () => api.post("/home/", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
 
   // Extract data from bundle
   const homeOverview = bundle;
@@ -96,11 +100,6 @@ export default function Home() {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
-      log.info("simulation.navigate.attempt", {
-        message: "Navigating to simulation attempt",
-        subject: { entityType: "attempt", entityId: attemptId },
-        context: { component: "Home", function: "handleSimulationStarted" },
-      });
       router.push(`/home/a/${attemptId}`);
     };
 
@@ -132,7 +131,7 @@ export default function Home() {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId, log]);
+  }, [router, loadingToastId]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
@@ -147,15 +146,6 @@ export default function Home() {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
           );
-          log.error("simulation.start.precheck.failed", {
-            message: "WebSocket not connected when trying to start simulation",
-            subject: { entityType: "simulation", entityId: simulationId },
-            context: {
-              component: "Home",
-              function: "handleStartSimulation",
-              isConnected,
-            },
-          });
           return;
         }
 
@@ -167,16 +157,6 @@ export default function Home() {
         const profileIdForEmit =
           effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
 
-        log.info("simulation.start", {
-          message: "Starting simulation via global WebSocket",
-          subject: { entityType: "simulation", entityId: simulationId },
-          context: {
-            component: "Home",
-            function: "handleStartSimulation",
-            isConnected,
-          },
-        });
-
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
@@ -185,22 +165,11 @@ export default function Home() {
         // timeout...
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
-          log.error("simulation.start.timeout", {
-            message: "Simulation start timeout - no response from server",
-            subject: { entityType: "simulation", entityId: simulationId },
-            context: { component: "Home", function: "handleStartSimulation" },
-          });
           toast.dismiss(toastId);
           toast.error("Simulation start timed out. Please try again.");
           setLoadingToastId(null);
         }, 30000);
-      } catch (err) {
-        log.error("simulation.start.failed", {
-          message: "Error starting simulation",
-          subject: { entityType: "simulation", entityId: simulationId },
-          context: { component: "Home", function: "handleStartSimulation" },
-          error: err,
-        });
+      } catch {
         if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start simulation. Please try again.");
         setLoadingToastId(null);
@@ -212,7 +181,6 @@ export default function Home() {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-      log,
     ]
   );
 

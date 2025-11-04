@@ -39,13 +39,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-import {
-  useDeleteScenario,
-  useDuplicateScenario,
-  useScenariosList,
-} from "@/lib/api/v2/hooks/scenarios";
+import { api } from "@/lib/api/client";
 import { ScenarioItem } from "@/lib/api/v2/schemas/scenarios";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
@@ -67,18 +64,32 @@ export function Scenarios() {
     new Set()
   );
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
-  // V2 API hooks - single fetch with all data
-  const { data: scenariosData, isLoading } = useScenariosList(
-    {
-      profileId: effectiveProfile?.id || "",
-    },
-    { enabled: !!effectiveProfile?.id }
-  );
+  const queryClient = useQueryClient();
 
-  // Mutation hooks
-  const duplicateScenarioMutation = useDuplicateScenario();
-  const deleteScenarioMutation = useDeleteScenario();
+  // V3 API - Query with generated keys
+  const filters = { profileId: effectiveProfile?.id || "" };
+  const { data: scenariosData, isLoading } = useQuery({
+    queryKey: keys.scenarios.list(filters),
+    queryFn: () => api.post("/scenarios/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  // Mutation hooks with v3 API
+  const duplicateScenarioMutation = useMutation({
+    mutationFn: (req: { scenarioId: string }) =>
+      api.post("/scenarios/duplicate", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
+    },
+  });
+
+  const deleteScenarioMutation = useMutation({
+    mutationFn: (req: { scenarioId: string }) =>
+      api.post("/scenarios/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
+    },
+  });
 
   // Extract data from V2 response
   const scenarios = useMemo(
@@ -271,23 +282,8 @@ export function Scenarios() {
     setIsDeleting(true);
     try {
       await deleteScenarioMutation.mutateAsync({ scenarioId: deleteItem.id });
-      await log.info("scenario.delete.success", {
-        message: "Scenario deleted successfully",
-        subject: { entityType: "scenario", entityId: deleteItem.id },
-        context: {
-          component: "Scenarios",
-          function: "handleDelete",
-          name: deleteItem.name,
-        },
-      });
       toast.success("Scenario deleted successfully");
-    } catch (error) {
-      await log.error("scenario.delete.failed", {
-        message: "Error deleting scenario",
-        subject: { entityType: "scenario", entityId: deleteItem?.id },
-        context: { component: "Scenarios", function: "handleDelete" },
-        error,
-      });
+    } catch {
       toast.error("Failed to delete scenario");
     } finally {
       setIsDeleting(false);
@@ -300,27 +296,8 @@ export function Scenarios() {
     setIsDuplicating(scenarioId);
     try {
       await duplicateScenarioMutation.mutateAsync({ scenarioId });
-      await log.info("scenario.duplicate.success", {
-        message: "Scenario duplicated successfully",
-        subject: { entityType: "scenario", entityId: scenarioId },
-        context: {
-          component: "Scenarios",
-          function: "handleDuplicate",
-          originalName: scenarioName,
-        },
-      });
       toast.success(`Scenario "${scenarioName}" duplicated successfully`);
-    } catch (error) {
-      await log.error("scenario.duplicate.failed", {
-        message: "Error duplicating scenario",
-        subject: { entityType: "scenario", entityId: scenarioId },
-        context: {
-          component: "Scenarios",
-          function: "handleDuplicate",
-          originalName: scenarioName,
-        },
-        error,
-      });
+    } catch {
       toast.error("Failed to duplicate scenario");
     } finally {
       setIsDuplicating(null);
@@ -625,15 +602,19 @@ export function Scenarios() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+              <AlertDialogCancel
+                disabled={isDeleting || deleteScenarioMutation.isPending}
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                disabled={isDeleting}
+                disabled={isDeleting || deleteScenarioMutation.isPending}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting || deleteScenarioMutation.isPending
+                  ? "Deleting..."
+                  : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

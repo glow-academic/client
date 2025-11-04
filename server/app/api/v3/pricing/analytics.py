@@ -13,7 +13,7 @@ from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-router = APIRouter()
+router = APIRouter(prefix="/pricing", tags=["pricing"])
 
 # Inline schemas (moved from app.schemas.pricing)
 class DebugInfoItem(BaseModel):
@@ -72,7 +72,7 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
         return obj
 
 
-@router.post("/", response_model=PricingAnalyticsResponse)
+@router.post("", response_model=PricingAnalyticsResponse)
 async def get_pricing(
     filters: AnalyticsFilters,
     request: Request,

@@ -8,7 +8,6 @@
 
 import { useProfile } from "@/contexts/profile-context";
 import type { LogItem } from "@/lib/api/v2/schemas/logs";
-import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,7 +19,9 @@ import {
   DialogContent,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useLogger, useLogsList } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<LogItem | null>(null);
@@ -28,34 +29,44 @@ export default function Logs() {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
-  // V2 API hook
-  const profileId = effectiveProfile?.id || "";
-  const { data: logsData, isLoading } = useLogsList(profileId, !!profileId);
 
-  // Extract data from V2 response
-  const logs = useMemo(() => logsData?.logs || [], [logsData?.logs]);
+  // V3 API hook (read-only)
+  const filters = { profileId: effectiveProfile?.id || "" };
+  const { data: logsData, isLoading } = useQuery({
+    queryKey: keys.logs.list(filters),
+    queryFn: () => api.post("/logs/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  // Extract and normalize data from V3 response to match v2 LogItem type
+  const logs = useMemo(() => {
+    if (!logsData?.logs) return [];
+
+    return logsData.logs.map((log) => ({
+      ...log,
+      // Convert log_id from string to number (v2 expects number)
+      log_id: Number.parseInt(log.log_id, 10) || 0,
+      // Ensure correlation_id is always a string (v2 expects non-nullable)
+      correlation_id: log.correlation_id ?? "",
+      // Ensure actor_name can be null (v2 expects nullable)
+      actor_name: log.actor_name || null,
+      // Ensure actor can be null (v2 expects nullable)
+      actor: log.actor || null,
+      // Ensure subject can be null
+      subject: log.subject || null,
+      // Ensure context can be null
+      context: log.context || null,
+      // Ensure error can be null
+      error: log.error || null,
+    }));
+  }, [logsData?.logs]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey[0];
-          return typeof key === "string" && key.startsWith("logs:v2:list");
-        },
-      });
-      log.info("logs.refresh.success", {
-        message: "Logs refreshed successfully",
-        context: { component: "Logs" },
-      });
+      await queryClient.invalidateQueries({ queryKey: keys.logs.all });
       toast.success("Logs refreshed successfully");
-    } catch (error) {
-      log.error("logs.refresh.failed", {
-        message: "Error refreshing logs",
-        error,
-        context: { component: "Logs" },
-      });
+    } catch {
       toast.error("Failed to refresh logs");
     } finally {
       setIsRefreshing(false);

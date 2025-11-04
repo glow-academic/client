@@ -19,7 +19,7 @@ class ProfileByAliasRequest(BaseModel):
     alias: str
 
 
-@router.post("/by-alias")
+@router.post("/by-alias", response_model=ProfileDetailResponse)
 async def get_profile_by_alias(
     request: ProfileByAliasRequest,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],

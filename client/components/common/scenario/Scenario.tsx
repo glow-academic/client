@@ -65,15 +65,9 @@ import { PersonaPicker } from "./PersonaPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
-import {
-  useCreateScenario,
-  useGenerateScenarioAI,
-  useRandomizeScenario,
-  useScenarioDetail,
-  useScenarioDetailDefault,
-  useUpdateScenario,
-} from "@/lib/api/v2/hooks/scenarios";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getObjectivesFromMapping,
   getParameterItemIdsFromStructure,
@@ -238,18 +232,41 @@ export default function Scenario({
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const queryClient = useQueryClient();
   const isEditMode = mode === "edit" && !!scenarioId;
-  const log = useLogger();
-  // V2 API hooks - single hook for all data
-  const { data: scenarioDetail, isLoading: isLoadingScenarioDetail } =
-    useScenarioDetail(
-      scenarioId || "",
-      effectiveProfile?.id || "",
-      !!scenarioId && isEditMode
-    );
 
+  // V3 API - fetch scenario detail when editing
+  const { data: scenarioDetail, isLoading: isLoadingScenarioDetail } =
+    useQuery({
+      queryKey: keys.scenarios.with({
+        scenarioId: scenarioId || "",
+        profileId: effectiveProfile?.id || "",
+      }),
+      queryFn: () =>
+        api.post("/scenarios/detail", {
+          body: {
+            scenarioId: scenarioId || "",
+            profileId: effectiveProfile?.id || "",
+          },
+        }),
+      enabled: !!scenarioId && isEditMode && !!effectiveProfile?.id,
+    });
+
+  // V3 API - fetch default scenario detail when creating
   const { data: scenarioDetailDefault, isLoading: isLoadingScenarioDefault } =
-    useScenarioDetailDefault(effectiveProfile?.id || "", !isEditMode);
+    useQuery({
+      queryKey: keys.scenarios.with({
+        profileId: effectiveProfile?.id || "",
+        default: true,
+      }),
+      queryFn: () =>
+        api.post("/scenarios/detail-default", {
+          body: {
+            profileId: effectiveProfile?.id || "",
+          },
+        }),
+      enabled: !isEditMode && !!effectiveProfile?.id,
+    });
 
   // Use edit detail when editing, default detail when creating
   const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
@@ -275,11 +292,41 @@ export default function Scenario({
     clearEntityMetadata,
   ]);
 
-  // V2 Mutation hooks
-  const { mutate: createScenario } = useCreateScenario();
-  const { mutate: updateScenario } = useUpdateScenario();
-  const generateAIMutation = useGenerateScenarioAI();
-  const randomizeMutation = useRandomizeScenario();
+  // V3 API - create mutation
+  const createScenarioMutation = useMutation({
+    mutationFn: (body: unknown) => api.post("/scenarios/create", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
+    },
+  });
+
+  // V3 API - update mutation
+  const updateScenarioMutation = useMutation({
+    mutationFn: (body: unknown) => api.post("/scenarios/update", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
+    },
+  });
+
+  // V3 API - generate AI mutation
+  const generateAIMutation = useMutation({
+    mutationFn: (body: unknown) => api.post("/scenarios/generate-ai", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
+    },
+  });
+
+  // V3 API - randomize mutation
+  const randomizeMutation = useMutation({
+    mutationFn: (body: unknown) => api.post("/scenarios/randomize", { body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
+    },
+  });
+
+  // Extract mutate functions for compatibility
+  const createScenario = createScenarioMutation.mutate;
+  const updateScenario = updateScenarioMutation.mutate;
 
   // Form data state
   const initialFormData = useMemo(
@@ -1030,14 +1077,6 @@ export default function Scenario({
       setCurrentParameterItemIds(resp.parameterItemIds || []);
       toast.success("Parameter suggestions applied");
     } catch (error) {
-      log.error("scenario.parameters.randomize.failed", {
-        message: "Error randomizing parameters",
-        error,
-        context: {
-          component: "Scenario",
-          function: "handleRandomizeParameters",
-        },
-      });
       toast.error("Failed to randomize parameters");
     } finally {
       setIsRandomizingParameters(false);
@@ -1049,11 +1088,6 @@ export default function Scenario({
       setCurrentParameterItemIds([]);
       toast.success("Parameters reset");
     } catch (error) {
-      log.error("scenario.parameters.reset.failed", {
-        message: "Error resetting parameters",
-        error,
-        context: { component: "Scenario", function: "handleResetParameters" },
-      });
       toast.error("Failed to reset parameters");
     }
   };
@@ -1076,11 +1110,6 @@ export default function Scenario({
       setSelectedPersonaIds(resp.personaIds || []);
       toast.success("Persona suggestion applied");
     } catch (error) {
-      log.error("scenario.persona.randomize.failed", {
-        message: "Error randomizing persona",
-        error,
-        context: { component: "Scenario", function: "handleRandomizePersona" },
-      });
       toast.error("Failed to randomize persona");
     } finally {
       setIsRandomizingPersona(false);
@@ -1092,11 +1121,6 @@ export default function Scenario({
       setSelectedPersonaIds([]);
       toast.success("Persona reset");
     } catch (error) {
-      log.error("scenario.persona.reset.failed", {
-        message: "Error resetting persona",
-        error,
-        context: { component: "Scenario", function: "handleResetPersona" },
-      });
       toast.error("Failed to reset persona");
     }
   };
@@ -1125,14 +1149,6 @@ export default function Scenario({
       setCurrentDocumentIds(uniqueDocumentIds);
       toast.success("Document suggestions applied");
     } catch (error) {
-      log.error("scenario.documents.randomize.failed", {
-        message: "Error randomizing documents",
-        error,
-        context: {
-          component: "Scenario",
-          function: "handleRandomizeDocuments",
-        },
-      });
       toast.error("Failed to randomize documents");
     } finally {
       setIsRandomizingDocuments(false);
@@ -1144,11 +1160,6 @@ export default function Scenario({
       setCurrentDocumentIds([]);
       toast.success("Documents reset");
     } catch (error) {
-      log.error("scenario.documents.reset.failed", {
-        message: "Error resetting documents",
-        error,
-        context: { component: "Scenario", function: "handleResetDocuments" },
-      });
       toast.error("Failed to reset documents");
     }
   };
@@ -1167,11 +1178,6 @@ export default function Scenario({
       setSelectedProblemStatementId(null);
       toast.success("Scenario content reset");
     } catch (error) {
-      log.error("scenario.content.reset.failed", {
-        message: "Error resetting content",
-        error,
-        context: { component: "Scenario", function: "handleResetContent" },
-      });
       toast.error("Failed to reset content");
     }
   };
@@ -1320,15 +1326,6 @@ export default function Scenario({
                 toast.success("Problem statement regenerated and saved!");
               },
               onError: (error) => {
-                log.error("scenario.regenerate.save.failed", {
-                  message: "Error saving regenerated problem statement",
-                  error,
-                  context: {
-                    component: "Scenario",
-                    function: "handleGenerateScenario",
-                    scenarioId,
-                  },
-                });
                 toast.error(
                   `Failed to save regenerated problem statement: ${error.message}`
                 );
@@ -1356,11 +1353,6 @@ export default function Scenario({
         throw new Error("No scenario content was generated");
       }
     } catch (error) {
-      log.error("scenario.generate.failed", {
-        message: "Error generating scenario",
-        error,
-        context: { component: "Scenario", function: "handleGenerateScenario" },
-      });
       toast.error(
         `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
@@ -1439,15 +1431,6 @@ export default function Scenario({
               router.push("/create/scenarios");
             },
             onError: (error) => {
-              log.error("scenario.update.failed", {
-                message: "Error updating scenario",
-                error,
-                context: {
-                  component: "Scenario",
-                  function: "handleSubmit",
-                  scenarioId,
-                },
-              });
               toast.error(`Failed to update scenario: ${error.message}`);
               setIsSubmitting(false);
             },
@@ -1463,30 +1446,12 @@ export default function Scenario({
             router.push("/create/scenarios");
           },
           onError: (error) => {
-            log.error("scenario.create.failed", {
-              message: "Error creating scenario",
-              error,
-              context: {
-                component: "Scenario",
-                function: "handleSubmit",
-              },
-            });
             toast.error(`Failed to create scenario: ${error.message}`);
             setIsSubmitting(false);
           },
         });
       }
     } catch (error) {
-      log.error("scenario.submit.failed", {
-        message: "Error submitting scenario",
-        error,
-        context: {
-          component: "Scenario",
-          function: "handleSubmit",
-          mode: isEditMode ? "edit" : "create",
-          scenarioId,
-        },
-      });
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );

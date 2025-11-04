@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import { useAgentsList, useDuplicateAgent } from "@/lib/api/v2/hooks/agents";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { AgentsDataTable } from "./AgentsDataTable";
@@ -21,13 +22,25 @@ import { AgentsDataTable } from "./AgentsDataTable";
 export default function Agents() {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
-  const log = useLogger();  
-  // V2 API hook
-  const profileId = effectiveProfile?.id || "";
-  const { data: agentsData, isLoading } = useAgentsList(profileId, !!profileId);
-  const duplicateMutation = useDuplicateAgent();
+  const queryClient = useQueryClient();
 
-  // Extract data from V2 response
+  // V3 API with generated keys
+  const filters = { profileId: effectiveProfile?.id || "" };
+  const { data: agentsData, isLoading } = useQuery({
+    queryKey: keys.agents.list(filters),
+    queryFn: () => api.post("/agents/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: (req: { agentId: string }) =>
+      api.post("/agents/duplicate", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.agents.all });
+    },
+  });
+
+  // Extract data from V3 response
   const agents = useMemo(() => agentsData?.agents || [], [agentsData?.agents]);
   const modelMapping = useMemo(
     () =>
@@ -100,12 +113,8 @@ export default function Agents() {
   const handleDuplicate = async (id: string) => {
     try {
       await duplicateMutation.mutateAsync({ agentId: id });
-      // Optional: show success toast
+      toast.success("Agent duplicated successfully");
     } catch {
-      log.error("agent.duplicate.failed", {
-        error: new Error("Failed to duplicate agent"),
-        context: { component: "Agents", function: "handleDuplicate" },
-      });
       toast.error("Failed to duplicate agent");
     }
   };
@@ -192,16 +201,16 @@ export default function Agents() {
 
   return (
     <div className="space-y-8">
-        <AgentsDataTable
-          data={agents}
-          modelMapping={modelMapping}
-          reasoningOptions={reasoningOptions}
-          modelOptions={modelOptions}
-          temperatureOptions={temperatureOptions}
-          roleOptions={roleOptions}
-          departmentOptions={departmentOptions}
-          renderAgentCard={renderAgentCard}
-        />
+      <AgentsDataTable
+        data={agents}
+        modelMapping={modelMapping}
+        reasoningOptions={reasoningOptions}
+        modelOptions={modelOptions}
+        temperatureOptions={temperatureOptions}
+        roleOptions={roleOptions}
+        departmentOptions={departmentOptions}
+        renderAgentCard={renderAgentCard}
+      />
     </div>
   );
 }

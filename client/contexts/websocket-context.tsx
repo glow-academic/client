@@ -5,15 +5,8 @@
  */
 "use client";
 
-import {
-  analyticsHomeOverviewKeys,
-  analyticsPracticeOverviewKeys,
-  assistantChatsFullKeys,
-  attemptsFullKeys,
-  layoutContextKeys,
-} from "@/lib/api/v2/keys";
 import { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
-import { log, type LogEntry } from "@/lib/api/v2/server/logs";
+import { keys } from "@/lib/query/keys";
 import { createSocketClient } from "@/lib/ws/socket";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
@@ -148,18 +141,10 @@ export function WebSocketProvider({
           completed: boolean;
           created_at: string;
         }) => {
-          log.debug("ws.assistant.new_message", {
-            context: {
-              messageId: data.message_id,
-              chatId: data.chat_id,
-              role: data.role,
-            },
-          });
-
           // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantChatsFullKeys.all,
+              queryKey: keys.assistant.all,
             });
           }, 0);
         }
@@ -176,14 +161,6 @@ export function WebSocketProvider({
           completed: boolean;
           created_at: string;
         }) => {
-          log.debug("ws.simulation.new_message", {
-            context: {
-              messageId: data.message_id,
-              chatId: data.chat_id,
-              role: data.role,
-            },
-          });
-
           // Dispatch simulationMessageStart event for response messages to trigger immediate UI display
           if (data.role === "assistant" || data.role === "response") {
             window.dispatchEvent(
@@ -211,7 +188,7 @@ export function WebSocketProvider({
           // Invalidate v2 attempts (includes messages)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: attemptsFullKeys.all,
+              queryKey: keys.attempts.all,
             });
           }, 0);
         }
@@ -225,14 +202,10 @@ export function WebSocketProvider({
           chat_id: string;
           accumulated_content: string;
         }) => {
-          log.debug("ws.assistant.message_token", {
-            context: { messageId: data.message_id, chatId: data.chat_id },
-          });
-
           // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantChatsFullKeys.all,
+              queryKey: keys.assistant.all,
             });
           }, 0);
         }
@@ -247,14 +220,10 @@ export function WebSocketProvider({
           token: string;
           accumulated_content: string;
         }) => {
-          log.debug("ws.simulation.message_token", {
-            context: { messageId: data.message_id, chatId: data.chat_id },
-          });
-
           // Optimistically update the query cache with accumulated content
           // This updates ALL attempt queries to find the right message
           queryClient.setQueriesData(
-            { queryKey: attemptsFullKeys.all },
+            { queryKey: keys.attempts.all },
             (oldData: AttemptFullResponse) => {
               if (!oldData?.chats) return oldData;
 
@@ -304,10 +273,6 @@ export function WebSocketProvider({
           final_content: string;
           completed?: boolean;
         }) => {
-          log.debug("ws.assistant.message_complete", {
-            context: { messageId: data.message_id, chatId: data.chat_id },
-          });
-
           // Reset loading states
           setIsSendingAssistantMessage(false);
 
@@ -325,7 +290,7 @@ export function WebSocketProvider({
           // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantChatsFullKeys.all,
+              queryKey: keys.assistant.all,
             });
           }, 0);
         }
@@ -339,10 +304,6 @@ export function WebSocketProvider({
           chat_id: string;
           final_content: string;
         }) => {
-          log.debug("ws.assistant.message_cancelled", {
-            context: { messageId: data.message_id, chatId: data.chat_id },
-          });
-
           // Reset loading states
           setIsSendingAssistantMessage(false);
           setIsStoppingAssistant(false);
@@ -361,7 +322,7 @@ export function WebSocketProvider({
           // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantChatsFullKeys.all,
+              queryKey: keys.assistant.all,
             });
           }, 0);
         }
@@ -377,10 +338,6 @@ export function WebSocketProvider({
           completed?: boolean;
           audio?: boolean;
         }) => {
-          log.debug("ws.simulation.message_complete", {
-            context: { messageId: data.message_id, chatId: data.chat_id },
-          });
-
           // Reset loading states
           setIsSendingSimulationMessage(false);
 
@@ -398,7 +355,7 @@ export function WebSocketProvider({
           // Invalidate v2 attempts (includes messages)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: attemptsFullKeys.all,
+              queryKey: keys.attempts.all,
             });
           }, 0);
         }
@@ -462,10 +419,6 @@ export function WebSocketProvider({
           chat_id: string;
           final_content: string;
         }) => {
-          log.debug("ws.simulation.message_cancelled", {
-            context: { messageId: data.message_id, chatId: data.chat_id },
-          });
-
           // Reset loading states
           setIsSendingSimulationMessage(false);
           setIsStoppingSimulation(false);
@@ -484,7 +437,7 @@ export function WebSocketProvider({
           // Invalidate v2 attempts (includes messages)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: attemptsFullKeys.all,
+              queryKey: keys.attempts.all,
             });
           }, 0);
         }
@@ -494,11 +447,6 @@ export function WebSocketProvider({
       socket.on(
         "simulation_message_error",
         (data: { chat_id: string; error: string }) => {
-          log.error("ws.simulation.message_error", {
-            message: data.error,
-            context: { chatId: data.chat_id },
-          });
-
           // Reset loading states
           setIsSendingSimulationMessage(false);
           setIsStoppingSimulation(false);
@@ -519,53 +467,37 @@ export function WebSocketProvider({
       socket.on(
         "message_cancelled",
         (data: { message_id: string; chat_id: string }) => {
-          log.debug("ws.message_cancelled", {
-            context: { messageId: data.message_id, chatId: data.chat_id },
-          });
-
           // Invalidate v2 queries (for both assistant and simulation)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantChatsFullKeys.all,
+              queryKey: keys.assistant.all,
             });
             queryClient.invalidateQueries({
-              queryKey: attemptsFullKeys.all,
+              queryKey: keys.attempts.all,
             });
           }, 0);
         }
       );
 
       socket.on("title_updated", (data: { chat_id: string; title: string }) => {
-        log.debug("ws.title_updated", {
-          context: { chatId: data.chat_id, title: data.title },
-        });
-
         // Invalidate v2 assistant chat query (will refetch all data with updated title)
         queryClient.invalidateQueries({
-          queryKey: assistantChatsFullKeys.all,
+          queryKey: keys.assistant.all,
         });
       });
 
       socket.on(
         "joined_chat",
-        (data: { chat_type: string; chat_id: string }) => {
-          log.info("ws.joined_chat", {
-            message: `Successfully joined ${data.chat_type} chat: ${data.chat_id}`,
-            context: { chatId: data.chat_id, chatType: data.chat_type },
-          });
-        }
+        (data: { chat_type: string; chat_id: string }) => {}
       );
 
       // Tool call events
       socket.on(
         "tool_call_created",
         (data: { tool_name: string; chat_id: string }) => {
-          log.debug("ws.tool_call.created", {
-            context: { tool: data.tool_name, chatId: data.chat_id },
-          });
           // Invalidate v2 assistant chat query (will refetch all data)
           queryClient.invalidateQueries({
-            queryKey: assistantChatsFullKeys.all,
+            queryKey: keys.assistant.all,
           });
         }
       );
@@ -573,12 +505,9 @@ export function WebSocketProvider({
       socket.on(
         "tool_call_completed",
         (data: { tool_name: string; chat_id: string }) => {
-          log.debug("ws.tool_call.completed", {
-            context: { tool: data.tool_name, chatId: data.chat_id },
-          });
           // Invalidate v2 assistant chat query (will refetch all data)
           queryClient.invalidateQueries({
-            queryKey: assistantChatsFullKeys.all,
+            queryKey: keys.assistant.all,
           });
         }
       );
@@ -592,22 +521,18 @@ export function WebSocketProvider({
           attempt_id: string;
           chat_id: string;
         }) => {
-          log.info("ws.simulation.started", {
-            message: "Simulation started",
-            context: data,
-          });
           setStartingSimulationId(null);
           if (data.success) {
             toast.success(data.message);
 
             // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
             queryClient.invalidateQueries({
-              queryKey: attemptsFullKeys.all,
+              queryKey: keys.attempts.all,
             });
 
             // Invalidate v2 layout context (includes simulations, cohorts, scenarios, etc.)
             queryClient.invalidateQueries({
-              queryKey: layoutContextKeys.all,
+              queryKey: keys.profile.all,
             });
 
             // Trigger navigation by emitting a custom event
@@ -619,10 +544,10 @@ export function WebSocketProvider({
 
             // Invalidate home and practice queries to refresh data
             queryClient.invalidateQueries({
-              queryKey: analyticsHomeOverviewKeys.all,
+              queryKey: keys.home.all,
             });
             queryClient.invalidateQueries({
-              queryKey: analyticsPracticeOverviewKeys.all,
+              queryKey: keys.practice.all,
             });
           } else {
             toast.error(data.message);
@@ -632,15 +557,12 @@ export function WebSocketProvider({
 
       socket.on(
         "simulation_message_processing",
-        (data: { chat_id: string; status: string; message: string }) => {
-          log.debug("ws.simulation.message_processing", { context: data });
-        }
+        (data: { chat_id: string; status: string; message: string }) => {}
       );
 
       socket.on(
         "simulation_stopped",
         (data: { chat_id: string; success: boolean; message: string }) => {
-          log.info("ws.simulation.stopped", { context: data });
           setIsStoppingSimulation(false);
 
           // Always let SimulationContext know about the stop event
@@ -674,7 +596,6 @@ export function WebSocketProvider({
           next_chat_id: string;
           is_attempt_finished: boolean;
         }) => {
-          log.info("ws.simulation.continued", { context: data });
           setIsContinuingSimulation(false);
 
           if (data.success) {
@@ -682,7 +603,7 @@ export function WebSocketProvider({
 
             // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
             queryClient.invalidateQueries({
-              queryKey: attemptsFullKeys.all,
+              queryKey: keys.attempts.all,
             });
 
             // Dispatch a custom event with the new, richer detail object
@@ -707,10 +628,10 @@ export function WebSocketProvider({
 
             // Invalidate home and practice queries to show updated grades/history
             queryClient.invalidateQueries({
-              queryKey: analyticsHomeOverviewKeys.all,
+              queryKey: keys.home.all,
             });
             queryClient.invalidateQueries({
-              queryKey: analyticsPracticeOverviewKeys.all,
+              queryKey: keys.practice.all,
             });
           } else {
             toast.error(data.message);
@@ -721,7 +642,6 @@ export function WebSocketProvider({
       socket.on(
         "end_all_completed",
         (data: { success: boolean; message: string; attempt_id: string }) => {
-          log.info("ws.simulation.end_all_completed", { context: data });
           setIsContinuingSimulation(false);
 
           if (data.success) {
@@ -729,7 +649,7 @@ export function WebSocketProvider({
 
             // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
             queryClient.invalidateQueries({
-              queryKey: attemptsFullKeys.all,
+              queryKey: keys.attempts.all,
             });
 
             // Dispatch a custom event for end all completion
@@ -743,10 +663,10 @@ export function WebSocketProvider({
 
             // Invalidate home and practice queries to show updated grades/history
             queryClient.invalidateQueries({
-              queryKey: analyticsHomeOverviewKeys.all,
+              queryKey: keys.home.all,
             });
             queryClient.invalidateQueries({
-              queryKey: analyticsPracticeOverviewKeys.all,
+              queryKey: keys.practice.all,
             });
           } else {
             toast.error(data.message);
@@ -757,7 +677,6 @@ export function WebSocketProvider({
       socket.on(
         "simulation_error",
         (data: { success: boolean; message: string }) => {
-          log.error("ws.simulation.error", { message: data.message });
           setStartingSimulationId(null);
           setIsSendingSimulationMessage(false);
           setIsStoppingSimulation(false);
@@ -772,7 +691,6 @@ export function WebSocketProvider({
       socket.on(
         "assistant_started",
         (data: { success: boolean; message: string; chat_id: string }) => {
-          log.info("ws.assistant.started", { context: data });
           setIsStartingAssistant(false);
           if (data.success) {
             // toast.success(data.message);
@@ -791,15 +709,12 @@ export function WebSocketProvider({
 
       socket.on(
         "assistant_message_processing",
-        (data: { chat_id: string; status: string; message: string }) => {
-          log.debug("ws.assistant.message_processing", { context: data });
-        }
+        (data: { chat_id: string; status: string; message: string }) => {}
       );
 
       socket.on(
         "assistant_stopped",
         (data: { chat_id: string; success: boolean; message: string }) => {
-          log.info("ws.assistant.stopped", { context: data });
           setIsStoppingAssistant(false);
           if (data.success) {
             toast.success(data.message);
@@ -812,7 +727,6 @@ export function WebSocketProvider({
       socket.on(
         "assistant_error",
         (data: { success: boolean; message: string }) => {
-          log.error("ws.assistant.error", { message: data.message });
           setIsStartingAssistant(false);
           setIsSendingAssistantMessage(false);
           setIsStoppingAssistant(false);
@@ -836,17 +750,11 @@ export function WebSocketProvider({
   useEffect(() => {
     // Distinguish undefined (still loading) vs null (guest) vs string (user)
     if (profileId === undefined) {
-      log.debug("ws.connect.wait_profile", {
-        message: "Waiting for profileId resolution before connecting WebSocket",
-      });
       return;
     }
 
     // Don't create multiple connections
     if (socketRef.current?.connected) {
-      log.debug("ws.connect.skip_already_connected", {
-        context: { profileId },
-      });
       return;
     }
 
@@ -854,15 +762,6 @@ export function WebSocketProvider({
     const roomsToCleanup = currentRoomsRef.current;
 
     const connectWebSocket = async () => {
-      log.info("websocket.connect.start", {
-        message: "Initializing global WebSocket connection",
-        context: {
-          component: "WebSocketContext",
-          function: "connectWebSocket",
-          profileId,
-          attempt: connectionAttempts.current + 1,
-        },
-      });
       const query: Record<string, string | number | undefined> = {
         timestamp: Date.now(),
         EIO: "4",
@@ -892,7 +791,6 @@ export function WebSocketProvider({
           },
         };
         if (socket.id) payload.correlation = { sessionId: socket.id };
-        log.info("websocket.connected", payload);
       });
 
       // Handle connection confirmation from server
@@ -916,7 +814,6 @@ export function WebSocketProvider({
             },
           };
           if (data.sid) payload2.correlation = { sessionId: data.sid };
-          log.info("websocket.connection.confirmed", payload2);
         }
       );
 
@@ -931,7 +828,6 @@ export function WebSocketProvider({
           },
         };
         if (socket.id) payload3.correlation = { sessionId: socket.id };
-        log.info("websocket.disconnected", payload3);
       });
 
       socket.on("connect_error", (error: Error) => {
@@ -948,7 +844,6 @@ export function WebSocketProvider({
           },
         };
         if (socket.id) payload4.correlation = { sessionId: socket.id };
-        log.error("websocket.connect.error", payload4);
         setIsConnected(false);
 
         if (connectionAttempts.current >= maxConnectionAttempts) {
@@ -970,7 +865,6 @@ export function WebSocketProvider({
           },
         };
         if (socket.id) payload5.correlation = { sessionId: socket.id };
-        log.info("websocket.reconnected", payload5);
         toast.success("Connection restored!");
       });
 
@@ -985,7 +879,6 @@ export function WebSocketProvider({
           },
         };
         if (socket.id) payload6.correlation = { sessionId: socket.id };
-        log.error("websocket.reconnect.error", payload6);
       });
 
       socket.on("reconnect_failed", () => {
@@ -999,7 +892,6 @@ export function WebSocketProvider({
           },
         };
         if (socket.id) payload7.correlation = { sessionId: socket.id };
-        log.error("websocket.reconnect.failed", payload7);
         toast.error("Connection lost. Please refresh the page to reconnect.");
       });
 
@@ -1017,7 +909,6 @@ export function WebSocketProvider({
         };
         if (socketRef.current?.id)
           payload8.correlation = { sessionId: socketRef.current.id };
-        log.info("websocket.cleanup", payload8);
         // Leave all rooms before disconnecting using captured rooms
         roomsToCleanup.forEach((roomId) => {
           socketRef.current?.emit("leave_chat", {
@@ -1038,13 +929,8 @@ export function WebSocketProvider({
   const joinRoom = useCallback(
     (roomId: string, roomType: "assistant" | "simulation") => {
       if (!socketRef.current || !isConnected) {
-        log.debug("ws.room.join.skip_not_connected", {
-          context: { roomId, roomType },
-        });
         return;
       }
-
-      log.debug("ws.room.join", { context: { roomId, roomType } });
       socketRef.current.emit("join_chat", {
         chat_id: roomId,
         chat_type: roomType,
@@ -1057,13 +943,8 @@ export function WebSocketProvider({
   const leaveRoom = useCallback(
     (roomId: string, roomType: "assistant" | "simulation") => {
       if (!socketRef.current) {
-        log.debug("ws.room.leave.skip_no_socket", {
-          context: { roomId, roomType },
-        });
         return;
       }
-
-      log.debug("ws.room.leave", { context: { roomId, roomType } });
       socketRef.current.emit("leave_chat", {
         chat_id: roomId,
         chat_type: roomType,
@@ -1085,9 +966,6 @@ export function WebSocketProvider({
       infinite_time_limit?: number | null;
     }) => {
       if (!socketRef.current || !isConnected) {
-        log.error("ws.simulation.start.skip_not_connected", {
-          context: { function: "emitStartSimulation" },
-        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
@@ -1105,7 +983,6 @@ export function WebSocketProvider({
       };
 
       setStartingSimulationId(data.simulation_id);
-      log.debug("ws.emit.start_simulation", { context: payload });
       socketRef.current.emit("start_simulation", payload);
     },
     [isConnected]
@@ -1114,19 +991,10 @@ export function WebSocketProvider({
   const emitSendSimulationMessage = useCallback(
     (data: { chat_id: string; message: string; isRetry?: boolean }) => {
       if (!socketRef.current || !isConnected) {
-        log.error("ws.simulation.send.skip_not_connected", {
-          context: { function: "emitSendSimulationMessage" },
-        });
         return;
       }
 
       setIsSendingSimulationMessage(true);
-      log.debug("ws.emit.send_simulation_message", {
-        context: {
-          chatId: data.chat_id,
-          isRetry: data.isRetry,
-        },
-      });
       socketRef.current.emit("send_simulation_message", data);
     },
     [isConnected]
@@ -1135,15 +1003,11 @@ export function WebSocketProvider({
   const emitStopSimulation = useCallback(
     (data: { chat_id: string }) => {
       if (!socketRef.current || !isConnected) {
-        log.error("ws.simulation.stop.skip_not_connected", {
-          context: { function: "emitStopSimulation" },
-        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
       setIsStoppingSimulation(true);
-      log.debug("ws.emit.stop_simulation", { context: data });
       socketRef.current.emit("stop_simulation", data);
     },
     [isConnected]
@@ -1159,15 +1023,11 @@ export function WebSocketProvider({
       department_id?: string;
     }) => {
       if (!socketRef.current || !isConnected) {
-        log.error("ws.simulation.continue.skip_not_connected", {
-          context: { function: "emitContinueSimulation" },
-        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
       setIsContinuingSimulation(true);
-      log.debug("ws.emit.continue_simulation", { context: data });
       socketRef.current.emit("continue_simulation", data);
     },
     [isConnected]
@@ -1181,15 +1041,11 @@ export function WebSocketProvider({
       department_id: string;
     }) => {
       if (!socketRef.current || !isConnected) {
-        log.error("ws.assistant.start.skip_not_connected", {
-          context: { function: "emitStartAssistant" },
-        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
       setIsStartingAssistant(true);
-      log.debug("ws.emit.start_assistant", { context: data });
       socketRef.current.emit("start_assistant", data);
     },
     [isConnected]
@@ -1198,16 +1054,10 @@ export function WebSocketProvider({
   const emitSendAssistantMessage = useCallback(
     (data: { chat_id: string; message: string }) => {
       if (!socketRef.current || !isConnected) {
-        log.error("ws.assistant.send.skip_not_connected", {
-          context: { function: "emitSendAssistantMessage" },
-        });
         return;
       }
 
       setIsSendingAssistantMessage(true);
-      log.debug("ws.emit.send_assistant_message", {
-        context: { chatId: data.chat_id },
-      });
       socketRef.current.emit("send_assistant_message", data);
     },
     [isConnected]
@@ -1216,15 +1066,11 @@ export function WebSocketProvider({
   const emitStopAssistant = useCallback(
     (data: { chat_id: string }) => {
       if (!socketRef.current || !isConnected) {
-        log.error("ws.assistant.stop.skip_not_connected", {
-          context: { function: "emitStopAssistant" },
-        });
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
       setIsStoppingAssistant(true);
-      log.debug("ws.emit.stop_assistant", { context: data });
       socketRef.current.emit("stop_assistant", data);
     },
     [isConnected]

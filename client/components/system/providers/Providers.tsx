@@ -49,18 +49,19 @@ import { ColumnDef } from "@tanstack/react-table";
 
 import { useProfile } from "@/contexts/profile-context";
 
-import { useLogger } from "@/lib/api/v2/hooks/logs";
+import { api } from "@/lib/api/client";
 import {
   useDeleteModel,
   useDeleteProvider,
   useDuplicateModel,
   useDuplicateProvider,
-  useProvidersList,
 } from "@/lib/api/v2/hooks/providers";
 import type {
   ModelItem,
   ProviderWithModels,
 } from "@/lib/api/v2/schemas/providers";
+import { keys } from "@/lib/query/keys";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ProvidersDataTable } from "./ProvidersDataTable";
 
 export default function Providers() {
@@ -79,14 +80,9 @@ export default function Providers() {
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
   const { effectiveProfile } = useProfile();
-  const log = useLogger();
-  // Mutation hooks
-  const deleteModelMutation = useDeleteModel();
-  const deleteProviderMutation = useDeleteProvider();
-  const duplicateProviderMutation = useDuplicateProvider();
-  const duplicateModelMutation = useDuplicateModel();
+  const queryClient = useQueryClient();
 
-  // V2 API: Single fetch with hierarchical data and permissions
+  // V3 API: Single fetch with hierarchical data and permissions
   // Note: Providers are global (not department-specific)
   const filters = useMemo(
     () => ({
@@ -95,7 +91,23 @@ export default function Providers() {
     [effectiveProfile?.id]
   );
 
-  const { data: providersData, isLoading } = useProvidersList(filters);
+  const { data: providersData, isLoading } = useQuery({
+    queryKey: keys.providers.list(filters),
+    queryFn: () => api.post("/providers/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
+
+  // Mutation hooks - using v2 hooks temporarily until v3 endpoints are available
+  // Note: Provider/model mutation endpoints not yet available in v3 API
+  const deleteModelMutation = useDeleteModel();
+  const deleteProviderMutation = useDeleteProvider();
+  const duplicateProviderMutation = useDuplicateProvider();
+  const duplicateModelMutation = useDuplicateModel();
+
+  // Invalidate queries after mutations
+  const invalidateProviders = () => {
+    queryClient.invalidateQueries({ queryKey: keys.providers.all });
+  };
   const providers = useMemo(
     () => providersData?.providers || [],
     [providersData]
@@ -197,18 +209,9 @@ export default function Providers() {
     setIsDeleting(true);
     try {
       await deleteModelMutation.mutateAsync({ modelId: deleteItem.id });
-
+      invalidateProviders();
       toast.success("Model deleted successfully");
-    } catch (error) {
-      log.error("provider.model.delete.failed", {
-        message: "Error deleting model",
-        error,
-        context: {
-          component: "Providers",
-          function: "handleDelete",
-          modelId: deleteItem.id,
-        },
-      });
+    } catch {
       toast.error("Failed to delete model");
     } finally {
       setIsDeleting(false);
@@ -243,18 +246,9 @@ export default function Providers() {
       await deleteProviderMutation.mutateAsync({
         providerId: deleteProviderItem.id,
       });
-
+      invalidateProviders();
       toast.success("Provider deleted successfully");
-    } catch (error) {
-      log.error("provider.delete.failed", {
-        message: "Error deleting provider",
-        error,
-        context: {
-          component: "Providers",
-          function: "handleDeleteProvider",
-          providerId: deleteProviderItem.id,
-        },
-      });
+    } catch {
       toast.error("Failed to delete provider");
     } finally {
       setIsDeletingProvider(false);
@@ -268,18 +262,9 @@ export default function Providers() {
       await duplicateProviderMutation.mutateAsync({
         providerId: provider.provider_id,
       });
-
+      invalidateProviders();
       toast.success(`Provider '${provider.name}' duplicated successfully`);
-    } catch (error) {
-      log.error("provider.duplicate.failed", {
-        message: "Error duplicating provider",
-        error,
-        context: {
-          component: "Providers",
-          function: "handleDuplicateProviderClick",
-          providerId: provider.provider_id,
-        },
-      });
+    } catch {
       toast.error("Failed to duplicate provider");
     }
   };
@@ -289,18 +274,9 @@ export default function Providers() {
       await duplicateModelMutation.mutateAsync({
         modelId: model.model_id,
       });
-
+      invalidateProviders();
       toast.success(`Model '${model.name}' duplicated successfully`);
-    } catch (error) {
-      log.error("provider.model.duplicate.failed", {
-        message: "Error duplicating model",
-        error,
-        context: {
-          component: "Providers",
-          function: "handleDuplicateModelClick",
-          modelId: model.model_id,
-        },
-      });
+    } catch {
       toast.error("Failed to duplicate model");
     }
   };

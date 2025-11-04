@@ -8,7 +8,6 @@
 import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 
 import { useAttemptFull } from "@/lib/api/v2/hooks/attempts";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
 import { useQueryClient } from "@tanstack/react-query";
@@ -179,7 +178,6 @@ export function SimulationProvider({
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
   const simulationRef = useRef<SimulationItem | null>(null);
   const pendingNextChatIdRef = useRef<string | null>(null);
-  const log = useLogger();
 
   // Use the global WebSocket context
   const {
@@ -476,14 +474,6 @@ export function SimulationProvider({
     joinRoom(currentChat.id, "simulation");
     currentRoomRef.current = currentChat.id;
     currentChatIdRef.current = currentChat.id;
-    log.info("simulation.room.joined", {
-      message: `Joined simulation chat room: ${currentChat.id}`,
-      subject: { entityType: "simulation_chat", entityId: currentChat.id },
-      context: {
-        component: "SimulationContext",
-        function: "useEffect(joinRoom)",
-      },
-    });
 
     return () => {
       if (currentRoomRef.current) {
@@ -492,7 +482,6 @@ export function SimulationProvider({
         currentChatIdRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentChat?.id, isConnected, joinRoom, leaveRoom]);
 
   // Update the ref whenever currentChat changes
@@ -706,19 +695,6 @@ export function SimulationProvider({
     const handleChatEnded = (event: CustomEvent) => {
       // THE FIX: Check if the event's completedChatId matches the current one.
       if (event.detail.completedChatId === currentChatIdRef.current) {
-        log.debug("simulation.chat.ended", {
-          message: `Chat ${event.detail.completedChatId} ended. Invalidating data to fetch next state.`,
-          subject: {
-            entityType: "simulation_chat",
-            entityId: String(event.detail.completedChatId),
-          },
-          context: {
-            component: "SimulationContext",
-            function: "handleChatEnded",
-            attemptId,
-          },
-        });
-
         // Mark the chat as freshly completed so the UI can auto-advance
         setFreshlyCompletedChats((prev) =>
           new Set(prev).add(event.detail.completedChatId)
@@ -900,12 +876,6 @@ export function SimulationProvider({
           gradingProgressRef.current = initialProgress;
           setGradingProgress(initialProgress);
         }
-        log.debug("grading.start", {
-          context: {
-            chatId: chat_id,
-            total: initialTotal,
-          },
-        });
       } else if (
         type === "standard_graded" &&
         completed_count !== undefined &&
@@ -955,14 +925,6 @@ export function SimulationProvider({
           gradingProgressRef.current = updatedProgress;
           return updatedProgress;
         });
-        log.debug("grading.progress", {
-          context: {
-            chatId: chat_id,
-            completed: completed_count,
-            total: total_count,
-            progress: `${completed_count}/${total_count}`,
-          },
-        });
       } else if (type === "summary_recorded") {
         // Explicitly mark summary phase and set progress to 95%
         setGradingProgress((prev) => {
@@ -974,9 +936,6 @@ export function SimulationProvider({
           };
           gradingProgressRef.current = updatedProgress;
           return updatedProgress;
-        });
-        log.debug("grading.summary_recorded", {
-          context: { chatId: chat_id },
         });
       } else if (type === "complete") {
         // Set to 100% briefly, then reset
@@ -994,9 +953,6 @@ export function SimulationProvider({
           setGradingProgress(null);
           gradingProgressRef.current = null;
         }, 300);
-        log.info("grading.complete", {
-          context: { chatId: chat_id },
-        });
       }
     };
 

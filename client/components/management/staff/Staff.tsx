@@ -17,12 +17,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useBulkDeleteProfile,
-  useDeleteProfile,
-  useProfileList,
-} from "@/lib/api/v2/hooks/profile";
+import { api } from "@/lib/api/client";
 import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
+import { keys } from "@/lib/query/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import { toast } from "sonner";
 import StaffBulkEditModal from "./StaffBulkEditModal";
@@ -38,7 +36,9 @@ export default function Staff() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const { effectiveProfile } = useProfile();
 
-  // V2 API hooks
+  const queryClient = useQueryClient();
+
+  // V3 API hooks
   const filters = React.useMemo(
     () => ({
       profileId: effectiveProfile?.id || "",
@@ -50,11 +50,28 @@ export default function Staff() {
     data: staffData,
     isLoading,
     refetch,
-  } = useProfileList(filters, !!effectiveProfile?.id);
+  } = useQuery({
+    queryKey: keys.profile.list(filters),
+    queryFn: () => api.post("/profile/staff/list", { body: filters }),
+    enabled: !!effectiveProfile?.id,
+  });
 
-  // Mutation hooks
-  const deleteStaffMutation = useDeleteProfile();
-  const bulkDeleteStaffMutation = useBulkDeleteProfile();
+  // Mutation hooks with v3 API
+  const deleteStaffMutation = useMutation({
+    mutationFn: (req: { profileId: string }) =>
+      api.post("/profile/staff/delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
+
+  const bulkDeleteStaffMutation = useMutation({
+    mutationFn: (req: { profileIds: string[] }) =>
+      api.post("/profile/staff/bulk-delete", { body: req }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.profile.all });
+    },
+  });
 
   // Selection
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
@@ -190,7 +207,7 @@ export default function Staff() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <ActiveUsersKPI
           currentValue={counts.active}
-          trendData={trendData.active}
+          trendData={trendData["active"] || []}
           isLoading={isLoading}
           isError={false}
         />
@@ -200,25 +217,25 @@ export default function Staff() {
               ? (counts.superadmin || 0) + (counts.admin || 0)
               : counts.admin
           }
-          trendData={trendData.admin}
+          trendData={trendData["admin"] || []}
           isLoading={isLoading}
           isError={false}
         />
         <InstructionalUsersKPI
           currentValue={counts.instructional}
-          trendData={trendData.instructional}
+          trendData={trendData["instructional"] || []}
           isLoading={isLoading}
           isError={false}
         />
         <TAUsersKPI
           currentValue={counts.ta}
-          trendData={trendData.ta}
+          trendData={trendData["ta"] || []}
           isLoading={isLoading}
           isError={false}
         />
         <TotalRequestsKPI
           currentValue={counts.totalRequests}
-          trendData={trendData.total_requests}
+          trendData={trendData["total_requests"] || []}
           isLoading={isLoading}
           isError={false}
         />
@@ -428,6 +445,7 @@ export default function Staff() {
                   await bulkDeleteStaffMutation.mutateAsync({
                     profileIds: deletableIds,
                   });
+                  queryClient.invalidateQueries({ queryKey: keys.profile.all });
                   toast.success("Selected staff deleted");
                   setSelectedStaffIds([]);
                   setShowBulkDeleteDialog(false);
@@ -534,6 +552,7 @@ export default function Staff() {
                   await deleteStaffMutation.mutateAsync({
                     profileId: deleteStaffMember.profile_id,
                   });
+                  queryClient.invalidateQueries({ queryKey: keys.profile.all });
                   toast.success("User deleted successfully");
                   setShowSingleDeleteDialog(false);
                   setDeleteStaffMember(null);

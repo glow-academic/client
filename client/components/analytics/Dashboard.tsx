@@ -11,7 +11,9 @@
 import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDashboard } from "@/lib/api/v2/hooks/dashboard";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/query/keys";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -73,7 +75,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds: effectiveCohortIds,
       roles: effectiveRoles,
       simulationFilters: effectiveSimulationFilters,
-      profileId,
+      profileId: profileId ?? null,
       departmentIds: effectiveDepartmentIds,
     }),
     [
@@ -102,7 +104,11 @@ export default function Dashboard({ profileId }: DashboardProps) {
     isLoading,
     isError,
     error,
-  } = useDashboard(filters, rqOpts);
+  } = useQuery({
+    queryKey: keys.dashboard.with(filters),
+    queryFn: () => api.post("/dashboard", { body: filters }),
+    ...rqOpts,
+  });
 
   // Get thresholds from server (or use defaults if not available)
   const thresholds = useMemo(
@@ -128,16 +134,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     return {
-      averageScore: bundle.header.average_score.trendAnalysis ?? null,
-      completion: bundle.header.completion_percentage.trendAnalysis ?? null,
-      passRate: bundle.header.first_attempt_pass_rate.trendAnalysis ?? null,
-      highestScore: bundle.header.highest_score.trendAnalysis ?? null,
-      messages: bundle.header.messages_per_session.trendAnalysis ?? null,
-      responseTime: bundle.header.persona_response_times.trendAnalysis ?? null,
-      sessionEfficiency: bundle.header.session_efficiency.trendAnalysis ?? null,
-      stagnationRate: bundle.header.stagnation_rate.trendAnalysis ?? null,
-      timeSpent: bundle.header.time_spent.trendAnalysis ?? null,
-      totalAttempts: bundle.header.total_attempts.trendAnalysis ?? null,
+      averageScore: bundle.header.averageScore.trendAnalysis ?? null,
+      completion: bundle.header.completionPercentage.trendAnalysis ?? null,
+      passRate: bundle.header.firstAttemptPassRate.trendAnalysis ?? null,
+      highestScore: bundle.header.highestScore.trendAnalysis ?? null,
+      messages: bundle.header.messagesPerSession.trendAnalysis ?? null,
+      responseTime: bundle.header.personaResponseTimes.trendAnalysis ?? null,
+      sessionEfficiency: bundle.header.sessionEfficiency.trendAnalysis ?? null,
+      stagnationRate: bundle.header.stagnationRate.trendAnalysis ?? null,
+      timeSpent: bundle.header.timeSpent.trendAnalysis ?? null,
+      totalAttempts: bundle.header.totalAttempts.trendAnalysis ?? null,
     };
   }, [bundle]);
 
@@ -148,9 +154,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
     return [
       <AverageScore
         key="average-score"
-        averageScore={bundle.header.average_score.currentValue}
-        scoreTrend={bundle.header.average_score.trendData}
-        hasDataAvailable={bundle.header.average_score.hasData}
+        averageScore={bundle.header.averageScore.currentValue}
+        scoreTrend={bundle.header.averageScore.trendData}
+        hasDataAvailable={bundle.header.averageScore.hasData}
         trendAnalysis={trendAnalysis.averageScore}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -158,9 +164,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <CompletionPercentage
         key="completion-percentage"
-        completionPercentage={bundle.header.completion_percentage.currentValue}
-        completionTrend={bundle.header.completion_percentage.trendData}
-        hasDataAvailable={bundle.header.completion_percentage.hasData}
+        completionPercentage={bundle.header.completionPercentage.currentValue}
+        completionTrend={bundle.header.completionPercentage.trendData}
+        hasDataAvailable={bundle.header.completionPercentage.hasData}
         trendAnalysis={trendAnalysis.completion}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -168,11 +174,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <FirstAttemptPassRate
         key="first-attempt-pass-rate"
-        firstAttemptPassRate={
-          bundle.header.first_attempt_pass_rate.currentValue
-        }
-        passRateTrend={bundle.header.first_attempt_pass_rate.trendData}
-        hasDataAvailable={bundle.header.first_attempt_pass_rate.hasData}
+        firstAttemptPassRate={bundle.header.firstAttemptPassRate.currentValue}
+        passRateTrend={bundle.header.firstAttemptPassRate.trendData}
+        hasDataAvailable={bundle.header.firstAttemptPassRate.hasData}
         trendAnalysis={trendAnalysis.passRate}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -180,9 +184,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <HighestScore
         key="highest-score"
-        highestScore={bundle.header.highest_score.currentValue}
-        scoreTrend={bundle.header.highest_score.trendData}
-        hasDataAvailable={bundle.header.highest_score.hasData}
+        highestScore={bundle.header.highestScore.currentValue}
+        scoreTrend={bundle.header.highestScore.trendData}
+        hasDataAvailable={bundle.header.highestScore.hasData}
         trendAnalysis={trendAnalysis.highestScore}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -191,10 +195,10 @@ export default function Dashboard({ profileId }: DashboardProps) {
       <MessagesPerSession
         key="messages-per-session"
         averageMessagesPerSession={
-          bundle.header.messages_per_session.currentValue
+          bundle.header.messagesPerSession.currentValue
         }
-        messagesTrend={bundle.header.messages_per_session.trendData}
-        hasDataAvailable={bundle.header.messages_per_session.hasData}
+        messagesTrend={bundle.header.messagesPerSession.trendData}
+        hasDataAvailable={bundle.header.messagesPerSession.hasData}
         trendAnalysis={trendAnalysis.messages}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -202,9 +206,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <PersonaResponseTimes
         key="persona-response-times"
-        averageResponseTime={bundle.header.persona_response_times.currentValue}
-        responseTimeTrend={bundle.header.persona_response_times.trendData}
-        hasDataAvailable={bundle.header.persona_response_times.hasData}
+        averageResponseTime={bundle.header.personaResponseTimes.currentValue}
+        responseTimeTrend={bundle.header.personaResponseTimes.trendData}
+        hasDataAvailable={bundle.header.personaResponseTimes.hasData}
         trendAnalysis={trendAnalysis.responseTime}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -212,9 +216,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <SessionEfficiency
         key="session-efficiency"
-        sessionEfficiency={bundle.header.session_efficiency.currentValue}
-        efficiencyTrend={bundle.header.session_efficiency.trendData}
-        hasDataAvailable={bundle.header.session_efficiency.hasData}
+        sessionEfficiency={bundle.header.sessionEfficiency.currentValue}
+        efficiencyTrend={bundle.header.sessionEfficiency.trendData}
+        hasDataAvailable={bundle.header.sessionEfficiency.hasData}
         trendAnalysis={trendAnalysis.sessionEfficiency}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -222,9 +226,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <StagnationRate
         key="stagnation-rate"
-        stagnationRate={bundle.header.stagnation_rate.currentValue}
-        stagnationTrend={bundle.header.stagnation_rate.trendData}
-        hasDataAvailable={bundle.header.stagnation_rate.hasData}
+        stagnationRate={bundle.header.stagnationRate.currentValue}
+        stagnationTrend={bundle.header.stagnationRate.trendData}
+        hasDataAvailable={bundle.header.stagnationRate.hasData}
         trendAnalysis={trendAnalysis.stagnationRate}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -232,12 +236,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <TimeSpent
         key="time-spent"
-        totalTimeSpent={bundle.header.time_spent.currentValue * 60}
-        timeSpentTrend={bundle.header.time_spent.trendData.map((t) => ({
+        totalTimeSpent={bundle.header.timeSpent.currentValue * 60}
+        timeSpentTrend={bundle.header.timeSpent.trendData.map((t) => ({
           ...t,
           value: Math.round(t.value * 60),
         }))}
-        hasDataAvailable={bundle.header.time_spent.hasData}
+        hasDataAvailable={bundle.header.timeSpent.hasData}
         trendAnalysis={trendAnalysis.timeSpent}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -245,9 +249,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <TotalAttempts
         key="total-attempts"
-        totalAttempts={bundle.header.total_attempts.currentValue}
-        attemptsTrend={bundle.header.total_attempts.trendData}
-        hasDataAvailable={bundle.header.total_attempts.hasData}
+        totalAttempts={bundle.header.totalAttempts.currentValue}
+        attemptsTrend={bundle.header.totalAttempts.trendData}
+        hasDataAvailable={bundle.header.totalAttempts.hasData}
         trendAnalysis={trendAnalysis.totalAttempts}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -260,26 +264,89 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const primaryComponents = useMemo(() => {
     if (!bundle) return [];
 
+    // Normalize Growth chartData to ensure all required fields are present
+    const normalizedGrowthChartData = bundle.primary.growthData.chartData.map(
+      (point) => ({
+        date: point.date,
+        averageScore: point.averageScore ?? null,
+        passRate: point.passRate ?? null,
+        completionRate: point.completionRate ?? null,
+        firstAttemptPassRate: point.firstAttemptPassRate ?? null,
+        messagesPerSession: point.messagesPerSession ?? null,
+        personaResponseTimes: point.personaResponseTimes ?? null,
+        sessionEfficiency: point.sessionEfficiency ?? null,
+        stagnationRate: point.stagnationRate ?? null,
+        timeSpent: point.timeSpent ?? null,
+        totalAttempts: point.totalAttempts ?? null,
+      })
+    );
+
+    // Normalize PersonaPerformance trendData to ensure score is always present
+    const normalizedPersonaChartData =
+      bundle.primary.personaPerformance.chartData.map((persona) => ({
+        ...persona,
+        trendData: persona.trendData.map((td) => ({
+          date: td.date,
+          score: td.score ?? null,
+          timestamp: td.timestamp,
+          simulationId: td.simulationId ?? undefined,
+        })),
+        simulationIds: persona.simulationIds ?? undefined,
+      }));
+
+    // Normalize RubricHeatmap matrices to ensure required fields
+    const normalizedRubricMatrices = bundle.primary.rubricHeatmap.matrices.map(
+      (matrix) => ({
+        ...matrix,
+        standardGroups: matrix.standardGroups.map((sg) => ({
+          id: sg.id,
+          name: sg.name,
+          shortName: sg.shortName ?? null,
+          rubricId: sg.rubricId,
+        })),
+        matrix: matrix.matrix.map((row) =>
+          row.map((cell) => ({
+            ...cell,
+            pValue: cell.pValue ?? null,
+          }))
+        ),
+        insights: matrix.insights ?? null,
+      })
+    );
+
+    // Normalize windowAverages to ensure last and prev are always present
+    const normalizedWindowAverages = {
+      averageScore: {
+        n: bundle.primary.growthData.windowAverages.averageScore.n,
+        last:
+          bundle.primary.growthData.windowAverages.averageScore.last ?? null,
+        prev:
+          bundle.primary.growthData.windowAverages.averageScore.prev ?? null,
+      },
+    };
+
     return [
       <Growth
         key="growth"
-        {...bundle.primary.growth_data}
-        hasDataAvailable={bundle.primary.growth_data.chartData.length > 0}
-        actionableInsight={bundle.insights.growth}
+        {...bundle.primary.growthData}
+        chartData={normalizedGrowthChartData}
+        windowAverages={normalizedWindowAverages}
+        hasDataAvailable={bundle.primary.growthData.chartData.length > 0}
+        actionableInsight={bundle.insights.growth ?? null}
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
       />,
       <PersonaPerformance
         key="persona-performance"
-        chartData={bundle.primary.persona_performance.chartData}
+        chartData={normalizedPersonaChartData}
         simulationMapping={bundle.simulation_mapping}
         validSimulationIds={
-          bundle.primary.persona_performance.validSimulationIds
+          bundle.primary.personaPerformance.validSimulationIds
         }
-        personaColors={bundle.primary.persona_performance.personaColors}
+        personaColors={bundle.primary.personaPerformance.personaColors}
         hasDataAvailable={
-          bundle.primary.persona_performance.chartData.length > 0
+          bundle.primary.personaPerformance.chartData.length > 0
         }
         actionableInsights={bundle.insights.persona}
         thresholds={thresholds}
@@ -289,11 +356,11 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <RubricHeatmap
         key="rubric-heatmap"
-        matrices={bundle.primary.rubric_heatmap.matrices}
+        matrices={normalizedRubricMatrices}
         rubricMapping={bundle.rubric_mapping}
-        validRubricIds={bundle.primary.rubric_heatmap.validRubricIds}
-        hasDataAvailable={bundle.primary.rubric_heatmap.matrices.length > 0}
-        actionableInsight={bundle.insights.rubric_heatmap}
+        validRubricIds={bundle.primary.rubricHeatmap.validRubricIds}
+        hasDataAvailable={bundle.primary.rubricHeatmap.matrices.length > 0}
+        actionableInsight={bundle.insights.rubric_heatmap ?? null}
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
@@ -359,16 +426,40 @@ export default function Dashboard({ profileId }: DashboardProps) {
       >
     );
 
+    // Normalize CohortPerformance dailyData to convert null to undefined
+    const normalizedDailyData =
+      bundle.secondary.cohortPerformance.dailyData.map((d) => ({
+        date: d.date,
+        avgScore: d.avgScore,
+        cohortId: d.cohortId ?? undefined,
+      }));
+
+    // Normalize SkillPerformance packages to convert null to undefined
+    const normalizedSkillPackages =
+      bundle.secondary.skillPerformance.packages.map((pkg) => ({
+        ...pkg,
+        radarData: pkg.radarData.map((rd) => ({
+          metric: rd.metric,
+          description: rd.description ?? undefined,
+          value: rd.value,
+          fullMark: rd.fullMark,
+        })),
+        groupFacts: pkg.groupFacts.map((gf) => ({
+          ...gf,
+          groupDescription: gf.groupDescription ?? undefined,
+        })),
+      }));
+
     return [
       <CohortPerformance
         key="cohort-performance"
-        cohortData={bundle.secondary.cohort_performance.cohortData}
-        dailyData={bundle.secondary.cohort_performance.dailyData}
-        cohortFacts={bundle.secondary.cohort_performance.cohortFacts}
-        dailyFacts={bundle.secondary.cohort_performance.dailyFacts}
+        cohortData={bundle.secondary.cohortPerformance.cohortData}
+        dailyData={normalizedDailyData}
+        cohortFacts={bundle.secondary.cohortPerformance.cohortFacts}
+        dailyFacts={bundle.secondary.cohortPerformance.dailyFacts}
         simulationMapping={normalizedSimulationMapping}
         validSimulationIds={
-          bundle.secondary.cohort_performance.validSimulationIds
+          bundle.secondary.cohortPerformance.validSimulationIds
         }
         profileId={profileId}
         actionableInsights={bundle.insights.cohort}
@@ -378,23 +469,23 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <AttemptImprovement
         key="attempt-improvement"
-        chartData={bundle.secondary.attempt_improvement.chartData}
-        facts={bundle.secondary.attempt_improvement.facts}
+        chartData={bundle.secondary.attemptImprovement.chartData}
+        facts={bundle.secondary.attemptImprovement.facts}
         simulationMapping={normalizedSimulationMappingRequired}
         validSimulationIds={
-          bundle.secondary.attempt_improvement.validSimulationIds
+          bundle.secondary.attemptImprovement.validSimulationIds
         }
-        actionableInsight={bundle.insights.attempt_improvement}
+        actionableInsight={bundle.insights.attempt_improvement ?? null}
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
       />,
       <SkillPerformance
         key="skill-performance"
-        packages={bundle.secondary.skill_performance.packages}
+        packages={normalizedSkillPackages}
         rubricMapping={bundle.rubric_mapping}
-        validRubricIds={bundle.secondary.skill_performance.validRubricIds}
-        actionableInsight={bundle.insights.skill_performance}
+        validRubricIds={bundle.secondary.skillPerformance.validRubricIds}
+        actionableInsight={bundle.insights.skill_performance ?? null}
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
@@ -410,28 +501,28 @@ export default function Dashboard({ profileId }: DashboardProps) {
       <ScenarioPerformance
         key="scenario-performance"
         attributeAttemptFacts={
-          bundle.footer.scenario_performance.attributeAttemptFacts
+          bundle.footer.scenarioPerformance.attributeAttemptFacts
         }
         attributeScenarioFacts={
-          bundle.footer.scenario_performance.attributeScenarioFacts
+          bundle.footer.scenarioPerformance.attributeScenarioFacts
         }
         parameterMapping={bundle.parameter_mapping}
         parameterItemMapping={bundle.parameter_item_mapping}
-        validParameterIds={bundle.footer.scenario_performance.validParameterIds}
-        actionableInsight={bundle.insights.scenario_performance}
+        validParameterIds={bundle.footer.scenarioPerformance.validParameterIds}
+        actionableInsight={bundle.insights.scenario_performance ?? null}
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
       />,
       <ScenarioStats
         key="scenario-stats"
-        numericAttemptFacts={bundle.footer.scenario_stats.numericAttemptFacts}
-        numericScenarioFacts={bundle.footer.scenario_stats.numericScenarioFacts}
+        numericAttemptFacts={bundle.footer.scenarioStats.numericAttemptFacts}
+        numericScenarioFacts={bundle.footer.scenarioStats.numericScenarioFacts}
         parameterMapping={bundle.parameter_mapping}
         validNumericParameterIds={
-          bundle.footer.scenario_stats.validNumericParameterIds
+          bundle.footer.scenarioStats.validNumericParameterIds
         }
-        actionableInsight={bundle.insights.scenario_stats}
+        actionableInsight={bundle.insights.scenario_stats ?? null}
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
@@ -446,32 +537,32 @@ export default function Dashboard({ profileId }: DashboardProps) {
       <SimulationPerformance
         key="simulation-performance"
         validSimulationIds={
-          bundle.footer.simulation_performance.validSimulationIds
+          bundle.footer.simulationPerformance.validSimulationIds
         }
-        scenarioFacts={bundle.footer.simulation_performance.scenarioFacts}
+        scenarioFacts={bundle.footer.simulationPerformance.scenarioFacts}
         simulationMapping={bundle.simulation_mapping}
-        actionableInsight={bundle.insights.simulation_performance}
+        actionableInsight={bundle.insights.simulation_performance ?? null}
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
       />,
       <SimulationComposition
         key="simulation-composition"
-        simulationFacts={bundle.footer.simulation_composition.simulationFacts}
+        simulationFacts={bundle.footer.simulationComposition.simulationFacts}
         simulationParameterFactsCategorical={
-          bundle.footer.simulation_composition
+          bundle.footer.simulationComposition
             .simulationParameterFactsCategorical
         }
         simulationParameterFactsNumeric={
-          bundle.footer.simulation_composition.simulationParameterFactsNumeric
+          bundle.footer.simulationComposition.simulationParameterFactsNumeric
         }
         simulationMapping={bundle.simulation_mapping}
         parameterMapping={bundle.parameter_mapping}
         parameterItemMapping={bundle.parameter_item_mapping}
         validSimulationIds={
-          bundle.footer.simulation_composition.validSimulationIds
+          bundle.footer.simulationComposition.validSimulationIds
         }
-        actionableInsight={bundle.insights.simulation_composition}
+        actionableInsight={bundle.insights.simulation_composition ?? null}
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
