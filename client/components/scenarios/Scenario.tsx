@@ -65,10 +65,21 @@ import { ProblemStatementPicker } from "@/components/common/forms/ProblemStateme
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 
 // Types and API functions
+import type {
+  CreateScenarioIn,
+  CreateScenarioOut,
+  GenerateAIScenarioIn,
+  GenerateAIScenarioOut,
+  RandomizeScenarioIn,
+  RandomizeScenarioOut,
+  ScenarioDetailDefaultOut,
+  ScenarioDetailOut,
+  UpdateScenarioIn,
+  UpdateScenarioOut,
+} from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import type { components } from "@/lib/api-types";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import {
@@ -76,7 +87,7 @@ import {
   getParameterItemIdsFromStructure,
   groupParameterItemsByParameterId,
 } from "@/utils/scenario-helpers";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 // Component for objective input with autocomplete
 function ObjectiveInputWithAutocomplete({
@@ -217,6 +228,22 @@ function ObjectiveInputWithAutocomplete({
 export interface ScenarioProps {
   scenarioId?: string;
   mode?: "create" | "edit";
+  // Server-provided data (for server-side rendering)
+  scenarioDetail?: ScenarioDetailOut;
+  scenarioDetailDefault?: ScenarioDetailDefaultOut;
+  // Server actions (replaces useMutation)
+  createScenarioAction?: (
+    input: CreateScenarioIn
+  ) => Promise<CreateScenarioOut>;
+  updateScenarioAction?: (
+    input: UpdateScenarioIn
+  ) => Promise<UpdateScenarioOut>;
+  generateAIScenarioAction?: (
+    input: GenerateAIScenarioIn
+  ) => Promise<GenerateAIScenarioOut>;
+  randomizeScenarioAction?: (
+    input: RandomizeScenarioIn
+  ) => Promise<RandomizeScenarioOut>;
 }
 
 type StepStatus = "pending" | "active" | "completed";
@@ -232,16 +259,22 @@ interface Step {
 export default function Scenario({
   mode = "create",
   scenarioId,
+  scenarioDetail: serverScenarioDetail,
+  scenarioDetailDefault: serverScenarioDetailDefault,
+  createScenarioAction,
+  updateScenarioAction,
+  generateAIScenarioAction,
+  randomizeScenarioAction,
 }: ScenarioProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const queryClient = useQueryClient();
   const isEditMode = mode === "edit" && !!scenarioId;
 
-  // V3 API - fetch scenario detail when editing
-  const { data: scenarioDetail, isLoading: isLoadingScenarioDetail } = useQuery(
-    {
+  // Fallback to React Query if server data not provided (for create mode or compatibility)
+  // V3 API - fetch scenario detail when editing (fallback only if server data not provided)
+  const { data: clientScenarioDetail, isLoading: isLoadingScenarioDetail } =
+    useQuery({
       queryKey: keys.scenarios.with({
         scenarioId: scenarioId || "",
         profileId: effectiveProfile?.id || "",
@@ -253,31 +286,46 @@ export default function Scenario({
             profileId: effectiveProfile?.id || "",
           },
         }),
-      enabled: !!scenarioId && isEditMode && !!effectiveProfile?.id,
-    }
-  );
-
-  // V3 API - fetch default scenario detail when creating
-  const { data: scenarioDetailDefault, isLoading: isLoadingScenarioDefault } =
-    useQuery({
-      queryKey: keys.scenarios.with({
-        profileId: effectiveProfile?.id || "",
-        default: true,
-      }),
-      queryFn: () =>
-        api.post("/scenarios/detail-default", {
-          body: {
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled: !isEditMode && !!effectiveProfile?.id,
+      enabled:
+        !!scenarioId &&
+        isEditMode &&
+        !!effectiveProfile?.id &&
+        !serverScenarioDetail,
     });
+
+  // V3 API - fetch default scenario detail when creating (fallback only if server data not provided)
+  const {
+    data: clientScenarioDetailDefault,
+    isLoading: isLoadingScenarioDefault,
+  } = useQuery({
+    queryKey: keys.scenarios.with({
+      profileId: effectiveProfile?.id || "",
+      default: true,
+    }),
+    queryFn: () =>
+      api.post("/scenarios/detail-default", {
+        body: {
+          profileId: effectiveProfile?.id || "",
+        },
+      }),
+    enabled:
+      !isEditMode && !!effectiveProfile?.id && !serverScenarioDetailDefault,
+  });
+
+  // Use server data if available, otherwise fall back to client data
+  const scenarioDetail = serverScenarioDetail ?? clientScenarioDetail;
+  const scenarioDetailDefault =
+    serverScenarioDetailDefault ?? clientScenarioDetailDefault;
 
   // Use edit detail when editing, default detail when creating
   const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
   const isLoadingData = isEditMode
-    ? isLoadingScenarioDetail
-    : isLoadingScenarioDefault;
+    ? serverScenarioDetail
+      ? false
+      : isLoadingScenarioDetail
+    : serverScenarioDetailDefault
+      ? false
+      : isLoadingScenarioDefault;
 
   // Set breadcrumb context when scenario data is loaded
   useEffect(() => {
@@ -297,61 +345,52 @@ export default function Scenario({
     clearEntityMetadata,
   ]);
 
-  // Explicit types from API schema
-  type CreateScenarioRequest = components["schemas"]["CreateScenarioRequest"];
-  type UpdateScenarioRequest = components["schemas"]["UpdateScenarioRequest"];
-  type RandomizeScenarioRequest =
-    components["schemas"]["RandomizeScenarioRequest"];
-  type GenerateAIScenarioRequest =
-    components["schemas"]["GenerateScenarioAIRequest"];
+  // Extract body types for type safety
+  type CreateScenarioBody = CreateScenarioIn extends { body: infer B }
+    ? B
+    : never;
+  type UpdateScenarioBody = UpdateScenarioIn extends { body: infer B }
+    ? B
+    : never;
+  type GenerateAIScenarioBody = GenerateAIScenarioIn extends { body: infer B }
+    ? B
+    : never;
+  type RandomizeScenarioBody = RandomizeScenarioIn extends { body: infer B }
+    ? B
+    : never;
 
-  // V3 API - create mutation
-  const createScenarioMutation = useMutation({
-    mutationFn: (body: CreateScenarioRequest) =>
-      api.post("/scenarios/create", { body } as Parameters<
-        typeof api.post<"/scenarios/create">
-      >[1]),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
-    },
-  });
+  // Server action handlers
+  const handleCreateScenario = async (body: CreateScenarioBody) => {
+    if (!createScenarioAction) {
+      throw new Error("createScenarioAction is required");
+    }
+    return await createScenarioAction({ body });
+  };
 
-  // V3 API - update mutation
-  const updateScenarioMutation = useMutation({
-    mutationFn: (body: UpdateScenarioRequest) =>
-      api.post("/scenarios/update", { body } as Parameters<
-        typeof api.post<"/scenarios/update">
-      >[1]),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
-    },
-  });
+  const handleUpdateScenario = async (body: UpdateScenarioBody) => {
+    if (!updateScenarioAction) {
+      throw new Error("updateScenarioAction is required");
+    }
+    return await updateScenarioAction({ body });
+  };
 
-  // V3 API - generate AI mutation
-  const generateAIMutation = useMutation({
-    mutationFn: (body: GenerateAIScenarioRequest) =>
-      api.post("/scenarios/generate-ai", { body } as Parameters<
-        typeof api.post<"/scenarios/generate-ai">
-      >[1]),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
-    },
-  });
+  const handleGenerateAIScenario = async (body: GenerateAIScenarioBody) => {
+    if (!generateAIScenarioAction) {
+      throw new Error("generateAIScenarioAction is required");
+    }
+    return await generateAIScenarioAction({ body });
+  };
 
-  // V3 API - randomize mutation
-  const randomizeMutation = useMutation({
-    mutationFn: (body: RandomizeScenarioRequest) =>
-      api.post("/scenarios/randomize", { body } as Parameters<
-        typeof api.post<"/scenarios/randomize">
-      >[1]),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
-    },
-  });
+  const handleRandomizeScenario = async (body: RandomizeScenarioBody) => {
+    if (!randomizeScenarioAction) {
+      throw new Error("randomizeScenarioAction is required");
+    }
+    return await randomizeScenarioAction({ body });
+  };
 
-  // Extract mutate functions for compatibility
-  const createScenario = createScenarioMutation.mutateAsync;
-  const updateScenario = updateScenarioMutation.mutateAsync;
+  // Wrapper functions for compatibility (matching original mutateAsync signature)
+  const createScenario = handleCreateScenario;
+  const updateScenario = handleUpdateScenario;
 
   // Form data state
   const initialFormData = useMemo(
@@ -1097,7 +1136,7 @@ export default function Scenario({
   const handleRandomizeParameters = async () => {
     try {
       setIsRandomizingParameters(true);
-      const resp = await randomizeMutation.mutateAsync({
+      const resp = await handleRandomizeScenario({
         name: formData.name || "",
         personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds,
@@ -1129,7 +1168,7 @@ export default function Scenario({
   const handleRandomizePersona = async () => {
     try {
       setIsRandomizingPersona(true);
-      const resp = await randomizeMutation.mutateAsync({
+      const resp = await handleRandomizeScenario({
         name: formData.name || "",
         personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds,
@@ -1165,7 +1204,7 @@ export default function Scenario({
         toast("Documents disabled by choice");
         return;
       }
-      const resp = await randomizeMutation.mutateAsync({
+      const resp = await handleRandomizeScenario({
         name: formData.name || "",
         personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds,
@@ -1273,7 +1312,7 @@ export default function Scenario({
         throw new Error("No valid department found");
       }
 
-      const result = await generateAIMutation.mutateAsync({
+      const result = await handleGenerateAIScenario({
         departmentId,
         personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds.length > 0 ? currentDocumentIds : null,

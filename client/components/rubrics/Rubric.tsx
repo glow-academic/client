@@ -14,11 +14,14 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 import RubricDetails from "./RubricDetails";
 import RubricStandardGroup from "./RubricStandardGroup";
+
+// Type-only import from server page
+import type {
+  RubricDetailDefaultOut,
+  RubricDetailOut,
+} from "@/app/(main)/management/rubrics/r/[rubricId]/page";
 
 type RubricItem = {
   rubric_id: string;
@@ -35,9 +38,16 @@ type RubricItem = {
 
 export interface RubricProps {
   rubricId?: string;
+  // Optional server-provided data (for server-side rendering)
+  rubricDetail?: RubricDetailOut;
+  rubricDetailDefault?: RubricDetailDefaultOut;
 }
 
-export default function Rubric({ rubricId }: RubricProps) {
+export default function Rubric({
+  rubricId,
+  rubricDetail: serverRubricDetail,
+  rubricDetailDefault: serverRubricDetailDefault,
+}: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
   const { effectiveProfile } = useProfile();
@@ -45,40 +55,11 @@ export default function Rubric({ rubricId }: RubricProps) {
 
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
 
-  // V3 API: Fetch rubric detail (edit mode)
-  const { data: rubricDetail, isLoading: isLoadingRubricDetail } = useQuery({
-    queryKey: keys.rubrics.with({
-      rubricId: rubricId || "",
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/rubrics/detail", {
-        body: {
-          rubricId: rubricId || "",
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !!rubricId && isEditMode && !!effectiveProfile?.id,
-  });
-
-  // V3 API: Fetch rubric detail default (create mode)
-  const { data: rubricDetailDefault, isLoading: isLoadingRubricDefault } =
-    useQuery({
-      queryKey: keys.rubrics.with({
-        profileId: effectiveProfile?.id || "",
-      }),
-      queryFn: () =>
-        api.post("/rubrics/detail-default", {
-          body: {
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled: !isEditMode && !!effectiveProfile?.id,
-    });
-
-  // Use edit detail when editing, default detail when creating
+  // Use server-provided data (no React Query needed when server data is provided)
+  const rubricDetail = serverRubricDetail;
+  const rubricDetailDefault = serverRubricDetailDefault;
   const rubricData = isEditMode ? rubricDetail : rubricDetailDefault;
-  const isLoading = isEditMode ? isLoadingRubricDetail : isLoadingRubricDefault;
+  const isLoading = false; // No loading state when using server data
 
   // Set breadcrumb context when rubric data is loaded
   useEffect(() => {

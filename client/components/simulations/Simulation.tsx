@@ -33,9 +33,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
   CheckCircle2,
@@ -46,8 +43,27 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+// Type-only import from server page
+import type {
+  CreateSimulationIn,
+  CreateSimulationOut,
+  SimulationDetailDefaultOut,
+  SimulationDetailOut,
+  UpdateSimulationIn,
+  UpdateSimulationOut,
+} from "@/app/(main)/create/simulations/s/[simulationId]/page";
+
 export interface SimulationProps {
   simulationId?: string;
+  // Optional server-provided data and actions (for server-side rendering)
+  simulationDetail?: SimulationDetailOut;
+  simulationDetailDefault?: SimulationDetailDefaultOut;
+  createSimulationAction?: (
+    input: CreateSimulationIn
+  ) => Promise<CreateSimulationOut>;
+  updateSimulationAction?: (
+    input: UpdateSimulationIn
+  ) => Promise<UpdateSimulationOut>;
 }
 
 interface FormData {
@@ -69,10 +85,15 @@ interface FormErrors {
   departmentIds?: string[];
 }
 
-export default function Simulation({ simulationId }: SimulationProps) {
+export default function Simulation({
+  simulationId,
+  simulationDetail: serverSimulationDetail,
+  simulationDetailDefault: serverSimulationDetailDefault,
+  createSimulationAction,
+  updateSimulationAction,
+}: SimulationProps) {
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
@@ -83,86 +104,36 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const router = useRouter();
   const isEditMode = !!simulationId;
 
-  // V3 API - fetch simulation detail when editing
-  const { data: simulationDetail, isLoading: isLoadingSimulationDetail } =
-    useQuery({
-      queryKey: keys.simulations.with({
-        simulationId: simulationId || "",
-        profileId: effectiveProfile?.id || "",
-      }),
-      queryFn: () =>
-        api.post("/simulations/detail", {
-          body: {
-            simulationId: simulationId || "",
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled: !!simulationId && isEditMode && !!effectiveProfile?.id,
-    });
-
-  // V3 API - fetch default simulation detail when creating
-  const {
-    data: simulationDetailDefault,
-    isLoading: isLoadingSimulationDefault,
-  } = useQuery({
-    queryKey: keys.simulations.with({
-      profileId: effectiveProfile?.id || "",
-      default: true,
-    }),
-    queryFn: () =>
-      api.post("/simulations/detail-default", {
-        body: {
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !isEditMode && !!effectiveProfile?.id,
-  });
-
-  // V3 API - create mutation
-  const createSimulationMutation = useMutation({
-    mutationFn: (body: {
-      title: string;
-      description: string;
-      department_ids: string[] | null;
-      active: boolean;
-      practice_simulation: boolean;
-      time_limit: number | null;
-      rubric_id: string;
-      scenario_ids: string[] | Array<{ scenario_id: string; active: boolean }>;
-    }) => api.post("/simulations/create", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.simulations.all });
-      router.push("/simulations");
-    },
-  });
-
-  // V3 API - update mutation
-  const updateSimulationMutation = useMutation({
-    mutationFn: (body: {
-      simulationId: string;
-      title: string;
-      description: string;
-      department_ids: string[] | null;
-      active: boolean;
-      practice_simulation: boolean;
-      time_limit: number | null;
-      rubric_id: string;
-      scenario_ids: string[] | Array<{ scenario_id: string; active: boolean }>;
-    }) => api.post("/simulations/update", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.simulations.all });
-      router.push("/simulations");
-    },
-  });
-
-  // Use edit detail when editing, default detail when creating
-  // Infer type directly from API response
+  // Use server-provided data (no React Query needed when server data is provided)
+  const simulationDetail = serverSimulationDetail;
+  const simulationDetailDefault = serverSimulationDetailDefault;
   const simulationData = isEditMode
     ? simulationDetail
     : simulationDetailDefault;
-  const isLoadingData = isEditMode
-    ? isLoadingSimulationDetail
-    : isLoadingSimulationDefault;
+  const isLoadingData = false; // No loading state when using server data
+
+  // Extract body types from server action types for type safety
+  type CreateSimulationBody = CreateSimulationIn extends { body: infer B }
+    ? B
+    : never;
+  type UpdateSimulationBody = UpdateSimulationIn extends { body: infer B }
+    ? B
+    : never;
+
+  // Use server actions directly (no mutations needed)
+  const handleCreateSimulation = async (body: CreateSimulationBody) => {
+    if (!createSimulationAction) {
+      throw new Error("createSimulationAction is required");
+    }
+    await createSimulationAction({ body });
+  };
+
+  const handleUpdateSimulation = async (body: UpdateSimulationBody) => {
+    if (!updateSimulationAction) {
+      throw new Error("updateSimulationAction is required");
+    }
+    await updateSimulationAction({ body });
+  };
 
   // Set breadcrumb context when simulation data is loaded
   useEffect(() => {
@@ -630,10 +601,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
           })),
         };
 
-        await updateSimulationMutation.mutateAsync(updatePayload);
+        await handleUpdateSimulation(updatePayload);
         toast.success("Simulation updated successfully!");
       } else {
-        // CREATE mode - v2 API handles scenarios in one request
+        // CREATE mode - v3 API handles scenarios in one request
         const createPayload = {
           title: formData?.title || "",
           description: formData?.description ?? "",
@@ -648,7 +619,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           })),
         };
 
-        await createSimulationMutation.mutateAsync(createPayload);
+        await handleCreateSimulation(createPayload);
         toast.success("Simulation created successfully!");
       }
 
@@ -1100,18 +1071,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
           </Button>
           <Button
             type="submit"
-            disabled={
-              isSubmitting ||
-              isReadonly ||
-              (isEditMode && !hasChanges) ||
-              createSimulationMutation.isPending ||
-              updateSimulationMutation.isPending
-            }
+            disabled={isSubmitting || isReadonly || (isEditMode && !hasChanges)}
             className="min-w-[120px]"
           >
-            {isSubmitting ||
-            createSimulationMutation.isPending ||
-            updateSimulationMutation.isPending ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 {simulationId || editingSimulationId
@@ -1138,19 +1101,15 @@ export default function Simulation({ simulationId }: SimulationProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isSubmitting || updateSimulationMutation.isPending}
-            >
+            <AlertDialogCancel disabled={isSubmitting}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmUpdate}
-              disabled={isSubmitting || updateSimulationMutation.isPending}
+              disabled={isSubmitting}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {isSubmitting || updateSimulationMutation.isPending
-                ? "Updating..."
-                : "Update"}
+              {isSubmitting ? "Updating..." : "Update"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -31,13 +31,19 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+// Type-only import from server page
+import type {
+  DeleteStaffIn,
+  DeleteStaffOut,
+  StaffDetailOut,
+  UpdateStaffIn,
+  UpdateStaffOut,
+} from "@/app/(main)/management/staff/p/[profileId]/page";
 
 type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
@@ -56,64 +62,53 @@ export interface StaffEditProps {
   redirectOnSuccess?: boolean;
   onDone?: () => void;
   canToggleDefault?: boolean;
+  // Optional server-provided data and actions (for server-side rendering)
+  staffDetail?: StaffDetailOut;
+  updateStaffAction?: (input: UpdateStaffIn) => Promise<UpdateStaffOut>;
+  deleteStaffAction?: (input: DeleteStaffIn) => Promise<DeleteStaffOut>;
 }
 
 // Internal business logic functions for better testability
 const useStaffEditBusinessLogic = (
   profileId: string,
   redirectOnSuccess: boolean,
-  onDone?: () => void
+  onDone?: () => void,
+  serverStaffDetail?: StaffDetailOut,
+  updateStaffAction?: (input: UpdateStaffIn) => Promise<UpdateStaffOut>,
+  deleteStaffAction?: (input: DeleteStaffIn) => Promise<DeleteStaffOut>
 ) => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { effectiveProfile } = useEffectiveProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const queryClient = useQueryClient();
 
-  // Mutation hooks
-  const updateProfileMutation = useMutation({
-    mutationFn: (req: {
-      profileId: string;
-      firstName?: string;
-      lastName?: string;
-      alias?: string;
-      role?: string;
-      reqPerDay?: number | null;
-    }) => api.post("/profile/staff/update", { body: {
-      profileId: req.profileId,
-      role: req.role || "",
-      requests_per_day: req.reqPerDay || null,
-      department_id: effectiveProfile?.primaryDepartmentId || "",
-      active: true,
-    } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
+  // Use server-provided data (no React Query needed when server data is provided)
+  const targetUser = serverStaffDetail;
+  const isLoading = false; // No loading state when using server data
 
-  const deleteProfileMutation = useMutation({
-    mutationFn: (req: { profileId: string }) =>
-      api.post("/profile/staff/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
+  // Extract body types from server action types for type safety
+  type UpdateStaffBody = UpdateStaffIn extends { body: infer B } ? B : never;
+  type DeleteStaffBody = DeleteStaffIn extends { body: infer B } ? B : never;
 
-  const { data: profileData, isLoading: isProfileLoading } = useQuery({
-    queryKey: keys.profile.with({ profileId }),
-    queryFn: () =>
-      api.post("/profile/staff/detail", {
-        body: { profileId, currentProfileId: effectiveProfile?.id || "" },
-      }),
-    enabled: !!profileId,
-  });
-  const targetUser = profileData;
+  // Use server actions directly (no mutations needed)
+  const handleUpdateStaff = async (body: UpdateStaffBody) => {
+    if (!updateStaffAction) {
+      throw new Error("updateStaffAction is required");
+    }
+    await updateStaffAction({ body });
+  };
+
+  const handleDeleteStaff = async (body: DeleteStaffBody) => {
+    if (!deleteStaffAction) {
+      throw new Error("deleteStaffAction is required");
+    }
+    await deleteStaffAction({ body });
+  };
 
   const isCurrentUserAdmin =
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "superadmin";
-  const isLoading = isProfileLoading;
 
   // Set breadcrumb context when profile data is loaded
   useEffect(() => {
@@ -142,12 +137,12 @@ const useStaffEditBusinessLogic = (
           formData.reqPerDay === "" || formData.reqPerDay === undefined
             ? null
             : Number(formData.reqPerDay);
-        await updateProfileMutation.mutateAsync({
+        await handleUpdateStaff({
           profileId: profileId,
-          firstName: formData.firstName || "",
-          lastName: formData.lastName || "",
           role: formData.role || "",
-          reqPerDay: parsedReqPerDay,
+          requests_per_day: parsedReqPerDay,
+          department_id: effectiveProfile?.primaryDepartmentId || "",
+          active: true,
         });
         setHasChanges(false);
         toast.success("User updated successfully");
@@ -162,20 +157,20 @@ const useStaffEditBusinessLogic = (
         setIsSubmitting(false);
       }
     },
-    [profileId, router, redirectOnSuccess, onDone, updateProfileMutation]
+    [profileId, router, redirectOnSuccess, onDone, handleUpdateStaff, effectiveProfile]
   );
 
   const handleDelete = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      await deleteProfileMutation.mutateAsync({ profileId });
+      await handleDeleteStaff({ profileId });
       toast.success("User deleted successfully");
       router.push("/management/staff");
     } catch {
     } finally {
       setIsSubmitting(false);
     }
-  }, [profileId, router, deleteProfileMutation]);
+  }, [profileId, router, handleDeleteStaff]);
 
   const handleBackNavigation = useCallback(() => {
     router.push("/management/staff");
@@ -202,6 +197,9 @@ export default function StaffEdit({
   redirectOnSuccess = true,
   onDone,
   canToggleDefault = false,
+  staffDetail: serverStaffDetail,
+  updateStaffAction,
+  deleteStaffAction,
 }: StaffEditProps) {
   const [formData, setFormData] = useState<FormData>({});
   const [toggleDefault, setToggleDefault] = useState<boolean | null>(null);
@@ -218,7 +216,14 @@ export default function StaffEdit({
     handleSubmit,
     handleDelete,
     handleBackNavigation,
-  } = useStaffEditBusinessLogic(profileId, redirectOnSuccess, onDone);
+  } = useStaffEditBusinessLogic(
+    profileId,
+    redirectOnSuccess,
+    onDone,
+    serverStaffDetail,
+    updateStaffAction,
+    deleteStaffAction
+  );
 
   // Initialize form data when user is loaded
   useEffect(() => {

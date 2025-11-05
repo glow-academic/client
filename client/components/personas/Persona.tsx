@@ -61,6 +61,14 @@ import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 // import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { cn } from "@/lib/utils";
+import type {
+  PersonaDetailOut,
+  PersonaDetailDefaultOut,
+  CreatePersonaIn,
+  CreatePersonaOut,
+  UpdatePersonaIn,
+  UpdatePersonaOut,
+} from "@/app/(main)/create/personas/p/[personaId]/page";
 import {
   getPersonaIconComponent,
   PERSONA_ICON_MAP,
@@ -94,11 +102,25 @@ interface FormData {
 export interface PersonaProps {
   personaId?: string;
   mode?: "create" | "edit";
+  // Server-provided data (for server-side rendering)
+  personaDetail?: PersonaDetailOut;
+  personaDetailDefault?: PersonaDetailDefaultOut;
+  // Server actions (replaces useMutation)
+  createPersonaAction?: (
+    input: CreatePersonaIn
+  ) => Promise<CreatePersonaOut>;
+  updatePersonaAction?: (
+    input: UpdatePersonaIn
+  ) => Promise<UpdatePersonaOut>;
 }
 
 export default function Persona({
   personaId,
   mode = personaId ? "edit" : "create",
+  personaDetail: serverPersonaDetail,
+  personaDetailDefault: serverPersonaDetailDefault,
+  createPersonaAction,
+  updatePersonaAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
@@ -142,27 +164,29 @@ export default function Persona({
     isDepartmentSpecific: boolean;
   } | null>(null);
 
-  // V2 API hooks
+  // Fallback to React Query if server data not provided (for create mode or compatibility)
   const queryClient = useQueryClient();
 
-  // V3 API - fetch persona detail when editing
-  const { data: personaDetail, isLoading: isLoadingPersonaDetail } = useQuery({
-    queryKey: keys.personas.with({
-      personaId: personaId || "",
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/personas/detail", {
-        body: {
-          personaId: personaId || "",
-          profileId: effectiveProfile?.id || "",
-        },
+  // V3 API - fetch persona detail when editing (fallback only if server data not provided)
+  const { data: clientPersonaDetail, isLoading: isLoadingPersonaDetail } =
+    useQuery({
+      queryKey: keys.personas.with({
+        personaId: personaId || "",
+        profileId: effectiveProfile?.id || "",
       }),
-    enabled: !!personaId && isEditMode && !!effectiveProfile?.id,
-  });
+      queryFn: () =>
+        api.post("/personas/detail", {
+          body: {
+            personaId: personaId || "",
+            profileId: effectiveProfile?.id || "",
+          },
+        }),
+      enabled:
+        !!personaId && isEditMode && !!effectiveProfile?.id && !serverPersonaDetail,
+    });
 
-  // V3 API - fetch default persona detail when creating
-  const { data: personaDetailDefault, isLoading: isLoadingPersonaDefault } =
+  // V3 API - fetch default persona detail when creating (fallback only if server data not provided)
+  const { data: clientPersonaDetailDefault, isLoading: isLoadingPersonaDefault } =
     useQuery({
       queryKey: keys.personas.with({
         profileId: effectiveProfile?.id || "",
@@ -174,60 +198,73 @@ export default function Persona({
             profileId: effectiveProfile?.id || "",
           },
         }),
-      enabled: !isEditMode && !!effectiveProfile?.id,
+      enabled: !isEditMode && !!effectiveProfile?.id && !serverPersonaDetailDefault,
     });
+
+  // Use server data if available, otherwise fall back to client data
+  const personaDetail = serverPersonaDetail ?? clientPersonaDetail;
+  const personaDetailDefault =
+    serverPersonaDetailDefault ?? clientPersonaDetailDefault;
 
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
   const isLoadingData = isEditMode
-    ? isLoadingPersonaDetail
-    : isLoadingPersonaDefault;
+    ? (serverPersonaDetail ? false : isLoadingPersonaDetail)
+    : (serverPersonaDetailDefault ? false : isLoadingPersonaDefault);
 
-  // V3 API - create mutation
-  const createPersonaMutation = useMutation({
-    mutationFn: (body: {
-      name: string;
-      description: string | null;
-      department_ids: string[] | null;
-      active: boolean;
-      color: string;
-      icon: string;
-      model_id: string;
-      reasoning: string | null;
-      temperature: number;
-      system_prompt: string | null;
-      prompt_id: string | null;
-    }) => api.post("/personas/create", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.personas.all });
-    },
-  });
+  // Extract body types for type safety
+  type CreatePersonaBody = CreatePersonaIn extends { body: infer B } ? B : never;
+  type UpdatePersonaBody = UpdatePersonaIn extends { body: infer B } ? B : never;
 
-  // V3 API - update mutation
-  const updatePersonaMutation = useMutation({
-    mutationFn: (body: {
-      personaId: string;
-      name: string;
-      description: string | null;
-      department_ids: string[] | null;
-      active: boolean;
-      color: string;
-      icon: string;
-      model_id: string;
-      reasoning: string | null;
-      temperature: number;
-      system_prompt: string | null;
-      prompt_id: string | null;
-      department_id: string | null;
-    }) => api.post("/personas/update", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.personas.all });
-    },
-  });
+  // Server action handlers
+  const handleCreatePersona = async (body: CreatePersonaBody) => {
+    if (!createPersonaAction) {
+      throw new Error("createPersonaAction is required");
+    }
+    await createPersonaAction({ body });
+  };
 
-  // Extract mutate functions for compatibility
-  const createPersona = createPersonaMutation.mutate;
-  const updatePersona = updatePersonaMutation.mutate;
+  const handleUpdatePersona = async (body: UpdatePersonaBody) => {
+    if (!updatePersonaAction) {
+      throw new Error("updatePersonaAction is required");
+    }
+    await updatePersonaAction({ body });
+  };
+
+  // Wrapper functions for compatibility (matching original mutate signature with callbacks)
+  const createPersona = (
+    body: CreatePersonaBody,
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    handleCreatePersona(body)
+      .then(() => {
+        options?.onSuccess?.();
+      })
+      .catch((error) => {
+        const err = error instanceof Error ? error : new Error("Unknown error");
+        options?.onError?.(err);
+        if (!options?.onError) {
+          toast.error(`Failed to create persona: ${err.message}`);
+        }
+      });
+  };
+
+  const updatePersona = (
+    body: UpdatePersonaBody,
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    handleUpdatePersona(body)
+      .then(() => {
+        options?.onSuccess?.();
+      })
+      .catch((error) => {
+        const err = error instanceof Error ? error : new Error("Unknown error");
+        options?.onError?.(err);
+        if (!options?.onError) {
+          toast.error(`Failed to update persona: ${err.message}`);
+        }
+      });
+  };
 
   // Note: deletePersonaPrompt - v3 endpoint doesn't exist yet, using v2 hook temporarily
   // TODO: Create v3 endpoint for delete persona prompt

@@ -5,14 +5,44 @@
  * 06/08/2025
  */
 
-import SystemAgent from "@/components/agents/SystemAgent";
 import { auth } from "@/auth";
+import SystemAgent from "@/components/agents/SystemAgent";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { getQueryClient } from "@/utils/queryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { revalidateTag } from "next/cache";
+import { cache } from "react";
 
+/** ---- Strong types from OpenAPI ---- */
+type AgentDetailIn = InputOf<"/api/v3/agents/detail", "post">;
+type AgentDetailOut = OutputOf<"/api/v3/agents/detail", "post">;
+
+type AgentDetailDefaultIn = InputOf<"/api/v3/agents/detail-default", "post">;
+type AgentDetailDefaultOut = OutputOf<"/api/v3/agents/detail-default", "post">;
+
+type CreateAgentIn = InputOf<"/api/v3/agents/create", "post">;
+type CreateAgentOut = OutputOf<"/api/v3/agents/create", "post">;
+
+type UpdateAgentIn = InputOf<"/api/v3/agents/update", "post">;
+type UpdateAgentOut = OutputOf<"/api/v3/agents/update", "post">;
+
+type DeleteAgentPromptIn = InputOf<"/api/v3/agents/delete-prompt", "post">;
+type DeleteAgentPromptOut = OutputOf<"/api/v3/agents/delete-prompt", "post">;
+
+/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
+const getAgent = cache(
+  async (input: AgentDetailIn): Promise<AgentDetailOut> => {
+    return api.post("/agents/detail", input);
+  }
+);
+
+const getAgentDefault = cache(
+  async (input: AgentDetailDefaultIn): Promise<AgentDetailDefaultOut> => {
+    return api.post("/agents/detail-default", input);
+  }
+);
+
+/** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
   _parent: ResolvingMetadata
@@ -22,9 +52,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const agent = await api.post("/agents/detail", {
-      body: { agentId, profileId },
-    });
+    const agent = await getAgent({ body: { agentId, profileId } });
     return {
       title: `${agent?.name || "Agent"} Agent`,
       description: `${agent ? `${agent.name} ${agent.description}` : "Agent"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -37,6 +65,35 @@ export async function generateMetadata(
   }
 }
 
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+export async function createAgent(
+  input: CreateAgentIn
+): Promise<CreateAgentOut> {
+  "use server";
+  const out = await api.post("/agents/create", input);
+  revalidateTag("agents");
+  return out;
+}
+
+export async function updateAgent(
+  input: UpdateAgentIn
+): Promise<UpdateAgentOut> {
+  "use server";
+  const out = await api.post("/agents/update", input);
+  revalidateTag("agents");
+  return out;
+}
+
+export async function deleteAgentPrompt(
+  input: DeleteAgentPromptIn
+): Promise<DeleteAgentPromptOut> {
+  "use server";
+  const out = await api.post("/agents/delete-prompt", input);
+  revalidateTag("agents");
+  return out;
+}
+
+/** ---- Server renders client with typed data and actions ---- */
 export default async function AgentEditPage({
   params,
 }: {
@@ -46,22 +103,40 @@ export default async function AgentEditPage({
   const session = await auth();
   const profileId = session?.effectiveProfileId || "";
 
-  const queryClient = getQueryClient();
-
-  // Prefetch agent detail for instant hydration
-  await queryClient.prefetchQuery({
-    queryKey: keys.agents.with({ agentId, profileId }),
-    queryFn: () =>
-      api.post("/agents/detail", {
-        body: { agentId, profileId },
-      }),
-  });
+  // Fetch data based on mode (edit vs create)
+  const [agentDetail, agentDetailDefault] = await Promise.all([
+    agentId
+      ? getAgent({ body: { agentId, profileId } }).catch(() => null)
+      : Promise.resolve(null),
+    !agentId
+      ? getAgentDefault({ body: { profileId } }).catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-6">
-        <SystemAgent agentId={agentId} />
-      </div>
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <SystemAgent
+        agentId={agentId}
+        agentDetail={agentDetail || undefined}
+        agentDetailDefault={agentDetailDefault || undefined}
+        createAgentAction={createAgent}
+        updateAgentAction={updateAgent}
+        deleteAgentPromptAction={deleteAgentPrompt}
+      />
+    </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  AgentDetailDefaultIn,
+  AgentDetailDefaultOut,
+  AgentDetailIn,
+  AgentDetailOut,
+  CreateAgentIn,
+  CreateAgentOut,
+  DeleteAgentPromptIn,
+  DeleteAgentPromptOut,
+  UpdateAgentIn,
+  UpdateAgentOut,
+};

@@ -8,11 +8,46 @@
 import { auth } from "@/auth";
 import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { getQueryClient } from "@/utils/queryClient";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { revalidateTag } from "next/cache";
+import { cache } from "react";
 
+/** ---- Strong types from OpenAPI ---- */
+type ParameterDetailIn = InputOf<"/api/v3/parameters/detail", "post">;
+type ParameterDetailOut = OutputOf<"/api/v3/parameters/detail", "post">;
+
+type ParameterDetailDefaultIn = InputOf<
+  "/api/v3/parameters/detail-default",
+  "post"
+>;
+type ParameterDetailDefaultOut = OutputOf<
+  "/api/v3/parameters/detail-default",
+  "post"
+>;
+
+type CreateParameterIn = InputOf<"/api/v3/parameters/create", "post">;
+type CreateParameterOut = OutputOf<"/api/v3/parameters/create", "post">;
+
+type UpdateParameterIn = InputOf<"/api/v3/parameters/update", "post">;
+type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
+
+/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
+const getParameter = cache(
+  async (input: ParameterDetailIn): Promise<ParameterDetailOut> => {
+    return api.post("/parameters/detail", input);
+  }
+);
+
+const getParameterDefault = cache(
+  async (
+    input: ParameterDetailDefaultIn
+  ): Promise<ParameterDetailDefaultOut> => {
+    return api.post("/parameters/detail-default", input);
+  }
+);
+
+/** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ parameterId: string }> },
   _parent: ResolvingMetadata
@@ -22,9 +57,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const parameter = await api.post("/parameters/detail", {
-      body: { parameterId, profileId },
-    });
+    const parameter = await getParameter({ body: { parameterId, profileId } });
     return {
       title: `${parameter?.name || "Parameter"} Parameter`,
       description: `${parameter ? `${parameter.name} ${parameter.description || ""}` : "Parameter"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -37,6 +70,26 @@ export async function generateMetadata(
   }
 }
 
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+export async function createParameter(
+  input: CreateParameterIn
+): Promise<CreateParameterOut> {
+  "use server";
+  const out = await api.post("/parameters/create", input);
+  revalidateTag("parameters");
+  return out;
+}
+
+export async function updateParameter(
+  input: UpdateParameterIn
+): Promise<UpdateParameterOut> {
+  "use server";
+  const out = await api.post("/parameters/update", input);
+  revalidateTag("parameters");
+  return out;
+}
+
+/** ---- Server renders client with typed data and actions ---- */
 export default async function ParameterEditPage({
   params,
 }: {
@@ -44,23 +97,40 @@ export default async function ParameterEditPage({
 }) {
   const { parameterId } = await params;
   const session = await auth();
-  const queryClient = getQueryClient();
-
-  // Prefetch parameter detail data
   const profileId = session?.effectiveProfileId || "";
-  await queryClient.prefetchQuery({
-    queryKey: keys.parameters.with({ parameterId, profileId }),
-    queryFn: () =>
-      api.post("/parameters/detail", {
-        body: { parameterId, profileId },
-      }),
-  });
+
+  // Fetch data based on mode (edit vs create)
+  const [parameterDetail, parameterDetailDefault] = await Promise.all([
+    parameterId
+      ? getParameter({ body: { parameterId, profileId } }).catch(() => null)
+      : Promise.resolve(null),
+    !parameterId
+      ? getParameterDefault({ body: { profileId } }).catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-6">
-        <Parameter parameterId={parameterId} mode="edit" />
-      </div>
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <Parameter
+        parameterId={parameterId}
+        mode="edit"
+        parameterDetail={parameterDetail || undefined}
+        parameterDetailDefault={parameterDetailDefault || undefined}
+        createParameterAction={createParameter}
+        updateParameterAction={updateParameter}
+      />
+    </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  CreateParameterIn,
+  CreateParameterOut,
+  ParameterDetailDefaultIn,
+  ParameterDetailDefaultOut,
+  ParameterDetailIn,
+  ParameterDetailOut,
+  UpdateParameterIn,
+  UpdateParameterOut,
+};

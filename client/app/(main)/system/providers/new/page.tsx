@@ -5,9 +5,25 @@
  * 06/08/2025
  */
 
-import NewProvider from "@/components/providers/NewProvider";
-
+import Provider from "@/components/providers/Provider";
+import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { revalidateTag } from "next/cache";
+
+/** ---- Strong types from OpenAPI ---- */
+type CreateProviderIn = InputOf<"/api/v3/providers/create", "post">;
+type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
+
+/** ---- Strongly-typed server action (single source of truth) ---- */
+export async function createProvider(
+  input: CreateProviderIn
+): Promise<CreateProviderOut> {
+  "use server";
+  const out = await api.post("/providers/create", input);
+  revalidateTag("providers");
+  return out;
+}
 
 export const metadata: Metadata = {
   title: "Providers",
@@ -17,7 +33,10 @@ export const metadata: Metadata = {
 export default function NewProviderPage() {
   return (
     <div className="space-y-6">
-      <NewProvider />
+      <Provider createProviderAction={createProvider} />
     </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type { CreateProviderIn, CreateProviderOut };

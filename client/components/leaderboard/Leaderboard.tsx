@@ -6,6 +6,7 @@
  */
 "use client";
 
+import type { LeaderboardOut } from "@/app/(main)/cohorts/c/[cohortId]/page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -65,9 +66,14 @@ const getInitials = (firstName: string, lastName: string): string => {
 
 export interface LeaderboardProps {
   cohortId?: string;
+  // Server-provided data (for server-side rendering)
+  initialLeaderboardData?: LeaderboardOut;
 }
 
-export default function Leaderboard({ cohortId }: LeaderboardProps) {
+export default function Leaderboard({
+  cohortId,
+  initialLeaderboardData,
+}: LeaderboardProps) {
   const {
     effectiveProfile,
     isLoading: isProfileLoading,
@@ -106,6 +112,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   );
 
   // Load the leaderboard data
+  // If initial data is provided, use it to avoid loading state, but still refetch when filters change
   const {
     data: leaderboardResponse,
     isLoading,
@@ -113,12 +120,20 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   } = useQuery({
     queryKey: keys.leaderboard.with(filters),
     queryFn: () => api.post("/leaderboard", { body: filters }),
+    // Use server-provided initial data if available (prevents loading state on mount)
+    initialData: initialLeaderboardData,
   });
 
-  // Use the data directly from the API (no hydration needed)
+  // Use the data directly from the API, prioritizing fresh query data over initial server data
   const hydratedRows = useMemo(() => {
-    return leaderboardResponse?.data || [];
-  }, [leaderboardResponse?.data]);
+    // Prefer fresh query data, fall back to initial server data
+    const data =
+      leaderboardResponse?.data || initialLeaderboardData?.data || [];
+    return data;
+  }, [leaderboardResponse?.data, initialLeaderboardData?.data]);
+
+  // No loading state if we have initial server data (SSR)
+  const isLoadingData = initialLeaderboardData ? false : isLoading;
 
   // Two-page carousel state
   const [page, setPage] = useState(0);
@@ -597,7 +612,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     return [];
   }, [hydratedRows]);
 
-  if (isProfileLoading || isLoading) {
+  if (isProfileLoading || isLoadingData) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">

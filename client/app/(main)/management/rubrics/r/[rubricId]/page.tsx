@@ -8,11 +8,31 @@
 import Rubric from "@/components/rubrics/Rubric";
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { getQueryClient } from "@/utils/queryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { cache } from "react";
 
+/** ---- Strong types from OpenAPI ---- */
+type RubricDetailIn = InputOf<"/api/v3/rubrics/detail", "post">;
+type RubricDetailOut = OutputOf<"/api/v3/rubrics/detail", "post">;
+
+type RubricDetailDefaultIn = InputOf<"/api/v3/rubrics/detail-default", "post">;
+type RubricDetailDefaultOut = OutputOf<"/api/v3/rubrics/detail-default", "post">;
+
+/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
+const getRubric = cache(
+  async (input: RubricDetailIn): Promise<RubricDetailOut> => {
+    return api.post("/rubrics/detail", input);
+  }
+);
+
+const getRubricDefault = cache(
+  async (input: RubricDetailDefaultIn): Promise<RubricDetailDefaultOut> => {
+    return api.post("/rubrics/detail-default", input);
+  }
+);
+
+/** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ rubricId: string }> },
   _parent: ResolvingMetadata
@@ -22,9 +42,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const rubric = await api.post("/rubrics/detail", {
-      body: { rubricId, profileId },
-    });
+    const rubric = await getRubric({ body: { rubricId, profileId } });
     return {
       title: `${rubric?.name || "Rubric"}`,
       description: `${rubric ? `${rubric.name} ${rubric.description || ""}` : "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -37,6 +55,7 @@ export async function generateMetadata(
   }
 }
 
+/** ---- Server renders client with typed data (read-only, mutations in child components) ---- */
 export default async function EditRubricPage({
   params,
 }: {
@@ -46,22 +65,31 @@ export default async function EditRubricPage({
   const session = await auth();
   const profileId = session?.effectiveProfileId || "";
 
-  const queryClient = getQueryClient();
-
-  // Prefetch rubric detail for instant hydration
-  await queryClient.prefetchQuery({
-    queryKey: keys.rubrics.with({ rubricId, profileId }),
-    queryFn: () =>
-      api.post("/rubrics/detail", {
-        body: { rubricId, profileId },
-      }),
-  });
+  // Fetch data based on mode (edit vs create)
+  const [rubricDetail, rubricDetailDefault] = await Promise.all([
+    rubricId
+      ? getRubric({ body: { rubricId, profileId } }).catch(() => null)
+      : Promise.resolve(null),
+    !rubricId
+      ? getRubricDefault({ body: { profileId } }).catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-6">
-        <Rubric rubricId={rubricId} />
-      </div>
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <Rubric
+        rubricId={rubricId}
+        rubricDetail={rubricDetail || undefined}
+        rubricDetailDefault={rubricDetailDefault || undefined}
+      />
+    </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  RubricDetailDefaultIn,
+  RubricDetailDefaultOut,
+  RubricDetailIn,
+  RubricDetailOut,
+};

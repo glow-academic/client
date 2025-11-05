@@ -32,9 +32,6 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Calculator,
   FileText,
@@ -43,6 +40,16 @@ import {
   Power,
   Trash2,
 } from "lucide-react";
+
+// Type-only import from server page
+import type {
+  CreateParameterIn,
+  CreateParameterOut,
+  ParameterDetailDefaultOut,
+  ParameterDetailOut,
+  UpdateParameterIn,
+  UpdateParameterOut,
+} from "@/app/(main)/management/parameters/p/[parameterId]/page";
 
 type MappingItem = {
   name: string;
@@ -75,11 +82,20 @@ interface ParameterItemFormData {
 export interface ParameterProps {
   parameterId?: string;
   mode?: "create" | "edit";
+  // Optional server-provided data and actions (for server-side rendering)
+  parameterDetail?: ParameterDetailOut;
+  parameterDetailDefault?: ParameterDetailDefaultOut;
+  createParameterAction?: (input: CreateParameterIn) => Promise<CreateParameterOut>;
+  updateParameterAction?: (input: UpdateParameterIn) => Promise<UpdateParameterOut>;
 }
 
 export default function Parameter({
   parameterId,
   mode = parameterId ? "edit" : "create",
+  parameterDetail: serverParameterDetail,
+  parameterDetailDefault: serverParameterDetailDefault,
+  createParameterAction,
+  updateParameterAction,
 }: ParameterProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
@@ -105,43 +121,30 @@ export default function Parameter({
     ParameterItemFormData[]
   >([]);
 
-  const queryClient = useQueryClient();
-
-  // V3 API - detail query for edit mode
-  const { data: parameterDetail, isLoading: isLoadingParameterDetail } =
-    useQuery({
-      queryKey: keys.parameters.with({
-        parameterId: parameterId || "",
-        profileId: effectiveProfile?.id || "",
-      }),
-      queryFn: () =>
-        api.post("/parameters/detail", {
-          body: {
-            parameterId: parameterId || "",
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled: !!parameterId && isEditMode && !!effectiveProfile?.id,
-    });
-
-  // V3 API - detail-default query for create mode
-  const { data: parameterDetailDefault, isLoading: isLoadingParameterDefault } =
-    useQuery({
-      queryKey: keys.parameters.with({
-        profileId: effectiveProfile?.id || "",
-      }),
-      queryFn: () =>
-        api.post("/parameters/detail-default", {
-          body: { profileId: effectiveProfile?.id || "" },
-        }),
-      enabled: !isEditMode && !!effectiveProfile?.id,
-    });
-
-  // Use edit detail when editing, default detail when creating
+  // Use server-provided data (no React Query needed when server data is provided)
+  const parameterDetail = serverParameterDetail;
+  const parameterDetailDefault = serverParameterDetailDefault;
   const parameterData = isEditMode ? parameterDetail : parameterDetailDefault;
-  const isLoadingData = isEditMode
-    ? isLoadingParameterDetail
-    : isLoadingParameterDefault;
+  const isLoading = false; // No loading state when using server data
+
+  // Extract body types from server action types for type safety
+  type CreateParameterBody = CreateParameterIn extends { body: infer B } ? B : never;
+  type UpdateParameterBody = UpdateParameterIn extends { body: infer B } ? B : never;
+
+  // Use server actions directly (no mutations needed)
+  const handleCreateParameter = async (body: CreateParameterBody) => {
+    if (!createParameterAction) {
+      throw new Error("createParameterAction is required");
+    }
+    await createParameterAction({ body });
+  };
+
+  const handleUpdateParameter = async (body: UpdateParameterBody) => {
+    if (!updateParameterAction) {
+      throw new Error("updateParameterAction is required");
+    }
+    await updateParameterAction({ body });
+  };
 
   // Set breadcrumb context when parameter data is loaded
   useEffect(() => {
@@ -161,7 +164,7 @@ export default function Parameter({
     clearEntityMetadata,
   ]);
 
-  // Extract mappings from v2 response
+  // Extract mappings from v3 response
   const departmentMapping = useMemo(
     () =>
       (parameterData?.department_mapping || {}) as Record<string, MappingItem>,
@@ -178,52 +181,6 @@ export default function Parameter({
     () => parameterData?.parameter_items || [],
     [parameterData]
   );
-
-  // V3 API mutations
-  const createParameterMutation = useMutation({
-    mutationFn: (req: {
-      name: string;
-      description: string;
-      numerical: boolean;
-      active: boolean;
-      document_parameter: boolean;
-      practice_parameter: boolean;
-      department_ids: string[] | null;
-      parameter_items: Array<{
-        name: string;
-        description: string;
-        value: string;
-        department_ids: string[] | null;
-      }>;
-    }) => api.post("/parameters/create", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
-    },
-  });
-
-  const updateParameterMutation = useMutation({
-    mutationFn: (req: {
-      parameterId: string;
-      name: string;
-      description: string;
-      numerical: boolean;
-      active: boolean;
-      document_parameter: boolean;
-      practice_parameter: boolean;
-      department_ids: string[] | null;
-      parameter_items: Array<{
-        name: string;
-        description: string;
-        value: string;
-        department_ids: string[] | null;
-      }>;
-    }) => api.post("/parameters/update", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
-    },
-  });
-
-  const isLoading = isLoadingData;
 
   const [initiallySorted, setInitiallySorted] = useState(false);
 
@@ -323,7 +280,7 @@ export default function Parameter({
 
       if (isEditMode) {
         // V2 API: Single atomic update with nested items
-        await updateParameterMutation.mutateAsync({
+        await handleUpdateParameter({
           parameterId: parameterId!,
           name: formData.name!,
           description: formData.description!,
@@ -337,8 +294,8 @@ export default function Parameter({
 
         toast.success("Parameter updated successfully!");
       } else {
-        // V2 API: Single atomic create with nested items
-        await createParameterMutation.mutateAsync({
+        // V3 API: Single atomic create with nested items
+        await handleCreateParameter({
           name: formData.name!,
           description: formData.description!,
           numerical: formData.numerical || false,

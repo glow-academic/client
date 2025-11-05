@@ -44,20 +44,20 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import type { components } from "@/lib/api-types";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bug, Copy, Eye, Power, Trash2 } from "lucide-react";
 import AgentDebugInfo from "./AgentDebugInfo";
 
-// Explicit types from API schema
-type CreateAgentRequest =
-  components["schemas"]["app__schemas__agents__CreateAgentRequest"];
-type UpdateAgentRequest =
-  components["schemas"]["app__schemas__agents__UpdateAgentRequest"];
-type DeleteAgentPromptRequest =
-  components["schemas"]["app__schemas__agents__DeleteAgentPromptRequest"];
+// Type-only import from server page
+import type {
+  AgentDetailDefaultOut,
+  AgentDetailOut,
+  CreateAgentIn,
+  CreateAgentOut,
+  DeleteAgentPromptIn,
+  DeleteAgentPromptOut,
+  UpdateAgentIn,
+  UpdateAgentOut,
+} from "@/app/(main)/management/agents/a/[agentId]/page";
 
 interface SystemAgentFormData {
   name?: string;
@@ -74,6 +74,12 @@ interface SystemAgentFormData {
 
 export interface SystemAgentProps {
   agentId?: string;
+  // Optional server-provided data and actions (for server-side rendering)
+  agentDetail?: AgentDetailOut;
+  agentDetailDefault?: AgentDetailDefaultOut;
+  createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
+  updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
+  deleteAgentPromptAction?: (input: DeleteAgentPromptIn) => Promise<DeleteAgentPromptOut>;
 }
 
 interface FormErrors {
@@ -83,11 +89,17 @@ interface FormErrors {
   modelId?: string;
 }
 
-export default function SystemAgent({ agentId }: SystemAgentProps) {
+export default function SystemAgent({
+  agentId,
+  agentDetail: serverAgentDetail,
+  agentDetailDefault: serverAgentDetailDefault,
+  createAgentAction,
+  updateAgentAction,
+  deleteAgentPromptAction,
+}: SystemAgentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
@@ -108,56 +120,38 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
   const isEditMode = !!agentId;
 
-  // V3 API hooks
-  const { data: agentDetail, isLoading: isLoadingAgentDetail } = useQuery({
-    queryKey: keys.agents.with({
-      agentId: agentId || "",
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/agents/detail", {
-        body: { agentId: agentId || "", profileId: effectiveProfile?.id || "" },
-      }),
-    enabled: isEditMode && !!agentId && !!effectiveProfile?.id,
-  });
-
-  const { data: agentDetailDefault, isLoading: isLoadingAgentDefault } =
-    useQuery({
-      queryKey: keys.agents.with({ profileId: effectiveProfile?.id || "" }),
-      queryFn: () =>
-        api.post("/agents/detail-default", {
-          body: { profileId: effectiveProfile?.id || "" },
-        }),
-      enabled: !isEditMode && !!effectiveProfile?.id,
-    });
-
-  const createAgentMutation = useMutation({
-    mutationFn: (req: CreateAgentRequest) =>
-      api.post("/agents/create", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.agents.all });
-    },
-  });
-
-  const updateAgentMutation = useMutation({
-    mutationFn: (req: UpdateAgentRequest) =>
-      api.post("/agents/update", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.agents.all });
-    },
-  });
-
-  const deleteAgentPromptMutation = useMutation({
-    mutationFn: (req: DeleteAgentPromptRequest) =>
-      api.post("/agents/delete-prompt", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.agents.all });
-    },
-  });
-
-  // Use edit detail when editing, default detail when creating
+  // Use server-provided data (no React Query needed when server data is provided)
+  const agentDetail = serverAgentDetail;
+  const agentDetailDefault = serverAgentDetailDefault;
   const agentData = isEditMode ? agentDetail : agentDetailDefault;
-  const isLoading = isEditMode ? isLoadingAgentDetail : isLoadingAgentDefault;
+  const isLoading = false; // No loading state when using server data
+
+  // Extract body types from server action types for type safety
+  type CreateAgentBody = CreateAgentIn extends { body: infer B } ? B : never;
+  type UpdateAgentBody = UpdateAgentIn extends { body: infer B } ? B : never;
+  type DeleteAgentPromptBody = DeleteAgentPromptIn extends { body: infer B } ? B : never;
+
+  // Use server actions directly (no mutations needed)
+  const handleCreateAgent = async (body: CreateAgentBody) => {
+    if (!createAgentAction) {
+      throw new Error("createAgentAction is required");
+    }
+    await createAgentAction({ body });
+  };
+
+  const handleUpdateAgent = async (body: UpdateAgentBody) => {
+    if (!updateAgentAction) {
+      throw new Error("updateAgentAction is required");
+    }
+    await updateAgentAction({ body });
+  };
+
+  const handleDeleteAgentPrompt = async (body: DeleteAgentPromptBody) => {
+    if (!deleteAgentPromptAction) {
+      throw new Error("deleteAgentPromptAction is required");
+    }
+    await deleteAgentPromptAction({ body });
+  };
 
   // Temperature bounds from v2 response
   const temperatureLower = agentData?.temperature_lower ?? 0.0;
@@ -424,7 +418,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     try {
       if (isEditMode && agentId && agentDetail) {
         // Update existing agent using v3 API
-        await updateAgentMutation.mutateAsync({
+        await handleUpdateAgent({
           agentId,
           name: formData.name!,
           description: formData.description!,
@@ -454,7 +448,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         setIsSubmitting(false);
       } else {
         // Create new agent using v3 API
-        const response = await createAgentMutation.mutateAsync({
+        const response = await handleCreateAgent({
           name: formData.name!,
           description: formData.description!,
           prompt_id: formData.promptId || null,
@@ -1011,13 +1005,9 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 type="submit"
                 disabled={
                   isSubmitting ||
-                  createAgentMutation.isPending ||
-                  updateAgentMutation.isPending
                 }
               >
-                {isSubmitting ||
-                createAgentMutation.isPending ||
-                updateAgentMutation.isPending ? (
+                {isSubmitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                     {isEditMode ? "Updating..." : "Creating..."}
@@ -1069,7 +1059,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   if (!promptToDelete || !agentId) return;
 
                   try {
-                    await deleteAgentPromptMutation.mutateAsync({
+                    await handleDeleteAgentPrompt({
                       agentId,
                       promptId: promptToDelete.promptId,
                       departmentId: promptToDelete.isDepartmentSpecific

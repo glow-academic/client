@@ -8,11 +8,46 @@
 import { auth } from "@/auth";
 import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { getQueryClient } from "@/utils/queryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { revalidateTag } from "next/cache";
+import { cache } from "react";
 
+/** ---- Strong types from OpenAPI ---- */
+type SimulationDetailIn = InputOf<"/api/v3/simulations/detail", "post">;
+type SimulationDetailOut = OutputOf<"/api/v3/simulations/detail", "post">;
+
+type SimulationDetailDefaultIn = InputOf<
+  "/api/v3/simulations/detail-default",
+  "post"
+>;
+type SimulationDetailDefaultOut = OutputOf<
+  "/api/v3/simulations/detail-default",
+  "post"
+>;
+
+type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
+type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
+
+type UpdateSimulationIn = InputOf<"/api/v3/simulations/update", "post">;
+type UpdateSimulationOut = OutputOf<"/api/v3/simulations/update", "post">;
+
+/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
+const getSimulation = cache(
+  async (input: SimulationDetailIn): Promise<SimulationDetailOut> => {
+    return api.post("/simulations/detail", input);
+  }
+);
+
+const getSimulationDefault = cache(
+  async (
+    input: SimulationDetailDefaultIn
+  ): Promise<SimulationDetailDefaultOut> => {
+    return api.post("/simulations/detail-default", input);
+  }
+);
+
+/** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ simulationId: string }> },
   _parent: ResolvingMetadata
@@ -22,7 +57,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const simulation = await api.post("/simulations/detail", {
+    const simulation = await getSimulation({
       body: { simulationId, profileId },
     });
     return {
@@ -37,6 +72,26 @@ export async function generateMetadata(
   }
 }
 
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+export async function createSimulation(
+  input: CreateSimulationIn
+): Promise<CreateSimulationOut> {
+  "use server";
+  const out = await api.post("/simulations/create", input);
+  revalidateTag("simulations");
+  return out;
+}
+
+export async function updateSimulation(
+  input: UpdateSimulationIn
+): Promise<UpdateSimulationOut> {
+  "use server";
+  const out = await api.post("/simulations/update", input);
+  revalidateTag("simulations");
+  return out;
+}
+
+/** ---- Server renders client with typed data and actions ---- */
 export default async function EditSimulationPage({
   params,
 }: {
@@ -46,22 +101,37 @@ export default async function EditSimulationPage({
   const session = await auth();
   const profileId = session?.effectiveProfileId || "";
 
-  const queryClient = getQueryClient();
-
-  // Prefetch simulation detail for instant hydration
-  await queryClient.prefetchQuery({
-    queryKey: keys.simulations.with({ simulationId, profileId }),
-    queryFn: () =>
-      api.post("/simulations/detail", {
-        body: { simulationId, profileId },
-      }),
-  });
+  // Fetch data based on mode (edit vs create)
+  const [simulationDetail, simulationDetailDefault] = await Promise.all([
+    simulationId
+      ? getSimulation({ body: { simulationId, profileId } }).catch(() => null)
+      : Promise.resolve(null),
+    !simulationId
+      ? getSimulationDefault({ body: { profileId } }).catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-6">
-        <Simulation simulationId={simulationId} />
-      </div>
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <Simulation
+        simulationId={simulationId}
+        simulationDetail={simulationDetail || undefined}
+        simulationDetailDefault={simulationDetailDefault || undefined}
+        createSimulationAction={createSimulation}
+        updateSimulationAction={updateSimulation}
+      />
+    </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  CreateSimulationIn,
+  CreateSimulationOut,
+  SimulationDetailDefaultIn,
+  SimulationDetailDefaultOut,
+  SimulationDetailIn,
+  SimulationDetailOut,
+  UpdateSimulationIn,
+  UpdateSimulationOut,
+};

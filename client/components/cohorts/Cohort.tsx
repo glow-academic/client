@@ -37,9 +37,17 @@ import { useProfile } from "@/contexts/profile-context";
 import type { components } from "@/lib/api-types";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type {
+  CohortDetailOut,
+  CohortDetailDefaultOut,
+  CreateCohortIn,
+  CreateCohortOut,
+  UpdateCohortIn,
+  UpdateCohortOut,
+} from "@/app/(main)/cohorts/e/[cohortId]/page";
 
 type ProfileListItem = {
   profile_id: string;
@@ -65,6 +73,12 @@ type ProfileListItem = {
 
 export interface CohortProps {
   cohortId?: string;
+  // Server-provided data (for server-side rendering)
+  cohortDetail?: CohortDetailOut;
+  cohortDetailDefault?: CohortDetailDefaultOut;
+  // Server actions (replaces useMutation)
+  createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
+  updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
 }
 
 interface FormErrors {
@@ -76,7 +90,13 @@ interface FormData {
   active: boolean;
   departmentIds: string[] | null;
 }
-export default function Cohort({ cohortId }: CohortProps) {
+export default function Cohort({
+  cohortId,
+  cohortDetail: serverCohortDetail,
+  cohortDetailDefault: serverCohortDetailDefault,
+  createCohortAction,
+  updateCohortAction,
+}: CohortProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
@@ -142,12 +162,12 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   // Memoize callback functions to prevent unnecessary re-renders
 
-  // V2 API hooks
+  // Fallback to React Query if server data not provided (for create mode or compatibility)
   const queryClient = useQueryClient();
 
-  // V3 API - fetch cohort detail when editing
+  // V3 API - fetch cohort detail when editing (fallback only if server data not provided)
   const {
-    data: cohortDetail,
+    data: clientCohortDetail,
     isLoading: isLoadingCohortDetail,
     refetch: refetchCohortDetail,
   } = useQuery({
@@ -162,11 +182,11 @@ export default function Cohort({ cohortId }: CohortProps) {
           profileId: effectiveProfile?.id || "",
         },
       }),
-    enabled: !!cohortId && isEditMode && !!effectiveProfile?.id,
+    enabled: !!cohortId && isEditMode && !!effectiveProfile?.id && !serverCohortDetail,
   });
 
-  // V3 API - fetch default cohort detail when creating
-  const { data: cohortDetailDefault, isLoading: isLoadingCohortDefault } =
+  // V3 API - fetch default cohort detail when creating (fallback only if server data not provided)
+  const { data: clientCohortDetailDefault, isLoading: isLoadingCohortDefault } =
     useQuery({
       queryKey: keys.cohorts.with({
         profileId: effectiveProfile?.id || "",
@@ -178,14 +198,18 @@ export default function Cohort({ cohortId }: CohortProps) {
             profileId: effectiveProfile?.id || "",
           },
         }),
-      enabled: !isEditMode && !!effectiveProfile?.id,
+      enabled: !isEditMode && !!effectiveProfile?.id && !serverCohortDetailDefault,
     });
 
+  // Use server data if available, otherwise fall back to client data
+  const cohortDetail = serverCohortDetail ?? clientCohortDetail;
+  const cohortDetailDefault = serverCohortDetailDefault ?? clientCohortDetailDefault;
+  
   // Use edit detail when editing, default detail when creating
   const cohortData = isEditMode ? cohortDetail : cohortDetailDefault;
   const isLoadingData = isEditMode
-    ? isLoadingCohortDetail
-    : isLoadingCohortDefault;
+    ? (serverCohortDetail ? false : isLoadingCohortDetail)
+    : (serverCohortDetailDefault ? false : isLoadingCohortDefault);
 
   // Set breadcrumb context when cohort data is loaded
   useEffect(() => {
@@ -205,33 +229,24 @@ export default function Cohort({ cohortId }: CohortProps) {
     clearEntityMetadata,
   ]);
 
-  // Explicit types from API schema
-  type CreateCohortRequest =
-    components["schemas"]["app__schemas__cohorts__CreateCohortRequest"];
-  type UpdateCohortRequest =
-    components["schemas"]["app__schemas__cohorts__UpdateCohortRequest"];
+  // Extract body types for type safety
+  type CreateCohortBody = CreateCohortIn extends { body: infer B } ? B : never;
+  type UpdateCohortBody = UpdateCohortIn extends { body: infer B } ? B : never;
 
-  // V3 API - create mutation
-  const createCohortMutation = useMutation({
-    mutationFn: (body: CreateCohortRequest) =>
-      api.post("/cohorts/create", { body } as Parameters<
-        typeof api.post<"/cohorts/create">
-      >[1]),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
-    },
-  });
+  // Server action handlers
+  const handleCreateCohort = async (body: CreateCohortBody) => {
+    if (!createCohortAction) {
+      throw new Error("createCohortAction is required");
+    }
+    await createCohortAction({ body });
+  };
 
-  // V3 API - update mutation
-  const updateCohortMutation = useMutation({
-    mutationFn: (body: UpdateCohortRequest) =>
-      api.post("/cohorts/update", { body } as Parameters<
-        typeof api.post<"/cohorts/update">
-      >[1]),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
-    },
-  });
+  const handleUpdateCohort = async (body: UpdateCohortBody) => {
+    if (!updateCohortAction) {
+      throw new Error("updateCohortAction is required");
+    }
+    await updateCohortAction({ body });
+  };
 
   // State for junction data
   const [currentSimulationIds, setCurrentSimulationIds] = useState<string[]>(
@@ -632,8 +647,8 @@ export default function Cohort({ cohortId }: CohortProps) {
 
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
-        // UPDATE mode - V2 API handles junction tables with active states
-        const updateRequest: UpdateCohortRequest = {
+        // UPDATE mode
+        const updateRequest: UpdateCohortBody = {
           cohortId: targetCohortId,
           title: formData.title || "",
           description: formData.description || null,
@@ -644,18 +659,18 @@ export default function Cohort({ cohortId }: CohortProps) {
           simulation_ids: currentSimulationIds.map((simId) => ({
             simulation_id: simId,
             active: simulationActiveStates[simId] ?? true,
-          })) as UpdateCohortRequest["simulation_ids"],
+          })),
           profile_ids: profileIds,
         };
-        await updateCohortMutation.mutateAsync(updateRequest);
+        await handleUpdateCohort(updateRequest);
 
         toast.success("Cohort updated successfully!");
         // Clear staged profiles after successful update
         setStagedProfilesToAdd([]);
         setStagedProfilesToRemove([]);
       } else {
-        // CREATE mode - V2 API handles junction tables with active states
-        const createRequest: CreateCohortRequest = {
+        // CREATE mode
+        const createRequest: CreateCohortBody = {
           title: formData.title || "",
           description: formData.description || null,
           department_ids: formData.departmentIds?.length
@@ -665,10 +680,10 @@ export default function Cohort({ cohortId }: CohortProps) {
           simulation_ids: currentSimulationIds.map((simId) => ({
             simulation_id: simId,
             active: simulationActiveStates[simId] ?? true,
-          })) as CreateCohortRequest["simulation_ids"],
+          })),
           profile_ids: profileIds,
         };
-        await createCohortMutation.mutateAsync(createRequest);
+        await handleCreateCohort(createRequest);
 
         toast.success("Cohort created successfully!");
         // Clear staged profiles after successful create

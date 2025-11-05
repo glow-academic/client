@@ -17,13 +17,32 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
 import { maskApiKey } from "@/utils/model-utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// Type-only import from server page (for edit mode)
+import type {
+  CreateProviderIn,
+  CreateProviderOut,
+  DecryptProviderKeyIn,
+  DecryptProviderKeyOut,
+  ProviderDetailOut,
+  UpdateProviderIn,
+  UpdateProviderOut,
+} from "@/app/(main)/system/providers/p/[providerId]/page";
 
 export interface ProviderProps {
   providerId?: string;
+  // Optional server-provided data and actions (for server-side rendering)
+  providerDetail?: ProviderDetailOut;
+  createProviderAction?: (
+    input: CreateProviderIn
+  ) => Promise<CreateProviderOut>;
+  updateProviderAction?: (
+    input: UpdateProviderIn
+  ) => Promise<UpdateProviderOut>;
+  decryptProviderKeyAction?: (
+    input: DecryptProviderKeyIn
+  ) => Promise<DecryptProviderKeyOut>;
 }
 
 interface FormErrors {
@@ -39,7 +58,13 @@ interface FormData {
   baseUrl?: string;
 }
 
-export default function Provider({ providerId }: ProviderProps) {
+export default function Provider({
+  providerId,
+  providerDetail: serverProviderDetail,
+  createProviderAction,
+  updateProviderAction,
+  decryptProviderKeyAction,
+}: ProviderProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
@@ -63,58 +88,43 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
-  const queryClient = useQueryClient();
 
-  // V3 API - fetch provider detail when editing
-  const { data: providerDetail, isLoading: isLoadingProviderDetail } = useQuery(
-    {
-      queryKey: keys.providers.with({
-        providerId: providerId || "",
-        profileId: effectiveProfile?.id || "",
-      }),
-      queryFn: () =>
-        api.post("/providers/detail", {
-          body: {
-            providerId: providerId || "",
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled: !!providerId && isEditMode && !!effectiveProfile?.id,
+  // Use server-provided data (no React Query needed when server data is provided)
+  const providerDetail = serverProviderDetail;
+  const isLoading = false; // No loading state when using server data
+
+  // Extract body types from server action types for type safety
+  type CreateProviderBody = CreateProviderIn extends { body: infer B }
+    ? B
+    : never;
+  type UpdateProviderBody = UpdateProviderIn extends { body: infer B }
+    ? B
+    : never;
+  type DecryptProviderKeyBody = DecryptProviderKeyIn extends { body: infer B }
+    ? B
+    : never;
+
+  // Use server actions directly (no mutations needed)
+  const handleCreateProvider = async (body: CreateProviderBody) => {
+    if (!createProviderAction) {
+      throw new Error("createProviderAction is required");
     }
-  );
+    await createProviderAction({ body });
+  };
 
-  const isLoading = isLoadingProviderDetail;
+  const handleUpdateProvider = async (body: UpdateProviderBody) => {
+    if (!updateProviderAction) {
+      throw new Error("updateProviderAction is required");
+    }
+    await updateProviderAction({ body });
+  };
 
-  // V3 API mutations
-  const createProviderMutation = useMutation({
-    mutationFn: (body: {
-      name: string;
-      description: string;
-      api_key: string;
-      base_url: string | null;
-    }) => api.post("/providers/create", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.providers.all });
-    },
-  });
-
-  const updateProviderMutation = useMutation({
-    mutationFn: (body: {
-      providerId: string;
-      name: string;
-      description: string;
-      api_key?: string;
-      base_url?: string | null;
-    }) => api.post("/providers/update", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.providers.all });
-    },
-  });
-
-  const decryptProviderKeyMutation = useMutation({
-    mutationFn: (body: { providerId: string; profileId: string }) =>
-      api.post("/providers/decrypt-key", { body }),
-  });
+  const handleDecryptProviderKey = async (body: DecryptProviderKeyBody) => {
+    if (!decryptProviderKeyAction) {
+      throw new Error("decryptProviderKeyAction is required");
+    }
+    return await decryptProviderKeyAction({ body });
+  };
 
   // Set breadcrumb context when provider data is loaded
   useEffect(() => {
@@ -195,14 +205,8 @@ export default function Provider({ providerId }: ProviderProps) {
 
     try {
       if (isEditMode && providerId && providerDetail) {
-        // For updates, we use the updateProvider mutation
-        const updateBody: {
-          providerId: string;
-          name: string;
-          description: string;
-          api_key?: string;
-          base_url?: string | null;
-        } = {
+        // For updates, we use the server action
+        const updateBody: UpdateProviderBody = {
           providerId: providerId,
           name: formData.name!,
           description: formData.description!,
@@ -215,13 +219,13 @@ export default function Provider({ providerId }: ProviderProps) {
         ) {
           updateBody.api_key = formData.apiKey;
         }
-        await updateProviderMutation.mutateAsync(updateBody);
+        await handleUpdateProvider(updateBody);
         resetFormAndState();
         toast.success("Provider updated successfully!");
         router.push(`/system/providers`);
       } else {
-        // For creates
-        await createProviderMutation.mutateAsync({
+        // For creates, we use the server action
+        await handleCreateProvider({
           name: formData.name!,
           description: formData.description!,
           api_key: formData.apiKey!,
@@ -240,13 +244,13 @@ export default function Provider({ providerId }: ProviderProps) {
   };
 
   const handleToggleApiKey = async () => {
-    if (!providerDetail || !effectiveProfile) return;
+    if (!providerDetail || !effectiveProfile || !providerId) return;
 
     if (!showApiKey) {
       setIsDecrypting(true);
       try {
-        const result = await decryptProviderKeyMutation.mutateAsync({
-          providerId: providerId || "",
+        const result = await handleDecryptProviderKey({
+          providerId: providerId,
           profileId: effectiveProfile.id,
         });
         if (result && typeof result === "object" && "api_key" in result) {
@@ -434,17 +438,10 @@ export default function Provider({ providerId }: ProviderProps) {
           </Button>
           <Button
             type="submit"
-            disabled={
-              isSubmitting ||
-              isLoading ||
-              createProviderMutation.isPending ||
-              updateProviderMutation.isPending
-            }
+            disabled={isSubmitting || isLoading}
             className="min-w-[120px]"
           >
-            {isSubmitting ||
-            createProviderMutation.isPending ||
-            updateProviderMutation.isPending ? (
+            {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                 {isEditMode ? "Updating..." : "Creating..."}
