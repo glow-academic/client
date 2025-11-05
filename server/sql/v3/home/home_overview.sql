@@ -19,13 +19,13 @@ WITH
 profile_role_lookup AS (
     SELECT 
         CASE 
-            WHEN $3 IS NULL THEN 'instructional'
-            WHEN (SELECT role FROM profiles WHERE id = $3) = 'ta' THEN 'ta'
+            WHEN $3::uuid IS NULL THEN 'instructional'
+            WHEN (SELECT role FROM profiles WHERE id = $3::uuid) = 'ta' THEN 'ta'
             ELSE 'instructional'
         END AS mode,
         CASE
-            WHEN $3 IS NULL THEN false
-            ELSE COALESCE((SELECT role = 'ta' FROM profiles WHERE id = $3), false)
+            WHEN $3::uuid IS NULL THEN false
+            ELSE COALESCE((SELECT role = 'ta' FROM profiles WHERE id = $3::uuid), false)
         END AS is_ta_mode
 ),
 -- Filter analytics for items: for TA mode include profileId filter
@@ -34,7 +34,7 @@ filt AS (
     SELECT a.* 
     FROM analytics a, profile_role_lookup prl
     WHERE {WHERE_CLAUSE_PLACEHOLDER}
-      AND (NOT prl.is_ta_mode OR a.profile_id = $3)
+      AND (NOT prl.is_ta_mode OR a.profile_id = $3::uuid)
 ),
 -- Get cohort-simulation pairs (includes empty cohorts)
 cohort_sim AS (
@@ -160,7 +160,7 @@ ta_primary_cohort AS (
     FROM cohorts c
     JOIN cohort_simulations cs ON cs.cohort_id = c.id
     JOIN cohort_profiles cp ON cp.cohort_id = c.id
-        AND cp.profile_id = $3
+        AND cp.profile_id = $3::uuid
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     WHERE (cardinality($4::uuid[]) = 0 OR c.id = ANY($4::uuid[]))
     GROUP BY c.id, c.title, cs.simulation_id
@@ -184,7 +184,7 @@ ta_rows AS (
             'highestScore', (
                 SELECT ROUND(GREATEST(0, LEAST(100, uss.avg_pct_over_expected)))::int
                 FROM user_sim_status uss
-                WHERE uss.profile_id = $3
+                WHERE uss.profile_id = $3::uuid
                   AND uss.simulation_id = s.simulation_id
             ),
             'rubric_id', s.rubric_id::text,
@@ -193,7 +193,7 @@ ta_rows AS (
             'hasPassed', (
                 SELECT COALESCE(uss.passed, false)
                 FROM user_sim_status uss
-                WHERE uss.profile_id = $3
+                WHERE uss.profile_id = $3::uuid
                   AND uss.simulation_id = s.simulation_id
             ),
             'passRate', CASE WHEN s.rubric_points > 0
@@ -206,13 +206,13 @@ ta_rows AS (
                           ELSE 'not-started'
                         END
                 FROM user_sim_status uss
-                WHERE uss.profile_id = $3
+                WHERE uss.profile_id = $3::uuid
                   AND uss.simulation_id = s.simulation_id
             ), 'not-started'),
             'completionPct', COALESCE((
                 SELECT ROUND(GREATEST(0, LEAST(100, uss.avg_pct_over_expected)))::int
                 FROM user_sim_status uss
-                WHERE uss.profile_id = $3
+                WHERE uss.profile_id = $3::uuid
                   AND uss.simulation_id = s.simulation_id
             ), 0),
             'passedCount', NULL,
@@ -238,7 +238,7 @@ ta_rows AS (
                     SELECT ARRAY_AGG(DISTINCT c.cohort_title ORDER BY c.cohort_title) AS titles
                     FROM cohort_membership c
                     WHERE c.simulation_id = s.simulation_id
-                      AND c.profile_id = $3
+                      AND c.profile_id = $3::uuid
                 ) x
             ),
             'orderIndex', (

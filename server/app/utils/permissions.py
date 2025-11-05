@@ -5,13 +5,18 @@ Extracted from app.services.permissions_service to remove v2 dependencies.
 
 from typing import Literal
 
+from app.schemas.permissions import ROUTE_PERMISSIONS
+
 # Profile role type (matches database enum)
 ProfileRole = Literal["guest", "ta", "instructional", "admin", "superadmin"]
 
 
 def get_available_subsections_for_role(role: ProfileRole) -> list[str]:
     """
-    Get all available subsections for a role.
+    Get all available subsections for a role (including individual route sections).
+    
+    This extracts subsections from ROUTE_PERMISSIONS, matching the behavior
+    of PermissionsService.get_available_subsections_for_role in v2.
 
     Args:
         role: User role
@@ -19,14 +24,23 @@ def get_available_subsections_for_role(role: ProfileRole) -> list[str]:
     Returns:
         List of subsection identifiers available to the role
     """
-    role_map = {
-        "superadmin": ["home", "analytics", "practice", "management", "system", "create"],
-        "admin": ["home", "analytics", "practice", "management", "system", "create"],
-        "instructional": ["home", "practice", "analytics", "management", "create"],
-        "ta": ["home", "practice"],
-        "guest": ["practice"],
-    }
-    return role_map.get(role, [])
+    subsections = set()
+
+    for section in ROUTE_PERMISSIONS:
+        if role in section.roles:
+            # Add the main section
+            subsections.add(section.section)
+
+            # Add all subsections from routes
+            for route in section.routes:
+                # Extract subsection from route path
+                path_parts = [p for p in route.path.split("/") if p]
+                if len(path_parts) >= 2:
+                    # For paths like "/analytics/dashboard", add "dashboard"
+                    # For paths like "/create/personas", add "personas"
+                    subsections.add(path_parts[1])
+
+    return sorted(list(subsections))
 
 
 def get_redirect_path_for_role(role: ProfileRole) -> str:

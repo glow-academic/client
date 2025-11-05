@@ -12,12 +12,7 @@ import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import {
-  useIsFetching,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { refreshAnalytics } from "@/lib/server/analytics-actions";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -56,32 +51,8 @@ export function AnalyticsFilters({
   const { cohorts, cohortMemberCounts, departments } = useProfile();
   const getCohortMemberCount = (cohortId: string) =>
     cohortMemberCounts[cohortId] ?? 0;
-  const queryClient = useQueryClient();
 
-  // V3 API: Refresh analytics mutation
-  const refreshAnalyticsMutation = useMutation({
-    mutationFn: () => api.post("/analytics/refresh", { body: {} }),
-    onSuccess: () => {
-      // Invalidate all analytics queries
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey?.[0];
-          return typeof key === "string" && key.startsWith("analytics:");
-        },
-      });
-    },
-  });
-
-  const refreshAnalytics = refreshAnalyticsMutation.mutate;
-  const isRefreshing = refreshAnalyticsMutation.isPending;
-
-  // Count all in-flight analytics queries (after invalidation)
-  const isFetchingAnalytics = useIsFetching({
-    predicate: (q) => {
-      const k = q.queryKey?.[0];
-      return typeof k === "string" && k.startsWith("analytics:");
-    },
-  });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Stable spinner that respects pending mutation, in-flight queries, and a min duration
   const [spinning, setSpinning] = useState(false);
@@ -94,25 +65,27 @@ export function AnalyticsFilters({
   const SETTLE_DELAY_MS = 150; // brief cushion after last fetch
 
   // Start immediately on click to avoid a 1-frame delay
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     if (!spinning) {
       setSpinning(true);
       spinStartRef.current = performance.now();
     }
 
-    refreshAnalytics(undefined, {
-      onError: () => {
-        toast.error("Failed to refresh analytics data");
-      },
-    });
+    setIsRefreshing(true);
+    try {
+      await refreshAnalytics({ body: {} });
+      // Note: Analytics pages using server actions will revalidate automatically
+      // via Next.js cache revalidation, so no manual query invalidation needed
+    } catch {
+      toast.error("Failed to refresh analytics data");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
-  // Keep spinning while either the mutation is pending OR analytics queries are fetching.
-  // When both are done, ensure we've spun for at least MIN_SPIN_MS, then stop with a small settle delay.
+  // Keep spinning while refreshing, then ensure minimum spin duration
   useEffect(() => {
-    const active = isRefreshing || isFetchingAnalytics > 0;
-
-    if (active) {
+    if (isRefreshing) {
       if (!spinning) {
         setSpinning(true);
         spinStartRef.current = performance.now();
@@ -150,7 +123,7 @@ export function AnalyticsFilters({
     }
 
     return undefined;
-  }, [isRefreshing, isFetchingAnalytics, spinning]);
+  }, [isRefreshing, spinning]);
 
   // Local UI state to distinguish between "empty (all)" and "specific selections"
   const [practiceSelected, setPracticeSelected] = useState<SimulationFilter[]>(

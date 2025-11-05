@@ -5,8 +5,11 @@
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { OutputOf } from "@/lib/api/types";
+import {
+  getAssistantChatFull,
+  getAssistantChatList,
+} from "@/lib/server/assistant-actions";
 import {
   createContext,
   useCallback,
@@ -19,26 +22,9 @@ import {
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
 
-/** ---- Server Actions (defined directly in file) ---- */
-type AssistantChatListIn = InputOf<"/api/v3/assistant/chats/list", "post">;
+/** ---- Server Actions Types ---- */
 type AssistantChatListOut = OutputOf<"/api/v3/assistant/chats/list", "post">;
-
-type AssistantChatFullIn = InputOf<"/api/v3/assistant/chats/full", "post">;
 type AssistantChatFullOut = OutputOf<"/api/v3/assistant/chats/full", "post">;
-
-async function getAssistantChatList(
-  input: AssistantChatListIn
-): Promise<AssistantChatListOut> {
-  "use server";
-  return api.post("/assistant/chats/list", input);
-}
-
-async function getAssistantChatFull(
-  input: AssistantChatFullIn
-): Promise<AssistantChatFullOut> {
-  "use server";
-  return api.post("/assistant/chats/full", input);
-}
 
 type ChatUIState = "closed" | "open" | "minimized" | "widget" | "expanded";
 

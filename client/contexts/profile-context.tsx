@@ -89,7 +89,7 @@ interface ProfileContextType {
   redirectPath: string;
 }
 
-const ProfileContext = createContext<ProfileContextType | null>(null);
+export const ProfileContext = createContext<ProfileContextType | null>(null);
 
 export const useProfile = () => {
   const context = useContext(ProfileContext);

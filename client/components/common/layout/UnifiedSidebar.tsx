@@ -43,9 +43,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
+import { authorizeEmulation } from "@/lib/server/profile-actions";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
-import { useMutation } from "@tanstack/react-query";
 import {
   Brain,
   ChartBar,
@@ -208,17 +207,6 @@ export function UnifiedSidebar({
     availableSections,
   } = useProfile();
   const { update } = useSession();
-
-  // V3 API: Authorize emulation mutation
-  const authorizeMutation = useMutation({
-    mutationFn: (request: {
-      requesterProfileId: string;
-      targetProfileId: string;
-    }) =>
-      api.post("/profile/authorize-emulation", {
-        body: request,
-      }),
-  });
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts || !effectiveProfile) return [];
@@ -553,11 +541,13 @@ export function UnifiedSidebar({
           emulationTTL: null,
         });
       } else {
-        // 1) server permission check using TanStack Query mutation
+        // 1) server permission check using server action
         // Note: BFF route derives requesterProfileId from session for security
-        const result = await authorizeMutation.mutateAsync({
-          requesterProfileId: activeProfile!.id, // Sent but overridden by server
-          targetProfileId: profileId,
+        const result = await authorizeEmulation({
+          body: {
+            requesterProfileId: activeProfile!.id, // Sent but overridden by server
+            targetProfileId: profileId,
+          },
         });
 
         if (!result.allowed) {
@@ -1007,9 +997,11 @@ export function UnifiedSidebar({
                 try {
                   // Use the same authorization flow as profile switching
                   // Note: BFF route derives requesterProfileId from session for security
-                  const result = await authorizeMutation.mutateAsync({
-                    requesterProfileId: activeProfile!.id, // Sent but overridden by server
-                    targetProfileId: effectiveProfile.id,
+                  const result = await authorizeEmulation({
+                    body: {
+                      requesterProfileId: activeProfile!.id, // Sent but overridden by server
+                      targetProfileId: effectiveProfile.id,
+                    },
                   });
 
                   if (!result.allowed) {

@@ -23,12 +23,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ProfileContext } from "@/contexts/profile-context";
+import { createFeedback } from "@/lib/server/feedback-actions";
 import { MessageSquare } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface FormData {
@@ -56,17 +54,10 @@ export default function ReportProblem({
 }: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const queryClient = useQueryClient();
-  const { activeProfile } = useProfile();
-
-  // V3 API - create feedback mutation
-  const createAppFeedbackMutation = useMutation({
-    mutationFn: (body: { type: string; message: string; profileId: string }) =>
-      api.post("/feedback/create", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.feedback.all });
-    },
-  });
+  // Handle missing ProfileProvider gracefully (e.g., in not-found page)
+  const profileContext = useContext(ProfileContext);
+  const activeProfile = profileContext?.activeProfile ?? null;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     type: initialType || "",
@@ -149,16 +140,30 @@ export default function ReportProblem({
       return;
     }
 
-    const feedbackData = {
-      type: formData.type as "feature" | "bug" | "question" | "other",
-      message: formData.message,
-      profileId: activeProfile?.id || "",
-    };
+    setIsSubmitting(true);
+    try {
+      const result = await createFeedback({
+        body: {
+          type: formData.type as "feature" | "bug" | "question" | "other",
+          message: formData.message,
+          profileId: activeProfile?.id || "",
+        },
+      });
 
-    createAppFeedbackMutation.mutate(feedbackData, {
-      onSuccess: handleSuccess,
-      onError: handleError,
-    });
+      if (result.success) {
+        await handleSuccess();
+      } else {
+        await handleError(
+          new Error(result.message || "Failed to submit feedback")
+        );
+      }
+    } catch (error) {
+      await handleError(
+        error instanceof Error ? error : new Error("Failed to submit feedback")
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDialogClose = (open: boolean) => {
@@ -231,7 +236,7 @@ export default function ReportProblem({
               onChange={(e) => handleInputChange("message", e.target.value)}
               placeholder="Please describe your issue, feature request, or question..."
               className={`min-h-[100px] ${errors.message ? "border-red-500" : ""}`}
-              disabled={createAppFeedbackMutation.isPending}
+              disabled={isSubmitting}
             />
             {errors.message && (
               <p className="text-sm text-red-500">{errors.message}</p>
@@ -243,15 +248,12 @@ export default function ReportProblem({
               type="button"
               variant="outline"
               onClick={() => setIsOpen(false)}
-              disabled={createAppFeedbackMutation.isPending}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={createAppFeedbackMutation.isPending}
-            >
-              {createAppFeedbackMutation.isPending ? "Submitting..." : "Submit"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit"}
             </Button>
           </div>
         </form>

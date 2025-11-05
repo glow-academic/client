@@ -37,9 +37,7 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { bulkArchiveAttempts } from "@/lib/server/attempts-actions";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
@@ -101,16 +99,6 @@ export function DataTable<TData, TValue>({
     null
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
-  const queryClient = useQueryClient();
-  const bulkArchiveMutation = useMutation({
-    mutationFn: (request: { attemptIds: string[]; archived: boolean }) =>
-      api.post("/attempts/bulk-archive", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.attempts.all });
-      // Refresh analytics - this would need to be imported if available
-      // refreshAnalytics();
-    },
-  });
   // Helper functions to normalize id and archived fields
   const getRowId = (item: unknown) => {
     const obj = item as Record<string, unknown>;
@@ -251,9 +239,11 @@ export function DataTable<TData, TValue>({
 
     setIsArchiving(true);
     try {
-      await bulkArchiveMutation.mutateAsync({
-        attemptIds: attemptsToUpdate,
-        archived: archiveAction,
+      await bulkArchiveAttempts({
+        body: {
+          attemptIds: attemptsToUpdate,
+          archived: archiveAction,
+        },
       });
 
       toast.success(
@@ -269,7 +259,7 @@ export function DataTable<TData, TValue>({
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveAction, table, bulkArchiveMutation]);
+  }, [archiveAction, table]);
 
   return (
     <div className="space-y-4">

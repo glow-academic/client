@@ -1,16 +1,22 @@
 "use client";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
-import { useProfile } from "@/contexts/profile-context";
+import { ProfileContext } from "@/contexts/profile-context";
 import { Bug } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useContext } from "react";
 
 export default function NotFound() {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+
+  // Try to get profile context, but handle gracefully if not available
+  // (not-found.tsx can render outside the layout hierarchy)
+  // useContext returns null if context is not provided, which is safe
+  const profileContext = useContext(ProfileContext);
+  const effectiveProfile = profileContext?.effectiveProfile ?? null;
 
   const handleBackToGlow = () => {
-    // Navigate based on effective role
+    // Navigate based on effective role, default to /home if context unavailable
     if (effectiveProfile?.role !== "ta" && effectiveProfile?.role !== "guest") {
       router.push("/analytics");
     } else {
