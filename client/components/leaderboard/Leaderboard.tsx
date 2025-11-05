@@ -6,7 +6,6 @@
  */
 "use client";
 
-import type { LeaderboardOut } from "@/app/(main)/cohorts/c/[cohortId]/page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -66,14 +65,9 @@ const getInitials = (firstName: string, lastName: string): string => {
 
 export interface LeaderboardProps {
   cohortId?: string;
-  // Server-provided data (for server-side rendering)
-  initialLeaderboardData?: LeaderboardOut;
 }
 
-export default function Leaderboard({
-  cohortId,
-  initialLeaderboardData,
-}: LeaderboardProps) {
+export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const {
     effectiveProfile,
     isLoading: isProfileLoading,
@@ -112,7 +106,7 @@ export default function Leaderboard({
   );
 
   // Load the leaderboard data
-  // If initial data is provided, use it to avoid loading state, but still refetch when filters change
+  // SSR hydration will provide initial data via HydrationBoundary
   const {
     data: leaderboardResponse,
     isLoading,
@@ -120,20 +114,15 @@ export default function Leaderboard({
   } = useQuery({
     queryKey: keys.leaderboard.with(filters),
     queryFn: () => api.post("/leaderboard", { body: filters }),
-    // Use server-provided initial data if available (prevents loading state on mount)
-    initialData: initialLeaderboardData,
   });
 
-  // Use the data directly from the API, prioritizing fresh query data over initial server data
+  // Use the data directly from the API (SSR data will be hydrated via React Query)
   const hydratedRows = useMemo(() => {
-    // Prefer fresh query data, fall back to initial server data
-    const data =
-      leaderboardResponse?.data || initialLeaderboardData?.data || [];
-    return data;
-  }, [leaderboardResponse?.data, initialLeaderboardData?.data]);
+    return leaderboardResponse?.data || [];
+  }, [leaderboardResponse?.data]);
 
-  // No loading state if we have initial server data (SSR)
-  const isLoadingData = initialLeaderboardData ? false : isLoading;
+  // Loading state - will be false if data was hydrated from SSR
+  const isLoadingData = isLoading;
 
   // Two-page carousel state
   const [page, setPage] = useState(0);

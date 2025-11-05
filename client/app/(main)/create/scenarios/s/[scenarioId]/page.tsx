@@ -28,19 +28,10 @@ type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v3/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v3/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v3/scenarios/update", "post">;
-type GenerateAIScenarioIn = InputOf<
-  "/api/v3/scenarios/generate-ai",
-  "post"
->;
-type GenerateAIScenarioOut = OutputOf<
-  "/api/v3/scenarios/generate-ai",
-  "post"
->;
+type GenerateAIScenarioIn = InputOf<"/api/v3/scenarios/generate-ai", "post">;
+type GenerateAIScenarioOut = OutputOf<"/api/v3/scenarios/generate-ai", "post">;
 type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
-type RandomizeScenarioOut = OutputOf<
-  "/api/v3/scenarios/randomize",
-  "post"
->;
+type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getScenario = cache(
@@ -50,9 +41,7 @@ const getScenario = cache(
 );
 
 const getScenarioDefault = cache(
-  async (
-    input: ScenarioDetailDefaultIn
-  ): Promise<ScenarioDetailDefaultOut> => {
+  async (input: ScenarioDetailDefaultIn): Promise<ScenarioDetailDefaultOut> => {
     return api.post("/scenarios/detail-default", input);
   }
 );
@@ -149,16 +138,16 @@ export default async function EditScenarioPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  ScenarioDetailIn,
-  ScenarioDetailOut,
-  ScenarioDetailDefaultIn,
-  ScenarioDetailDefaultOut,
   CreateScenarioIn,
   CreateScenarioOut,
-  UpdateScenarioIn,
-  UpdateScenarioOut,
   GenerateAIScenarioIn,
   GenerateAIScenarioOut,
   RandomizeScenarioIn,
   RandomizeScenarioOut,
+  ScenarioDetailDefaultIn,
+  ScenarioDetailDefaultOut,
+  ScenarioDetailIn,
+  ScenarioDetailOut,
+  UpdateScenarioIn,
+  UpdateScenarioOut,
 };

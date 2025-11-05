@@ -27,6 +27,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import type {
+  CohortDetailDefaultOut,
+  CohortDetailOut,
+  CreateCohortIn,
+  CreateCohortOut,
+  UpdateCohortIn,
+  UpdateCohortOut,
+} from "@/app/(main)/cohorts/e/[cohortId]/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
 import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
@@ -34,20 +42,11 @@ import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import type { components } from "@/lib/api-types";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type {
-  CohortDetailOut,
-  CohortDetailDefaultOut,
-  CreateCohortIn,
-  CreateCohortOut,
-  UpdateCohortIn,
-  UpdateCohortOut,
-} from "@/app/(main)/cohorts/e/[cohortId]/page";
 
 type ProfileListItem = {
   profile_id: string;
@@ -182,7 +181,8 @@ export default function Cohort({
           profileId: effectiveProfile?.id || "",
         },
       }),
-    enabled: !!cohortId && isEditMode && !!effectiveProfile?.id && !serverCohortDetail,
+    enabled:
+      !!cohortId && isEditMode && !!effectiveProfile?.id && !serverCohortDetail,
   });
 
   // V3 API - fetch default cohort detail when creating (fallback only if server data not provided)
@@ -198,18 +198,24 @@ export default function Cohort({
             profileId: effectiveProfile?.id || "",
           },
         }),
-      enabled: !isEditMode && !!effectiveProfile?.id && !serverCohortDetailDefault,
+      enabled:
+        !isEditMode && !!effectiveProfile?.id && !serverCohortDetailDefault,
     });
 
   // Use server data if available, otherwise fall back to client data
   const cohortDetail = serverCohortDetail ?? clientCohortDetail;
-  const cohortDetailDefault = serverCohortDetailDefault ?? clientCohortDetailDefault;
-  
+  const cohortDetailDefault =
+    serverCohortDetailDefault ?? clientCohortDetailDefault;
+
   // Use edit detail when editing, default detail when creating
   const cohortData = isEditMode ? cohortDetail : cohortDetailDefault;
   const isLoadingData = isEditMode
-    ? (serverCohortDetail ? false : isLoadingCohortDetail)
-    : (serverCohortDetailDefault ? false : isLoadingCohortDefault);
+    ? serverCohortDetail
+      ? false
+      : isLoadingCohortDetail
+    : serverCohortDetailDefault
+      ? false
+      : isLoadingCohortDefault;
 
   // Set breadcrumb context when cohort data is loaded
   useEffect(() => {

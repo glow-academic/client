@@ -16,10 +16,7 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type CohortDetailIn = InputOf<"/api/v3/cohorts/detail", "post">;
 type CohortDetailOut = OutputOf<"/api/v3/cohorts/detail", "post">;
-type CohortDetailDefaultIn = InputOf<
-  "/api/v3/cohorts/detail-default",
-  "post"
->;
+type CohortDetailDefaultIn = InputOf<"/api/v3/cohorts/detail-default", "post">;
 type CohortDetailDefaultOut = OutputOf<
   "/api/v3/cohorts/detail-default",
   "post"
@@ -37,9 +34,7 @@ const getCohort = cache(
 );
 
 const getCohortDefault = cache(
-  async (
-    input: CohortDetailDefaultIn
-  ): Promise<CohortDetailDefaultOut> => {
+  async (input: CohortDetailDefaultIn): Promise<CohortDetailDefaultOut> => {
     return api.post("/cohorts/detail-default", input);
   }
 );
@@ -113,10 +108,10 @@ export default async function CohortEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CohortDetailIn,
-  CohortDetailOut,
   CohortDetailDefaultIn,
   CohortDetailDefaultOut,
+  CohortDetailIn,
+  CohortDetailOut,
   CreateCohortIn,
   CreateCohortOut,
   UpdateCohortIn,

@@ -157,7 +157,14 @@ const useStaffEditBusinessLogic = (
         setIsSubmitting(false);
       }
     },
-    [profileId, router, redirectOnSuccess, onDone, handleUpdateStaff, effectiveProfile]
+    [
+      profileId,
+      router,
+      redirectOnSuccess,
+      onDone,
+      handleUpdateStaff,
+      effectiveProfile,
+    ]
   );
 
   const handleDelete = useCallback(async () => {

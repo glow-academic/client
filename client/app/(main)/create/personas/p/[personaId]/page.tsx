@@ -112,12 +112,12 @@ export default async function PersonaEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  PersonaDetailIn,
-  PersonaDetailOut,
-  PersonaDetailDefaultIn,
-  PersonaDetailDefaultOut,
   CreatePersonaIn,
   CreatePersonaOut,
+  PersonaDetailDefaultIn,
+  PersonaDetailDefaultOut,
+  PersonaDetailIn,
+  PersonaDetailOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
 };

@@ -60,15 +60,16 @@ import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 // import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
-import { cn } from "@/lib/utils";
 import type {
-  PersonaDetailOut,
-  PersonaDetailDefaultOut,
   CreatePersonaIn,
   CreatePersonaOut,
+  PersonaDetailDefaultOut,
+  PersonaDetailOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
 } from "@/app/(main)/create/personas/p/[personaId]/page";
+import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
+import { cn } from "@/lib/utils";
 import {
   getPersonaIconComponent,
   PERSONA_ICON_MAP,
@@ -82,7 +83,6 @@ import {
   Power,
   Trash2,
 } from "lucide-react";
-import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
 
 interface FormData {
@@ -106,12 +106,8 @@ export interface PersonaProps {
   personaDetail?: PersonaDetailOut;
   personaDetailDefault?: PersonaDetailDefaultOut;
   // Server actions (replaces useMutation)
-  createPersonaAction?: (
-    input: CreatePersonaIn
-  ) => Promise<CreatePersonaOut>;
-  updatePersonaAction?: (
-    input: UpdatePersonaIn
-  ) => Promise<UpdatePersonaOut>;
+  createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
+  updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
 }
 
 export default function Persona({
@@ -182,24 +178,30 @@ export default function Persona({
           },
         }),
       enabled:
-        !!personaId && isEditMode && !!effectiveProfile?.id && !serverPersonaDetail,
+        !!personaId &&
+        isEditMode &&
+        !!effectiveProfile?.id &&
+        !serverPersonaDetail,
     });
 
   // V3 API - fetch default persona detail when creating (fallback only if server data not provided)
-  const { data: clientPersonaDetailDefault, isLoading: isLoadingPersonaDefault } =
-    useQuery({
-      queryKey: keys.personas.with({
-        profileId: effectiveProfile?.id || "",
-        default: true,
+  const {
+    data: clientPersonaDetailDefault,
+    isLoading: isLoadingPersonaDefault,
+  } = useQuery({
+    queryKey: keys.personas.with({
+      profileId: effectiveProfile?.id || "",
+      default: true,
+    }),
+    queryFn: () =>
+      api.post("/personas/detail-default", {
+        body: {
+          profileId: effectiveProfile?.id || "",
+        },
       }),
-      queryFn: () =>
-        api.post("/personas/detail-default", {
-          body: {
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled: !isEditMode && !!effectiveProfile?.id && !serverPersonaDetailDefault,
-    });
+    enabled:
+      !isEditMode && !!effectiveProfile?.id && !serverPersonaDetailDefault,
+  });
 
   // Use server data if available, otherwise fall back to client data
   const personaDetail = serverPersonaDetail ?? clientPersonaDetail;
@@ -209,12 +211,20 @@ export default function Persona({
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
   const isLoadingData = isEditMode
-    ? (serverPersonaDetail ? false : isLoadingPersonaDetail)
-    : (serverPersonaDetailDefault ? false : isLoadingPersonaDefault);
+    ? serverPersonaDetail
+      ? false
+      : isLoadingPersonaDetail
+    : serverPersonaDetailDefault
+      ? false
+      : isLoadingPersonaDefault;
 
   // Extract body types for type safety
-  type CreatePersonaBody = CreatePersonaIn extends { body: infer B } ? B : never;
-  type UpdatePersonaBody = UpdatePersonaIn extends { body: infer B } ? B : never;
+  type CreatePersonaBody = CreatePersonaIn extends { body: infer B }
+    ? B
+    : never;
+  type UpdatePersonaBody = UpdatePersonaIn extends { body: infer B }
+    ? B
+    : never;
 
   // Server action handlers
   const handleCreatePersona = async (body: CreatePersonaBody) => {
