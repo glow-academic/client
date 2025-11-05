@@ -8,11 +8,21 @@
 import { auth } from "@/auth";
 import Leaderboard from "@/components/leaderboard/Leaderboard";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getDefaultAnalyticsFilters } from "@/lib/server/analytics-filters";
-import { getQueryClient } from "@/utils/queryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
+import { cache } from "react";
+
+/** ---- Strong types from OpenAPI ---- */
+type LeaderboardIn = InputOf<"/api/v3/leaderboard", "post">;
+type LeaderboardOut = OutputOf<"/api/v3/leaderboard", "post">;
+
+/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
+const getLeaderboard = cache(
+  async (input: LeaderboardIn): Promise<LeaderboardOut> => {
+    return api.post("/leaderboard", input);
+  }
+);
 
 /** ---- Metadata ---- */
 export async function generateMetadata(
@@ -39,32 +49,48 @@ export async function generateMetadata(
   }
 }
 
-/** ---- Server page with SSR hydration ---- */
+/** ---- Server page with SSR ---- */
+interface CohortDashboardPageProps {
+  params: Promise<{ cohortId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
 export default async function CohortDashboardPage({
   params,
-}: {
-  params: Promise<{ cohortId: string }>;
-}) {
+  searchParams,
+}: CohortDashboardPageProps) {
   const { cohortId } = await params;
 
-  // Get default filters matching analytics context, then override cohortIds
-  const defaultFilters = await getDefaultAnalyticsFilters();
+  // Parse search params
+  const paramsObj = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(paramsObj).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
+
+  // Get filters from search params or defaults, then override cohortIds with the cohortId from URL
+  const defaultFilters = await getDefaultAnalyticsFilters(
+    searchParamsObj.toString() ? searchParamsObj : undefined
+  );
   const filters = { ...defaultFilters, cohortIds: [cohortId] };
 
-  const queryClient = getQueryClient();
-
-  // Prefetch leaderboard with same queryKey that client will use
-  await queryClient.prefetchQuery({
-    queryKey: keys.leaderboard.with(filters),
-    queryFn: () => api.post("/leaderboard", { body: filters }),
-    staleTime: 30_000, // Prevent instant refetch
+  // Fetch leaderboard data server-side
+  const leaderboardData = await getLeaderboard({
+    body: filters,
   });
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-6">
-        <Leaderboard cohortId={cohortId} />
-      </div>
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <Leaderboard cohortId={cohortId} leaderboardData={leaderboardData} />
+    </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type { LeaderboardIn, LeaderboardOut };

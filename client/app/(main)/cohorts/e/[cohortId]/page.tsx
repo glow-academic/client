@@ -26,6 +26,8 @@ type CohortDetailIn = InputOf<"/api/v3/cohorts/detail", "post">;
 type CohortDetailOut = OutputOf<"/api/v3/cohorts/detail", "post">;
 type UpdateCohortIn = InputOf<"/api/v3/cohorts/update", "post">;
 type UpdateCohortOut = OutputOf<"/api/v3/cohorts/update", "post">;
+/** ---- Derived types from server responses ---- */
+type CohortStaffItem = CohortDetailOut["staff"][number];
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getCohort = cache(
@@ -114,9 +116,6 @@ export default async function CohortEditPage({
     </div>
   );
 }
-
-/** ---- Derived types from server responses ---- */
-export type CohortStaffItem = CohortDetailOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {

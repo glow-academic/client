@@ -24,6 +24,10 @@ type UpdateDocumentIn = InputOf<"/api/v3/documents/update", "post">;
 type UpdateDocumentOut = OutputOf<"/api/v3/documents/update", "post">;
 type BulkUpdateDocumentsIn = InputOf<"/api/v3/documents/bulk-update", "post">;
 type BulkUpdateDocumentsOut = OutputOf<"/api/v3/documents/bulk-update", "post">;
+type DocumentDetailIn = InputOf<"/api/v3/documents/detail", "post">;
+type DocumentDetailOut = OutputOf<"/api/v3/documents/detail", "post">;
+type DocumentDetailBulkIn = InputOf<"/api/v3/documents/detail-bulk", "post">;
+type DocumentDetailBulkOut = OutputOf<"/api/v3/documents/detail-bulk", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getDocumentsList = cache(
@@ -69,6 +73,20 @@ export async function bulkUpdateDocuments(
   return out;
 }
 
+export async function getDocumentDetail(
+  input: DocumentDetailIn
+): Promise<DocumentDetailOut> {
+  "use server";
+  return api.post("/documents/detail", input);
+}
+
+export async function getDocumentDetailBulk(
+  input: DocumentDetailBulkIn
+): Promise<DocumentDetailBulkOut> {
+  "use server";
+  return api.post("/documents/detail-bulk", input);
+}
+
 export const metadata: Metadata = {
   title: "Documents",
   description: `Documents in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -91,6 +109,8 @@ export default async function DocumentsPage() {
         bulkDeleteDocumentsAction={bulkDeleteDocuments}
         updateDocumentAction={updateDocument}
         bulkUpdateDocumentsAction={bulkUpdateDocuments}
+        getDocumentDetailAction={getDocumentDetail}
+        getDocumentDetailBulkAction={getDocumentDetailBulk}
       />
     </div>
   );
@@ -104,6 +124,10 @@ export type {
   BulkUpdateDocumentsOut,
   DeleteDocumentIn,
   DeleteDocumentOut,
+  DocumentDetailBulkIn,
+  DocumentDetailBulkOut,
+  DocumentDetailIn,
+  DocumentDetailOut,
   DocumentsListIn,
   DocumentsListOut,
   UpdateDocumentIn,

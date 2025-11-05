@@ -8,55 +8,17 @@
 
 "use client";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
+import type { ReportsOut } from "@/app/(main)/analytics/reports/page";
 import { useMemo } from "react";
 import Reports from "./Reports";
 
-export default function ReportsPage() {
-  const {
-    startDate,
-    endDate,
-    effectiveCohortIds,
-    effectiveRoles,
-    effectiveSimulationFilters,
-  } = useAnalytics();
-  const { effectiveDepartmentIds } = useProfile();
+interface ReportsPageProps {
+  reportsData: ReportsOut;
+}
 
-  const filters = useMemo(
-    () => ({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: effectiveCohortIds,
-      roles: effectiveRoles,
-      simulationFilters: effectiveSimulationFilters,
-      departmentIds: effectiveDepartmentIds,
-    }),
-    [
-      startDate,
-      endDate,
-      effectiveCohortIds,
-      effectiveRoles,
-      effectiveSimulationFilters,
-      effectiveDepartmentIds,
-    ]
-  );
-
-  const rqOpts = useMemo(() => ({ enabled: true, staleTime: 60_000 }), []);
-
-  // Single hook call with all data and entity mappings!
-  const {
-    data: bundle,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: keys.reports.with(filters),
-    queryFn: () => api.post("/reports", { body: filters }),
-    ...rqOpts,
-  });
+export default function ReportsPage({ reportsData }: ReportsPageProps) {
+  // Use the data directly from props (fetched server-side)
+  const bundle = reportsData;
 
   // Transform bundle data to Reports component format
   const transformedData = useMemo(() => {
@@ -74,24 +36,41 @@ export default function ReportsPage() {
         value: (profile.metrics.averageScore.hover?.["mean"] as number) ?? 0,
         formattedValue: `${(profile.metrics.averageScore.hover?.["mean"] as number) ?? 0}%`,
         thresholds: { gray: 0, red: 60, yellow: 75, green: 85 },
-        hover: profile.metrics.averageScore.hover as { mean: number; median: number; mode: number },
+        hover: profile.metrics.averageScore.hover as {
+          mean: number;
+          median: number;
+          mode: number;
+        },
       },
       completionPercentage: {
-        value: (profile.metrics.completionPercentage.hover?.["percent"] as number) ?? 0,
+        value:
+          (profile.metrics.completionPercentage.hover?.["percent"] as number) ??
+          0,
         formattedValue: `${(profile.metrics.completionPercentage.hover?.["percent"] as number) ?? 0}%`,
         thresholds: { gray: 0, red: 60, yellow: 75, green: 85 },
-        hover: profile.metrics.completionPercentage.hover as { completed: number; total: number; percent: number },
+        hover: profile.metrics.completionPercentage.hover as {
+          completed: number;
+          total: number;
+          percent: number;
+        },
       },
       firstAttemptPassRate: {
-        value: (profile.metrics.firstAttemptPassRate.hover?.["percent"] as number) ?? 0,
+        value:
+          (profile.metrics.firstAttemptPassRate.hover?.["percent"] as number) ??
+          0,
         formattedValue: `${(profile.metrics.firstAttemptPassRate.hover?.["percent"] as number) ?? 0}%`,
         thresholds: { gray: 0, red: 60, yellow: 75, green: 85 },
-        hover: profile.metrics.firstAttemptPassRate.hover as { passed: number; total: number; percent: number },
+        hover: profile.metrics.firstAttemptPassRate.hover as {
+          passed: number;
+          total: number;
+          percent: number;
+        },
       },
       highestScore: {
         value:
-          (profile.metrics.highestScore.hover?.["top"] as number[])?.[0] as number | null ??
-          null,
+          ((profile.metrics.highestScore.hover?.["top"] as number[])?.[0] as
+            | number
+            | null) ?? null,
         formattedValue: (
           profile.metrics.highestScore.hover?.["top"] as number[]
         )?.[0]
@@ -101,40 +80,75 @@ export default function ReportsPage() {
         hover: profile.metrics.highestScore.hover as { top: number[] },
       },
       messagesPerSession: {
-        value: (profile.metrics.messagesPerSession.hover?.["mean"] as number) ?? 0,
+        value:
+          (profile.metrics.messagesPerSession.hover?.["mean"] as number) ?? 0,
         formattedValue: `${(profile.metrics.messagesPerSession.hover?.["mean"] as number) ?? 0}`,
         thresholds: { gray: 0, red: 5, yellow: 8, green: 12 },
-        hover: profile.metrics.messagesPerSession.hover as { mean: number; median: number; count: number },
+        hover: profile.metrics.messagesPerSession.hover as {
+          mean: number;
+          median: number;
+          count: number;
+        },
       },
       personaResponseTimes: {
-        value: (profile.metrics.personaResponseTimes.hover?.["meanSeconds"] as number) ?? 0,
+        value:
+          (profile.metrics.personaResponseTimes.hover?.[
+            "meanSeconds"
+          ] as number) ?? 0,
         formattedValue: `${(profile.metrics.personaResponseTimes.hover?.["meanSeconds"] as number) ?? 0}s`,
         thresholds: { gray: 0, red: 300, yellow: 180, green: 60 },
-        hover: profile.metrics.personaResponseTimes.hover as { meanSeconds: number; medianSeconds: number; samples: number },
+        hover: profile.metrics.personaResponseTimes.hover as {
+          meanSeconds: number;
+          medianSeconds: number;
+          samples: number;
+        },
       },
       sessionEfficiency: {
-        value: (profile.metrics.sessionEfficiency.hover?.["efficiency"] as number) ?? 0,
+        value:
+          (profile.metrics.sessionEfficiency.hover?.["efficiency"] as number) ??
+          0,
         formattedValue: `${(profile.metrics.sessionEfficiency.hover?.["efficiency"] as number) ?? 0}%`,
         thresholds: { gray: 0, red: 60, yellow: 75, green: 85 },
-        hover: profile.metrics.sessionEfficiency.hover as { avgScorePercent: number; avgMinutes: number; efficiency: number },
+        hover: profile.metrics.sessionEfficiency.hover as {
+          avgScorePercent: number;
+          avgMinutes: number;
+          efficiency: number;
+        },
       },
       stagnationRate: {
-        value: (profile.metrics.stagnationRate.hover?.["ratePercent"] as number) ?? 0,
+        value:
+          (profile.metrics.stagnationRate.hover?.["ratePercent"] as number) ??
+          0,
         formattedValue: `${(profile.metrics.stagnationRate.hover?.["ratePercent"] as number) ?? 0}%`,
         thresholds: { gray: 0, red: 25, yellow: 15, green: 5 },
-        hover: profile.metrics.stagnationRate.hover as { tracked: number; stagnant: number; ratePercent: number },
+        hover: profile.metrics.stagnationRate.hover as {
+          tracked: number;
+          stagnant: number;
+          ratePercent: number;
+        },
       },
       timeSpent: {
-        value: (profile.metrics.timeSpent.hover?.["avgSessionMinutes"] as number) ?? 0,
+        value:
+          (profile.metrics.timeSpent.hover?.["avgSessionMinutes"] as number) ??
+          0,
         formattedValue: `${(profile.metrics.timeSpent.hover?.["avgSessionMinutes"] as number) ?? 0}m`,
         thresholds: { gray: 0, red: 90, yellow: 60, green: 30 },
-        hover: profile.metrics.timeSpent.hover as { avgSessionMinutes: number; avgChatMinutes: number; avgOverallMinutes: number },
+        hover: profile.metrics.timeSpent.hover as {
+          avgSessionMinutes: number;
+          avgChatMinutes: number;
+          avgOverallMinutes: number;
+        },
       },
       totalAttempts: {
-        value: (profile.metrics.totalAttempts.hover?.["attempts"] as number) ?? 0,
+        value:
+          (profile.metrics.totalAttempts.hover?.["attempts"] as number) ?? 0,
         formattedValue: `${(profile.metrics.totalAttempts.hover?.["attempts"] as number) ?? 0}`,
         thresholds: { gray: 0, red: 3, yellow: 5, green: 8 },
-        hover: profile.metrics.totalAttempts.hover as { attempts: number; uniqueSims: number; meanPerSim: number },
+        hover: profile.metrics.totalAttempts.hover as {
+          attempts: number;
+          uniqueSims: number;
+          meanPerSim: number;
+        },
       },
     }));
   }, [bundle]);
@@ -144,8 +158,8 @@ export default function ReportsPage() {
       data={transformedData}
       scenarioMapping={bundle?.scenario_mapping ?? {}}
       simulationMapping={bundle?.simulation_mapping ?? {}}
-      isLoading={isLoading}
-      isError={isError}
+      isLoading={false}
+      isError={false}
     />
   );
 }

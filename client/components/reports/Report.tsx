@@ -6,14 +6,15 @@
  */
 "use client";
 
+import type {
+  DashboardOut,
+  ProfileDetailOut,
+} from "@/app/(main)/analytics/reports/p/[profileId]/page";
 import Dashboard from "@/components/dashboard/Dashboard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 // Helper function to get initials
 const getInitials = (firstName: string, lastName: string): string => {
@@ -50,33 +51,30 @@ const getRoleDisplayName = (role: string) => {
 
 export interface ReportProps {
   profileId: string;
+  profileData: ProfileDetailOut;
+  dashboardData: DashboardOut;
 }
 
-export default function Report({ profileId }: ReportProps) {
+export default function Report({
+  profileId,
+  profileData,
+  dashboardData,
+}: ReportProps) {
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
-  // V3 API: Fetch profile detail
-  const { data: profileData, isLoading: isLoadingProfile } = useQuery({
-    queryKey: keys.profile.with({ profileId }),
-    queryFn: () =>
-      api.post("/profile/staff/detail", {
-        body: {
-          profileId,
-          currentProfileId: profileId, // Use same ID for permissions
-        },
-      }),
-    enabled: !!profileId,
-  });
-
-  // V3 response structure: fields are directly on the response object
-  const profile = profileData
-    ? {
-        firstName: profileData.name?.split(" ")[0] || "",
-        lastName: profileData.name?.split(" ").slice(1).join(" ") || "",
-        alias: profileData.email?.split("@")[0] || "",
-        role: profileData.role || "",
-      }
-    : null;
+  // Use profile data from props (fetched server-side)
+  const profile = useMemo(
+    () =>
+      profileData
+        ? {
+            firstName: profileData.name?.split(" ")[0] || "",
+            lastName: profileData.name?.split(" ").slice(1).join(" ") || "",
+            alias: profileData.email?.split("@")[0] || "",
+            role: profileData.role || "",
+          }
+        : null,
+    [profileData]
+  );
 
   // Set breadcrumb context when profile data is loaded
   useEffect(() => {
@@ -91,14 +89,13 @@ export default function Report({ profileId }: ReportProps) {
     return () => clearEntityMetadata();
   }, [profile, profileId, setEntityMetadata, clearEntityMetadata]);
 
-  // Loading state
-  if (isLoadingProfile || !profile) {
+  // Data is always available from server-side fetch
+  if (!profile) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading report...</p>
+            <p className="text-muted-foreground">No profile data available</p>
           </div>
         </div>
       </div>
@@ -133,7 +130,7 @@ export default function Report({ profileId }: ReportProps) {
           </div>
         </div>
       </div>
-      <Dashboard profileId={profileId} />
+      <Dashboard profileId={profileId} dashboardData={dashboardData} />
     </div>
   );
 }

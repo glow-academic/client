@@ -6,35 +6,59 @@
  */
 import Pricing from "@/components/pricing/Pricing";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getDefaultAnalyticsFilters } from "@/lib/server/analytics-filters";
-import { getQueryClient } from "@/utils/queryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { cache } from "react";
+
+/** ---- Strong types from OpenAPI ---- */
+type PricingIn = InputOf<"/api/v3/pricing", "post">;
+type PricingOut = OutputOf<"/api/v3/pricing", "post">;
+
+/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
+const getPricing = cache(async (input: PricingIn): Promise<PricingOut> => {
+  return api.post("/pricing", input);
+});
 
 export const metadata: Metadata = {
   title: "Pricing",
   description: `Manage pricing for GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
-export default async function PricingPage() {
-  // Get default filters matching analytics context (includes earliestAttemptDate logic)
-  const filters = await getDefaultAnalyticsFilters();
+interface PricingPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-  const queryClient = getQueryClient();
+export default async function PricingPage({ searchParams }: PricingPageProps) {
+  // Parse search params
+  const params = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
 
-  // Prefetch pricing with same queryKey that client will use
-  await queryClient.prefetchQuery({
-    queryKey: keys.pricing.with(filters),
-    queryFn: () => api.post("/pricing", { body: filters }),
-    staleTime: 30_000, // Prevent instant refetch
+  // Get filters from search params or defaults
+  const filters = await getDefaultAnalyticsFilters(
+    searchParamsObj.toString() ? searchParamsObj : undefined
+  );
+
+  // Fetch pricing data server-side
+  const pricingData = await getPricing({
+    body: filters,
   });
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-6">
-        <Pricing />
-      </div>
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <Pricing pricingData={pricingData} />
+    </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type { PricingIn, PricingOut };

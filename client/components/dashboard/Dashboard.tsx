@@ -8,14 +8,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { DashboardOut } from "@/app/(main)/analytics/dashboard/page";
 import { Button } from "@/components/ui/button";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
+import SimulationHistory from "../common/history/SimulationHistory";
 import ScenarioPerformance from "./footer/ScenarioPerformance";
 import ScenarioStats from "./footer/ScenarioStats";
 import SimulationComposition from "./footer/SimulationComposition";
@@ -36,22 +34,17 @@ import RubricHeatmap from "./primary/RubricHeatmap";
 import AttemptImprovement from "./secondary/AttemptImprovement";
 import CohortPerformance from "./secondary/CohortPerformance";
 import SkillPerformance from "./secondary/SkillPerformance";
-import SimulationHistory from "../common/history/SimulationHistory";
 
 interface DashboardProps {
   profileId?: string;
+  dashboardData: DashboardOut;
 }
 
-export default function Dashboard({ profileId }: DashboardProps) {
-  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
-
-  const {
-    startDate,
-    endDate,
-    effectiveCohortIds,
-    effectiveRoles,
-    effectiveSimulationFilters,
-  } = useAnalytics();
+export default function Dashboard({
+  profileId,
+  dashboardData,
+}: DashboardProps) {
+  const { effectiveProfile } = useProfile();
 
   // Carousel states
   const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
@@ -67,48 +60,10 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
-  // Build filters for bundle request
-  const filters = useMemo(
-    () => ({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: effectiveCohortIds,
-      roles: effectiveRoles,
-      simulationFilters: effectiveSimulationFilters,
-      profileId: profileId ?? null,
-      departmentIds: effectiveDepartmentIds,
-    }),
-    [
-      startDate,
-      endDate,
-      effectiveCohortIds,
-      effectiveRoles,
-      effectiveSimulationFilters,
-      profileId,
-      effectiveDepartmentIds,
-    ]
-  );
-
-  // Stable React Query options
-  const rqOpts = useMemo(
-    () => ({
-      enabled: true,
-      staleTime: 60_000,
-    }),
-    []
-  );
-
-  // Fetch complete dashboard bundle with single API call
-  const {
-    data: bundle,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: keys.dashboard.with(filters),
-    queryFn: () => api.post("/dashboard", { body: filters }),
-    ...rqOpts,
-  });
+  const bundle = dashboardData;
+  const isLoading = false;
+  const isError = false;
+  const error = "";
 
   // Get thresholds from server (or use defaults if not available)
   const thresholds = useMemo(

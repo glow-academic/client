@@ -6,12 +6,9 @@
  */
 "use client";
 
+import type { LeaderboardOut } from "@/app/(main)/analytics/leaderboard/page";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
@@ -65,64 +62,26 @@ const getInitials = (firstName: string, lastName: string): string => {
 
 export interface LeaderboardProps {
   cohortId?: string;
+  leaderboardData: LeaderboardOut;
 }
 
-export default function Leaderboard({ cohortId }: LeaderboardProps) {
-  const {
-    effectiveProfile,
-    isLoading: isProfileLoading,
-    effectiveDepartmentIds,
-  } = useProfile();
-  const {
-    startDate,
-    endDate,
-    effectiveCohortIds,
-    effectiveRoles,
-    effectiveSimulationFilters,
-  } = useAnalytics();
+export default function Leaderboard({
+  cohortId,
+  leaderboardData,
+}: LeaderboardProps) {
+  const { effectiveProfile } = useProfile();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Build the shared filters
-  const filters = useMemo(
-    () => ({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: cohortId ? [cohortId] : effectiveCohortIds,
-      roles: effectiveRoles,
-      simulationFilters: effectiveSimulationFilters,
-      departmentIds: effectiveDepartmentIds,
-      // profileId: undefined  <-- leave undefined for the grid; filter locally per profile
-    }),
-    [
-      startDate,
-      endDate,
-      cohortId,
-      effectiveCohortIds,
-      effectiveRoles,
-      effectiveSimulationFilters,
-      effectiveDepartmentIds,
-    ]
-  );
-
-  // Load the leaderboard data
-  // SSR hydration will provide initial data via HydrationBoundary
-  const {
-    data: leaderboardResponse,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: keys.leaderboard.with(filters),
-    queryFn: () => api.post("/leaderboard", { body: filters }),
-  });
-
-  // Use the data directly from the API (SSR data will be hydrated via React Query)
+  // Use the data directly from props (fetched server-side)
   const hydratedRows = useMemo(() => {
-    return leaderboardResponse?.data || [];
-  }, [leaderboardResponse?.data]);
+    return leaderboardData?.data || [];
+  }, [leaderboardData?.data]);
 
-  // Loading state - will be false if data was hydrated from SSR
-  const isLoadingData = isLoading;
+  // Data is always available from server-side fetch
+  const isError = false;
+  const isLoadingData = false;
+  const isProfileLoading = false;
 
   // Two-page carousel state
   const [page, setPage] = useState(0);

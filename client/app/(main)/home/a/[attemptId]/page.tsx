@@ -6,21 +6,32 @@
  */
 
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
+import { SimulationProvider } from "@/contexts/simulation-context";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { getQueryClient } from "@/utils/queryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { Metadata, ResolvingMetadata } from "next";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { Metadata, ResolvingMetadata } from "next";
+import { cache } from "react";
 
+/** ---- Strong types from OpenAPI ---- */
+type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
+type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
+
+/** ---- Cached fetch (prevents duplicate requests) ---- */
+const getAttemptFull = cache(
+  async (input: AttemptFullIn): Promise<AttemptFullOut> => {
+    return api.post("/attempts/full", input);
+  }
+);
+
+/** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
-  // read route params
   const { attemptId } = await params;
 
   try {
-    const attemptData = await api.post("/attempts/full", {
+    const attemptData = await getAttemptFull({
       body: { attemptId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
@@ -36,6 +47,7 @@ export async function generateMetadata(
   }
 }
 
+/** ---- Page component ---- */
 export default async function AttemptPage({
   params,
 }: {
@@ -43,22 +55,19 @@ export default async function AttemptPage({
 }) {
   const { attemptId } = await params;
 
-  const queryClient = getQueryClient();
-
-  // Prefetch attempt full data for instant hydration
-  await queryClient.prefetchQuery({
-    queryKey: keys.attempts.with({ attemptId }),
-    queryFn: () =>
-      api.post("/attempts/full", {
-        body: { attemptId },
-      }),
+  // Fetch initial snapshot
+  const initial = await getAttemptFull({
+    body: { attemptId },
   });
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
+    <SimulationProvider attemptId={attemptId} initial={initial}>
       <div className="space-y-6">
         <AttemptChat />
       </div>
-    </HydrationBoundary>
+    </SimulationProvider>
   );
 }
+
+/** ---- Export types for client (type-only imports) ---- */
+export type { AttemptFullOut };

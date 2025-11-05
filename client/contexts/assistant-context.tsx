@@ -1,13 +1,13 @@
 /**
  * Chat Context for managing assistant chat state and WebSocket interactions
  * Provides functionality for creating chats, sending messages, and real-time updates
+ * Uses SSR + Server Actions pattern (no React Query)
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, {
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import {
   createContext,
   useCallback,
   useContext,
@@ -18,6 +18,27 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
+
+/** ---- Server Actions (defined directly in file) ---- */
+type AssistantChatListIn = InputOf<"/api/v3/assistant/chats/list", "post">;
+type AssistantChatListOut = OutputOf<"/api/v3/assistant/chats/list", "post">;
+
+type AssistantChatFullIn = InputOf<"/api/v3/assistant/chats/full", "post">;
+type AssistantChatFullOut = OutputOf<"/api/v3/assistant/chats/full", "post">;
+
+async function getAssistantChatList(
+  input: AssistantChatListIn
+): Promise<AssistantChatListOut> {
+  "use server";
+  return api.post("/assistant/chats/list", input);
+}
+
+async function getAssistantChatFull(
+  input: AssistantChatFullIn
+): Promise<AssistantChatFullOut> {
+  "use server";
+  return api.post("/assistant/chats/full", input);
+}
 
 type ChatUIState = "closed" | "open" | "minimized" | "widget" | "expanded";
 
@@ -119,8 +140,13 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const [hasEverOpened, setHasEverOpened] = useState(false);
-  const queryClient = useQueryClient();
   const currentRoomRef = useRef<string | null>(null);
+
+  // Local state for assistant data (replaces React Query)
+  const [assistantData, setAssistantData] = useState<
+    AssistantChatFullOut | AssistantChatListOut | null
+  >(null);
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
 
   // Use the global WebSocket context
   const {
@@ -136,95 +162,202 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
   // V3 API: Fetch assistant chat data
   // Only fetch when user has interacted with chat (lazy loading)
-  const enabled =
-    hasEverOpened &&
-    activeProfile?.id !== "guest-profile-id" &&
-    !!activeProfile?.id;
   const profileId =
     activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || "";
 
-  // Fetch chat list when no chatId (for dropdown)
-  const { data: chatListData, isLoading: isLoadingChatList } = useQuery({
-    queryKey: keys.assistant.with({ profileId, list: true }),
-    queryFn: () =>
-      api.post("/assistant/chats/list", {
-        body: { profileId },
-      }),
-    enabled: enabled && !currentChatId && !!profileId && profileId !== "",
-    staleTime: 1000,
-    refetchOnWindowFocus: false,
-  });
+  // Direct fetch function (no useEffect dependency chains)
+  const fetchAssistantData = useCallback(async () => {
+    if (!profileId || profileId === "") return;
 
-  // Fetch full chat data when chatId is present
-  const { data: chatFullData, isLoading: isLoadingChatFull } = useQuery({
-    queryKey: keys.assistant.with({ chatId: currentChatId || "", profileId }),
-    queryFn: () =>
-      api.post("/assistant/chats/full", {
-        body: {
-          chatId: currentChatId || "",
-          profileId,
-        },
-      }),
-    enabled: enabled && !!currentChatId && !!profileId && profileId !== "",
-    staleTime: 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  // Combine data from both queries
-  const assistantData = currentChatId ? chatFullData : chatListData;
-  const isLoadingChats = currentChatId ? isLoadingChatFull : isLoadingChatList;
+    setIsLoadingChats(true);
+    try {
+      const data = currentChatId
+        ? await getAssistantChatFull({
+            body: { chatId: currentChatId, profileId },
+          })
+        : await getAssistantChatList({ body: { profileId } });
+      setAssistantData(data);
+    } catch (error) {
+      toast.error("Failed to load chat data");
+      // eslint-disable-next-line no-console
+      console.error("Assistant chat fetch error:", error);
+    } finally {
+      setIsLoadingChats(false);
+    }
+  }, [profileId, currentChatId]);
 
   // Extract data from API response
-  const chats = useMemo(
-    () =>
-      ((assistantData as AssistantChatFullResponse)?.allChats ||
-        []) as NonNullable<AssistantChatFullResponse["chat"]>[],
-    [assistantData]
-  );
-  const chat = useMemo(
-    () =>
-      ((assistantData as AssistantChatFullResponse)?.chat ||
-        null) as NonNullable<AssistantChatFullResponse["chat"]> | null,
-    [assistantData]
-  );
-  const messages = useMemo(
-    () =>
-      ((assistantData as AssistantChatFullResponse)?.messages ||
-        []) as NonNullable<AssistantChatFullResponse["messages"]>,
-    [assistantData]
-  );
-  const toolCalls = useMemo(
-    () =>
-      ((assistantData as AssistantChatFullResponse)?.toolCalls ||
-        []) as NonNullable<AssistantChatFullResponse["toolCalls"]>,
-    [assistantData]
-  );
+  // AssistantChatFullOut has: chat, messages, toolCalls, allChats
+  // AssistantChatListOut has: allChats
+  const chats = useMemo(() => {
+    if (!assistantData) return [];
+    if ("allChats" in assistantData) {
+      return assistantData.allChats as NonNullable<
+        AssistantChatFullResponse["chat"]
+      >[];
+    }
+    return [];
+  }, [assistantData]);
+
+  const chat = useMemo(() => {
+    if (!assistantData) return null;
+    if ("chat" in assistantData && assistantData.chat) {
+      return assistantData.chat as NonNullable<
+        AssistantChatFullResponse["chat"]
+      >;
+    }
+    return null;
+  }, [assistantData]);
+
+  const messages = useMemo(() => {
+    if (!assistantData) return [];
+    if ("messages" in assistantData) {
+      return assistantData.messages as AssistantChatFullResponse["messages"];
+    }
+    return [];
+  }, [assistantData]);
+
+  const toolCalls = useMemo(() => {
+    if (!assistantData) return [];
+    if ("toolCalls" in assistantData) {
+      return assistantData.toolCalls as AssistantChatFullResponse["toolCalls"];
+    }
+    return [];
+  }, [assistantData]);
 
   // Set up assistant-specific event listeners
   useEffect(() => {
     if (!isConnected) return;
 
     // Listen for assistant started event (when server creates new chat)
-    const handleAssistantStarted = (event: Event) => {
+    const handleAssistantStarted = async (event: Event) => {
       const data = (event as CustomEvent).detail as { chat_id?: string };
       if (data.chat_id) {
         setCurrentChatId(data.chat_id);
-        // Invalidate queries to refetch chat list with new chat
-        queryClient.invalidateQueries({ queryKey: keys.assistant.all });
+        // Fetch full chat data directly when chat is created
+        if (profileId && profileId !== "") {
+          setIsLoadingChats(true);
+          try {
+            const chatData = await getAssistantChatFull({
+              body: { chatId: data.chat_id, profileId },
+            });
+            setAssistantData(chatData);
+          } catch (error) {
+            toast.error("Failed to load new chat");
+            // eslint-disable-next-line no-console
+            console.error("Assistant chat fetch error:", error);
+          } finally {
+            setIsLoadingChats(false);
+          }
+        }
       }
     };
 
-    // Listen for assistant message completion to reset loading state
+    // Listen for assistant message completion to reset loading state and refresh
     const handleAssistantMessageComplete = () => {
       setIsSendingMessage(false);
+      // Refetch to get updated messages
+      fetchAssistantData();
     };
 
     const handleAssistantMessageCancelled = () => {
       setIsSendingMessage(false);
+      // Refetch to get updated state
+      fetchAssistantData();
     };
 
     const handleAssistantError = () => {
       setIsSendingMessage(false);
+    };
+
+    // Listen for title updates
+    const handleTitleUpdated = async (event: Event) => {
+      const data = (event as CustomEvent).detail as {
+        chat_id?: string;
+        title?: string;
+      };
+      if (data.chat_id && data.title) {
+        // Update local state optimistically
+        setAssistantData((prev) => {
+          if (!prev) return prev;
+          if ("chat" in prev && prev.chat?.["id"] === data.chat_id) {
+            return {
+              ...prev,
+              chat: prev.chat ? { ...prev.chat, title: data.title! } : null,
+            };
+          }
+          // Update in allChats array
+          if ("allChats" in prev) {
+            return {
+              ...prev,
+              allChats: prev.allChats.map((chat) =>
+                chat["id"] === data.chat_id
+                  ? { ...chat, title: data.title! }
+                  : chat
+              ),
+            };
+          }
+          return prev;
+        });
+        // Refetch to ensure consistency
+        await fetchAssistantData();
+      }
+    };
+
+    // Listen for tool call events
+    const handleToolCallCreated = async () => {
+      // Refetch to get updated tool calls
+      await fetchAssistantData();
+    };
+
+    const handleToolCallCompleted = async () => {
+      // Refetch to get updated tool calls
+      await fetchAssistantData();
+    };
+
+    // Listen for message token events (streaming)
+    const handleAssistantMessageToken = (event: Event) => {
+      const data = (event as CustomEvent).detail as {
+        messageId?: string;
+        chatId?: string;
+        accumulatedContent?: string;
+      };
+      if (data.messageId && data.chatId && data.accumulatedContent) {
+        // Update local state optimistically for streaming
+        setAssistantData((prev) => {
+          if (!prev || !("messages" in prev)) return prev;
+          const messageIndex = prev.messages.findIndex(
+            (msg) => msg["id"] === data.messageId
+          );
+          if (messageIndex >= 0) {
+            // Update existing message
+            return {
+              ...prev,
+              messages: prev.messages.map((msg) =>
+                msg["id"] === data.messageId
+                  ? { ...msg, content: data.accumulatedContent! }
+                  : msg
+              ),
+            };
+          } else {
+            // Create new message if it doesn't exist
+            const newMessage: AssistantChatFullResponse["messages"][number] = {
+              id: data.messageId!,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              completedAt: null,
+              chatId: data.chatId!,
+              role: "assistant",
+              content: data.accumulatedContent!,
+              completed: false,
+            };
+            return {
+              ...prev,
+              messages: [...prev.messages, newMessage],
+            };
+          }
+        });
+      }
     };
 
     // Add event listeners
@@ -238,6 +371,13 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       handleAssistantMessageCancelled
     );
     window.addEventListener("assistant_error", handleAssistantError);
+    window.addEventListener("title_updated", handleTitleUpdated);
+    window.addEventListener("tool_call_created", handleToolCallCreated);
+    window.addEventListener("tool_call_completed", handleToolCallCompleted);
+    window.addEventListener(
+      "assistant_message_token",
+      handleAssistantMessageToken
+    );
 
     return () => {
       // Remove event listeners
@@ -251,8 +391,18 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
         handleAssistantMessageCancelled
       );
       window.removeEventListener("assistant_error", handleAssistantError);
+      window.removeEventListener("title_updated", handleTitleUpdated);
+      window.removeEventListener("tool_call_created", handleToolCallCreated);
+      window.removeEventListener(
+        "tool_call_completed",
+        handleToolCallCompleted
+      );
+      window.removeEventListener(
+        "assistant_message_token",
+        handleAssistantMessageToken
+      );
     };
-  }, [isConnected, queryClient]);
+  }, [isConnected, fetchAssistantData, profileId]);
 
   // Join/leave chat rooms when currentChatId changes - with connection check
   useEffect(() => {
@@ -279,24 +429,51 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   }, [currentChatId, isConnected, joinRoom, leaveRoom]);
 
   // UI state management methods
-  const openWidget = useCallback(() => {
+  const openWidget = useCallback(async () => {
     setUiState("widget");
-    setHasEverOpened(true); // Enable data fetching on first interaction
-  }, []);
+    if (!hasEverOpened) {
+      setHasEverOpened(true);
+      // Fetch data directly when opening for first time
+      await fetchAssistantData();
+    }
+  }, [hasEverOpened, fetchAssistantData]);
 
-  const expand = useCallback(() => {
+  const expand = useCallback(async () => {
     setUiState("expanded");
-    setHasEverOpened(true); // Enable data fetching on first interaction
-  }, []);
+    if (!hasEverOpened) {
+      setHasEverOpened(true);
+      // Fetch data directly when expanding for first time
+      await fetchAssistantData();
+    }
+  }, [hasEverOpened, fetchAssistantData]);
 
   const close = useCallback(() => {
     setUiState("closed");
   }, []);
 
   // Chat management methods
-  const selectChat = useCallback((chatId: string) => {
-    setCurrentChatId(chatId);
-  }, []);
+  const selectChat = useCallback(
+    async (chatId: string) => {
+      setCurrentChatId(chatId);
+      // Fetch full chat data directly when selecting
+      if (profileId && profileId !== "") {
+        setIsLoadingChats(true);
+        try {
+          const data = await getAssistantChatFull({
+            body: { chatId, profileId },
+          });
+          setAssistantData(data);
+        } catch (error) {
+          toast.error("Failed to load chat");
+          // eslint-disable-next-line no-console
+          console.error("Assistant chat fetch error:", error);
+        } finally {
+          setIsLoadingChats(false);
+        }
+      }
+    },
+    [profileId]
+  );
 
   // Removed startBlankChat and createNewChat - all chat creation now happens
   // server-side when user sends their first message via emitStartAssistant

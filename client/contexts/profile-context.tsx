@@ -4,17 +4,16 @@
  * all components stay in sync with the effective user's data (ID, role, name, etc.).
  *
  * Now also provides departments, cohorts, and breadcrumbs from a single data source.
+ * Uses SSR + Server Actions pattern (no React Query)
  */
 "use client";
 
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
+import type { LayoutContextResponse } from "@/app/(main)/layout-server";
 import {
   getFirstAvailableSectionForRole,
   getSectionRoute,
   isSectionAvailableForRole,
 } from "@/utils/navigation-utils";
-import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import React, {
@@ -24,109 +23,20 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { z } from "zod";
 
 type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
-type ProfileItem = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  alias: string;
-  role: ProfileRole;
-  active: boolean;
-  viewedIntro: boolean;
-  viewedChat: boolean;
-  defaultProfile: boolean;
-  reqPerDay: number | null;
-  lastLogin: string;
-  lastActive: string | null;
-  createdAt: string;
-  updatedAt: string;
-  primaryDepartmentId: string | null;
-};
+// Use types from server response
+type ProfileItem = LayoutContextResponse["actualProfile"];
 
 // ============================================================================
-// INTERNAL TYPES (for consolidated API)
+// TYPES (derived from LayoutContextResponse)
 // ============================================================================
 
-const DepartmentItemSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string().optional().nullable(),
-  active: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
-const CohortItemSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string().optional().nullable(),
-  departmentIds: z.array(z.string()).nullable().optional(),
-  active: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
-const CohortsDataSchema = z.object({
-  items: z.array(CohortItemSchema),
-  memberCounts: z.record(z.string(), z.number()),
-});
-
-const SimulationContextItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  departmentIds: z.array(z.string()).nullable().optional(),
-  timeLimit: z.number().nullable(),
-  active: z.boolean(),
-  practiceSimulation: z.boolean(),
-  // Note: defaultSimulation is not returned by the server in profile context
-  // It's only used in detailed simulation endpoints
-});
-
-const SimulationsDataSchema = z.object({
-  items: z.array(SimulationContextItemSchema),
-});
-
-// ProfileItemSchema for Zod validation (inline to avoid v2 schema dependency)
-const ProfileItemSchema = z.object({
-  id: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  alias: z.string(),
-  role: z.enum(["superadmin", "admin", "instructional", "ta", "guest"]),
-  active: z.boolean(),
-  viewedIntro: z.boolean(),
-  viewedChat: z.boolean(),
-  defaultProfile: z.boolean(),
-  reqPerDay: z.number().nullable(),
-  lastLogin: z.string(),
-  lastActive: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  primaryDepartmentId: z.string().nullable(),
-});
-
-const LayoutContextResponseSchema = z.object({
-  actualProfile: ProfileItemSchema,
-  effectiveProfile: ProfileItemSchema,
-  departments: z.array(DepartmentItemSchema),
-  departmentIds: z.array(z.string()),
-  cohorts: CohortsDataSchema,
-  cohortIds: z.array(z.string()),
-  simulations: SimulationsDataSchema,
-  simulationIds: z.array(z.string()),
-  simulatableProfiles: z.array(ProfileItemSchema),
-  earliestAttemptDate: z.string().nullable(),
-  availableSections: z.array(z.string()),
-  redirectPath: z.string(),
-});
-
-export type DepartmentItem = z.infer<typeof DepartmentItemSchema>;
-export type CohortItem = z.infer<typeof CohortItemSchema>;
-export type SimulationContextItem = z.infer<typeof SimulationContextItemSchema>;
+export type DepartmentItem = LayoutContextResponse["departments"][number];
+export type CohortItem = LayoutContextResponse["cohorts"]["items"][number];
+export type SimulationContextItem =
+  LayoutContextResponse["simulations"]["items"][number];
 
 // A generic, fallback guest profile for when no user is logged in or during loading states.
 const GUEST_PROFILE: ProfileItem = {
@@ -184,17 +94,21 @@ const ProfileContext = createContext<ProfileContextType | null>(null);
 export const useProfile = () => {
   const context = useContext(ProfileContext);
   if (!context) {
-    throw new Error("useProfile must be used within a ProfileProvider");
+    throw new Error("useProfile must be used within a ProfileProviderClient");
   }
   return context;
 };
 
-interface ProfileProviderProps {
+interface ProfileProviderClientProps {
   children: React.ReactNode;
+  initial: LayoutContextResponse;
 }
 
-export function ProfileProvider({ children }: ProfileProviderProps) {
-  const { data: session, status } = useSession();
+export function ProfileProviderClient({
+  children,
+  initial,
+}: ProfileProviderClientProps) {
+  const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -203,42 +117,16 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     []
   );
 
-  // Internal hook: Get ALL data from consolidated API (single source of truth!)
-  // Note: effectiveProfileId is derived from session on the server for security
-  const effectiveProfileId = session?.effectiveProfileId ?? "";
-
-  const { data: layoutData, isLoading: layoutLoading } = useQuery({
-    queryKey: keys.profile.with({
-      pathname: pathname ?? "/",
-      effectiveProfileId, // For cache key uniqueness
-    }),
-    queryFn: async () => {
-      const res = await api.post("/profile/context", {
-        body: {
-          // Placeholder values - BFF route overrides these with session values for security
-          actualProfileId: session?.user?.profileId || "",
-          effectiveProfileId: session?.effectiveProfileId || "",
-          pathname: pathname ?? "/",
-        },
-      });
-      return LayoutContextResponseSchema.parse(res);
-    },
-    enabled: !!effectiveProfileId && !!session?.user?.profileId,
-    staleTime: 15 * 60 * 1000, // 15 minutes - stable data persists across page navigation
-    structuralSharing: true, // Enable deep equality check
-    gcTime: 20 * 60 * 1000, // Cache for 20 minutes
-  });
-
-  const bootstrapProfile = layoutData?.actualProfile ?? null;
-  const effectiveProfile = layoutData?.effectiveProfile ?? null;
+  const bootstrapProfile = initial.actualProfile ?? null;
+  const effectiveProfile = initial.effectiveProfile ?? null;
 
   // Compute effective department IDs (like cohorts in Home.tsx)
   const effectiveDepartmentIds = useMemo(() => {
-    const allDepartmentIds = layoutData?.departmentIds ?? [];
+    const allDepartmentIds = initial.departmentIds ?? [];
     return selectedDepartmentIds.length > 0
       ? selectedDepartmentIds
       : allDepartmentIds;
-  }, [selectedDepartmentIds, layoutData?.departmentIds]);
+  }, [selectedDepartmentIds, initial.departmentIds]);
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
   const isFullEmulation = useMemo(() => {
@@ -257,10 +145,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   ]);
 
   const resolvedActiveProfile = useMemo<ProfileItem | null>(() => {
-    // When authenticated but no effective fetched yet, show null/loading
-    if (status === "loading" || layoutLoading) return null;
     // If not authenticated at all, fallback to guest
-    if (status === "unauthenticated" && !bootstrapProfile) return GUEST_PROFILE;
+    if (!bootstrapProfile) return GUEST_PROFILE;
 
     // Three states:
     // 1. Normal: activeProfile = bootstrapProfile, effectiveProfile = bootstrapProfile
@@ -271,13 +157,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     } else {
       return bootstrapProfile; // Normal or half emulation: use user's actual profile as active
     }
-  }, [
-    status,
-    layoutLoading,
-    bootstrapProfile,
-    effectiveProfile,
-    isFullEmulation,
-  ]);
+  }, [bootstrapProfile, effectiveProfile, isFullEmulation]);
 
   const simulatedProfile = useMemo<ProfileItem | null>(() => {
     if (!effectiveProfile || !bootstrapProfile) return null;
@@ -300,7 +180,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
 
   const isSectionAvailable = useCallback(
     (section: string, role?: ProfileRole) => {
-      const targetRole = role || effectiveProfile?.role || "guest";
+      const targetRole = (role ||
+        effectiveProfile?.role ||
+        "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
     [effectiveProfile?.role]
@@ -318,29 +200,29 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       effectiveProfile.id !== bootstrapProfile.id
     ),
     isFullEmulation,
-    isLoading: status === "loading" || layoutLoading,
+    isLoading: false, // Data comes from server, always available
 
     // Helper functions
     navigateToDefault,
     isSectionAvailable,
 
-    // Layout data (from useLayoutContext)
-    departments: layoutData?.departments ?? [],
-    departmentIds: layoutData?.departmentIds ?? [],
+    // Layout data (from server)
+    departments: initial.departments ?? [],
+    departmentIds: initial.departmentIds ?? [],
     selectedDepartmentIds,
     setSelectedDepartmentIds,
     effectiveDepartmentIds,
-    cohorts: layoutData?.cohorts.items ?? [],
-    cohortIds: layoutData?.cohortIds ?? [],
-    simulations: layoutData?.simulations.items ?? [],
-    simulationIds: layoutData?.simulationIds ?? [],
-    cohortMemberCounts: layoutData?.cohorts.memberCounts ?? {},
-    simulatableProfiles: layoutData?.simulatableProfiles ?? [],
-    earliestAttemptDate: layoutData?.earliestAttemptDate ?? null,
+    cohorts: initial.cohorts.items ?? [],
+    cohortIds: initial.cohortIds ?? [],
+    simulations: initial.simulations.items ?? [],
+    simulationIds: initial.simulationIds ?? [],
+    cohortMemberCounts: initial.cohorts.memberCounts ?? {},
+    simulatableProfiles: initial.simulatableProfiles ?? [],
+    earliestAttemptDate: initial.earliestAttemptDate ?? null,
 
     // Permissions data (from server)
-    availableSections: layoutData?.availableSections ?? [],
-    redirectPath: layoutData?.redirectPath ?? "/home",
+    availableSections: initial.availableSections ?? [],
+    redirectPath: initial.redirectPath ?? "/home",
   };
 
   return (

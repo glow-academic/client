@@ -100,7 +100,7 @@ export default async function ModelEditPage({
   ]);
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
       <Model
         modelId={modelId}
         providerId={providerId}
@@ -109,7 +109,7 @@ export default async function ModelEditPage({
         createModelAction={createModel}
         updateModelAction={updateModel}
       />
-    </div>
+      </div>
   );
 }
 

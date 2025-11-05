@@ -5,6 +5,7 @@
  * 07/20/2025
  */
 "use client";
+import type { HomeOut } from "@/app/(main)/home/page";
 import {
   Card,
   CardContent,
@@ -13,12 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 
 import SimulationCard from "@/components/common/layout/SimulationCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -28,41 +25,17 @@ import { toast } from "sonner";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationProgress, { ViewMode } from "./SimulationProgress";
 
-export default function Home() {
-  const { effectiveProfile, activeProfile, effectiveDepartmentIds } =
-    useProfile();
-  const { startDate, endDate, effectiveCohortIds } = useAnalytics();
+export interface HomeProps {
+  homeData: HomeOut;
+}
 
-  // Memoized filters for home query (no roles/simulationFilters - always shows general)
-  const filters = useMemo(
-    () => ({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: effectiveCohortIds,
-      // Always send profileId - server will decide whether to use it based on role
-      profileId: effectiveProfile?.id || null,
-      departmentIds: effectiveDepartmentIds,
-    }),
-    [
-      startDate,
-      endDate,
-      effectiveCohortIds,
-      effectiveProfile?.id,
-      effectiveDepartmentIds,
-    ]
-  );
+export default function Home({ homeData }: HomeProps) {
+  const { effectiveProfile, activeProfile } = useProfile();
 
-  // V3 API - Single optimized bundle call with items, history, and mappings
-  const { data: bundle, isLoading: isHomeOverviewLoading } = useQuery({
-    queryKey: keys.home.with(filters),
-    queryFn: () => api.post("/home", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
-
-  // Extract data from bundle
-  const homeOverview = bundle;
-  const historyData = bundle?.history;
-  const isHistoryLoading = isHomeOverviewLoading;
+  // Use data directly from props (fetched server-side)
+  const homeOverview = homeData;
+  const historyData = homeData?.history;
+  const isHistoryLoading = false; // Data is always available from server-side fetch
 
   // Extract rubric mappings from home overview data
   const standardGroupsMapping = useMemo(
@@ -283,6 +256,7 @@ export default function Home() {
   const startIndex = carouselIndex * maxVisible;
   const endIndex = startIndex + maxVisible;
   const visibleSimulations = sortedSimulations.slice(startIndex, endIndex);
+  const isHomeOverviewLoading = false;
 
   // Loading state
   // const isLoading = isFilteredDataLoading;
@@ -643,7 +617,7 @@ export default function Home() {
                   type="cohort"
                   onStartSimulation={handleStartSimulation}
                   loadingSimulation={loadingSimulation}
-                  effectiveProfile={effectiveProfile}
+                  effectiveProfile={{...effectiveProfile, role: effectiveProfile.role as "ta" | "instructional" | "superadmin" | "admin" | "guest"}}
                 />
               ) : null
             )}

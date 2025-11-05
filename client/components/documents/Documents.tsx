@@ -76,6 +76,10 @@ import type {
   BulkUpdateDocumentsOut,
   DeleteDocumentIn,
   DeleteDocumentOut,
+  DocumentDetailBulkIn,
+  DocumentDetailBulkOut,
+  DocumentDetailIn,
+  DocumentDetailOut,
   DocumentsListOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
@@ -100,9 +104,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";
 
@@ -111,6 +112,14 @@ const truncateText = (text: string, maxLength: number = 30): string => {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + "...";
 };
+
+// Explicitly define server action types (matching the page exports)
+export type GetDocumentDetailAction = (
+  input: DocumentDetailIn
+) => Promise<DocumentDetailOut>;
+export type GetDocumentDetailBulkAction = (
+  input: DocumentDetailBulkIn
+) => Promise<DocumentDetailBulkOut>;
 
 export interface DocumentsProps {
   // Server-provided data (for server-side rendering)
@@ -128,6 +137,9 @@ export interface DocumentsProps {
   bulkUpdateDocumentsAction?: (
     input: BulkUpdateDocumentsIn
   ) => Promise<BulkUpdateDocumentsOut>;
+  // Server actions for fetching detail data
+  getDocumentDetailAction?: GetDocumentDetailAction;
+  getDocumentDetailBulkAction?: GetDocumentDetailBulkAction;
 }
 
 export default function Documents({
@@ -136,6 +148,8 @@ export default function Documents({
   bulkDeleteDocumentsAction,
   updateDocumentAction,
   bulkUpdateDocumentsAction,
+  getDocumentDetailAction,
+  getDocumentDetailBulkAction,
 }: DocumentsProps) {
   const router = useRouter();
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
@@ -164,6 +178,12 @@ export default function Documents({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [documentDetail, setDocumentDetail] =
+    useState<DocumentDetailOut | null>(null);
+  const [bulkDocumentDetail, setBulkDocumentDetail] =
+    useState<DocumentDetailBulkOut | null>(null);
+  const [isLoadingDocumentDetail, setIsLoadingDocumentDetail] = useState(false);
+  const [isLoadingBulkDetail, setIsLoadingBulkDetail] = useState(false);
   const [bulkType, setBulkType] = useState<DocumentType | "__keep__">(
     "__keep__"
   );
@@ -229,41 +249,6 @@ export default function Documents({
     () => effectiveDepartmentIds,
     [effectiveDepartmentIds]
   );
-
-  // V3 API: Fetch single document detail for editing
-  const { data: documentDetail } = useQuery({
-    queryKey: keys.documents.with({
-      documentId: editingDocument?.document_id || "",
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/documents/detail", {
-        body: {
-          documentId: editingDocument?.document_id || "",
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !!editingDocument && !!effectiveProfile?.id,
-  });
-
-  // V3 API: Fetch bulk document detail for bulk editing
-  const { data: bulkDocumentDetail } = useQuery({
-    queryKey: keys.documents.with({
-      documentIds: selectedDocuments,
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/documents/detail-bulk", {
-        body: {
-          documentIds: selectedDocuments,
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled:
-      showBulkEditDialog &&
-      selectedDocuments.length > 0 &&
-      !!effectiveProfile?.id,
-  });
 
   // Filter valid parameter item IDs for edit dialog based on selected departments
   const validParameterItemIdsForEdit = useMemo(() => {
@@ -834,15 +819,42 @@ export default function Documents({
     [documents]
   );
 
-  // Handle document edit
-  const handleEdit = useCallback((document: (typeof documents)[number]) => {
-    setEditingDocument({ ...document });
-    // Initialize previousDepartmentIdsEdit when opening edit dialog
-    setPreviousDepartmentIdsEdit((prev) =>
-      prev.length === 0 ? document.department_ids || [] : prev
-    );
-    setShowEditDialog(true);
-  }, []);
+  // Handle document edit - fetch detail data on demand
+  const handleEdit = useCallback(
+    async (document: (typeof documents)[number]) => {
+      setEditingDocument({ ...document });
+      // Initialize previousDepartmentIdsEdit when opening edit dialog
+      setPreviousDepartmentIdsEdit((prev) =>
+        prev.length === 0 ? document.department_ids || [] : prev
+      );
+
+      // Fetch document detail on demand
+      if (getDocumentDetailAction && effectiveProfile?.id) {
+        setIsLoadingDocumentDetail(true);
+        try {
+          const detail = await getDocumentDetailAction({
+            body: {
+              documentId: document.document_id,
+              profileId: effectiveProfile.id,
+            },
+          });
+          setDocumentDetail(detail);
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to load document details"
+          );
+          setDocumentDetail(null);
+        } finally {
+          setIsLoadingDocumentDetail(false);
+        }
+      }
+
+      setShowEditDialog(true);
+    },
+    [getDocumentDetailAction, effectiveProfile?.id]
+  );
 
   // Handle single document delete
   const handleSingleDelete = useCallback(
@@ -991,14 +1003,38 @@ export default function Documents({
     }
   };
 
-  // Handle bulk edit
-  const handleBulkEdit = () => {
-    if (selectedDocuments.length > 0) {
-      setBulkType("__keep__");
-      setBulkParameterItemIds([]);
-      setBulkDepartmentId(null);
-      setShowBulkEditDialog(true);
+  // Handle bulk edit - fetch detail data on demand
+  const handleBulkEdit = async () => {
+    if (selectedDocuments.length === 0) return;
+
+    setBulkType("__keep__");
+    setBulkParameterItemIds([]);
+    setBulkDepartmentId(null);
+
+    // Fetch bulk document detail on demand
+    if (getDocumentDetailBulkAction && effectiveProfile?.id) {
+      setIsLoadingBulkDetail(true);
+      try {
+        const detail = await getDocumentDetailBulkAction({
+          body: {
+            documentIds: selectedDocuments,
+            profileId: effectiveProfile.id,
+          },
+        });
+        setBulkDocumentDetail(detail);
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to load bulk document details"
+        );
+        setBulkDocumentDetail(null);
+      } finally {
+        setIsLoadingBulkDetail(false);
+      }
     }
+
+    setShowBulkEditDialog(true);
   };
 
   // Handle document delete
@@ -1449,102 +1485,109 @@ export default function Documents({
               Update document properties. Changes will be saved immediately.
             </DialogDescription>
           </DialogHeader>
-          {editingDocument && documentDetail && (
-            <div className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={editingDocument.name}
-                  onChange={(e) =>
-                    setEditingDocument(
-                      (prev: (typeof documents)[number] | null) =>
-                        prev ? { ...prev, name: e.target.value } : null
-                    )
-                  }
-                />
+          {editingDocument &&
+            (isLoadingDocumentDetail ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-sm text-muted-foreground">
+                  Loading document details...
+                </div>
               </div>
+            ) : documentDetail ? (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={editingDocument.name}
+                    onChange={(e) =>
+                      setEditingDocument(
+                        (prev: (typeof documents)[number] | null) =>
+                          prev ? { ...prev, name: e.target.value } : null
+                      )
+                    }
+                  />
+                </div>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="active">Document Active</Label>
-                <Switch
-                  id="active"
-                  checked={editingDocument.active}
-                  onCheckedChange={(checked) =>
-                    setEditingDocument((prev) =>
-                      prev ? { ...prev, active: checked } : null
-                    )
-                  }
-                />
-              </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="active">Document Active</Label>
+                  <Switch
+                    id="active"
+                    checked={editingDocument.active}
+                    onCheckedChange={(checked) =>
+                      setEditingDocument((prev) =>
+                        prev ? { ...prev, active: checked } : null
+                      )
+                    }
+                  />
+                </div>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="type">Type</Label>
-                <Select
-                  defaultValue={documentDetail.type}
-                  onValueChange={(value) => {
-                    // Update in temporary state for submission
-                    setEditingDocument(
-                      (prev: (typeof documents)[number] | null) =>
-                        prev ? { ...prev, type: value as DocumentType } : null
-                    );
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {documentDetail.document_type_options.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {typeOptions.find((o) => o.value === option)?.label ||
-                          option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="type">Type</Label>
+                  <Select
+                    defaultValue={documentDetail.type}
+                    onValueChange={(value) => {
+                      // Update in temporary state for submission
+                      setEditingDocument(
+                        (prev: (typeof documents)[number] | null) =>
+                          prev ? { ...prev, type: value as DocumentType } : null
+                      );
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {documentDetail.document_type_options.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {typeOptions.find((o) => o.value === option)?.label ||
+                            option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Department Selection */}
-              <div className="flex flex-col gap-2">
-                <Label>Department</Label>
-                <DepartmentPicker
-                  mapping={documentDetail.department_mapping}
-                  validIds={documentDetail.valid_department_ids}
-                  selectedIds={documentDetail.department_ids || []}
-                  onSelect={(ids) =>
-                    setEditingDocument(
-                      (prev: (typeof documents)[number] | null) =>
-                        prev ? { ...prev, department_ids: ids } : null
-                    )
-                  }
-                  multiSelect={true}
-                />
-              </div>
+                {/* Department Selection */}
+                <div className="flex flex-col gap-2">
+                  <Label>Department</Label>
+                  <DepartmentPicker
+                    mapping={documentDetail.department_mapping}
+                    validIds={documentDetail.valid_department_ids}
+                    selectedIds={documentDetail.department_ids || []}
+                    onSelect={(ids) =>
+                      setEditingDocument(
+                        (prev: (typeof documents)[number] | null) =>
+                          prev ? { ...prev, department_ids: ids } : null
+                      )
+                    }
+                    multiSelect={true}
+                  />
+                </div>
 
-              <div className="flex flex-col gap-2">
-                <Label>Parameter Items</Label>
-                <ParameterItemPicker
-                  mapping={documentDetail["parameter_item_mapping"]}
-                  selectedIds={documentDetail.parameter_item_ids}
-                  onSelect={(ids) =>
-                    setEditingDocument(
-                      (prev: (typeof documents)[number] | null) =>
-                        prev
-                          ? { ...prev, parameter_item_ids: ids as string[] }
-                          : null
-                    )
-                  }
-                  validIds={validParameterItemIdsForEdit}
-                  parameterId=""
-                  parameterName="Parameter Items"
-                  allowCreate={false}
-                  multiSelect={true}
-                  badgesPosition="below"
-                  showClearAll={true}
-                />
+                <div className="flex flex-col gap-2">
+                  <Label>Parameter Items</Label>
+                  <ParameterItemPicker
+                    mapping={documentDetail["parameter_item_mapping"]}
+                    selectedIds={documentDetail.parameter_item_ids}
+                    onSelect={(ids) =>
+                      setEditingDocument(
+                        (prev: (typeof documents)[number] | null) =>
+                          prev
+                            ? { ...prev, parameter_item_ids: ids as string[] }
+                            : null
+                      )
+                    }
+                    validIds={validParameterItemIdsForEdit}
+                    parameterId=""
+                    parameterName="Parameter Items"
+                    allowCreate={false}
+                    multiSelect={true}
+                    badgesPosition="below"
+                    showClearAll={true}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            ) : null)}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
@@ -1569,7 +1612,13 @@ export default function Documents({
               want to change it for all selected documents.
             </DialogDescription>
           </DialogHeader>
-          {bulkDocumentDetail && (
+          {isLoadingBulkDetail ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-sm text-muted-foreground">
+                Loading document details...
+              </div>
+            </div>
+          ) : bulkDocumentDetail ? (
             <div className="space-y-4">
               <div className="flex flex-col gap-2">
                 <Label>Type</Label>
@@ -1626,7 +1675,7 @@ export default function Documents({
                 />
               </div>
             </div>
-          )}
+          ) : null}
           <DialogFooter>
             <Button
               variant="outline"

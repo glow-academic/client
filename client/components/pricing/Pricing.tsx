@@ -8,6 +8,7 @@
  * - Displays summary cards and a stacked area chart (per model) + total line
  */
 
+import type { PricingOut } from "@/app/(main)/analytics/pricing/page";
 import { format } from "date-fns";
 import { useMemo, useState } from "react";
 
@@ -22,11 +23,6 @@ import {
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { RunsDataTable, type ModelRunRow } from "./RunsDataTable";
 
@@ -50,48 +46,17 @@ const COLOR_PALETTE = [
   "#f97316",
 ];
 
-export default function Pricing() {
-  const { effectiveProfile, departmentIds } = useProfile();
-  const {
-    startDate,
-    endDate,
-    effectiveCohortIds,
-    effectiveRoles,
-    effectiveSimulationFilters,
-  } = useAnalytics();
+interface PricingProps {
+  pricingData: PricingOut;
+}
 
+export default function Pricing({ pricingData }: PricingProps) {
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
 
-  // Build filters for V3 API
-  const filters = useMemo(
-    () => ({
-      departmentIds,
-      profileId: effectiveProfile?.id || "",
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: effectiveCohortIds,
-      roles: effectiveRoles,
-      simulationFilters: effectiveSimulationFilters,
-    }),
-    [
-      departmentIds,
-      effectiveProfile?.id,
-      startDate,
-      endDate,
-      effectiveCohortIds,
-      effectiveRoles,
-      effectiveSimulationFilters,
-    ]
-  );
-
-  const { data: pricingData, isLoading } = useQuery({
-    queryKey: keys.pricing.with(filters),
-    queryFn: () => api.post("/pricing", { body: filters }),
-  });
-
+  const isLoading = false;
   // Extract data from V3 API response
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
   const modelMapping = useMemo(

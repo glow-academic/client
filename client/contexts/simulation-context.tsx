@@ -1,16 +1,14 @@
 /**
- * SimulationContext.tsx
- * Used to manage the simulation state. This will be used to create all the functions to call websocket events, and handle everything smoothly between all of the components.
+ * SimulationContext (WebSocket + Server Actions Pattern)
+ * Manages simulation state with SSR snapshot + WebSocket patches
  * @AshokSaravanan222 & @siladiea
- * 06/27/2025
+ * Based on spec-websocket-server-actions.md
  */
 "use client";
 
-import { api } from "@/lib/api/client";
 import type { OutputOf } from "@/lib/api/types";
-import { keys } from "@/lib/query/keys";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, {
+import { useRouter } from "next/navigation";
+import {
   createContext,
   useCallback,
   useContext,
@@ -118,6 +116,7 @@ export const useSimulation = () => {
 interface SimulationProviderProps {
   children: React.ReactNode;
   attemptId: string;
+  initial: AttemptFullResponse;
   onSimulationFinished?: () => void;
   readOnly?: boolean;
 }
@@ -125,9 +124,11 @@ interface SimulationProviderProps {
 export function SimulationProvider({
   children,
   attemptId,
+  initial,
   onSimulationFinished,
   readOnly = false,
 }: SimulationProviderProps) {
+  const router = useRouter();
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
@@ -157,8 +158,6 @@ export function SimulationProvider({
   } | null>(null);
   const isGradingRef = useRef(false);
 
-  const queryClient = useQueryClient();
-  // Note: updateChatCompletedAt removed - completed_at column was removed from database
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
@@ -176,26 +175,23 @@ export function SimulationProvider({
   } = useWebSocket();
 
   // Function to set viewedChat to true when simulation is completed
-  // NOTE: viewedChat is now handled by TATour component when step 4 completes
   const handleSimulationCompletion = useCallback(async () => {
     return; // viewedChat is now handled by TATour component
   }, []);
 
-  // V3: Single hook to fetch all attempt data with server-side computations
-  const { data: attemptData, isLoading: isLoadingChats } = useQuery({
-    queryKey: keys.attempts.with({ attemptId }),
-    queryFn: () =>
-      api.post("/attempts/full", {
-        body: { attemptId },
-      }),
-    enabled: Boolean(attemptId),
-    staleTime: 1000, // 1 second - allow WebSocket updates to trigger refetch
-    refetchOnWindowFocus: false, // Don't refetch on window focus since we have active polling
-  });
+  // Initialize state from server snapshot
+  const [attemptData, setAttemptData] = useState<AttemptFullResponse | null>(
+    initial
+  );
+
+  // Update state when initial prop changes (from router.refresh())
+  useEffect(() => {
+    setAttemptData(initial);
+  }, [initial]);
 
   // Infer types from the API response
-  type AttemptFullResponse = NonNullable<typeof attemptData>;
-  type ChatData = AttemptFullResponse["chats"][number];
+  type AttemptFullResponseType = NonNullable<typeof attemptData>;
+  type ChatDataType = AttemptFullResponseType["chats"][number];
 
   // Extract data from v3 response
   const chats = useMemo(
@@ -234,7 +230,7 @@ export function SimulationProvider({
   // Scenarios map - map chatId -> scenario for all chats
   const scenariosByChatId = useMemo(() => {
     if (!attemptData?.chats) return {};
-    const map: Record<string, ChatData["scenario"]> = {};
+    const map: Record<string, ChatDataType["scenario"]> = {};
     attemptData.chats.forEach((chatData) => {
       map[chatData.chat.id] = chatData.scenario;
     });
@@ -247,7 +243,7 @@ export function SimulationProvider({
   // Grading states map - map chatId -> grading state
   const gradingStatesByChatId = useMemo(() => {
     if (!attemptData?.chats) return {};
-    const map: Record<string, NonNullable<ChatData["gradingState"]>> = {};
+    const map: Record<string, NonNullable<ChatDataType["gradingState"]>> = {};
     attemptData.chats.forEach((chatData) => {
       if (chatData.gradingState) {
         map[chatData.chat.id] = chatData.gradingState;
@@ -280,7 +276,6 @@ export function SimulationProvider({
     const chatData = attemptData.chats.find(
       (c) => c.chat.id === currentChat.id
     );
-    // Convert null to undefined for type compatibility
     return chatData?.dynamicRubric;
   }, [attemptData, currentChat]);
 
@@ -289,7 +284,7 @@ export function SimulationProvider({
       attemptData?.chats
         .map((c) => c.dynamicRubric)
         .filter(
-          (r): r is NonNullable<ChatData["dynamicRubric"]> => r !== null
+          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null
         ) || [],
     [attemptData]
   );
@@ -506,11 +501,8 @@ export function SimulationProvider({
         });
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
-        setIsSendingMessage(false); // Reset sending state on error
+        setIsSendingMessage(false);
       }
-      // Note: setIsSendingMessage(false) is handled by WebSocket event handlers
-      // (handleSimulationMessageComplete, handleSimulationMessageCancelled, etc.)
-      // to ensure proper state management with server responses
     },
     [currentChat, isSendingMessage, emitSendSimulationMessage, readOnly]
   );
@@ -560,10 +552,6 @@ export function SimulationProvider({
         }
         emitContinueSimulation(continueData);
       } catch (error) {
-        // Invalidate to refetch on error
-        queryClient.invalidateQueries({
-          queryKey: keys.attempts.all,
-        });
         toast.error(`Failed to end chat: ${error}`);
         setEndChatLoading(false);
       }
@@ -573,7 +561,6 @@ export function SimulationProvider({
       emitContinueSimulation,
       attemptId,
       readOnly,
-      queryClient,
       simulation?.departmentId,
     ]
   );
@@ -604,10 +591,6 @@ export function SimulationProvider({
         }
         emitContinueSimulation(continueData);
       } catch (error) {
-        // Invalidate to refetch on error
-        queryClient.invalidateQueries({
-          queryKey: keys.attempts.all,
-        });
         toast.error(`Failed to end all chats: ${error}`);
         setEndChatLoading(false);
       }
@@ -619,7 +602,6 @@ export function SimulationProvider({
       attemptId,
       emitContinueSimulation,
       readOnly,
-      queryClient,
     ]
   );
 
@@ -636,12 +618,7 @@ export function SimulationProvider({
         // Reset loading states
         setIsSendingMessage(false);
 
-        // Invalidate attempts for fresh data
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: keys.attempts.all,
-          });
-        }, 0);
+        // State updated via WebSocket patches, no need to invalidate
 
         // Dispatch responseComplete event for tour progression and navigating state management
         window.dispatchEvent(
@@ -701,10 +678,8 @@ export function SimulationProvider({
         );
         freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
 
-        // Invalidate attempts to refetch everything
-        queryClient.invalidateQueries({
-          queryKey: keys.attempts.all,
-        });
+        // Refresh server data
+        router.refresh();
 
         // Turn off the loading indicator for the "End Chat" button
         setEndChatLoading(false);
@@ -736,10 +711,8 @@ export function SimulationProvider({
 
     const handleEndAllCompleted = (event: CustomEvent) => {
       if (event.detail.attemptId === attemptId) {
-        // Invalidate attempts to refetch everything
-        queryClient.invalidateQueries({
-          queryKey: keys.attempts.all,
-        });
+        // Refresh server data
+        router.refresh();
 
         // Show results since all chats are now completed
         setShowResults(true);
@@ -830,12 +803,7 @@ export function SimulationProvider({
         handleSimulationMessageToken as EventListener
       );
     };
-  }, [
-    queryClient,
-    attemptId,
-    onSimulationFinished,
-    handleSimulationCompletion,
-  ]); // Add queryClient, attemptId, onSimulationFinished, and handleSimulationCompletion to the dependency array
+  }, [attemptId, onSimulationFinished, handleSimulationCompletion, router]);
 
   // Listen for grading progress events
   useEffect(() => {
@@ -1016,7 +984,7 @@ export function SimulationProvider({
     setCurrentChatIndex,
     currentChat,
     chats,
-    isLoadingChats,
+    isLoadingChats: false, // No loading when using server data
 
     // Messages and hints (from v3)
     currentMessages,

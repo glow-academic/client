@@ -7,13 +7,20 @@
 
 "use client";
 
+import {
+  filtersToSearchParams,
+  searchParamsToFilters,
+  type DefaultAnalyticsFilters,
+} from "@/lib/server/analytics-filters";
 import { subDays } from "date-fns";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useProfile } from "./profile-context";
@@ -73,6 +80,8 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const { effectiveProfile, earliestAttemptDate, cohortIds, departmentIds } =
     useProfile();
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Calculate the earliest date to use as default start date
   // Round to start of day for stable query keys
@@ -90,19 +99,99 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     return fallback;
   }, [earliestAttemptDate]);
 
+  // Compute default filters (same logic as server-side)
+  const defaultFilters = useMemo<DefaultAnalyticsFilters>(() => {
+    const defaultStartDate = new Date(earliestDate);
+    defaultStartDate.setHours(0, 0, 0, 0);
+    const defaultEndDate = new Date();
+    defaultEndDate.setHours(23, 59, 59, 999);
+
+    return {
+      startDate: defaultStartDate.toISOString(),
+      endDate: defaultEndDate.toISOString(),
+      cohortIds: [],
+      roles: [],
+      simulationFilters: ["general"],
+      departmentIds: [],
+    };
+  }, [earliestDate]);
+
+  // Initialize state from search params or defaults
+  const getInitialFilters = useCallback(() => {
+    if (searchParams.toString()) {
+      const parsed = searchParamsToFilters(searchParams, defaultFilters);
+      return {
+        startDate: new Date(parsed.startDate),
+        endDate: new Date(parsed.endDate),
+        selectedCohortIds: parsed.cohortIds || [],
+        selectedDepartmentIds: parsed.departmentIds || [],
+        selectedRoles: (parsed.roles || []) as ProfileRole[],
+        simulationFilters: (parsed.simulationFilters || [
+          "general",
+        ]) as SimulationFilter[],
+      };
+    }
+    // Use defaults
+    return {
+      startDate: new Date(defaultFilters.startDate),
+      endDate: new Date(defaultFilters.endDate),
+      selectedCohortIds: [],
+      selectedDepartmentIds: [],
+      selectedRoles: ["ta"] as ProfileRole[],
+      simulationFilters: ["general"] as SimulationFilter[],
+    };
+  }, [searchParams, defaultFilters]);
+
+  const initialFilters = getInitialFilters();
+
   // Default to earliest attempt date instead of last 30 days
   // Round to day boundaries for stable query keys
-  const [startDate, setStartDate] = useState<Date>(() => {
-    const date = new Date(earliestDate);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  });
-  const [endDate, setEndDate] = useState<Date>(() => {
-    const date = new Date();
-    date.setHours(23, 59, 59, 999);
-    return date;
-  });
+  const [startDate, setStartDate] = useState<Date>(initialFilters.startDate);
+  const [endDate, setEndDate] = useState<Date>(initialFilters.endDate);
   const [hasUserSetDateRange, setHasUserSetDateRange] = useState(false);
+
+  // Helper to compare arrays
+  const arraysEqual = useCallback((a: string[], b: string[]): boolean => {
+    if (a.length !== b.length) return false;
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    return sortedA.every((val, idx) => val === sortedB[idx]);
+  }, []);
+
+  // Sync search params to state on mount/change (only if search params change externally)
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Only sync if search params changed externally (not from our own updates)
+    const currentFilters = getInitialFilters();
+    if (
+      currentFilters.startDate.getTime() !== startDate.getTime() ||
+      currentFilters.endDate.getTime() !== endDate.getTime()
+    ) {
+      setStartDate(currentFilters.startDate);
+      setEndDate(currentFilters.endDate);
+      setHasUserSetDateRange(true);
+    }
+    if (!arraysEqual(currentFilters.selectedCohortIds, selectedCohortIds)) {
+      setSelectedCohortIds(currentFilters.selectedCohortIds);
+    }
+    if (
+      !arraysEqual(currentFilters.selectedDepartmentIds, selectedDepartmentIds)
+    ) {
+      setSelectedDepartmentIds(currentFilters.selectedDepartmentIds);
+    }
+    if (!arraysEqual(currentFilters.selectedRoles, selectedRoles)) {
+      setSelectedRoles(currentFilters.selectedRoles);
+    }
+    if (!arraysEqual(currentFilters.simulationFilters, simulationFilters)) {
+      setSimulationFilters(currentFilters.simulationFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString(), arraysEqual]);
 
   // Update start date when earliest date changes
   // Only auto-update if user hasn't manually set a date range
@@ -116,19 +205,97 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   }, [earliestDate, startDate, hasUserSetDateRange]);
 
   // Cohort filtering - empty array means all cohorts
-  const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
+  const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>(
+    initialFilters.selectedCohortIds
+  );
   // Department filtering - empty array means all departments
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    []
+    initialFilters.selectedDepartmentIds
   );
   // Document filtering - empty array means all documents
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
-  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(["ta"]);
+  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(
+    initialFilters.selectedRoles
+  );
   // New dual flags for practice/assigned filtering
   const [simulationFilters, setSimulationFilters] = useState<
     SimulationFilter[]
-  >(["general"]);
+  >(initialFilters.simulationFilters);
+
+  // Sync filter state to search params
+  const syncFiltersToSearchParams = useCallback(() => {
+    const currentFilters: {
+      startDate: string;
+      endDate: string;
+      cohortIds?: string[];
+      roles?: string[];
+      simulationFilters?: SimulationFilter[];
+      departmentIds?: string[];
+    } = {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    };
+
+    if (selectedCohortIds.length > 0) {
+      currentFilters.cohortIds = selectedCohortIds;
+    }
+
+    if (selectedRoles.length > 0) {
+      currentFilters.roles = selectedRoles;
+    }
+
+    if (
+      simulationFilters.length > 0 &&
+      !arraysEqual(simulationFilters, ["general"])
+    ) {
+      currentFilters.simulationFilters = simulationFilters;
+    }
+
+    if (selectedDepartmentIds.length > 0) {
+      currentFilters.departmentIds = selectedDepartmentIds;
+    }
+
+    const params = filtersToSearchParams(currentFilters, defaultFilters);
+    const newSearch = params.toString();
+    const currentSearch = searchParams.toString();
+
+    // Only update if search params actually changed
+    if (newSearch !== currentSearch) {
+      const newUrl = newSearch ? `${pathname}?${newSearch}` : pathname || "/";
+      router.replace(newUrl);
+      router.refresh();
+    }
+  }, [
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+    selectedDepartmentIds,
+    defaultFilters,
+    pathname,
+    router,
+    searchParams,
+    arraysEqual,
+  ]);
+
+  // Debounce search params updates
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      syncFiltersToSearchParams();
+    }, 100);
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [syncFiltersToSearchParams]);
 
   // Compute effective cohort IDs (all user cohorts if none selected)
   const effectiveCohortIds = useMemo(
@@ -192,6 +359,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setStartDate(roundedStart);
     setEndDate(roundedEnd);
     setHasUserSetDateRange(true); // Mark that the user has set the date range
+    // Search params will be synced via effect
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -208,6 +376,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setSelectedRoles([]);
     setSimulationFilters(["general"]);
     setHasUserSetDateRange(false); // Reset user-set date range
+    // Search params will be synced via effect - will clear to defaults
   }, [earliestDate]);
 
   const hasActiveFilters =
@@ -215,21 +384,48 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     selectedDepartmentIds.length > 0 ||
     selectedDocumentIds.length > 0;
 
+  // Wrap setters to trigger search params sync
+  const wrappedSetSelectedCohortIds = useCallback((cohortIds: string[]) => {
+    setSelectedCohortIds(cohortIds);
+  }, []);
+
+  const wrappedSetSelectedDepartmentIds = useCallback(
+    (departmentIds: string[]) => {
+      setSelectedDepartmentIds(departmentIds);
+    },
+    []
+  );
+
+  const wrappedSetSelectedDocumentIds = useCallback((documentIds: string[]) => {
+    setSelectedDocumentIds(documentIds);
+  }, []);
+
+  const wrappedSetSelectedRoles = useCallback((roles: ProfileRole[]) => {
+    setSelectedRoles(roles);
+  }, []);
+
+  const wrappedSetSimulationFilters = useCallback(
+    (filters: SimulationFilter[]) => {
+      setSimulationFilters(filters);
+    },
+    []
+  );
+
   const value: AnalyticsContextType = useMemo(
     () => ({
       startDate,
       endDate,
       setDateRange,
       selectedCohortIds,
-      setSelectedCohortIds,
+      setSelectedCohortIds: wrappedSetSelectedCohortIds,
       selectedDepartmentIds,
-      setSelectedDepartmentIds,
+      setSelectedDepartmentIds: wrappedSetSelectedDepartmentIds,
       selectedDocumentIds,
-      setSelectedDocumentIds,
+      setSelectedDocumentIds: wrappedSetSelectedDocumentIds,
       selectedRoles,
-      setSelectedRoles,
+      setSelectedRoles: wrappedSetSelectedRoles,
       simulationFilters,
-      setSimulationFilters,
+      setSimulationFilters: wrappedSetSimulationFilters,
       effectiveCohortIds,
       effectiveDepartmentIds,
       effectiveDocumentIds,
@@ -243,15 +439,15 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       endDate,
       setDateRange,
       selectedCohortIds,
-      setSelectedCohortIds,
+      wrappedSetSelectedCohortIds,
       selectedDepartmentIds,
-      setSelectedDepartmentIds,
+      wrappedSetSelectedDepartmentIds,
       selectedDocumentIds,
-      setSelectedDocumentIds,
+      wrappedSetSelectedDocumentIds,
       effectiveRoles,
-      setSelectedRoles,
+      wrappedSetSelectedRoles,
       effectiveSimulationFilters,
-      setSimulationFilters,
+      wrappedSetSimulationFilters,
       effectiveCohortIds,
       effectiveDepartmentIds,
       effectiveDocumentIds,

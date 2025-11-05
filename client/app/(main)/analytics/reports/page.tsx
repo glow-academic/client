@@ -7,35 +7,61 @@
 
 import ReportsPage from "@/components/reports/ReportsPage";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getDefaultAnalyticsFilters } from "@/lib/server/analytics-filters";
-import { getQueryClient } from "@/utils/queryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
+import { cache } from "react";
+
+/** ---- Strong types from OpenAPI ---- */
+type ReportsIn = InputOf<"/api/v3/reports", "post">;
+type ReportsOut = OutputOf<"/api/v3/reports", "post">;
+
+/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
+const getReports = cache(async (input: ReportsIn): Promise<ReportsOut> => {
+  return api.post("/reports", input);
+});
 
 export const metadata: Metadata = {
   title: "Reports",
   description: `Reports in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
-export default async function ReportsFullPage() {
-  // Get default filters matching analytics context (includes earliestAttemptDate logic)
-  const filters = await getDefaultAnalyticsFilters();
+interface ReportsPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-  const queryClient = getQueryClient();
+export default async function ReportsFullPage({
+  searchParams,
+}: ReportsPageProps) {
+  // Parse search params
+  const params = await searchParams;
+  const searchParamsObj = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParamsObj.append(key, v));
+      } else {
+        searchParamsObj.set(key, value);
+      }
+    }
+  });
 
-  // Prefetch reports with same queryKey that client will use
-  await queryClient.prefetchQuery({
-    queryKey: keys.reports.with(filters),
-    queryFn: () => api.post("/reports", { body: filters }),
-    staleTime: 30_000, // Prevent instant refetch
+  // Get filters from search params or defaults
+  const filters = await getDefaultAnalyticsFilters(
+    searchParamsObj.toString() ? searchParamsObj : undefined
+  );
+
+  // Fetch reports data server-side
+  const reportsData = await getReports({
+    body: filters,
   });
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-6">
-        <ReportsPage />
-      </div>
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <ReportsPage reportsData={reportsData} />
+    </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type { ReportsIn, ReportsOut };

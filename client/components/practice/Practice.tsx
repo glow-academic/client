@@ -5,6 +5,7 @@
  * 06/08/2025
  */
 "use client";
+import type { PracticeOut } from "@/app/(main)/practice/page";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -19,9 +20,6 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 // Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
 // This functionality needs to be re-implemented or removed
 import SimulationHistory from "../common/history/SimulationHistory";
@@ -29,9 +27,12 @@ import { Skeleton } from "../ui/skeleton";
 import { PracticeCustomizeDialog } from "./PracticeCustomizeDialog";
 import PracticeZone from "./PracticeZone";
 
-export default function Practice() {
+export interface PracticeProps {
+  practiceData: PracticeOut;
+}
+
+export default function Practice({ practiceData }: PracticeProps) {
   const router = useRouter();
-  const { effectiveDepartmentIds } = useProfile();
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation, startingSimulationId } =
@@ -56,26 +57,12 @@ export default function Practice() {
       window.removeEventListener("openPracticeCustomize", handleOpenCustomize);
   }, []);
 
-  // Practice uses simplified filters: only profileId and departmentIds
-  // No date/cohort/role filtering for personal practice
-  const filters = useMemo(
-    () => ({
-      profileId: effectiveProfile?.id || "",
-      departmentIds: effectiveDepartmentIds,
-    }),
-    [effectiveProfile?.id, effectiveDepartmentIds]
-  );
-
-  // Single optimized bundle call with items, history, and mappings
-  const { data: bundle, isLoading: isPracticeOverviewLoading } = useQuery({
-    queryKey: keys.practice.with(filters),
-    queryFn: () => api.post("/practice", { body: filters }),
-  });
-
-  // Extract data from bundle
+  // Extract data from practiceData
+  const bundle = practiceData;
   const practiceOverview = bundle;
-  const historyData = bundle?.history;
-  const isHistoryLoading = isPracticeOverviewLoading;
+  const historyData = practiceData?.history;
+  const isHistoryLoading = false;
+  const isPracticeOverviewLoading = false;
 
   // Extract entity mappings for PracticeCustomizeDialog (memoized to prevent reference changes)
   const personaMapping = useMemo(
@@ -388,7 +375,15 @@ export default function Practice() {
               { name: string; description: string; points: number }
             >
           }
-          profile={effectiveProfile}
+          profile={{
+            ...effectiveProfile,
+            role: effectiveProfile.role as
+              | "ta"
+              | "instructional"
+              | "superadmin"
+              | "admin"
+              | "guest",
+          }}
           onStartSimulation={handleStartSimulation}
           loadingSimulation={loadingSimulation}
         />
@@ -527,8 +522,24 @@ export default function Practice() {
             }
           }}
           isStartingAttempt={isStartingAttempt}
-          effectiveProfile={effectiveProfile!}
-          activeProfile={activeProfile!}
+          effectiveProfile={{
+            ...effectiveProfile!,
+            role: effectiveProfile!.role as
+              | "ta"
+              | "instructional"
+              | "superadmin"
+              | "admin"
+              | "guest",
+          }}
+          activeProfile={{
+            ...activeProfile!,
+            role: activeProfile!.role as
+              | "ta"
+              | "instructional"
+              | "superadmin"
+              | "admin"
+              | "guest",
+          }}
         />
       )}
     </TooltipProvider>
