@@ -13,6 +13,14 @@ import type { Metadata } from "next";
 import { revalidateTag } from "next/cache";
 import { cache } from "react";
 
+// Import staff actions from staff page
+import {
+  bulkCreateOrUpdateStaff,
+  getCreateStaffData,
+  processCSV,
+  searchStaff,
+} from "@/app/(main)/management/staff/page";
+
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailDefaultIn = InputOf<
   "/api/v3/departments/detail-default",
@@ -26,17 +34,6 @@ type DepartmentDetailDefaultOut = OutputOf<
 type CreateDepartmentIn = InputOf<"/api/v3/departments/create", "post">;
 type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
 
-type UpdateDepartmentIn = InputOf<"/api/v3/departments/update", "post">;
-type UpdateDepartmentOut = OutputOf<"/api/v3/departments/update", "post">;
-
-type RemoveProfilesFromDepartmentIn = InputOf<
-  "/api/v3/departments/remove-profiles",
-  "post"
->;
-type RemoveProfilesFromDepartmentOut = OutputOf<
-  "/api/v3/departments/remove-profiles",
-  "post"
->;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
@@ -47,30 +44,12 @@ const getDepartmentDefault = cache(
   }
 );
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server action ---- */
 export async function createDepartment(
   input: CreateDepartmentIn
 ): Promise<CreateDepartmentOut> {
   "use server";
   const out = await api.post("/departments/create", input);
-  revalidateTag("departments");
-  return out;
-}
-
-export async function updateDepartment(
-  input: UpdateDepartmentIn
-): Promise<UpdateDepartmentOut> {
-  "use server";
-  const out = await api.post("/departments/update", input);
-  revalidateTag("departments");
-  return out;
-}
-
-export async function removeProfilesFromDepartment(
-  input: RemoveProfilesFromDepartmentIn
-): Promise<RemoveProfilesFromDepartmentOut> {
-  "use server";
-  const out = await api.post("/departments/remove-profiles", input);
   revalidateTag("departments");
   return out;
 }
@@ -90,17 +69,42 @@ export default async function NewDepartmentPage() {
     body: { profileId },
   });
 
+  // Fetch initial search data (empty query) for SearchExistingStaffModal
+  const initialSearchData = await searchStaff({
+    body: {
+      query: null,
+      cohortIds: null,
+      departmentIds: null,
+      limit: 200,
+      profileId,
+    },
+  });
+
+  // Fetch initial create staff data for CreateStaffButton
+  const initialCreateStaffData = await getCreateStaffData({
+    body: {
+      departmentIds: [],
+      profileId,
+    },
+  });
+
   return (
     <div className="space-y-6">
       <Department
         departmentDetailDefault={departmentDetailDefault}
         createDepartmentAction={createDepartment}
-        updateDepartmentAction={updateDepartment}
-        removeProfilesFromDepartmentAction={removeProfilesFromDepartment}
+        processCSVAction={processCSV}
+        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
+        searchStaffAction={searchStaff}
+        initialSearchData={initialSearchData}
+        initialCreateStaffData={initialCreateStaffData}
       />
     </div>
   );
 }
+
+/** ---- Derived types from server responses ---- */
+export type DepartmentDefaultStaffItem = DepartmentDetailDefaultOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
@@ -108,8 +112,5 @@ export type {
   CreateDepartmentOut,
   DepartmentDetailDefaultIn,
   DepartmentDetailDefaultOut,
-  RemoveProfilesFromDepartmentIn,
-  RemoveProfilesFromDepartmentOut,
-  UpdateDepartmentIn,
-  UpdateDepartmentOut,
+  DepartmentDefaultStaffItem,
 };

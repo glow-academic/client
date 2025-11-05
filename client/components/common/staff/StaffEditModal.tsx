@@ -6,11 +6,9 @@
 
 "use client";
 
-import type {
-  UpdateStaffIn,
-  UpdateStaffOut,
-} from "@/app/(main)/management/staff/page";
+import type { StaffDetailOut } from "@/app/(main)/management/staff/page";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
+import type { UpdateStaffAction } from "@/components/staff/Staff";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,9 +32,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -46,7 +41,9 @@ export interface StaffEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone?: () => void;
-  updateStaffAction?: (input: UpdateStaffIn) => Promise<UpdateStaffOut>;
+  updateStaffAction?: UpdateStaffAction;
+  staffDetail?: StaffDetailOut | null;
+  isLoading?: boolean;
 }
 
 export default function StaffEditModal({
@@ -55,25 +52,11 @@ export default function StaffEditModal({
   onOpenChange,
   onDone,
   updateStaffAction,
+  staffDetail: profileData,
+  isLoading = false,
 }: StaffEditModalProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
-
-  // V3 API: Fetch profile detail
-  const { data: profileData, isLoading } = useQuery({
-    queryKey: keys.profile.with({
-      profileId: profileId || "",
-      currentProfileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/profile/staff/detail", {
-        body: {
-          profileId: profileId || "",
-          currentProfileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !!profileId && !!effectiveProfile?.id,
-  });
 
   // V3 response structure: fields are directly on the response object
   // Extract name into firstName/lastName (assuming format "FirstName LastName")

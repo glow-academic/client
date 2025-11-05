@@ -6,11 +6,9 @@
 
 "use client";
 
-import type {
-  BulkUpdateStaffIn,
-  BulkUpdateStaffOut,
-} from "@/app/(main)/management/staff/page";
+import type { StaffDetailBulkOut } from "@/app/(main)/management/staff/page";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
+import type { BulkUpdateStaffAction } from "@/components/staff/Staff";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,9 +31,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -45,9 +40,8 @@ export interface StaffBulkEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone?: () => void;
-  bulkUpdateStaffAction?: (
-    input: BulkUpdateStaffIn
-  ) => Promise<BulkUpdateStaffOut>;
+  bulkUpdateStaffAction?: BulkUpdateStaffAction;
+  bulkDetail?: StaffDetailBulkOut | null;
 }
 
 export default function StaffBulkEditModal({
@@ -56,25 +50,10 @@ export default function StaffBulkEditModal({
   onOpenChange,
   onDone,
   bulkUpdateStaffAction,
+  bulkDetail,
 }: StaffBulkEditModalProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
-
-  // V3 API: Fetch bulk detail
-  const { data: bulkDetail } = useQuery({
-    queryKey: keys.profile.with({
-      profileIds,
-      currentProfileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/profile/staff/detail-bulk", {
-        body: {
-          profileIds,
-          currentProfileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: open && profileIds.length > 0 && !!effectiveProfile?.id,
-  });
 
   const [bulkRole, setBulkRole] = useState<string>("__keep__");
   const [bulkReqPerDay, setBulkReqPerDay] = useState<string>("");

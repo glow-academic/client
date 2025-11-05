@@ -1,21 +1,13 @@
 /**
  * Staff.tsx
  * Used to display the staff page with faceted filters and data table.
+ * All data is fetched server-side and passed as props.
+ * All actions use server actions - no client-side data fetching.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
 "use client";
-import type {
-  BulkDeleteStaffIn,
-  BulkDeleteStaffOut,
-  BulkUpdateStaffIn,
-  BulkUpdateStaffOut,
-  DeleteStaffIn,
-  DeleteStaffOut,
-  StaffListOut,
-  UpdateStaffIn,
-  UpdateStaffOut,
-} from "@/app/(main)/management/staff/page";
+
 import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
@@ -40,48 +32,88 @@ import InstructionalUsersKPI from "./kpis/InstructionalUsersKPI";
 import TAUsersKPI from "./kpis/TAUsersKPI";
 import TotalRequestsKPI from "./kpis/TotalRequestsKPI";
 
-type ProfileListItem = {
-  profile_id: string;
-  first_name: string;
-  last_name: string;
-  alias: string;
-  name: string;
-  role: string;
-  email: string;
-  initials: string;
-  active: boolean;
-  last_active: string | null;
-  cohort_ids: string[];
-  department_ids: string[];
-  requests_per_day: number | null;
-  total_requests: number;
-  default_profile: boolean;
-  requests_in_last_day: number;
-  can_edit: boolean;
-  can_delete: boolean;
-  can_remove?: boolean;
-};
+// Import types from page (all types are already exported from the page)
+import type {
+  BulkCreateOrUpdateStaffIn,
+  BulkCreateOrUpdateStaffOut,
+  BulkDeleteStaffIn,
+  BulkDeleteStaffOut,
+  BulkUpdateStaffIn,
+  BulkUpdateStaffOut,
+  CreateStaffDataOut,
+  DeleteStaffIn,
+  DeleteStaffOut,
+  ProcessCSVIn,
+  ProcessCSVOut,
+  ProfileListItem,
+  SearchStaffIn,
+  SearchStaffOut,
+  StaffDetailBulkIn,
+  StaffDetailBulkOut,
+  StaffDetailIn,
+  StaffDetailOut,
+  StaffListOut,
+  UpdateStaffIn,
+  UpdateStaffOut,
+} from "@/app/(main)/management/staff/page";
+
+// Explicitly define server action types (matching the page exports)
+export type DeleteStaffAction = (
+  input: DeleteStaffIn
+) => Promise<DeleteStaffOut>;
+export type BulkDeleteStaffAction = (
+  input: BulkDeleteStaffIn
+) => Promise<BulkDeleteStaffOut>;
+export type UpdateStaffAction = (
+  input: UpdateStaffIn
+) => Promise<UpdateStaffOut>;
+export type BulkUpdateStaffAction = (
+  input: BulkUpdateStaffIn
+) => Promise<BulkUpdateStaffOut>;
+export type GetStaffDetailAction = (
+  input: StaffDetailIn
+) => Promise<StaffDetailOut>;
+export type GetStaffDetailBulkAction = (
+  input: StaffDetailBulkIn
+) => Promise<StaffDetailBulkOut>;
+export type SearchStaffAction = (
+  input: SearchStaffIn
+) => Promise<SearchStaffOut>;
+export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
+export type BulkCreateOrUpdateStaffAction = (
+  input: BulkCreateOrUpdateStaffIn
+) => Promise<BulkCreateOrUpdateStaffOut>;
 
 export interface StaffProps {
-  // Server-provided data (for server-side rendering)
+  // Server-provided data (fetched server-side, no client fetching)
   listData: StaffListOut;
-  // Server actions (replaces useMutation)
-  deleteStaffAction?: (input: DeleteStaffIn) => Promise<DeleteStaffOut>;
-  bulkDeleteStaffAction?: (
-    input: BulkDeleteStaffIn
-  ) => Promise<BulkDeleteStaffOut>;
-  updateStaffAction?: (input: UpdateStaffIn) => Promise<UpdateStaffOut>;
-  bulkUpdateStaffAction?: (
-    input: BulkUpdateStaffIn
-  ) => Promise<BulkUpdateStaffOut>;
+  initialSearchData?: SearchStaffOut;
+  initialCreateStaffData?: CreateStaffDataOut;
+  // Server actions (pure server actions, no client-side mutations)
+  deleteStaffAction?: DeleteStaffAction;
+  bulkDeleteStaffAction?: BulkDeleteStaffAction;
+  updateStaffAction?: UpdateStaffAction;
+  bulkUpdateStaffAction?: BulkUpdateStaffAction;
+  getStaffDetailAction?: GetStaffDetailAction;
+  getStaffDetailBulkAction?: GetStaffDetailBulkAction;
+  searchStaffAction?: SearchStaffAction;
+  processCSVAction?: ProcessCSVAction;
+  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
 }
 
 export default function Staff({
   listData: serverListData,
+  initialSearchData,
+  initialCreateStaffData,
   deleteStaffAction,
   bulkDeleteStaffAction,
   updateStaffAction,
   bulkUpdateStaffAction,
+  getStaffDetailAction,
+  getStaffDetailBulkAction,
+  searchStaffAction,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
 }: StaffProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -91,16 +123,19 @@ export default function Staff({
   const staffData = serverListData;
   const isLoading = false; // No loading when using server data
 
-  // Selection
+  // Selection state
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
 
-  // Create modal
-
-  // Edit modal
+  // Edit modal - fetch data when opening via server action
   const [editProfileId, setEditProfileId] = React.useState<string | null>(null);
+  const [editStaffDetail, setEditStaffDetail] =
+    React.useState<StaffDetailOut | null>(null);
+  const [isLoadingEditDetail, setIsLoadingEditDetail] = React.useState(false);
 
-  // Bulk edit modal state
+  // Bulk edit modal - fetch data when opening
   const [showBulkEditModal, setShowBulkEditModal] = React.useState(false);
+  const [bulkEditDetail, setBulkEditDetail] =
+    React.useState<StaffDetailBulkOut | null>(null);
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
@@ -111,7 +146,7 @@ export default function Staff({
   const [deleteStaffMember, setDeleteStaffMember] =
     React.useState<ProfileListItem | null>(null);
 
-  // Extract data from V2 API response
+  // Extract data from server-provided data (already filtered server-side)
   const staff = React.useMemo(() => staffData?.staff || [], [staffData?.staff]);
   const cohortMapping = React.useMemo(
     () => staffData?.cohort_mapping || {},
@@ -133,9 +168,7 @@ export default function Staff({
     [staffData?.trend_data]
   );
 
-  // Filter staff users based on current user's role (done server-side now)
-
-  // Get role and activity counts for summary
+  // Calculate counts for KPI cards
   const counts = React.useMemo(() => {
     const activeStaff = staff.filter((s) => s.active);
     const inactiveStaff = staff.filter((s) => !s.active);
@@ -153,10 +186,11 @@ export default function Staff({
     };
   }, [staff]);
 
+  // Refresh data by revalidating server-side data
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      router.refresh();
+      router.refresh(); // Triggers server-side revalidation
       toast.success("Staff data refreshed");
     } catch {
       toast.error("Failed to refresh staff data");
@@ -308,12 +342,48 @@ export default function Staff({
             "noopener,noreferrer"
           );
         }}
-        onEdit={(staffMember) => setEditProfileId(staffMember.profile_id)}
+        onEdit={async (staffMember) => {
+          if (!getStaffDetailAction || !effectiveProfile?.id) return;
+          setIsLoadingEditDetail(true);
+          try {
+            const detail = await getStaffDetailAction({
+              body: {
+                profileId: staffMember.profile_id,
+                currentProfileId: effectiveProfile.id,
+              },
+            });
+            setEditStaffDetail(detail);
+            setEditProfileId(staffMember.profile_id);
+          } catch {
+            toast.error("Failed to load staff details");
+          } finally {
+            setIsLoadingEditDetail(false);
+          }
+        }}
         onDelete={(staffMember) => {
           setDeleteStaffMember(staffMember);
           setShowSingleDeleteDialog(true);
         }}
-        onBulkEdit={() => setShowBulkEditModal(true)}
+        onBulkEdit={async () => {
+          if (
+            !getStaffDetailBulkAction ||
+            !effectiveProfile?.id ||
+            selectedStaffIds.length === 0
+          )
+            return;
+          try {
+            const detail = await getStaffDetailBulkAction({
+              body: {
+                profileIds: selectedStaffIds,
+                currentProfileId: effectiveProfile.id,
+              },
+            });
+            setBulkEditDetail(detail);
+            setShowBulkEditModal(true);
+          } catch {
+            toast.error("Failed to load staff details");
+          }
+        }}
         onBulkDelete={() => setShowBulkDeleteDialog(true)}
         canDelete={(profileId) => {
           const row = staff.find((s) => s.profile_id === profileId);
@@ -335,6 +405,13 @@ export default function Staff({
           const row = staff.find((s) => s.profile_id === profileId);
           return row?.can_edit ?? false;
         }}
+        {...(searchStaffAction && { searchStaffAction })}
+        {...(processCSVAction && { processCSVAction })}
+        {...(bulkCreateOrUpdateStaffAction && {
+          bulkCreateOrUpdateStaffAction,
+        })}
+        {...(initialSearchData && { initialSearchData })}
+        {...(initialCreateStaffData && { initialCreateStaffData })}
       />
 
       {/* Edit Staff Modal */}
@@ -342,12 +419,20 @@ export default function Staff({
         <StaffEditModal
           profileId={editProfileId}
           open={!!editProfileId}
-          onOpenChange={(open: boolean) => !open && setEditProfileId(null)}
+          onOpenChange={(open: boolean) => {
+            if (!open) {
+              setEditProfileId(null);
+              setEditStaffDetail(null);
+            }
+          }}
           onDone={() => {
             setEditProfileId(null);
+            setEditStaffDetail(null);
             router.refresh();
           }}
           updateStaffAction={updateStaffAction}
+          staffDetail={editStaffDetail}
+          isLoading={isLoadingEditDetail}
         />
       )}
 
@@ -356,12 +441,19 @@ export default function Staff({
         <StaffBulkEditModal
           profileIds={selectedStaffIds}
           open={showBulkEditModal}
-          onOpenChange={setShowBulkEditModal}
+          onOpenChange={(open: boolean) => {
+            setShowBulkEditModal(open);
+            if (!open) {
+              setBulkEditDetail(null);
+            }
+          }}
           onDone={() => {
             setSelectedStaffIds([]);
+            setBulkEditDetail(null);
             router.refresh();
           }}
           bulkUpdateStaffAction={bulkUpdateStaffAction}
+          bulkDetail={bulkEditDetail}
         />
       )}
 

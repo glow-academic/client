@@ -3,6 +3,15 @@
 import { Plus, Search, Upload, UserPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import type {
+  CreateStaffDataOut,
+  SearchStaffOut,
+} from "@/app/(main)/management/staff/page";
+import type {
+  BulkCreateOrUpdateStaffAction,
+  ProcessCSVAction,
+  SearchStaffAction,
+} from "@/components/staff/Staff";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,10 +19,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
 import CSVImportStaffModal from "./CSVImportStaffModal";
 import ManualAddStaffModal from "./ManualAddStaffModal";
 import SearchExistingStaffModal from "./SearchExistingStaffModal";
@@ -31,6 +36,11 @@ export interface CreateStaffButtonProps {
       role?: string;
     }>
   ) => void;
+  initialCreateStaffData?: CreateStaffDataOut;
+  initialSearchData?: SearchStaffOut;
+  searchStaffAction?: SearchStaffAction;
+  processCSVAction?: ProcessCSVAction;
+  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
 }
 
 export default function CreateStaffButton({
@@ -38,27 +48,17 @@ export default function CreateStaffButton({
   cohortIds: scopedCohortIds,
   onDone,
   onStagedProfiles,
+  initialCreateStaffData,
+  initialSearchData,
+  searchStaffAction,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
 }: CreateStaffButtonProps) {
-  const { effectiveProfile, departmentIds } = useProfile();
   const [showManualModal, setShowManualModal] = useState(false);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
-
-  // V3 API: Fetch create staff data
-  const { data: createStaffData, isLoading } = useQuery({
-    queryKey: keys.profile.with({
-      departmentIds,
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/profile/staff/create-staff-data", {
-        body: {
-          departmentIds: departmentIds,
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !!effectiveProfile?.id,
-  });
+  const createStaffData = initialCreateStaffData;
+  const isLoading = !createStaffData;
 
   // Transform mappings for pickers
   const departmentMapping = useMemo(() => {
@@ -66,10 +66,12 @@ export default function CreateStaffButton({
     if (createStaffData?.department_mapping) {
       Object.entries(createStaffData.department_mapping).forEach(
         ([id, dept]) => {
-          mapping[id] = {
-            name: dept.name,
-            description: dept.description || "",
-          };
+          if (dept && typeof dept === "object" && "name" in dept) {
+            mapping[id] = {
+              name: String(dept.name),
+              description: String(dept.description || ""),
+            };
+          }
         }
       );
     }
@@ -80,10 +82,12 @@ export default function CreateStaffButton({
     const mapping: Record<string, { name: string; description: string }> = {};
     if (createStaffData?.cohort_mapping) {
       Object.entries(createStaffData.cohort_mapping).forEach(([id, cohort]) => {
-        mapping[id] = {
-          name: cohort.name,
-          description: cohort.description || "",
-        };
+        if (cohort && typeof cohort === "object" && "name" in cohort) {
+          mapping[id] = {
+            name: String(cohort.name),
+            description: String(cohort.description || ""),
+          };
+        }
       });
     }
     return mapping;
@@ -161,6 +165,9 @@ export default function CreateStaffButton({
           validCohortIds={validCohortIds}
           roleOptions={roleOptions}
           onDone={handleModalDone}
+          {...(bulkCreateOrUpdateStaffAction && {
+            bulkCreateOrUpdateStaffAction,
+          })}
           {...(scopedDepartmentIds?.length || scopedCohortIds?.length
             ? { onStagedProfiles }
             : {})}
@@ -182,6 +189,8 @@ export default function CreateStaffButton({
           cohortMapping={cohortMapping}
           validCohortIds={validCohortIds}
           onDone={handleModalDone}
+          {...(initialSearchData && { initialSearchData })}
+          {...(searchStaffAction && { searchStaffAction })}
           {...(scopedDepartmentIds?.length || scopedCohortIds?.length
             ? { onStagedProfiles }
             : {})}
@@ -204,6 +213,10 @@ export default function CreateStaffButton({
           validCohortIds={validCohortIds}
           roleOptions={roleOptions}
           onDone={handleModalDone}
+          {...(processCSVAction && { processCSVAction })}
+          {...(bulkCreateOrUpdateStaffAction && {
+            bulkCreateOrUpdateStaffAction,
+          })}
           {...(scopedDepartmentIds?.length || scopedCohortIds?.length
             ? { onStagedProfiles }
             : {})}

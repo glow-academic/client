@@ -12,9 +12,17 @@ import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
+import type {
+  CSVColumnMapping,
+  ProcessedCSVRow,
+} from "@/app/(main)/management/staff/page";
 import { CohortPicker } from "@/components/common/forms/CohortPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
+import type {
+  BulkCreateOrUpdateStaffAction,
+  ProcessCSVAction,
+} from "@/components/staff/Staff";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -47,30 +55,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-type CSVColumnMapping = {
-  csv_column: string;
-  target_field: string | null;
-};
-
-type ProcessedCSVRow = {
-  row_index: number;
-  firstName: string | null;
-  lastName: string | null;
-  alias: string | null;
-  role: string | null;
-  department_ids: string[];
-  cohort_ids: string[];
-  errors: Array<{
-    row_index: number;
-    field: string;
-    message: string;
-  }>;
-};
+import { useRouter } from "next/navigation";
 
 export interface CSVImportStaffModalProps {
   open: boolean;
@@ -92,6 +78,8 @@ export interface CSVImportStaffModalProps {
       role?: string;
     }>
   ) => void;
+  processCSVAction?: ProcessCSVAction;
+  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
 }
 
 type Stage = "upload" | "mapping" | "review";
@@ -311,43 +299,11 @@ export default function CSVImportStaffModal({
   roleOptions,
   onDone,
   onStagedProfiles,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
 }: CSVImportStaffModalProps) {
   const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
-
-  // V3 API mutations
-  const processCSVMutation = useMutation({
-    mutationFn: (request: {
-      csv_content: string;
-      column_mappings: Array<{
-        csv_column: string;
-        target_field: string | null;
-      }>;
-    }) =>
-      api.post("/profile/staff/process-csv", {
-        body: request,
-      }),
-  });
-
-  const bulkCreateOrUpdateMutation = useMutation({
-    mutationFn: (request: {
-      profiles: Array<{
-        firstName: string;
-        lastName: string;
-        alias: string;
-        role: string;
-        department_ids: string[];
-        cohort_ids: string[];
-      }>;
-      currentProfileId: string;
-    }) =>
-      api.post("/profile/staff/bulk-create-or-update-staff", {
-        body: request,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
+  const router = useRouter();
 
   const [stage, setStage] = useState<Stage>("upload");
   const [csvContent, setCsvContent] = useState<string>("");
@@ -634,12 +590,19 @@ export default function CSVImportStaffModal({
       return;
     }
 
+    if (!processCSVAction) {
+      toast.error("Process CSV action not available");
+      return;
+    }
+
     setIsProcessing(true);
     try {
       // Use filtered mappings (only included columns)
-      const response = await processCSVMutation.mutateAsync({
-        csv_content: csvContent,
-        column_mappings: activeMappings,
+      const response = await processCSVAction({
+        body: {
+          csv_content: csvContent,
+          column_mappings: activeMappings,
+        },
       });
 
       setProcessedRows(response.rows);
@@ -652,7 +615,7 @@ export default function CSVImportStaffModal({
     } finally {
       setIsProcessing(false);
     }
-  }, [csvContent, columnMappings, includedColumns, processCSVMutation]);
+  }, [csvContent, columnMappings, includedColumns, processCSVAction]);
 
   // Check for duplicate aliases in review stage
   const duplicateAliasMap = React.useMemo(() => {
@@ -845,10 +808,20 @@ export default function CSVImportStaffModal({
         };
       });
 
-      const response = await bulkCreateOrUpdateMutation.mutateAsync({
-        profiles,
-        currentProfileId: effectiveProfile?.id || "",
+      if (!bulkCreateOrUpdateStaffAction) {
+        toast.error("Bulk create or update action not available");
+        return;
+      }
+
+      const response = await bulkCreateOrUpdateStaffAction({
+        body: {
+          profiles,
+          currentProfileId: effectiveProfile?.id || "",
+        },
       });
+
+      // Refresh data after successful update
+      router.refresh();
 
       // When scoped, stage the profiles
       if (isScoped && onStagedProfiles && response.profileIds) {
@@ -899,7 +872,8 @@ export default function CSVImportStaffModal({
     isScoped,
     validRoles,
     effectiveProfile?.id,
-    bulkCreateOrUpdateMutation,
+    bulkCreateOrUpdateStaffAction,
+    router,
     onOpenChange,
     onDone,
     onStagedProfiles,

@@ -1,9 +1,14 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import React, { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import type {
+  ProfileListItem,
+  SearchStaffOut,
+} from "@/app/(main)/management/staff/page";
+import type { SearchStaffAction } from "@/components/staff/Staff";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,31 +28,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery } from "@tanstack/react-query";
-
-type ProfileListItem = {
-  profile_id: string;
-  first_name: string;
-  last_name: string;
-  alias: string;
-  name: string;
-  role: string;
-  email: string;
-  initials: string;
-  active: boolean;
-  last_active: string | null;
-  cohort_ids: string[];
-  department_ids: string[];
-  requests_per_day: number | null;
-  total_requests: number;
-  default_profile: boolean;
-  requests_in_last_day: number;
-  can_edit: boolean;
-  can_delete: boolean;
-  can_remove?: boolean;
-};
 
 export interface SearchExistingStaffModalProps {
   open: boolean;
@@ -70,6 +50,8 @@ export interface SearchExistingStaffModalProps {
       totalRequests?: number;
     }>
   ) => void;
+  initialSearchData?: SearchStaffOut;
+  searchStaffAction?: SearchStaffAction;
 }
 
 export default function SearchExistingStaffModal({
@@ -83,6 +65,8 @@ export default function SearchExistingStaffModal({
   validCohortIds: _validCohortIds,
   onDone,
   onStagedProfiles,
+  initialSearchData,
+  searchStaffAction,
 }: SearchExistingStaffModalProps) {
   const { effectiveProfile } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,31 +76,58 @@ export default function SearchExistingStaffModal({
   const [selectedProfiles, setSelectedProfiles] = useState<
     Map<string, ProfileListItem>
   >(new Map());
+  const [searchData, setSearchData] = useState<SearchStaffOut | null>(
+    initialSearchData || null
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // V3 API: Server-side search
-  const { data: searchData, isLoading } = useQuery({
-    queryKey: keys.profile.with({
-      query: searchQuery || null,
-      cohortIds: scopedCohortIds || undefined,
-      departmentIds: _scopedDepartmentIds || undefined,
-      limit: 200,
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/profile/staff/search-staff", {
-        body: {
-          query: searchQuery || null,
-          cohortIds: scopedCohortIds || null,
-          departmentIds: _scopedDepartmentIds || null,
-          limit: 200,
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: open && !!effectiveProfile?.id,
-  });
+  // Search when user types (debounced)
+  const handleSearch = useCallback(
+    async (query: string) => {
+      if (!effectiveProfile?.id || !searchStaffAction) return;
+      setIsLoading(true);
+      try {
+        const data = await searchStaffAction({
+          body: {
+            query: query || null,
+            cohortIds: scopedCohortIds || null,
+            departmentIds: _scopedDepartmentIds || null,
+            limit: 200,
+            profileId: effectiveProfile.id,
+          },
+        });
+        setSearchData(data);
+      } catch {
+        toast.error("Failed to search staff");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      effectiveProfile?.id,
+      searchStaffAction,
+      scopedCohortIds,
+      _scopedDepartmentIds,
+    ]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchQueryChange = useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      searchTimeoutRef.current = setTimeout(() => {
+        handleSearch(value);
+      }, 300);
+    },
+    [handleSearch]
+  );
 
   // Get search results from API response
-  const searchResults = React.useMemo(() => {
+  const searchResults = useMemo(() => {
     if (!searchData?.staff) {
       return [];
     }
@@ -129,13 +140,14 @@ export default function SearchExistingStaffModal({
   }, [searchData?.staff, selectedProfiles]);
 
   // Reset state when modal closes
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open) {
       setSearchQuery("");
       setSelectedProfileIds(new Set());
       setSelectedProfiles(new Map());
+      setSearchData(initialSearchData || null);
     }
-  }, [open]);
+  }, [open, initialSearchData]);
 
   // Toggle profile selection
   const handleToggleProfile = useCallback((profile: ProfileListItem) => {
@@ -232,7 +244,7 @@ export default function SearchExistingStaffModal({
               id="search"
               placeholder="Search by name or alias"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchQueryChange(e.target.value)}
               className="pl-10"
               autoFocus
             />

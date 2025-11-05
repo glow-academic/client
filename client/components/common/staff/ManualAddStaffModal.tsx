@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import type { BulkCreateOrUpdateStaffAction } from "@/components/staff/Staff";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,9 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 type RoleValue = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
@@ -49,6 +48,7 @@ export interface ManualAddStaffModalProps {
       role?: string;
     }>
   ) => void;
+  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
 }
 
 export default function ManualAddStaffModal({
@@ -63,30 +63,10 @@ export default function ManualAddStaffModal({
   roleOptions,
   onDone,
   onStagedProfiles,
+  bulkCreateOrUpdateStaffAction,
 }: ManualAddStaffModalProps) {
   const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
-
-  // V3 API mutation
-  const bulkCreateOrUpdateMutation = useMutation({
-    mutationFn: (request: {
-      profiles: Array<{
-        firstName: string;
-        lastName: string;
-        alias: string;
-        role: string;
-        department_ids: string[];
-        cohort_ids: string[];
-      }>;
-      currentProfileId: string;
-    }) =>
-      api.post("/profile/staff/bulk-create-or-update-staff", {
-        body: request,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
+  const router = useRouter();
 
   const [inputText, setInputText] = useState("");
   const [parsedEntries, setParsedEntries] = useState<ParsedStaffEntry[]>([]);
@@ -327,10 +307,20 @@ export default function ManualAddStaffModal({
         cohort_ids: finalCohortIds,
       }));
 
-      const response = await bulkCreateOrUpdateMutation.mutateAsync({
-        profiles,
-        currentProfileId: effectiveProfile?.id || "",
+      if (!bulkCreateOrUpdateStaffAction) {
+        toast.error("Bulk create or update action not available");
+        return;
+      }
+
+      const response = await bulkCreateOrUpdateStaffAction({
+        body: {
+          profiles,
+          currentProfileId: effectiveProfile?.id || "",
+        },
       });
+
+      // Refresh data after successful update
+      router.refresh();
 
       // When scoped, stage the profiles
       if (isScoped && onStagedProfiles && response.profileIds) {
@@ -372,7 +362,8 @@ export default function ManualAddStaffModal({
     isCohortScoped,
     isDepartmentScoped,
     effectiveProfile?.id,
-    bulkCreateOrUpdateMutation,
+    bulkCreateOrUpdateStaffAction,
+    router,
     onOpenChange,
     onDone,
     onStagedProfiles,

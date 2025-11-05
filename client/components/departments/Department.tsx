@@ -21,37 +21,56 @@ import { useProfile } from "@/contexts/profile-context";
 import { Power } from "lucide-react";
 // Type-only import from server page
 import type {
+  CreateStaffDataOut,
+  SearchStaffOut,
+} from "@/app/(main)/management/staff/page";
+// Import types from new page (create action)
+import type {
   CreateDepartmentIn,
   CreateDepartmentOut,
   DepartmentDetailDefaultOut,
+} from "@/app/(main)/system/departments/new/page";
+// Import types from edit page (update action)
+import type {
   DepartmentDetailOut,
   RemoveProfilesFromDepartmentIn,
   RemoveProfilesFromDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
 } from "@/app/(main)/system/departments/d/[departmentId]/page";
+import type {
+  BulkCreateOrUpdateStaffAction,
+  ProcessCSVAction,
+  SearchStaffAction,
+} from "@/components/staff/Staff";
+// Import staff item types from API responses
+import type { ProfileListItem } from "@/app/(main)/management/staff/page";
+import type { DepartmentStaffItem } from "@/app/(main)/system/departments/d/[departmentId]/page";
+import type { DepartmentDefaultStaffItem } from "@/app/(main)/system/departments/new/page";
 
-type ProfileListItem = {
-  profile_id: string;
-  first_name: string;
-  last_name: string;
-  alias: string;
-  name: string;
-  role: string;
-  email: string;
-  initials: string;
-  active: boolean;
-  last_active: string | null;
-  cohort_ids: string[];
-  department_ids: string[];
-  requests_per_day: number | null;
-  total_requests: number;
-  default_profile: boolean;
-  requests_in_last_day: number;
-  can_edit: boolean;
-  can_delete: boolean;
-  can_remove?: boolean;
-};
+// Helper to normalize department staff item to ProfileListItem format
+const normalizeDepartmentStaffItem = (
+  item: DepartmentStaffItem | DepartmentDefaultStaffItem
+): ProfileListItem => ({
+  profile_id: item.profile_id,
+  first_name: item.first_name,
+  last_name: item.last_name,
+  alias: item.alias,
+  name: item.name,
+  role: item.role,
+  email: item.email,
+  initials: item.initials,
+  active: item.active,
+  last_active: item.last_active ?? null,
+  cohort_ids: item.cohort_ids ?? [],
+  department_ids: item.department_ids ?? [],
+  requests_per_day: item.requests_per_day ?? null,
+  total_requests: item.total_requests ?? 0,
+  default_profile: item.default_profile,
+  requests_in_last_day: item.requests_in_last_day ?? 0,
+  can_edit: item.can_edit,
+  can_delete: item.can_delete,
+});
 
 export interface DepartmentProps {
   departmentId?: string;
@@ -68,6 +87,12 @@ export interface DepartmentProps {
   removeProfilesFromDepartmentAction?: (
     input: RemoveProfilesFromDepartmentIn
   ) => Promise<RemoveProfilesFromDepartmentOut>;
+  // Staff actions for StaffDataTable
+  processCSVAction?: ProcessCSVAction;
+  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
+  searchStaffAction?: SearchStaffAction;
+  initialSearchData?: SearchStaffOut;
+  initialCreateStaffData?: CreateStaffDataOut;
 }
 
 interface FormErrors {
@@ -88,6 +113,11 @@ export default function Department({
   createDepartmentAction,
   updateDepartmentAction,
   removeProfilesFromDepartmentAction,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
+  searchStaffAction,
+  initialSearchData,
+  initialCreateStaffData,
 }: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -374,7 +404,9 @@ export default function Department({
         {departmentId && departmentData && (
           <div className="space-y-4">
             <StaffDataTable
-              data={(departmentData.staff as ProfileListItem[]) || []}
+              data={(departmentData.staff || []).map(
+                normalizeDepartmentStaffItem
+              )}
               cohortMapping={departmentData.cohort_mapping || {}}
               departmentMapping={departmentData.department_mapping || {}}
               roleOptions={[
@@ -476,6 +508,13 @@ export default function Department({
               deletableCount={selectedStaffIds.length}
               canEdit={() => false} // Edit not available in scoped view
               editableCount={0}
+              {...(searchStaffAction && { searchStaffAction })}
+              {...(processCSVAction && { processCSVAction })}
+              {...(bulkCreateOrUpdateStaffAction && {
+                bulkCreateOrUpdateStaffAction,
+              })}
+              {...(initialCreateStaffData && { initialCreateStaffData })}
+              {...(initialSearchData && { initialSearchData })}
             />
           </div>
         )}

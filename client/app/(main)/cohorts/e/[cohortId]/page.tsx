@@ -13,16 +13,17 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { revalidateTag } from "next/cache";
 import { cache } from "react";
 
+// Import staff actions from staff page
+import {
+  bulkCreateOrUpdateStaff,
+  getCreateStaffData,
+  processCSV,
+  searchStaff,
+} from "@/app/(main)/management/staff/page";
+
 /** ---- Strong types from OpenAPI ---- */
 type CohortDetailIn = InputOf<"/api/v3/cohorts/detail", "post">;
 type CohortDetailOut = OutputOf<"/api/v3/cohorts/detail", "post">;
-type CohortDetailDefaultIn = InputOf<"/api/v3/cohorts/detail-default", "post">;
-type CohortDetailDefaultOut = OutputOf<
-  "/api/v3/cohorts/detail-default",
-  "post"
->;
-type CreateCohortIn = InputOf<"/api/v3/cohorts/create", "post">;
-type CreateCohortOut = OutputOf<"/api/v3/cohorts/create", "post">;
 type UpdateCohortIn = InputOf<"/api/v3/cohorts/update", "post">;
 type UpdateCohortOut = OutputOf<"/api/v3/cohorts/update", "post">;
 
@@ -30,12 +31,6 @@ type UpdateCohortOut = OutputOf<"/api/v3/cohorts/update", "post">;
 const getCohort = cache(
   async (input: CohortDetailIn): Promise<CohortDetailOut> => {
     return api.post("/cohorts/detail", input);
-  }
-);
-
-const getCohortDefault = cache(
-  async (input: CohortDetailDefaultIn): Promise<CohortDetailDefaultOut> => {
-    return api.post("/cohorts/detail-default", input);
   }
 );
 
@@ -62,16 +57,7 @@ export async function generateMetadata(
   }
 }
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createCohort(
-  input: CreateCohortIn
-): Promise<CreateCohortOut> {
-  "use server";
-  const out = await api.post("/cohorts/create", input);
-  revalidateTag("cohorts");
-  return out;
-}
-
+/** ---- Strongly-typed server action ---- */
 export async function updateCohort(
   input: UpdateCohortIn
 ): Promise<UpdateCohortOut> {
@@ -94,26 +80,49 @@ export default async function CohortEditPage({
   // Fetch cohort detail (cached, won't duplicate with metadata)
   const cohortDetail = await getCohort({ body: { cohortId, profileId } });
 
+  // Fetch initial search data (empty query) for SearchExistingStaffModal
+  const initialSearchData = await searchStaff({
+    body: {
+      query: null,
+      cohortIds: [cohortId],
+      departmentIds: null,
+      limit: 200,
+      profileId,
+    },
+  });
+
+  // Fetch initial create staff data for CreateStaffButton
+  const initialCreateStaffData = await getCreateStaffData({
+    body: {
+      departmentIds: [],
+      profileId,
+    },
+  });
+
   return (
     <div className="space-y-6">
       <Cohort
         cohortId={cohortId}
         cohortDetail={cohortDetail}
-        createCohortAction={createCohort}
         updateCohortAction={updateCohort}
+        processCSVAction={processCSV}
+        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
+        searchStaffAction={searchStaff}
+        initialSearchData={initialSearchData}
+        initialCreateStaffData={initialCreateStaffData}
       />
     </div>
   );
 }
 
+/** ---- Derived types from server responses ---- */
+export type CohortStaffItem = CohortDetailOut["staff"][number];
+
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CohortDetailDefaultIn,
-  CohortDetailDefaultOut,
   CohortDetailIn,
   CohortDetailOut,
-  CreateCohortIn,
-  CreateCohortOut,
+  CohortStaffItem,
   UpdateCohortIn,
   UpdateCohortOut,
 };

@@ -25,8 +25,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import type {
+  CreateStaffDataOut,
+  ProfileListItem,
+  SearchStaffOut,
+} from "@/app/(main)/management/staff/page";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import type {
+  BulkCreateOrUpdateStaffAction,
+  ProcessCSVAction,
+  SearchStaffAction,
+} from "@/components/staff/Staff";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,28 +56,6 @@ import {
   UserMinus,
 } from "lucide-react";
 import { StaffDataTableToolbar } from "./StaffDataTableToolbar";
-
-type ProfileListItem = {
-  profile_id: string;
-  first_name: string;
-  last_name: string;
-  alias: string;
-  name: string;
-  role: string;
-  email: string;
-  initials: string;
-  active: boolean;
-  last_active: string | null;
-  cohort_ids: string[];
-  department_ids: string[];
-  requests_per_day: number | null;
-  total_requests: number;
-  default_profile: boolean;
-  requests_in_last_day: number;
-  can_edit: boolean;
-  can_delete: boolean;
-  can_remove?: boolean;
-};
 
 // Helper functions
 const getInitials = (firstName: string, lastName: string): string => {
@@ -171,6 +159,11 @@ export interface StaffDataTableProps {
   deletableCount: number;
   canEdit: (profileId: string) => boolean;
   editableCount: number;
+  searchStaffAction?: SearchStaffAction;
+  processCSVAction?: ProcessCSVAction;
+  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
+  initialCreateStaffData?: CreateStaffDataOut;
+  initialSearchData?: SearchStaffOut;
 }
 
 export function StaffDataTable({
@@ -201,6 +194,11 @@ export function StaffDataTable({
   deletableCount,
   canEdit,
   editableCount,
+  searchStaffAction,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
+  initialCreateStaffData,
+  initialSearchData,
 }: StaffDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
 
@@ -692,6 +690,13 @@ export function StaffDataTable({
           deletableCount={deletableCount}
           editableCount={editableCount}
           cohortId={cohortId}
+          {...(searchStaffAction && { searchStaffAction })}
+          {...(processCSVAction && { processCSVAction })}
+          {...(bulkCreateOrUpdateStaffAction && {
+            bulkCreateOrUpdateStaffAction,
+          })}
+          {...(initialCreateStaffData && { initialCreateStaffData })}
+          {...(initialSearchData && { initialSearchData })}
           departmentId={departmentId}
           {...(cohortIds && cohortIds.length > 0 && { cohortIds })}
           {...(departmentIds && departmentIds.length > 0 && { departmentIds })}

@@ -27,46 +27,69 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+// Import types from new page (create action)
 import type {
   CohortDetailDefaultOut,
-  CohortDetailOut,
   CreateCohortIn,
   CreateCohortOut,
+} from "@/app/(main)/cohorts/new/page";
+// Import types from edit page (update action)
+import type {
+  CohortDetailOut,
   UpdateCohortIn,
   UpdateCohortOut,
 } from "@/app/(main)/cohorts/e/[cohortId]/page";
+import type {
+  CreateStaffDataOut,
+  SearchStaffOut,
+} from "@/app/(main)/management/staff/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
 import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
+import type {
+  BulkCreateOrUpdateStaffAction,
+  ProcessCSVAction,
+  SearchStaffAction,
+} from "@/components/staff/Staff";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 
+// Import staff item types from API responses
+import type { CohortStaffItem } from "@/app/(main)/cohorts/e/[cohortId]/page";
+import type { CohortDefaultStaffItem } from "@/app/(main)/cohorts/new/page";
+import type { ProfileListItem } from "@/app/(main)/management/staff/page";
 import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-type ProfileListItem = {
-  profile_id: string;
-  first_name: string;
-  last_name: string;
-  alias: string;
-  name: string;
-  role: string;
-  email: string;
-  initials: string;
-  active: boolean;
-  last_active: string | null;
-  cohort_ids: string[];
-  department_ids: string[];
-  requests_per_day: number | null;
-  total_requests: number;
-  default_profile: boolean;
-  requests_in_last_day: number;
-  can_edit: boolean;
-  can_delete: boolean;
-  can_remove?: boolean;
-};
+// Helper to normalize cohort staff item to ProfileListItem format
+// Note: ProfileListItem doesn't have can_remove, so we extend it
+type ProfileListItemWithRemove = ProfileListItem & { can_remove?: boolean };
+
+const normalizeCohortStaffItem = (
+  item: CohortStaffItem | CohortDefaultStaffItem
+): ProfileListItemWithRemove => ({
+  profile_id: item.profile_id,
+  first_name: item.first_name,
+  last_name: item.last_name,
+  alias: item.alias,
+  name: item.name,
+  role: item.role,
+  email: item.email,
+  initials: item.initials,
+  active: item.active,
+  last_active: item.lastActive ?? null,
+  cohort_ids: item.cohort_ids ?? [],
+  department_ids: item.department_ids ?? [],
+  requests_per_day: item.requests_per_day ?? null,
+  total_requests: item.total_requests ?? 0,
+  default_profile: item.default_profile,
+  requests_in_last_day: item.requests_in_last_day ?? 0,
+  can_edit: item.can_edit,
+  can_delete: item.can_delete,
+  can_remove: "can_remove" in item ? item.can_remove : false,
+});
 
 export interface CohortProps {
   cohortId?: string;
@@ -76,6 +99,12 @@ export interface CohortProps {
   // Server actions (replaces useMutation)
   createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
   updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
+  // Staff actions for StaffDataTable
+  processCSVAction?: ProcessCSVAction;
+  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
+  searchStaffAction?: SearchStaffAction;
+  initialSearchData?: SearchStaffOut;
+  initialCreateStaffData?: CreateStaffDataOut;
 }
 
 interface FormErrors {
@@ -93,6 +122,11 @@ export default function Cohort({
   cohortDetailDefault: serverCohortDetailDefault,
   createCohortAction,
   updateCohortAction,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
+  searchStaffAction,
+  initialSearchData,
+  initialCreateStaffData,
 }: CohortProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -1049,13 +1083,15 @@ export default function Cohort({
               (s) => !stagedRemovalsSet.has(s.profile_id)
             );
 
+            // Normalize API staff items to ProfileListItem format
+            const normalizedExistingStaff = filteredExistingStaff.map(
+              normalizeCohortStaffItem
+            );
+
             // Combine existing staff with staged profiles (staged profiles first)
-            const mergedStaff: (ProfileListItem & {
+            const mergedStaff: (ProfileListItemWithRemove & {
               isStaged?: boolean;
-            })[] = [
-              ...stagedWithDetails,
-              ...(filteredExistingStaff as ProfileListItem[]),
-            ];
+            })[] = [...stagedWithDetails, ...normalizedExistingStaff];
 
             return (
               <div className="space-y-4">
@@ -1168,7 +1204,9 @@ export default function Cohort({
                   onRemoveFromCohort={(staff) => {
                     // Check if this is a staged profile
                     const isStaged = (
-                      staff as ProfileListItem & { isStaged?: boolean }
+                      staff as ProfileListItemWithRemove & {
+                        isStaged?: boolean;
+                      }
                     ).isStaged;
 
                     if (isStaged) {
@@ -1179,7 +1217,7 @@ export default function Cohort({
                       toast.success("Removed staged profile");
                     } else {
                       // Use server-side can_remove flag
-                      if (!staff.can_remove) {
+                      if (!(staff as ProfileListItemWithRemove).can_remove) {
                         toast.error(
                           "You cannot remove this staff member from the cohort."
                         );
@@ -1199,7 +1237,9 @@ export default function Cohort({
                       );
                       if (!staff) return false;
                       const isStaged = (
-                        staff as ProfileListItem & { isStaged?: boolean }
+                        staff as ProfileListItemWithRemove & {
+                          isStaged?: boolean;
+                        }
                       ).isStaged;
                       if (isStaged) return true; // Staged profiles can always be removed
                       return staff.can_remove ?? false;
@@ -1232,12 +1272,21 @@ export default function Cohort({
                       );
                       if (!staff) return false;
                       const isStaged = (
-                        staff as ProfileListItem & { isStaged?: boolean }
+                        staff as ProfileListItemWithRemove & {
+                          isStaged?: boolean;
+                        }
                       ).isStaged;
                       if (isStaged) return true;
                       return staff.can_remove ?? false;
                     }).length
                   }
+                  {...(searchStaffAction && { searchStaffAction })}
+                  {...(processCSVAction && { processCSVAction })}
+                  {...(bulkCreateOrUpdateStaffAction && {
+                    bulkCreateOrUpdateStaffAction,
+                  })}
+                  {...(initialCreateStaffData && { initialCreateStaffData })}
+                  {...(initialSearchData && { initialSearchData })}
                   canEdit={(profileId) => {
                     const staff = mergedStaff.find(
                       (s) => s.profile_id === profileId
@@ -1400,12 +1449,13 @@ export default function Cohort({
                     const filteredExistingStaff = existingStaff.filter(
                       (s) => !stagedRemovalsSet.has(s.profile_id)
                     );
-                    const mergedStaffForCheck: (ProfileListItem & {
+                    // Normalize API staff items to ProfileListItem format
+                    const normalizedExistingStaff = filteredExistingStaff.map(
+                      normalizeCohortStaffItem
+                    );
+                    const mergedStaffForCheck: (ProfileListItemWithRemove & {
                       isStaged?: boolean;
-                    })[] = [
-                      ...stagedWithDetails,
-                      ...(filteredExistingStaff as ProfileListItem[]),
-                    ];
+                    })[] = [...stagedWithDetails, ...normalizedExistingStaff];
 
                     // Filter to only removable profiles (use server-side can_remove)
                     const removableIds = selectedStaffIds.filter((id) => {
@@ -1414,7 +1464,9 @@ export default function Cohort({
                       );
                       if (!staff) return false;
                       const isStaged = (
-                        staff as ProfileListItem & { isStaged?: boolean }
+                        staff as ProfileListItemWithRemove & {
+                          isStaged?: boolean;
+                        }
                       ).isStaged;
                       if (isStaged) return true;
                       return staff.can_remove ?? false;

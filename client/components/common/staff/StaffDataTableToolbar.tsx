@@ -3,33 +3,21 @@
 import { Table } from "@tanstack/react-table";
 import { RefreshCw, X } from "lucide-react";
 
+import type {
+  CreateStaffDataOut,
+  ProfileListItem,
+  SearchStaffOut,
+} from "@/app/(main)/management/staff/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import type {
+  BulkCreateOrUpdateStaffAction,
+  ProcessCSVAction,
+  SearchStaffAction,
+} from "@/components/staff/Staff";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CreateStaffButton from "./CreateStaffButton";
-
-type ProfileListItem = {
-  profile_id: string;
-  first_name: string;
-  last_name: string;
-  alias: string;
-  name: string;
-  role: string;
-  email: string;
-  initials: string;
-  active: boolean;
-  last_active: string | null;
-  cohort_ids: string[];
-  department_ids: string[];
-  requests_per_day: number | null;
-  total_requests: number;
-  default_profile: boolean;
-  requests_in_last_day: number;
-  can_edit: boolean;
-  can_delete: boolean;
-  can_remove?: boolean;
-};
 
 export interface StaffDataTableToolbarProps {
   table: Table<ProfileListItem>;
@@ -51,6 +39,11 @@ export interface StaffDataTableToolbarProps {
   // Scoped arrays for staff creation
   cohortIds?: string[];
   departmentIds?: string[];
+  searchStaffAction?: SearchStaffAction;
+  processCSVAction?: ProcessCSVAction;
+  bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
+  initialCreateStaffData?: CreateStaffDataOut;
+  initialSearchData?: SearchStaffOut;
 }
 
 export function StaffDataTableToolbar({
@@ -71,6 +64,11 @@ export function StaffDataTableToolbar({
   departmentId,
   cohortIds,
   departmentIds,
+  searchStaffAction,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
+  initialCreateStaffData,
+  initialSearchData,
 }: StaffDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -152,6 +150,13 @@ export function StaffDataTableToolbar({
             departmentIds={departmentIds || []}
             onDone={() => onCreate()}
             onStagedProfiles={onCreate}
+            {...(searchStaffAction && { searchStaffAction })}
+            {...(processCSVAction && { processCSVAction })}
+            {...(bulkCreateOrUpdateStaffAction && {
+              bulkCreateOrUpdateStaffAction,
+            })}
+            {...(initialCreateStaffData && { initialCreateStaffData })}
+            {...(initialSearchData && { initialSearchData })}
           />
         )}
 
