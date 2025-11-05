@@ -8,36 +8,108 @@
 import { auth } from "@/auth";
 import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { getQueryClient } from "@/utils/queryClient";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { revalidateTag } from "next/cache";
+import { cache } from "react";
+
+/** ---- Strong types from OpenAPI ---- */
+type DepartmentDetailDefaultIn = InputOf<
+  "/api/v3/departments/detail-default",
+  "post"
+>;
+type DepartmentDetailDefaultOut = OutputOf<
+  "/api/v3/departments/detail-default",
+  "post"
+>;
+
+type CreateDepartmentIn = InputOf<"/api/v3/departments/create", "post">;
+type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
+
+type UpdateDepartmentIn = InputOf<"/api/v3/departments/update", "post">;
+type UpdateDepartmentOut = OutputOf<"/api/v3/departments/update", "post">;
+
+type RemoveProfilesFromDepartmentIn = InputOf<
+  "/api/v3/departments/remove-profiles",
+  "post"
+>;
+type RemoveProfilesFromDepartmentOut = OutputOf<
+  "/api/v3/departments/remove-profiles",
+  "post"
+>;
+
+/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
+const getDepartmentDefault = cache(
+  async (
+    input: DepartmentDetailDefaultIn
+  ): Promise<DepartmentDetailDefaultOut> => {
+    return api.post("/departments/detail-default", input);
+  }
+);
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+export async function createDepartment(
+  input: CreateDepartmentIn
+): Promise<CreateDepartmentOut> {
+  "use server";
+  const out = await api.post("/departments/create", input);
+  revalidateTag("departments");
+  return out;
+}
+
+export async function updateDepartment(
+  input: UpdateDepartmentIn
+): Promise<UpdateDepartmentOut> {
+  "use server";
+  const out = await api.post("/departments/update", input);
+  revalidateTag("departments");
+  return out;
+}
+
+export async function removeProfilesFromDepartment(
+  input: RemoveProfilesFromDepartmentIn
+): Promise<RemoveProfilesFromDepartmentOut> {
+  "use server";
+  const out = await api.post("/departments/remove-profiles", input);
+  revalidateTag("departments");
+  return out;
+}
 
 export const metadata: Metadata = {
-  title: "Departments",
-  description: `Create new AI departments in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+  title: "New Department",
+  description: `New department creation page for the departments section in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
+/** ---- Server renders client with typed data and actions ---- */
 export default async function NewDepartmentPage() {
   const session = await auth();
   const profileId = session?.effectiveProfileId || "";
 
-  const queryClient = getQueryClient();
-
-  // Prefetch default department detail for instant hydration
-  await queryClient.prefetchQuery({
-    queryKey: keys.departments.with({ profileId }),
-    queryFn: () =>
-      api.post("/departments/detail-default", {
-        body: { profileId },
-      }),
+  // Fetch default department detail server-side
+  const departmentDetailDefault = await getDepartmentDefault({
+    body: { profileId },
   });
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="space-y-6">
-        <Department />
-      </div>
-    </HydrationBoundary>
+    <div className="space-y-6">
+      <Department
+        departmentDetailDefault={departmentDetailDefault}
+        createDepartmentAction={createDepartment}
+        updateDepartmentAction={updateDepartment}
+        removeProfilesFromDepartmentAction={removeProfilesFromDepartment}
+      />
+    </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  CreateDepartmentIn,
+  CreateDepartmentOut,
+  DepartmentDetailDefaultIn,
+  DepartmentDetailDefaultOut,
+  RemoveProfilesFromDepartmentIn,
+  RemoveProfilesFromDepartmentOut,
+  UpdateDepartmentIn,
+  UpdateDepartmentOut,
+};

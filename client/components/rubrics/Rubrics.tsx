@@ -33,6 +33,13 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+import type {
+  DeleteRubricIn,
+  DeleteRubricOut,
+  DuplicateRubricIn,
+  DuplicateRubricOut,
+  RubricsListOut,
+} from "@/app/(main)/management/rubrics/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import TableRubric from "@/components/common/rubric/TableRubric";
@@ -49,12 +56,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export default function Rubrics() {
+export interface RubricsProps {
+  // Server-provided data (for server-side rendering)
+  listData: RubricsListOut;
+  // Server actions (replaces useMutation)
+  duplicateRubricAction?: (
+    input: DuplicateRubricIn
+  ) => Promise<DuplicateRubricOut>;
+  deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
+}
+
+export default function Rubrics({
+  listData: serverListData,
+  duplicateRubricAction,
+  deleteRubricAction,
+}: RubricsProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -63,8 +80,6 @@ export default function Rubrics() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -74,36 +89,10 @@ export default function Rubrics() {
     { id: "name", desc: false },
   ]);
 
-  // V3 API: Single fetch with hierarchical data and permissions
-  const filters = useMemo(
-    () => ({
-      profileId: effectiveProfile?.id || "",
-    }),
-    [effectiveProfile?.id]
-  );
+  // Use server-provided data directly
+  const rubricsData = serverListData;
+  const isLoading = false; // No loading when using server data
 
-  const { data: rubricsData, isLoading } = useQuery({
-    queryKey: keys.rubrics.list(filters),
-    queryFn: () => api.post("/rubrics/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
-
-  // Mutation hooks with V3 API
-  const deleteRubricMutation = useMutation({
-    mutationFn: (req: { rubricId: string }) =>
-      api.post("/rubrics/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.rubrics.all });
-    },
-  });
-
-  const duplicateRubricMutation = useMutation({
-    mutationFn: (req: { rubricId: string }) =>
-      api.post("/rubrics/duplicate", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.rubrics.all });
-    },
-  });
   const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
   const standardGroupsMapping = useMemo(
     () => rubricsData?.standard_groups_mapping || {},
@@ -289,12 +278,13 @@ export default function Rubrics() {
   });
 
   const handleDelete = async () => {
-    if (!deleteItem) return;
+    if (!deleteItem || !deleteRubricAction) return;
 
     setIsDeleting(true);
     try {
-      await deleteRubricMutation.mutateAsync({ rubricId: deleteItem.id });
+      await deleteRubricAction({ body: { rubricId: deleteItem.id } });
       toast.success("Rubric deleted successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to delete rubric");
     } finally {
@@ -305,17 +295,16 @@ export default function Rubrics() {
   };
 
   const handleDuplicate = async (rubric: (typeof rubrics)[number]) => {
-    if (!rubric.can_duplicate) {
+    if (!rubric.can_duplicate || !duplicateRubricAction) {
       toast.error("This rubric cannot be duplicated");
       return;
     }
 
     setIsDuplicating(rubric.rubric_id);
     try {
-      await duplicateRubricMutation.mutateAsync({
-        rubricId: rubric.rubric_id,
-      });
+      await duplicateRubricAction({ body: { rubricId: rubric.rubric_id } });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
+      router.refresh();
     } catch {
       toast.error("Failed to duplicate rubric");
     } finally {
@@ -533,19 +522,13 @@ export default function Rubrics() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isDeleting || deleteRubricMutation.isPending}
-            >
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting || deleteRubricMutation.isPending}
+              disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting || deleteRubricMutation.isPending
-                ? "Deleting..."
-                : "Delete"}
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

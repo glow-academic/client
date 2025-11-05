@@ -53,18 +53,36 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+import type {
+  DeleteParameterIn,
+  DeleteParameterOut,
+  DuplicateParameterIn,
+  DuplicateParameterOut,
+  ParametersListOut,
+} from "@/app/(main)/management/parameters/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Input } from "@/components/ui/input";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
 import type { ParameterSampleItem } from "@/lib/api/v2/schemas/parameters";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export default function Parameters() {
+export interface ParametersProps {
+  // Server-provided data (for server-side rendering)
+  listData: ParametersListOut;
+  // Server actions (replaces useMutation)
+  duplicateParameterAction?: (
+    input: DuplicateParameterIn
+  ) => Promise<DuplicateParameterOut>;
+  deleteParameterAction?: (
+    input: DeleteParameterIn
+  ) => Promise<DeleteParameterOut>;
+}
+
+export default function Parameters({
+  listData: serverListData,
+  duplicateParameterAction,
+  deleteParameterAction,
+}: ParametersProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -80,38 +98,10 @@ export default function Parameters() {
     { id: "updated_at", desc: true },
   ]);
 
-  const queryClient = useQueryClient();
+  // Use server-provided data directly
+  const parametersData = serverListData;
+  const isLoading = false; // No loading when using server data
 
-  // V3 API: Single fetch with pre-calculated counts and permissions
-  const filters = useMemo(
-    () => ({
-      profileId: effectiveProfile?.id || "",
-    }),
-    [effectiveProfile?.id]
-  );
-
-  const { data: parametersData, isLoading } = useQuery({
-    queryKey: keys.parameters.list(filters),
-    queryFn: () => api.post("/parameters/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
-
-  // Mutations with V3 API
-  const duplicateParameterMutation = useMutation({
-    mutationFn: (req: { parameterId: string }) =>
-      api.post("/parameters/duplicate", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
-    },
-  });
-
-  const deleteParameterMutation = useMutation({
-    mutationFn: (req: { parameterId: string }) =>
-      api.post("/parameters/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
-    },
-  });
   const parameters = useMemo(
     () => parametersData?.parameters || [],
     [parametersData]
@@ -225,17 +215,18 @@ export default function Parameters() {
   });
 
   const handleDuplicate = async (parameter: (typeof parameters)[number]) => {
-    if (!parameter.can_duplicate) {
+    if (!parameter.can_duplicate || !duplicateParameterAction) {
       toast.error("This parameter cannot be duplicated");
       return;
     }
 
     setIsDuplicating(parameter.parameter_id);
     try {
-      await duplicateParameterMutation.mutateAsync({
-        parameterId: parameter.parameter_id,
+      await duplicateParameterAction({
+        body: { parameterId: parameter.parameter_id },
       });
       toast.success(`Parameter "${parameter.name}" duplicated successfully`);
+      router.refresh();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to duplicate parameter"
@@ -246,13 +237,12 @@ export default function Parameters() {
   };
 
   const handleDelete = async () => {
-    if (!deleteItem) return;
+    if (!deleteItem || !deleteParameterAction) return;
 
     try {
-      await deleteParameterMutation.mutateAsync({
-        parameterId: deleteItem.id,
-      });
+      await deleteParameterAction({ body: { parameterId: deleteItem.id } });
       toast.success(`Parameter "${deleteItem.name}" deleted successfully`);
+      router.refresh();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete parameter"

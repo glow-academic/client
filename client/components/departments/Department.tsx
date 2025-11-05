@@ -18,10 +18,18 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Power } from "lucide-react";
+// Type-only import from server page
+import type {
+  CreateDepartmentIn,
+  CreateDepartmentOut,
+  DepartmentDetailDefaultOut,
+  DepartmentDetailOut,
+  RemoveProfilesFromDepartmentIn,
+  RemoveProfilesFromDepartmentOut,
+  UpdateDepartmentIn,
+  UpdateDepartmentOut,
+} from "@/app/(main)/system/departments/d/[departmentId]/page";
 
 type ProfileListItem = {
   profile_id: string;
@@ -47,6 +55,19 @@ type ProfileListItem = {
 
 export interface DepartmentProps {
   departmentId?: string;
+  // Optional server-provided data (for server-side rendering)
+  departmentDetail?: DepartmentDetailOut;
+  departmentDetailDefault?: DepartmentDetailDefaultOut;
+  // Server actions (replaces useMutation)
+  createDepartmentAction?: (
+    input: CreateDepartmentIn
+  ) => Promise<CreateDepartmentOut>;
+  updateDepartmentAction?: (
+    input: UpdateDepartmentIn
+  ) => Promise<UpdateDepartmentOut>;
+  removeProfilesFromDepartmentAction?: (
+    input: RemoveProfilesFromDepartmentIn
+  ) => Promise<RemoveProfilesFromDepartmentOut>;
 }
 
 interface FormErrors {
@@ -60,7 +81,14 @@ interface FormData {
   active?: boolean;
 }
 
-export default function Department({ departmentId }: DepartmentProps) {
+export default function Department({
+  departmentId,
+  departmentDetail: serverDepartmentDetail,
+  departmentDetailDefault: serverDepartmentDetailDefault,
+  createDepartmentAction,
+  updateDepartmentAction,
+  removeProfilesFromDepartmentAction,
+}: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
@@ -83,54 +111,15 @@ export default function Department({ departmentId }: DepartmentProps) {
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // V2 API hooks
-  const queryClient = useQueryClient();
-
-  // V3 API - fetch department detail when editing
-  const {
-    data: departmentDetail,
-    isLoading: isLoadingDepartmentDetail,
-    refetch: refetchDepartmentDetail,
-  } = useQuery({
-    queryKey: keys.departments.with({
-      departmentId: departmentId || "",
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/departments/detail", {
-        body: {
-          departmentId: departmentId || "",
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !!departmentId && isEditMode && !!effectiveProfile?.id,
-  });
-
-  // V3 API - fetch default department detail when creating
-  const {
-    data: departmentDetailDefault,
-    isLoading: isLoadingDepartmentDefault,
-  } = useQuery({
-    queryKey: keys.departments.with({
-      profileId: effectiveProfile?.id || "",
-      default: true,
-    }),
-    queryFn: () =>
-      api.post("/departments/detail-default", {
-        body: {
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled: !isEditMode && !!effectiveProfile?.id,
-  });
+  // Use server-provided data (no React Query needed when server data is provided)
+  const departmentDetail = serverDepartmentDetail;
+  const departmentDetailDefault = serverDepartmentDetailDefault;
 
   // Use edit detail when editing, default detail when creating
   const departmentData = isEditMode
     ? departmentDetail
     : departmentDetailDefault;
-  const isLoadingData = isEditMode
-    ? isLoadingDepartmentDetail
-    : isLoadingDepartmentDefault;
+  const isLoading = false; // No loading state when using server data
 
   // Set breadcrumb context when department data is loaded
   useEffect(() => {
@@ -150,46 +139,39 @@ export default function Department({ departmentId }: DepartmentProps) {
     clearEntityMetadata,
   ]);
 
-  // V3 API - create mutation
-  const createDepartmentMutation = useMutation({
-    mutationFn: (body: {
-      title: string;
-      description: string;
-      active: boolean;
-      profile_id: string;
-    }) => api.post("/departments/create", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.departments.all });
-    },
-  });
+  // Extract body types from server action types for type safety
+  type CreateDepartmentBody = CreateDepartmentIn extends { body: infer B }
+    ? B
+    : never;
+  type UpdateDepartmentBody = UpdateDepartmentIn extends { body: infer B }
+    ? B
+    : never;
+  type RemoveProfilesFromDepartmentBody =
+    RemoveProfilesFromDepartmentIn extends { body: infer B } ? B : never;
 
-  // V3 API - update mutation
-  const updateDepartmentMutation = useMutation({
-    mutationFn: (body: {
-      departmentId: string;
-      title: string;
-      description: string;
-      active: boolean;
-    }) => api.post("/departments/update", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.departments.all });
-    },
-  });
+  // Server action handlers
+  const handleCreateDepartment = async (body: CreateDepartmentBody) => {
+    if (!createDepartmentAction) {
+      throw new Error("createDepartmentAction is required");
+    }
+    await createDepartmentAction({ body });
+  };
 
-  // V3 API - remove profiles mutation
-  const removeProfilesFromDepartmentMutation = useMutation({
-    mutationFn: (body: { departmentId: string; profileIds: string[] }) =>
-      api.post("/departments/remove-profiles", { body }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.departments.all });
-    },
-  });
+  const handleUpdateDepartment = async (body: UpdateDepartmentBody) => {
+    if (!updateDepartmentAction) {
+      throw new Error("updateDepartmentAction is required");
+    }
+    await updateDepartmentAction({ body });
+  };
 
-  // Extract mutate functions for compatibility
-  const createDepartment = createDepartmentMutation.mutate;
-  const updateDepartment = updateDepartmentMutation.mutate;
-
-  const isLoading = isLoadingData;
+  const handleRemoveProfilesFromDepartment = async (
+    body: RemoveProfilesFromDepartmentBody
+  ) => {
+    if (!removeProfilesFromDepartmentAction) {
+      throw new Error("removeProfilesFromDepartmentAction is required");
+    }
+    await removeProfilesFromDepartmentAction({ body });
+  };
 
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
@@ -249,52 +231,33 @@ export default function Department({ departmentId }: DepartmentProps) {
 
     try {
       if (isEditMode && departmentId) {
-        // UPDATE mode - single mutation with all data
-        updateDepartment(
-          {
-            departmentId: departmentId,
-            title: formData.title,
-            description: formData.description,
-            active: formData.active ?? true,
-          },
-          {
-            onSuccess: () => {
-              resetFormAndState();
-              toast.success("Department updated successfully!");
-              router.push("/system/departments");
-            },
-            onError: (error) => {
-              toast.error(`Failed to update department: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+        // UPDATE mode
+        await handleUpdateDepartment({
+          departmentId: departmentId,
+          title: formData.title,
+          description: formData.description,
+          active: formData.active ?? true,
+        });
+        resetFormAndState();
+        toast.success("Department updated successfully!");
+        router.push("/system/departments");
       } else {
-        // CREATE mode - single mutation with all data
-        createDepartment(
-          {
-            title: formData.title,
-            description: formData.description,
-            active: formData.active ?? true,
-            profile_id: effectiveProfile?.id || "",
-          },
-          {
-            onSuccess: () => {
-              resetFormAndState();
-              toast.success("Department created successfully!");
-              router.push("/system/departments");
-            },
-            onError: (error) => {
-              toast.error(`Failed to create department: ${error.message}`);
-              setIsSubmitting(false);
-            },
-          }
-        );
+        // CREATE mode
+        await handleCreateDepartment({
+          title: formData.title,
+          description: formData.description,
+          active: formData.active ?? true,
+          profile_id: effectiveProfile?.id || "",
+        });
+        resetFormAndState();
+        toast.success("Department created successfully!");
+        router.push("/system/departments");
       }
     } catch (error) {
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`
       );
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -440,7 +403,7 @@ export default function Department({ departmentId }: DepartmentProps) {
               isRefreshing={isRefreshing}
               onRefresh={async () => {
                 setIsRefreshing(true);
-                await refetchDepartmentDetail();
+                router.refresh();
                 setIsRefreshing(false);
               }}
               departmentId={departmentId}
@@ -468,9 +431,9 @@ export default function Department({ departmentId }: DepartmentProps) {
                 }
               }}
               onCreate={async () => {
-                // Refetch after create
+                // Refresh after create
                 setIsRefreshing(true);
-                await refetchDepartmentDetail();
+                router.refresh();
                 setIsRefreshing(false);
               }}
               onPreview={(staff) => {
@@ -492,7 +455,7 @@ export default function Department({ departmentId }: DepartmentProps) {
               onBulkDelete={async () => {
                 if (selectedStaffIds.length === 0) return;
                 try {
-                  await removeProfilesFromDepartmentMutation.mutateAsync({
+                  await handleRemoveProfilesFromDepartment({
                     departmentId: departmentId,
                     profileIds: selectedStaffIds,
                   });
@@ -501,7 +464,7 @@ export default function Department({ departmentId }: DepartmentProps) {
                   );
                   setSelectedStaffIds([]);
                   setIsRefreshing(true);
-                  await refetchDepartmentDetail();
+                  router.refresh();
                   setIsRefreshing(false);
                 } catch (error) {
                   toast.error(

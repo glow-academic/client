@@ -10,10 +10,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -28,6 +25,13 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+import type {
+  DeletePersonaIn,
+  DeletePersonaOut,
+  DuplicatePersonaIn,
+  DuplicatePersonaOut,
+  PersonasListOut,
+} from "@/app/(main)/create/personas/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
@@ -51,7 +55,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -74,7 +77,21 @@ const generateGradientFromHex = (hexColor: string): string => {
   return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
 };
 
-export default function Personas() {
+export interface PersonasProps {
+  // Server-provided data (for server-side rendering)
+  listData: PersonasListOut;
+  // Server actions (replaces useMutation)
+  duplicatePersonaAction?: (
+    input: DuplicatePersonaIn
+  ) => Promise<DuplicatePersonaOut>;
+  deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
+}
+
+export default function Personas({
+  listData: serverListData,
+  duplicatePersonaAction,
+  deletePersonaAction,
+}: PersonasProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -83,8 +100,6 @@ export default function Personas() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const { effectiveProfile } = useProfile();
-  const qc = useQueryClient();
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -94,33 +109,11 @@ export default function Personas() {
     { id: "updatedAt", desc: true },
   ]);
 
-  // V3 API - Proof of Concept with generated keys
-  const filters = { profileId: effectiveProfile?.id || "" };
-  const { data: personasData, isLoading } = useQuery({
-    queryKey: keys.personas.with(filters),
-    queryFn: () => api.post("/personas/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
+  // Use server-provided data directly
+  const personasData = serverListData;
+  const isLoading = false; // No loading when using server data
 
-  // Duplicate mutation with v3 API
-  const duplicatePersonaMutation = useMutation({
-    mutationFn: (req: { personaId: string }) =>
-      api.post("/personas/duplicate", { body: req }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.personas.all });
-    },
-  });
-
-  // Delete mutation with v3 API
-  const deletePersonaMutation = useMutation({
-    mutationFn: (req: { personaId: string }) =>
-      api.post("/personas/delete", { body: req }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: keys.personas.all });
-    },
-  });
-
-  // Extract data from V2 response
+  // Extract data from response
   const personas = personasData?.personas || [];
   const scenarioMapping = useMemo(
     () => personasData?.scenario_mapping || {},
@@ -375,12 +368,14 @@ export default function Personas() {
   // No need for client-side permission logic
 
   const handleDelete = async () => {
-    if (!deleteItem) return;
+    if (!deleteItem || !deletePersonaAction) return;
 
     setIsDeleting(true);
     try {
-      await deletePersonaMutation.mutateAsync({ personaId: deleteItem.id });
+      await deletePersonaAction({ body: { personaId: deleteItem.id } });
       toast.success("Persona deleted successfully");
+      // Refresh page to get updated data
+      router.refresh();
     } catch {
       toast.error("Failed to delete persona");
     } finally {
@@ -391,10 +386,14 @@ export default function Personas() {
   };
 
   const handleDuplicate = async (personaId: string, personaName: string) => {
+    if (!duplicatePersonaAction) return;
+
     setIsDuplicating(personaId);
     try {
-      await duplicatePersonaMutation.mutateAsync({ personaId });
+      await duplicatePersonaAction({ body: { personaId } });
       toast.success(`Persona "${personaName}" duplicated successfully`);
+      // Refresh page to get updated data
+      router.refresh();
     } catch {
       toast.error("Failed to duplicate persona");
     } finally {
@@ -527,10 +526,7 @@ export default function Personas() {
                   onClick={() =>
                     handleDuplicate(persona.persona_id, persona.name)
                   }
-                  disabled={
-                    isDuplicating === persona.persona_id ||
-                    duplicatePersonaMutation.isPending
-                  }
+                  disabled={isDuplicating === persona.persona_id}
                 >
                   <Copy className="h-4 w-4" />
                   {isDuplicating === persona.persona_id ? "..." : ""}
@@ -744,19 +740,15 @@ export default function Personas() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel
-                disabled={isDeleting || deletePersonaMutation.isPending}
-              >
+              <AlertDialogCancel disabled={isDeleting}>
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                disabled={isDeleting || deletePersonaMutation.isPending}
+                disabled={isDeleting}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                {isDeleting || deletePersonaMutation.isPending
-                  ? "Deleting..."
-                  : "Delete"}
+                {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

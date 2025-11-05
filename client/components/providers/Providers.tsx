@@ -60,14 +60,20 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { useProfile } from "@/contexts/profile-context";
-
+import type {
+  DeleteModelIn,
+  DeleteModelOut,
+  DeleteProviderIn,
+  DeleteProviderOut,
+  DuplicateModelIn,
+  DuplicateModelOut,
+  DuplicateProviderIn,
+  DuplicateProviderOut,
+  ProvidersListOut,
+} from "@/app/(main)/system/providers/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 type ModelItem = {
   model_id: string;
@@ -89,7 +95,29 @@ type ProviderWithModels = {
   models: ModelItem[];
 };
 
-export default function Providers() {
+export interface ProvidersProps {
+  // Server-provided data (for server-side rendering)
+  listData: ProvidersListOut;
+  // Server actions (replaces useMutation)
+  duplicateProviderAction?: (
+    input: DuplicateProviderIn
+  ) => Promise<DuplicateProviderOut>;
+  deleteProviderAction?: (
+    input: DeleteProviderIn
+  ) => Promise<DeleteProviderOut>;
+  duplicateModelAction?: (
+    input: DuplicateModelIn
+  ) => Promise<DuplicateModelOut>;
+  deleteModelAction?: (input: DeleteModelIn) => Promise<DeleteModelOut>;
+}
+
+export default function Providers({
+  listData: serverListData,
+  duplicateProviderAction,
+  deleteProviderAction,
+  duplicateModelAction,
+  deleteModelAction,
+}: ProvidersProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -104,62 +132,16 @@ export default function Providers() {
     name: string;
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
-  const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
+  // Use server-provided data directly
+  const providersData = serverListData;
+  const isLoading = false; // No loading when using server data
 
-  // V3 API: Single fetch with hierarchical data and permissions
-  // Note: Providers are global (not department-specific)
-  const filters = useMemo(
-    () => ({
-      profileId: effectiveProfile?.id || "",
-    }),
-    [effectiveProfile?.id]
-  );
-
-  const { data: providersData, isLoading } = useQuery({
-    queryKey: keys.providers.list(filters),
-    queryFn: () => api.post("/providers/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
-
-  // V3 API mutations
-  const deleteModelMutation = useMutation({
-    mutationFn: (req: { modelId: string }) =>
-      api.post("/providers/models/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.providers.all });
-    },
-  });
-
-  const deleteProviderMutation = useMutation({
-    mutationFn: (req: { providerId: string }) =>
-      api.post("/providers/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.providers.all });
-    },
-  });
-
-  const duplicateProviderMutation = useMutation({
-    mutationFn: (req: { providerId: string }) =>
-      api.post("/providers/duplicate", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.providers.all });
-    },
-  });
-
-  const duplicateModelMutation = useMutation({
-    mutationFn: (req: { modelId: string }) =>
-      api.post("/providers/models/duplicate", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.providers.all });
-    },
-  });
+  // Build filter options
   const providers = useMemo(
     () => providersData?.providers || [],
     [providersData]
   );
 
-  // Build filter options
   const providerOptions = useMemo(
     () => providers.map((p) => ({ value: p.provider_id, label: p.name })),
     [providers]
@@ -380,12 +362,13 @@ export default function Providers() {
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const handleDelete = async () => {
-    if (!deleteItem) return;
+    if (!deleteItem || !deleteModelAction) return;
 
     setIsDeleting(true);
     try {
-      await deleteModelMutation.mutateAsync({ modelId: deleteItem.id });
+      await deleteModelAction({ body: { modelId: deleteItem.id } });
       toast.success("Model deleted successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to delete model");
     } finally {
@@ -414,14 +397,15 @@ export default function Providers() {
   };
 
   const handleDeleteProvider = async () => {
-    if (!deleteProviderItem) return;
+    if (!deleteProviderItem || !deleteProviderAction) return;
 
     setIsDeletingProvider(true);
     try {
-      await deleteProviderMutation.mutateAsync({
-        providerId: deleteProviderItem.id,
+      await deleteProviderAction({
+        body: { providerId: deleteProviderItem.id },
       });
       toast.success("Provider deleted successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to delete provider");
     } finally {
@@ -432,22 +416,26 @@ export default function Providers() {
   };
 
   const handleDuplicateProviderClick = async (provider: ProviderWithModels) => {
+    if (!duplicateProviderAction) return;
+
     try {
-      await duplicateProviderMutation.mutateAsync({
-        providerId: provider.provider_id,
+      await duplicateProviderAction({
+        body: { providerId: provider.provider_id },
       });
       toast.success(`Provider '${provider.name}' duplicated successfully`);
+      router.refresh();
     } catch {
       toast.error("Failed to duplicate provider");
     }
   };
 
   const handleDuplicateModelClick = async (model: ModelItem) => {
+    if (!duplicateModelAction) return;
+
     try {
-      await duplicateModelMutation.mutateAsync({
-        modelId: model.model_id,
-      });
+      await duplicateModelAction({ body: { modelId: model.model_id } });
       toast.success(`Model '${model.name}' duplicated successfully`);
+      router.refresh();
     } catch {
       toast.error("Failed to duplicate model");
     }
@@ -509,7 +497,7 @@ export default function Providers() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleDuplicateProviderClick(provider)}
-                disabled={duplicateProviderMutation.isPending}
+                disabled={false}
               >
                 <Copy className="h-4 w-4" />
               </Button>
@@ -580,7 +568,7 @@ export default function Providers() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleDuplicateModelClick(model)}
-                  disabled={duplicateModelMutation.isPending}
+                  disabled={false}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -710,19 +698,15 @@ export default function Providers() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel
-                disabled={isDeleting || deleteModelMutation.isPending}
-              >
+              <AlertDialogCancel disabled={isDeleting}>
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                disabled={isDeleting || deleteModelMutation.isPending}
+                disabled={isDeleting}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isDeleting || deleteModelMutation.isPending
-                  ? "Deleting..."
-                  : "Delete"}
+                {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -745,23 +729,15 @@ export default function Providers() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel
-                disabled={
-                  isDeletingProvider || deleteProviderMutation.isPending
-                }
-              >
+              <AlertDialogCancel disabled={isDeletingProvider}>
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteProvider}
-                disabled={
-                  isDeletingProvider || deleteProviderMutation.isPending
-                }
+                disabled={isDeletingProvider}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isDeletingProvider || deleteProviderMutation.isPending
-                  ? "Deleting..."
-                  : "Delete"}
+                {isDeletingProvider ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

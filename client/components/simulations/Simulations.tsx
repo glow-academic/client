@@ -10,6 +10,13 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import type {
+  DeleteSimulationIn,
+  DeleteSimulationOut,
+  DuplicateSimulationIn,
+  DuplicateSimulationOut,
+  SimulationsListOut,
+} from "@/app/(main)/create/simulations/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
@@ -27,10 +34,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -45,7 +48,23 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-export function Simulations() {
+export interface SimulationsProps {
+  // Server-provided data (for server-side rendering)
+  listData: SimulationsListOut;
+  // Server actions (replaces useMutation)
+  duplicateSimulationAction?: (
+    input: DuplicateSimulationIn
+  ) => Promise<DuplicateSimulationOut>;
+  deleteSimulationAction?: (
+    input: DeleteSimulationIn
+  ) => Promise<DeleteSimulationOut>;
+}
+
+export function Simulations({
+  listData: serverListData,
+  duplicateSimulationAction,
+  deleteSimulationAction,
+}: SimulationsProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -54,8 +73,6 @@ export function Simulations() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -65,32 +82,11 @@ export function Simulations() {
     { id: "updatedAt", desc: true },
   ]);
 
-  // V3 API - Query with generated keys
-  const filters = { profileId: effectiveProfile?.id || "" };
-  const { data: simulationsData, isLoading } = useQuery({
-    queryKey: keys.simulations.list(filters),
-    queryFn: () => api.post("/simulations/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
+  // Use server-provided data directly
+  const simulationsData = serverListData;
+  const isLoading = false; // No loading when using server data
 
-  // Mutation hooks with v3 API
-  const duplicateSimulationMutation = useMutation({
-    mutationFn: (req: { simulationId: string }) =>
-      api.post("/simulations/duplicate", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.simulations.all });
-    },
-  });
-
-  const deleteSimulationMutation = useMutation({
-    mutationFn: (req: { simulationId: string }) =>
-      api.post("/simulations/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.simulations.all });
-    },
-  });
-
-  // Extract data from V2 response
+  // Extract data from response
   const simulations = useMemo(
     () => simulationsData?.simulations || [],
     [simulationsData?.simulations]
@@ -273,14 +269,13 @@ export function Simulations() {
   // No need for client-side permission logic
 
   const handleDelete = async () => {
-    if (!deleteItem) return;
+    if (!deleteItem || !deleteSimulationAction) return;
 
     setIsDeleting(true);
     try {
-      await deleteSimulationMutation.mutateAsync({
-        simulationId: deleteItem.id,
-      });
+      await deleteSimulationAction({ body: { simulationId: deleteItem.id } });
       toast.success("Simulation deleted successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to delete simulation");
     } finally {
@@ -303,10 +298,13 @@ export function Simulations() {
     simulationId: string,
     _simulationName: string
   ) => {
+    if (!duplicateSimulationAction) return;
+
     setIsDuplicating(simulationId);
     try {
-      await duplicateSimulationMutation.mutateAsync({ simulationId });
+      await duplicateSimulationAction({ body: { simulationId } });
       toast.success("Simulation duplicated successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to duplicate simulation");
     } finally {
@@ -375,10 +373,7 @@ export function Simulations() {
                 onClick={() =>
                   handleDuplicate(simulation.simulation_id, simulation.name)
                 }
-                disabled={
-                  isDuplicating === simulation.simulation_id ||
-                  duplicateSimulationMutation.isPending
-                }
+                disabled={isDuplicating === simulation.simulation_id || false}
                 aria-label={`Duplicate ${simulation.name}`}
               >
                 {isDuplicating === simulation.simulation_id ? (
@@ -587,19 +582,13 @@ export function Simulations() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isDeleting || deleteSimulationMutation.isPending}
-            >
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting || deleteSimulationMutation.isPending}
+              disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting || deleteSimulationMutation.isPending
-                ? "Deleting..."
-                : "Delete"}
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

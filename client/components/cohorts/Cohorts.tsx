@@ -20,12 +20,18 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import type {
+  CohortsListOut,
+  DeleteCohortIn,
+  DeleteCohortOut,
+  DuplicateCohortIn,
+  DuplicateCohortOut,
+  LeaveCohortIn,
+  LeaveCohortOut,
+} from "@/app/(main)/cohorts/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -55,60 +61,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-export default function Cohorts() {
+
+export interface CohortsProps {
+  // Server-provided data (for server-side rendering)
+  listData: CohortsListOut;
+  // Server actions (replaces useMutation)
+  duplicateCohortAction?: (
+    input: DuplicateCohortIn
+  ) => Promise<DuplicateCohortOut>;
+  deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
+  leaveCohortAction?: (input: LeaveCohortIn) => Promise<LeaveCohortOut>;
+}
+
+export default function Cohorts({
+  listData: serverListData,
+  duplicateCohortAction,
+  deleteCohortAction,
+  leaveCohortAction,
+}: CohortsProps) {
   const router = useRouter();
-  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  const queryClient = useQueryClient();
-
-  // V3 API: Fetch cohorts list
-  const { data: cohortsData, isLoading: loadingCohorts } = useQuery({
-    queryKey: keys.cohorts.list({ profileId: effectiveProfile?.id || "" }),
-    queryFn: () =>
-      api.post("/cohorts/list", {
-        body: { profileId: effectiveProfile?.id || "" },
-      }),
-    enabled: !!effectiveProfile?.id,
-  });
-
-  // Mutation hooks - V3 API
-  const duplicateCohortMutation = useMutation({
-    mutationFn: (request: { cohortId: string }) =>
-      api.post("/cohorts/duplicate", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
-    },
-  });
-
-  const deleteCohortMutation = useMutation({
-    mutationFn: (request: { cohortId: string }) =>
-      api.post("/cohorts/delete", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
-    },
-  });
-
-  const leaveCohortMutation = useMutation({
-    mutationFn: (request: { cohortId: string; profileId: string }) =>
-      api.post("/cohorts/leave", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.cohorts.all });
-    },
-  });
-
-  // Extract data from V3 response
-  const cohorts = useMemo(
-    () => cohortsData?.cohorts || [],
-    [cohortsData?.cohorts]
-  );
-  const profileMapping = useMemo(
-    () => cohortsData?.profile_mapping || {},
-    [cohortsData?.profile_mapping]
-  );
-  const simulationMapping = useMemo(
-    () => cohortsData?.simulation_mapping || {},
-    [cohortsData?.simulation_mapping]
-  );
-
+  const { effectiveProfile } = useProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -130,6 +102,24 @@ export default function Cohorts() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "updatedAt", desc: true },
   ]);
+
+  // Use server-provided data directly
+  const cohortsData = serverListData;
+  const isLoading = false; // No loading when using server data
+
+  // Extract data from response
+  const cohorts = useMemo(
+    () => cohortsData?.cohorts || [],
+    [cohortsData?.cohorts]
+  );
+  const profileMapping = useMemo(
+    () => cohortsData?.profile_mapping || {},
+    [cohortsData?.profile_mapping]
+  );
+  const simulationMapping = useMemo(
+    () => cohortsData?.simulation_mapping || {},
+    [cohortsData?.simulation_mapping]
+  );
 
   // Create filter options from mappings
   const profileOptions = useMemo(() => {
@@ -225,8 +215,6 @@ export default function Cohorts() {
     },
   });
 
-  const isLoading = isProfileLoading || !effectiveProfile || loadingCohorts;
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -273,12 +261,13 @@ export default function Cohorts() {
   // No need for client-side permission or filtering logic
 
   const handleDelete = async () => {
-    if (!deleteItem) return;
+    if (!deleteItem || !deleteCohortAction) return;
 
     setIsDeleting(true);
     try {
-      await deleteCohortMutation.mutateAsync({ cohortId: deleteItem.id });
+      await deleteCohortAction({ body: { cohortId: deleteItem.id } });
       toast.success("Cohort deleted successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to delete cohort");
     } finally {
@@ -289,16 +278,15 @@ export default function Cohorts() {
   };
 
   const handleLeave = async () => {
-    if (!leaveItem) return;
+    if (!leaveItem || !leaveCohortAction) return;
 
     setIsLeaving(true);
     try {
-      await leaveCohortMutation.mutateAsync({
-        cohortId: leaveItem.id,
-        profileId: effectiveProfile?.id || "",
+      await leaveCohortAction({
+        body: { cohortId: leaveItem.id, profileId: effectiveProfile?.id || "" },
       });
-
       toast.success("Left cohort successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to leave cohort");
     } finally {
@@ -309,10 +297,13 @@ export default function Cohorts() {
   };
 
   const handleDuplicate = async (cohortId: string, cohortName: string) => {
+    if (!duplicateCohortAction) return;
+
     setIsDuplicating(cohortId);
     try {
-      await duplicateCohortMutation.mutateAsync({ cohortId });
+      await duplicateCohortAction({ body: { cohortId } });
       toast.success(`Cohort "${cohortName}" duplicated successfully`);
+      router.refresh();
     } catch {
       toast.error("Failed to duplicate cohort");
     } finally {
@@ -395,8 +386,7 @@ export default function Cohorts() {
                 size="sm"
                 onClick={() => handleDuplicate(cohort.cohort_id, cohort.name)}
                 disabled={
-                  isDuplicating === cohort.cohort_id ||
-                  duplicateCohortMutation.isPending
+                  isDuplicating === cohort.cohort_id || false // No pending state for server action
                 }
                 aria-label={`Duplicate ${cohort.name}`}
               >

@@ -8,16 +8,17 @@
 import { Brain, Copy, Edit, Thermometer, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import type {
+  AgentsListOut,
+  DuplicateAgentIn,
+  DuplicateAgentOut,
+} from "@/app/(main)/management/agents/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -34,10 +35,20 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-export default function Agents() {
+export interface AgentsProps {
+  // Server-provided data (for server-side rendering)
+  listData: AgentsListOut;
+  // Server actions (replaces useMutation)
+  duplicateAgentAction?: (
+    input: DuplicateAgentIn
+  ) => Promise<DuplicateAgentOut>;
+}
+
+export default function Agents({
+  listData: serverListData,
+  duplicateAgentAction,
+}: AgentsProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -47,23 +58,11 @@ export default function Agents() {
     { id: "updated_at", desc: true },
   ]);
 
-  // V3 API with generated keys
-  const filters = { profileId: effectiveProfile?.id || "" };
-  const { data: agentsData, isLoading } = useQuery({
-    queryKey: keys.agents.list(filters),
-    queryFn: () => api.post("/agents/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
+  // Use server-provided data directly
+  const agentsData = serverListData;
+  const isLoading = false; // No loading when using server data
 
-  const duplicateMutation = useMutation({
-    mutationFn: (req: { agentId: string }) =>
-      api.post("/agents/duplicate", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.agents.all });
-    },
-  });
-
-  // Extract data from V3 response
+  // Extract data from response
   const agents = useMemo(() => agentsData?.agents || [], [agentsData?.agents]);
   const modelMapping = useMemo(
     () =>
@@ -217,9 +216,12 @@ export default function Agents() {
   };
 
   const handleDuplicate = async (id: string) => {
+    if (!duplicateAgentAction) return;
+
     try {
-      await duplicateMutation.mutateAsync({ agentId: id });
+      await duplicateAgentAction({ body: { agentId: id } });
       toast.success("Agent duplicated successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to duplicate agent");
     }
@@ -265,7 +267,7 @@ export default function Agents() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleDuplicate(agent.agent_id)}
-                disabled={duplicateMutation.isPending}
+                disabled={false} // No loading state for server action
               >
                 <Copy className="h-4 w-4" />
               </Button>

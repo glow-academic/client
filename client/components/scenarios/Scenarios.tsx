@@ -19,6 +19,13 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import type {
+  DeleteScenarioIn,
+  DeleteScenarioOut,
+  DuplicateScenarioIn,
+  DuplicateScenarioOut,
+  ScenariosListOut,
+} from "@/app/(main)/create/scenarios/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
@@ -42,10 +49,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -60,7 +63,23 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-export function Scenarios() {
+export interface ScenariosProps {
+  // Server-provided data (for server-side rendering)
+  listData: ScenariosListOut;
+  // Server actions (replaces useMutation)
+  duplicateScenarioAction?: (
+    input: DuplicateScenarioIn
+  ) => Promise<DuplicateScenarioOut>;
+  deleteScenarioAction?: (
+    input: DeleteScenarioIn
+  ) => Promise<DeleteScenarioOut>;
+}
+
+export function Scenarios({
+  listData: serverListData,
+  duplicateScenarioAction,
+  deleteScenarioAction,
+}: ScenariosProps) {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -72,8 +91,6 @@ export function Scenarios() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set()
   );
-  const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -83,32 +100,11 @@ export function Scenarios() {
     { id: "updatedAt", desc: true },
   ]);
 
-  // V3 API - Query with generated keys
-  const filters = { profileId: effectiveProfile?.id || "" };
-  const { data: scenariosData, isLoading } = useQuery({
-    queryKey: keys.scenarios.list(filters),
-    queryFn: () => api.post("/scenarios/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
+  // Use server-provided data directly
+  const scenariosData = serverListData;
+  const isLoading = false; // No loading when using server data
 
-  // Mutation hooks with v3 API
-  const duplicateScenarioMutation = useMutation({
-    mutationFn: (req: { scenarioId: string }) =>
-      api.post("/scenarios/duplicate", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
-    },
-  });
-
-  const deleteScenarioMutation = useMutation({
-    mutationFn: (req: { scenarioId: string }) =>
-      api.post("/scenarios/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.scenarios.all });
-    },
-  });
-
-  // Extract data from V2 response
+  // Extract data from response
   const scenarios = useMemo(
     () => scenariosData?.scenarios || [],
     [scenariosData?.scenarios]
@@ -360,12 +356,13 @@ export function Scenarios() {
   // No need for client-side permission logic
 
   const handleDelete = async () => {
-    if (!deleteItem) return;
+    if (!deleteItem || !deleteScenarioAction) return;
 
     setIsDeleting(true);
     try {
-      await deleteScenarioMutation.mutateAsync({ scenarioId: deleteItem.id });
+      await deleteScenarioAction({ body: { scenarioId: deleteItem.id } });
       toast.success("Scenario deleted successfully");
+      router.refresh();
     } catch {
       toast.error("Failed to delete scenario");
     } finally {
@@ -376,10 +373,13 @@ export function Scenarios() {
   };
 
   const handleDuplicate = async (scenarioId: string, scenarioName: string) => {
+    if (!duplicateScenarioAction) return;
+
     setIsDuplicating(scenarioId);
     try {
-      await duplicateScenarioMutation.mutateAsync({ scenarioId });
+      await duplicateScenarioAction({ body: { scenarioId } });
       toast.success(`Scenario "${scenarioName}" duplicated successfully`);
+      router.refresh();
     } catch {
       toast.error("Failed to duplicate scenario");
     } finally {
@@ -480,10 +480,7 @@ export function Scenarios() {
                     onClick={() =>
                       handleDuplicate(scenario.scenario_id, scenario.title)
                     }
-                    disabled={
-                      isDuplicating === scenario.scenario_id ||
-                      duplicateScenarioMutation.isPending
-                    }
+                    disabled={isDuplicating === scenario.scenario_id}
                   >
                     <Copy className="h-4 w-4" />
                     {isDuplicating === scenario.scenario_id ? "..." : ""}
@@ -524,10 +521,7 @@ export function Scenarios() {
                     onClick={() =>
                       handleDuplicate(scenario.scenario_id, scenario.title)
                     }
-                    disabled={
-                      isDuplicating === scenario.scenario_id ||
-                      duplicateScenarioMutation.isPending
-                    }
+                    disabled={isDuplicating === scenario.scenario_id}
                   >
                     <Copy className="h-4 w-4" />
                     {isDuplicating === scenario.scenario_id ? "..." : ""}
@@ -760,19 +754,15 @@ export function Scenarios() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel
-                disabled={isDeleting || deleteScenarioMutation.isPending}
-              >
+              <AlertDialogCancel disabled={isDeleting}>
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                disabled={isDeleting || deleteScenarioMutation.isPending}
+                disabled={isDeleting}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                {isDeleting || deleteScenarioMutation.isPending
-                  ? "Deleting..."
-                  : "Delete"}
+                {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

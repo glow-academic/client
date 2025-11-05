@@ -1,22 +1,81 @@
 /**
- * app/management/rubrics/page.tsx
+ * app/(main)/management/rubrics/page.tsx
  * Rubric list page - redirects to home with rubrics section
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
+import { auth } from "@/auth";
 import Rubrics from "@/components/rubrics/Rubrics";
-
+import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { revalidateTag } from "next/cache";
+import { cache } from "react";
+
+/** ---- Strong types from OpenAPI ---- */
+type RubricsListIn = InputOf<"/api/v3/rubrics/list", "post">;
+type RubricsListOut = OutputOf<"/api/v3/rubrics/list", "post">;
+type DuplicateRubricIn = InputOf<"/api/v3/rubrics/duplicate", "post">;
+type DuplicateRubricOut = OutputOf<"/api/v3/rubrics/duplicate", "post">;
+type DeleteRubricIn = InputOf<"/api/v3/rubrics/delete", "post">;
+type DeleteRubricOut = OutputOf<"/api/v3/rubrics/delete", "post">;
+
+/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
+const getRubricsList = cache(
+  async (input: RubricsListIn): Promise<RubricsListOut> => {
+    return api.post("/rubrics/list", input);
+  }
+);
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+export async function duplicateRubric(
+  input: DuplicateRubricIn
+): Promise<DuplicateRubricOut> {
+  "use server";
+  const out = await api.post("/rubrics/duplicate", input);
+  revalidateTag("rubrics");
+  return out;
+}
+
+export async function deleteRubric(
+  input: DeleteRubricIn
+): Promise<DeleteRubricOut> {
+  "use server";
+  const out = await api.post("/rubrics/delete", input);
+  revalidateTag("rubrics");
+  return out;
+}
 
 export const metadata: Metadata = {
   title: "Rubrics",
   description: `Rubrics in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
-export default function RubricsPage() {
+export default async function RubricsPage() {
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
+  // Fetch list data server-side
+  const listData = await getRubricsList({
+    body: { profileId },
+  });
+
   return (
     <div className="space-y-6">
-      <Rubrics />
+      <Rubrics
+        listData={listData}
+        duplicateRubricAction={duplicateRubric}
+        deleteRubricAction={deleteRubric}
+      />
     </div>
   );
 }
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  DeleteRubricIn,
+  DeleteRubricOut,
+  DuplicateRubricIn,
+  DuplicateRubricOut,
+  RubricsListOut,
+};

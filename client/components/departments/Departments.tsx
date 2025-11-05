@@ -23,10 +23,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import type {
+  DeleteDepartmentIn,
+  DeleteDepartmentOut,
+  DepartmentsListOut,
+  DuplicateDepartmentIn,
+  DuplicateDepartmentOut,
+} from "@/app/(main)/system/departments/page";
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { Input } from "@/components/ui/input";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -40,13 +47,25 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { Input } from "@/components/ui/input";
 
-export default function Departments() {
+export interface DepartmentsProps {
+  // Server-provided data (for server-side rendering)
+  listData: DepartmentsListOut;
+  // Server actions (replaces useMutation)
+  duplicateDepartmentAction?: (
+    input: DuplicateDepartmentIn
+  ) => Promise<DuplicateDepartmentOut>;
+  deleteDepartmentAction?: (
+    input: DeleteDepartmentIn
+  ) => Promise<DeleteDepartmentOut>;
+}
+
+export default function Departments({
+  listData: serverListData,
+  duplicateDepartmentAction,
+  deleteDepartmentAction,
+}: DepartmentsProps) {
   const router = useRouter();
-  const { effectiveProfile, departmentIds } = useProfile();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -62,41 +81,11 @@ export default function Departments() {
     { id: "updated_at", desc: true },
   ]);
 
-  const queryClient = useQueryClient();
+  // Use server-provided data directly
+  const departmentsData = serverListData;
+  const isLoading = false; // No loading when using server data
 
-  // V3 API hook
-  const filters = useMemo(
-    () => ({
-      departmentIds: departmentIds,
-      profileId: effectiveProfile?.id || "",
-    }),
-    [departmentIds, effectiveProfile?.id]
-  );
-
-  const { data: departmentsData, isLoading } = useQuery({
-    queryKey: keys.departments.list(filters),
-    queryFn: () => api.post("/departments/list", { body: filters }),
-    enabled: !!effectiveProfile?.id && departmentIds.length > 0,
-  });
-
-  // Mutations with V3 API
-  const duplicateDepartmentMutation = useMutation({
-    mutationFn: (req: { departmentId: string }) =>
-      api.post("/departments/duplicate", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.departments.all });
-    },
-  });
-
-  const deleteDepartmentMutation = useMutation({
-    mutationFn: (req: { departmentId: string }) =>
-      api.post("/departments/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.departments.all });
-    },
-  });
-
-  // Extract data from V2 response
+  // Extract data from response
   const departments = useMemo(
     () => departmentsData?.departments || [],
     [departmentsData?.departments]
@@ -203,17 +192,18 @@ export default function Departments() {
   };
 
   const handleDuplicate = async (department: (typeof departments)[number]) => {
-    if (!department.can_duplicate) {
+    if (!department.can_duplicate || !duplicateDepartmentAction) {
       toast.error("This department cannot be duplicated");
       return;
     }
 
     setIsDuplicating(department.department_id);
     try {
-      await duplicateDepartmentMutation.mutateAsync({
-        departmentId: department.department_id,
+      await duplicateDepartmentAction({
+        body: { departmentId: department.department_id },
       });
       toast.success(`Department "${department.title}" duplicated successfully`);
+      router.refresh();
     } catch (error) {
       toast.error("Failed to duplicate department");
     } finally {
@@ -222,13 +212,14 @@ export default function Departments() {
   };
 
   const handleDelete = async () => {
-    if (!deleteItem) return;
+    if (!deleteItem || !deleteDepartmentAction) return;
 
     try {
-      await deleteDepartmentMutation.mutateAsync({
-        departmentId: deleteItem.id,
+      await deleteDepartmentAction({
+        body: { departmentId: deleteItem.id },
       });
       toast.success(`Department "${deleteItem.name}" deleted successfully`);
+      router.refresh();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete department"
@@ -403,7 +394,9 @@ export default function Departments() {
         {/* Cards Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => renderDepartmentCard(row.original))
+            table
+              .getRowModel()
+              .rows.map((row) => renderDepartmentCard(row.original))
           ) : (
             <div className="col-span-full text-center py-8 text-muted-foreground">
               No departments match the current filters.
