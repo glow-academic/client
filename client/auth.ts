@@ -8,7 +8,14 @@ const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+// NOTE: also export `unstable_update` as `update` for server-side session mutation
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut,
+  unstable_update: update,
+} = NextAuth({
   basePath: `${appPrefix}/api/auth`,
   providers: [
     MicrosoftEntraID({
@@ -140,40 +147,48 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      // On client `useSession().update({ ... })`, accept changes
+      // Accept client/server updates (trigger: "update")
       if (trigger === "update" && session) {
         if (typeof session.effectiveProfileId === "string") {
           token["effectiveProfileId"] = session.effectiveProfileId;
         }
-        if (session.emulationTTL != null) {
-          token["emulationTTL"] = session.emulationTTL;
+        if ("emulationTTL" in session) {
+          token["emulationTTL"] =
+            (session.emulationTTL as number | null) ?? null;
         }
-        if (session.fullEmulation != null) {
-          token["fullEmulation"] = session.fullEmulation;
+        if ("fullEmulation" in session) {
+          token["fullEmulation"] = !!session.fullEmulation;
         }
       }
 
-      // Optional TTL auto-revert (hardening)
+      // TTL auto-revert (hardening)
       if (token["emulationTTL"] && Date.now() > Number(token["emulationTTL"])) {
-        token["effectiveProfileId"] = token["profileId"];
+        token["effectiveProfileId"] = token["profileId"] ?? null;
+        token["fullEmulation"] = false; // also clear fullEmulation
         token["emulationTTL"] = null;
       }
 
       return token;
     },
 
-    // 🌐 Expose fields to the client session
+    // 🌐 Expose to client session
     async session({ session, token }) {
       if (session.user) {
         session.user.id = session.user.id ?? (token.sub as string);
         session.user.role = (token["role"] as string) || "guest";
-        session.user.profileId = token["profileId"] as string | undefined;
+        const profileId = token["profileId"] as string | undefined;
+        if (profileId) {
+          session.user.profileId = profileId;
+        }
       }
+
       session.effectiveProfileId =
         (token["effectiveProfileId"] as string) ??
-        (token["profileId"] as string);
+        (token["profileId"] as string) ??
+        null;
       session.emulationTTL = (token["emulationTTL"] as number | null) ?? null;
-      session.fullEmulation = (token["fullEmulation"] as boolean) ?? false;
+      session.fullEmulation = !!(token["fullEmulation"] as boolean);
+
       return session;
     },
   },

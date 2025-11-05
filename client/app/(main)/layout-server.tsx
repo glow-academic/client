@@ -20,8 +20,21 @@ const getLayoutContext = cache(
 /** ---- Export type for client (type-only imports) ---- */
 export type LayoutContextResponse = LayoutContextOut;
 
+export type SafeSessionSnapshot = {
+  effectiveProfileId: string | null;
+  fullEmulation: boolean;
+  emulationTTL: number | null;
+};
+
 export async function getLayoutContextData() {
   const session = await auth();
+
+  const snapshot: SafeSessionSnapshot = {
+    effectiveProfileId: session?.effectiveProfileId ?? null,
+    fullEmulation: !!session?.fullEmulation,
+    emulationTTL: session?.emulationTTL ?? null,
+  };
+
   const effectiveProfileId = session?.effectiveProfileId || "";
   const actualProfileId = session?.user?.profileId || "";
 
@@ -34,5 +47,5 @@ export async function getLayoutContextData() {
     },
   });
 
-  return initial;
+  return { initial, snapshot };
 }

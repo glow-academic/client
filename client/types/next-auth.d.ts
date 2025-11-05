@@ -1,15 +1,16 @@
 import "next-auth";
+import { type DefaultSession } from "next-auth";
 
+// ---- Type augmentation (Session & JWT) ----
 declare module "next-auth" {
   interface Session {
-    effectiveProfileId?: string;
-    emulationTTL?: number | null;
+    effectiveProfileId?: string | null;
     fullEmulation?: boolean;
-    user: {
-      id: string;
-      role?: string;
+    emulationTTL?: number | null;
+    user: DefaultSession["user"] & {
       profileId?: string;
-    } & DefaultSession["user"];
+      role?: string;
+    };
   }
 
   interface User {
@@ -22,8 +23,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     profileId?: string;
     role?: string;
-    effectiveProfileId?: string;
-    emulationTTL?: number | null;
+    effectiveProfileId?: string | null;
     fullEmulation?: boolean;
+    emulationTTL?: number | null;
   }
 }

@@ -41,7 +41,10 @@ import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
-import type { LayoutContextResponse } from "./layout-server";
+import type {
+  LayoutContextResponse,
+  SafeSessionSnapshot,
+} from "./layout-server";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -317,12 +320,14 @@ function WebSocketProviderWrapper({ children }: { children: React.ReactNode }) {
 export function MainLayoutClient({
   children,
   initial,
+  sessionSnapshot,
 }: {
   children: React.ReactNode;
   initial: LayoutContextResponse;
+  sessionSnapshot: SafeSessionSnapshot;
 }) {
   return (
-    <ProfileProviderClient initial={initial}>
+    <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
       <WebSocketProviderWrapper>
         <TourProvider>
           <BreadcrumbProvider>

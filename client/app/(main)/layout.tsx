@@ -12,7 +12,11 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const initial = await getLayoutContextData();
+  const { initial, snapshot } = await getLayoutContextData();
 
-  return <MainLayoutClient initial={initial}>{children}</MainLayoutClient>;
+  return (
+    <MainLayoutClient initial={initial} sessionSnapshot={snapshot}>
+      {children}
+    </MainLayoutClient>
+  );
 }

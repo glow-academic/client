@@ -8,13 +8,15 @@
  */
 "use client";
 
-import type { LayoutContextResponse } from "@/app/(main)/layout-server";
+import type {
+  LayoutContextResponse,
+  SafeSessionSnapshot,
+} from "@/app/(main)/layout-server";
 import {
   getFirstAvailableSectionForRole,
   getSectionRoute,
   isSectionAvailableForRole,
 } from "@/utils/navigation-utils";
-import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import React, {
   createContext,
@@ -102,13 +104,14 @@ export const useProfile = () => {
 interface ProfileProviderClientProps {
   children: React.ReactNode;
   initial: LayoutContextResponse;
+  sessionSnapshot: SafeSessionSnapshot;
 }
 
 export function ProfileProviderClient({
   children,
   initial,
+  sessionSnapshot,
 }: ProfileProviderClientProps) {
-  const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -130,18 +133,18 @@ export function ProfileProviderClient({
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
   const isFullEmulation = useMemo(() => {
-    return !!(
+    return Boolean(
       bootstrapProfile &&
-      effectiveProfile &&
-      effectiveProfile.id !== bootstrapProfile.id &&
-      session?.emulationTTL && // Full emulation is enabled when TTL is set
-      session?.fullEmulation // And the full emulation flag is set
+        effectiveProfile &&
+        effectiveProfile.id !== bootstrapProfile.id &&
+        sessionSnapshot.emulationTTL &&
+        sessionSnapshot.fullEmulation
     );
   }, [
     bootstrapProfile,
     effectiveProfile,
-    session?.emulationTTL,
-    session?.fullEmulation,
+    sessionSnapshot.emulationTTL,
+    sessionSnapshot.fullEmulation,
   ]);
 
   const resolvedActiveProfile = useMemo<ProfileItem | null>(() => {

@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import {
   AlertCircle,
@@ -38,7 +39,6 @@ import {
   Wifi,
   XCircle,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -71,8 +71,11 @@ interface HealthModalProps {
 
 export function HealthModal({ open, onOpenChange }: HealthModalProps) {
   const { isConnected } = useWebSocket();
-  const { data: session, status: authStatus } = useSession();
+  const { effectiveProfile } = useProfile();
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([]);
+  const [authStatus, setAuthStatus] = useState<
+    "loading" | "authenticated" | "unauthenticated"
+  >("loading");
   // Initialize health checks
   useEffect(() => {
     const initialChecks: HealthCheck[] = [
@@ -160,28 +163,24 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
     );
   }, [isConnected]);
 
-  // Update authentication status
+  // Update authentication status based on profile context
   useEffect(() => {
+    const status = effectiveProfile ? "authenticated" : "unauthenticated";
+    setAuthStatus(status);
+
     setHealthChecks((prev) =>
       prev.map((check) =>
         check.id === "authentication"
           ? {
               ...check,
-              status:
-                authStatus === "loading"
-                  ? "loading"
-                  : authStatus === "authenticated"
-                    ? "healthy"
-                    : authStatus === "unauthenticated"
-                      ? "warning"
-                      : "unhealthy",
+              status: effectiveProfile ? "healthy" : "warning",
               lastChecked: new Date(),
-              responseTime: authStatus === "loading" ? undefined : 0,
+              responseTime: 0,
             }
           : check
       )
     );
-  }, [authStatus]);
+  }, [effectiveProfile]);
 
   const runAllHealthChecks = useCallback(async () => {
     try {
@@ -234,10 +233,10 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
 
   // Run health checks when modal opens
   useEffect(() => {
-    if (open && healthChecks.length > 0 && authStatus !== "loading") {
+    if (open && healthChecks.length > 0) {
       runAllHealthChecks();
     }
-  }, [open, healthChecks.length, authStatus, runAllHealthChecks]);
+  }, [open, healthChecks.length, runAllHealthChecks]);
 
   const getStatusIcon = (status: HealthCheck["status"]) => {
     switch (status) {
@@ -421,7 +420,9 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">User:</span>
                     <span className="font-mono">
-                      {session?.user?.email || "Guest"}
+                      {effectiveProfile
+                        ? `${effectiveProfile.firstName} ${effectiveProfile.lastName}`
+                        : "Guest"}
                     </span>
                   </div>
                 </div>

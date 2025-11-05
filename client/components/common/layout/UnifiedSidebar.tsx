@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-import { authorizeEmulation } from "@/lib/server/profile-actions";
+import { switchEffectiveProfile } from "@/lib/server/session-actions";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   Brain,
@@ -61,7 +61,7 @@ import {
   UserCogIcon,
   Users,
 } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -206,7 +206,6 @@ export function UnifiedSidebar({
     simulatableProfiles,
     availableSections,
   } = useProfile();
-  const { update } = useSession();
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts || !effectiveProfile) return [];
@@ -531,41 +530,20 @@ export function UnifiedSidebar({
   );
 
   const handleProfileSelect = async (profileId: string) => {
-    const isSelf = profileId === activeProfile?.id;
-
     try {
-      if (isSelf) {
-        // revert to self (no need to authorize)
-        await update({
-          effectiveProfileId: activeProfile!.id,
-          emulationTTL: null,
-        });
-      } else {
-        // 1) server permission check using server action
-        // Note: BFF route derives requesterProfileId from session for security
-        const result = await authorizeEmulation({
-          body: {
-            requesterProfileId: activeProfile!.id, // Sent but overridden by server
-            targetProfileId: profileId,
-          },
-        });
+      const result = await switchEffectiveProfile({
+        targetProfileId: profileId,
+        fullEmulation: false,
+        emulationTTL: Date.now() + 120 * 60 * 1000, // 2 hours TTL for emulation
+      });
 
-        if (!result.allowed) {
-          toast.error(result.reason || "Emulation not allowed");
-          return;
-        }
-
-        // 2) write to NextAuth session (authoritative) - this is half emulation
-        await update({
-          effectiveProfileId: profileId,
-          // optional TTL: 2 hours
-          emulationTTL: Date.now() + 120 * 60 * 1000,
-          fullEmulation: false, // This is half emulation, not full
-        });
+      if (!result.ok) {
+        toast.error(result.reason || "Failed to switch profile");
+        return;
       }
 
-      // Reload so server-rendered pages pick up the new session
-      window.location.reload();
+      // Session updated server-side, refresh to pick up changes
+      router.refresh();
     } catch {
       toast.error("Failed to switch profile");
     }
@@ -995,29 +973,19 @@ export function UnifiedSidebar({
               className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
               onClick={async () => {
                 try {
-                  // Use the same authorization flow as profile switching
-                  // Note: BFF route derives requesterProfileId from session for security
-                  const result = await authorizeEmulation({
-                    body: {
-                      requesterProfileId: activeProfile!.id, // Sent but overridden by server
-                      targetProfileId: effectiveProfile.id,
-                    },
+                  const result = await switchEffectiveProfile({
+                    targetProfileId: effectiveProfile.id,
+                    fullEmulation: true,
+                    emulationTTL: Date.now() + 120 * 60 * 1000, // 2 hours
                   });
 
-                  if (!result.allowed) {
+                  if (!result.ok) {
                     toast.error(result.reason || "Emulation not allowed");
                     return;
                   }
 
-                  // Update the session to enable full emulation mode
-                  await update({
-                    effectiveProfileId: effectiveProfile.id,
-                    emulationTTL: Date.now() + 120 * 60 * 1000, // 2 hours
-                    fullEmulation: true, // This enables full emulation mode
-                  });
-
-                  // Reload to pick up the new session
-                  window.location.reload();
+                  // Session updated server-side, refresh to pick up changes
+                  router.refresh();
                 } catch {
                   toast.error("Failed to enable emulation");
                 }
