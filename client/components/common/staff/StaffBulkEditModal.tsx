@@ -6,6 +6,10 @@
 
 "use client";
 
+import type {
+  BulkUpdateStaffIn,
+  BulkUpdateStaffOut,
+} from "@/app/(main)/management/staff/page";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import {
   AlertDialog,
@@ -31,7 +35,8 @@ import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -40,6 +45,9 @@ export interface StaffBulkEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone?: () => void;
+  bulkUpdateStaffAction?: (
+    input: BulkUpdateStaffIn
+  ) => Promise<BulkUpdateStaffOut>;
 }
 
 export default function StaffBulkEditModal({
@@ -47,9 +55,10 @@ export default function StaffBulkEditModal({
   open,
   onOpenChange,
   onDone,
+  bulkUpdateStaffAction,
 }: StaffBulkEditModalProps) {
+  const router = useRouter();
   const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
 
   // V3 API: Fetch bulk detail
   const { data: bulkDetail } = useQuery({
@@ -65,21 +74,6 @@ export default function StaffBulkEditModal({
         },
       }),
     enabled: open && profileIds.length > 0 && !!effectiveProfile?.id,
-  });
-
-  // V3 API: Bulk update mutation
-  const bulkUpdateMutation = useMutation({
-    mutationFn: (request: {
-      profileIds: string[];
-      role?: string | null;
-      requests_per_day?: number | null | string;
-      default_profile?: boolean | null;
-      currentProfileId: string;
-      active?: boolean | null;
-    }) => api.post("/profile/staff/bulk-update", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
   });
 
   const [bulkRole, setBulkRole] = useState<string>("__keep__");
@@ -177,7 +171,12 @@ export default function StaffBulkEditModal({
         updates.default_profile = bulkDefaultProfile;
       }
 
-      await bulkUpdateMutation.mutateAsync(updates);
+      if (!bulkUpdateStaffAction) {
+        toast.error("Update action not available");
+        return;
+      }
+      await bulkUpdateStaffAction({ body: updates });
+      router.refresh();
       toast.success("Staff updated successfully");
       setShowConfirmDialog(false);
       onOpenChange(false);
@@ -198,7 +197,8 @@ export default function StaffBulkEditModal({
     bulkDefaultProfile,
     isSuperadmin,
     effectiveProfile?.id,
-    bulkUpdateMutation,
+    bulkUpdateStaffAction,
+    router,
     onOpenChange,
     onDone,
   ]);

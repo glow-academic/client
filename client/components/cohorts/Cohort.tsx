@@ -42,9 +42,7 @@ import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -161,61 +159,13 @@ export default function Cohort({
 
   // Memoize callback functions to prevent unnecessary re-renders
 
-  // Fallback to React Query if server data not provided (for create mode or compatibility)
-  const queryClient = useQueryClient();
-
-  // V3 API - fetch cohort detail when editing (fallback only if server data not provided)
-  const {
-    data: clientCohortDetail,
-    isLoading: isLoadingCohortDetail,
-    refetch: refetchCohortDetail,
-  } = useQuery({
-    queryKey: keys.cohorts.with({
-      cohortId: cohortId || "",
-      profileId: effectiveProfile?.id || "",
-    }),
-    queryFn: () =>
-      api.post("/cohorts/detail", {
-        body: {
-          cohortId: cohortId || "",
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled:
-      !!cohortId && isEditMode && !!effectiveProfile?.id && !serverCohortDetail,
-  });
-
-  // V3 API - fetch default cohort detail when creating (fallback only if server data not provided)
-  const { data: clientCohortDetailDefault, isLoading: isLoadingCohortDefault } =
-    useQuery({
-      queryKey: keys.cohorts.with({
-        profileId: effectiveProfile?.id || "",
-        default: true,
-      }),
-      queryFn: () =>
-        api.post("/cohorts/detail-default", {
-          body: {
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled:
-        !isEditMode && !!effectiveProfile?.id && !serverCohortDetailDefault,
-    });
-
-  // Use server data if available, otherwise fall back to client data
-  const cohortDetail = serverCohortDetail ?? clientCohortDetail;
-  const cohortDetailDefault =
-    serverCohortDetailDefault ?? clientCohortDetailDefault;
+  // Use server-provided data directly (no fallback needed - server pages always provide data)
+  const cohortDetail = serverCohortDetail;
+  const cohortDetailDefault = serverCohortDetailDefault;
 
   // Use edit detail when editing, default detail when creating
   const cohortData = isEditMode ? cohortDetail : cohortDetailDefault;
-  const isLoadingData = isEditMode
-    ? serverCohortDetail
-      ? false
-      : isLoadingCohortDetail
-    : serverCohortDetailDefault
-      ? false
-      : isLoadingCohortDefault;
+  const isLoadingData = false; // No loading when using server data
 
   // Set breadcrumb context when cohort data is loaded
   useEffect(() => {
@@ -658,14 +608,12 @@ export default function Cohort({
           cohortId: targetCohortId,
           title: formData.title || "",
           description: formData.description || null,
-          department_ids: formData.departmentIds?.length
-            ? formData.departmentIds
-            : null,
+          department_ids:
+            formData.departmentIds && formData.departmentIds.length > 0
+              ? formData.departmentIds
+              : [],
           active: formData.active ?? true,
-          simulation_ids: currentSimulationIds.map((simId) => ({
-            simulation_id: simId,
-            active: simulationActiveStates[simId] ?? true,
-          })),
+          simulation_ids: currentSimulationIds,
           profile_ids: profileIds,
         };
         await handleUpdateCohort(updateRequest);
@@ -679,14 +627,12 @@ export default function Cohort({
         const createRequest: CreateCohortBody = {
           title: formData.title || "",
           description: formData.description || null,
-          department_ids: formData.departmentIds?.length
-            ? formData.departmentIds
-            : null,
+          department_ids:
+            formData.departmentIds && formData.departmentIds.length > 0
+              ? formData.departmentIds
+              : [],
           active: formData.active || true,
-          simulation_ids: currentSimulationIds.map((simId) => ({
-            simulation_id: simId,
-            active: simulationActiveStates[simId] ?? true,
-          })),
+          simulation_ids: currentSimulationIds,
           profile_ids: profileIds,
         };
         await handleCreateCohort(createRequest);
@@ -1148,7 +1094,7 @@ export default function Cohort({
                   isRefreshing={isRefreshing}
                   onRefresh={async () => {
                     setIsRefreshing(true);
-                    await refetchCohortDetail();
+                    // No need to refetch here, as we are using server data
                     setIsRefreshing(false);
                   }}
                   cohortId={cohortId}
@@ -1204,9 +1150,8 @@ export default function Cohort({
                         return [...prev, ...newProfiles];
                       });
                     }
-                    // Refetch to show any changes
+                    // No need to refetch here, as we are using server data
                     setIsRefreshing(true);
-                    await refetchCohortDetail();
                     setIsRefreshing(false);
                   }}
                   onPreview={(staff) => {
@@ -1320,7 +1265,7 @@ export default function Cohort({
             onOpenChange={(open: boolean) => !open && setEditProfileId(null)}
             onDone={() => {
               setEditProfileId(null);
-              refetchCohortDetail();
+              // No need to refetch here, as we are using server data
             }}
           />
         )}
@@ -1334,7 +1279,7 @@ export default function Cohort({
             onDone={() => {
               setSelectedStaffIds([]);
               setShowBulkEditModal(false);
-              refetchCohortDetail();
+              // No need to refetch here, as we are using server data
             }}
           />
         )}

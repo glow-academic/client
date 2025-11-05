@@ -4,6 +4,10 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import type {
+  BulkDeleteLogsIn,
+  BulkDeleteLogsOut,
+} from "@/app/(main)/system/logs/page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,10 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useProfile } from "@/contexts/profile-context";
+import { useRouter } from "next/navigation";
 
 type LogItem = {
   log_id: number;
@@ -57,6 +58,9 @@ export interface BulkDeleteLogsDialogProps {
   onOpenChange: (open: boolean) => void;
   logs: LogItem[];
   onSuccess?: () => void;
+  bulkDeleteLogsAction?: (
+    input: BulkDeleteLogsIn
+  ) => Promise<BulkDeleteLogsOut>;
 }
 
 type DeletePercentage = "10" | "25" | "50" | "100";
@@ -66,21 +70,12 @@ export function BulkDeleteLogsDialog({
   onOpenChange,
   logs,
   onSuccess,
+  bulkDeleteLogsAction,
 }: BulkDeleteLogsDialogProps) {
+  const router = useRouter();
   const [selectedPercentage, setSelectedPercentage] =
     useState<DeletePercentage>("10");
   const [isDeleting, setIsDeleting] = useState(false);
-  const queryClient = useQueryClient();
-  const { effectiveProfile } = useProfile();
-
-  // V3 API: Bulk delete logs mutation
-  const deleteLogsMutation = useMutation({
-    mutationFn: (request: { ids: number[] }) =>
-      api.post("/logs/bulk-delete", { body: { profileId: effectiveProfile?.id || "", ...request } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.logs.all });
-    },
-  });
 
   const getLogsToDelete = (percentage: DeletePercentage): LogItem[] => {
     const totalLogs = logs.length;
@@ -110,9 +105,14 @@ export function BulkDeleteLogsDialog({
 
     setIsDeleting(true);
     try {
-      await deleteLogsMutation.mutateAsync({
-        ids: logsToDelete.map((log) => log.log_id),
+      if (!bulkDeleteLogsAction) return;
+      await bulkDeleteLogsAction({
+        body: {
+          profileId: "", // Server will get from session
+          ids: logsToDelete.map((log) => log.log_id),
+        },
       });
+      router.refresh();
 
       // Show success toast and close dialog only after successful deletion
       toast.success(

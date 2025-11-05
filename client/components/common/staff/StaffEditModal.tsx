@@ -6,6 +6,10 @@
 
 "use client";
 
+import type {
+  UpdateStaffIn,
+  UpdateStaffOut,
+} from "@/app/(main)/management/staff/page";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import {
   AlertDialog,
@@ -32,7 +36,8 @@ import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -41,6 +46,7 @@ export interface StaffEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone?: () => void;
+  updateStaffAction?: (input: UpdateStaffIn) => Promise<UpdateStaffOut>;
 }
 
 export default function StaffEditModal({
@@ -48,9 +54,10 @@ export default function StaffEditModal({
   open,
   onOpenChange,
   onDone,
+  updateStaffAction,
 }: StaffEditModalProps) {
+  const router = useRouter();
   const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
 
   // V3 API: Fetch profile detail
   const { data: profileData, isLoading } = useQuery({
@@ -81,21 +88,6 @@ export default function StaffEditModal({
       defaultProfile: false, // Not in v3 response, default to false
     };
   }, [profileData]);
-
-  // V3 API: Update profile mutation
-  // Note: v3 update endpoint only accepts role, requests_per_day, department_id, and active
-  const updateProfileMutation = useMutation({
-    mutationFn: (request: {
-      profileId: string;
-      role: string;
-      requests_per_day: number | null;
-      department_id: string;
-      active: boolean;
-    }) => api.post("/profile/staff/update", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -162,13 +154,20 @@ export default function StaffEditModal({
           profileData.valid_department_ids[0]) ||
         "";
 
-      await updateProfileMutation.mutateAsync({
-        profileId: profileId,
-        role: formData.role,
-        requests_per_day: parsedReqPerDay,
-        department_id: departmentId,
-        active: profileData?.active ?? true,
+      if (!updateStaffAction) {
+        toast.error("Update action not available");
+        return;
+      }
+      await updateStaffAction({
+        body: {
+          profileId: profileId,
+          role: formData.role,
+          requests_per_day: parsedReqPerDay,
+          department_id: departmentId,
+          active: profileData?.active ?? true,
+        },
       });
+      router.refresh();
 
       toast.success("Staff updated successfully");
       setShowConfirmDialog(false);
@@ -188,7 +187,8 @@ export default function StaffEditModal({
     profileData?.active,
     profileData?.department_id,
     profileData?.valid_department_ids,
-    updateProfileMutation,
+    updateStaffAction,
+    router,
     onOpenChange,
     onDone,
   ]);

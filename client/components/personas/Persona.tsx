@@ -56,9 +56,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 // import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import type {
   CreatePersonaIn,
@@ -160,63 +158,13 @@ export default function Persona({
     isDepartmentSpecific: boolean;
   } | null>(null);
 
-  // Fallback to React Query if server data not provided (for create mode or compatibility)
-  const queryClient = useQueryClient();
-
-  // V3 API - fetch persona detail when editing (fallback only if server data not provided)
-  const { data: clientPersonaDetail, isLoading: isLoadingPersonaDetail } =
-    useQuery({
-      queryKey: keys.personas.with({
-        personaId: personaId || "",
-        profileId: effectiveProfile?.id || "",
-      }),
-      queryFn: () =>
-        api.post("/personas/detail", {
-          body: {
-            personaId: personaId || "",
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled:
-        !!personaId &&
-        isEditMode &&
-        !!effectiveProfile?.id &&
-        !serverPersonaDetail,
-    });
-
-  // V3 API - fetch default persona detail when creating (fallback only if server data not provided)
-  const {
-    data: clientPersonaDetailDefault,
-    isLoading: isLoadingPersonaDefault,
-  } = useQuery({
-    queryKey: keys.personas.with({
-      profileId: effectiveProfile?.id || "",
-      default: true,
-    }),
-    queryFn: () =>
-      api.post("/personas/detail-default", {
-        body: {
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled:
-      !isEditMode && !!effectiveProfile?.id && !serverPersonaDetailDefault,
-  });
-
-  // Use server data if available, otherwise fall back to client data
-  const personaDetail = serverPersonaDetail ?? clientPersonaDetail;
-  const personaDetailDefault =
-    serverPersonaDetailDefault ?? clientPersonaDetailDefault;
+  // Use server-provided data directly (no fallback needed - server pages always provide data)
+  const personaDetail = serverPersonaDetail;
+  const personaDetailDefault = serverPersonaDetailDefault;
 
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
-  const isLoadingData = isEditMode
-    ? serverPersonaDetail
-      ? false
-      : isLoadingPersonaDetail
-    : serverPersonaDetailDefault
-      ? false
-      : isLoadingPersonaDefault;
+  const isLoadingData = false; // No loading when using server data
 
   // Extract body types for type safety
   type CreatePersonaBody = CreatePersonaIn extends { body: infer B }
@@ -294,7 +242,7 @@ export default function Persona({
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.personas.all });
+      router.refresh(); // Refresh to get updated data
     },
   });
 

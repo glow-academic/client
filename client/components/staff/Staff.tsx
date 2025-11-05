@@ -5,6 +5,17 @@
  * 06/07/2025
  */
 "use client";
+import type {
+  BulkDeleteStaffIn,
+  BulkDeleteStaffOut,
+  BulkUpdateStaffIn,
+  BulkUpdateStaffOut,
+  DeleteStaffIn,
+  DeleteStaffOut,
+  StaffListOut,
+  UpdateStaffIn,
+  UpdateStaffOut,
+} from "@/app/(main)/management/staff/page";
 import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
@@ -20,9 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
 import ActiveUsersKPI from "./kpis/ActiveUsersKPI";
@@ -53,46 +62,34 @@ type ProfileListItem = {
   can_remove?: boolean;
 };
 
-export default function Staff() {
+export interface StaffProps {
+  // Server-provided data (for server-side rendering)
+  listData: StaffListOut;
+  // Server actions (replaces useMutation)
+  deleteStaffAction?: (input: DeleteStaffIn) => Promise<DeleteStaffOut>;
+  bulkDeleteStaffAction?: (
+    input: BulkDeleteStaffIn
+  ) => Promise<BulkDeleteStaffOut>;
+  updateStaffAction?: (input: UpdateStaffIn) => Promise<UpdateStaffOut>;
+  bulkUpdateStaffAction?: (
+    input: BulkUpdateStaffIn
+  ) => Promise<BulkUpdateStaffOut>;
+}
+
+export default function Staff({
+  listData: serverListData,
+  deleteStaffAction,
+  bulkDeleteStaffAction,
+  updateStaffAction,
+  bulkUpdateStaffAction,
+}: StaffProps) {
+  const router = useRouter();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile } = useProfile(); // Still needed for child components
 
-  const queryClient = useQueryClient();
-
-  // V3 API hooks
-  const filters = React.useMemo(
-    () => ({
-      profileId: effectiveProfile?.id || "",
-    }),
-    [effectiveProfile?.id]
-  );
-
-  const {
-    data: staffData,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: keys.profile.list(filters),
-    queryFn: () => api.post("/profile/staff/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
-
-  // Mutation hooks with v3 API
-  const deleteStaffMutation = useMutation({
-    mutationFn: (req: { profileId: string }) =>
-      api.post("/profile/staff/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
-
-  const bulkDeleteStaffMutation = useMutation({
-    mutationFn: (req: { profileIds: string[] }) =>
-      api.post("/profile/staff/bulk-delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
+  // Use server-provided data directly
+  const staffData = serverListData;
+  const isLoading = false; // No loading when using server data
 
   // Selection
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
@@ -159,8 +156,10 @@ export default function Staff() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // Force refetch of profiles data
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay for UX
+      router.refresh();
+      toast.success("Staff data refreshed");
+    } catch {
+      toast.error("Failed to refresh staff data");
     } finally {
       setIsRefreshing(false);
     }
@@ -300,7 +299,7 @@ export default function Staff() {
         }}
         onCreate={() => {
           // Refresh staff list after create
-          refetch();
+          router.refresh();
         }}
         onPreview={(staffMember) => {
           window.open(
@@ -339,26 +338,32 @@ export default function Staff() {
       />
 
       {/* Edit Staff Modal */}
-      <StaffEditModal
-        profileId={editProfileId}
-        open={!!editProfileId}
-        onOpenChange={(open: boolean) => !open && setEditProfileId(null)}
-        onDone={() => {
-          setEditProfileId(null);
-          refetch();
-        }}
-      />
+      {updateStaffAction && (
+        <StaffEditModal
+          profileId={editProfileId}
+          open={!!editProfileId}
+          onOpenChange={(open: boolean) => !open && setEditProfileId(null)}
+          onDone={() => {
+            setEditProfileId(null);
+            router.refresh();
+          }}
+          updateStaffAction={updateStaffAction}
+        />
+      )}
 
       {/* Bulk Edit Modal */}
-      <StaffBulkEditModal
-        profileIds={selectedStaffIds}
-        open={showBulkEditModal}
-        onOpenChange={setShowBulkEditModal}
-        onDone={() => {
-          setSelectedStaffIds([]);
-          refetch();
-        }}
-      />
+      {bulkUpdateStaffAction && (
+        <StaffBulkEditModal
+          profileIds={selectedStaffIds}
+          open={showBulkEditModal}
+          onOpenChange={setShowBulkEditModal}
+          onDone={() => {
+            setSelectedStaffIds([]);
+            router.refresh();
+          }}
+          bulkUpdateStaffAction={bulkUpdateStaffAction}
+        />
+      )}
 
       {/* Bulk Delete Confirmation */}
       <AlertDialog
@@ -463,10 +468,11 @@ export default function Staff() {
                     setShowBulkDeleteDialog(false);
                     return;
                   }
-                  await bulkDeleteStaffMutation.mutateAsync({
-                    profileIds: deletableIds,
+                  if (!bulkDeleteStaffAction) return;
+                  await bulkDeleteStaffAction({
+                    body: { profileIds: deletableIds },
                   });
-                  queryClient.invalidateQueries({ queryKey: keys.profile.all });
+                  router.refresh();
                   toast.success("Selected staff deleted");
                   setSelectedStaffIds([]);
                   setShowBulkDeleteDialog(false);
@@ -570,10 +576,11 @@ export default function Staff() {
                 }
 
                 try {
-                  await deleteStaffMutation.mutateAsync({
-                    profileId: deleteStaffMember.profile_id,
+                  if (!deleteStaffAction) return;
+                  await deleteStaffAction({
+                    body: { profileId: deleteStaffMember.profile_id },
                   });
-                  queryClient.invalidateQueries({ queryKey: keys.profile.all });
+                  router.refresh();
                   toast.success("User deleted successfully");
                   setShowSingleDeleteDialog(false);
                   setDeleteStaffMember(null);

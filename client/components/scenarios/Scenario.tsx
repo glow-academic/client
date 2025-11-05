@@ -80,14 +80,11 @@ import type {
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
 import {
   getObjectivesFromMapping,
   getParameterItemIdsFromStructure,
   groupParameterItemsByParameterId,
 } from "@/utils/scenario-helpers";
-import { useQuery } from "@tanstack/react-query";
 
 // Component for objective input with autocomplete
 function ObjectiveInputWithAutocomplete({
@@ -271,61 +268,13 @@ export default function Scenario({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isEditMode = mode === "edit" && !!scenarioId;
 
-  // Fallback to React Query if server data not provided (for create mode or compatibility)
-  // V3 API - fetch scenario detail when editing (fallback only if server data not provided)
-  const { data: clientScenarioDetail, isLoading: isLoadingScenarioDetail } =
-    useQuery({
-      queryKey: keys.scenarios.with({
-        scenarioId: scenarioId || "",
-        profileId: effectiveProfile?.id || "",
-      }),
-      queryFn: () =>
-        api.post("/scenarios/detail", {
-          body: {
-            scenarioId: scenarioId || "",
-            profileId: effectiveProfile?.id || "",
-          },
-        }),
-      enabled:
-        !!scenarioId &&
-        isEditMode &&
-        !!effectiveProfile?.id &&
-        !serverScenarioDetail,
-    });
-
-  // V3 API - fetch default scenario detail when creating (fallback only if server data not provided)
-  const {
-    data: clientScenarioDetailDefault,
-    isLoading: isLoadingScenarioDefault,
-  } = useQuery({
-    queryKey: keys.scenarios.with({
-      profileId: effectiveProfile?.id || "",
-      default: true,
-    }),
-    queryFn: () =>
-      api.post("/scenarios/detail-default", {
-        body: {
-          profileId: effectiveProfile?.id || "",
-        },
-      }),
-    enabled:
-      !isEditMode && !!effectiveProfile?.id && !serverScenarioDetailDefault,
-  });
-
-  // Use server data if available, otherwise fall back to client data
-  const scenarioDetail = serverScenarioDetail ?? clientScenarioDetail;
-  const scenarioDetailDefault =
-    serverScenarioDetailDefault ?? clientScenarioDetailDefault;
+  // Use server-provided data directly (no fallback needed - server pages always provide data)
+  const scenarioDetail = serverScenarioDetail;
+  const scenarioDetailDefault = serverScenarioDetailDefault;
 
   // Use edit detail when editing, default detail when creating
   const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
-  const isLoadingData = isEditMode
-    ? serverScenarioDetail
-      ? false
-      : isLoadingScenarioDetail
-    : serverScenarioDetailDefault
-      ? false
-      : isLoadingScenarioDefault;
+  const isLoadingData = false; // No loading when using server data
 
   // Set breadcrumb context when scenario data is loaded
   useEffect(() => {

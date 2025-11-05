@@ -6,13 +6,26 @@
  */
 "use client";
 
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { BulkDeleteFeedbackDialog } from "./BulkDeleteFeedbackDialog";
+import type {
+  BulkDeleteFeedbackIn,
+  BulkDeleteFeedbackOut,
+  FeedbackListOut,
+} from "@/app/(main)/system/feedback/page";
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -27,22 +40,11 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { RefreshCw, Trash2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { BulkDeleteFeedbackDialog } from "./BulkDeleteFeedbackDialog";
 
 // Helper functions
 const getFeedbackTypeVariant = (
@@ -77,10 +79,23 @@ const getFeedbackTypeIcon = (type: string): string => {
   }
 };
 
-export default function Feedback() {
+export interface FeedbackProps {
+  // Server-provided data (for server-side rendering)
+  listData: FeedbackListOut;
+  // Server actions (replaces useMutation)
+  bulkDeleteFeedbackAction?: (
+    input: BulkDeleteFeedbackIn
+  ) => Promise<BulkDeleteFeedbackOut>;
+}
+
+export default function Feedback({
+  listData: serverListData,
+  bulkDeleteFeedbackAction,
+}: FeedbackProps) {
+  const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
-  
+
   // Table state
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -88,17 +103,10 @@ export default function Feedback() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "created_at", desc: true },
   ]);
-  
-  const queryClient = useQueryClient();
-  const { effectiveProfile } = useProfile();
-  
-  // V3 API hook
-  const filters = { profileId: effectiveProfile?.id || "" };
-  const { data: feedbackData, isLoading } = useQuery({
-    queryKey: keys.feedback.list(filters),
-    queryFn: () => api.post("/feedback/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
+
+  // Use server-provided data directly
+  const feedbackData = serverListData;
+  const isLoading = false; // No loading when using server data
 
   // Extract data from V3 response
   const feedback = useMemo(
@@ -130,7 +138,7 @@ export default function Feedback() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: keys.feedback.all });
+      router.refresh();
       toast.success("Feedback data refreshed");
     } catch {
       toast.error("Failed to refresh feedback data");
@@ -461,6 +469,7 @@ export default function Feedback() {
         onOpenChange={setShowBulkDeleteDialog}
         feedback={feedback}
         onSuccess={handleBulkDeleteSuccess}
+        bulkDeleteFeedbackAction={bulkDeleteFeedbackAction}
       />
     </>
   );

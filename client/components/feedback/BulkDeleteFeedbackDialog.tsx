@@ -5,6 +5,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import {
+  BulkDeleteFeedbackIn,
+  BulkDeleteFeedbackOut,
+} from "@/app/(main)/system/feedback/page";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -15,10 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 type FeedbackItem = {
   feedback_id: number;
@@ -35,6 +36,9 @@ export interface BulkDeleteFeedbackDialogProps {
   onOpenChange: (open: boolean) => void;
   feedback: FeedbackItem[];
   onSuccess?: () => void;
+  bulkDeleteFeedbackAction?: (
+    input: BulkDeleteFeedbackIn
+  ) => Promise<BulkDeleteFeedbackOut>;
 }
 
 type DeletePercentage = "10" | "25" | "50" | "100";
@@ -44,21 +48,12 @@ export function BulkDeleteFeedbackDialog({
   onOpenChange,
   feedback,
   onSuccess,
+  bulkDeleteFeedbackAction,
 }: BulkDeleteFeedbackDialogProps) {
+  const router = useRouter();
   const [selectedPercentage, setSelectedPercentage] =
     useState<DeletePercentage>("10");
   const [isDeleting, setIsDeleting] = useState(false);
-  const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
-
-  // V3 API: Bulk delete feedback mutation
-  const deleteFeedbackMutation = useMutation({
-    mutationFn: (request: { ids: number[] }) =>
-      api.post("/feedback/bulk-delete", { body: { profileId: effectiveProfile?.id || "", ...request } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.feedback.all });
-    },
-  });
 
   const getFeedbackToDelete = (
     percentage: DeletePercentage
@@ -90,9 +85,14 @@ export function BulkDeleteFeedbackDialog({
 
     setIsDeleting(true);
     try {
-      await deleteFeedbackMutation.mutateAsync({
-        ids: feedbackToDelete.map((item) => item.feedback_id),
+      if (!bulkDeleteFeedbackAction) return;
+      await bulkDeleteFeedbackAction({
+        body: {
+          profileId: "", // Server will get from session
+          ids: feedbackToDelete.map((item) => item.feedback_id),
+        },
       });
+      router.refresh();
 
       // Show success toast and close dialog only after successful deletion
       toast.success(

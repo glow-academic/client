@@ -69,6 +69,17 @@ type DocumentType =
   | "lecture"
   | "syllabus";
 
+import type {
+  BulkDeleteDocumentsIn,
+  BulkDeleteDocumentsOut,
+  BulkUpdateDocumentsIn,
+  BulkUpdateDocumentsOut,
+  DeleteDocumentIn,
+  DeleteDocumentOut,
+  DocumentsListOut,
+  UpdateDocumentIn,
+  UpdateDocumentOut,
+} from "@/app/(main)/create/documents/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
@@ -91,7 +102,8 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/query/keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";
 
 // Helper function to truncate text
@@ -100,51 +112,33 @@ const truncateText = (text: string, maxLength: number = 30): string => {
   return text.substring(0, maxLength) + "...";
 };
 
-export default function Documents() {
+export interface DocumentsProps {
+  // Server-provided data (for server-side rendering)
+  listData: DocumentsListOut;
+  // Server actions (replaces useMutation)
+  deleteDocumentAction?: (
+    input: DeleteDocumentIn
+  ) => Promise<DeleteDocumentOut>;
+  bulkDeleteDocumentsAction?: (
+    input: BulkDeleteDocumentsIn
+  ) => Promise<BulkDeleteDocumentsOut>;
+  updateDocumentAction?: (
+    input: UpdateDocumentIn
+  ) => Promise<UpdateDocumentOut>;
+  bulkUpdateDocumentsAction?: (
+    input: BulkUpdateDocumentsIn
+  ) => Promise<BulkUpdateDocumentsOut>;
+}
+
+export default function Documents({
+  listData: serverListData,
+  deleteDocumentAction,
+  bulkDeleteDocumentsAction,
+  updateDocumentAction,
+  bulkUpdateDocumentsAction,
+}: DocumentsProps) {
+  const router = useRouter();
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
-
-  const queryClient = useQueryClient();
-
-  // Mutation hooks
-  const deleteDocumentMutation = useMutation({
-    mutationFn: (req: { documentId: string }) =>
-      api.post("/documents/delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.documents.all });
-    },
-  });
-
-  const bulkDeleteDocumentsMutation = useMutation({
-    mutationFn: (req: { documentIds: string[] }) =>
-      api.post("/documents/bulk-delete", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.documents.all });
-    },
-  });
-
-  const updateDocumentMutation = useMutation({
-    mutationFn: (req: {
-      documentId: string;
-      type: string;
-      department_ids: string[] | null;
-      parameter_item_ids: string[];
-    }) => api.post("/documents/update", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.documents.all });
-    },
-  });
-
-  const bulkUpdateDocumentsMutation = useMutation({
-    mutationFn: (req: {
-      documentIds: string[];
-      type: string;
-      department_ids: string[] | null;
-      parameter_item_ids: string[];
-    }) => api.post("/documents/bulk-update", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.documents.all });
-    },
-  });
 
   // State management
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -204,20 +198,9 @@ export default function Documents() {
       window.removeEventListener("openDocumentUpload", handleOpenUpload);
   }, []);
 
-  // V3 API: Build filters
-  const filters = useMemo(
-    () => ({
-      profileId: effectiveProfile?.id || "",
-    }),
-    [effectiveProfile?.id]
-  );
-
-  // V3 API: Fetch documents list
-  const { data: documentsData, isLoading } = useQuery({
-    queryKey: keys.documents.list(filters),
-    queryFn: () => api.post("/documents/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
+  // Use server-provided data directly
+  const documentsData = serverListData;
+  const isLoading = false; // No loading when using server data
 
   // Extract data from V3 response
   const documents = useMemo(
@@ -1038,9 +1021,11 @@ export default function Documents() {
 
       setIsDeleting(true);
       try {
-        await deleteDocumentMutation.mutateAsync({
-          documentId: editingDocument.document_id,
+        if (!deleteDocumentAction) return;
+        await deleteDocumentAction({
+          body: { documentId: editingDocument.document_id },
         });
+        router.refresh();
         toast.success("Document deleted successfully");
         setShowDeleteDialog(false);
         setEditingDocument(null);
@@ -1068,10 +1053,12 @@ export default function Documents() {
 
       setIsDeleting(true);
       try {
+        if (!bulkDeleteDocumentsAction) return;
         // Use bulk delete for efficiency
-        await bulkDeleteDocumentsMutation.mutateAsync({
-          documentIds: deletableDocuments,
+        await bulkDeleteDocumentsAction({
+          body: { documentIds: deletableDocuments },
         });
+        router.refresh();
 
         const nonDeletableCount =
           selectedDocuments.length - deletableDocuments.length;
@@ -1099,13 +1086,21 @@ export default function Documents() {
 
     setIsUpdating(true);
     try {
-      await updateDocumentMutation.mutateAsync({
-        documentId: editingDocument.document_id,
-        type: documentDetail.type,
-        department_ids: documentDetail.department_ids,
-        parameter_item_ids: documentDetail.parameter_item_ids,
+      if (!updateDocumentAction) return;
+      const departmentId: string | null =
+        documentDetail.department_ids &&
+        documentDetail.department_ids.length > 0
+          ? (documentDetail.department_ids[0] ?? null)
+          : null;
+      await updateDocumentAction({
+        body: {
+          documentId: editingDocument.document_id,
+          type: documentDetail.type,
+          department_id: departmentId,
+          parameter_item_ids: documentDetail.parameter_item_ids,
+        },
       });
-
+      router.refresh();
       toast.success("Document updated successfully");
       setShowEditDialog(false);
       setEditingDocument(null);
@@ -1131,16 +1126,24 @@ export default function Documents() {
         bulkParameterItemIds.length > 0
           ? bulkParameterItemIds
           : bulkDocumentDetail.parameter_item_ids;
-      const department_ids = bulkDepartmentId
-        ? [bulkDepartmentId]
-        : bulkDocumentDetail.department_ids || null;
+      const department_id: string | null = bulkDepartmentId
+        ? bulkDepartmentId
+        : bulkDocumentDetail.department_ids &&
+            bulkDocumentDetail.department_ids.length > 0 &&
+            bulkDocumentDetail.department_ids[0]
+          ? bulkDocumentDetail.department_ids[0]
+          : null;
 
-      await bulkUpdateDocumentsMutation.mutateAsync({
-        documentIds: selectedDocuments,
-        type,
-        department_ids,
-        parameter_item_ids,
+      if (!bulkUpdateDocumentsAction) return;
+      await bulkUpdateDocumentsAction({
+        body: {
+          documentIds: selectedDocuments,
+          type,
+          department_id,
+          parameter_item_ids,
+        },
       });
+      router.refresh();
 
       toast.success("Documents updated successfully");
       setShowBulkEditDialog(false);
@@ -1546,13 +1549,8 @@ export default function Documents() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleUpdate}
-              disabled={isUpdating || updateDocumentMutation.isPending}
-            >
-              {isUpdating || updateDocumentMutation.isPending
-                ? "Updating..."
-                : "Update"}
+            <Button onClick={handleUpdate} disabled={isUpdating}>
+              {isUpdating ? "Updating..." : "Update"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1636,13 +1634,8 @@ export default function Documents() {
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleBulkUpdate}
-              disabled={isBulkUpdating || updateDocumentMutation.isPending}
-            >
-              {isBulkUpdating || updateDocumentMutation.isPending
-                ? "Updating..."
-                : "Apply Changes"}
+            <Button onClick={handleBulkUpdate} disabled={isBulkUpdating}>
+              {isBulkUpdating ? "Updating..." : "Apply Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1758,16 +1751,11 @@ export default function Documents() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isDeleting || deleteDocumentMutation.isPending}
-            >
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={
                 isDeleting ||
-                deleteDocumentMutation.isPending ||
                 (editingDocument && !selectedDocuments.length
                   ? !canDeleteDocument(editingDocument.document_id)
                   : selectedDocuments.filter((documentId) =>
@@ -1776,7 +1764,7 @@ export default function Documents() {
               }
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting || deleteDocumentMutation.isPending
+              {isDeleting
                 ? "Deleting..."
                 : editingDocument && !selectedDocuments.length
                   ? "Delete Document"

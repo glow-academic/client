@@ -6,7 +6,6 @@
  */
 "use client";
 
-import { useProfile } from "@/contexts/profile-context";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -24,10 +23,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
 import { formatTimestamp, getLogLevelVariant } from "@/utils/logs/log-utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -44,7 +40,20 @@ import {
 import { Activity, FileText, RefreshCw, Trash2, X } from "lucide-react";
 import { HealthModal } from "./HealthModal";
 
-export default function Logs() {
+export interface LogsProps {
+  // Server-provided data (for server-side rendering)
+  listData: LogsListOut;
+  // Server actions (replaces useMutation)
+  bulkDeleteLogsAction?: (
+    input: BulkDeleteLogsIn
+  ) => Promise<BulkDeleteLogsOut>;
+}
+
+export default function Logs({
+  listData: serverListData,
+  bulkDeleteLogsAction,
+}: LogsProps) {
+  const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
@@ -64,16 +73,9 @@ export default function Logs() {
     { id: "created_at", desc: true },
   ]);
 
-  const queryClient = useQueryClient();
-  const { effectiveProfile } = useProfile();
-
-  // V3 API hook (read-only)
-  const filters = { profileId: effectiveProfile?.id || "" };
-  const { data: logsData, isLoading } = useQuery({
-    queryKey: keys.logs.list(filters),
-    queryFn: () => api.post("/logs/list", { body: filters }),
-    enabled: !!effectiveProfile?.id,
-  });
+  // Use server-provided data directly
+  const logsData = serverListData;
+  const isLoading = false; // No loading when using server data
 
   // Extract and normalize data from V3 response to match v2 LogItem type
   const logs = useMemo(() => {
@@ -101,7 +103,7 @@ export default function Logs() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: keys.logs.all });
+      router.refresh();
       toast.success("Logs refreshed successfully");
     } catch {
       toast.error("Failed to refresh logs");
@@ -752,6 +754,7 @@ export default function Logs() {
         onOpenChange={setShowBulkDeleteDialog}
         logs={logs}
         onSuccess={handleBulkDeleteSuccess}
+        bulkDeleteLogsAction={bulkDeleteLogsAction}
       />
     </div>
   );

@@ -79,7 +79,9 @@ export interface SystemAgentProps {
   agentDetailDefault?: AgentDetailDefaultOut;
   createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
   updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
-  deleteAgentPromptAction?: (input: DeleteAgentPromptIn) => Promise<DeleteAgentPromptOut>;
+  deleteAgentPromptAction?: (
+    input: DeleteAgentPromptIn
+  ) => Promise<DeleteAgentPromptOut>;
 }
 
 interface FormErrors {
@@ -129,7 +131,9 @@ export default function SystemAgent({
   // Extract body types from server action types for type safety
   type CreateAgentBody = CreateAgentIn extends { body: infer B } ? B : never;
   type UpdateAgentBody = UpdateAgentIn extends { body: infer B } ? B : never;
-  type DeleteAgentPromptBody = DeleteAgentPromptIn extends { body: infer B } ? B : never;
+  type DeleteAgentPromptBody = DeleteAgentPromptIn extends { body: infer B }
+    ? B
+    : never;
 
   // Use server actions directly (no mutations needed)
   const handleCreateAgent = async (body: CreateAgentBody) => {
@@ -448,7 +452,7 @@ export default function SystemAgent({
         setIsSubmitting(false);
       } else {
         // Create new agent using v3 API
-        const response = await handleCreateAgent({
+        await handleCreateAgent({
           name: formData.name!,
           description: formData.description!,
           prompt_id: formData.promptId || null,
@@ -468,7 +472,7 @@ export default function SystemAgent({
         });
         toast.success("Agent created successfully!");
         resetFormAndState();
-        router.push(`/management/agents/a/${response.agentId}`);
+        router.push(`/management/agents`);
         setIsSubmitting(false);
       }
     } catch (error) {
@@ -1004,7 +1008,7 @@ export default function SystemAgent({
               <Button
                 type="submit"
                 disabled={
-                  isSubmitting ||
+                  isSubmitting || !createAgentAction || !updateAgentAction
                 }
               >
                 {isSubmitting ? (
