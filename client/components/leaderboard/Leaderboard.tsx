@@ -12,8 +12,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Crown,
   MessageSquareText,
@@ -23,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AccoladeCard from "./AccoladeCard";
 import LeaderboardTable from "./LeaderboardTable";
 
@@ -83,28 +81,18 @@ export default function Leaderboard({
   const isLoadingData = false;
   const isProfileLoading = false;
 
-  // Two-page carousel state
-  const [page, setPage] = useState(0);
+  // Randomize order on mount
   const [seed, setSeed] = useState(0);
 
-  // Track nav direction for animation
-  const navDirRef = useRef<"next" | "prev">("next");
-  // Prevent initial mount animation
-  const hasMountedRef = useRef(false);
-  useEffect(() => {
-    hasMountedRef.current = true;
-  }, []);
-
-  // Selection + rotation pause state
+  // Selection state
   const [selected, setSelected] = useState<{
     key: string;
     title: string;
     icon: React.ReactNode;
     accolade: { holder: LeaderboardRow | undefined; details: string };
   } | null>(null);
-  const [isHoveringAccolades, setIsHoveringAccolades] = useState(false);
 
-  // Randomize which 4 are on page 1 vs page 2 when component mounts or route changes
+  // Randomize order when component mounts or route changes
   useEffect(() => setSeed(Math.floor(Math.random() * 8)), [pathname]);
 
   useEffect(() => {
@@ -316,65 +304,15 @@ export default function Leaderboard({
     return [...set1, ...set2];
   }, [accoladeSets]);
 
-  // Rotate for randomization
-  const rotated = useMemo(() => {
+  // Rotate for randomization and take first 8 items
+  const displayedAccolades = useMemo(() => {
     if (!allAccolades.length) return [];
-    return Array.from(
+    const rotated = Array.from(
       { length: allAccolades.length },
       (_, i) => allAccolades[(i + seed) % allAccolades.length]
     );
+    return rotated.slice(0, 8);
   }, [allAccolades, seed]);
-
-  // 2) Exactly two pages (4 per page)
-  const pages = useMemo(() => {
-    const a = rotated.slice(0, 4);
-    const b = rotated.slice(4, 8);
-    return [a, b];
-  }, [rotated]);
-
-  const goto = (next: "prev" | "next") => {
-    navDirRef.current = next;
-    setPage((p) => (next === "next" ? (p + 1) % 2 : (p + 1) % 2)); // toggles 0 ↔ 1 either way
-  };
-
-  // Optional: if you still want auto-advance every 3.5s
-  // (pause on hover/selected just like before)
-  useEffect(() => {
-    if (selected || isHoveringAccolades) return;
-    const t = setInterval(() => goto("next"), 3500);
-    return () => clearInterval(t);
-  }, [selected, isHoveringAccolades]);
-
-  // 3) "Split" animation variants (Framer Motion)
-  const splitVariants = {
-    initial: (ctx: { i: number; dir: "next" | "prev" }) => {
-      // For entering items: start slightly off-center toward where they came from
-      const leftHalf = ctx.i < 2;
-      const bias = 60; // px
-      const from =
-        ctx.dir === "next"
-          ? leftHalf
-            ? -bias
-            : bias // page slides in opposite lanes
-          : leftHalf
-            ? bias
-            : -bias;
-      return { x: from, opacity: 0.0, scale: 0.98 };
-    },
-    animate: {
-      x: 0,
-      opacity: 1,
-      scale: 1,
-      transition: { type: "spring", stiffness: 220, damping: 24 },
-    },
-    exit: (ctx: { i: number; dir: "next" | "prev" }) => {
-      // For exiting items: split—left two go right, right two go left
-      const leftHalf = ctx.i < 2;
-      const to =
-        ctx.dir === "next" ? (leftHalf ? 60 : -60) : leftHalf ? -60 : 60;
-      return { x: to, opacity: 0, scale: 0.98, transition: { duration: 0.28 } };
-    },
-  } as const;
 
   // Calculate challengers for each accolade using currentValue from server
   const getChallengers = (
@@ -573,7 +511,7 @@ export default function Leaderboard({
 
   if (isError || !hydratedRows.length) {
     return (
-      <div className="container mx-auto p-4">
+      <div>
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">No Data Available</h1>
           <p className="text-gray-600">
@@ -589,104 +527,52 @@ export default function Leaderboard({
   return (
     <div className="space-y-6">
       {/* Dashboard Content */}
-      <div className="container mx-auto p-4 space-y-8">
+      <div className="space-y-8">
         {/* Accolades Section */}
         <div className="relative">
           {/* Accolades Grid */}
-          <div
-            className="relative group"
-            onMouseEnter={() => setIsHoveringAccolades(true)}
-            onMouseLeave={() => setIsHoveringAccolades(false)}
-          >
+          <div className="relative group">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <AnimatePresence mode="popLayout" initial={false}>
-                {pages[page]
-                  ?.filter((item): item is NonNullable<typeof item> =>
-                    Boolean(item)
-                  )
-                  .map(({ key, icon, title, accolade }, i) => (
-                    <motion.div
-                      key={`${page}-${key}`} // key must change per page so exit/enter runs
-                      custom={{ i, dir: navDirRef.current }}
-                      variants={splitVariants}
-                      initial={hasMountedRef.current ? "initial" : false}
-                      animate="animate"
-                      exit="exit"
-                      layout
-                      className="transition-all duration-500"
-                    >
-                      <AccoladeCard
-                        icon={icon}
-                        title={title}
-                        user={
-                          accolade?.holder
-                            ? {
-                                id: accolade.holder.profileId,
-                                firstName: accolade.holder.firstName ?? "",
-                                lastName: accolade.holder.lastName ?? "",
-                                role: "guest" as ProfileRole,
-                                alias: "",
-                                active: true,
-                                createdAt: new Date().toISOString(),
-                                defaultProfile: false,
-                                lastActive: null,
-                                lastLogin: new Date().toISOString(),
-                                reqPerDay: 0,
-                                updatedAt: new Date().toISOString(),
-                                viewedChat: false,
-                                viewedIntro: false,
-                                primaryDepartmentId: null,
-                              }
-                            : undefined
-                        }
-                        details={accolade?.details || ""}
-                        layoutId={`accolade-${key}`}
-                        onClick={
-                          accolade?.holder
-                            ? () => setSelected({ key, title, icon, accolade })
-                            : undefined
-                        }
-                        disabled={false}
-                      />
-                    </motion.div>
-                  ))}
-              </AnimatePresence>
-            </div>
-
-            {/* Two chevrons; each toggles the page and sets direction */}
-            <button
-              aria-label="Previous accolades"
-              className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
-                isHoveringAccolades ? "opacity-100" : "opacity-0"
-              } hover:opacity-100`}
-              onClick={() => goto("prev")}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              aria-label="Next accolades"
-              className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
-                isHoveringAccolades ? "opacity-100" : "opacity-0"
-              } hover:opacity-100`}
-              onClick={() => goto("next")}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-
-            {/* Two dots */}
-            <div className="flex justify-center gap-2 mt-4">
-              {[0, 1].map((idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    navDirRef.current = idx > page ? "next" : "prev";
-                    setPage(idx);
-                  }}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    idx === page ? "bg-primary" : "bg-muted"
-                  }`}
-                />
-              ))}
+              {displayedAccolades
+                .filter((item): item is NonNullable<typeof item> =>
+                  Boolean(item)
+                )
+                .map(({ key, icon, title, accolade }) => (
+                  <AccoladeCard
+                    key={key}
+                    icon={icon}
+                    title={title}
+                    user={
+                      accolade?.holder
+                        ? {
+                            id: accolade.holder.profileId,
+                            firstName: accolade.holder.firstName ?? "",
+                            lastName: accolade.holder.lastName ?? "",
+                            role: "guest" as ProfileRole,
+                            alias: "",
+                            active: true,
+                            createdAt: new Date().toISOString(),
+                            defaultProfile: false,
+                            lastActive: null,
+                            lastLogin: new Date().toISOString(),
+                            reqPerDay: 0,
+                            updatedAt: new Date().toISOString(),
+                            viewedChat: false,
+                            viewedIntro: false,
+                            primaryDepartmentId: null,
+                          }
+                        : undefined
+                    }
+                    details={accolade?.details || ""}
+                    layoutId={`accolade-${key}`}
+                    onClick={
+                      accolade?.holder
+                        ? () => setSelected({ key, title, icon, accolade })
+                        : undefined
+                    }
+                    disabled={false}
+                  />
+                ))}
             </div>
           </div>
         </div>

@@ -264,7 +264,7 @@ export default function Home({ homeData }: HomeProps) {
   // Optional guard before rendering main body
   if (isHomeOverviewLoading || isHistoryLoading) {
     return (
-      <div className="container mx-auto p-4 space-y-8">
+      <div className="space-y-8">
         {/* Header skeleton */}
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-64" />
@@ -365,7 +365,7 @@ export default function Home({ homeData }: HomeProps) {
 
   if (!effectiveProfile) {
     return (
-      <div className="container mx-auto p-4 space-y-8">
+      <div className="space-y-8">
         {/* Header skeleton */}
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-64" />
@@ -466,7 +466,7 @@ export default function Home({ homeData }: HomeProps) {
 
   if (!effectiveProfile || effectiveProfile.role === "guest") {
     return (
-      <div className="container mx-auto p-4">
+      <div>
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="text-gray-600">
@@ -479,7 +479,7 @@ export default function Home({ homeData }: HomeProps) {
 
   if (!simulationItems.length) {
     return (
-      <div className="container mx-auto p-4">
+      <div>
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">No Simulations Available</h1>
           <p className="text-gray-600">
@@ -492,7 +492,7 @@ export default function Home({ homeData }: HomeProps) {
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-8">
+    <div className="space-y-8">
       {/* Header with title */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">

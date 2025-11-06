@@ -4,6 +4,11 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
@@ -19,7 +24,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { ReactNode } from "react";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -56,16 +61,54 @@ function SidebarSkeleton() {
       </SidebarHeader>
 
       <SidebarContent className="gap-0">
-        {/* Navigation sections skeleton */}
-        {[1, 2, 3, 4, 5].map((i) => (
-          <SidebarGroup key={i}>
-            <SidebarGroupLabel className="group/label text-sidebar-foreground text-sm font-medium">
+        {/* Standalone navigation items skeleton (e.g., Home, Practice) */}
+        {[1, 2].map((i) => (
+          <SidebarGroup key={`standalone-${i}`}>
+            <SidebarGroupLabel
+              asChild
+              className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm font-medium cursor-pointer"
+            >
               <div className="flex items-center gap-2 px-2 py-1.5">
                 <Skeleton className="h-4 w-4" />
                 <Skeleton className="h-4 w-20" />
               </div>
             </SidebarGroupLabel>
           </SidebarGroup>
+        ))}
+
+        {/* Collapsible sections skeleton (e.g., Analytics, Create, Management) */}
+        {[1, 2, 3].map((i) => (
+          <Collapsible
+            key={`collapsible-${i}`}
+            defaultOpen
+            className="group/collapsible"
+          >
+            <SidebarGroup>
+              <SidebarGroupLabel
+                asChild
+                className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
+              >
+                <CollapsibleTrigger>
+                  <Skeleton className="h-4 w-4 mr-2" />
+                  <Skeleton className="h-4 w-24" />
+                  <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {[1, 2, 3, 4].map((j) => (
+                      <SidebarMenuItem key={`subitem-${i}-${j}`}>
+                        <SidebarMenuButton disabled className="pl-8">
+                          <Skeleton className="h-4 w-32" />
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
         ))}
       </SidebarContent>
 

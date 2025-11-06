@@ -206,7 +206,7 @@ export default function Practice({ practiceData }: PracticeProps) {
   // Loading state
   if (isPracticeOverviewLoading || isHistoryLoading) {
     return (
-      <div className="container mx-auto p-4 md:p-6 space-y-12">
+      <div className="space-y-12">
         {/* Header skeleton */}
         <div className="space-y-4">
           <div className="flex items-center justify-between space-y-2">
@@ -280,7 +280,7 @@ export default function Practice({ practiceData }: PracticeProps) {
 
   if (!effectiveProfile) {
     return (
-      <div className="container mx-auto p-4 md:p-6 space-y-12">
+      <div className="space-y-12">
         {/* Header skeleton */}
         <div className="space-y-4">
           <div className="flex items-center justify-between space-y-2">
@@ -355,7 +355,7 @@ export default function Practice({ practiceData }: PracticeProps) {
   // 4. RENDER NEW COMPONENT STRUCTURE
   return (
     <TooltipProvider>
-      <div className="container mx-auto p-4 md:p-6 space-y-12">
+      <div className="space-y-12">
         <PracticeZone
           simulations={simulationItems}
           standardGroupsMapping={
