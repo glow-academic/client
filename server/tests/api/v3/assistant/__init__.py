@@ -1,0 +1,2 @@
+"""Assistant route tests."""
+

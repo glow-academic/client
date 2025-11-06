@@ -55,8 +55,24 @@ async def create_parameter(
     
     try:
         async with transaction(conn):
-            # Create parameter
-            create_sql = load_sql("sql/v3/parameters/create_parameter.sql")
+            # Prepare items as JSONB array
+            import json
+            items_data = []
+            for item in request.parameter_items:
+                item_dict = {
+                    "name": item.name,
+                    "description": item.description,
+                    "value": item.value,
+                }
+                # Only include department_ids if it's not None
+                if item.department_ids is not None:
+                    item_dict["department_ids"] = item.department_ids
+                items_data.append(item_dict)
+            
+            items_json = json.dumps(items_data)
+
+            # Create parameter with items and department links in single SQL (DHH style)
+            create_sql = load_sql("sql/v3/parameters/create_parameter_complete.sql")
             parameter_result = await conn.fetchrow(
                 create_sql,
                 request.name,
@@ -65,40 +81,14 @@ async def create_parameter(
                 request.active,
                 request.document_parameter,
                 request.practice_parameter,
+                request.department_ids,  # Parameter-level department_ids (fallback)
+                items_json,  # JSONB array of items
             )
 
             if not parameter_result:
                 raise ValueError("Failed to create parameter")
 
-            parameter_id = str(parameter_result["id"])
-
-            # Create parameter items
-            item_sql = load_sql("sql/v3/parameters/create_parameter_item.sql")
-            item_ids = []
-            for item in request.parameter_items:
-                item_result = await conn.fetchrow(
-                    item_sql,
-                    parameter_id,
-                    item.name,
-                    item.description,
-                    item.value,
-                )
-                if item_result:
-                    item_id = str(item_result["id"])
-                    item_ids.append(item_id)
-
-                    # Link department_ids to this parameter item if provided
-                    # Use per-item department_ids if available, otherwise fall back to parameter-level
-                    dept_ids = (
-                        item.department_ids
-                        if item.department_ids is not None
-                        else request.department_ids
-                    )
-                    if dept_ids:
-                        dept_sql = load_sql(
-                            "sql/v3/parameters/create_parameter_item_departments.sql"
-                        )
-                        await conn.execute(dept_sql, item_id, dept_ids)
+            parameter_id = parameter_result["parameter_id"]
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

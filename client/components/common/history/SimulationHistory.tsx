@@ -5,6 +5,10 @@
  * 06/07/2025
  */
 
+import type {
+  BulkArchiveAttemptsIn,
+  BulkArchiveAttemptsOut,
+} from "@/app/(main)/analytics/dashboard/page";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -61,6 +65,11 @@ export interface SimulationHistoryProps {
 
   // Optional: Whether to show loading state
   isLoading?: boolean;
+
+  // Optional: Server action for bulk archiving attempts (only needed when showArchive is true)
+  bulkArchiveAttemptsAction?: (
+    input: BulkArchiveAttemptsIn,
+  ) => Promise<BulkArchiveAttemptsOut>;
 }
 
 export default function SimulationHistory({
@@ -69,6 +78,7 @@ export default function SimulationHistory({
   showArchive,
   singleProfile = false,
   isLoading = false,
+  bulkArchiveAttemptsAction,
 }: SimulationHistoryProps) {
   const { effectiveProfile } = useProfile();
   // Check if all attempts have the same profileId (only when singleProfile is true)
@@ -604,6 +614,9 @@ export default function SimulationHistory({
       showArchive={showArchive}
       showAll={true} // Always show all since filtering is handled upstream
       cohortData={cohortData}
+      {...(showArchive && bulkArchiveAttemptsAction
+        ? { bulkArchiveAttemptsAction }
+        : {})}
     />
   );
 }

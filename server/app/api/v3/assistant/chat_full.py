@@ -1,5 +1,6 @@
 """Assistant chat full data endpoint - POST /assistant/chats/full"""
 
+import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -53,76 +54,75 @@ async def get_assistant_chat_full(
         chat_id_str = request_body.chatId
         profile_id_str = request_body.profileId
 
-        result: dict[str, Any] = {
-            "chat": None,
-            "messages": [],
-            "toolCalls": [],
-            "allChats": [],
-        }
+        # Get complete chat data in a single SQL query
+        sql = load_sql("sql/v3/assistant/get_chat_full_complete.sql")
+        result_row = await conn.fetchrow(sql, chat_id_str, profile_id_str)
 
-        # 1. Get all chats for this profile (for dropdown)
-        all_chats_sql = load_sql("sql/v3/assistant/get_all_chats.sql")
-        all_chats_result = await conn.fetch(all_chats_sql, profile_id_str)
-        result["allChats"] = [
-            {
-                "id": str(row["id"]),
-                "createdAt": row["created_at"].isoformat(),
-                "updatedAt": row["updated_at"].isoformat(),
-                "profileId": str(row["profile_id"]),
-                "title": row["title"],
-                "traceId": row["trace_id"],
-            }
-            for row in all_chats_result
-        ]
-
-        # 2. Get specific chat details
-        chat_sql = load_sql("sql/v3/assistant/get_chat.sql")
-        chat_result = await conn.fetchrow(chat_sql, chat_id_str)
-        if not chat_result:
+        if not result_row or not result_row["chat"]:
             raise HTTPException(status_code=404, detail=f"Assistant chat {chat_id_str} not found")
 
-        result["chat"] = {
-            "id": str(chat_result["id"]),
-            "createdAt": chat_result["created_at"].isoformat(),
-            "updatedAt": chat_result["updated_at"].isoformat(),
-            "profileId": str(chat_result["profile_id"]),
-            "title": chat_result["title"],
-            "traceId": chat_result["trace_id"],
+        # Parse JSONB data from SQL (asyncpg returns JSONB as dict/list, but handle string case for safety)
+        def parse_jsonb(data: Any) -> Any:
+            if isinstance(data, str):
+                return json.loads(data)
+            return data
+
+        chat_data = parse_jsonb(result_row["chat"])
+        if not chat_data:
+            raise HTTPException(status_code=404, detail=f"Assistant chat {chat_id_str} not found")
+        
+        all_chats_data = parse_jsonb(result_row["all_chats"]) or []
+        messages_data = parse_jsonb(result_row["messages"]) or []
+        tool_calls_data = parse_jsonb(result_row["tool_calls"]) or []
+
+        # Format chat data (JSONB timestamps are already ISO format strings)
+        result: dict[str, Any] = {
+            "chat": {
+                "id": str(chat_data["id"]),
+                "createdAt": str(chat_data["created_at"]),
+                "updatedAt": str(chat_data["updated_at"]),
+                "profileId": str(chat_data["profile_id"]),
+                "title": str(chat_data["title"]),
+                "traceId": str(chat_data.get("trace_id", "")) if chat_data.get("trace_id") else None,
+            },
+            "allChats": [
+                {
+                    "id": str(chat["id"]),
+                    "createdAt": str(chat["created_at"]),
+                    "updatedAt": str(chat["updated_at"]),
+                    "profileId": str(chat["profile_id"]),
+                    "title": str(chat["title"]),
+                    "traceId": str(chat.get("trace_id", "")) if chat.get("trace_id") else None,
+                }
+                for chat in all_chats_data
+            ],
+            "messages": [
+                {
+                    "id": str(msg["id"]),
+                    "createdAt": str(msg["created_at"]),
+                    "updatedAt": str(msg["updated_at"]),
+                    "chatId": str(msg["chat_id"]),
+                    "role": str(msg["role"]),
+                    "content": str(msg["content"]),
+                    "completed": bool(msg["completed"]),
+                }
+                for msg in messages_data
+            ],
+            "toolCalls": [
+                {
+                    "id": str(tc["id"]),
+                    "createdAt": str(tc["created_at"]),
+                    "updatedAt": str(tc["updated_at"]),
+                    "chatId": str(tc["chat_id"]),
+                    "toolName": str(tc["tool_name"]),
+                    "toolType": str(tc["tool_type"]),
+                    "toolArguments": tc["tool_arguments"],
+                    "toolResult": tc["tool_result"],
+                    "completed": bool(tc["completed"]),
+                }
+                for tc in tool_calls_data
+            ],
         }
-
-        # 3. Get all messages for this chat
-        messages_sql = load_sql("sql/v3/assistant/get_chat_messages.sql")
-        messages_result = await conn.fetch(messages_sql, chat_id_str)
-        result["messages"] = [
-            {
-                "id": str(row["id"]),
-                "createdAt": row["created_at"].isoformat(),
-                "updatedAt": row["updated_at"].isoformat(),
-                "chatId": str(row["chat_id"]),
-                "role": row["role"],
-                "content": row["content"],
-                "completed": row["completed"],
-            }
-            for row in messages_result
-        ]
-
-        # 4. Get all tool calls for this chat
-        tool_calls_sql = load_sql("sql/v3/assistant/get_chat_tool_calls.sql")
-        tool_calls_result = await conn.fetch(tool_calls_sql, chat_id_str)
-        result["toolCalls"] = [
-            {
-                "id": str(row["id"]),
-                "createdAt": row["created_at"].isoformat(),
-                "updatedAt": row["updated_at"].isoformat(),
-                "chatId": str(row["chat_id"]),
-                "toolName": row["tool_name"],
-                "toolType": row["tool_type"],
-                "toolArguments": row["tool_arguments"],
-                "toolResult": row["tool_result"],
-                "completed": row["completed"],
-            }
-            for row in tool_calls_result
-        ]
 
         response_data = AssistantChatFullResponse(**result)
         

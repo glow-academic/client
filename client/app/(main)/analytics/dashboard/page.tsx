@@ -15,12 +15,14 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/api/v3/dashboard", "post">;
 type DashboardOut = OutputOf<"/api/v3/dashboard", "post">;
+type BulkArchiveAttemptsIn = InputOf<"/api/v3/attempts/bulk-archive", "post">;
+type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/bulk-archive", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getDashboard = cache(
   async (input: DashboardIn): Promise<DashboardOut> => {
     return api.post("/dashboard", input);
-  },
+  }
 );
 
 export const metadata: Metadata = {
@@ -50,7 +52,7 @@ export default async function DashboardPage({
 
   // Get filters from search params or defaults
   const filters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined,
+    searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
   // Fetch dashboard data server-side
@@ -60,10 +62,26 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <Dashboard dashboardData={dashboardData} />
+      <Dashboard
+        dashboardData={dashboardData}
+        bulkArchiveAttemptsAction={bulkArchiveAttempts}
+      />
     </div>
   );
 }
 
+/** ---- Strongly-typed server actions for Dashboard (single source of truth) ---- */
+export async function bulkArchiveAttempts(
+  input: BulkArchiveAttemptsIn
+): Promise<BulkArchiveAttemptsOut> {
+  "use server";
+  return api.post("/attempts/bulk-archive", input);
+}
+
 /** ---- Export types for client component (type-only imports) ---- */
-export type { DashboardIn, DashboardOut };
+export type {
+  BulkArchiveAttemptsIn,
+  BulkArchiveAttemptsOut,
+  DashboardIn,
+  DashboardOut,
+};

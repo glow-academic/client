@@ -38,11 +38,11 @@ async def update_chat_completed_at(
         # Parse ISO string to datetime
         completed_at = datetime.fromisoformat(request.completedAt.replace("Z", "+00:00"))
 
-        # Update the completedAt timestamp
-        sql = load_sql("sql/v3/attempts/update_chat_completed_at.sql")
-        result = await conn.execute(sql, completed_at, request.chatId)
+        # Update the completedAt timestamp with existence check in a single SQL file
+        sql = load_sql("sql/v3/attempts/update_chat_completed_at_complete.sql")
+        result = await conn.fetchrow(sql, completed_at, request.chatId)
 
-        if result == "UPDATE 0":
+        if not result:
             raise HTTPException(status_code=404, detail=f"Chat not found: {request.chatId}")
 
         result_data = UpdateChatTimestampResponse(

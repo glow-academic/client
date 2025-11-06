@@ -35,11 +35,17 @@ async def bulk_archive_attempts(
     tags = ["attempts"]  # From router tags
     
     try:
-        sql = load_sql("sql/v3/attempts/bulk_archive_attempts.sql")
-        await conn.execute(sql, request.archived, request.attemptIds)
+        # Bulk archive attempts with count return in a single SQL file
+        sql = load_sql("sql/v3/attempts/bulk_archive_attempts_complete.sql")
+        result = await conn.fetchrow(sql, request.archived, request.attemptIds)
+
+        if not result:
+            updated_count = 0
+        else:
+            updated_count = result["updated_count"]
 
         action = "archived" if request.archived else "unarchived"
-        count = len(request.attemptIds)
+        count = updated_count
 
         result_data = BulkArchiveAttemptsResponse(
             success=True,

@@ -35,25 +35,28 @@ async def bulk_delete_logs(
     tags = ["logs"]  # From router tags
     
     try:
-        # Check if user is superadmin
-        check_sql = load_sql("sql/v3/logs/check_profile_role.sql")
-        result = await conn.fetchrow(check_sql, request.profileId)
-
-        if not result:
-            raise HTTPException(status_code=404, detail=f"Profile not found: {request.profileId}")
-
-        if result["role"] != "superadmin":
-            raise HTTPException(status_code=403, detail="Only superadmin users can delete logs")
-
         if not request.ids:
             return BulkDeleteLogsResponse(
                 success=True, deleted_count=0, message="No logs to delete"
             )
 
-        # Delete logs
-        delete_sql = load_sql("sql/v3/logs/delete_logs_bulk.sql")
-        deleted_rows = await conn.fetch(delete_sql, request.ids)
-        deleted_count = len(deleted_rows)
+        # Bulk delete logs with role check in a single SQL file
+        sql = load_sql("sql/v3/logs/bulk_delete_logs_complete.sql")
+        result = await conn.fetchrow(sql, request.profileId, request.ids)
+
+        if not result:
+            # Profile doesn't exist
+            raise HTTPException(
+                status_code=404, detail=f"Profile not found: {request.profileId}"
+            )
+
+        # Check if user is superadmin
+        if result["role"] != "superadmin":
+            raise HTTPException(
+                status_code=403, detail="Only superadmin users can delete logs"
+            )
+
+        deleted_count = result["deleted_count"]
 
         result_data = BulkDeleteLogsResponse(
             success=True,

@@ -96,10 +96,10 @@ SELECT
             'initials', ap.initials,
             'active', ap.active,
             'lastActive', ap.lastActive,
-            'cohort_ids', (
+            'cohort_ids', COALESCE((
                 SELECT array_agg(cid::text)
                 FROM unnest(ap.cohort_ids) as cid
-            ),
+            ), ARRAY[]::text[]),
             'requests_per_day', ap.requests_per_day,
             'default_profile', ap.default_profile,
             'requests_in_last_day', ap.requests_in_last_day,

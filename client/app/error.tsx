@@ -1,4 +1,5 @@
 "use client";
+import { createFeedback } from "@/app/(main)/layout-server";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
@@ -43,6 +44,7 @@ export default function Error({
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
           <ReportProblem
+            createFeedback={createFeedback}
             initialType="bug"
             initialMessage={`Error occurred on page: ${error.message}\n\nError Stack: ${error.stack || "No stack trace available"}\n\nPage URL: ${typeof window !== "undefined" ? window.location.href : "Unknown"}`}
           >

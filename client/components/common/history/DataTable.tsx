@@ -36,8 +36,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import type {
+  BulkArchiveAttemptsIn,
+  BulkArchiveAttemptsOut,
+} from "@/app/(main)/analytics/dashboard/page";
 import { Checkbox } from "@/components/ui/checkbox";
-import { bulkArchiveAttempts } from "@/lib/server/attempts-actions";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
@@ -63,6 +66,9 @@ export interface DataTableProps<TData, TValue> {
       passed: boolean;
     }>;
   }>;
+  bulkArchiveAttemptsAction?: (
+    input: BulkArchiveAttemptsIn,
+  ) => Promise<BulkArchiveAttemptsOut>;
 }
 
 export function DataTable<TData, TValue>({
@@ -77,6 +83,7 @@ export function DataTable<TData, TValue>({
   startDate: _startDate,
   endDate: _endDate,
   cohortData = [],
+  bulkArchiveAttemptsAction,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -224,7 +231,7 @@ export function DataTable<TData, TValue>({
 
   // Execute bulk archive
   const executeBulkArchive = React.useCallback(async () => {
-    if (archiveAction === null) return;
+    if (archiveAction === null || !bulkArchiveAttemptsAction) return;
 
     const selectedRows = table.getSelectedRowModel().flatRows;
     const attemptsToUpdate = selectedRows
@@ -239,7 +246,7 @@ export function DataTable<TData, TValue>({
 
     setIsArchiving(true);
     try {
-      await bulkArchiveAttempts({
+      await bulkArchiveAttemptsAction({
         body: {
           attemptIds: attemptsToUpdate,
           archived: archiveAction,
@@ -259,7 +266,7 @@ export function DataTable<TData, TValue>({
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveAction, table]);
+  }, [archiveAction, table, bulkArchiveAttemptsAction]);
 
   return (
     <div className="space-y-4">

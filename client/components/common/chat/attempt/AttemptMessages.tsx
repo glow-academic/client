@@ -26,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { createFeedback } from "@/app/(main)/layout-server";
 import Markdown from "@/components/common/chat/markdown/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
@@ -369,6 +370,7 @@ export default function AttemptMessages({
                                           <Tooltip>
                                             <TooltipTrigger>
                                               <ReportProblem
+                                                createFeedback={createFeedback}
                                                 initialType="bug"
                                                 initialMessage={`Error in simulation chat: ${currentResponse.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${currentResponse.id}`}
                                                 onDialogStateChange={

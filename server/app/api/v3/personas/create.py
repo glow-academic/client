@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -40,58 +41,53 @@ router = APIRouter()
 @router.post("/create", response_model=CreatePersonaResponse)
 async def create_persona(
     request: CreatePersonaRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreatePersonaResponse:
     """Create a new persona."""
+    tags = ["personas"]  # From router tags
+    
     try:
         async with transaction(conn):
-            # Create persona
-            create_sql = load_sql("sql/v3/personas/create_persona.sql")
+            # Ensure department_ids is always an array (empty array if None)
+            dept_ids = request.department_ids if request.department_ids else []
+            
+            # Convert description None to empty string
+            description = request.description if request.description is not None else ""
+
+            # Create persona with prompt and departments in single SQL (DHH style)
+            create_sql = load_sql("sql/v3/personas/create_persona_complete.sql")
             result = await conn.fetchrow(
                 create_sql,
                 request.name,
-                request.description,
+                description,
                 request.active,
                 request.color,
                 request.icon,
                 request.model_id,
-                request.reasoning or "none",
+                request.reasoning,
                 request.temperature,
+                request.prompt_id,
+                request.system_prompt if not request.prompt_id else None,
+                dept_ids,  # Always pass array (empty array if no departments)
             )
 
             if not result:
                 raise ValueError("Failed to create persona")
 
-            persona_id = str(result["id"])
+            persona_id = result["persona_id"]
 
-            # Handle prompt creation/linking
-            prompt_id = None
-            if request.prompt_id:
-                # Use existing prompt
-                prompt_id = request.prompt_id
-            elif request.system_prompt:
-                # Create new prompt
-                prompt_sql = load_sql("sql/v3/personas/create_prompt.sql")
-                prompt_row = await conn.fetchrow(prompt_sql, request.system_prompt)
-                if not prompt_row:
-                    raise ValueError("Failed to create prompt")
-                prompt_id = prompt_row["prompt_id"]
-
-            # Link persona to prompt
-            if prompt_id:
-                persona_prompt_sql = load_sql("sql/v3/personas/create_persona_prompt.sql")
-                await conn.execute(persona_prompt_sql, persona_id, prompt_id)
-
-            # Insert department links if department_ids provided
-            if request.department_ids:
-                dept_sql = load_sql("sql/v3/personas/create_persona_departments.sql")
-                await conn.execute(dept_sql, persona_id, request.department_ids)
-
-            return CreatePersonaResponse(
-                success=True,
-                personaId=persona_id,
-                message=f"Persona '{request.name}' created successfully",
-            )
+        result_data = CreatePersonaResponse(
+            success=True,
+            personaId=persona_id,
+            message=f"Persona '{request.name}' created successfully",
+        )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except ValueError as e:

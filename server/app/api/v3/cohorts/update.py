@@ -4,12 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 
 class UpdateCohortRequest(BaseModel):
@@ -46,8 +45,10 @@ async def update_cohort(
     try:
         async with transaction(conn):
             # Update cohort
+            # Handle None description (cohorts.description is NOT NULL, so use empty string)
+            description = request.description if request.description is not None else ""
             sql = load_sql("sql/v3/cohorts/update_cohort.sql")
-            await conn.execute(sql, uuid.UUID(request.cohortId), request.title, request.description, request.active)
+            await conn.execute(sql, uuid.UUID(request.cohortId), request.title, description, request.active)
 
             # Update departments (delete old, create new)
             delete_dept_sql = load_sql("sql/v3/cohorts/delete_cohort_departments.sql")

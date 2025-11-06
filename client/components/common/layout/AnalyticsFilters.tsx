@@ -10,9 +10,12 @@
 import { ProfileRolePicker } from "@/components/common/forms/ProfileRolePicker";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
+import type {
+  RefreshAnalyticsIn,
+  RefreshAnalyticsOut,
+} from "@/app/(main)/layout-server";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { refreshAnalytics } from "@/lib/server/analytics-actions";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -28,11 +31,15 @@ type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;
+  refreshAnalytics: (
+    input: RefreshAnalyticsIn,
+  ) => Promise<RefreshAnalyticsOut>;
 }
 
 export function AnalyticsFilters({
   homePage = false,
   reportPage = false,
+  refreshAnalytics,
 }: AnalyticsFiltersProps) {
   const {
     startDate,

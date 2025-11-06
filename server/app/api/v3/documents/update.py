@@ -42,18 +42,17 @@ async def update_document(
     
     try:
         async with transaction(conn):
-            # Update document
-            sql = load_sql("sql/v3/documents/update_document.sql")
-            await conn.execute(sql, uuid.UUID(request.documentId), request.type, uuid.UUID(request.department_id) if request.department_id else None)
-
-            # Update parameter items (delete old, insert new)
-            delete_sql = load_sql("sql/v3/documents/delete_document_parameter_items.sql")
-            await conn.execute(delete_sql, uuid.UUID(request.documentId))
-
-            if request.parameter_item_ids:
-                insert_sql = load_sql("sql/v3/documents/insert_document_parameter_item.sql")
-                for param_item_id in request.parameter_item_ids:
-                    await conn.execute(insert_sql, uuid.UUID(request.documentId), uuid.UUID(param_item_id))
+            # Update document with department links and parameter items in a single transaction
+            sql = load_sql("sql/v3/documents/update_document_complete.sql")
+            # Ensure parameter_item_ids is always an array (empty if None)
+            param_item_ids = request.parameter_item_ids or []
+            await conn.execute(
+                sql,
+                uuid.UUID(request.documentId),
+                request.type,
+                uuid.UUID(request.department_id) if request.department_id else None,
+                param_item_ids,
+            )
 
         result = UpdateDocumentResponse(
             success=True,

@@ -36,31 +36,24 @@ async def delete_department(
     tags = ["departments"]  # From router tags
     
     try:
-        # Check if department is in use
-        usage_sql = load_sql("sql/v3/departments/check_department_usage.sql")
-        usage_row = await conn.fetchrow(usage_sql, request.departmentId)
+        # Delete department with existence and usage checks in a single SQL file
+        sql = load_sql("sql/v3/departments/delete_department_complete.sql")
+        result = await conn.fetchrow(sql, request.departmentId)
 
-        if not usage_row:
-            raise HTTPException(status_code=404, detail=f"Department {request.departmentId} not found")
+        if not result:
+            # Department doesn't exist
+            raise HTTPException(
+                status_code=404, detail=f"Department {request.departmentId} not found"
+            )
 
-        # Only count actual data dependencies
-        total_usage = (
-            usage_row["simulation_count"]
-            + usage_row["scenario_count"]
-            + usage_row["persona_count"]
-            + usage_row["document_count"]
-            + usage_row["cohort_count"]
-        )
-
-        if total_usage > 0:
+        # Check if department was deleted or is in use
+        if not result["deleted"]:
+            # Department exists but is in use
+            total_usage = result["total_usage"]
             raise HTTPException(
                 status_code=400,
                 detail=f"Cannot delete department: in use by {total_usage} entities",
             )
-
-        # Delete department
-        sql = load_sql("sql/v3/departments/delete_department.sql")
-        await conn.execute(sql, request.departmentId)
 
         result = DeleteDepartmentResponse(
             success=True,

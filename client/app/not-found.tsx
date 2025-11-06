@@ -1,4 +1,5 @@
 "use client";
+import { createFeedback } from "@/app/(main)/layout-server";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
 import { ProfileContext } from "@/contexts/profile-context";
@@ -43,6 +44,7 @@ export default function NotFound() {
         {/* Action Buttons */}
         <div className="flex flex-col gap-2">
           <ReportProblem
+            createFeedback={createFeedback}
             initialType="bug"
             initialMessage={`404 Error - Page Not Found\n\nRequested URL: ${typeof window !== "undefined" ? window.location.href : "Unknown"}\n\nUser Agent: ${typeof window !== "undefined" ? window.navigator.userAgent : "Unknown"}\n\nTimestamp: ${new Date().toISOString()}`}
           >

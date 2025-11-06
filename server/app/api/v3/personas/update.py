@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -41,73 +42,52 @@ router = APIRouter()
 @router.post("/update", response_model=UpdatePersonaResponse)
 async def update_persona(
     request: UpdatePersonaRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdatePersonaResponse:
     """Update an existing persona."""
+    tags = ["personas"]  # From router tags
+    
     try:
         async with transaction(conn):
-            # Check if persona exists
-            get_name_sql = load_sql("sql/v3/personas/get_persona_name.sql")
-            existing = await conn.fetchrow(get_name_sql, request.personaId)
+            # Ensure department_ids is always an array (empty array if None)
+            dept_ids = request.department_ids if request.department_ids else []
+            
+            # Convert description None to empty string
+            description = request.description if request.description is not None else ""
 
-            if not existing:
-                raise ValueError(f"Persona not found: {request.personaId}")
-
-            # Update persona
-            update_sql = load_sql("sql/v3/personas/update_persona.sql")
-            await conn.execute(
+            # Update persona with prompt and departments in single SQL (DHH style)
+            update_sql = load_sql("sql/v3/personas/update_persona_complete.sql")
+            result = await conn.fetchrow(
                 update_sql,
                 request.personaId,
                 request.name,
-                request.description,
+                description,
                 request.active,
                 request.color,
                 request.icon,
                 request.model_id,
-                request.reasoning or "none",
+                request.reasoning,
                 request.temperature,
+                request.prompt_id,
+                request.system_prompt if not request.prompt_id else None,
+                dept_ids,  # Always pass array (empty array if no departments)
+                request.department_id,
             )
 
-            # Handle prompt update
-            prompt_id = None
-            if request.prompt_id:
-                prompt_id = request.prompt_id
-            elif request.system_prompt:
-                # Create new prompt entry
-                prompt_sql = load_sql("sql/v3/personas/create_prompt.sql")
-                prompt_row = await conn.fetchrow(prompt_sql, request.system_prompt)
-                if not prompt_row:
-                    raise ValueError("Failed to create prompt")
-                prompt_id = prompt_row["prompt_id"]
+            if not result:
+                raise ValueError(f"Persona not found: {request.personaId}")
 
-            # Handle department-specific prompt or default prompt
-            if request.department_id and prompt_id:
-                # Update department-specific prompt
-                dept_prompt_sql = load_sql(
-                    "sql/v3/personas/create_or_update_persona_department_prompt.sql"
-                )
-                await conn.execute(
-                    dept_prompt_sql, request.personaId, request.department_id, prompt_id
-                )
-            elif prompt_id:
-                # Link persona to prompt (default prompt)
-                persona_prompt_sql = load_sql("sql/v3/personas/create_persona_prompt.sql")
-                await conn.execute(persona_prompt_sql, request.personaId, prompt_id)
-
-            # Update persona-department links
-            # First deactivate all existing
-            delete_dept_sql = load_sql("sql/v3/personas/delete_persona_departments.sql")
-            await conn.execute(delete_dept_sql, request.personaId)
-
-            # Then insert new ones if provided
-            if request.department_ids:
-                create_dept_sql = load_sql("sql/v3/personas/create_persona_departments.sql")
-                await conn.execute(create_dept_sql, request.personaId, request.department_ids)
-
-            return UpdatePersonaResponse(
-                success=True,
-                message=f"Persona '{request.name}' updated successfully",
-            )
+        result_data = UpdatePersonaResponse(
+            success=True,
+            message=f"Persona '{request.name}' updated successfully",
+        )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except ValueError as e:

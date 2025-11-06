@@ -5,11 +5,7 @@
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
-import type { OutputOf } from "@/lib/api/types";
-import {
-  getAssistantChatFull,
-  getAssistantChatList,
-} from "@/lib/server/assistant-actions";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   createContext,
   useCallback,
@@ -117,9 +113,19 @@ export const useAssistant = () => {
 
 interface AssistantProviderProps {
   children: React.ReactNode;
+  getAssistantChatList: (
+    input: InputOf<"/api/v3/assistant/chats/list", "post">
+  ) => Promise<OutputOf<"/api/v3/assistant/chats/list", "post">>;
+  getAssistantChatFull: (
+    input: InputOf<"/api/v3/assistant/chats/full", "post">
+  ) => Promise<OutputOf<"/api/v3/assistant/chats/full", "post">>;
 }
 
-export function AssistantProvider({ children }: AssistantProviderProps) {
+export function AssistantProvider({
+  children,
+  getAssistantChatList,
+  getAssistantChatFull,
+}: AssistantProviderProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
   const { departmentIds } = useProfile();
   const [currentChatId, setCurrentChatId] = useState<string>();
@@ -170,7 +176,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     } finally {
       setIsLoadingChats(false);
     }
-  }, [profileId, currentChatId]);
+  }, [profileId, currentChatId, getAssistantChatFull, getAssistantChatList]);
 
   // Extract data from API response
   // AssistantChatFullOut has: chat, messages, toolCalls, allChats
@@ -279,7 +285,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
               allChats: prev.allChats.map((chat) =>
                 chat["id"] === data.chat_id
                   ? { ...chat, title: data.title! }
-                  : chat,
+                  : chat
               ),
             };
           }
@@ -313,7 +319,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
         setAssistantData((prev) => {
           if (!prev || !("messages" in prev)) return prev;
           const messageIndex = prev.messages.findIndex(
-            (msg) => msg["id"] === data.messageId,
+            (msg) => msg["id"] === data.messageId
           );
           if (messageIndex >= 0) {
             // Update existing message
@@ -322,7 +328,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
               messages: prev.messages.map((msg) =>
                 msg["id"] === data.messageId
                   ? { ...msg, content: data.accumulatedContent! }
-                  : msg,
+                  : msg
               ),
             };
           } else {
@@ -350,11 +356,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     window.addEventListener("assistant_started", handleAssistantStarted);
     window.addEventListener(
       "assistant_message_complete",
-      handleAssistantMessageComplete,
+      handleAssistantMessageComplete
     );
     window.addEventListener(
       "assistant_message_cancelled",
-      handleAssistantMessageCancelled,
+      handleAssistantMessageCancelled
     );
     window.addEventListener("assistant_error", handleAssistantError);
     window.addEventListener("title_updated", handleTitleUpdated);
@@ -362,7 +368,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     window.addEventListener("tool_call_completed", handleToolCallCompleted);
     window.addEventListener(
       "assistant_message_token",
-      handleAssistantMessageToken,
+      handleAssistantMessageToken
     );
 
     return () => {
@@ -370,25 +376,31 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       window.removeEventListener("assistant_started", handleAssistantStarted);
       window.removeEventListener(
         "assistant_message_complete",
-        handleAssistantMessageComplete,
+        handleAssistantMessageComplete
       );
       window.removeEventListener(
         "assistant_message_cancelled",
-        handleAssistantMessageCancelled,
+        handleAssistantMessageCancelled
       );
       window.removeEventListener("assistant_error", handleAssistantError);
       window.removeEventListener("title_updated", handleTitleUpdated);
       window.removeEventListener("tool_call_created", handleToolCallCreated);
       window.removeEventListener(
         "tool_call_completed",
-        handleToolCallCompleted,
+        handleToolCallCompleted
       );
       window.removeEventListener(
         "assistant_message_token",
-        handleAssistantMessageToken,
+        handleAssistantMessageToken
       );
     };
-  }, [isConnected, fetchAssistantData, profileId]);
+  }, [
+    isConnected,
+    fetchAssistantData,
+    profileId,
+    getAssistantChatFull,
+    getAssistantChatList,
+  ]);
 
   // Join/leave chat rooms when currentChatId changes - with connection check
   useEffect(() => {
@@ -458,7 +470,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
         }
       }
     },
-    [profileId],
+    [profileId, getAssistantChatFull]
   );
 
   // Removed startBlankChat and createNewChat - all chat creation now happens
@@ -551,7 +563,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       emitStartAssistant,
       emitSendAssistantMessage,
       departmentIds,
-    ],
+    ]
   );
 
   const stopMessage = useCallback(() => {

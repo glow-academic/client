@@ -1,0 +1,2 @@
+"""Department route tests."""
+

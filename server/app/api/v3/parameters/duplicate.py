@@ -39,71 +39,24 @@ async def duplicate_parameter(
     
     try:
         async with transaction(conn):
-            # Get original parameter data
-            get_parameter_sql = """
-                SELECT name, description, numerical, 
-                       COALESCE(document_parameter, false) as document_parameter,
-                       COALESCE(practice_parameter, false) as practice_parameter
-                FROM parameters
-                WHERE id = $1
-            """
-            parameter = await conn.fetchrow(get_parameter_sql, request.parameterId)
-
-            if not parameter:
-                raise ValueError(f"Parameter not found: {request.parameterId}")
-
-            # Create duplicate parameter
-            duplicate_sql = load_sql("sql/v3/parameters/duplicate_parameter.sql")
-            new_parameter = await conn.fetchrow(
-                duplicate_sql,
-                parameter["name"],
-                parameter["description"],
-                parameter["numerical"],
-                parameter["document_parameter"],
-                parameter["practice_parameter"],
-            )
+            # Duplicate parameter with items and department links in single SQL (DHH style)
+            duplicate_sql = load_sql("sql/v3/parameters/duplicate_parameter_complete.sql")
+            new_parameter = await conn.fetchrow(duplicate_sql, request.parameterId)
 
             if not new_parameter:
-                raise ValueError("Failed to create duplicate parameter")
+                raise ValueError(f"Parameter not found: {request.parameterId}")
 
-            new_parameter_id = str(new_parameter["id"])
+            new_parameter_id = new_parameter["parameter_id"]
 
-            # Get original items
-            get_items_sql = load_sql("sql/v3/parameters/get_items_for_duplicate.sql")
-            items = await conn.fetch(get_items_sql, request.parameterId)
-
-            # Get department_ids for each item and duplicate them
-            item_dept_query = """
-                SELECT pid.department_id::text
-                FROM parameter_item_departments pid
-                WHERE pid.parameter_item_id = $1::uuid AND pid.active = true
-            """
-
-            # Duplicate items with their department associations
-            item_sql = load_sql("sql/v3/parameters/create_parameter_item.sql")
-            for item in items:
-                item_result = await conn.fetchrow(
-                    item_sql,
-                    new_parameter_id,
-                    item["name"],
-                    item["description"],
-                    item["value"],
-                )
-                if item_result:
-                    new_item_id = str(item_result["id"])
-                    # Get original item's department_ids
-                    original_item_id = str(item["id"])
-                    dept_results = await conn.fetch(item_dept_query, original_item_id)
-                    if dept_results:
-                        dept_ids = [str(d["department_id"]) for d in dept_results]
-                        if dept_ids:
-                            insert_dept_sql = load_sql("sql/v3/parameters/create_parameter_item_departments.sql")
-                            await conn.execute(insert_dept_sql, new_item_id, dept_ids)
+            # Get original parameter name for message
+            original_parameter = await conn.fetchrow(
+                "SELECT name FROM parameters WHERE id = $1", request.parameterId
+            )
 
             result_data = DuplicateParameterResponse(
                 success=True,
                 parameterId=new_parameter_id,
-                message=f"Parameter '{parameter['name']}' duplicated successfully",
+                message=f"Parameter '{original_parameter['name']}' duplicated successfully",
             )
             
             # Invalidate cache after mutation

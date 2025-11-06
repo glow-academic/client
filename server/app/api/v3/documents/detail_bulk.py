@@ -71,6 +71,10 @@ async def get_document_detail_bulk(
 
         # Parse types array and determine common type
         types = row.get("types") or []
+        # If types is NULL or empty, no documents were found
+        if not types or (isinstance(types, list) and len(types) == 0):
+            raise HTTPException(status_code=404, detail="No documents found")
+        
         common_type = types[0] if len(types) == 1 else None
 
         # Parse department IDs from array

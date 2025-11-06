@@ -62,9 +62,25 @@ async def update_parameter(
             if not existing:
                 raise ValueError(f"Parameter not found: {request.parameterId}")
 
-            # Update parameter basic fields
-            update_sql = load_sql("sql/v3/parameters/update_parameter.sql")
-            await conn.execute(
+            # Prepare items as JSONB array
+            import json
+            items_data = []
+            for item in request.parameter_items:
+                item_dict = {
+                    "name": item.name,
+                    "description": item.description,
+                    "value": item.value,
+                }
+                # Only include department_ids if it's not None
+                if item.department_ids is not None:
+                    item_dict["department_ids"] = item.department_ids
+                items_data.append(item_dict)
+            
+            items_json = json.dumps(items_data)
+
+            # Update parameter with items and department links in single SQL (DHH style)
+            update_sql = load_sql("sql/v3/parameters/update_parameter_complete.sql")
+            result = await conn.fetchrow(
                 update_sql,
                 request.parameterId,
                 request.name,
@@ -73,39 +89,12 @@ async def update_parameter(
                 request.active,
                 request.document_parameter,
                 request.practice_parameter,
+                request.department_ids,  # Parameter-level department_ids (fallback)
+                items_json,  # JSONB array of items
             )
 
-            # Delete existing parameter items (this will cascade delete parameter_item_departments)
-            delete_items_sql = load_sql("sql/v3/parameters/delete_parameter_items.sql")
-            await conn.execute(delete_items_sql, request.parameterId)
-
-            # Recreate parameter items
-            item_sql = load_sql("sql/v3/parameters/create_parameter_item.sql")
-            item_ids = []
-            for item in request.parameter_items:
-                item_result = await conn.fetchrow(
-                    item_sql,
-                    request.parameterId,
-                    item.name,
-                    item.description,
-                    item.value,
-                )
-                if item_result:
-                    item_id = str(item_result["id"])
-                    item_ids.append(item_id)
-
-                    # Link department_ids to this parameter item if provided
-                    # Use per-item department_ids if available, otherwise fall back to parameter-level
-                    dept_ids = (
-                        item.department_ids
-                        if item.department_ids is not None
-                        else request.department_ids
-                    )
-                    if dept_ids:
-                        dept_sql = load_sql(
-                            "sql/v3/parameters/create_parameter_item_departments.sql"
-                        )
-                        await conn.execute(dept_sql, item_id, dept_ids)
+            if not result:
+                raise ValueError("Failed to update parameter")
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

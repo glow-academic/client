@@ -42,7 +42,12 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
-import { switchEffectiveProfile } from "@/lib/server/session-actions";
+import type {
+  CreateFeedbackIn,
+  CreateFeedbackOut,
+  SwitchEffectiveProfileParams,
+  SwitchEffectiveProfileResult,
+} from "@/app/(main)/layout-server";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   Brain,
@@ -71,6 +76,12 @@ export interface UnifiedSidebarProps
   extends React.ComponentProps<typeof Sidebar> {
   activeSection: string;
   onSectionChange?: (section: string) => void;
+  switchEffectiveProfile: (
+    input: SwitchEffectiveProfileParams,
+  ) => Promise<SwitchEffectiveProfileResult>;
+  createFeedback: (
+    input: CreateFeedbackIn,
+  ) => Promise<CreateFeedbackOut>;
 }
 
 interface ClassData {
@@ -108,6 +119,8 @@ const getInitials = (name?: string): string => {
 export function UnifiedSidebar({
   activeSection,
   onSectionChange,
+  switchEffectiveProfile,
+  createFeedback,
   ...props
 }: UnifiedSidebarProps) {
   const [isNavigating, setIsNavigating] = useState(false);
@@ -734,7 +747,7 @@ export function UnifiedSidebar({
             {/* Report Problem Button - Enhanced with bubble styling */}
             <SidebarMenuItem>
               <div className="px-2 pb-2">
-                <ReportProblem>
+                <ReportProblem createFeedback={createFeedback}>
                   <div className="relative group">
                     <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5 transition-all duration-200 bg-transparent hover:bg-blue-50 dark:hover:bg-purple-950 text-blue-700 dark:text-purple-200 shadow-none hover:shadow-md">
                       <div className="flex items-center justify-center gap-2">

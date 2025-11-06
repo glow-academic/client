@@ -38,33 +38,26 @@ async def delete_parameter(
     
     try:
         async with transaction(conn):
-            # Check if any parameter items are in use
-            check_usage_sql = load_sql("sql/v3/parameters/check_parameter_usage.sql")
-            usage = await conn.fetchrow(check_usage_sql, request.parameterId)
+            # Delete parameter with usage check in single SQL (DHH style)
+            delete_sql = load_sql("sql/v3/parameters/delete_parameter_complete.sql")
+            result = await conn.fetchrow(delete_sql, request.parameterId)
 
-            if not usage:
-                raise ValueError("Failed to check parameter usage")
+            if not result:
+                raise ValueError(f"Parameter not found: {request.parameterId}")
 
-            usage_count = usage.get("usage_count", 0)
+            usage_count = result.get("usage_count", 0)
             if usage_count > 0:
                 raise ValueError(
                     "Cannot delete parameter: Some items are in use by scenarios"
                 )
 
-            # Get parameter name
-            get_name_sql = "SELECT name FROM parameters WHERE id = $1"
-            parameter = await conn.fetchrow(get_name_sql, request.parameterId)
-
-            if not parameter:
+            parameter_name = result.get("name")
+            if not parameter_name:
                 raise ValueError(f"Parameter not found: {request.parameterId}")
-
-            # Delete parameter (cascade deletes items)
-            delete_sql = load_sql("sql/v3/parameters/delete_parameter.sql")
-            await conn.execute(delete_sql, request.parameterId)
 
             result_data = DeleteParameterResponse(
                 success=True,
-                message=f"Parameter '{parameter['name']}' deleted successfully",
+                message=f"Parameter '{parameter_name}' deleted successfully",
             )
             
             # Invalidate cache after mutation

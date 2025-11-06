@@ -1,0 +1,2 @@
+"""Analytics route tests."""
+

@@ -4,12 +4,11 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 
 
 class CreateCohortRequest(BaseModel):
@@ -46,8 +45,10 @@ async def create_cohort(
     try:
         async with transaction(conn):
             # Create cohort
+            # Handle None description (cohorts.description is NOT NULL, so use empty string)
+            description = request.description if request.description is not None else ""
             sql = load_sql("sql/v3/cohorts/create_cohort.sql")
-            row = await conn.fetchrow(sql, request.title, request.description, request.active)
+            row = await conn.fetchrow(sql, request.title, description, request.active)
 
             if not row:
                 raise HTTPException(status_code=500, detail="Failed to create cohort")

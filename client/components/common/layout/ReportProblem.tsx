@@ -23,8 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type {
+  CreateFeedbackIn,
+  CreateFeedbackOut,
+} from "@/app/(main)/layout-server";
 import { ProfileContext } from "@/contexts/profile-context";
-import { createFeedback } from "@/lib/server/feedback-actions";
 import { MessageSquare } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -44,6 +47,9 @@ export interface ReportProblemProps {
   initialType?: "feature" | "bug" | "question" | "other";
   initialMessage?: string;
   onDialogStateChange?: (isOpen: boolean) => void;
+  createFeedback?: (
+    input: CreateFeedbackIn,
+  ) => Promise<CreateFeedbackOut>;
 }
 
 export default function ReportProblem({
@@ -51,6 +57,7 @@ export default function ReportProblem({
   initialType,
   initialMessage,
   onDialogStateChange,
+  createFeedback,
 }: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -137,6 +144,11 @@ export default function ReportProblem({
 
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!createFeedback) {
+      toast.error("Feedback functionality is not available");
       return;
     }
 

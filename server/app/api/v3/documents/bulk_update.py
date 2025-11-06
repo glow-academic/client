@@ -42,29 +42,17 @@ async def bulk_update_documents(
     
     try:
         async with transaction(conn):
-            # Bulk update documents
-            sql = load_sql("sql/v3/documents/bulk_update_documents.sql")
+            # Bulk update documents with department links and parameter items in a single transaction
+            sql = load_sql("sql/v3/documents/bulk_update_documents_complete.sql")
+            # Ensure parameter_item_ids is always an array (empty if None)
+            param_item_ids = request.parameter_item_ids or []
             await conn.execute(
                 sql,
                 [uuid.UUID(did) for did in request.documentIds],
                 request.type,
                 uuid.UUID(request.department_id) if request.department_id else None,
+                param_item_ids,
             )
-
-            # Delete old parameter items for all documents
-            delete_sql = load_sql("sql/v3/documents/delete_document_parameter_items_bulk.sql")
-            await conn.execute(delete_sql, [uuid.UUID(did) for did in request.documentIds])
-
-            # Insert new parameter items for all documents
-            if request.parameter_item_ids:
-                insert_sql = load_sql("sql/v3/documents/insert_document_parameter_item.sql")
-                for doc_id in request.documentIds:
-                    for param_item_id in request.parameter_item_ids:
-                        await conn.execute(
-                            insert_sql,
-                            uuid.UUID(doc_id),
-                            uuid.UUID(param_item_id),
-                        )
 
         result = BulkUpdateDocumentsResponse(
             success=True,

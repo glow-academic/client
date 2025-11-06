@@ -44,12 +44,22 @@ import {
   isMainScreen,
 } from "@/utils/navigation-utils";
 import type {
+  AssistantChatFullIn,
+  AssistantChatFullOut,
+  AssistantChatListIn,
+  AssistantChatListOut,
+  CreateFeedbackIn,
+  CreateFeedbackOut,
   LayoutContextResponse,
   MarkChatCompleteIn,
   MarkChatCompleteOut,
   MarkIntroCompleteIn,
   MarkIntroCompleteOut,
+  RefreshAnalyticsIn,
+  RefreshAnalyticsOut,
   SafeSessionSnapshot,
+  SwitchEffectiveProfileParams,
+  SwitchEffectiveProfileResult,
 } from "./layout-server";
 
 // Inner component that uses the role context
@@ -57,6 +67,11 @@ function MainLayoutContent({
   children,
   markIntroCompleteAction,
   markChatCompleteAction,
+  getAssistantChatListAction,
+  getAssistantChatFullAction,
+  switchEffectiveProfileAction,
+  createFeedbackAction,
+  refreshAnalyticsAction,
 }: {
   children: React.ReactNode;
   markIntroCompleteAction: (
@@ -65,6 +80,21 @@ function MainLayoutContent({
   markChatCompleteAction: (
     input: MarkChatCompleteIn,
   ) => Promise<MarkChatCompleteOut>;
+  getAssistantChatListAction: (
+    input: AssistantChatListIn,
+  ) => Promise<AssistantChatListOut>;
+  getAssistantChatFullAction: (
+    input: AssistantChatFullIn,
+  ) => Promise<AssistantChatFullOut>;
+  switchEffectiveProfileAction: (
+    input: SwitchEffectiveProfileParams,
+  ) => Promise<SwitchEffectiveProfileResult>;
+  createFeedbackAction: (
+    input: CreateFeedbackIn,
+  ) => Promise<CreateFeedbackOut>;
+  refreshAnalyticsAction: (
+    input: RefreshAnalyticsIn,
+  ) => Promise<RefreshAnalyticsOut>;
 }) {
   const pathname = usePathname() || "/";
 
@@ -267,11 +297,16 @@ function MainLayoutContent({
   const actionButton = getActionButton();
 
   return (
-    <AssistantProvider>
+    <AssistantProvider
+      getAssistantChatList={getAssistantChatListAction}
+      getAssistantChatFull={getAssistantChatFullAction}
+    >
       <SidebarProvider>
         <UnifiedSidebar
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
+          switchEffectiveProfile={switchEffectiveProfileAction}
+          createFeedback={createFeedbackAction}
         />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -289,6 +324,7 @@ function MainLayoutContent({
               <AnalyticsFilters
                 homePage={isHomePage}
                 reportPage={isReportPage}
+                refreshAnalytics={refreshAnalyticsAction}
               />
             )}
 
@@ -380,6 +416,11 @@ export function MainLayoutClient({
   attemptId,
   markIntroCompleteAction,
   markChatCompleteAction,
+  getAssistantChatListAction,
+  getAssistantChatFullAction,
+  switchEffectiveProfileAction,
+  createFeedbackAction,
+  refreshAnalyticsAction,
 }: {
   children: React.ReactNode;
   initial: LayoutContextResponse;
@@ -392,6 +433,21 @@ export function MainLayoutClient({
   markChatCompleteAction: (
     input: MarkChatCompleteIn,
   ) => Promise<MarkChatCompleteOut>;
+  getAssistantChatListAction: (
+    input: AssistantChatListIn,
+  ) => Promise<AssistantChatListOut>;
+  getAssistantChatFullAction: (
+    input: AssistantChatFullIn,
+  ) => Promise<AssistantChatFullOut>;
+  switchEffectiveProfileAction: (
+    input: SwitchEffectiveProfileParams,
+  ) => Promise<SwitchEffectiveProfileResult>;
+  createFeedbackAction: (
+    input: CreateFeedbackIn,
+  ) => Promise<CreateFeedbackOut>;
+  refreshAnalyticsAction: (
+    input: RefreshAnalyticsIn,
+  ) => Promise<RefreshAnalyticsOut>;
 }) {
   return (
     <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
@@ -406,6 +462,11 @@ export function MainLayoutClient({
                 <MainLayoutContent
                   markIntroCompleteAction={markIntroCompleteAction}
                   markChatCompleteAction={markChatCompleteAction}
+                  getAssistantChatListAction={getAssistantChatListAction}
+                  getAssistantChatFullAction={getAssistantChatFullAction}
+                  switchEffectiveProfileAction={switchEffectiveProfileAction}
+                  createFeedbackAction={createFeedbackAction}
+                  refreshAnalyticsAction={refreshAnalyticsAction}
                 >
                   {children}
                 </MainLayoutContent>

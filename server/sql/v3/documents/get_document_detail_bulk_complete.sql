@@ -2,15 +2,17 @@ WITH document_data AS (
     SELECT 
         d.id,
         d.type,
-        d.department_id
+        (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids
     FROM documents d
     WHERE d.id = ANY($1)
 ),
 aggregated_data AS (
     SELECT 
         array_agg(DISTINCT type) as types,
-        array_agg(DISTINCT department_id::text) as department_ids
-    FROM document_data
+        COALESCE(array_agg(DISTINCT dept_id) FILTER (WHERE dept_id IS NOT NULL), ARRAY[]::text[]) as department_ids
+    FROM document_data dd
+    CROSS JOIN LATERAL UNNEST(COALESCE(dd.department_ids, ARRAY[]::text[])) as dept_id
+    WHERE EXISTS (SELECT 1 FROM document_data)
 ),
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -68,8 +70,18 @@ valid_param_items AS (
         array_agg(pi.id::text ORDER BY pi.name) as param_item_ids
     FROM parameter_items pi
     JOIN parameters p ON p.id = pi.parameter_id
-    JOIN doc_dept_ids ddi ON p.department_id::text = ddi.dept_id
+    CROSS JOIN aggregated_data ad
+    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
     WHERE p.active = true
+      AND (
+          (ad.department_ids IS NULL OR array_length(ad.department_ids, 1) = 0)
+          AND NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+      )
+      OR (
+          ad.department_ids IS NOT NULL 
+          AND array_length(ad.department_ids, 1) > 0
+          AND pid.department_id = ANY(SELECT unnest(ad.department_ids)::uuid)
+      )
 )
 SELECT 
     ad.types,

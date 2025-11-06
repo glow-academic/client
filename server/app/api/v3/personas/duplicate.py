@@ -46,10 +46,12 @@ async def duplicate_persona(
             if not result:
                 raise ValueError(f"Persona not found: {request.personaId}")
 
-            # Duplicate persona
-            duplicate_sql = load_sql("sql/v3/personas/insert_duplicate_persona.sql")
+            # Duplicate persona with prompt and departments in single SQL (DHH style)
+            # The SQL will automatically copy department links from the original persona
+            duplicate_sql = load_sql("sql/v3/personas/duplicate_persona_complete.sql")
             new_persona = await conn.fetchrow(
                 duplicate_sql,
+                request.personaId,  # Original persona ID for copying departments
                 result["name"],
                 result["description"],
                 result["temperature"],
@@ -57,22 +59,13 @@ async def duplicate_persona(
                 result["model_id"],
                 result["color"],
                 result["icon"],
+                result["system_prompt"] or None,
             )
 
             if not new_persona:
                 raise ValueError("Failed to create duplicate persona")
 
-            persona_id = str(new_persona["id"])
-
-            # Create new prompt from original persona's prompt
-            if result["system_prompt"]:
-                prompt_sql = load_sql("sql/v3/personas/create_prompt.sql")
-                prompt_row = await conn.fetchrow(prompt_sql, result["system_prompt"])
-                if prompt_row:
-                    prompt_id = prompt_row["prompt_id"]
-                    # Link persona to prompt
-                    persona_prompt_sql = load_sql("sql/v3/personas/create_persona_prompt.sql")
-                    await conn.execute(persona_prompt_sql, persona_id, prompt_id)
+            persona_id = new_persona["persona_id"]
 
             result_data = DuplicatePersonaResponse(
                 success=True,

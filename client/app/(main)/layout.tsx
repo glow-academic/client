@@ -8,9 +8,14 @@ import { AppShell } from "@/components/common/layout/AppShell";
 import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
+  createFeedback,
+  getAssistantChatFull,
+  getAssistantChatList,
   getLayoutContextData,
   markChatComplete,
   markIntroComplete,
+  refreshAnalytics,
+  switchEffectiveProfile,
 } from "./layout-server";
 
 export default async function MainLayout({
@@ -29,6 +34,11 @@ export default async function MainLayout({
       attemptId={attemptId}
       markIntroCompleteAction={markIntroComplete}
       markChatCompleteAction={markChatComplete}
+      getAssistantChatListAction={getAssistantChatList}
+      getAssistantChatFullAction={getAssistantChatFull}
+      switchEffectiveProfileAction={switchEffectiveProfile}
+      createFeedbackAction={createFeedback}
+      refreshAnalyticsAction={refreshAnalytics}
     >
       {/* Only the PAGE AREA suspends */}
       <Suspense fallback={<AppShell.ContentSkeleton />}>{children}</Suspense>

@@ -1362,16 +1362,23 @@ async def get_dashboard(
         # Execute query
         result = await conn.fetchrow(sql, *params)
 
-        if not result:
-            raise ValueError("Dashboard bundle query returned no results")
-
-        # Parse JSONB result (may be string or dict)
-        data = result["result"]
-        if isinstance(data, str):
-            data = json.loads(data)
+        # Handle empty results gracefully - return empty structure instead of error
+        # The SQL should always return a row, but handle edge case where it doesn't
+        if not result or not result.get("result"):
+            # Create empty data structure - parsing function will handle defaults
+            data = {}
+        else:
+            # Parse JSONB result (may be string or dict)
+            data = result["result"]
+            if isinstance(data, str):
+                data = json.loads(data)
+            # Ensure data is a dict (handle case where result is None or empty)
+            if not isinstance(data, dict):
+                data = {}
 
         # Use the same parsing logic as v2 DashboardService
         # This manually parses the SQL result to match the expected response structure
+        # The parsing function handles missing keys gracefully with .get() defaults
         response_data = _parse_dashboard_bundle(data)
         
         # Cache response

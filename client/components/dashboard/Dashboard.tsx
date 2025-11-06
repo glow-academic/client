@@ -8,7 +8,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { DashboardOut } from "@/app/(main)/analytics/dashboard/page";
+import type {
+  BulkArchiveAttemptsIn,
+  BulkArchiveAttemptsOut,
+  DashboardOut,
+} from "@/app/(main)/analytics/dashboard/page";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -38,11 +42,15 @@ import SkillPerformance from "./secondary/SkillPerformance";
 interface DashboardProps {
   profileId?: string;
   dashboardData: DashboardOut;
+  bulkArchiveAttemptsAction?: (
+    input: BulkArchiveAttemptsIn,
+  ) => Promise<BulkArchiveAttemptsOut>;
 }
 
 export default function Dashboard({
   profileId,
   dashboardData,
+  bulkArchiveAttemptsAction,
 }: DashboardProps) {
   const { effectiveProfile } = useProfile();
 
@@ -921,6 +929,9 @@ export default function Dashboard({
         showExport={false}
         showArchive={canArchive}
         singleProfile={false}
+        {...(canArchive && bulkArchiveAttemptsAction
+          ? { bulkArchiveAttemptsAction }
+          : {})}
       />
     </div>
   );
