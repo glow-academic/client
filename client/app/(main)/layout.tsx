@@ -4,6 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
+import { AppShell } from "@/components/common/layout/AppShell";
+import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
   getLayoutContextData,
@@ -28,7 +30,8 @@ export default async function MainLayout({
       markIntroCompleteAction={markIntroComplete}
       markChatCompleteAction={markChatComplete}
     >
-      {children}
+      {/* Only the PAGE AREA suspends */}
+      <Suspense fallback={<AppShell.ContentSkeleton />}>{children}</Suspense>
     </MainLayoutClient>
   );
 }
