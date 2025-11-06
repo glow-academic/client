@@ -53,8 +53,25 @@ async def create_simulation(
     
     try:
         async with transaction(conn):
-            # Create simulation
-            create_sql = load_sql("sql/v3/simulations/create_simulation.sql")
+            # Extract scenario IDs and active flags for SQL
+            scenario_ids: list[str] = []
+            scenario_active_flags: list[bool] = []
+            
+            for scenario_item in request.scenario_ids:
+                if isinstance(scenario_item, str):
+                    scenario_ids.append(scenario_item)
+                    scenario_active_flags.append(True)
+                else:
+                    scenario_ids.append(scenario_item.scenario_id)
+                    scenario_active_flags.append(scenario_item.active)
+
+            # Ensure arrays are always arrays (empty arrays if None/empty)
+            dept_ids = request.department_ids if request.department_ids else []
+            scenario_ids_array = scenario_ids if scenario_ids else []
+            scenario_flags_array = scenario_active_flags if scenario_active_flags else []
+
+            # Create simulation with departments, time limit, and scenarios in single SQL (DHH style)
+            create_sql = load_sql("sql/v3/simulations/create_simulation_complete.sql")
             result = await conn.fetchrow(
                 create_sql,
                 request.title,
@@ -62,58 +79,16 @@ async def create_simulation(
                 request.active,
                 request.practice_simulation,
                 request.rubric_id,
+                dept_ids,  # Always pass array (empty array if no departments)
+                request.time_limit,
+                scenario_ids_array,
+                scenario_flags_array,
             )
 
             if not result:
                 raise ValueError("Failed to create simulation")
 
-            simulation_id = str(result["id"])
-
-            # Insert department links if department_ids provided
-            if request.department_ids:
-                dept_sql = load_sql("sql/v3/simulations/create_simulation_departments.sql")
-                await conn.execute(dept_sql, simulation_id, request.department_ids)
-
-            # Insert time limit if provided
-            if request.time_limit is not None:
-                time_limit_sql = load_sql("sql/v3/simulations/insert_simulation_time_limit.sql")
-                await conn.execute(time_limit_sql, simulation_id, request.time_limit)
-
-            # Insert scenario relationships with active-first ordering
-            scenario_sql = load_sql("sql/v3/simulations/insert_simulation_scenario.sql")
-
-            # Sort scenarios: active first, then inactive
-            active_scenarios: list[tuple[str, bool]] = []
-            inactive_scenarios: list[tuple[str, bool]] = []
-
-            for scenario_item in request.scenario_ids:
-                # Handle both string IDs and ScenarioInRequest objects
-                scenario_id: str
-                active: bool
-                if isinstance(scenario_item, str):
-                    scenario_id = scenario_item
-                    active = True
-                else:
-                    scenario_id = scenario_item.scenario_id
-                    active = scenario_item.active
-
-                if active:
-                    active_scenarios.append((scenario_id, active))
-                else:
-                    inactive_scenarios.append((scenario_id, active))
-
-            # Combine: active first, then inactive
-            sorted_scenarios = active_scenarios + inactive_scenarios
-
-            # Insert with proper position indices (1-indexed)
-            for idx, (scenario_id, active) in enumerate(sorted_scenarios, start=1):
-                await conn.execute(
-                    scenario_sql,
-                    simulation_id,
-                    scenario_id,
-                    active,
-                    idx,
-                )
+            simulation_id = result["simulation_id"]
 
             result_data = CreateSimulationResponse(
                 success=True,

@@ -44,8 +44,11 @@ async def create_agent(
     
     try:
         async with conn.transaction():
-            # Create agent
-            create_sql = load_sql("sql/v3/agents/create_agent.sql")
+            # Ensure department_ids is always an array (empty array if None)
+            dept_ids = request.department_ids if request.department_ids else []
+
+            # Create agent with prompt and departments in single SQL (DHH style)
+            create_sql = load_sql("sql/v3/agents/create_agent_complete.sql")
             agent_row = await conn.fetchrow(
                 create_sql,
                 request.name,
@@ -55,34 +58,15 @@ async def create_agent(
                 request.reasoning,
                 request.active,
                 request.role,
+                request.prompt_id,
+                request.system_prompt if not request.prompt_id else None,
+                dept_ids,  # Always pass array (empty array if no departments)
             )
 
             if not agent_row:
                 raise HTTPException(status_code=500, detail="Failed to create agent")
 
             agent_id = agent_row["agent_id"]
-
-            # Handle prompt creation/linking
-            prompt_id = None
-            if request.prompt_id:
-                prompt_id = request.prompt_id
-            elif request.system_prompt:
-                # Create new prompt
-                prompt_sql = load_sql("sql/v3/agents/create_prompt.sql")
-                prompt_row = await conn.fetchrow(prompt_sql, request.system_prompt)
-                if not prompt_row:
-                    raise HTTPException(status_code=500, detail="Failed to create prompt")
-                prompt_id = prompt_row["prompt_id"]
-
-            # Link agent to prompt
-            if prompt_id:
-                agent_prompt_sql = load_sql("sql/v3/agents/create_agent_prompt.sql")
-                await conn.execute(agent_prompt_sql, agent_id, prompt_id)
-
-            # Create agent-department links if department_ids provided
-            if request.department_ids:
-                dept_sql = load_sql("sql/v3/agents/create_agent_departments.sql")
-                await conn.execute(dept_sql, agent_id, request.department_ids)
 
         result_data = CreateAgentResponse(
             success=True,

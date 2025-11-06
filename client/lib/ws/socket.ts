@@ -5,8 +5,8 @@ type QueryValue = string | number | boolean | undefined;
 export type SocketQuery = Record<string, QueryValue>;
 
 /** Browser sockets typically go direct to backend; swap to BFF if you proxy WS. */
-export function createSocketClient(isServer: boolean, query: SocketQuery) {
-  const base = isServer ? INTERNAL_WS_BASE : INTERNAL_WS_BASE; // or BFF_WS_BASE
+export function createSocketClient(query: SocketQuery) {
+  const base = INTERNAL_WS_BASE;
   const opts: Partial<ManagerOptions & SocketOptions> = {
     path: SOCKET_PATH,
     transports: ["websocket"],

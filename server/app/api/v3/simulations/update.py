@@ -53,83 +53,41 @@ async def update_simulation(
     
     try:
         async with transaction(conn):
-            # Check if simulation exists
-            get_name_sql = load_sql("sql/v3/simulations/get_simulation_name.sql")
-            existing = await conn.fetchrow(get_name_sql, request.simulationId)
+            # Extract scenario IDs and active flags for SQL
+            scenario_ids: list[str] = []
+            scenario_active_flags: list[bool] = []
+            
+            for scenario_item in request.scenario_ids:
+                if isinstance(scenario_item, str):
+                    scenario_ids.append(scenario_item)
+                    scenario_active_flags.append(True)
+                else:
+                    scenario_ids.append(scenario_item.scenario_id)
+                    scenario_active_flags.append(scenario_item.active)
 
-            if not existing:
-                raise ValueError(f"Simulation not found: {request.simulationId}")
+            # Ensure arrays are always arrays (empty arrays if None/empty)
+            dept_ids = request.department_ids if request.department_ids else []
+            scenario_ids_array = scenario_ids if scenario_ids else []
+            scenario_flags_array = scenario_active_flags if scenario_active_flags else []
 
-            # Update simulation
-            update_sql = load_sql("sql/v3/simulations/update_simulation.sql")
-            await conn.execute(
+            # Update simulation with departments, time limit, and scenarios in single SQL (DHH style)
+            update_sql = load_sql("sql/v3/simulations/update_simulation_complete.sql")
+            result = await conn.fetchrow(
                 update_sql,
+                request.simulationId,
                 request.title,
                 request.description,
                 request.active,
                 request.practice_simulation,
                 request.rubric_id,
-                request.simulationId,
+                dept_ids,  # Always pass array (empty array if no departments)
+                request.time_limit,
+                scenario_ids_array,
+                scenario_flags_array,
             )
 
-            # Update time limit in junction table
-            # First delete existing, then insert if provided
-            delete_time_limit_sql = load_sql("sql/v3/simulations/delete_simulation_time_limit.sql")
-            await conn.execute(delete_time_limit_sql, request.simulationId)
-
-            if request.time_limit is not None:
-                insert_time_limit_sql = load_sql("sql/v3/simulations/insert_simulation_time_limit.sql")
-                await conn.execute(insert_time_limit_sql, request.simulationId, request.time_limit)
-
-            # Update department links
-            # First deactivate all existing
-            delete_dept_sql = load_sql("sql/v3/simulations/delete_simulation_departments.sql")
-            await conn.execute(delete_dept_sql, request.simulationId)
-
-            # Then insert new ones if provided
-            if request.department_ids:
-                create_dept_sql = load_sql("sql/v3/simulations/create_simulation_departments.sql")
-                await conn.execute(create_dept_sql, request.simulationId, request.department_ids)
-
-            # Update scenario relationships
-            # Delete existing scenarios
-            delete_scenarios_sql = load_sql("sql/v3/simulations/delete_simulation_scenarios.sql")
-            await conn.execute(delete_scenarios_sql, request.simulationId)
-
-            # Insert new scenarios with active-first ordering
-            scenario_sql = load_sql("sql/v3/simulations/insert_simulation_scenario.sql")
-
-            # Sort scenarios: active first, then inactive
-            active_scenarios: list[tuple[str, bool]] = []
-            inactive_scenarios: list[tuple[str, bool]] = []
-
-            for scenario_item in request.scenario_ids:
-                scenario_id: str
-                active: bool
-                if isinstance(scenario_item, str):
-                    scenario_id = scenario_item
-                    active = True
-                else:
-                    scenario_id = scenario_item.scenario_id
-                    active = scenario_item.active
-
-                if active:
-                    active_scenarios.append((scenario_id, active))
-                else:
-                    inactive_scenarios.append((scenario_id, active))
-
-            # Combine: active first, then inactive
-            sorted_scenarios = active_scenarios + inactive_scenarios
-
-            # Insert with proper position indices (1-indexed)
-            for idx, (scenario_id, active) in enumerate(sorted_scenarios, start=1):
-                await conn.execute(
-                    scenario_sql,
-                    request.simulationId,
-                    scenario_id,
-                    active,
-                    idx,
-                )
+            if not result:
+                raise ValueError(f"Simulation not found: {request.simulationId}")
 
             result_data = UpdateSimulationResponse(
                 success=True,

@@ -685,7 +685,7 @@ export function WebSocketProvider({
         query["guestId"] = guestIdRef.current!;
       }
 
-      const socket = createSocketClient(false, query);
+      const socket = createSocketClient(query);
 
       socketRef.current = socket;
 
