@@ -63,8 +63,6 @@ export interface CohortPerformanceProps {
   simulationMapping: Record<string, { name: string; description: string, department_ids?: string[] | null, time_limit?: number | null }>;
   /** Valid simulation IDs */
   validSimulationIds: string[];
-  isLoading: boolean;
-  isError: boolean;
   /** If rendering for a single learner detail view */
   profileId?: string | undefined;
   actionableInsights?: Record<string, string | null>; // Key: cohort_id, Value: insight text
@@ -82,8 +80,6 @@ export default function CohortPerformance({
   dailyFacts: _dailyFacts,
   simulationMapping,
   validSimulationIds,
-  isLoading,
-  isError,
   profileId,
   actionableInsights,
   thresholds,
@@ -166,32 +162,6 @@ export default function CohortPerformance({
 
   const thresholdStatus = getThresholdStatus();
 
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Cohort Performance</CardTitle>
-          <CardDescription>Loading cohort data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
-          Loading...
-        </CardContent>
-      </Card>
-    );
-  }
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Cohort Performance</CardTitle>
-          <CardDescription>Error loading data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-destructive">
-          Failed to load cohort data
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">

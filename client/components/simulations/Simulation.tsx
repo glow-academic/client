@@ -29,7 +29,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -110,7 +109,6 @@ export default function Simulation({
   const simulationData = isEditMode
     ? simulationDetail
     : simulationDetailDefault;
-  const isLoadingData = false; // No loading state when using server data
 
   // Extract body types from server action types for type safety
   type CreateSimulationBody = CreateSimulationIn extends { body: infer B }
@@ -173,7 +171,6 @@ export default function Simulation({
   const [originalFormData, setOriginalFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const isLoading = isLoadingData;
 
   // Permission logic - server computes can_edit flag
   const isReadonly = useMemo(() => {
@@ -724,7 +721,7 @@ export default function Simulation({
 
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
-          {formData?.title !== undefined && !isLoading ? (
+          {formData?.title !== undefined ? (
             <Input
               id="title"
               value={formData.title}
@@ -733,9 +730,7 @@ export default function Simulation({
               className={errors.title ? "border-destructive" : ""}
               disabled={isReadonly}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.title && (
             <p className="text-sm text-destructive">{errors.title}</p>
           )}
@@ -743,7 +738,7 @@ export default function Simulation({
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          {formData?.description !== undefined && !isLoading ? (
+          {formData?.description !== undefined ? (
             <Textarea
               id="description"
               value={formData.description || ""}
@@ -752,15 +747,13 @@ export default function Simulation({
               rows={3}
               disabled={isReadonly}
             />
-          ) : (
-            <Skeleton className="h-20 w-full" />
-          )}
+          ) : null}
         </div>
 
         {/* Department Selection */}
         <div className="space-y-2">
           <Label htmlFor="department">Department</Label>
-          {formData?.departmentIds !== undefined && !isLoading ? (
+          {formData?.departmentIds !== undefined ? (
             <DepartmentPicker
               mapping={simulationData?.department_mapping || {}}
               validIds={simulationData?.valid_department_ids || []}
@@ -770,9 +763,7 @@ export default function Simulation({
               disabled={isReadonly}
               multiSelect={true}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.departmentIds && (
             <p className="text-sm text-destructive">{errors.departmentIds}</p>
           )}
@@ -790,7 +781,7 @@ export default function Simulation({
                 <Power className="h-3.5 w-3.5 text-muted-foreground" />
                 Active
               </Label>
-              {formData?.active !== undefined && !isLoading ? (
+              {formData?.active !== undefined ? (
                 <Switch
                   id="active"
                   checked={formData.active ?? true}
@@ -799,9 +790,7 @@ export default function Simulation({
                   }
                   disabled={isReadonly}
                 />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
+              ) : null}
             </div>
             <p className="text-xs text-muted-foreground pl-5">
               Inactive simulations will not be available for cohorts
@@ -819,7 +808,7 @@ export default function Simulation({
                   <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
                   Practice
                 </Label>
-                {formData?.practiceSimulation !== undefined && !isLoading ? (
+                {formData?.practiceSimulation !== undefined ? (
                   <Switch
                     id="practiceSimulation"
                     checked={formData.practiceSimulation ?? false}
@@ -828,9 +817,7 @@ export default function Simulation({
                     }
                     disabled={isReadonly}
                   />
-                ) : (
-                  <Skeleton className="h-6 w-11" />
-                )}
+                ) : null}
               </div>
               <p className="text-xs text-muted-foreground pl-5">
                 Show this simulation on the practice page
@@ -842,7 +829,7 @@ export default function Simulation({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="timeLimit">Minutes Allowed</Label>
-            {formData?.timeLimit !== undefined && !isLoading ? (
+            {formData?.timeLimit !== undefined ? (
               <Input
                 id="timeLimit"
                 type="number"
@@ -859,9 +846,7 @@ export default function Simulation({
                 placeholder="Leave empty for no time limit"
                 disabled={isReadonly}
               />
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
+            ) : null}
             {errors.timeLimit && (
               <p className="text-sm text-destructive">{errors.timeLimit}</p>
             )}
@@ -869,7 +854,7 @@ export default function Simulation({
 
           <div className="space-y-2">
             <Label htmlFor="rubricId">Rubric</Label>
-            {formData?.rubricId !== undefined && !isLoading ? (
+            {formData?.rubricId !== undefined ? (
               isReadonly ? (
                 <Button
                   variant="outline"
@@ -897,9 +882,7 @@ export default function Simulation({
                   buttonClassName={`${errors.rubricId ? "border-destructive" : ""}`}
                 />
               )
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
+            ) : null}
             {errors.rubricId && (
               <p className="text-sm text-destructive">{errors.rubricId}</p>
             )}
@@ -912,14 +895,11 @@ export default function Simulation({
             <div>
               <Label htmlFor="scenarios">Scenarios</Label>
             </div>
-            {isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <ScenarioPicker
-                scenarioMapping={simulationData?.scenario_mapping || {}}
-                validScenarioIds={validScenarioIds}
-                selectedScenarioIds={currentScenarioIds}
-                onSelect={handleScenarioSelection}
+            <ScenarioPicker
+              scenarioMapping={simulationData?.scenario_mapping || {}}
+              validScenarioIds={validScenarioIds}
+              selectedScenarioIds={currentScenarioIds}
+              onSelect={handleScenarioSelection}
                 label=""
                 placeholder="Select scenarios..."
                 description="Choose scenarios to include in this simulation"

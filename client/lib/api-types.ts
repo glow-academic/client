@@ -4106,6 +4106,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/documents/download/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Document
+         * @description Download a document by ID.
+         */
+        get: operations["download_document_api_v3_documents_download__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/documents/certificate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Certificate
+         * @description Generate a certificate PDF/text for a profile.
+         */
+        post: operations["generate_certificate_api_v3_documents_certificate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/rubrics/list": {
         parameters: {
             query?: never;
@@ -5000,6 +5040,28 @@ export interface paths {
          * @description Bulk delete logs. Only superadmin can delete logs.
          */
         post: operations["bulk_delete_logs_api_v3_logs_bulk_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/logs/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get System Health
+         * @description Comprehensive system health check endpoint.
+         *     Tests all 9 system components with real functionality checks.
+         *     No authentication required (for monitoring tools).
+         */
+        get: operations["get_system_health_api_v3_logs_health_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6740,23 +6802,6 @@ export interface components {
             }[] | null;
         };
         /**
-         * GenerateCertificateRequest
-         * @description Request to generate a certificate.
-         */
-        GenerateCertificateRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /**
-             * Cohortdata
-             * @default []
-             */
-            cohortData: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
          * GenerateScenarioAIRequest
          * @description Request to generate AI scenario content.
          */
@@ -7273,42 +7318,6 @@ export interface components {
             personaId: string;
             /** Profileid */
             profileId: string;
-        };
-        /**
-         * PersonaItem
-         * @description Individual persona item in the response.
-         */
-        PersonaItem: {
-            /** Persona Id */
-            persona_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Active */
-            active: boolean;
-            /** Num Scenarios */
-            num_scenarios: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
         };
         /**
          * PersonaMappingItem
@@ -8693,7 +8702,7 @@ export interface components {
             documentId?: string | null;
             /** Documents */
             documents?: {
-                [key: string]: unknown;
+                [key: string]: string;
             }[] | null;
             /** Userscreated */
             usersCreated?: number | null;
@@ -9928,6 +9937,18 @@ export interface components {
             parameter_item_ids: string[];
         };
         /**
+         * GenerateCertificateRequest
+         * @description Request to generate certificate.
+         */
+        app__api__v3__documents__certificate__GenerateCertificateRequest: {
+            /** Profilename */
+            profileName: string;
+            /** Cohortdata */
+            cohortData: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
          * DocumentItem
          * @description Document item for list view.
          */
@@ -10659,12 +10680,59 @@ export interface components {
             message: string;
         };
         /**
+         * PersonaItem
+         * @description Individual persona item in the response.
+         */
+        app__api__v3__personas__list__PersonaItem: {
+            /** Persona Id */
+            persona_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Model Id */
+            model_id: string;
+            /** Model Name */
+            model_name: string | null;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number;
+            /** Temperature Display */
+            temperature_display: string;
+            /**
+             * Temperature Category
+             * @enum {string}
+             */
+            temperature_category: "low" | "medium" | "high";
+            /** Active */
+            active: boolean;
+            /** Is Inactive */
+            is_inactive: boolean;
+            /** Num Scenarios */
+            num_scenarios: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /**
          * PersonasListResponse
          * @description Response for personas list endpoint.
          */
         app__api__v3__personas__list__PersonasListResponse: {
             /** Personas */
-            personas: components["schemas"]["PersonaItem"][];
+            personas: components["schemas"]["app__api__v3__personas__list__PersonaItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
@@ -10677,6 +10745,22 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
+            /** Scenario Options */
+            scenario_options: {
+                [key: string]: string;
+            }[];
+            /** Model Options */
+            model_options: {
+                [key: string]: string;
+            }[];
+            /** Reasoning Options */
+            reasoning_options: string[];
+            /** Temperature Options */
+            temperature_options: string[];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * UpdatePersonaRequest
@@ -13188,6 +13272,23 @@ export interface components {
             };
         };
         /**
+         * GenerateCertificateRequest
+         * @description Request to generate a certificate.
+         */
+        app__schemas__documents__GenerateCertificateRequest: {
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /**
+             * Cohortdata
+             * @default []
+             */
+            cohortData: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
          * UpdateDocumentRequest
          * @description Request to update a document.
          */
@@ -13850,12 +13951,48 @@ export interface components {
             debug_info: components["schemas"]["app__schemas__personas__DebugInfoItem"][];
         };
         /**
+         * PersonaItem
+         * @description Individual persona item in the response.
+         */
+        app__schemas__personas__PersonaItem: {
+            /** Persona Id */
+            persona_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Model Id */
+            model_id: string;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number;
+            /** Active */
+            active: boolean;
+            /** Num Scenarios */
+            num_scenarios: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /**
          * PersonasListResponse
          * @description Response for personas list endpoint.
          */
         app__schemas__personas__PersonasListResponse: {
             /** Personas */
-            personas: components["schemas"]["PersonaItem"][];
+            personas: components["schemas"]["app__schemas__personas__PersonaItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
@@ -16766,7 +16903,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GenerateCertificateRequest"];
+                "application/json": components["schemas"]["app__schemas__documents__GenerateCertificateRequest"];
             };
         };
         responses: {
@@ -21927,6 +22064,70 @@ export interface operations {
             };
         };
     };
+    download_document_api_v3_documents_download__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_certificate_api_v3_documents_certificate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__api__v3__documents__certificate__GenerateCertificateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_rubrics_list_api_v3_rubrics_list_post: {
         parameters: {
             query?: never;
@@ -23408,6 +23609,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_system_health_api_v3_logs_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponse"];
                 };
             };
         };

@@ -147,16 +147,12 @@ interface ReportsDataItem {
 
 interface ReportsInterface {
   data: ReportsDataItem[];
-  isLoading: boolean;
-  isError: boolean;
   scenarioMapping: ScenarioMapping;
   simulationMapping: SimulationMapping;
 }
 
 export default function Reports({
   data,
-  isLoading,
-  isError,
   scenarioMapping,
   simulationMapping,
 }: ReportsInterface) {
@@ -195,30 +191,6 @@ export default function Reports({
       })),
     [simulationMapping]
   );
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">Loading reports…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Couldn't load reports</h1>
-          <p className="text-gray-600">
-            One or more analytics endpoints failed.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Create comprehensive columns matching useReportColumns pattern
   const columns: ColumnDef<ReportsDataItem>[] = [

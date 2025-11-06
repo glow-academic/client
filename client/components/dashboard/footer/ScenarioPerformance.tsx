@@ -163,8 +163,6 @@ export interface ScenarioPerformanceProps {
   >;
   /** Valid parameter IDs */
   validParameterIds: string[];
-  isLoading: boolean;
-  isError: boolean;
   actionableInsight?: string | null;
   thresholds: {
     danger: number;
@@ -179,8 +177,6 @@ export default function ScenarioPerformance({
   parameterMapping,
   parameterItemMapping,
   validParameterIds,
-  isLoading,
-  isError,
   actionableInsight,
   thresholds,
 }: ScenarioPerformanceProps) {
@@ -422,33 +418,6 @@ export default function ScenarioPerformance({
     );
   }
 
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Scenario Attribute Breakdown</CardTitle>
-          <CardDescription>Loading scenario data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
-          Loading...
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Scenario Attribute Breakdown</CardTitle>
-          <CardDescription>Error loading data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-destructive">
-          Failed to load scenario data
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">

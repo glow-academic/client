@@ -23,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -199,7 +198,6 @@ export default function Cohort({
 
   // Use edit detail when editing, default detail when creating
   const cohortData = isEditMode ? cohortDetail : cohortDetailDefault;
-  const isLoadingData = false; // No loading when using server data
 
   // Set breadcrumb context when cohort data is loaded
   useEffect(() => {
@@ -243,7 +241,6 @@ export default function Cohort({
     []
   );
 
-  const isLoading = isLoadingData;
 
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
@@ -756,7 +753,7 @@ export default function Cohort({
         {/* Basic Cohort Information */}
         <div className="space-y-2">
           <Label htmlFor="title">Title *</Label>
-          {formData.title !== undefined && !isLoading ? (
+          {formData.title !== undefined ? (
             <Input
               id="title"
               value={formData.title}
@@ -765,9 +762,7 @@ export default function Cohort({
               className={errors.title ? "border-destructive" : ""}
               disabled={isReadonly}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.title && (
             <p className="text-sm text-destructive">{errors.title}</p>
           )}
@@ -775,7 +770,7 @@ export default function Cohort({
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          {formData.description !== undefined && !isLoading ? (
+          {formData.description !== undefined ? (
             <Textarea
               id="description"
               value={formData.description || ""}
@@ -784,15 +779,13 @@ export default function Cohort({
               rows={3}
               disabled={isReadonly}
             />
-          ) : (
-            <Skeleton className="h-20 w-full" />
-          )}
+          ) : null}
         </div>
 
         {/* Department Selection */}
         <div className="space-y-2">
           <Label htmlFor="department">Department</Label>
-          {formData?.departmentIds !== undefined && !isLoading ? (
+          {formData?.departmentIds !== undefined ? (
             <DepartmentPicker
               mapping={cohortData?.department_mapping || {}}
               validIds={cohortData?.valid_department_ids || []}
@@ -802,9 +795,7 @@ export default function Cohort({
               disabled={isReadonly}
               multiSelect={true}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
         </div>
 
         {/* Active Switch */}
@@ -818,7 +809,7 @@ export default function Cohort({
                 <Power className="h-3.5 w-3.5 text-muted-foreground" />
                 Active
               </Label>
-              {formData.active !== undefined && !isLoading ? (
+              {formData.active !== undefined ? (
                 <Switch
                   id="active"
                   checked={formData.active ?? true}
@@ -827,9 +818,7 @@ export default function Cohort({
                   }
                   disabled={isReadonly}
                 />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
+              ) : null}
             </div>
             <p className="text-xs text-muted-foreground pl-5">
               Inactive cohorts will not be shown
@@ -845,51 +834,20 @@ export default function Cohort({
             </div>
             {!isReadonly && (
               <div className="flex gap-2">
-                {!isLoading ? (
-                  <SimulationPicker
-                    simulationMapping={cohortData?.simulation_mapping || {}}
-                    validSimulationIds={validSimulationIds}
-                    selectedSimulationIds={currentSimulationIds}
-                    onSelect={handleSimulationSelection}
-                    placeholder="Add simulation"
-                    showLabel={false}
-                    buttonClassName="w-48"
-                  />
-                ) : (
-                  <Skeleton className="h-10 w-48" />
-                )}
+                <SimulationPicker
+                  simulationMapping={cohortData?.simulation_mapping || {}}
+                  validSimulationIds={validSimulationIds}
+                  selectedSimulationIds={currentSimulationIds}
+                  onSelect={handleSimulationSelection}
+                  placeholder="Add simulation"
+                  showLabel={false}
+                  buttonClassName="w-48"
+                />
               </div>
             )}
           </div>
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="p-3 min-h-[180px]">
-                  <div className="space-y-3 h-full flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <Skeleton className="h-4 w-1/2" />
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-6 w-6 rounded" />
-                          <Skeleton className="h-6 w-6 rounded" />
-                          <Skeleton className="h-4 w-4 rounded" />
-                        </div>
-                      </div>
-                      <div className="space-y-2 mt-2">
-                        <Skeleton className="h-3 w-full" />
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-5 w-20 rounded" />
-                          <Skeleton className="h-5 w-20 rounded" />
-                        </div>
-                        <Skeleton className="h-5 w-16 rounded" />
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : currentSimulationIds.length === 0 ? (
+          {currentSimulationIds.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
               <div>
                 <p className="font-medium mb-1">No simulations selected</p>
@@ -1513,42 +1471,35 @@ export default function Cohort({
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">
-          {!isLoading ? (
-            <>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => router.push("/cohorts")}
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                disabled={
-                  isSubmitting || isReadonly || (isEditMode && !hasChanges)
-                }
-                className="min-w-[120px]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {cohortId || editingCohortId
-                      ? "Updating..."
-                      : "Creating..."}
-                  </>
-                ) : cohortId || editingCohortId ? (
-                  "Update Cohort"
-                ) : (
-                  "Create Cohort"
-                )}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Skeleton className="h-10 w-16" />
-              <Skeleton className="h-10 w-32" />
-            </>
-          )}
+          <>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => router.push("/cohorts")}
+            >
+              Back
+            </Button>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting || isReadonly || (isEditMode && !hasChanges)
+              }
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {cohortId || editingCohortId
+                    ? "Updating..."
+                    : "Creating..."}
+                </>
+              ) : cohortId || editingCohortId ? (
+                "Update Cohort"
+              ) : (
+                "Create Cohort"
+              )}
+            </Button>
+          </>
         </div>
       </form>
 

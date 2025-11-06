@@ -80,7 +80,6 @@ export default function Logs({
 
   // Use server-provided data directly
   const logsData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Extract data from V3 response
   const logs = useMemo(() => {
@@ -551,10 +550,6 @@ export default function Logs({
   const createdAtColumn = table.getColumn("created_at");
   const createdTimeColumn = table.getColumn("created_time");
   const isFiltered = table.getState().columnFilters.length > 0;
-
-  if (isLoading) {
-    return <div className="text-center p-6">Loading logs...</div>;
-  }
 
   return (
     <div className="space-y-6">

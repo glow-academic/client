@@ -47,8 +47,6 @@ export interface SkillPerformanceProps {
   rubricMapping: Record<string, { name: string; description: string }>;
   /** Valid rubric IDs */
   validRubricIds: string[];
-  isLoading: boolean;
-  isError: boolean;
   actionableInsight?: string | null;
   thresholds: {
     danger: number;
@@ -61,8 +59,6 @@ export default function SkillPerformance({
   packages,
   rubricMapping,
   validRubricIds,
-  isLoading,
-  isError,
   actionableInsight,
   thresholds,
 }: SkillPerformanceProps) {
@@ -96,32 +92,6 @@ export default function SkillPerformance({
 
   const thresholdStatus = getThresholdStatus();
 
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Skill Performance</CardTitle>
-          <CardDescription>Loading skill data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
-          Loading...
-        </CardContent>
-      </Card>
-    );
-  }
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Skill Performance</CardTitle>
-          <CardDescription>Error loading data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-destructive">
-          Failed to load skill data
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">

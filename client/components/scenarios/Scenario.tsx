@@ -46,7 +46,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -274,7 +273,6 @@ export default function Scenario({
 
   // Use edit detail when editing, default detail when creating
   const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
-  const isLoadingData = false; // No loading when using server data
 
   // Set breadcrumb context when scenario data is loaded
   useEffect(() => {
@@ -1488,19 +1486,6 @@ export default function Scenario({
     setSelectedPersonaIds(ids);
   };
 
-  // Loading state for edit mode
-  if (isLoadingData) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Loading Scenario...</h1>
-          <p className="text-muted-foreground">
-            Please wait while we load the scenario data.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full p-6 space-y-8">
@@ -1588,7 +1573,7 @@ export default function Scenario({
             {/* Department Selection */}
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              {formData?.departmentIds !== undefined && !isLoadingData ? (
+              {formData?.departmentIds !== undefined ? (
                 <DepartmentPicker
                   mapping={departmentMapping}
                   validIds={Array.from(
@@ -1603,9 +1588,7 @@ export default function Scenario({
                   disabled={isReadonly}
                   multiSelect={true}
                 />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+              ) : null}
             </div>
 
             {/* Active Switch */}

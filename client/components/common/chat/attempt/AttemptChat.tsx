@@ -39,7 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 
 // Icons
 import {
@@ -415,16 +414,6 @@ export default function AttemptChat({
     selectedDocumentId,
   ]);
 
-  if (simulationContext?.isLoadingChats) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <Skeleton className="h-8 w-64 mx-auto" />
-          <Skeleton className="h-4 w-48 mx-auto" />
-        </div>
-      </div>
-    );
-  }
 
   if (!simulationContext?.chats || simulationContext?.chats.length === 0) {
     return (

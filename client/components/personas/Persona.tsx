@@ -57,7 +57,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -168,7 +167,6 @@ export default function Persona({
 
   // Use edit detail when editing, default detail when creating
   const personaData = isEditMode ? personaDetail : personaDetailDefault;
-  const isLoadingData = false; // No loading when using server data
 
   // Extract body types for type safety
   type CreatePersonaBody = CreatePersonaIn extends { body: infer B }
@@ -272,7 +270,6 @@ export default function Persona({
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
 
-  const isLoading = isLoadingData;
 
   // Filter prompt_mapping based on selected department
   // When "All Departments" is selected, only show default prompts (null department_ids)
@@ -605,7 +602,7 @@ export default function Persona({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Persona Name *</Label>
-              {formData?.name !== undefined && !isLoading ? (
+              {formData?.name !== undefined ? (
                 <Input
                   id="name"
                   value={formData.name}
@@ -616,14 +613,12 @@ export default function Persona({
                   required
                   disabled={isReadonly}
                 />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+              ) : null}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
-              {formData?.description !== undefined && !isLoading ? (
+              {formData?.description !== undefined ? (
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -638,15 +633,13 @@ export default function Persona({
                   required
                   disabled={isReadonly}
                 />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+              ) : null}
             </div>
 
             {/* Department Selection */}
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              {formData?.departmentIds !== undefined && !isLoading ? (
+              {formData?.departmentIds !== undefined ? (
                 <DepartmentPicker
                   mapping={personaData?.department_mapping || {}}
                   validIds={personaData?.valid_department_ids || []}
@@ -661,9 +654,7 @@ export default function Persona({
                   disabled={isReadonly}
                   multiSelect={true}
                 />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+              ) : null}
             </div>
 
             {/* Active Switch */}
@@ -677,7 +668,7 @@ export default function Persona({
                     <Power className="h-3.5 w-3.5 text-muted-foreground" />
                     Active
                   </Label>
-                  {formData?.active !== undefined && !isLoading ? (
+                  {formData?.active !== undefined ? (
                     <Switch
                       id="active"
                       checked={formData.active ?? true}
@@ -689,9 +680,7 @@ export default function Persona({
                       }
                       disabled={isReadonly}
                     />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground pl-5">
                   Inactive personas will not be available for scenarios
@@ -704,7 +693,7 @@ export default function Persona({
               {/* Color Picker */}
               <div className="space-y-2">
                 <Label htmlFor="color">Persona Color</Label>
-                {formData?.color !== undefined && !isLoading ? (
+                {formData?.color !== undefined ? (
                   <Popover
                     open={colorPickerOpen}
                     onOpenChange={setColorPickerOpen}
@@ -776,15 +765,13 @@ export default function Persona({
                       </div>
                     </PopoverContent>
                   </Popover>
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
 
               {/* Icon Picker */}
               <div className="space-y-2">
                 <Label htmlFor="icon">Persona Icon</Label>
-                {formData?.icon !== undefined && !isLoading ? (
+                {formData?.icon !== undefined ? (
                   <Popover
                     open={iconPickerOpen}
                     onOpenChange={setIconPickerOpen}
@@ -887,9 +874,7 @@ export default function Persona({
                       </Command>
                     </PopoverContent>
                   </Popover>
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -898,7 +883,7 @@ export default function Persona({
               {/* Text Model */}
               <div className="space-y-2">
                 <Label htmlFor="modelId">Text Model *</Label>
-                {formData?.modelId !== undefined && !isLoading ? (
+                {formData?.modelId !== undefined ? (
                   <ModelPicker
                     mapping={personaData?.model_mapping || {}}
                     validIds={personaData?.valid_model_ids || []}
@@ -913,15 +898,13 @@ export default function Persona({
                     disabled={isReadonly}
                     multiSelect={false}
                   />
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
 
               {/* Reasoning Effort */}
               <div className="space-y-2">
                 <Label htmlFor="reasoning">Reasoning Effort</Label>
-                {formData?.reasoning !== undefined && !isLoading ? (
+                {formData?.reasoning !== undefined ? (
                   <ReasoningPicker
                     mapping={personaData?.reasoning_mapping || {}}
                     validIds={["none", "minimal", "low", "medium", "high"]}
@@ -943,9 +926,7 @@ export default function Persona({
                     disabled={isReadonly}
                     multiSelect={false}
                   />
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
 
               {/* Temperature */}
@@ -956,7 +937,7 @@ export default function Persona({
                     ? formData.temperature.toFixed(2)
                     : "0.00"}
                 </Label>
-                {formData?.temperature !== undefined && !isLoading ? (
+                {formData?.temperature !== undefined ? (
                   <>
                     <Slider
                       id="temperature"
@@ -979,9 +960,7 @@ export default function Persona({
                       <span>Creative</span>
                     </div>
                   </>
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -1046,7 +1025,7 @@ export default function Persona({
                         buttonClassName="h-8"
                       />
                     )}
-                  {formData?.systemPrompt !== undefined && !isLoading && (
+                  {formData?.systemPrompt !== undefined && (
                     <>
                       {isEditMode &&
                         (formData?.promptId || isUsingDefaultPrompt) && (
@@ -1171,7 +1150,7 @@ export default function Persona({
                   )}
                 </div>
               </div>
-              {formData?.systemPrompt !== undefined && !isLoading ? (
+              {formData?.systemPrompt !== undefined ? (
                 <>
                   {isUsingDefaultPrompt &&
                   formData.systemPrompt === "" &&
@@ -1293,9 +1272,7 @@ export default function Persona({
                     </div>
                   )}
                 </>
-              ) : (
-                <Skeleton className="h-[500px] w-full" />
-              )}
+              ) : null}
               <p className="text-sm text-muted-foreground">
                 This prompt defines the persona's behavior and personality in
                 conversations. You can use markdown formatting for better

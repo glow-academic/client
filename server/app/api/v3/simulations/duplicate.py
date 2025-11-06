@@ -3,9 +3,10 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db, transaction
+from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 
@@ -30,51 +31,40 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateSimulationResponse)
 async def duplicate_simulation(
     request: DuplicateSimulationRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateSimulationResponse:
     """Duplicate a simulation."""
+    tags = ["simulations"]  # From router tags
+    
     try:
-        async with transaction(conn):
-            # Get original simulation data
-            get_sql = load_sql("sql/v3/simulations/get_simulation_for_duplicate.sql")
-            result = await conn.fetchrow(get_sql, request.simulationId)
+        # Use single comprehensive SQL file (DHH style)
+        duplicate_sql = load_sql("sql/v3/simulations/duplicate_simulation.sql")
+        new_simulation_row = await conn.fetchrow(duplicate_sql, request.simulationId)
 
-            if not result:
-                raise ValueError(f"Simulation not found: {request.simulationId}")
+        if not new_simulation_row:
+            raise HTTPException(status_code=404, detail=f"Simulation {request.simulationId} not found")
 
-            # Create duplicate simulation
-            duplicate_sql = load_sql("sql/v3/simulations/insert_duplicate_simulation.sql")
-            new_sim = await conn.fetchrow(
-                duplicate_sql,
-                result["title"],
-                result["description"],
-                result["rubric_id"],
-            )
+        new_simulation_id = new_simulation_row["simulation_id"]
 
-            if not new_sim:
-                raise ValueError("Failed to create duplicate simulation")
+        # Get original title for message
+        original_title = await conn.fetchval(
+            "SELECT title FROM simulations WHERE id = $1", request.simulationId
+        )
 
-            new_simulation_id = str(new_sim["id"])
-
-            # Copy scenario relationships
-            copy_scenarios_sql = load_sql("sql/v3/simulations/copy_simulation_scenarios.sql")
-            await conn.execute(copy_scenarios_sql, new_simulation_id, request.simulationId)
-
-            result_data = DuplicateSimulationResponse(
-                success=True,
-                simulationId=new_simulation_id,
-                message=f"Simulation '{result['title']}' duplicated successfully",
-            )
-            
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
-            return result_data
+        result_data = DuplicateSimulationResponse(
+            success=True,
+            simulationId=new_simulation_id,
+            message=f"Simulation '{original_title}' duplicated successfully",
+        )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

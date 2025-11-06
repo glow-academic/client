@@ -37,7 +37,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 
 import {
   ColumnDef,
@@ -100,7 +99,6 @@ export default function Parameters({
 
   // Use server-provided data directly
   const parametersData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   const parameters = useMemo(
     () => parametersData?.parameters || [],
@@ -461,43 +459,6 @@ export default function Parameters({
       </Card>
     </div>
   );
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {/* Header skeleton */}
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-
-        {/* Parameters grid skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                  <Skeleton className="h-8 w-8 rounded" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-3/4 mb-3" />
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-3" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");

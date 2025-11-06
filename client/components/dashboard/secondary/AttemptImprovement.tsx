@@ -43,8 +43,6 @@ export interface AttemptImprovementProps {
   simulationMapping: Record<string, { name: string; description: string, department_ids: string[] | null }>;
   /** Valid simulation IDs */
   validSimulationIds: string[];
-  isLoading: boolean;
-  isError: boolean;
   actionableInsight?: string | null;
   thresholds: {
     danger: number;
@@ -58,8 +56,6 @@ export default function AttemptImprovement({
   facts,
   simulationMapping,
   validSimulationIds,
-  isLoading,
-  isError,
   actionableInsight,
   thresholds,
 }: AttemptImprovementProps) {
@@ -124,33 +120,6 @@ export default function AttemptImprovement({
 
   const thresholdStatus = getThresholdStatus();
 
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Attempt Improvement</CardTitle>
-          <CardDescription>Loading attempt data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
-          Loading...
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Attempt Improvement</CardTitle>
-          <CardDescription>Error loading data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-destructive">
-          Failed to load attempt data
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">

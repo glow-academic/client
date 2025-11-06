@@ -32,7 +32,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,7 +125,6 @@ export default function SystemAgent({
   const agentDetail = serverAgentDetail;
   const agentDetailDefault = serverAgentDetailDefault;
   const agentData = isEditMode ? agentDetail : agentDetailDefault;
-  const isLoading = false; // No loading state when using server data
 
   // Extract body types from server action types for type safety
   type CreateAgentBody = CreateAgentIn extends { body: infer B } ? B : never;
@@ -491,7 +489,7 @@ export default function SystemAgent({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Agent Name *</Label>
-              {formData?.name !== undefined && !isLoading ? (
+              {formData?.name !== undefined ? (
                 <Input
                   id="name"
                   value={formData.name}
@@ -500,9 +498,7 @@ export default function SystemAgent({
                   className={errors.name ? "border-destructive" : ""}
                   required
                 />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+              ) : null}
               {errors.name && (
                 <p className="text-sm text-destructive">{errors.name}</p>
               )}
@@ -510,7 +506,7 @@ export default function SystemAgent({
 
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
-              {formData?.description !== undefined && !isLoading ? (
+              {formData?.description !== undefined ? (
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -522,9 +518,7 @@ export default function SystemAgent({
                   className={errors.description ? "border-destructive" : ""}
                   required
                 />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+              ) : null}
               {errors.description && (
                 <p className="text-sm text-destructive">{errors.description}</p>
               )}
@@ -536,8 +530,7 @@ export default function SystemAgent({
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 {formData?.departmentIds !== undefined &&
-                agentData?.department_mapping !== undefined &&
-                !isLoading ? (
+                agentData?.department_mapping !== undefined ? (
                   <DepartmentPicker
                     mapping={agentData.department_mapping || {}}
                     validIds={agentData.valid_department_ids || []}
@@ -552,23 +545,19 @@ export default function SystemAgent({
                     disabled={isSubmitting}
                     multiSelect={true}
                   />
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
 
               {/* Role Picker */}
               <div className="space-y-2">
                 <Label htmlFor="role">Role *</Label>
-                {formData?.role !== undefined && !isLoading ? (
+                {formData?.role !== undefined ? (
                   <RolePicker
                     selectedRole={formData.role || "assistant"}
                     onSelect={(role) => handleInputChange("role", role)}
                     placeholder="Select role"
                   />
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -583,7 +572,7 @@ export default function SystemAgent({
                     <Power className="h-3.5 w-3.5 text-muted-foreground" />
                     Active
                   </Label>
-                  {formData?.active !== undefined && !isLoading ? (
+                  {formData?.active !== undefined ? (
                     <Switch
                       id="active"
                       checked={formData.active ?? true}
@@ -591,9 +580,7 @@ export default function SystemAgent({
                         handleInputChange("active", checked)
                       }
                     />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground pl-5">
                   Inactive agents will not be available to perform operations
@@ -607,7 +594,7 @@ export default function SystemAgent({
               {/* Text Model */}
               <div className="space-y-2">
                 <Label htmlFor="modelId">Text Model *</Label>
-                {formData?.modelId !== undefined && !isLoading ? (
+                {formData?.modelId !== undefined ? (
                   <>
                     <ModelPicker
                       mapping={agentDetail?.model_mapping || {}}
@@ -628,15 +615,13 @@ export default function SystemAgent({
                       </p>
                     )}
                   </>
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
 
               {/* Reasoning Effort */}
               <div className="space-y-2">
                 <Label htmlFor="reasoning">Reasoning Effort</Label>
-                {formData?.reasoning !== undefined && !isLoading ? (
+                {formData?.reasoning !== undefined ? (
                   <ReasoningPicker
                     mapping={agentDetail?.reasoning_mapping || {}}
                     validIds={["none", "minimal", "low", "medium", "high"]}
@@ -657,9 +642,7 @@ export default function SystemAgent({
                     placeholder="Select reasoning effort"
                     multiSelect={false}
                   />
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
 
               {/* Temperature */}
@@ -670,7 +653,7 @@ export default function SystemAgent({
                     ? formData.temperature.toFixed(2)
                     : "0.00"}
                 </Label>
-                {formData?.temperature !== undefined && !isLoading ? (
+                {formData?.temperature !== undefined ? (
                   <>
                     <Slider
                       id="temperature"
@@ -689,9 +672,7 @@ export default function SystemAgent({
                       <span>Creative</span>
                     </div>
                   </>
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -756,7 +737,7 @@ export default function SystemAgent({
                         buttonClassName="h-8"
                       />
                     )}
-                  {formData?.systemPrompt !== undefined && !isLoading && (
+                  {formData?.systemPrompt !== undefined && (
                     <>
                       {isEditMode &&
                         (formData?.promptId || isUsingDefaultPrompt) && (
@@ -878,7 +859,7 @@ export default function SystemAgent({
                   )}
                 </div>
               </div>
-              {formData?.systemPrompt !== undefined && !isLoading ? (
+              {formData?.systemPrompt !== undefined ? (
                 <>
                   {isUsingDefaultPrompt &&
                   formData.systemPrompt === "" &&
@@ -981,9 +962,7 @@ export default function SystemAgent({
                     </div>
                   )}
                 </>
-              ) : (
-                <Skeleton className="h-[500px] w-full" />
-              )}
+              ) : null}
               <p className="text-sm text-muted-foreground">
                 This prompt defines the agent's behavior and personality in
                 conversations. You can use markdown formatting for better

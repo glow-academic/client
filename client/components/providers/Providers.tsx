@@ -9,7 +9,6 @@ import {
   Copy,
   Cpu,
   Edit,
-  Loader2,
   Plus,
   Settings,
   Sparkles,
@@ -134,7 +133,6 @@ export default function Providers({
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
   // Use server-provided data directly
   const providersData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Build filter options
   const providers = useMemo(
@@ -609,11 +607,7 @@ export default function Providers({
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : providers.length === 0 ? (
+        {providers.length === 0 ? (
           renderEmptyState()
         ) : (
           <div className="space-y-4">

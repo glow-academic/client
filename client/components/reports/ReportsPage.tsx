@@ -158,8 +158,6 @@ export default function ReportsPage({ reportsData }: ReportsPageProps) {
       data={transformedData}
       scenarioMapping={bundle?.scenario_mapping ?? {}}
       simulationMapping={bundle?.simulation_mapping ?? {}}
-      isLoading={false}
-      isError={false}
     />
   );
 }

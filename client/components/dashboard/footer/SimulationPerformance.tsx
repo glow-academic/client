@@ -158,8 +158,6 @@ export interface SimulationPerformanceProps {
   scenarioFacts: ScenarioFact[];
   /** Simulation mapping object */
   simulationMapping: Record<string, { name: string; description: string }>;
-  isLoading: boolean;
-  isError: boolean;
   actionableInsight?: string | null;
   thresholds: {
     danger: number;
@@ -172,8 +170,6 @@ export default function SimulationPerformance({
   validSimulationIds,
   scenarioFacts,
   simulationMapping,
-  isLoading,
-  isError,
   actionableInsight,
   thresholds,
 }: SimulationPerformanceProps) {
@@ -248,33 +244,6 @@ export default function SimulationPerformance({
     }
   }, [data]);
 
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Simulation Performance</CardTitle>
-          <CardDescription>Loading simulation data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
-          Loading...
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Simulation Performance</CardTitle>
-          <CardDescription>Error loading data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-destructive">
-          Failed to load simulation data
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">

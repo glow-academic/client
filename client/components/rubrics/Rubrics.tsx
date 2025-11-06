@@ -10,7 +10,6 @@ import {
   Edit,
   Eye,
   FileCheck,
-  Loader2,
   Star,
   Trash2,
   X,
@@ -97,7 +96,6 @@ export default function Rubrics({
 
   // Use server-provided data directly
   const rubricsData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
   const standardGroupsMapping = useMemo(
@@ -430,12 +428,7 @@ export default function Rubrics({
 
   return (
     <div className="space-y-6">
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : (
-        <div className="space-y-4" data-testid="rubrics-data-table">
+      <div className="space-y-4" data-testid="rubrics-data-table">
           {/* Toolbar */}
           <div className="flex items-center justify-between">
             <div className="flex flex-1 items-center space-x-2 flex-wrap">

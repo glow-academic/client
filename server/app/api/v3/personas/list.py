@@ -1,7 +1,8 @@
 """Personas list endpoint - v3 API following DHH principles."""
 
 import json
-from typing import Annotated
+from collections import Counter
+from typing import Annotated, Literal
 
 import asyncpg  # type: ignore
 from app.db import get_db
@@ -32,9 +33,13 @@ class PersonaItem(BaseModel):
     department_ids: list[str] | None  # None = cross-department (all departments)
     scenario_ids: list[str]  # Array of scenario IDs
     model_id: str
+    model_name: str | None  # Precomputed model name
     reasoning: str | None
     temperature: float
+    temperature_display: str  # Precomputed formatted temperature (e.g. "0.44")
+    temperature_category: Literal["low", "medium", "high"]  # Precomputed category
     active: bool
+    is_inactive: bool  # Mirror of !active for easier badge rendering
     num_scenarios: int
     can_edit: bool
     can_duplicate: bool
@@ -48,9 +53,38 @@ class PersonasListResponse(BaseModel):
     scenario_mapping: ScenarioMapping
     model_mapping: ModelMapping
     department_mapping: DepartmentMapping
+    # UI-ready facet options (precomputed on server)
+    scenario_options: list[dict[str, str]]  # Array of {value, label}
+    model_options: list[dict[str, str]]  # Array of {value, label}
+    reasoning_options: list[str]  # ["none", "minimal", "low", "medium", "high"]
+    temperature_options: list[str]  # ["low", "medium", "high"]
+    department_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
+
+
+def temp_cat(t: float) -> Literal["low", "medium", "high"]:
+    """Categorize temperature into low/medium/high."""
+    if t <= 0.33:
+        return "low"
+    elif t <= 0.66:
+        return "medium"
+    else:
+        return "high"
+
+
+def disambiguate_scenarios(smap: ScenarioMapping) -> list[dict[str, str]]:
+    """Build scenario options with disambiguation for duplicate names."""
+    names = Counter([v.name for v in smap.values()])
+    out = []
+    for sid, v in smap.items():
+        label = v.name
+        if names[v.name] > 1:
+            # Use last 8 characters of UUID for disambiguation
+            label = f"{v.name} ({sid[-8:]})"
+        out.append({"value": sid, "label": label})
+    return out
 
 
 @router.post("/list", response_model=PersonasListResponse)
@@ -63,16 +97,20 @@ async def get_personas_list(
     """Get personas list with permissions and scenario details."""
     tags = ["personas"]  # From router tags
     
+    # Check for cache bypass header (for testing)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
     
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return PersonasListResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return PersonasListResponse.model_validate(cached["data"])
     
     try:
         # Load SQL string
@@ -121,12 +159,26 @@ async def get_personas_list(
                             description=ddata.get("description", ""),
                         )
 
-        # Build persona items
+        # Build model_mapping from SQL results (collect unique models)
+        for row in result:
+            model_id = str(row["model_id"]) if row["model_id"] else ""
+            model_name = row.get("model_name")
+            if model_id and model_id not in model_mapping and model_name:
+                model_mapping[model_id] = ModelMappingItem(
+                    name=model_name,
+                    description=row.get("model_description") or "",
+                )
+
+        # Build persona items with derived fields
         for row in result:
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
             dept_ids = None
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
+
+            model_id = str(row["model_id"]) if row["model_id"] else ""
+            temperature = float(row["temperature"]) if row["temperature"] else 0.0
+            model_name = row.get("model_name")
 
             personas.append(
                 PersonaItem(
@@ -137,10 +189,14 @@ async def get_personas_list(
                     icon=row["icon"],
                     department_ids=dept_ids,
                     scenario_ids=scenario_ids,
-                    model_id=str(row["model_id"]) if row["model_id"] else "",
+                    model_id=model_id,
+                    model_name=model_name,
                     reasoning=row["reasoning"],
-                    temperature=float(row["temperature"]) if row["temperature"] else 0.0,
+                    temperature=temperature,
+                    temperature_display=f"{temperature:.2f}",
+                    temperature_category=temp_cat(temperature),
                     active=row["active"],
+                    is_inactive=not row["active"],
                     num_scenarios=row["num_scenarios"],
                     can_edit=row["can_edit"],
                     can_duplicate=row["can_duplicate"],
@@ -148,11 +204,25 @@ async def get_personas_list(
                 )
             )
 
+        # Build facet options
+        scenario_options = disambiguate_scenarios(scenario_mapping)
+        model_options = [{"value": mid, "label": m.name} for (mid, m) in model_mapping.items()]
+        department_options = [
+            {"value": did, "label": d.name or did} for (did, d) in department_mapping.items()
+        ]
+        reasoning_options = ["none", "minimal", "low", "medium", "high"]
+        temperature_options = ["low", "medium", "high"]
+
         response_data = PersonasListResponse(
             personas=personas,
             scenario_mapping=scenario_mapping,
             model_mapping=model_mapping,
             department_mapping=department_mapping,
+            scenario_options=scenario_options,
+            model_options=model_options,
+            reasoning_options=reasoning_options,
+            temperature_options=temperature_options,
+            department_options=department_options,
         )
         
         # Cache response

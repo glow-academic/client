@@ -17,7 +17,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 // UI Components
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 
 // Tooltip
 import {
@@ -71,7 +70,7 @@ export default function AttemptMessages({
     );
     return chatData?.messages || [];
   }, [targetChatId, simulationContext?.attemptData]);
-  const messagesLoading = simulationContext?.isLoadingChats || false;
+  const messagesLoading = false; // Always false with SSR
 
   // Group messages by conversation turns (user message + all its responses)
   const groupedMessages = useMemo(() => {
@@ -270,22 +269,6 @@ export default function AttemptMessages({
     return () => viewport.removeEventListener("scroll", handleScrollEvent);
   }, [messages.length, messages]);
 
-  if (messagesLoading) {
-    return (
-      <div className="flex-1 flex flex-col p-0 min-h-0 relative">
-        <ScrollArea className="flex-1 px-4 min-h-0">
-          <div className="space-y-4 py-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-    );
-  }
 
   return (
     <div className="flex-1 flex flex-col p-0 min-h-0 relative">

@@ -83,7 +83,6 @@ export default function Departments({
 
   // Use server-provided data directly
   const departmentsData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Extract data from response
   const departments = useMemo(
@@ -322,18 +321,6 @@ export default function Departments({
       </CardContent>
     </Card>
   );
-
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">Loading departments...</div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("title");

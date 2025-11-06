@@ -23,7 +23,6 @@ import {
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
-import { Loader2 } from "lucide-react";
 import { RunsDataTable, type ModelRunRow } from "./RunsDataTable";
 
 const currency = (value: number) =>
@@ -55,8 +54,6 @@ export default function Pricing({ pricingData }: PricingProps) {
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
-
-  const isLoading = false;
   // Extract data from V3 API response
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
   const modelMapping = useMemo(
@@ -296,12 +293,7 @@ export default function Pricing({ pricingData }: PricingProps) {
           <CardTitle className="text-base">Spend over time</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading pricing
-              data…
-            </div>
-          ) : chartData.length === 0 ? (
+          {chartData.length === 0 ? (
             <div className="flex h-64 items-center justify-center text-muted-foreground">
               No data for the selected range/models
             </div>
@@ -397,27 +389,21 @@ export default function Pricing({ pricingData }: PricingProps) {
 
       {/* Runs table */}
       <div className="mt-6">
-        {isLoading ? (
-          <div className="flex h-40 items-center justify-center text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading runs…
-          </div>
-        ) : (
-          <RunsDataTable
-            rows={runRows}
-            modelMapping={modelMapping}
-            profileMapping={profileMapping}
-            agentMapping={agentMapping}
-            personaMapping={personaMapping}
-            selectedModelIds={selectedModelIds}
-            selectedAgentIds={selectedAgentIds}
-            selectedPersonaIds={selectedPersonaIds}
-            selectedProfileIds={selectedProfileIds}
-            setSelectedModelIds={setSelectedModelIds}
-            setSelectedAgentIds={setSelectedAgentIds}
-            setSelectedPersonaIds={setSelectedPersonaIds}
-            setSelectedProfileIds={setSelectedProfileIds}
-          />
-        )}
+        <RunsDataTable
+          rows={runRows}
+          modelMapping={modelMapping}
+          profileMapping={profileMapping}
+          agentMapping={agentMapping}
+          personaMapping={personaMapping}
+          selectedModelIds={selectedModelIds}
+          selectedAgentIds={selectedAgentIds}
+          selectedPersonaIds={selectedPersonaIds}
+          selectedProfileIds={selectedProfileIds}
+          setSelectedModelIds={setSelectedModelIds}
+          setSelectedAgentIds={setSelectedAgentIds}
+          setSelectedPersonaIds={setSelectedPersonaIds}
+          setSelectedProfileIds={setSelectedProfileIds}
+        />
       </div>
     </div>
   );

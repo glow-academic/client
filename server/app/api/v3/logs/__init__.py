@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.v3.logs.bulk_delete import router as bulk_delete_router
 from app.api.v3.logs.create import router as create_router
+from app.api.v3.logs.health import router as health_router
 from app.api.v3.logs.list import router as list_router
 
 router = APIRouter(prefix="/logs", tags=["logs"])
@@ -12,4 +13,5 @@ router = APIRouter(prefix="/logs", tags=["logs"])
 router.include_router(list_router)
 router.include_router(create_router)
 router.include_router(bulk_delete_router)
+router.include_router(health_router)
 

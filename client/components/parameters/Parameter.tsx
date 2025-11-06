@@ -14,7 +14,6 @@ import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -125,7 +124,6 @@ export default function Parameter({
   const parameterDetail = serverParameterDetail;
   const parameterDetailDefault = serverParameterDetailDefault;
   const parameterData = isEditMode ? parameterDetail : parameterDetailDefault;
-  const isLoading = false; // No loading state when using server data
 
   // Extract body types from server action types for type safety
   type CreateParameterBody = CreateParameterIn extends { body: infer B } ? B : never;
@@ -411,7 +409,7 @@ export default function Parameter({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Parameter Name *</Label>
-              {formData?.name !== undefined && !isLoading ? (
+              {formData?.name !== undefined ? (
                 <Input
                   id="name"
                   value={formData.name}
@@ -421,14 +419,12 @@ export default function Parameter({
                   placeholder="e.g., Difficulty Level"
                   required
                 />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+              ) : null}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
-              {formData?.description !== undefined && !isLoading ? (
+              {formData?.description !== undefined ? (
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -442,9 +438,7 @@ export default function Parameter({
                   rows={4}
                   required
                 />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
+              ) : null}
             </div>
 
             {/* Active Switch */}
@@ -458,7 +452,7 @@ export default function Parameter({
                     <Power className="h-3.5 w-3.5 text-muted-foreground" />
                     Active
                   </Label>
-                  {formData?.active !== undefined && !isLoading ? (
+                  {formData?.active !== undefined ? (
                     <Switch
                       id="active"
                       checked={formData.active}
@@ -466,9 +460,7 @@ export default function Parameter({
                         setFormData((prev) => ({ ...prev, active: checked }))
                       }
                     />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground pl-5">
                   Inactive parameters will not be available for scenarios
@@ -487,7 +479,7 @@ export default function Parameter({
                     <Calculator className="h-3.5 w-3.5 text-muted-foreground" />
                     Numerical
                   </Label>
-                  {formData?.numerical !== undefined && !isLoading ? (
+                  {formData?.numerical !== undefined ? (
                     <Switch
                       id="numerical"
                       checked={formData.numerical}
@@ -495,9 +487,7 @@ export default function Parameter({
                         setFormData((prev) => ({ ...prev, numerical: checked }))
                       }
                     />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground pl-5">
                   Parameter values must be numeric
@@ -516,7 +506,7 @@ export default function Parameter({
                     <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                     Require Documents
                   </Label>
-                  {formData?.document_parameter !== undefined && !isLoading ? (
+                  {formData?.document_parameter !== undefined ? (
                     <Switch
                       id="document_parameter"
                       checked={formData.document_parameter}
@@ -527,9 +517,7 @@ export default function Parameter({
                         }))
                       }
                     />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground pl-5">
                   Documents must be connected to this parameter
@@ -548,7 +536,7 @@ export default function Parameter({
                     <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
                     Practice
                   </Label>
-                  {formData?.practice_parameter !== undefined && !isLoading ? (
+                  {formData?.practice_parameter !== undefined ? (
                     <Switch
                       id="practice_parameter"
                       checked={formData.practice_parameter}
@@ -559,9 +547,7 @@ export default function Parameter({
                         }))
                       }
                     />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground pl-5">
                   This shows up as a custom practice option

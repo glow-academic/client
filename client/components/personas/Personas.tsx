@@ -48,7 +48,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -111,105 +110,62 @@ export default function Personas({
 
   // Use server-provided data directly
   const personasData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Extract data from response
   const personas = personasData?.personas || [];
-  const scenarioMapping = useMemo(
-    () => personasData?.scenario_mapping || {},
-    [personasData?.scenario_mapping]
-  );
-  const modelMapping = useMemo(
-    () => personasData?.model_mapping || {},
-    [personasData?.model_mapping]
-  );
 
-  // Create filter options from mappings
-  const scenarioOptions = useMemo(() => {
-    const entries = Object.entries(scenarioMapping);
-
-    // Count occurrences of each name to detect duplicates
-    const nameCounts = new Map<string, number>();
-    entries.forEach(([_, obj]) => {
-      nameCounts.set(obj.name, (nameCounts.get(obj.name) || 0) + 1);
-    });
-
-    // Track how many times we've seen each duplicate name
-    const nameIndices = new Map<string, number>();
-
-    return entries.map(([id, obj]) => {
-      const isDuplicate = (nameCounts.get(obj.name) || 0) > 1;
-
-      if (isDuplicate) {
-        // For duplicates, add a disambiguator using short ID
-        const index = (nameIndices.get(obj.name) || 0) + 1;
-        nameIndices.set(obj.name, index);
-
-        // Use last 8 characters of UUID for disambiguation
-        const shortId = id.slice(-8);
-        return {
-          value: id,
-          label: `${obj.name} (${shortId})`,
-        };
-      }
-
-      return {
-        value: id,
-        label: obj.name,
-      };
-    });
-  }, [scenarioMapping]);
-
-  const modelOptions = useMemo(() => {
-    return Object.entries(modelMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj.name,
-    }));
-  }, [modelMapping]);
-
-  const reasoningOptions = useMemo(
-    () => [
-      { value: "none", label: "None" },
-      { value: "minimal", label: "Minimal" },
-      { value: "low", label: "Low" },
-      { value: "medium", label: "Medium" },
-      { value: "high", label: "High" },
-    ],
-    []
-  );
-
-  const temperatureOptions = useMemo(
-    () => [
-      { value: "low", label: "Low (0.0-0.33)" },
-      { value: "medium", label: "Medium (0.34-0.66)" },
-      { value: "high", label: "High (0.67-1.0)" },
-    ],
-    []
-  );
-
-  // Build department options from mapping
-  const departmentMapping = useMemo(
+  // Use server-provided facet options directly (no client-side computation)
+  const scenarioOptions = useMemo(
     () =>
-      (personasData?.department_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [personasData?.department_mapping]
+      (personasData?.scenario_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [personasData?.scenario_options]
   );
-
-  const departmentOptions = useMemo(() => {
-    return Object.entries(departmentMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
-    }));
-  }, [departmentMapping]);
-
-  // Helper function to get temperature range
-  const getTemperatureRange = (temperature: number) => {
-    if (temperature <= 0.33) return "low";
-    if (temperature <= 0.66) return "medium";
-    return "high";
-  };
+  const modelOptions = useMemo(
+    () =>
+      (personasData?.model_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [personasData?.model_options]
+  );
+  const reasoningOptions = useMemo(
+    () =>
+      (personasData?.reasoning_options || []).map((val) => ({
+        value: val,
+        label: val.charAt(0).toUpperCase() + val.slice(1),
+      })),
+    [personasData?.reasoning_options]
+  );
+  const temperatureOptions = useMemo(
+    () =>
+      (personasData?.temperature_options || []).map((val) => ({
+        value: val,
+        label:
+          val === "low"
+            ? "Low (0.0-0.33)"
+            : val === "medium"
+              ? "Medium (0.34-0.66)"
+              : "High (0.67-1.0)",
+      })),
+    [personasData?.temperature_options]
+  );
+  const departmentOptions = useMemo(
+    () =>
+      (personasData?.department_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [personasData?.department_options]
+  );
 
   // Define table columns
   const columns: ColumnDef<(typeof personas)[number]>[] = useMemo(() => {
@@ -276,9 +232,9 @@ export default function Personas({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        // Return the temperature category for faceting and filtering
+        // Return the temperature category for faceting and filtering (from server)
         accessorFn: (row: (typeof personas)[number]) =>
-          getTemperatureRange(row.temperature),
+          row.temperature_category,
       },
       // Display column for Temperature - shows actual value
       {
@@ -287,8 +243,8 @@ export default function Personas({
         header: "Temperature",
         cell: ({ row }) => {
           const persona = row.original;
-          const temp = persona.temperature.toFixed(2);
-          return <div className="text-sm">{temp}</div>;
+          // Use server-provided temperature_display
+          return <div className="text-sm">{persona.temperature_display}</div>;
         },
       },
       // Hidden faceting column for Model (single ID) with correct ID
@@ -305,11 +261,11 @@ export default function Personas({
         header: "Model",
         cell: ({ row }) => {
           const persona = row.original;
-          const modelName = modelMapping[persona.model_id];
+          // Use server-provided model_name
           return (
             <div className="text-sm">
-              {modelName ? (
-                <span className="text-sm">{modelName.name}</span>
+              {persona.model_name ? (
+                <span className="text-sm">{persona.model_name}</span>
               ) : (
                 <span className="text-muted-foreground">No model</span>
               )}
@@ -334,7 +290,7 @@ export default function Personas({
         },
       },
     ];
-  }, [modelMapping]);
+  }, []);
 
   // Create table instance
   const table = useReactTable({
@@ -414,12 +370,6 @@ export default function Personas({
     router.push(`/create/personas/p/${id}`);
   };
 
-  const formatTemperature = (temp: number) => {
-    return temp.toFixed(2);
-  };
-
-  // no-op
-
   const renderPersonaCard = (persona: (typeof personas)[0]) => {
     // Get the icon component from the persona's stored icon name
     const IconComponent = getPersonaIconComponent(persona.icon) || Brain;
@@ -437,6 +387,8 @@ export default function Personas({
       <Card
         key={persona.persona_id}
         className="hover:shadow-md transition-shadow"
+        data-testid="persona-card"
+        data-persona-id={persona.persona_id}
       >
         <CardHeader>
           <div className="flex justify-between items-start">
@@ -479,7 +431,7 @@ export default function Personas({
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="text-xs cursor-help">
                         <Thermometer className="h-3 w-3 mr-1" />
-                        {formatTemperature(persona.temperature)}
+                        {persona.temperature_display}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -487,7 +439,7 @@ export default function Personas({
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                {!persona.active && (
+                {persona.is_inactive && (
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">Inactive</Badge>
                   </div>
@@ -496,13 +448,22 @@ export default function Personas({
             </div>
             <div className="flex gap-2 items-center">
               {persona.can_edit ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(persona.persona_id)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(persona.persona_id)}
+                      aria-label={`Edit persona ${persona.name}`}
+                      title={`Edit persona ${persona.name}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit Persona</p>
+                  </TooltipContent>
+                </Tooltip>
               ) : (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -510,6 +471,8 @@ export default function Personas({
                       variant="outline"
                       size="sm"
                       onClick={() => handleView(persona.persona_id)}
+                      aria-label={`View persona ${persona.name}`}
+                      title={`View persona ${persona.name}`}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -520,31 +483,49 @@ export default function Personas({
                 </Tooltip>
               )}
               {persona.can_duplicate && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    handleDuplicate(persona.persona_id, persona.name)
-                  }
-                  disabled={isDuplicating === persona.persona_id}
-                >
-                  <Copy className="h-4 w-4" />
-                  {isDuplicating === persona.persona_id ? "..." : ""}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDuplicate(persona.persona_id, persona.name)
+                      }
+                      disabled={isDuplicating === persona.persona_id}
+                      aria-label={`Duplicate persona ${persona.name}`}
+                      title={`Duplicate persona ${persona.name}`}
+                    >
+                      <Copy className="h-4 w-4" />
+                      {isDuplicating === persona.persona_id ? "..." : ""}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Duplicate Persona</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
               {persona.can_delete && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    handleDeleteClick(
-                      persona.persona_id,
-                      persona.name || "Unnamed Persona"
-                    )
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDeleteClick(
+                          persona.persona_id,
+                          persona.name || "Unnamed Persona"
+                        )
+                      }
+                      aria-label={`Delete persona ${persona.name}`}
+                      title={`Delete persona ${persona.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Delete Persona</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -561,69 +542,6 @@ export default function Personas({
       </Card>
     );
   };
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {/* Toolbar skeleton */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center space-x-2">
-            <Skeleton className="h-8 w-[150px] lg:w-[250px]" />
-            <Skeleton className="h-8 w-[120px]" />
-            <Skeleton className="h-8 w-[120px]" />
-            <Skeleton className="h-8 w-[120px]" />
-            <Skeleton className="h-8 w-[120px]" />
-          </div>
-        </div>
-
-        {/* Cards grid skeleton */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-8 w-8 rounded-lg" />
-                      <Skeleton className="h-6 w-2/3" />
-                    </div>
-                    <div className="mt-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-5 w-16" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <Skeleton className="h-9 w-9" />
-                    <Skeleton className="h-9 w-9" />
-                    <Skeleton className="h-9 w-9" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0 flex-grow flex flex-col">
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-3/4 mb-3" />
-                <div className="flex items-center gap-2 mt-3">
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Pagination skeleton */}
-        <div className="flex items-center justify-between px-2">
-          <Skeleton className="h-8 w-[100px]" />
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-8 w-[70px]" />
-            <Skeleton className="h-8 w-[70px]" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
@@ -649,6 +567,7 @@ export default function Personas({
                     nameColumn?.setFilterValue(event.target.value)
                   }
                   className="h-8 w-[150px] lg:w-[250px]"
+                  aria-label="Search personas"
                 />
               </div>
 

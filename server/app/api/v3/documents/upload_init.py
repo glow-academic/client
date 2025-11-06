@@ -1,14 +1,20 @@
 """Document upload init endpoint - v3 API following DHH principles."""
 
-import base64
+import json
+import os
+import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.services.document_service import DocumentService
+from app.extensions import UPLOAD_FOLDER
 from app.utils.http_cache import invalidate_tags
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
+
+# Directory for storing tus uploads in progress
+TUS_UPLOADS_DIR = os.path.join(UPLOAD_FOLDER, "tus_uploads")
+os.makedirs(TUS_UPLOADS_DIR, exist_ok=True)
 
 
 # Inline request/response schemas
@@ -42,24 +48,33 @@ async def upload_init(
     tags = ["documents"]  # From router tags
     
     try:
-        service = DocumentService(conn)
-        
-        # Get app prefix from environment
-        import os
-        app_prefix = os.getenv("APP_PREFIX", "").strip("/")
-        
+        # Generate upload ID
+        upload_id = str(uuid.uuid4())
+        upload_dir = os.path.join(TUS_UPLOADS_DIR, upload_id)
+        os.makedirs(upload_dir, exist_ok=True)
+
         # Create metadata
         metadata = {
             "filename": request.filename,
             "filetype": request.contentType,
         }
+
+        # Save metadata
+        with open(os.path.join(upload_dir, "metadata.json"), "w") as f:
+            json.dump(metadata, f)
+
+        # Create empty file
+        with open(os.path.join(upload_dir, "file"), "wb") as f:
+            pass
+
+        # Save upload info
+        with open(os.path.join(upload_dir, "info"), "w") as f:
+            f.write(f"length:{request.uploadLength}\noffset:0")
+
+        # Get app prefix from environment
+        app_prefix = os.getenv("APP_PREFIX", "").strip("/")
         
-        # Create TUS upload
-        upload_id, location, offset = await service.create_tus_upload(
-            str(request.uploadLength), metadata, app_prefix
-        )
-        
-        # Update location to v3 endpoint
+        # Generate location path
         if app_prefix:
             location_v3 = f"/{app_prefix}/api/v3/documents/upload/{upload_id}"
         else:

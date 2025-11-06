@@ -62,8 +62,6 @@ export interface PersonaPerformanceProps {
   validSimulationIds: string[];
   personaColors: Record<string, string>;
   hasDataAvailable: boolean;
-  isLoading: boolean;
-  isError: boolean;
   performanceStatus: "success" | "warning" | "danger" | "neutral";
   actionableInsights?: Record<string, string | null>; // Key: persona_id, Value: insight text
   thresholds: {
@@ -79,8 +77,6 @@ export default function PersonaPerformance({
   validSimulationIds,
   personaColors,
   hasDataAvailable,
-  isLoading,
-  isError,
   performanceStatus,
   actionableInsights,
   thresholds,
@@ -116,33 +112,6 @@ export default function PersonaPerformance({
     return "bg-red-50 dark:bg-red-950";
   };
 
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Persona Performance</CardTitle>
-          <CardDescription>Loading persona data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Persona Performance</CardTitle>
-          <CardDescription>Error loading persona data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-destructive">Failed to load persona data</div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!hasDataAvailable) {
     return (

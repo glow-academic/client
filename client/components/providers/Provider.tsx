@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -91,7 +90,6 @@ export default function Provider({
 
   // Use server-provided data (no React Query needed when server data is provided)
   const providerDetail = serverProviderDetail;
-  const isLoading = false; // No loading state when using server data
 
   // Extract body types from server action types for type safety
   type CreateProviderBody = CreateProviderIn extends { body: infer B }
@@ -284,7 +282,7 @@ export default function Provider({
         {/* Name Field */}
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
-          {formData.name !== undefined && !isLoading ? (
+          {formData.name !== undefined ? (
             <Input
               id="name"
               value={formData.name}
@@ -292,9 +290,7 @@ export default function Provider({
               placeholder="Enter provider name"
               className={errors.name ? "border-destructive" : ""}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.name && (
             <p className="text-sm text-destructive">{errors.name}</p>
           )}
@@ -303,7 +299,7 @@ export default function Provider({
         {/* Description Field */}
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          {formData.description !== undefined && !isLoading ? (
+          {formData.description !== undefined ? (
             <Textarea
               id="description"
               value={formData.description}
@@ -312,9 +308,7 @@ export default function Provider({
               rows={3}
               className={errors.description ? "border-destructive" : ""}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.description && (
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
@@ -323,7 +317,7 @@ export default function Provider({
         {/* API Key Field */}
         <div className="space-y-2">
           <Label htmlFor="apiKey">API Key</Label>
-          {formData.apiKey !== undefined && !isLoading ? (
+          {formData.apiKey !== undefined ? (
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Input
@@ -400,9 +394,7 @@ export default function Provider({
                 <p className="text-sm text-destructive">{errors.apiKey}</p>
               )}
             </div>
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
         </div>
 
         {/* Base URL Field */}
@@ -410,16 +402,14 @@ export default function Provider({
           <Label htmlFor="baseUrl">
             Base URL <span className="text-muted-foreground">(Optional)</span>
           </Label>
-          {formData.baseUrl !== undefined && !isLoading ? (
+          {formData.baseUrl !== undefined ? (
             <Input
               id="baseUrl"
               value={formData.baseUrl}
               onChange={(e) => handleInputChange("baseUrl", e.target.value)}
               placeholder="https://api.custom-provider.com/v1"
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           <p className="text-sm text-muted-foreground">
             Leave empty to use the default provider URL. Required for custom
             models.
@@ -432,13 +422,13 @@ export default function Provider({
             type="button"
             variant="outline"
             onClick={() => router.back()}
-            disabled={isSubmitting || isLoading}
+            disabled={isSubmitting}
           >
             Back
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isLoading}
+            disabled={isSubmitting}
             className="min-w-[120px]"
           >
             {isSubmitting ? (

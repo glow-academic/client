@@ -122,8 +122,6 @@ export interface ScenarioStatsProps {
   parameterMapping: Record<string, { name: string; description: string }>;
   /** Valid numeric parameter IDs */
   validNumericParameterIds: string[];
-  isLoading: boolean;
-  isError: boolean;
   actionableInsight?: string | null;
   thresholds: {
     danger: number;
@@ -137,8 +135,6 @@ export default function ScenarioStats({
   numericScenarioFacts,
   parameterMapping,
   validNumericParameterIds,
-  isLoading,
-  isError,
   actionableInsight,
   thresholds,
 }: ScenarioStatsProps) {
@@ -285,33 +281,6 @@ export default function ScenarioStats({
     [chartRows]
   );
 
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Scenario Performance Analysis</CardTitle>
-          <CardDescription>Loading scenario data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
-          Loading...
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Scenario Performance Analysis</CardTitle>
-          <CardDescription>Error loading data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-destructive">
-          Failed to load scenario data
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <TooltipProvider>

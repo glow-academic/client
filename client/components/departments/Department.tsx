@@ -13,7 +13,6 @@ import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
@@ -149,7 +148,6 @@ export default function Department({
   const departmentData = isEditMode
     ? departmentDetail
     : departmentDetailDefault;
-  const isLoading = false; // No loading state when using server data
 
   // Set breadcrumb context when department data is loaded
   useEffect(() => {
@@ -330,7 +328,7 @@ export default function Department({
         {/* Title Field */}
         <div className="space-y-2">
           <Label htmlFor="title">Title *</Label>
-          {formData?.title !== undefined && !isLoading ? (
+          {formData?.title !== undefined ? (
             <Input
               id="title"
               value={formData.title}
@@ -340,9 +338,7 @@ export default function Department({
               required
               disabled={isReadonly}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.title && (
             <p className="text-sm text-destructive">{errors.title}</p>
           )}
@@ -351,7 +347,7 @@ export default function Department({
         {/* Description Field */}
         <div className="space-y-2">
           <Label htmlFor="description">Description *</Label>
-          {formData?.description !== undefined && !isLoading ? (
+          {formData?.description !== undefined ? (
             <Textarea
               id="description"
               value={formData.description}
@@ -362,9 +358,7 @@ export default function Department({
               required
               disabled={isReadonly}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.description && (
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
@@ -381,7 +375,7 @@ export default function Department({
                 <Power className="h-3.5 w-3.5 text-muted-foreground" />
                 Active
               </Label>
-              {formData?.active !== undefined && !isLoading ? (
+              {formData?.active !== undefined ? (
                 <Switch
                   id="active"
                   checked={formData.active ?? true}
@@ -390,9 +384,7 @@ export default function Department({
                   }
                   disabled={isReadonly}
                 />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
+              ) : null}
             </div>
             <p className="text-xs text-muted-foreground pl-5">
               Inactive departments will not be visible to users
@@ -525,13 +517,13 @@ export default function Department({
             type="button"
             variant="outline"
             onClick={() => router.back()}
-            disabled={isSubmitting || isLoading}
+            disabled={isSubmitting}
           >
             Back
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isLoading || isReadonly}
+            disabled={isSubmitting || isReadonly}
             className="min-w-[120px]"
           >
             {isSubmitting ? (

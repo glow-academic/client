@@ -1,14 +1,18 @@
 """Document upload chunk endpoint - v3 API following DHH principles."""
 
 import base64
+import os
 from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.services.document_service import DocumentService
+from app.extensions import UPLOAD_FOLDER
 from app.utils.http_cache import invalidate_tags
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
+
+# Directory for storing tus uploads in progress
+TUS_UPLOADS_DIR = os.path.join(UPLOAD_FOLDER, "tus_uploads")
 
 
 # Inline request/response schemas
@@ -41,30 +45,40 @@ async def upload_chunk(
     tags = ["documents"]  # From router tags
     
     try:
-        service = DocumentService(conn)
-        
+        upload_dir = os.path.join(TUS_UPLOADS_DIR, request.uploadId)
+
+        if not os.path.exists(upload_dir):
+            raise HTTPException(status_code=404, detail="Upload not found")
+
+        # Read info file
+        info = {}
+        with open(os.path.join(upload_dir, "info")) as f:
+            for line in f:
+                k, v = line.strip().split(":", 1)
+                info[k] = v
+
+        # Check offset
+        if str(request.offset) != info.get("offset"):
+            raise HTTPException(status_code=409, detail="Offset mismatch")
+
         # Decode base64 chunk
         try:
             chunk_data = base64.b64decode(request.chunk)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid base64 chunk data: {str(e)}")
-        
-        # Append chunk
-        success, new_offset, error = service.append_tus_chunk(
-            request.uploadId, chunk_data, str(request.offset)
-        )
-        
-        if not success:
-            if error == "Upload not found":
-                raise HTTPException(status_code=404, detail="Upload not found")
-            elif error == "Offset mismatch":
-                raise HTTPException(status_code=409, detail="Offset mismatch")
-            else:
-                raise HTTPException(status_code=500, detail=error or "Failed to write chunk")
-        
+
+        # Append to file
+        with open(os.path.join(upload_dir, "file"), "ab") as f:
+            f.write(chunk_data)
+
+        # Update offset
+        new_offset = int(info.get("offset", "0")) + len(chunk_data)
+        with open(os.path.join(upload_dir, "info"), "w") as f:
+            f.write(f"length:{info.get('length', '0')}\noffset:{new_offset}")
+
         result_data = UploadChunkResponse(
             success=True,
-            offset=new_offset or request.offset,
+            offset=new_offset,
             message="Chunk uploaded successfully",
         )
         

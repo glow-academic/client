@@ -2194,7 +2194,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GenerateCertificateRequest"
+                "$ref": "#/components/schemas/app__schemas__documents__GenerateCertificateRequest"
               }
             }
           },
@@ -9423,6 +9423,97 @@
         ]
       }
     },
+    "/api/v3/documents/download/{document_id}": {
+      "get": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Download Document",
+        "description": "Download a document by ID.",
+        "operationId": "download_document_api_v3_documents_download__document_id__get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
+    "/api/v3/documents/certificate": {
+      "post": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Generate Certificate",
+        "description": "Generate a certificate PDF/text for a profile.",
+        "operationId": "generate_certificate_api_v3_documents_certificate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v3__documents__certificate__GenerateCertificateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
     "/api/v3/rubrics/list": {
       "post": {
         "tags": [
@@ -11539,6 +11630,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
+      }
+    },
+    "/api/v3/logs/health": {
+      "get": {
+        "tags": [
+          "v3",
+          "logs"
+        ],
+        "summary": "Get System Health",
+        "description": "Comprehensive system health check endpoint.\nTests all 9 system components with real functionality checks.\nNo authentication required (for monitoring tools).",
+        "operationId": "get_system_health_api_v3_logs_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
                 }
               }
             }
@@ -15780,34 +15898,6 @@
         "title": "FinalizeUploadResponse",
         "description": "Response from finalizing an upload."
       },
-      "GenerateCertificateRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "profileName": {
-            "type": "string",
-            "title": "Profilename"
-          },
-          "cohortData": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Cohortdata",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId",
-          "profileName"
-        ],
-        "title": "GenerateCertificateRequest",
-        "description": "Request to generate a certificate."
-      },
       "GenerateScenarioAIRequest": {
         "properties": {
           "departmentId": {
@@ -17246,117 +17336,6 @@
         ],
         "title": "PersonaDetailRequest",
         "description": "Request to get persona details."
-      },
-      "PersonaItem": {
-        "properties": {
-          "persona_id": {
-            "type": "string",
-            "title": "Persona Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "num_scenarios": {
-            "type": "integer",
-            "title": "Num Scenarios"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "persona_id",
-          "name",
-          "description",
-          "color",
-          "icon",
-          "department_ids",
-          "scenario_ids",
-          "model_id",
-          "reasoning",
-          "temperature",
-          "active",
-          "num_scenarios",
-          "can_edit",
-          "can_duplicate",
-          "can_delete"
-        ],
-        "title": "PersonaItem",
-        "description": "Individual persona item in the response."
       },
       "PersonaMappingItem": {
         "properties": {
@@ -20818,7 +20797,9 @@
             "anyOf": [
               {
                 "items": {
-                  "additionalProperties": true,
+                  "additionalProperties": {
+                    "type": "string"
+                  },
                   "type": "object"
                 },
                 "type": "array"
@@ -24014,6 +23995,29 @@
         "title": "BulkUpdateDocumentsRequest",
         "description": "Request to bulk update documents."
       },
+      "app__api__v3__documents__certificate__GenerateCertificateRequest": {
+        "properties": {
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "cohortData": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Cohortdata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileName",
+          "cohortData"
+        ],
+        "title": "GenerateCertificateRequest",
+        "description": "Request to generate certificate."
+      },
       "app__api__v3__documents__list__DocumentItem": {
         "properties": {
           "document_id": {
@@ -26052,11 +26056,154 @@
         "title": "DuplicatePersonaResponse",
         "description": "Response from duplicate persona."
       },
+      "app__api__v3__personas__list__PersonaItem": {
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "title": "Persona Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature"
+          },
+          "temperature_display": {
+            "type": "string",
+            "title": "Temperature Display"
+          },
+          "temperature_category": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Temperature Category"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "is_inactive": {
+            "type": "boolean",
+            "title": "Is Inactive"
+          },
+          "num_scenarios": {
+            "type": "integer",
+            "title": "Num Scenarios"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name",
+          "description",
+          "color",
+          "icon",
+          "department_ids",
+          "scenario_ids",
+          "model_id",
+          "model_name",
+          "reasoning",
+          "temperature",
+          "temperature_display",
+          "temperature_category",
+          "active",
+          "is_inactive",
+          "num_scenarios",
+          "can_edit",
+          "can_duplicate",
+          "can_delete"
+        ],
+        "title": "PersonaItem",
+        "description": "Individual persona item in the response."
+      },
       "app__api__v3__personas__list__PersonasListResponse": {
         "properties": {
           "personas": {
             "items": {
-              "$ref": "#/components/schemas/PersonaItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__list__PersonaItem"
             },
             "type": "array",
             "title": "Personas"
@@ -26081,6 +26228,50 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "scenario_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenario Options"
+          },
+          "model_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Model Options"
+          },
+          "reasoning_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasoning Options"
+          },
+          "temperature_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Temperature Options"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
           }
         },
         "type": "object",
@@ -26088,7 +26279,12 @@
           "personas",
           "scenario_mapping",
           "model_mapping",
-          "department_mapping"
+          "department_mapping",
+          "scenario_options",
+          "model_options",
+          "reasoning_options",
+          "temperature_options",
+          "department_options"
         ],
         "title": "PersonasListResponse",
         "description": "Response for personas list endpoint."
@@ -32603,6 +32799,34 @@
         "title": "DocumentsListResponse",
         "description": "Response for documents list endpoint."
       },
+      "app__schemas__documents__GenerateCertificateRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "cohortData": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Cohortdata",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId",
+          "profileName"
+        ],
+        "title": "GenerateCertificateRequest",
+        "description": "Request to generate a certificate."
+      },
       "app__schemas__documents__UpdateDocumentRequest": {
         "properties": {
           "documentId": {
@@ -34184,11 +34408,122 @@
         "title": "PersonaDetailResponse",
         "description": "Detailed persona response with all fields and metadata."
       },
+      "app__schemas__personas__PersonaItem": {
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "title": "Persona Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "num_scenarios": {
+            "type": "integer",
+            "title": "Num Scenarios"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "persona_id",
+          "name",
+          "description",
+          "color",
+          "icon",
+          "department_ids",
+          "scenario_ids",
+          "model_id",
+          "reasoning",
+          "temperature",
+          "active",
+          "num_scenarios",
+          "can_edit",
+          "can_duplicate",
+          "can_delete"
+        ],
+        "title": "PersonaItem",
+        "description": "Individual persona item in the response."
+      },
       "app__schemas__personas__PersonasListResponse": {
         "properties": {
           "personas": {
             "items": {
-              "$ref": "#/components/schemas/PersonaItem"
+              "$ref": "#/components/schemas/app__schemas__personas__PersonaItem"
             },
             "type": "array",
             "title": "Personas"

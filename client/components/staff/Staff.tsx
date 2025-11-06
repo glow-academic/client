@@ -21,7 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -121,7 +120,6 @@ export default function Staff({
 
   // Use server-provided data directly
   const staffData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Selection state
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
@@ -243,18 +241,6 @@ export default function Staff({
     { value: "never", label: "Never Active" },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">Loading staff members...</div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header with summary stats - 5 KPI cards */}
@@ -262,8 +248,6 @@ export default function Staff({
         <ActiveUsersKPI
           currentValue={counts.active}
           trendData={trendData["active"] || []}
-          isLoading={isLoading}
-          isError={false}
         />
         <AdminUsersKPI
           currentValue={
@@ -272,26 +256,18 @@ export default function Staff({
               : counts.admin
           }
           trendData={trendData["admin"] || []}
-          isLoading={isLoading}
-          isError={false}
         />
         <InstructionalUsersKPI
           currentValue={counts.instructional}
           trendData={trendData["instructional"] || []}
-          isLoading={isLoading}
-          isError={false}
         />
         <TAUsersKPI
           currentValue={counts.ta}
           trendData={trendData["ta"] || []}
-          isLoading={isLoading}
-          isError={false}
         />
         <TotalRequestsKPI
           currentValue={counts.totalRequests}
           trendData={trendData["total_requests"] || []}
-          isLoading={isLoading}
-          isError={false}
         />
       </div>
 

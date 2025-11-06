@@ -61,9 +61,6 @@ export default function Dashboard({
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
   const bundle = dashboardData;
-  const isLoading = false;
-  const isError = false;
-  const error = "";
 
   // Get thresholds from server (or use defaults if not available)
   const thresholds = useMemo(
@@ -114,8 +111,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.averageScore.hasData}
         trendAnalysis={trendAnalysis.averageScore}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <CompletionPercentage
         key="completion-percentage"
@@ -124,8 +119,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.completionPercentage.hasData}
         trendAnalysis={trendAnalysis.completion}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <FirstAttemptPassRate
         key="first-attempt-pass-rate"
@@ -134,8 +127,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.firstAttemptPassRate.hasData}
         trendAnalysis={trendAnalysis.passRate}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <HighestScore
         key="highest-score"
@@ -144,8 +135,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.highestScore.hasData}
         trendAnalysis={trendAnalysis.highestScore}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <MessagesPerSession
         key="messages-per-session"
@@ -156,8 +145,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.messagesPerSession.hasData}
         trendAnalysis={trendAnalysis.messages}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <PersonaResponseTimes
         key="persona-response-times"
@@ -166,8 +153,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.personaResponseTimes.hasData}
         trendAnalysis={trendAnalysis.responseTime}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <SessionEfficiency
         key="session-efficiency"
@@ -176,8 +161,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.sessionEfficiency.hasData}
         trendAnalysis={trendAnalysis.sessionEfficiency}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <StagnationRate
         key="stagnation-rate"
@@ -186,8 +169,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.stagnationRate.hasData}
         trendAnalysis={trendAnalysis.stagnationRate}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <TimeSpent
         key="time-spent"
@@ -199,8 +180,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.timeSpent.hasData}
         trendAnalysis={trendAnalysis.timeSpent}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <TotalAttempts
         key="total-attempts"
@@ -209,11 +188,9 @@ export default function Dashboard({
         hasDataAvailable={bundle.header.totalAttempts.hasData}
         trendAnalysis={trendAnalysis.totalAttempts}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
     ];
-  }, [bundle, trendAnalysis, isLoading, isError, thresholds]);
+  }, [bundle, trendAnalysis, thresholds]);
 
   // Build primary components from bundle data
   const primaryComponents = useMemo(() => {
@@ -289,8 +266,6 @@ export default function Dashboard({
         hasDataAvailable={bundle.primary.growthData.chartData.length > 0}
         actionableInsight={bundle.insights.growth ?? null}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <PersonaPerformance
         key="persona-performance"
@@ -305,8 +280,6 @@ export default function Dashboard({
         }
         actionableInsights={bundle.insights.persona}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
         performanceStatus="neutral"
       />,
       <RubricHeatmap
@@ -317,11 +290,9 @@ export default function Dashboard({
         hasDataAvailable={bundle.primary.rubricHeatmap.matrices.length > 0}
         actionableInsight={bundle.insights.rubric_heatmap ?? null}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
     ];
-  }, [bundle, isLoading, isError, thresholds]);
+  }, [bundle, thresholds]);
 
   // Build secondary components from bundle data
   const secondaryComponents = useMemo(() => {
@@ -419,8 +390,6 @@ export default function Dashboard({
         profileId={profileId}
         actionableInsights={bundle.insights.cohort}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <AttemptImprovement
         key="attempt-improvement"
@@ -432,8 +401,6 @@ export default function Dashboard({
         }
         actionableInsight={bundle.insights.attempt_improvement ?? null}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <SkillPerformance
         key="skill-performance"
@@ -442,11 +409,9 @@ export default function Dashboard({
         validRubricIds={bundle.secondary.skillPerformance.validRubricIds}
         actionableInsight={bundle.insights.skill_performance ?? null}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
     ];
-  }, [bundle, profileId, isLoading, isError, thresholds]);
+  }, [bundle, profileId, thresholds]);
 
   // Build footer components from bundle data
   const leftFooterComponents = useMemo(() => {
@@ -466,8 +431,6 @@ export default function Dashboard({
         validParameterIds={bundle.footer.scenarioPerformance.validParameterIds}
         actionableInsight={bundle.insights.scenario_performance ?? null}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <ScenarioStats
         key="scenario-stats"
@@ -479,11 +442,9 @@ export default function Dashboard({
         }
         actionableInsight={bundle.insights.scenario_stats ?? null}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
     ];
-  }, [bundle, isLoading, isError, thresholds]);
+  }, [bundle, thresholds]);
 
   const rightFooterComponents = useMemo(() => {
     if (!bundle) return [];
@@ -498,8 +459,6 @@ export default function Dashboard({
         simulationMapping={bundle.simulation_mapping}
         actionableInsight={bundle.insights.simulation_performance ?? null}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
       <SimulationComposition
         key="simulation-composition"
@@ -519,11 +478,9 @@ export default function Dashboard({
         }
         actionableInsight={bundle.insights.simulation_composition ?? null}
         thresholds={thresholds}
-        isLoading={isLoading}
-        isError={isError}
       />,
     ];
-  }, [bundle, isLoading, isError, thresholds]);
+  }, [bundle, thresholds]);
 
   // Header pagination logic
   const HEADER_CARDS_PER_PAGE = 5;
@@ -603,26 +560,6 @@ export default function Dashboard({
     effectiveProfile?.role === "instructional" ||
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "superadmin";
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground">Loading dashboard data...</div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-destructive">
-          Error loading dashboard: {error?.toString() || "Unknown error"}
-        </div>
-      </div>
-    );
-  }
 
   // Show no data state
   if (!bundle) {
@@ -984,7 +921,6 @@ export default function Dashboard({
         showExport={false}
         showArchive={canArchive}
         singleProfile={false}
-        isLoading={isLoading}
       />
     </div>
   );

@@ -3,9 +3,10 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db, transaction
+from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 
@@ -30,75 +31,40 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateScenarioResponse)
 async def duplicate_scenario(
     request: DuplicateScenarioRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateScenarioResponse:
     """Duplicate a scenario."""
+    tags = ["scenarios"]  # From router tags
+    
     try:
-        async with transaction(conn):
-            # Get original scenario
-            get_sql = load_sql("sql/v3/scenarios/get_scenario_for_duplicate.sql")
-            original = await conn.fetchrow(get_sql, request.scenarioId)
+        # Use single comprehensive SQL file (DHH style)
+        duplicate_sql = load_sql("sql/v3/scenarios/duplicate_scenario.sql")
+        new_scenario_row = await conn.fetchrow(duplicate_sql, request.scenarioId)
 
-            if not original:
-                raise ValueError(f"Scenario not found: {request.scenarioId}")
+        if not new_scenario_row:
+            raise HTTPException(status_code=404, detail=f"Scenario {request.scenarioId} not found")
 
-            # Create duplicate
-            insert_sql = load_sql("sql/v3/scenarios/insert_duplicate_scenario.sql")
-            new_scenario = await conn.fetchrow(
-                insert_sql,
-                original["name"],
-                original.get("hints_enabled", False),
-                original.get("objectives_enabled", True),
-                original.get("image_input_enabled", False),
-                original.get("copy_paste_allowed", False),
-                original.get("input_guardrail_enabled", False),
-                original.get("output_guardrail_enabled", False),
-            )
+        new_scenario_id = new_scenario_row["scenario_id"]
 
-            if not new_scenario:
-                raise ValueError("Failed to create duplicate scenario")
+        # Get original name for message
+        original_name = await conn.fetchval(
+            "SELECT name FROM scenarios WHERE id = $1", request.scenarioId
+        )
 
-            new_scenario_id = str(new_scenario["id"])
-
-            # Insert self-referencing edge in scenario_tree
-            tree_sql = load_sql("sql/v3/scenarios/insert_scenario_tree_edge.sql")
-            await conn.execute(tree_sql, new_scenario_id, new_scenario_id, True)
-
-            # Copy problem statements
-            copy_ps_sql = load_sql("sql/v3/scenarios/copy_scenario_problem_statements.sql")
-            await conn.execute(copy_ps_sql, new_scenario_id, request.scenarioId)
-
-            # Copy persona relationships
-            copy_persona_sql = load_sql("sql/v3/scenarios/copy_scenario_personas.sql")
-            await conn.execute(copy_persona_sql, new_scenario_id, request.scenarioId)
-
-            # Copy document relationships
-            copy_docs_sql = load_sql("sql/v3/scenarios/copy_scenario_documents.sql")
-            await conn.execute(copy_docs_sql, new_scenario_id, request.scenarioId)
-
-            # Copy objectives
-            copy_obj_sql = load_sql("sql/v3/scenarios/copy_scenario_objectives.sql")
-            await conn.execute(copy_obj_sql, new_scenario_id, request.scenarioId)
-
-            # Copy parameters
-            copy_params_sql = load_sql("sql/v3/scenarios/copy_scenario_parameters.sql")
-            await conn.execute(copy_params_sql, new_scenario_id, request.scenarioId)
-
-            result_data = DuplicateScenarioResponse(
-                success=True,
-                scenarioId=new_scenario_id,
-                message=f"Scenario '{original['name']}' duplicated successfully",
-            )
-            
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
-            return result_data
+        result_data = DuplicateScenarioResponse(
+            success=True,
+            scenarioId=new_scenario_id,
+            message=f"Scenario '{original_name}' duplicated successfully",
+        )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -87,7 +86,6 @@ export default function Model({
   // Use server-provided data (no React Query needed when server data is provided)
   const providerDetail = serverProviderDetail;
   const modelDetail = serverModelDetail;
-  const isLoading = false; // No loading state when using server data
 
   // Extract body types from server action types for type safety
   type CreateModelBody = CreateModelIn extends { body: infer B } ? B : never;
@@ -255,7 +253,7 @@ export default function Model({
         {/* Basic Model Information */}
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
-          {formData.name !== undefined && !isLoading ? (
+          {formData.name !== undefined ? (
             <Input
               id="name"
               value={formData.name}
@@ -263,9 +261,7 @@ export default function Model({
               placeholder="Enter model name"
               className={errors.name ? "border-destructive" : ""}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.name && (
             <p className="text-sm text-destructive">{errors.name}</p>
           )}
@@ -273,7 +269,7 @@ export default function Model({
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          {formData.description !== undefined && !isLoading ? (
+          {formData.description !== undefined ? (
             <Textarea
               id="description"
               value={formData.description}
@@ -282,9 +278,7 @@ export default function Model({
               rows={3}
               className={errors.description ? "border-destructive" : ""}
             />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+          ) : null}
           {errors.description && (
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
@@ -302,7 +296,7 @@ export default function Model({
                 <Power className="h-3.5 w-3.5 text-muted-foreground" />
                 Active
               </Label>
-              {formData.active !== undefined && !isLoading ? (
+              {formData.active !== undefined ? (
                 <Switch
                   id="active"
                   checked={formData.active}
@@ -310,9 +304,7 @@ export default function Model({
                     handleInputChange("active", checked)
                   }
                 />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
+              ) : null}
             </div>
             <p className="text-xs text-muted-foreground pl-5">
               Inactive models will not be available for selection
@@ -329,7 +321,7 @@ export default function Model({
                 <Settings className="h-3.5 w-3.5 text-muted-foreground" />
                 Custom Model
               </Label>
-              {formData.customModel !== undefined && !isLoading ? (
+              {formData.customModel !== undefined ? (
                 <Switch
                   id="customModel"
                   checked={formData.customModel}
@@ -337,9 +329,7 @@ export default function Model({
                     handleInputChange("customModel", checked)
                   }
                 />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
+              ) : null}
             </div>
             <p className="text-xs text-muted-foreground pl-5">
               Uses the base URL from the provider
@@ -351,7 +341,7 @@ export default function Model({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="inputPpm">Input price (USD per 1M tokens)</Label>
-            {formData.inputPpm !== undefined && !isLoading ? (
+            {formData.inputPpm !== undefined ? (
               <Input
                 id="inputPpm"
                 type="number"
@@ -367,16 +357,14 @@ export default function Model({
                 placeholder="e.g. 3.00"
                 className={errors.inputPpm ? "border-destructive" : ""}
               />
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
+            ) : null}
             {errors.inputPpm && (
               <p className="text-sm text-destructive">{errors.inputPpm}</p>
             )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="outputPpm">Output price (USD per 1M tokens)</Label>
-            {formData.outputPpm !== undefined && !isLoading ? (
+            {formData.outputPpm !== undefined ? (
               <Input
                 id="outputPpm"
                 type="number"
@@ -392,9 +380,7 @@ export default function Model({
                 placeholder="e.g. 15.00"
                 className={errors.outputPpm ? "border-destructive" : ""}
               />
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
+            ) : null}
             {errors.outputPpm && (
               <p className="text-sm text-destructive">{errors.outputPpm}</p>
             )}
@@ -407,13 +393,13 @@ export default function Model({
             type="button"
             variant="outline"
             onClick={() => router.back()}
-            disabled={isSubmitting || isLoading}
+            disabled={isSubmitting}
           >
             Back
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isLoading}
+            disabled={isSubmitting}
             className="min-w-[120px]"
           >
             {isSubmitting ? (

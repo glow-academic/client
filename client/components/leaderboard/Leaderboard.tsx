@@ -78,8 +78,6 @@ export default function Leaderboard({
 
   // Data is always available from server-side fetch
   const isError = false;
-  const isLoadingData = false;
-  const isProfileLoading = false;
 
   // Randomize order on mount
   const [seed, setSeed] = useState(0);
@@ -497,17 +495,6 @@ export default function Leaderboard({
     }
     return [];
   }, [hydratedRows]);
-
-  if (isProfileLoading || isLoadingData) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading leaderboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (isError || !hydratedRows.length) {
     return (

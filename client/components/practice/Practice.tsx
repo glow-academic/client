@@ -23,7 +23,6 @@ import { useWebSocket } from "@/contexts/websocket-context";
 // Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
 // This functionality needs to be re-implemented or removed
 import SimulationHistory from "../common/history/SimulationHistory";
-import { Skeleton } from "../ui/skeleton";
 import { PracticeCustomizeDialog } from "./PracticeCustomizeDialog";
 import PracticeZone from "./PracticeZone";
 
@@ -61,8 +60,6 @@ export default function Practice({ practiceData }: PracticeProps) {
   const bundle = practiceData;
   const practiceOverview = bundle;
   const historyData = practiceData?.history;
-  const isHistoryLoading = false;
-  const isPracticeOverviewLoading = false;
 
   // Extract entity mappings for PracticeCustomizeDialog (memoized to prevent reference changes)
   const personaMapping = useMemo(
@@ -203,153 +200,8 @@ export default function Practice({ practiceData }: PracticeProps) {
     ]
   );
 
-  // Loading state
-  if (isPracticeOverviewLoading || isHistoryLoading) {
-    return (
-      <div className="space-y-12">
-        {/* Header skeleton */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between space-y-2">
-            <div>
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-4 w-64" />
-            </div>
-          </div>
-        </div>
-
-        {/* Practice Zone skeleton */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card
-                key={i}
-                className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
-              >
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <Skeleton className="h-12 w-12 rounded-xl" />
-                    <div className="text-right space-y-1">
-                      <Skeleton className="h-3 w-12" />
-                      <Skeleton className="h-3 w-10" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Skeleton className="h-6 w-32 mb-2" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <Skeleton className="h-3 w-16" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Skeleton className="h-10 w-full rounded-lg" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* History Section skeleton - only show if not guest */}
-        <div className="space-y-2">
-          <div className="space-y-4">
-            <Skeleton className="h-6 w-32" />
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
-                >
-                  <Skeleton className="h-4 w-24" />
-                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <Skeleton className="h-2 w-1/3 rounded-full" />
-                  </div>
-                  <Skeleton className="h-6 w-16" />
-                  <Skeleton className="h-4 w-12" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (!effectiveProfile) {
-    return (
-      <div className="space-y-12">
-        {/* Header skeleton */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between space-y-2">
-            <div>
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-4 w-64" />
-            </div>
-          </div>
-        </div>
-
-        {/* Practice Zone skeleton */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card
-                key={i}
-                className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
-              >
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <Skeleton className="h-12 w-12 rounded-xl" />
-                    <div className="text-right space-y-1">
-                      <Skeleton className="h-3 w-12" />
-                      <Skeleton className="h-3 w-10" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Skeleton className="h-6 w-32 mb-2" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <Skeleton className="h-3 w-16" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Skeleton className="h-10 w-full rounded-lg" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* History Section skeleton - only show if not guest */}
-        <div className="space-y-2">
-          <div className="space-y-4">
-            <Skeleton className="h-6 w-32" />
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
-                >
-                  <Skeleton className="h-4 w-24" />
-                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <Skeleton className="h-2 w-1/3 rounded-full" />
-                  </div>
-                  <Skeleton className="h-6 w-16" />
-                  <Skeleton className="h-4 w-12" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // 4. RENDER NEW COMPONENT STRUCTURE
@@ -423,7 +275,6 @@ export default function Practice({ practiceData }: PracticeProps) {
               showExport={false}
               showArchive={false}
               singleProfile={true}
-              isLoading={isHistoryLoading}
             />
           </div>
         )}

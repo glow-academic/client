@@ -35,8 +35,6 @@ export interface CompletionPercentageProps {
   completionPercentage: number;
   completionTrend: TrendData[];
   hasDataAvailable: boolean;
-  isLoading: boolean;
-  isError: boolean;
   trendAnalysis: string | null;
   thresholds: {
     danger: number;
@@ -82,8 +80,6 @@ export default function CompletionPercentage({
   completionPercentage,
   completionTrend,
   hasDataAvailable,
-  isLoading,
-  isError,
   trendAnalysis,
   thresholds,
 }: CompletionPercentageProps) {
@@ -96,37 +92,6 @@ export default function CompletionPercentage({
     if (completionPercentage < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
   })();
-
-  // UI states
-  if (isLoading) {
-    return (
-      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">
-            Completion Percentage
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-8 w-28 bg-gray-200 dark:bg-gray-800 rounded" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="border-red-200 bg-red-50 dark:bg-red-950">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-red-700">
-            Completion Percentage
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-red-700">Failed to load.</div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Render
   return (

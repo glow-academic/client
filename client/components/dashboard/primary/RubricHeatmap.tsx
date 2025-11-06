@@ -56,7 +56,7 @@ type RubricMatrixPackage = {
 
 type RubricMapping = Record<string, { name: string; description: string }>;
 
-import { Info, Loader2, TrendingUp } from "lucide-react";
+import { Info, TrendingUp } from "lucide-react";
 import {
   useCallback,
   useDeferredValue,
@@ -70,8 +70,6 @@ export interface RubricHeatmapProps {
   rubricMapping: RubricMapping;
   validRubricIds: string[];
   hasDataAvailable: boolean;
-  isLoading: boolean;
-  isError: boolean;
   actionableInsight?: string | null | undefined;
   thresholds: {
     danger: number;
@@ -85,8 +83,6 @@ export default function RubricHeatmap({
   rubricMapping,
   validRubricIds,
   hasDataAvailable,
-  isLoading,
-  isError,
   actionableInsight,
   thresholds,
 }: RubricHeatmapProps) {
@@ -164,56 +160,6 @@ export default function RubricHeatmap({
 
   const thresholdStatus = getThresholdStatus();
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-4 w-4" />
-            Skill Area Correlation Matrix
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Statistical correlation between skill areas (standard groups)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1 p-3">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading correlation data...
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show error state
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Skill Area Correlation Matrix</CardTitle>
-          <CardDescription>Error loading correlation data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-destructive">
-            Failed to load correlation data
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Show no data state
   if (!hasDataAvailable || !deferredMatrix) {

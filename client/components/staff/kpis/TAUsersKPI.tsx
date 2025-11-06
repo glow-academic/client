@@ -34,8 +34,6 @@ type TrendData = {
 export interface TAUsersKPIProps {
   currentValue: number;
   trendData: TrendData[];
-  isLoading: boolean;
-  isError: boolean;
 }
 
 const COLOR_CONFIG = {
@@ -49,8 +47,6 @@ const COLOR_CONFIG = {
 export default function TAUsersKPI({
   currentValue,
   trendData,
-  isLoading,
-  isError,
 }: TAUsersKPIProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -63,33 +59,6 @@ export default function TAUsersKPI({
       year: "numeric",
     });
   };
-
-  // UI states
-  if (isLoading) {
-    return (
-      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">TAs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-8 w-20 bg-gray-200 dark:bg-gray-800 rounded" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="border-red-200 bg-red-50 dark:bg-red-950">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-red-700">TAs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-red-700">Failed to load.</div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Render
   return (

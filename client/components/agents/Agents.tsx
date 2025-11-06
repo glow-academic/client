@@ -295,18 +295,6 @@ export default function Agents({
     </Card>
   );
 
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">Loading agents...</div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
   const reasoningColumn = table.getColumn("reasoning");

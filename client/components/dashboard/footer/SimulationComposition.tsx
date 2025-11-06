@@ -104,8 +104,6 @@ export interface SimulationCompositionProps {
   >;
   /** Valid simulation IDs */
   validSimulationIds: string[];
-  isLoading: boolean;
-  isError: boolean;
   actionableInsight?: string | null;
   thresholds: {
     danger: number;
@@ -122,8 +120,6 @@ export default function SimulationComposition({
   parameterMapping,
   parameterItemMapping,
   validSimulationIds: _validSimulationIds,
-  isLoading,
-  isError,
   actionableInsight,
   thresholds,
 }: SimulationCompositionProps) {
@@ -349,49 +345,6 @@ export default function SimulationComposition({
         return isHigh ? "Top 25%" : "Bottom 25%";
     }
   };
-
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Simulation Composition
-          </CardTitle>
-          <CardDescription>High vs low performing simulations</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-            <p className="text-sm text-muted-foreground">
-              Loading simulation composition...
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Simulation Composition
-          </CardTitle>
-          <CardDescription>High vs low performing simulations</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">
-              Failed to load simulation composition data.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">

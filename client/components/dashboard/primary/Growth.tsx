@@ -78,8 +78,6 @@ export interface GrowthProps {
   availableMetrics: GrowthMetric[];
   windowAverages: GrowthDataResponse["windowAverages"];
   hasDataAvailable: boolean;
-  isLoading: boolean;
-  isError: boolean;
   actionableInsight: string | null;
   thresholds: {
     danger: number;
@@ -93,8 +91,6 @@ export default function Growth({
   availableMetrics,
   windowAverages,
   hasDataAvailable,
-  isLoading,
-  isError,
   actionableInsight,
   thresholds,
 }: GrowthProps) {
@@ -171,33 +167,6 @@ export default function Growth({
     [actionableInsight]
   );
 
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Growth Analytics</CardTitle>
-          <CardDescription>Loading growth data...</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle>Growth Analytics</CardTitle>
-          <CardDescription>Error loading growth data</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-destructive">Failed to load growth data</div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!hasDataAvailable) {
     return (

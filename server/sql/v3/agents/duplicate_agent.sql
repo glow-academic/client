@@ -1,5 +1,6 @@
 WITH source_agent AS (
     SELECT 
+        a.id as source_id,
         a.name,
         a.description,
         a.temperature,
@@ -39,6 +40,18 @@ link_prompt AS (
     SELECT na.agent_id::uuid, np.prompt_id, true, NOW(), NOW()
     FROM new_agent na
     CROSS JOIN new_prompt np
+),
+copy_departments AS (
+    INSERT INTO agent_departments (agent_id, department_id, active, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        ad.department_id,
+        ad.active,
+        NOW(),
+        NOW()
+    FROM source_agent sa
+    JOIN agent_departments ad ON ad.agent_id = sa.source_id AND ad.active = true
+    CROSS JOIN new_agent na
 )
 SELECT agent_id FROM new_agent
 

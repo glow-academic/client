@@ -82,7 +82,7 @@ export default function AttemptInput({
     );
     return hintsForMessage?.hints || [];
   }, [currentChatHints, latestAssistantMessage?.id]);
-  const hintsHookLoading = simulationContext?.isLoadingChats || false;
+  const hintsHookLoading = false; // Always false with SSR
 
   // Listen for hint generation progress via WebSocket events
   useEffect(() => {

@@ -106,7 +106,6 @@ export default function Feedback({
 
   // Use server-provided data directly
   const feedbackData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Extract data from V3 response
   const feedback = useMemo(
@@ -306,10 +305,6 @@ export default function Feedback({
         label: `ID: ${id}`,
       }));
   }, [table, idColumn]);
-
-  if (isLoading) {
-    return <div className="text-center p-6">Loading feedback...</div>;
-  }
 
   return (
     <>

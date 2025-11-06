@@ -56,7 +56,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Edit, Eye, Grid3X3, List, Trash2, UploadCloud, X } from "lucide-react";
 
@@ -235,7 +234,6 @@ export default function Documents({
 
   // Use server-provided data directly
   const documentsData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Extract data from V3 response
   const documents = useMemo(
@@ -1255,20 +1253,6 @@ export default function Documents({
       />
     );
   };
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

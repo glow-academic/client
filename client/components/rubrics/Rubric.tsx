@@ -11,7 +11,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import RubricDetails from "./RubricDetails";
@@ -70,7 +69,6 @@ export default function Rubric({
   const rubricDetail = serverRubricDetail;
   const rubricDetailDefault = serverRubricDetailDefault;
   const rubricData = isEditMode ? rubricDetail : rubricDetailDefault;
-  const isLoading = false; // No loading state when using server data
 
   // Set breadcrumb context when rubric data is loaded
   useEffect(() => {
@@ -225,36 +223,8 @@ export default function Rubric({
     router.push("/management/rubrics");
   };
 
-  // Loading state
-  if (isLoading && isEditMode) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64 mt-2" />
-        </div>
-        <div className="container mx-auto max-w-4xl">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-4 w-64" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <div className="grid grid-cols-2 gap-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   // Error state for edit mode when rubric not found
-  if (isEditMode && !isLoading && !rubricData) {
+  if (isEditMode && !rubricData) {
     return (
       <div className="space-y-6">
         <div>
