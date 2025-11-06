@@ -204,7 +204,8 @@ export const getSectionRoute = (
         if (currentPathname && currentPathname.includes("/analytics/reports")) {
           return `/analytics/reports/p/${profileId}`;
         }
-        return `/management/staff/p/${profileId}`;
+        // Staff editing is now done via modals, so redirect to staff list
+        return `/management/staff`;
       }
       if (section.startsWith("department-")) {
         const departmentId = section.replace("department-", "");
