@@ -156,8 +156,17 @@ async def get_practice_overview(
 
         result = await conn.fetchval(query, *params)
 
-        # Parse JSON string to dict if needed
-        parsed_result = _parse_json_strings_recursive(result or {})
+        # Handle empty results gracefully - return empty structure instead of error
+        # The SQL should always return a row, but handle edge case where it doesn't
+        if not result:
+            # Create empty data structure - parsing function will handle defaults
+            parsed_result = {}
+        else:
+            # Parse JSON string to dict if needed
+            parsed_result = _parse_json_strings_recursive(result)
+            # Ensure data is a dict (handle case where result is None or empty)
+            if not isinstance(parsed_result, dict):
+                parsed_result = {}
 
         # Parse embedded history
         history = []

@@ -1,13 +1,13 @@
 """Rubric update endpoint - v3 API."""
 
-import uuid
+import json
 from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from app.db import get_db, transaction
+from app.db import get_db
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -64,55 +64,45 @@ async def update_rubric(
     tags = ["rubrics"]  # From router tags
     
     try:
-        async with transaction(conn):
-            # Update rubric
-            sql = load_sql("sql/v3/rubrics/update_rubric.sql")
-            await conn.execute(
-                sql,
-                uuid.UUID(request.rubricId),
-                request.name,
-                request.description,
-                request.active,
-                request.points,
-                request.passPoints,
-            )
+        # Convert standard groups to JSONB array for SQL
+        standard_groups_json = json.dumps([
+            {
+                "name": group.name,
+                "short_name": group.short_name,
+                "description": group.description,
+                "points": group.points,
+                "passPoints": group.passPoints,
+                "standards": [
+                    {
+                        "name": standard.name,
+                        "description": standard.description,
+                        "points": standard.points,
+                    }
+                    for standard in group.standards
+                ]
+            }
+            for group in request.standard_groups
+        ])
 
-            # Update departments (delete old, create new)
-            delete_dept_sql = load_sql("sql/v3/rubrics/delete_rubric_departments.sql")
-            await conn.execute(delete_dept_sql, uuid.UUID(request.rubricId))
+        # Ensure department_ids is always an array (empty if None)
+        department_ids = request.department_ids if request.department_ids else []
 
-            if request.department_ids:
-                dept_sql = load_sql("sql/v3/rubrics/create_rubric_departments.sql")
-                await conn.execute(dept_sql, uuid.UUID(request.rubricId), request.department_ids)
+        # Update rubric with departments, standard groups, and standards in a single SQL file
+        sql = load_sql("sql/v3/rubrics/update_rubric_complete.sql")
+        row = await conn.fetchrow(
+            sql,
+            request.rubricId,
+            request.name,
+            request.description,
+            request.active,
+            request.points,
+            request.passPoints,
+            department_ids,
+            standard_groups_json,
+        )
 
-            # Delete old standard groups (cascade deletes standards)
-            delete_groups_sql = load_sql("sql/v3/rubrics/delete_standard_groups.sql")
-            await conn.execute(delete_groups_sql, uuid.UUID(request.rubricId))
-
-            # Create new standard groups and standards
-            create_group_sql = load_sql("sql/v3/rubrics/create_standard_group.sql")
-            create_standard_sql = load_sql("sql/v3/rubrics/create_standard.sql")
-
-            for group in request.standard_groups:
-                group_row = await conn.fetchrow(
-                    create_group_sql,
-                    uuid.UUID(request.rubricId),
-                    group.name,
-                    group.short_name,
-                    group.description,
-                    group.points,
-                    group.passPoints,
-                )
-                if group_row:
-                    group_id = group_row["id"]
-                    for standard in group.standards:
-                        await conn.fetchrow(
-                            create_standard_sql,
-                            group_id,
-                            standard.name,
-                            standard.description,
-                            standard.points,
-                        )
+        if not row:
+            raise HTTPException(status_code=404, detail="Rubric not found")
 
         result = UpdateRubricResponse(
             success=True,
@@ -124,6 +114,8 @@ async def update_rubric(
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
         
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

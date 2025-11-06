@@ -41,23 +41,20 @@ async def create_provider(
         # Encrypt API key before storing
         encrypted_api_key = encrypt_api_key(request.api_key)
 
-        create_sql = load_sql("sql/v3/providers/create_provider.sql")
+        # Create provider with endpoint in a single SQL file
+        sql = load_sql("sql/v3/providers/create_provider_complete.sql")
         result = await conn.fetchrow(
-            create_sql,
+            sql,
             request.name,
             request.description,
             encrypted_api_key,
+            request.base_url,
         )
 
         if not result:
             raise HTTPException(status_code=500, detail="Failed to create provider")
 
-        provider_id = str(result["id"])
-
-        # Insert provider endpoint if base_url provided
-        if request.base_url:
-            endpoint_sql = load_sql("sql/v3/providers/upsert_provider_endpoint.sql")
-            await conn.execute(endpoint_sql, provider_id, request.base_url)
+        provider_id = result["provider_id"]
 
         result_data = CreateProviderResponse(
             success=True,

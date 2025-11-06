@@ -1,7 +1,7 @@
 """Simulation detail-default endpoint - v3 API following DHH principles."""
 
 import json
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.db import get_db
@@ -108,10 +108,19 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     """Parse JSONB data with type safety."""
     if isinstance(data, str):
         try:
-            return json.loads(data)
+            parsed: Any = json.loads(data)  # type: ignore[assignment, no-any-return]
+            if isinstance(parsed, dict):
+                return cast(dict[str, Any], parsed)  # type: ignore[return-value]  # mypy doesn't narrow Any properly
+            if isinstance(parsed, list):
+                return cast(list[Any], parsed)  # type: ignore[redundant-cast]  # mypy doesn't narrow Any properly
+            return {}
         except json.JSONDecodeError:
             return {}
-    return data or {}
+    if isinstance(data, dict):
+        return cast(dict[str, Any], data)
+    if isinstance(data, list):
+        return cast(list[Any], data)
+    return None
 
 
 @router.post("/detail-default", response_model=SimulationDetailResponse)
@@ -147,18 +156,19 @@ async def get_simulation_detail_default(
                 status_code=404, detail="No simulations found for user's departments"
             )
 
-        # Extract user role and cohort count for permissions
+        # Extract user role and cohort counts for permissions
         user_role = result.get("user_role", "trainee")
-        cohort_count = result.get("cohort_count", 0)
+        active_cohort_count = result.get("active_cohort_count", 0)
+        total_cohort_links = result.get("total_cohort_links", 0)
         practice_simulation = result.get("practice_simulation", False)
-        in_use = cohort_count > 0
 
         # Compute permissions (matching list_simulations.sql logic)
         is_admin = user_role in ("admin", "instructional", "superadmin")
-        can_edit = is_admin and not in_use  # Can't edit if has active cohorts
+        # Can't edit if has active cohorts
+        can_edit = is_admin and active_cohort_count == 0
         can_duplicate = is_admin
-        # Can't delete if practice OR has cohort links OR not admin
-        can_delete = is_admin and not practice_simulation and not in_use
+        # Can't delete if practice OR has any cohort links OR not admin
+        can_delete = is_admin and not practice_simulation and total_cohort_links == 0
 
         # Parse scenarios list from JSONB
         scenarios_list: list[ScenarioInSimulation] = []
@@ -364,8 +374,8 @@ async def get_simulation_detail_default(
             can_edit=can_edit,
             can_duplicate=can_duplicate,
             can_delete=can_delete,
-            in_use=in_use,
-            cohort_count=cohort_count,
+            in_use=total_cohort_links > 0,  # In use if has any cohort links
+            cohort_count=total_cohort_links,  # Return total for display
             scenarios=scenarios_list,
             parameters=parameters_list,
             parameter_items=parameter_items_list,

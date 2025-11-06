@@ -95,10 +95,14 @@ async def get_reports(
         # Execute query
         result = await conn.fetchval(sql, *params)
 
+        # Handle empty results gracefully - return empty structure instead of error
         # Parse JSONB result (may be string or dict)
         parsed_result = result or {}
         if isinstance(parsed_result, str):
             parsed_result = json.loads(parsed_result)
+        # Ensure parsed_result is a dict (handle case where result is None or empty)
+        if not isinstance(parsed_result, dict):
+            parsed_result = {}
 
         # Extract data array (replicate v2 logic)
         bundle_data = parsed_result.get("data", []) if parsed_result else []

@@ -159,7 +159,10 @@ SELECT
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
     END as can_delete,
-    true as can_duplicate,
+    CASE 
+        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        ELSE false
+    END as can_duplicate,
     sm.mapping as scenario_mapping,
     rm.mapping as rubric_mapping,
     dm.mapping as department_mapping

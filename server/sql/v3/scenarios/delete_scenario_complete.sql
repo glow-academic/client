@@ -1,0 +1,29 @@
+-- Delete scenario with existence and usage checks in a single transaction
+-- Parameters: $1=scenarioId
+-- Returns: scenario_id, name if deleted, or no rows if scenario doesn't exist or is in use
+WITH scenario_info AS (
+    -- Check if scenario exists and get name
+    SELECT 
+        s.id,
+        s.name,
+        (SELECT COUNT(*) FROM simulation_scenarios WHERE scenario_id = s.id AND active = true) as usage_count
+    FROM scenarios s
+    WHERE s.id = $1::uuid
+),
+delete_scenario AS (
+    -- Delete scenario only if it exists and is not in use
+    DELETE FROM scenarios
+    WHERE id IN (
+        SELECT id FROM scenario_info WHERE usage_count = 0
+    )
+    RETURNING id::text as scenario_id, name
+)
+-- Return scenario info (even if not deleted, so caller can determine error)
+SELECT 
+    si.id::text as scenario_id,
+    si.name,
+    si.usage_count,
+    CASE WHEN ds.scenario_id IS NOT NULL THEN true ELSE false END as deleted
+FROM scenario_info si
+LEFT JOIN delete_scenario ds ON ds.scenario_id = si.id::text
+

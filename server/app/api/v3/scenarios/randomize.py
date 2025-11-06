@@ -82,15 +82,10 @@ async def randomize_scenario_sections(
             department_ids = [d for d in department_ids if d]
         targets = [t for t in request.targets if t.strip()] if request.targets else []
 
-        # Get randomization data
-        if department_ids and len(department_ids) > 0:
-            # Convert to UUIDs for query
-            dept_uuids = [uuid.UUID(d) for d in department_ids]
-            sql = load_sql("sql/v3/scenarios/get_randomization_data_with_depts.sql")
-            result = await conn.fetchrow(sql, dept_uuids)
-        else:
-            sql = load_sql("sql/v3/scenarios/get_randomization_data_all.sql")
-            result = await conn.fetchrow(sql)
+        # Get randomization data (single SQL file with conditional logic)
+        dept_uuids = [uuid.UUID(d) for d in department_ids] if department_ids and len(department_ids) > 0 else None
+        sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
+        result = await conn.fetchrow(sql, dept_uuids)
 
         if not result:
             raise ValueError("Failed to fetch randomization data")

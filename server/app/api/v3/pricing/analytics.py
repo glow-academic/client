@@ -106,75 +106,24 @@ async def get_pricing(
                 if role not in ("admin", "superadmin", "instructional"):
                     effective_profile_id = filters.profileId
 
-        # Build WHERE clause conditions (replicate v2 PricingQueries logic)
-        where_conditions = [
-            "mr.created_at >= $1",
-            "mr.created_at <= $2",
-        ]
-        
-        params: list[Any] = [
-            datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),
-            datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),
-        ]
-        param_counter = 3
-        
-        # Add department filter via profile_departments join (only if departments provided)
-        if filters.departmentIds and len(filters.departmentIds) > 0:
-            where_conditions.append(
-                f"""EXISTS (
-                    SELECT 1 FROM model_run_profiles mrp2
-                    JOIN profile_departments pd ON pd.profile_id = mrp2.profile_id
-                    WHERE mrp2.model_run_id = mr.id
-                      AND mrp2.active = true
-                      AND pd.department_id = ANY(${param_counter})
-                )"""
-            )
-            params.append(filters.departmentIds)
-            param_counter += 1
+        # Build parameters for consolidated SQL file
+        start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
+        department_ids = filters.departmentIds or None
+        roles = filters.roles or None
+        cohort_ids = filters.cohortIds or None
 
-        # Profile filter (specific user)
-        if effective_profile_id is not None:
-            where_conditions.append(f"mrp.profile_id = ${param_counter}")
-            params.append(effective_profile_id)
-            param_counter += 1
-
-        # Role filter (only if no profile_id specified)
-        if effective_profile_id is None and filters.roles is not None and len(filters.roles) > 0:
-            where_conditions.append(
-                f"""mrp.profile_id IN (
-                    SELECT id FROM profiles WHERE role = ANY(${param_counter})
-                )"""
-            )
-            params.append(filters.roles)
-            param_counter += 1
-
-        # Cohort filter via cohort_profiles
-        if filters.cohortIds is not None and len(filters.cohortIds) > 0:
-            where_conditions.append(
-                f"""mrp.profile_id IN (
-                    SELECT profile_id FROM cohort_profiles
-                    WHERE cohort_id = ANY(${param_counter}) AND active = true
-                )"""
-            )
-            params.append(filters.cohortIds)
-            param_counter += 1
-
-        where_clause = " AND ".join(where_conditions)
-
-        # Load SQL template and replace WHERE clause placeholder
-        # Replace only in the actual WHERE line, not in comments
-        sql_template = load_sql("sql/v3/pricing/pricing_analytics.sql")
-        # Split by lines, replace only in WHERE clause line (not in comments)
-        lines = sql_template.split("\n")
-        replaced_lines = []
-        for line in lines:
-            if line.strip().startswith("WHERE {WHERE_CLAUSE}"):
-                replaced_lines.append(line.replace("{WHERE_CLAUSE}", where_clause))
-            else:
-                replaced_lines.append(line)
-        query = "\n".join(replaced_lines)
-
-        result = await conn.fetchval(query, *params)
+        # Execute consolidated SQL query with all filter logic
+        sql = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
+        result = await conn.fetchval(
+            sql,
+            start_dt,
+            end_dt,
+            department_ids,
+            effective_profile_id,
+            roles,
+            cohort_ids,
+        )
 
         # Parse JSONB result
         parsed_result = _parse_json_strings_recursive(result or {})

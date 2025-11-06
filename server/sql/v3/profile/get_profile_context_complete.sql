@@ -1,10 +1,27 @@
-WITH actual_profile_role AS (
+-- Get profile context with guest-profile-id resolution in a single transaction
+-- Parameters: $1=actualProfileId (may be "guest-profile-id"), $2=effectiveProfileId (may be "guest-profile-id")
+-- Returns: Complete profile context data
+WITH resolve_profile_ids AS (
+    -- Resolve "guest-profile-id" to actual default guest profile ID for both actual and effective
+    SELECT 
+        CASE 
+            WHEN $1::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
+            ELSE $1::uuid
+        END as resolved_actual_profile_id,
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
+            ELSE $2::uuid
+        END as resolved_effective_profile_id
+),
+actual_profile_role AS (
     -- Use actual (logged-in) user's role for emulation permissions
-    SELECT role FROM profiles WHERE id = $1
+    SELECT role FROM profiles p, resolve_profile_ids rpi WHERE p.id = rpi.resolved_actual_profile_id
 ),
 effective_profile_role AS (
     -- Use effective profile's role for UI permissions filtering
-    SELECT role FROM profiles WHERE id = $2
+    SELECT role FROM profiles p, resolve_profile_ids rpi WHERE p.id = rpi.resolved_effective_profile_id
 ),
 actual_profile_data AS (
     -- Fetch the logged-in user's profile
@@ -24,7 +41,8 @@ actual_profile_data AS (
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
-    FROM profiles p
+    FROM resolve_profile_ids rpi
+    JOIN profiles p ON p.id = rpi.resolved_actual_profile_id
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN LATERAL (
@@ -34,7 +52,6 @@ actual_profile_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
-    WHERE p.id = $1
 ),
 effective_profile_data AS (
     -- Fetch the profile being viewed (could be same as actual or emulated)
@@ -54,7 +71,8 @@ effective_profile_data AS (
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
-    FROM profiles p
+    FROM resolve_profile_ids rpi
+    JOIN profiles p ON p.id = rpi.resolved_effective_profile_id
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN LATERAL (
@@ -64,7 +82,6 @@ effective_profile_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
-    WHERE p.id = $2
 ),
 dept_data AS (
     -- Departments for the effective profile
@@ -74,9 +91,10 @@ dept_data AS (
         d.description,
         d.active,
         pd.is_primary
-    FROM profile_departments pd
+    FROM resolve_profile_ids rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_effective_profile_id
     JOIN departments d ON d.id = pd.department_id
-    WHERE pd.profile_id = $2 AND pd.active = true
+    WHERE pd.active = true
 ),
 cohort_data AS (
     -- Cohorts for the effective profile
@@ -86,8 +104,9 @@ cohort_data AS (
         c.description,
         c.active,
         COALESCE(cdd.department_ids, NULL) as department_ids
-    FROM cohorts c
-    JOIN cohort_profiles pc ON pc.cohort_id = c.id
+    FROM resolve_profile_ids rpi
+    JOIN cohort_profiles pc ON pc.profile_id = rpi.resolved_effective_profile_id
+    JOIN cohorts c ON c.id = pc.cohort_id
     LEFT JOIN (
         SELECT 
             cd.cohort_id,
@@ -96,8 +115,7 @@ cohort_data AS (
         WHERE cd.active = true
         GROUP BY cd.cohort_id
     ) cdd ON cdd.cohort_id = c.id
-    WHERE pc.profile_id = $2 
-      AND pc.active = true
+    WHERE pc.active = true
       AND c.active = true
 ),
 sim_data AS (
@@ -153,7 +171,7 @@ simulatable_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
-    WHERE p.id != $1  -- Don't include actual user in emulation list
+    WHERE p.id != (SELECT resolved_actual_profile_id FROM resolve_profile_ids)  -- Don't include actual user in emulation list
       AND CASE 
         WHEN pr.role = 'superadmin' THEN true
         WHEN pr.role = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
@@ -164,9 +182,10 @@ simulatable_data AS (
 earliest_attempt AS (
     -- Earliest attempt for the effective profile
     SELECT MIN(sa.created_at) as earliest
-    FROM simulation_attempts sa
+    FROM resolve_profile_ids rpi
+    JOIN simulation_attempts sa ON true
     JOIN attempt_profiles ap ON ap.attempt_id = sa.id
-    WHERE ap.profile_id = $2
+    WHERE ap.profile_id = rpi.resolved_effective_profile_id
 )
 SELECT 
     -- Actual profile fields (prefixed with actual_)

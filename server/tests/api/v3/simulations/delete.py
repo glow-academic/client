@@ -83,7 +83,7 @@ async def test_delete_simulation_in_use(
     assert response.status_code == 400
     data = response.json()
     assert "detail" in data
-    assert "linked to cohorts" in data["detail"].lower()
+    assert "in use by" in data["detail"].lower()
 
     # Verify simulation was not deleted
     simulation = await db.fetchrow("SELECT * FROM simulations WHERE id = $1", simulation_id)
@@ -103,7 +103,7 @@ async def test_delete_simulation_not_found(
         json={"simulationId": fake_simulation_id},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 404
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()

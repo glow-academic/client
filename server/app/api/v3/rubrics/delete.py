@@ -1,6 +1,5 @@
 """Rubric delete endpoint - v3 API."""
 
-import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
@@ -38,21 +37,26 @@ async def delete_rubric(
     tags = ["rubrics"]  # From router tags
     
     try:
-        # Check usage
-        usage_sql = load_sql("sql/v3/rubrics/check_rubric_usage.sql")
-        usage_row = await conn.fetchrow(usage_sql, uuid.UUID(request.rubricId))
+        # Delete rubric with existence and usage checks in a single SQL file
+        sql = load_sql("sql/v3/rubrics/delete_rubric_complete.sql")
+        result = await conn.fetchrow(sql, request.rubricId)
 
-        if usage_row and usage_row["usage_count"] > 0:
+        if not result:
+            # Rubric doesn't exist
             raise HTTPException(
-                status_code=400,
-                detail=f"Cannot delete rubric: in use by {usage_row['usage_count']} simulation(s)",
+                status_code=404, detail=f"Rubric {request.rubricId} not found"
             )
 
-        # Delete rubric (cascade deletes standard_groups and standards)
-        sql = load_sql("sql/v3/rubrics/delete_rubric.sql")
-        await conn.execute(sql, uuid.UUID(request.rubricId))
+        # Check if rubric was deleted or is in use
+        if not result["deleted"]:
+            # Rubric exists but is in use
+            usage_count = result["usage_count"]
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete rubric: in use by {usage_count} simulation(s)",
+            )
 
-        result = DeleteRubricResponse(
+        result_data = DeleteRubricResponse(
             success=True,
             message="Rubric deleted successfully",
         )
@@ -61,7 +65,7 @@ async def delete_rubric(
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
         
-        return result
+        return result_data
     except HTTPException:
         raise
     except Exception as e:

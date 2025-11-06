@@ -3,9 +3,10 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db, transaction
+from app.db import get_db
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 
@@ -29,42 +30,41 @@ router = APIRouter()
 @router.post("/delete", response_model=DeleteScenarioResponse)
 async def delete_scenario(
     request: DeleteScenarioRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteScenarioResponse:
     """Delete a scenario."""
+    tags = ["scenarios"]  # From router tags
     try:
-        async with transaction(conn):
-            # Check if in use
-            usage_sql = load_sql("sql/v3/scenarios/check_scenario_usage.sql")
-            usage = await conn.fetchrow(usage_sql, request.scenarioId)
+        # Delete scenario with existence and usage checks in a single SQL file
+        sql = load_sql("sql/v3/scenarios/delete_scenario_complete.sql")
+        result = await conn.fetchrow(sql, request.scenarioId)
 
-            if not usage:
-                raise ValueError("Failed to check scenario usage")
-
-            if usage["usage_count"] > 0:
-                raise ValueError("Cannot delete scenario that is in use by simulations")
-
-            # Get name for response
-            name_sql = load_sql("sql/v3/scenarios/get_scenario_name.sql")
-            scenario = await conn.fetchrow(name_sql, request.scenarioId)
-
-            if not scenario:
-                raise ValueError(f"Scenario not found: {request.scenarioId}")
-
-            # Delete scenario (cascades will handle junction tables)
-            delete_sql = load_sql("sql/v3/scenarios/delete_scenario.sql")
-            await conn.execute(delete_sql, request.scenarioId)
-
-            result_data = DeleteScenarioResponse(
-                success=True,
-                message=f"Scenario '{scenario['name']}' deleted successfully",
+        if not result:
+            # Scenario doesn't exist
+            raise HTTPException(
+                status_code=404, detail=f"Scenario not found: {request.scenarioId}"
             )
-            
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
-            return result_data
+
+        # Check if scenario was deleted or is in use
+        if not result["deleted"]:
+            # Scenario exists but is in use
+            usage_count = result["usage_count"]
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete scenario that is in use by {usage_count} simulation(s)",
+            )
+
+        result_data = DeleteScenarioResponse(
+            success=True,
+            message=f"Scenario '{result['name']}' deleted successfully",
+        )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except ValueError as e:

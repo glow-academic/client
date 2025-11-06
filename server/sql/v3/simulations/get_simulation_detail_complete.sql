@@ -25,9 +25,11 @@ WITH         simulation_departments_data AS (
             SELECT role FROM profiles WHERE id = $2
         ),
         cohort_usage AS (
-            SELECT COUNT(*) as cohort_count
-            FROM cohort_simulations
-            WHERE simulation_id = $1
+            SELECT 
+                COUNT(*) FILTER (WHERE cs.active = true) as active_cohort_count,
+                COUNT(*) as total_cohort_links
+            FROM cohort_simulations cs
+            WHERE cs.simulation_id = $1
         ),
         user_departments AS (
             SELECT DISTINCT d.id, d.title as name, d.description
@@ -464,7 +466,8 @@ WITH         simulation_departments_data AS (
             sb.practice_simulation,
             -- User context
             uc.role as user_role,
-            COALESCE(cu.cohort_count, 0) as cohort_count,
+            COALESCE(cu.active_cohort_count, 0) as active_cohort_count,
+            COALESCE(cu.total_cohort_links, 0) as total_cohort_links,
             -- Scenarios
             sld.scenarios_list,
             sld.scenario_ids,

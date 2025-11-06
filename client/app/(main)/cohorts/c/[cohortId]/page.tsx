@@ -9,7 +9,7 @@ import { auth } from "@/auth";
 import Leaderboard from "@/components/leaderboard/Leaderboard";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getDefaultAnalyticsFilters } from "@/lib/server/analytics-filters";
+import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata, ResolvingMetadata } from "next";
 import { cache } from "react";
 
@@ -21,13 +21,58 @@ type LeaderboardOut = OutputOf<"/api/v3/leaderboard", "post">;
 const getLeaderboard = cache(
   async (input: LeaderboardIn): Promise<LeaderboardOut> => {
     return api.post("/leaderboard", input);
-  },
+  }
 );
+
+/** ---- Inline filters function for cohort page ---- */
+const getCohortFilters = cache(async (searchParams?: URLSearchParams) => {
+  const session = await auth();
+
+  // Fetch profile context to get earliestAttemptDate
+  const profileContext = await api.post("/profile/context", {
+    body: {
+      actualProfileId: session?.user?.profileId || "",
+      effectiveProfileId: session?.effectiveProfileId || "",
+      pathname: "/",
+    },
+  });
+
+  // Compute startDate using same logic as analytics context
+  let startDate: Date;
+  if (profileContext.earliestAttemptDate) {
+    startDate = new Date(profileContext.earliestAttemptDate);
+    startDate.setHours(0, 0, 0, 0);
+  } else {
+    // Fallback to 30 days ago (matching analytics context)
+    startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    startDate.setHours(0, 0, 0, 0);
+  }
+
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  const defaults = {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    cohortIds: [] as string[],
+    roles: [] as string[],
+    simulationFilters: ["general" as const],
+    departmentIds: [] as string[],
+  };
+
+  // If search params are provided, merge them with defaults
+  if (searchParams) {
+    return searchParamsToFilters(searchParams, defaults);
+  }
+
+  return defaults;
+});
 
 /** ---- Metadata ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { cohortId } = await params;
   const session = await auth();
@@ -75,8 +120,8 @@ export default async function CohortDashboardPage({
   });
 
   // Get filters from search params or defaults, then override cohortIds with the cohortId from URL
-  const defaultFilters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined,
+  const defaultFilters = await getCohortFilters(
+    searchParamsObj.toString() ? searchParamsObj : undefined
   );
   const filters = { ...defaultFilters, cohortIds: [cohortId] };
 

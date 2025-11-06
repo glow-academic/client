@@ -148,18 +148,16 @@ async def get_scenario_detail(
         return ScenarioDetailResponse.model_validate(cached["data"])
     
     try:
-        # Load SQL string
+        # Load SQL string (persona query is now merged into main query)
         sql = load_sql("sql/v3/scenarios/get_scenario_detail_complete.sql")
-        persona_sql = load_sql("sql/v3/scenarios/get_scenario_personas.sql")
 
-        # Execute queries
+        # Execute query
         scenario = await conn.fetchrow(sql, request_data.scenarioId, request_data.profileId)
         if not scenario:
             raise HTTPException(status_code=404, detail=f"Scenario not found: {request_data.scenarioId}")
 
-        # Get persona_ids from database (source of truth)
-        persona_result = await conn.fetchrow(persona_sql, request_data.scenarioId)
-        persona_ids = persona_result.get("persona_ids", []) if persona_result else []
+        # Get persona_ids from query result (already included in main query)
+        persona_ids = scenario.get("persona_ids", [])
         if persona_ids and not isinstance(persona_ids, list):
             persona_ids = [str(persona_ids)] if persona_ids else []
         elif persona_ids:

@@ -5,10 +5,7 @@
  * Only includes values in search params that differ from defaults.
  */
 
-import { auth } from "@/auth";
 import type { SimulationFilter } from "@/contexts/analytics-context";
-import { api } from "@/lib/api/client";
-import { cache } from "react";
 
 export interface AnalyticsFilters {
   startDate: string;
@@ -54,7 +51,7 @@ function datesEqual(a: string, b: string): boolean {
  */
 export function filtersToSearchParams(
   filters: AnalyticsFilters,
-  defaults: DefaultAnalyticsFilters,
+  defaults: DefaultAnalyticsFilters
 ): URLSearchParams {
   const params = new URLSearchParams();
 
@@ -111,7 +108,7 @@ export function filtersToSearchParams(
  */
 export function searchParamsToFilters(
   searchParams: URLSearchParams,
-  defaults: DefaultAnalyticsFilters,
+  defaults: DefaultAnalyticsFilters
 ): AnalyticsFilters {
   const filters: AnalyticsFilters = {
     startDate: defaults.startDate,
@@ -166,49 +163,3 @@ export function searchParamsToFilters(
   return filters;
 }
 
-export const getDefaultAnalyticsFilters = cache(
-  async (searchParams?: URLSearchParams) => {
-    const session = await auth();
-
-    // Fetch profile context to get earliestAttemptDate
-    const profileContext = await api.post("/profile/context", {
-      body: {
-        actualProfileId: session?.user?.profileId || "",
-        effectiveProfileId: session?.effectiveProfileId || "",
-        pathname: "/",
-      },
-    });
-
-    // Compute startDate using same logic as analytics context
-    let startDate: Date;
-    if (profileContext.earliestAttemptDate) {
-      startDate = new Date(profileContext.earliestAttemptDate);
-      startDate.setHours(0, 0, 0, 0);
-    } else {
-      // Fallback to 30 days ago (matching analytics context)
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
-      startDate.setHours(0, 0, 0, 0);
-    }
-
-    const endDate = new Date();
-    endDate.setHours(23, 59, 59, 999);
-
-    const defaults = {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: [] as string[],
-      roles: [] as string[],
-      simulationFilters: ["general" as const],
-      departmentIds: [] as string[],
-      // profileId omitted - allows cross-user caching
-    };
-
-    // If search params are provided, merge them with defaults
-    if (searchParams) {
-      return searchParamsToFilters(searchParams, defaults);
-    }
-
-    return defaults;
-  },
-);

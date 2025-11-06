@@ -96,53 +96,51 @@ async def get_profile_context(
 ) -> ProfileContextResponse:
     """Get consolidated profile context (profile, departments, cohorts, breadcrumbs)."""
     try:
-        # Resolve "guest-profile-id" to actual default guest profile
-        actual_profile_id = request.actualProfileId
-        effective_profile_id = request.effectiveProfileId
-
-        guest_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-
-        # Resolve actual_profile_id if it's "guest-profile-id"
-        if actual_profile_id == "guest-profile-id":
-            guest_row = await conn.fetchrow(guest_sql)
-            if guest_row:
-                actual_profile_id = str(guest_row["id"])
-            else:
-                raise HTTPException(
-                    status_code=404, detail="No default guest profile found in database"
-                )
-
-        # Resolve effective_profile_id if it's "guest-profile-id"
-        if effective_profile_id == "guest-profile-id":
-            guest_row = await conn.fetchrow(guest_sql)
-            if guest_row:
-                effective_profile_id = str(guest_row["id"])
-            else:
-                raise HTTPException(
-                    status_code=404, detail="No default guest profile found in database"
-                )
-
-        # Validate emulation is authorized when profiles differ
-        if actual_profile_id != effective_profile_id:
-            # Check if emulation is authorized
+        # Validate emulation is authorized when profiles differ (before fetching context)
+        if request.actualProfileId != request.effectiveProfileId:
+            # Check if emulation is authorized using a separate SQL file
+            # (This is a validation step, not core data retrieval)
             simulatable_sql = load_sql("sql/v3/profile/get_simulatable_profiles_combined.sql")
-            simulatable_rows = await conn.fetch(simulatable_sql, actual_profile_id)
+            # Resolve actual profile ID for authorization check
+            actual_id = request.actualProfileId
+            if actual_id == "guest-profile-id":
+                guest_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+                guest_row = await conn.fetchrow(guest_sql)
+                if guest_row:
+                    actual_id = str(guest_row["id"])
+                else:
+                    raise HTTPException(
+                        status_code=404, detail="No default guest profile found in database"
+                    )
+            simulatable_rows = await conn.fetch(simulatable_sql, actual_id)
             target_ids = {str(row["id"]) for row in simulatable_rows}
-
-            if effective_profile_id not in target_ids:
+            
+            # Resolve effective profile ID for comparison
+            effective_id = request.effectiveProfileId
+            if effective_id == "guest-profile-id":
+                guest_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+                guest_row = await conn.fetchrow(guest_sql)
+                if guest_row:
+                    effective_id = str(guest_row["id"])
+                else:
+                    raise HTTPException(
+                        status_code=404, detail="No default guest profile found in database"
+                    )
+            
+            if effective_id not in target_ids:
                 raise HTTPException(
                     status_code=403,
                     detail="You do not have permission to view this profile's context",
                 )
 
-        # Get all context data in ONE optimized query
+        # Get all context data with guest-profile-id resolution in a single SQL file
         context_sql = load_sql("sql/v3/profile/get_profile_context_complete.sql")
-        result = await conn.fetchrow(context_sql, actual_profile_id, effective_profile_id)
+        result = await conn.fetchrow(context_sql, request.actualProfileId, request.effectiveProfileId)
 
         if not result:
             raise HTTPException(
                 status_code=404,
-                detail=f"Profile context not found: {effective_profile_id}",
+                detail=f"Profile context not found: {request.effectiveProfileId}",
             )
 
         # Parse actual profile from result (with actual_ prefix)

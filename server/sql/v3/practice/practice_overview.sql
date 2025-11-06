@@ -600,10 +600,10 @@ SELECT json_build_object(
     ), '[]'::json),
     'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping LIMIT 1), '{}'::jsonb),
     'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping LIMIT 1), '{}'::jsonb),
-    'history', (SELECT history FROM attempt_history_data LIMIT 1),
-    'simulation_mapping', (SELECT mapping FROM simulation_mapping_data LIMIT 1),
-    'persona_mapping', (SELECT mapping FROM persona_mapping_data LIMIT 1),
-    'scenario_mapping', (SELECT mapping FROM scenario_mapping_data LIMIT 1),
-    'parameter_mapping', (SELECT mapping FROM parameter_mapping_data LIMIT 1),
-    'parameter_item_mapping', (SELECT mapping FROM parameter_item_mapping_data LIMIT 1)
+    'history', COALESCE((SELECT history FROM attempt_history_data LIMIT 1), '[]'::json),
+    'simulation_mapping', COALESCE((SELECT mapping FROM simulation_mapping_data LIMIT 1), '{}'::jsonb),
+    'persona_mapping', COALESCE((SELECT mapping FROM persona_mapping_data LIMIT 1), '{}'::jsonb),
+    'scenario_mapping', COALESCE((SELECT mapping FROM scenario_mapping_data LIMIT 1), '{}'::jsonb),
+    'parameter_mapping', COALESCE((SELECT mapping FROM parameter_mapping_data LIMIT 1), '{}'::jsonb),
+    'parameter_item_mapping', COALESCE((SELECT mapping FROM parameter_item_mapping_data LIMIT 1), '{}'::jsonb)
 ) AS result

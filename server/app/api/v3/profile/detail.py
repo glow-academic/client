@@ -51,23 +51,9 @@ async def get_profile_detail(
 ) -> ProfileDetailResponse:
     """Get profile by ID (simple auth version without permissions)."""
     try:
-        # Resolve "guest-profile-id" to actual default guest profile
-        profile_id = request.profileId
-        if profile_id == "guest-profile-id":
-            guest_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-            guest_row = await conn.fetchrow(guest_sql)
-            if guest_row:
-                profile_id = str(guest_row["id"])
-            else:
-                raise HTTPException(
-                    status_code=404, detail="No default guest profile found in database"
-                )
-
-        # Load SQL string
+        # Get profile with guest-profile-id resolution in a single SQL file
         sql = load_sql("sql/v3/profile/get_profile.sql")
-
-        # Execute with full control over transaction
-        row = await conn.fetchrow(sql, profile_id)
+        row = await conn.fetchrow(sql, request.profileId)
         if not row:
             raise HTTPException(status_code=404, detail="Profile not found")
 

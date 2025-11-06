@@ -34,7 +34,9 @@ WITH user_departments AS (
             SELECT role FROM profiles WHERE id = $1
         ),
         cohort_usage AS (
-            SELECT COUNT(*) as cohort_count
+            SELECT 
+                COUNT(*) FILTER (WHERE cs.active = true) as active_cohort_count,
+                COUNT(*) as total_cohort_links
             FROM cohort_simulations cs
             JOIN default_simulation ds ON cs.simulation_id = ds.id
         ),
@@ -420,7 +422,8 @@ WITH user_departments AS (
             false as default_simulation,
             sb.practice_simulation,
             uc.role as user_role,
-            COALESCE(cu.cohort_count, 0) as cohort_count,
+            COALESCE(cu.active_cohort_count, 0) as active_cohort_count,
+            COALESCE(cu.total_cohort_links, 0) as total_cohort_links,
             sld.scenarios_list,
             sld.scenario_ids,
             COALESCE(vs.ids, ARRAY[]::text[]) as valid_scenario_ids,

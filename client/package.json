@@ -14,8 +14,7 @@
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir hooks --dir lib --dir contexts",
     "format": "prettier --write .",
     "gen:types": "openapi-typescript ../server/openapi.json -o lib/api-types.ts",
-    "gen:keys": "tsx scripts/gen-keys-from-openapi.ts",
-    "watch:openapi": "chokidar ../server/openapi.json -c \"yarn gen:types && yarn gen:keys\""
+    "watch:openapi": "chokidar ../server/openapi.json -c \"yarn gen:types\""
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",

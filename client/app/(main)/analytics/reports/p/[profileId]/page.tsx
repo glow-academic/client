@@ -5,10 +5,11 @@
  * 06/08/2025
  */
 
+import { auth } from "@/auth";
 import Report from "@/components/reports/Report";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { getDefaultAnalyticsFilters } from "@/lib/server/analytics-filters";
+import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata, ResolvingMetadata } from "next";
 import { cache } from "react";
 
@@ -22,18 +23,65 @@ type DashboardOut = OutputOf<"/api/v3/dashboard", "post">;
 const getProfileDetail = cache(
   async (input: ProfileDetailIn): Promise<ProfileDetailOut> => {
     return api.post("/profile/staff/detail", input);
-  },
+  }
 );
 
 const getDashboard = cache(
   async (input: DashboardIn): Promise<DashboardOut> => {
     return api.post("/dashboard", input);
-  },
+  }
+);
+
+/** ---- Inline filters function for profile reports page ---- */
+const getProfileReportsFilters = cache(
+  async (searchParams?: URLSearchParams) => {
+    const session = await auth();
+
+    // Fetch profile context to get earliestAttemptDate
+    const profileContext = await api.post("/profile/context", {
+      body: {
+        actualProfileId: session?.user?.profileId || "",
+        effectiveProfileId: session?.effectiveProfileId || "",
+        pathname: "/",
+      },
+    });
+
+    // Compute startDate using same logic as analytics context
+    let startDate: Date;
+    if (profileContext.earliestAttemptDate) {
+      startDate = new Date(profileContext.earliestAttemptDate);
+      startDate.setHours(0, 0, 0, 0);
+    } else {
+      // Fallback to 30 days ago (matching analytics context)
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    const defaults = {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: [] as string[],
+      roles: [] as string[],
+      simulationFilters: ["general" as const],
+      departmentIds: [] as string[],
+    };
+
+    // If search params are provided, merge them with defaults
+    if (searchParams) {
+      return searchParamsToFilters(searchParams, defaults);
+    }
+
+    return defaults;
+  }
 );
 
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { profileId } = await params;
 
@@ -84,8 +132,8 @@ export default async function ReportsPage({
   });
 
   // Get filters from search params or defaults, then set profileId
-  const defaultFilters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined,
+  const defaultFilters = await getProfileReportsFilters(
+    searchParamsObj.toString() ? searchParamsObj : undefined
   );
   const dashboardFilters = { ...defaultFilters, profileId };
 

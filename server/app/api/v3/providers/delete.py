@@ -37,61 +37,42 @@ async def delete_provider(
     tags = ["providers"]  # From router tags
     
     try:
-        async with transaction(conn):
-            # Get provider name
-            get_name_sql = "SELECT name FROM providers WHERE id = $1"
-            provider = await conn.fetchrow(get_name_sql, request.providerId)
+        # Delete provider with existence and usage checks in a single SQL file
+        sql = load_sql("sql/v3/providers/delete_provider_complete.sql")
+        result = await conn.fetchrow(sql, request.providerId)
 
-            if not provider:
-                raise ValueError(f"Provider not found: {request.providerId}")
+        if not result:
+            # Provider doesn't exist
+            raise ValueError(f"Provider not found: {request.providerId}")
 
-            # Get all models for this provider
-            get_models_sql = load_sql("sql/v3/providers/get_provider_models.sql")
-            models = await conn.fetch(get_models_sql, request.providerId)
-            model_ids = [m["id"] for m in models]  # Keep as UUID objects
-
-            # Check if any models are in use
-            if model_ids:
-                # Check personas (check all models at once)
-                check_personas_sql = """
-                    SELECT model_id, COUNT(*) as usage_count
-                    FROM personas
-                    WHERE model_id = ANY($1::uuid[])
-                    GROUP BY model_id
-                """
-                personas_usage = await conn.fetch(check_personas_sql, model_ids)
-                if personas_usage:
-                    raise ValueError(
-                        "Cannot delete provider: Some models are in use by personas"
-                    )
-
-                # Check agents (check all models at once)
-                check_agents_sql = """
-                    SELECT model_id, COUNT(*) as usage_count
-                    FROM agents
-                    WHERE model_id = ANY($1::uuid[])
-                    GROUP BY model_id
-                """
-                agents_usage = await conn.fetch(check_agents_sql, model_ids)
-                if agents_usage:
-                    raise ValueError(
-                        "Cannot delete provider: Some models are in use by agents"
-                    )
-
-            # Delete provider (cascade deletes models)
-            delete_sql = load_sql("sql/v3/providers/delete_provider.sql")
-            await conn.execute(delete_sql, request.providerId)
-
-            result_data = DeleteProviderResponse(
-                success=True,
-                message=f"Provider '{provider['name']}' deleted successfully",
+        # Check if provider was deleted or is in use
+        if not result["deleted"]:
+            # Provider exists but is in use
+            total_usage = result["total_usage"]
+            if result["persona_usage_count"] > 0:
+                raise ValueError(
+                    f"Cannot delete provider: Some models are in use by {result['persona_usage_count']} persona(s)"
+                )
+            if result["agent_usage_count"] > 0:
+                raise ValueError(
+                    f"Cannot delete provider: Some models are in use by {result['agent_usage_count']} agent(s)"
+                )
+            raise ValueError(
+                f"Cannot delete provider: in use by {total_usage} entities"
             )
-            
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
-            return result_data
+
+        provider_name = result["name"]
+
+        result_data = DeleteProviderResponse(
+            success=True,
+            message=f"Provider '{provider_name}' deleted successfully",
+        )
+        
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        
+        return result_data
     except HTTPException:
         raise
     except ValueError as e:

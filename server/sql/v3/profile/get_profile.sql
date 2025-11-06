@@ -1,3 +1,15 @@
+-- Get profile by ID with guest-profile-id resolution in a single transaction
+-- Parameters: $1=profileId (may be "guest-profile-id")
+-- Returns: Profile data or no rows if profile doesn't exist
+WITH resolve_profile_id AS (
+    -- Resolve "guest-profile-id" to actual default guest profile ID
+    SELECT 
+        CASE 
+            WHEN $1::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
+            ELSE $1::uuid
+        END as resolved_profile_id
+)
 SELECT 
     p.id,
     p.first_name,
@@ -14,7 +26,8 @@ SELECT
     p.created_at,
     p.updated_at,
     pd.department_id as primary_department_id
-FROM profiles p
+FROM resolve_profile_id rpi
+JOIN profiles p ON p.id = rpi.resolved_profile_id
 LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
 LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
 LEFT JOIN LATERAL (
@@ -24,5 +37,4 @@ LEFT JOIN LATERAL (
     ORDER BY created_at DESC 
     LIMIT 1
 ) pa ON true
-WHERE p.id = $1
 

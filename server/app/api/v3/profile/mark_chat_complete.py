@@ -32,38 +32,23 @@ async def mark_chat_complete(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MarkTourStepResponse:
     """Mark chat tour step as complete."""
+    tags = ["profile"]  # From router tags
+    
     try:
-        # Resolve "guest-profile-id" to actual default guest profile
-        profile_id = request.profileId
-        if profile_id == "guest-profile-id":
-            guest_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-            guest_row = await conn.fetchrow(guest_sql)
-            if guest_row:
-                profile_id = str(guest_row["id"])
-            else:
-                raise HTTPException(
-                    status_code=404, detail="No default guest profile found in database"
-                )
+        # Mark chat complete with existence check in a single SQL file
+        sql = load_sql("sql/v3/profile/mark_chat_complete.sql")
+        result = await conn.fetchrow(sql, request.profileId)
 
-        # Update profile with viewed_chat = true
-        update_query = """
-        UPDATE profiles 
-        SET viewed_chat = true, updated_at = NOW()
-        WHERE id = $1
-        """
-        result = await conn.execute(update_query, profile_id)
-
-        # Check if update was successful (result is the number of rows affected)
-        if result == "UPDATE 0":
+        if not result:
             raise HTTPException(status_code=404, detail="Profile not found")
 
+        profile_id = result["profile_id"]
         result_data = MarkTourStepResponse(
             success=True,
             message=f"Profile {profile_id} chat marked complete",
         )
         
         # Invalidate cache after mutation
-        tags = ["profile"]  # From router tags
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
         
