@@ -17,27 +17,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
     pip install --prefer-binary --prefix=/install -r requirements.txt
 
-############################################
-# 2️⃣  tester stage  (CI only – never pushed)
-############################################
-FROM python:3.11-slim AS tester
-WORKDIR /src
-
-# re-use the compiled wheels
-COPY --from=deps /install /usr/local
-
-# copy *everything* so pytest can discover the tests
-COPY . .
-
-# install test-only deps
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir pytest pytest-cov
-
-# -q makes pytest quiet unless it fails
-CMD ["pytest", "-q"]
-
-############################################
-# 3️⃣  runtime image  (what you actually deploy)
+# 2️⃣  runtime image  (what you actually deploy)
 ############################################
 FROM python:3.11-slim AS runtime
 WORKDIR /app

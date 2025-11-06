@@ -147,16 +147,6 @@ services:
       - internal
       - public_net
   # --------------------
-  # Unit Testing
-  # --------------------
-  server-unit:
-    build:
-      context: ./server
-      target: tester
-    profiles: ["test"]
-    command: ["true"]
-
-  # --------------------
   # Next.js Client
   # --------------------
   client:

@@ -7644,7 +7644,7 @@
           "simulations"
         ],
         "summary": "Delete Simulation",
-        "description": "Delete a simulation.",
+        "description": "Delete a simulation (with usage check).",
         "operationId": "delete_simulation_api_v3_simulations_delete_post",
         "requestBody": {
           "content": {
@@ -11656,7 +11656,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get System Health Api V3 Logs Health Get"
                 }
               }
             }

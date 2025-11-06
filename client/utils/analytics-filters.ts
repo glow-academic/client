@@ -162,4 +162,3 @@ export function searchParamsToFilters(
 
   return filters;
 }
-

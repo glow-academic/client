@@ -3357,7 +3357,7 @@ export interface paths {
         put?: never;
         /**
          * Delete Simulation
-         * @description Delete a simulation.
+         * @description Delete a simulation (with usage check).
          */
         post: operations["delete_simulation_api_v3_simulations_delete_post"];
         delete?: never;
@@ -23626,7 +23626,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HealthResponse"];
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

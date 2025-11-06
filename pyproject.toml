@@ -50,6 +50,9 @@ dependencies = [
     "pytest-mock>=3.10.0",
     "httpx>=0.24.0",
     "testcontainers[postgresql]==4.0.0",
+    # E2E testing
+    "pytest-playwright>=0.4.0",
+    "playwright>=1.40.0",
 ]
 
 [project.scripts]

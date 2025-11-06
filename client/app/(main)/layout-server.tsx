@@ -1,6 +1,7 @@
 /**
  * Server component that fetches profile context data
  */
+"use server";
 import { auth, update } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -113,7 +114,6 @@ export async function getLayoutContextData() {
 export async function markIntroComplete(
   input: MarkIntroCompleteIn
 ): Promise<MarkIntroCompleteOut> {
-  "use server";
   const session = await auth();
   const profileId = session?.effectiveProfileId || "";
   const out = await api.post("/profile/mark-intro-complete", {
@@ -126,7 +126,6 @@ export async function markIntroComplete(
 export async function markChatComplete(
   input: MarkChatCompleteIn
 ): Promise<MarkChatCompleteOut> {
-  "use server";
   const session = await auth();
   const profileId = session?.effectiveProfileId || "";
   const out = await api.post("/profile/mark-chat-complete", {
@@ -140,14 +139,12 @@ export async function markChatComplete(
 export async function getAssistantChatList(
   input: AssistantChatListIn
 ): Promise<AssistantChatListOut> {
-  "use server";
   return api.post("/assistant/chats/list", input);
 }
 
 export async function getAssistantChatFull(
   input: AssistantChatFullIn
 ): Promise<AssistantChatFullOut> {
-  "use server";
   return api.post("/assistant/chats/full", input);
 }
 
@@ -177,7 +174,6 @@ async function authorizeEmulation(
 export async function switchEffectiveProfile(
   input: SwitchEffectiveProfileParams
 ): Promise<SwitchEffectiveProfileResult> {
-  "use server";
   try {
     const session = await auth();
     if (!session?.user?.profileId) {
@@ -220,7 +216,6 @@ export async function switchEffectiveProfile(
 export async function createFeedback(
   input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
-  "use server";
   return api.post("/feedback/create", input);
 }
 
@@ -228,7 +223,6 @@ export async function createFeedback(
 export async function refreshAnalytics(
   input: RefreshAnalyticsIn
 ): Promise<RefreshAnalyticsOut> {
-  "use server";
   return api.post("/analytics/refresh", input);
 }
 

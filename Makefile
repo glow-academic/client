@@ -107,6 +107,15 @@ test-cov: check-venv
 	@$(VENV_PYTHON) -m pytest server/tests/ --cov=server/app --cov-report=term-missing --cov-report=html
 	@echo "✅ Coverage report generated"
 
+test-e2e: check-venv
+	@echo "Running E2E tests (headless)..."
+	@$(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q
+	@echo "✅ E2E tests complete"
+
+test-e2e-headed: check-venv
+	@echo "Running E2E tests (headed)..."
+	@E2E_HEADED=1 $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q --headed
+	@echo "✅ E2E tests complete"
 # Run client typecheck
 typecheck-client:
 	@echo "Running client typecheck..."
