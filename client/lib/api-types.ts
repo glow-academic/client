@@ -5295,6 +5295,11 @@ export interface components {
             copyPasteAllowed: boolean;
             /** Objectives */
             objectives?: string[] | null;
+            /**
+             * Previouschats
+             * @default []
+             */
+            previousChats: components["schemas"]["PreviousChat"][];
         };
         /**
          * AnalyticsFilters
@@ -9967,9 +9972,7 @@ export interface components {
             documents: components["schemas"]["app__api__v3__documents__list__DocumentItem"][];
             /** Scenario Mapping */
             scenario_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {

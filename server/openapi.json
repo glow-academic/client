@@ -12182,6 +12182,14 @@
               }
             ],
             "title": "Objectives"
+          },
+          "previousChats": {
+            "items": {
+              "$ref": "#/components/schemas/PreviousChat"
+            },
+            "type": "array",
+            "title": "Previouschats",
+            "default": []
           }
         },
         "type": "object",
@@ -24134,8 +24142,7 @@
           },
           "scenario_mapping": {
             "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/ScenarioMappingItem"
             },
             "type": "object",
             "title": "Scenario Mapping"

@@ -437,7 +437,7 @@ export default function TATour() {
 
     // Create tour steps for TAs (we know they have at least one cohort here)
     const steps = createTATourSteps(
-      effectiveProfile,
+      { ...effectiveProfile, role: effectiveProfile.role as "superadmin" | "admin" | "instructional" | "ta" | "guest" },
       () => router.push("/home"),
       (cohortId: string) => router.push(`/cohorts/c/${cohortId}`),
       (simulationId: string) => handleStartPracticeSimulation(simulationId),
@@ -459,7 +459,7 @@ export default function TATour() {
     }
 
     // Always initialize the tour with steps (this sets up the guide button)
-    openTour(steps, effectiveProfile, initialStep);
+    openTour(steps, { ...effectiveProfile, role: effectiveProfile.role as "superadmin" | "admin" | "instructional" | "ta" | "guest" }, initialStep);
 
     // Navigate to the correct page for the initial step
     if (initialStep >= 0 && initialStep < steps.length) {

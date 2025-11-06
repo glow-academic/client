@@ -4,13 +4,13 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.db import get_db
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import DepartmentMappingItem, ParameterItemMappingItem, ParameterMappingItem
+from app.utils.schema import (DepartmentMappingItem, ParameterItemMappingItem,
+                              ParameterMappingItem, ScenarioMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class DocumentsListRequest(BaseModel):
@@ -43,7 +43,7 @@ class DocumentsListResponse(BaseModel):
     """Response for documents list."""
 
     documents: list[DocumentItem]
-    scenario_mapping: dict[str, dict[str, Any]]  # Complex nested structure
+    scenario_mapping: dict[str, ScenarioMappingItem]
     parameter_item_mapping: dict[str, ParameterItemMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
     parameter_mapping: dict[str, ParameterMappingItem]
@@ -78,10 +78,88 @@ async def get_documents_list(
         rows = await conn.fetch(sql, filters.profileId)
 
         documents: list[DocumentItem] = []
-        scenario_mapping: dict[str, Any] = {}  # Complex nested structure
+        scenario_mapping: dict[str, ScenarioMappingItem] = {}
         parameter_item_mapping: dict[str, ParameterItemMappingItem] = {}
         department_mapping: dict[str, DepartmentMappingItem] = {}
         parameter_mapping: dict[str, ParameterMappingItem] = {}
+
+        # Parse mappings from first row (same across all rows, replicate v2 logic)
+        if rows:
+            first_row = rows[0]
+
+            # Parse scenario mapping from JSONB (replicate v2 logic)
+            scenario_mapping_data = first_row.get("scenario_mapping")
+            if isinstance(scenario_mapping_data, str):
+                scenario_mapping_data = json.loads(scenario_mapping_data)
+            if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
+                for sid, sdata in scenario_mapping_data.items():
+                    if isinstance(sdata, dict):
+                        scenario_mapping[sid] = ScenarioMappingItem(
+                            name=sdata.get("name", ""),
+                            description=sdata.get("description", ""),
+                            persona_ids=[],
+                            persona_mapping={},
+                            document_mapping={},
+                            parameter_item_mapping={},
+                            parameter_item_ids=[],
+                            document_ids=[],
+                        )
+
+            # Parse parameter_item mapping from JSONB (replicate v2 logic)
+            param_item_mapping_data = first_row.get("parameter_item_mapping")
+            if isinstance(param_item_mapping_data, str):
+                param_item_mapping_data = json.loads(param_item_mapping_data)
+            if param_item_mapping_data and isinstance(param_item_mapping_data, dict):
+                for pid, pdata in param_item_mapping_data.items():
+                    if isinstance(pdata, dict):
+                        parameter_item_mapping[pid] = ParameterItemMappingItem(
+                            name=pdata.get("name", ""),
+                            description=pdata.get("description", ""),
+                            parameter_id=str(pdata.get("parameter_id", ""))
+                            if pdata.get("parameter_id")
+                            else "",
+                            parameter_name=pdata.get("parameter_name", ""),
+                            value=pdata.get("value", ""),
+                        )
+
+            # Parse department mapping from JSONB (replicate v2 logic)
+            dept_mapping_data = first_row.get("department_mapping")
+            if isinstance(dept_mapping_data, str):
+                dept_mapping_data = json.loads(dept_mapping_data)
+            if dept_mapping_data and isinstance(dept_mapping_data, dict):
+                for did, ddata in dept_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        # Parse optional ID arrays (replicate v2 logic)
+                        parameter_ids = ddata.get("parameter_ids")
+                        parameter_item_ids = ddata.get("parameter_item_ids")
+                        
+                        def to_str_list(value: Any) -> list[str] | None:
+                            if value is None:
+                                return None
+                            if isinstance(value, list):
+                                return [str(v) for v in value if v]
+                            return None
+                        
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                            parameter_ids=to_str_list(parameter_ids),
+                            parameter_item_ids=to_str_list(parameter_item_ids),
+                        )
+
+            # Parse parameter mapping from JSONB (replicate v2 logic)
+            param_mapping_raw = first_row.get("parameter_mapping")
+            if isinstance(param_mapping_raw, str):
+                param_mapping_raw = json.loads(param_mapping_raw)
+            if param_mapping_raw and isinstance(param_mapping_raw, dict):
+                for pid, pdata in param_mapping_raw.items():
+                    if isinstance(pdata, dict):
+                        parameter_mapping[pid] = ParameterMappingItem(
+                            name=pdata.get("name", ""),
+                            description=pdata.get("description", ""),
+                            numerical=pdata.get("numerical", False),
+                            document_parameter=pdata.get("document_parameter", False),
+                        )
 
         for row in rows:
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
@@ -90,16 +168,19 @@ async def get_documents_list(
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
+            # Handle extension (replicate v2 logic)
+            extension = row.get("extension") or ""
+            
             documents.append(
                 DocumentItem(
-                    document_id=row["document_id"],
+                    document_id=str(row["document_id"]),
                     name=row["name"],
                     type=row["type"],
-                    updated_at=row["updated_at"].isoformat(),
+                    updated_at=row["updated_at"].isoformat() if row["updated_at"] else "",
                     mime_type=row.get("mime_type"),
                     active=row["active"],
                     file_path=row.get("file_path"),
-                    extension=row.get("extension"),
+                    extension=extension,
                     department_ids=dept_ids,
                     scenario_ids=scenario_ids,
                     parameter_item_ids=parameter_item_ids,
@@ -109,56 +190,6 @@ async def get_documents_list(
                     can_delete=row["can_delete"],
                 )
             )
-
-            # Parse mappings from first row
-            if not scenario_mapping and row["scenario_mapping"]:
-                scenario_data = row["scenario_mapping"]
-                if isinstance(scenario_data, str):
-                    scenario_data = json.loads(scenario_data)
-                if isinstance(scenario_data, dict):
-                    scenario_mapping = scenario_data
-
-            if not parameter_item_mapping and row["parameter_item_mapping"]:
-                param_item_data = row["parameter_item_mapping"]
-                if isinstance(param_item_data, str):
-                    param_item_data = json.loads(param_item_data)
-                if isinstance(param_item_data, dict):
-                    for pid, pdata in param_item_data.items():
-                        if isinstance(pdata, dict):
-                            parameter_item_mapping[pid] = ParameterItemMappingItem(
-                                name=pdata.get("name", ""),
-                                description=pdata.get("description", ""),
-                                parameter_id=pdata.get("parameter_id", ""),
-                                parameter_name=pdata.get("parameter_name", ""),
-                                value=pdata.get("value", ""),
-                            )
-
-            if not department_mapping and row["department_mapping"]:
-                dept_data = row["department_mapping"]
-                if isinstance(dept_data, str):
-                    dept_data = json.loads(dept_data)
-                if isinstance(dept_data, dict):
-                    for did, ddata in dept_data.items():
-                        if isinstance(ddata, dict):
-                            department_mapping[did] = DepartmentMappingItem(
-                                name=ddata.get("name", ""),
-                                description=ddata.get("description", ""),
-                            )
-
-            if not parameter_mapping and row["parameter_mapping"]:
-                param_data = row["parameter_mapping"]
-                if isinstance(param_data, str):
-                    param_data = json.loads(param_data)
-                if isinstance(param_data, dict):
-                    for pid, pdata in param_data.items():
-                        if isinstance(pdata, dict):
-                            from app.utils.schema import ParameterMappingItem
-                            parameter_mapping[pid] = ParameterMappingItem(
-                                name=pdata.get("name", ""),
-                                description=pdata.get("description", ""),
-                                numerical=pdata.get("numerical", False),
-                                document_parameter=pdata.get("document_parameter", False),
-                            )
 
         response_data = DocumentsListResponse(
             documents=documents,

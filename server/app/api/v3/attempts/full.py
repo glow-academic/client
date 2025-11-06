@@ -1,6 +1,7 @@
 """Attempt full endpoint - returns complete attempt data with all related entities."""
 
 import json
+import re
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -182,6 +183,7 @@ class AllSimulationScenarioItem(BaseModel):
     defaultScenario: bool
     copyPasteAllowed: bool
     objectives: list[str] | None = None
+    previousChats: list[PreviousChat] = []
 
 
 class TimerItem(BaseModel):
@@ -317,6 +319,22 @@ async def get_attempt_full(
         
         all_simulation_scenarios = [AllSimulationScenarioItem(**s) for s in all_simulation_scenarios_data]
 
+        # Access result fields defensively (asyncpg may lowercase column names)
+        # Try both camelCase and snake_case versions
+        def get_result_field(key: str, default: Any = None) -> Any:
+            """Get field from result, trying both camelCase and snake_case."""
+            if key in result:
+                return result[key]
+            # Try lowercase version (asyncpg might lowercase)
+            key_lower = key.lower()
+            if key_lower in result:
+                return result[key_lower]
+            # Try snake_case version
+            key_snake = re.sub(r'([A-Z])', r'_\1', key).lower()
+            if key_snake in result:
+                return result[key_snake]
+            return default
+        
         response_data = AttemptFullResponse(
             attempt=attempt,
             simulation=simulation,
@@ -325,13 +343,13 @@ async def get_attempt_full(
             scenarioDocuments=scenario_documents,
             aggregatedResults=aggregated_results,
             timer=timer,
-            currentChatIndex=result["currentChatIndex"],
-            expectedChatCount=result["expectedChatCount"],
-            isSingleChatAttempt=result["isSingleChatAttempt"],
-            isLastAttempt=result["isLastAttempt"],
-            showResults=result["showResults"],
-            shouldShowControls=result["shouldShowControls"],
-            isActive=result["isActive"],
+            currentChatIndex=get_result_field("currentChatIndex", 0),
+            expectedChatCount=get_result_field("expectedChatCount", 1),
+            isSingleChatAttempt=get_result_field("isSingleChatAttempt", True),
+            isLastAttempt=get_result_field("isLastAttempt", True),
+            showResults=get_result_field("showResults", False),
+            shouldShowControls=get_result_field("shouldShowControls", True),
+            isActive=get_result_field("isActive", True),
             rubricStructure=rubric_structure,
             allSimulationScenarios=all_simulation_scenarios,
         )

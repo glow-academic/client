@@ -64,19 +64,32 @@ import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
 import { useSimulation } from "@/contexts/simulation-context";
 import { formatTime } from "@/utils/time";
 
+import type {
+  UpdateChatCreatedAtIn,
+  UpdateChatCreatedAtOut,
+} from "@/app/(main)/home/a/[attemptId]/page";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { Progress } from "@/components/ui/progress";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 
-export default function AttemptChat() {
+type UpdateChatCreatedAtBody = UpdateChatCreatedAtIn extends { body: infer B }
+  ? B
+  : never;
+
+interface AttemptChatProps {
+  updateChatCreatedAtAction?: (
+    input: UpdateChatCreatedAtIn
+  ) => Promise<UpdateChatCreatedAtOut>;
+}
+
+export default function AttemptChat({
+  updateChatCreatedAtAction,
+}: AttemptChatProps) {
   const router = useRouter();
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
@@ -86,15 +99,25 @@ export default function AttemptChat() {
     NonNullable<typeof simulationContext>["chats"][number]
   >;
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const queryClient = useQueryClient();
-  const updateChatCreatedAtMutation = useMutation({
-    mutationFn: async (request: { chatId: string; createdAt: string }) =>
-      api.post("/attempts/chats/update-created-at", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.attempts.all });
+
+  // Server action handler
+  const handleUpdateChatCreatedAt = useCallback(
+    async (body: UpdateChatCreatedAtBody) => {
+      if (!updateChatCreatedAtAction) {
+        throw new Error("updateChatCreatedAtAction is required");
+      }
+      await updateChatCreatedAtAction({ body });
     },
-  });
-  const updateChatCreatedAt = updateChatCreatedAtMutation.mutateAsync;
+    [updateChatCreatedAtAction]
+  );
+
+  // Wrapper function for compatibility (matching original async signature)
+  const updateChatCreatedAt = useCallback(
+    async (request: { chatId: string; createdAt: string }) => {
+      await handleUpdateChatCreatedAt(request);
+    },
+    [handleUpdateChatCreatedAt]
+  );
   const isMobile = useIsMobile();
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(

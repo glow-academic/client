@@ -16,6 +16,7 @@
                 SELECT
                     attempt_id,
                     MIN(attempt_created_at) AS attempt_created_at,
+                    (array_agg(profile_id))[1] AS profile_id,
                     COALESCE(MAX(sim_scenario_count), 0) AS expected_from_sim,
                     COUNT(*) FILTER (WHERE completed) AS completed_chats,
                     COUNT(*) FILTER (WHERE completed AND grade_percent IS NOT NULL) AS graded_chats,
@@ -28,6 +29,7 @@
                 SELECT
                     attempt_id,
                     attempt_created_at,
+                    profile_id,
                     GREATEST(expected_from_sim, chats_in_attempt) AS expected,
                     completed_chats,
                     graded_chats,
@@ -178,6 +180,289 @@
                 SELECT COUNT(DISTINCT attempt_id)::int AS current_value,
                        COUNT(*) > 0 AS has_data
                 FROM filt
+            ),
+            
+            -- =====================================================
+            -- HEADER METRICS TREND DATA (for trend charts)
+            -- =====================================================
+            
+            -- Average Score Trend (using attempt normalization)
+            header_avg_score_trend AS (
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(AVG(norm))::float AS value,
+                    COUNT(*)::int AS count
+                FROM attempt_norm
+                WHERE norm IS NOT NULL
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- Completion Percentage Trend
+            header_completion_trend AS (
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(100.0 * AVG((completed)::int))::float AS value,
+                    COUNT(*)::int AS count
+                FROM filt
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- First Attempt Pass Rate Trend
+            header_first_pass_trend AS (
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0))) / GREATEST(COUNT(*), 1))::float AS value,
+                    COUNT(*)::int AS count
+                FROM first_attempts
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- Highest Score Trend
+            header_highest_trend AS (
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(MAX(grade_percent))::float AS value,
+                    COUNT(*)::int AS count
+                FROM filt
+                WHERE grade_percent IS NOT NULL
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- Messages Per Session Trend
+            header_messages_trend AS (
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(AVG(num_messages_total))::float AS value,
+                    COUNT(*)::int AS count
+                FROM filt
+                WHERE num_messages_total IS NOT NULL
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- Persona Response Times Trend
+            header_persona_times_trend AS (
+                SELECT 
+                    to_char(pt.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(AVG(pt.delta_sec))::float AS value,
+                    COUNT(*)::int AS count
+                FROM (
+                    SELECT attempt_created_at, UNNEST(message_time_taken_seconds) AS delta_sec
+                    FROM filt
+                    WHERE cardinality(message_time_taken_seconds) > 0
+                ) pt
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- Session Efficiency Trend (user-level aggregation by date)
+            user_metrics_for_efficiency_by_date AS (
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    profile_id,
+                    AVG(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) AS avg_score,
+                    SUM(time_taken_seconds / 60.0) FILTER (WHERE time_taken_seconds IS NOT NULL) AS total_minutes,
+                    COUNT(DISTINCT chat_id) AS total_sessions
+                FROM filt
+                GROUP BY date, profile_id
+            ),
+            header_efficiency_trend AS (
+                SELECT 
+                    date,
+                    ROUND(GREATEST(0, LEAST(100, AVG(
+                        avg_score * (1.0 - LEAST(1.0, (total_minutes / NULLIF(total_sessions, 0)) / 120.0))
+                    ))))::float AS value,
+                    COUNT(*)::int AS count
+                FROM user_metrics_for_efficiency_by_date
+                WHERE total_sessions > 0
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- Stagnation Rate Trend
+            header_stagnation_trend AS (
+                SELECT 
+                    to_char(created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(100.0 * AVG(stagnated))::float AS value,
+                    COUNT(*)::int AS count
+                FROM stagnation_flags
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- Time Spent Trend (with 30-minute cap per chat)
+            header_time_trend AS (
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(AVG(LEAST(30.0, time_taken_seconds / 60.0)))::float AS value,
+                    COUNT(*)::int AS count
+                FROM filt
+                WHERE time_taken_seconds IS NOT NULL
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- Total Attempts Trend
+            header_attempts_trend AS (
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    COUNT(DISTINCT attempt_id)::float AS value,
+                    COUNT(*)::int AS count
+                FROM filt
+                GROUP BY date
+                ORDER BY date
+            ),
+            
+            -- =====================================================
+            -- HEADER METRICS DATA POINTS (for hover tooltips)
+            -- =====================================================
+            
+            -- Average Score Data Points
+            header_avg_score_points AS (
+                SELECT 
+                    COALESCE(an.profile_id::text, '') AS profile_id,
+                    to_char(an.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(an.norm)::int AS value,
+                    COALESCE(an.attempt_id::text, '') AS attempt_id,
+                    ''::text AS simulation_id,
+                    ''::text AS scenario_id
+                FROM attempt_norm an
+                WHERE an.norm IS NOT NULL
+                ORDER BY an.profile_id, an.attempt_created_at
+            ),
+            
+            -- Completion Percentage Data Points
+            header_completion_points AS (
+                SELECT 
+                    f.profile_id::text AS profile_id,
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    (f.completed::int * 100)::int AS value,
+                    f.attempt_id::text AS attempt_id,
+                    f.simulation_id::text AS simulation_id,
+                    f.scenario_id::text AS scenario_id
+                FROM filt f
+                ORDER BY f.profile_id, f.attempt_created_at
+            ),
+            
+            -- First Attempt Pass Rate Data Points
+            header_first_pass_points AS (
+                SELECT 
+                    fa.profile_id::text AS profile_id,
+                    to_char(fa.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    CASE 
+                        WHEN fa.grade_percent >= (fa.rubric_pass_points * 100.0 / NULLIF(fa.rubric_points, 0)) THEN 100
+                        ELSE 0
+                    END::int AS value,
+                    fa.attempt_id::text AS attempt_id,
+                    fa.simulation_id::text AS simulation_id,
+                    NULL::text AS scenario_id
+                FROM first_attempts fa
+                ORDER BY fa.profile_id, fa.attempt_created_at
+            ),
+            
+            -- Highest Score Data Points
+            header_highest_points AS (
+                SELECT 
+                    f.profile_id::text AS profile_id,
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(f.grade_percent)::int AS value,
+                    f.attempt_id::text AS attempt_id,
+                    f.simulation_id::text AS simulation_id,
+                    f.scenario_id::text AS scenario_id
+                FROM filt f
+                WHERE f.grade_percent IS NOT NULL
+                ORDER BY f.profile_id, f.attempt_created_at
+            ),
+            
+            -- Messages Per Session Data Points
+            header_messages_points AS (
+                SELECT 
+                    f.profile_id::text AS profile_id,
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    f.num_messages_total::int AS value,
+                    f.attempt_id::text AS attempt_id,
+                    f.simulation_id::text AS simulation_id,
+                    f.scenario_id::text AS scenario_id
+                FROM filt f
+                WHERE f.num_messages_total IS NOT NULL
+                ORDER BY f.profile_id, f.attempt_created_at
+            ),
+            
+            -- Persona Response Times Data Points
+            header_persona_times_points AS (
+                SELECT 
+                    f.profile_id::text AS profile_id,
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(pt.delta_sec)::int AS value,
+                    f.attempt_id::text AS attempt_id,
+                    f.simulation_id::text AS simulation_id,
+                    f.scenario_id::text AS scenario_id
+                FROM filt f
+                CROSS JOIN LATERAL UNNEST(f.message_time_taken_seconds) AS pt(delta_sec)
+                WHERE cardinality(f.message_time_taken_seconds) > 0
+                ORDER BY f.profile_id, f.attempt_created_at
+            ),
+            
+            -- Session Efficiency Data Points
+            header_efficiency_points AS (
+                SELECT 
+                    f.profile_id::text AS profile_id,
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(GREATEST(0, LEAST(100, 
+                        f.grade_percent * (1.0 - LEAST(1.0, (f.time_taken_seconds / 60.0) / 120.0))
+                    )))::int AS value,
+                    f.attempt_id::text AS attempt_id,
+                    f.simulation_id::text AS simulation_id,
+                    f.scenario_id::text AS scenario_id
+                FROM filt f
+                WHERE f.grade_percent IS NOT NULL AND f.time_taken_seconds IS NOT NULL
+                ORDER BY f.profile_id, f.attempt_created_at
+            ),
+            
+            -- Stagnation Rate Data Points
+            header_stagnation_points AS (
+                SELECT 
+                    ''::text AS profile_id,
+                    to_char(gs.created_at, 'YYYY-MM-DD') AS date,
+                    (sf.stagnated * 100)::int AS value,
+                    ''::text AS attempt_id,
+                    ''::text AS simulation_id,
+                    ''::text AS scenario_id
+                FROM stagnation_flags sf
+                JOIN grade_stream gs ON gs.id = sf.id
+                ORDER BY gs.created_at
+            ),
+            
+            -- Time Spent Data Points
+            header_time_points AS (
+                SELECT 
+                    f.profile_id::text AS profile_id,
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    ROUND(LEAST(30.0, f.time_taken_seconds / 60.0))::int AS value,
+                    f.attempt_id::text AS attempt_id,
+                    f.simulation_id::text AS simulation_id,
+                    f.scenario_id::text AS scenario_id
+                FROM filt f
+                WHERE f.time_taken_seconds IS NOT NULL
+                ORDER BY f.profile_id, f.attempt_created_at
+            ),
+            
+            -- Total Attempts Data Points
+            header_attempts_points AS (
+                SELECT 
+                    f.profile_id::text AS profile_id,
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    1::int AS value,
+                    f.attempt_id::text AS attempt_id,
+                    f.simulation_id::text AS simulation_id,
+                    f.scenario_id::text AS scenario_id
+                FROM filt f
+                WHERE f.attempt_id IS NOT NULL
+                ORDER BY f.profile_id, f.attempt_created_at
             ),
             
             -- =====================================================
@@ -1249,71 +1534,71 @@
                         'hasData', COALESCE((SELECT has_data FROM header_avg_score), false),
                         'method', 'avg',
                         'currentValue', COALESCE((SELECT current_value FROM header_avg_score), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_avg_score_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_avg_score_points), '[]'::json)
                     ),
                     'completionPercentage', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_completion), false),
                         'method', 'avg',
                         'currentValue', COALESCE((SELECT current_value FROM header_completion), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_completion_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_completion_points), '[]'::json)
                     ),
                     'firstAttemptPassRate', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_first_pass), false),
                         'method', 'rate',
                         'currentValue', COALESCE((SELECT current_value FROM header_first_pass), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_first_pass_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_first_pass_points), '[]'::json)
                     ),
                     'highestScore', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_highest), false),
                         'method', 'max',
                         'currentValue', COALESCE((SELECT current_value FROM header_highest), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_highest_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_highest_points), '[]'::json)
                     ),
                     'messagesPerSession', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_messages), false),
                         'method', 'avg',
                         'currentValue', COALESCE((SELECT current_value FROM header_messages), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_messages_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_messages_points), '[]'::json)
                     ),
                     'personaResponseTimes', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_persona_times), false),
                         'method', 'avg',
                         'currentValue', COALESCE((SELECT current_value FROM header_persona_times), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_persona_times_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_persona_times_points), '[]'::json)
                     ),
                     'sessionEfficiency', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_efficiency), false),
                         'method', 'avg',
                         'currentValue', COALESCE((SELECT current_value FROM header_efficiency), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_efficiency_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_efficiency_points), '[]'::json)
                     ),
                     'stagnationRate', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_stagnation), false),
                         'method', 'rate',
                         'currentValue', COALESCE((SELECT current_value FROM header_stagnation), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_stagnation_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_stagnation_points), '[]'::json)
                     ),
                     'timeSpent', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_time), false),
                         'method', 'avg',
                         'currentValue', COALESCE((SELECT current_value FROM header_time), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_time_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_time_points), '[]'::json)
                     ),
                     'totalAttempts', json_build_object(
                         'hasData', COALESCE((SELECT has_data FROM header_attempts), false),
                         'method', 'countDistinct',
                         'currentValue', COALESCE((SELECT current_value FROM header_attempts), 0),
-                        'trendData', '[]'::json,
-                        'dataPoints', '[]'::json
+                        'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_attempts_trend), '[]'::json),
+                        'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_attempts_points), '[]'::json)
                     )
                 ),
                 'primary', json_build_object(

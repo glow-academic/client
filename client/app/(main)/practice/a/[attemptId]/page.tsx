@@ -5,16 +5,17 @@
  * 06/08/2025
  */
 
+import type {
+  AttemptFullIn,
+  AttemptFullOut,
+  UpdateChatCreatedAtIn,
+  UpdateChatCreatedAtOut,
+} from "@/app/(main)/home/a/[attemptId]/page";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-import { SimulationProvider } from "@/contexts/simulation-context";
 import { api } from "@/lib/api/client";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { revalidateTag } from "next/cache";
 import { cache } from "react";
-
-/** ---- Strong types from OpenAPI ---- */
-type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
-type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
 
 /** ---- Cached fetch (prevents duplicate requests) ---- */
 const getAttemptFull = cache(
@@ -47,30 +48,36 @@ export async function generateMetadata(
   }
 }
 
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+export async function updateChatCreatedAt(
+  input: UpdateChatCreatedAtIn
+): Promise<UpdateChatCreatedAtOut> {
+  "use server";
+  const out = await api.post("/attempts/chats/update-created-at", input);
+  revalidateTag("attempts");
+  return out;
+}
+
 /** ---- Page component ---- */
 export default async function PracticeAttemptPage({
   params,
 }: {
   params: Promise<{ attemptId: string }>;
 }) {
-  const { attemptId } = await params;
-
-  // Fetch initial snapshot
-  const initial = await getAttemptFull({
-        body: { attemptId },
-  });
-
+  void params; // SimulationProvider is fetched in layout, so we don't need attemptId here
+  // SimulationProvider is now provided in the layout, so we don't need to wrap here
+  // The layout will fetch the data and provide the context
   return (
-    <SimulationProvider
-      attemptId={attemptId}
-      initial={initial}
-    >
-      <div className="space-y-6">
-        <AttemptChat />
-      </div>
-    </SimulationProvider>
+    <div className="space-y-6">
+      <AttemptChat updateChatCreatedAtAction={updateChatCreatedAt} />
+    </div>
   );
 }
 
-/** ---- Export types for client (type-only imports) ---- */
-export type { AttemptFullOut };
+/** ---- Re-export types for consistency (imported from home page) ---- */
+export type {
+  AttemptFullIn,
+  AttemptFullOut,
+  UpdateChatCreatedAtIn,
+  UpdateChatCreatedAtOut,
+};

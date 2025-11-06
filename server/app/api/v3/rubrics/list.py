@@ -4,13 +4,13 @@ import json
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.db import get_db
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import DepartmentMappingItem, StandardGroupMappingItem, StandardMappingItem
+from app.utils.schema import (DepartmentMappingItem, StandardGroupMappingItem,
+                              StandardMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class RubricsListRequest(BaseModel):
@@ -78,74 +78,84 @@ async def get_rubrics_list(
         standards_mapping: dict[str, StandardMappingItem] = {}
         department_mapping: dict[str, DepartmentMappingItem] = {}
 
+        # Parse mappings from first row (same across all rows, replicate v2 logic)
+        if rows:
+            first_row = rows[0]
+
+            # Parse standard_groups_mapping from JSONB (replicate v2 logic)
+            groups_mapping_data = first_row.get("standard_groups_mapping")
+            if isinstance(groups_mapping_data, str):
+                groups_mapping_data = json.loads(groups_mapping_data)
+            if groups_mapping_data and isinstance(groups_mapping_data, dict):
+                for group_id, gdata in groups_mapping_data.items():
+                    if isinstance(gdata, dict):
+                        standard_groups_mapping[group_id] = StandardGroupMappingItem(
+                            name=gdata.get("name", ""),
+                            description=gdata.get("description", ""),
+                            points=gdata.get("points", 0),
+                            passPoints=gdata.get("passPoints", 0),
+                        )
+
+            # Parse standards_mapping from JSONB (replicate v2 logic)
+            standards_mapping_data = first_row.get("standards_mapping")
+            if isinstance(standards_mapping_data, str):
+                standards_mapping_data = json.loads(standards_mapping_data)
+            if standards_mapping_data and isinstance(standards_mapping_data, dict):
+                for standard_id, sdata in standards_mapping_data.items():
+                    if isinstance(sdata, dict):
+                        standards_mapping[standard_id] = StandardMappingItem(
+                            name=sdata.get("name", ""),
+                            description=sdata.get("description", ""),
+                            points=sdata.get("points", 0),
+                        )
+
+            # Parse department_mapping from JSONB (replicate v2 logic)
+            department_mapping_data = first_row.get("department_mapping")
+            if isinstance(department_mapping_data, str):
+                department_mapping_data = json.loads(department_mapping_data)
+            if department_mapping_data and isinstance(department_mapping_data, dict):
+                for dept_id, ddata in department_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[dept_id] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
+        # Build rubric items with hierarchical structure (replicate v2 logic)
         for row in rows:
+            # Parse standard_groups structure for this rubric (replicate v2 logic)
+            standard_groups_dict = {}
+            standard_groups_data = row.get("standard_groups")
+            # Parse JSONB string to dict (asyncpg returns JSONB as string)
+            if isinstance(standard_groups_data, str):
+                standard_groups_data = json.loads(standard_groups_data)
+            if standard_groups_data and isinstance(standard_groups_data, dict):
+                for group_id, standards_list in standard_groups_data.items():
+                    if isinstance(standards_list, list):
+                        standard_groups_dict[group_id] = standards_list
+                    else:
+                        standard_groups_dict[group_id] = []
+
             dept_ids = None
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
-            # Parse standard_groups structure
-            groups_data = row.get("standard_groups")
-            if isinstance(groups_data, str):
-                groups_data = json.loads(groups_data)
-            if not isinstance(groups_data, dict):
-                groups_data = {}
-
             rubrics.append(
                 RubricItem(
-                    rubric_id=row["rubric_id"],
+                    rubric_id=str(row["rubric_id"]),
                     name=row["name"],
                     description=row["description"],
-                    points=row["points"],
-                    passPoints=row["passPoints"],
                     department_ids=dept_ids,
+                    points=row["points"],
+                    passPoints=row["passpoints"],
                     active_simulation_count=row["active_simulation_count"],
                     total_simulation_links=row["total_simulation_links"],
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],
-                    standard_groups=groups_data,
+                    standard_groups=standard_groups_dict,
                 )
             )
-
-            # Parse mappings from first row
-            if not standard_groups_mapping and row["standard_groups_mapping"]:
-                sg_data = row["standard_groups_mapping"]
-                if isinstance(sg_data, str):
-                    sg_data = json.loads(sg_data)
-                if isinstance(sg_data, dict):
-                    for sgid, sgdata in sg_data.items():
-                        if isinstance(sgdata, dict):
-                            standard_groups_mapping[sgid] = StandardGroupMappingItem(
-                                name=sgdata.get("name", ""),
-                                description=sgdata.get("description", ""),
-                                points=sgdata.get("points", 0),
-                                passPoints=sgdata.get("passPoints", 0),
-                            )
-
-            if not standards_mapping and row["standards_mapping"]:
-                s_data = row["standards_mapping"]
-                if isinstance(s_data, str):
-                    s_data = json.loads(s_data)
-                if isinstance(s_data, dict):
-                    for sid, sdata in s_data.items():
-                        if isinstance(sdata, dict):
-                            standards_mapping[sid] = StandardMappingItem(
-                                name=sdata.get("name", ""),
-                                description=sdata.get("description", ""),
-                                points=sdata.get("points", 0),
-                            )
-
-            if not department_mapping and row["department_mapping"]:
-                dept_data = row["department_mapping"]
-                if isinstance(dept_data, str):
-                    dept_data = json.loads(dept_data)
-                if isinstance(dept_data, dict):
-                    for did, ddata in dept_data.items():
-                        if isinstance(ddata, dict):
-                            department_mapping[did] = DepartmentMappingItem(
-                                name=ddata.get("name", ""),
-                                description=ddata.get("description", ""),
-                            )
 
         response_data = RubricsListResponse(
             rubrics=rubrics,

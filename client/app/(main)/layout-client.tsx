@@ -31,8 +31,10 @@ import {
   useBreadcrumbContext,
 } from "@/contexts/breadcrumb-context";
 import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
+import { SimulationProvider } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
+import type { OutputOf } from "@/lib/api/types";
 import {
   generateBreadcrumbs,
   getActiveSectionFromPath,
@@ -49,6 +51,9 @@ import type {
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
+
+  // Check if we're on an attempt page (home/a/[attemptId] or practice/a/[attemptId])
+  const isAttemptPage = /^\/(home|practice)\/a\/[^/]+$/.test(pathname);
   const router = useRouter();
   const { effectiveProfile, activeProfile } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
@@ -272,9 +277,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             )}
 
             {/* Simulation Controls - Only shown when in an attempt */}
-            <div className="pr-4">
-              <SimulationControls />
-            </div>
+            {isAttemptPage && (
+              <div className="pr-4">
+                <SimulationControls />
+              </div>
+            )}
 
             {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>
@@ -317,14 +324,45 @@ function WebSocketProviderWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Conditionally wraps children with SimulationProvider when on an attempt page.
+ * This allows SimulationControls in the layout header to access the context.
+ * Data is fetched server-side and passed from the layout.
+ */
+function SimulationProviderWrapper({
+  children,
+  attemptData,
+  attemptId,
+}: {
+  children: React.ReactNode;
+  attemptData: OutputOf<"/api/v3/attempts/full", "post"> | null;
+  attemptId: string | null;
+}) {
+  // Only provide SimulationProvider when we have attempt data
+  if (attemptId && attemptData) {
+    return (
+      <SimulationProvider attemptId={attemptId} initial={attemptData}>
+        {children}
+      </SimulationProvider>
+    );
+  }
+
+  // On non-attempt pages, just render children
+  return <>{children}</>;
+}
+
 export function MainLayoutClient({
   children,
   initial,
   sessionSnapshot,
+  attemptData,
+  attemptId,
 }: {
   children: React.ReactNode;
   initial: LayoutContextResponse;
   sessionSnapshot: SafeSessionSnapshot;
+  attemptData?: OutputOf<"/api/v3/attempts/full", "post"> | null;
+  attemptId?: string | null;
 }) {
   return (
     <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
@@ -332,7 +370,12 @@ export function MainLayoutClient({
         <TourProvider>
           <BreadcrumbProvider>
             <AnalyticsProvider>
-              <MainLayoutContent>{children}</MainLayoutContent>
+              <SimulationProviderWrapper
+                attemptData={attemptData ?? null}
+                attemptId={attemptId ?? null}
+              >
+                <MainLayoutContent>{children}</MainLayoutContent>
+              </SimulationProviderWrapper>
             </AnalyticsProvider>
           </BreadcrumbProvider>
         </TourProvider>

@@ -35,8 +35,7 @@ import HintDisplay from "@/components/common/chat/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { keys } from "@/lib/query/keys";
-import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 
 export interface AttemptInputProps {
@@ -51,7 +50,7 @@ export default function AttemptInput({
   const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
   const simulationContext = useSimulation();
   const { isConnected } = useWebSocket();
-  const queryClient = useQueryClient();
+  const router = useRouter();
   const [newMessage, setNewMessage] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -100,10 +99,8 @@ export default function AttemptInput({
       // Only handle hints for the current message
       if (data.message_id === latestAssistantMessage.id) {
         if (data.type === "complete" && data.hint_ids) {
-          // Invalidate the attempts query cache to trigger a refetch (includes hints)
-          queryClient.invalidateQueries({
-            queryKey: keys.attempts.all,
-          });
+          // Refresh server data to get updated hints
+          router.refresh();
         }
       }
     };
@@ -123,7 +120,7 @@ export default function AttemptInput({
   }, [
     simulationContext?.simulation?.practiceSimulation,
     latestAssistantMessage?.id,
-    queryClient,
+    router,
   ]);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);

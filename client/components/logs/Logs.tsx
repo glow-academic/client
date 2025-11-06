@@ -11,6 +11,11 @@ import { toast } from "sonner";
 
 import { BulkDeleteLogsDialog } from "./BulkDeleteLogsDialog";
 
+import type {
+  BulkDeleteLogsIn,
+  BulkDeleteLogsOut,
+  LogsListOut,
+} from "@/app/(main)/system/logs/page";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
@@ -23,6 +28,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import { formatTimestamp, getLogLevelVariant } from "@/utils/logs/log-utils";
 import {
   ColumnDef,
@@ -38,15 +44,14 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Activity, FileText, RefreshCw, Trash2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { HealthModal } from "./HealthModal";
 
 export interface LogsProps {
   // Server-provided data (for server-side rendering)
   listData: LogsListOut;
   // Server actions (replaces useMutation)
-  bulkDeleteLogsAction?: (
-    input: BulkDeleteLogsIn
-  ) => Promise<BulkDeleteLogsOut>;
+  bulkDeleteLogsAction: (input: BulkDeleteLogsIn) => Promise<BulkDeleteLogsOut>;
 }
 
 export default function Logs({
@@ -77,27 +82,74 @@ export default function Logs({
   const logsData = serverListData;
   const isLoading = false; // No loading when using server data
 
-  // Extract and normalize data from V3 response to match v2 LogItem type
+  // Extract data from V3 response
   const logs = useMemo(() => {
     if (!logsData?.logs) return [];
 
-    return logsData.logs.map((log) => ({
-      ...log,
-      // Convert log_id from string to number (v2 expects number)
-      log_id: Number.parseInt(log.log_id, 10) || 0,
-      // Ensure correlation_id is always a string (v2 expects non-nullable)
-      correlation_id: log.correlation_id ?? "",
-      // Ensure actor_name can be null (v2 expects nullable)
-      actor_name: log.actor_name || null,
-      // Ensure actor can be null (v2 expects nullable)
-      actor: log.actor || null,
-      // Ensure subject can be null
-      subject: log.subject || null,
-      // Ensure context can be null
-      context: log.context || null,
-      // Ensure error can be null
-      error: log.error || null,
-    }));
+    return logsData.logs.map((log): LogItem => {
+      // V3 API returns log_id as string, convert to number
+      const logId =
+        typeof log.log_id === "string"
+          ? Number.parseInt(log.log_id, 10) || 0
+          : log.log_id;
+
+      // Normalize optional properties to avoid undefined
+      const normalizeActor = (actor: typeof log.actor): LogItem["actor"] => {
+        if (!actor) return null;
+        return {
+          userId: actor.userId ?? null,
+          profileId: actor.profileId ?? null,
+          profileName: actor.profileName ?? null,
+        };
+      };
+
+      const normalizeSubject = (
+        subject: typeof log.subject
+      ): LogItem["subject"] => {
+        if (!subject) return null;
+        return {
+          entityId: subject.entityId ?? null,
+          entityType: subject.entityType ?? null,
+        };
+      };
+
+      const normalizeContext = (
+        context: typeof log.context
+      ): LogItem["context"] => {
+        if (!context) return null;
+        return {
+          route: context.route ?? null,
+          function: context.function ?? null,
+          component: context.component ?? null,
+          provider: context.provider ?? null,
+          model: context.model ?? null,
+        };
+      };
+
+      const normalizeError = (error: typeof log.error): LogItem["error"] => {
+        if (!error) return null;
+        return {
+          code: error.code ?? null,
+          name: error.name ?? null,
+          stack: error.stack ?? null,
+          message: error.message ?? null,
+        };
+      };
+
+      return {
+        log_id: logId,
+        event: log.event,
+        level: log.level,
+        message: log.message ?? "",
+        correlation_id: log.correlation_id ?? "",
+        actor: normalizeActor(log.actor),
+        subject: normalizeSubject(log.subject),
+        context: normalizeContext(log.context),
+        error: normalizeError(log.error),
+        created_at: log.created_at ?? "",
+        actor_name: log.actor_name ?? null,
+      };
+    });
   }, [logsData?.logs]);
 
   const handleRefresh = async () => {
@@ -146,22 +198,36 @@ export default function Logs({
     dateOptions,
     timeOptions,
   } = useMemo(() => {
-    const events = new Set(logs.map((l) => l.event));
-    const providers = new Set(
-      logs.map((l) => l.context?.provider).filter(Boolean)
+    const events = new Set<string>(logs.map((l: LogItem) => l.event));
+    const providers = new Set<string>(
+      logs
+        .map((l: LogItem) => l.context?.provider)
+        .filter((v): v is string => typeof v === "string" && v !== "")
     );
-    const models = new Set(logs.map((l) => l.context?.model).filter(Boolean));
-    const actors = new Set(logs.map((l) => l.actor_name).filter(Boolean));
-    const components = new Set(
-      logs.map((l) => l.context?.component).filter(Boolean)
+    const models = new Set<string>(
+      logs
+        .map((l: LogItem) => l.context?.model)
+        .filter((v): v is string => typeof v === "string" && v !== "")
     );
-    const functions = new Set(
-      logs.map((l) => l.context?.function).filter(Boolean)
+    const actors = new Set<string>(
+      logs
+        .map((l: LogItem) => l.actor_name)
+        .filter((v): v is string => typeof v === "string" && v !== "")
+    );
+    const components = new Set<string>(
+      logs
+        .map((l: LogItem) => l.context?.component)
+        .filter((v): v is string => typeof v === "string" && v !== "")
+    );
+    const functions = new Set<string>(
+      logs
+        .map((l: LogItem) => l.context?.function)
+        .filter((v): v is string => typeof v === "string" && v !== "")
     );
     const dates = new Set<string>();
     const hours = new Set<number>();
 
-    logs.forEach((logItem) => {
+    logs.forEach((logItem: LogItem) => {
       if (logItem.created_at) {
         const date = new Date(logItem.created_at);
         // Format as MM/DD for date options
@@ -177,19 +243,19 @@ export default function Logs({
         .map((v) => ({ value: v, label: v })),
       providerOptions: Array.from(providers)
         .sort()
-        .map((v) => ({ value: v!, label: v! })),
+        .map((v) => ({ value: v, label: v })),
       modelOptions: Array.from(models)
         .sort()
-        .map((v) => ({ value: v!, label: v! })),
+        .map((v) => ({ value: v, label: v })),
       actorOptions: Array.from(actors)
         .sort()
-        .map((v) => ({ value: v!, label: v! })),
+        .map((v) => ({ value: v, label: v })),
       componentOptions: Array.from(components)
         .sort()
-        .map((v) => ({ value: v!, label: v! })),
+        .map((v) => ({ value: v, label: v })),
       functionOptions: Array.from(functions)
         .sort()
-        .map((v) => ({ value: v!, label: v! })),
+        .map((v) => ({ value: v, label: v })),
       dateOptions: Array.from(dates)
         .sort()
         .map((d) => ({ value: d, label: d })),

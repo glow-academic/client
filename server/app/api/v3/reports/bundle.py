@@ -8,7 +8,8 @@ from app.db import get_db
 from app.utils.analytics_query_builder import build_base_filter
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (AnalyticsFilters, MetricResponse,
-                              ScenarioMapping, SimulationMapping)
+                              ScenarioMapping, ScenarioMappingItem,
+                              SimulationMapping, SimulationMappingItem)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -99,8 +100,47 @@ async def get_reports(
         if isinstance(parsed_result, str):
             parsed_result = json.loads(parsed_result)
 
-        # Validate and return response
-        response_data = ReportsBundleResponse.model_validate(parsed_result)
+        # Extract data array (replicate v2 logic)
+        bundle_data = parsed_result.get("data", []) if parsed_result else []
+
+        # Parse scenario mapping from JSONB (replicate v2 logic)
+        scenario_mapping: ScenarioMapping = {}
+        scenario_mapping_data = parsed_result.get("scenario_mapping", {})
+        if isinstance(scenario_mapping_data, str):
+            scenario_mapping_data = json.loads(scenario_mapping_data)
+        if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
+            for scenario_id, scenario_data in scenario_mapping_data.items():
+                if isinstance(scenario_data, dict):
+                    scenario_mapping[scenario_id] = ScenarioMappingItem(
+                        name=scenario_data.get("name", ""),
+                        description=scenario_data.get("description", ""),
+                        persona_ids=[],
+                        persona_mapping={},
+                        document_mapping={},
+                        parameter_item_mapping={},
+                        parameter_item_ids=[],
+                        document_ids=[],
+                    )
+
+        # Parse simulation mapping from JSONB (replicate v2 logic)
+        simulation_mapping: SimulationMapping = {}
+        simulation_mapping_data = parsed_result.get("simulation_mapping", {})
+        if isinstance(simulation_mapping_data, str):
+            simulation_mapping_data = json.loads(simulation_mapping_data)
+        if simulation_mapping_data and isinstance(simulation_mapping_data, dict):
+            for sim_id, sim_data in simulation_mapping_data.items():
+                if isinstance(sim_data, dict):
+                    simulation_mapping[sim_id] = SimulationMappingItem(
+                        name=sim_data.get("name", ""),
+                        description=sim_data.get("description", ""),
+                    )
+
+        # Build response (replicate v2 logic)
+        response_data = ReportsBundleResponse(
+            data=bundle_data,
+            scenario_mapping=scenario_mapping,
+            simulation_mapping=simulation_mapping,
+        )
         
         # Cache response
         await set_cached(

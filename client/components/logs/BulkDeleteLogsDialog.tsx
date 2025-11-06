@@ -19,48 +19,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { useProfile } from "@/contexts/profile-context";
+import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import { useRouter } from "next/navigation";
-
-type LogItem = {
-  log_id: number;
-  event: string;
-  level: string;
-  message: string;
-  correlation_id: string;
-  actor: {
-    userId?: string | null;
-    profileId?: string | null;
-    profileName?: string | null;
-  } | null;
-  subject: {
-    entityId?: string | null;
-    entityType?: string | null;
-  } | null;
-  context: {
-    route?: string | null;
-    function?: string | null;
-    component?: string | null;
-    provider?: string | null;
-    model?: string | null;
-  } | null;
-  error: {
-    code?: string | null;
-    name?: string | null;
-    stack?: string | null;
-    message?: string | null;
-  } | null;
-  created_at: string;
-  actor_name: string | null;
-};
 
 export interface BulkDeleteLogsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   logs: LogItem[];
   onSuccess?: () => void;
-  bulkDeleteLogsAction?: (
-    input: BulkDeleteLogsIn
-  ) => Promise<BulkDeleteLogsOut>;
+  bulkDeleteLogsAction: (input: BulkDeleteLogsIn) => Promise<BulkDeleteLogsOut>;
 }
 
 type DeletePercentage = "10" | "25" | "50" | "100";
@@ -73,6 +41,7 @@ export function BulkDeleteLogsDialog({
   bulkDeleteLogsAction,
 }: BulkDeleteLogsDialogProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
   const [selectedPercentage, setSelectedPercentage] =
     useState<DeletePercentage>("10");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -105,10 +74,9 @@ export function BulkDeleteLogsDialog({
 
     setIsDeleting(true);
     try {
-      if (!bulkDeleteLogsAction) return;
       await bulkDeleteLogsAction({
         body: {
-          profileId: "", // Server will get from session
+          profileId: effectiveProfile?.id || "",
           ids: logsToDelete.map((log) => log.log_id),
         },
       });

@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(_request: NextRequest) {
-  // Simple middleware that doesn't use database operations
-  // Auth will be handled in API routes and server components
-
-  // Allow all requests to pass through for now
-  // You can add route protection logic here that doesn't require database access
-  // For example, checking for auth cookies or JWT tokens
-
-  return NextResponse.next();
+export function middleware(request: NextRequest) {
+  // Inject pathname into headers so server components can access it
+  const pathname = request.nextUrl.pathname;
+  const response = NextResponse.next();
+  response.headers.set("x-pathname", pathname);
+  return response;
 }
 
 export const config = {

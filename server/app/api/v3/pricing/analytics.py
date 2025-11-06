@@ -94,7 +94,7 @@ async def get_pricing(
         return PricingAnalyticsResponse.model_validate(cached["data"])
     
     try:
-        # Determine effective profile ID based on role
+        # Determine effective profile ID based on role (replicate v2 logic)
         effective_profile_id = None
         if filters.profileId:
             # Fetch profile role to determine if we should use profileId
@@ -106,62 +106,73 @@ async def get_pricing(
                 if role not in ("admin", "superadmin", "instructional"):
                     effective_profile_id = filters.profileId
 
-        # Build WHERE clause conditions (similar to PricingQueries logic)
+        # Build WHERE clause conditions (replicate v2 PricingQueries logic)
         where_conditions = [
-            "mr.created_at >= $2",
-            "mr.created_at <= $3",
+            "mr.created_at >= $1",
+            "mr.created_at <= $2",
         ]
         
         params: list[Any] = [
-            filters.departmentIds or [],
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),
         ]
+        param_counter = 3
         
-        # Add department filter via profile_departments join
+        # Add department filter via profile_departments join (only if departments provided)
         if filters.departmentIds and len(filters.departmentIds) > 0:
             where_conditions.append(
-                """EXISTS (
+                f"""EXISTS (
                     SELECT 1 FROM model_run_profiles mrp2
                     JOIN profile_departments pd ON pd.profile_id = mrp2.profile_id
                     WHERE mrp2.model_run_id = mr.id
                       AND mrp2.active = true
-                      AND pd.department_id = ANY($1)
+                      AND pd.department_id = ANY(${param_counter})
                 )"""
             )
+            params.append(filters.departmentIds)
+            param_counter += 1
 
         # Profile filter (specific user)
         if effective_profile_id is not None:
-            param_idx = len(params) + 1
-            where_conditions.append(f"mrp.profile_id = ${param_idx}")
+            where_conditions.append(f"mrp.profile_id = ${param_counter}")
             params.append(effective_profile_id)
+            param_counter += 1
 
         # Role filter (only if no profile_id specified)
         if effective_profile_id is None and filters.roles is not None and len(filters.roles) > 0:
-            param_idx = len(params) + 1
             where_conditions.append(
                 f"""mrp.profile_id IN (
-                    SELECT id FROM profiles WHERE role = ANY(${param_idx})
+                    SELECT id FROM profiles WHERE role = ANY(${param_counter})
                 )"""
             )
             params.append(filters.roles)
+            param_counter += 1
 
         # Cohort filter via cohort_profiles
         if filters.cohortIds is not None and len(filters.cohortIds) > 0:
-            param_idx = len(params) + 1
             where_conditions.append(
                 f"""mrp.profile_id IN (
                     SELECT profile_id FROM cohort_profiles
-                    WHERE cohort_id = ANY(${param_idx}) AND active = true
+                    WHERE cohort_id = ANY(${param_counter}) AND active = true
                 )"""
             )
             params.append(filters.cohortIds)
+            param_counter += 1
 
         where_clause = " AND ".join(where_conditions)
 
-        # Load SQL template
+        # Load SQL template and replace WHERE clause placeholder
+        # Replace only in the actual WHERE line, not in comments
         sql_template = load_sql("sql/v3/pricing/pricing_analytics.sql")
-        query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
+        # Split by lines, replace only in WHERE clause line (not in comments)
+        lines = sql_template.split("\n")
+        replaced_lines = []
+        for line in lines:
+            if line.strip().startswith("WHERE {WHERE_CLAUSE}"):
+                replaced_lines.append(line.replace("{WHERE_CLAUSE}", where_clause))
+            else:
+                replaced_lines.append(line)
+        query = "\n".join(replaced_lines)
 
         result = await conn.fetchval(query, *params)
 

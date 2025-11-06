@@ -185,10 +185,30 @@
             SELECT 
                 ssl.scenario_id,
                 ssl.position,
-                COALESCE(s.name, 'Unknown Scenario') as scenario_name,
+                jsonb_build_object(
+                    'id', s.id::text,
+                    'name', s.name,
+                    'problemStatement', COALESCE(sps.problem_statement, ''),
+                    'departmentId', COALESCE((SELECT department_id::text FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), ''),
+                    'active', s.active,
+                    'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
+                    'createdAt', s.created_at,
+                    'updatedAt', s.updated_at,
+                    'generated', s.generated,
+                    'defaultScenario', false,
+                    'copyPasteAllowed', s.copy_paste_allowed,
+                    'objectives', COALESCE(
+                        (SELECT jsonb_agg(so.objective ORDER BY so.idx)
+                         FROM scenario_objectives so
+                         WHERE so.scenario_id = s.id),
+                        '[]'::jsonb
+                    )
+                ) as scenario_data,
                 COALESCE(pcf.previous_chats, '[]'::jsonb) as previous_chats
             FROM simulation_scenarios_list ssl
             LEFT JOIN scenarios s ON s.id = ssl.scenario_id
+            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN previous_chats_for_scenarios pcf ON pcf.scenario_id = ssl.scenario_id
             ORDER BY ssl.position
         ),
@@ -417,7 +437,7 @@
                         'name', d.name,
                         'type', d.type,
                         'updatedAt', d.updated_at,
-                        'extension', SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'),
+                        'extension', COALESCE(SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'), ''),
                         'scenario_ids', COALESCE(
                             (SELECT array_agg(DISTINCT st.parent_id::text)
                              FROM scenario_documents sd2
@@ -611,18 +631,34 @@
                 CASE 
                     WHEN COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL) > 0 THEN
                         jsonb_build_object(
-                            'totalChats', COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL),
-                            'passedChats', COUNT(*) FILTER (WHERE (grade->>'passed')::boolean = true),
-                            'averageScore', ROUND(
-                                AVG((grade->>'score')::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL),
-                                1
-                            ),
-                            'totalTime', SUM((grade->>'timeTaken')::integer) FILTER (WHERE completed = true AND grade IS NOT NULL),
-                            'overallPassed', BOOL_AND((grade->>'passed')::boolean) FILTER (WHERE completed = true AND grade IS NOT NULL)
+                            'totalScore', COALESCE(SUM((grade->>'score')::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL), 0)::float,
+                            'totalPossiblePoints', COALESCE(
+                                (SELECT r.points FROM rubrics r 
+                                 CROSS JOIN attempt_base ab 
+                                 WHERE r.id = ab.sim_rubric_id),
+                                0
+                            )::float,
+                            'percentage', CASE 
+                                WHEN (SELECT r.points FROM rubrics r 
+                                      CROSS JOIN attempt_base ab 
+                                      WHERE r.id = ab.sim_rubric_id) > 0 THEN
+                                    ROUND(
+                                        (SUM((grade->>'score')::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL)::numeric / 
+                                         (SELECT r.points FROM rubrics r 
+                                          CROSS JOIN attempt_base ab 
+                                          WHERE r.id = ab.sim_rubric_id)::numeric) * 100.0,
+                                        1
+                                    )::float
+                                ELSE 0.0
+                            END,
+                            'passed', BOOL_AND((grade->>'passed')::boolean) FILTER (WHERE completed = true AND grade IS NOT NULL),
+                            'chatsCompleted', COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL)::int,
+                            'totalChats', COUNT(*)::int
                         )
                     ELSE NULL
                 END as aggregated_results
             FROM chats_with_all_data
+            CROSS JOIN attempt_base ab
         ),
         elapsed_time_calc AS (
             SELECT 
@@ -647,19 +683,35 @@
             SELECT 
                 jsonb_build_object(
                     'elapsed', etc.total_elapsed,
-                    'remaining', CASE 
-                        WHEN ab.infinite_mode AND ab.sim_time_limit IS NOT NULL THEN
-                            GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0)
+                    'limit', CASE 
                         WHEN ab.sim_time_limit IS NOT NULL THEN
-                            (ab.sim_time_limit * 60) - etc.total_elapsed
+                            (ab.sim_time_limit * 60)::int
                         ELSE NULL
                     END,
-                    'expired', CASE 
+                    'exceeded', CASE 
                         WHEN ab.infinite_mode AND ab.sim_time_limit IS NOT NULL THEN
                             (GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) <= 0)
                         WHEN ab.sim_time_limit IS NOT NULL THEN
                             ((ab.sim_time_limit * 60) - etc.total_elapsed < 0)
                         ELSE false
+                    END,
+                    'formatted', CASE 
+                        WHEN ab.sim_time_limit IS NOT NULL THEN
+                            CASE 
+                                WHEN ab.infinite_mode THEN
+                                    CONCAT(
+                                        FLOOR(GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) / 3600)::text, 'h ',
+                                        FLOOR((GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) % 3600) / 60)::text, 'm ',
+                                        (GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) % 60)::text, 's'
+                                    )
+                                ELSE
+                                    CONCAT(
+                                        FLOOR(GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) / 3600)::text, 'h ',
+                                        FLOOR((GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) % 3600) / 60)::text, 'm ',
+                                        (GREATEST((ab.sim_time_limit * 60) - etc.total_elapsed, 0) % 60)::text, 's'
+                                    )
+                            END
+                        ELSE ''
                     END
                 ) as timer
             FROM attempt_base ab
@@ -724,17 +776,17 @@
                             0
                         ) = COUNT(*) - 1
                 END as is_last_attempt,
-                BOOL_AND(completed) as show_results,
+                COALESCE(BOOL_AND(completed), false) as show_results,
                 -- Show controls only if there are root scenarios without completed chats (work remaining)
                 -- Hide controls if every root scenario has at least one completed chat
                 -- Completed chats can be for any child scenario in the root's tree
                 CASE 
                     WHEN (SELECT COUNT(*) FROM simulation_root_scenarios_list) = 0 THEN false
-                    ELSE (
+                    ELSE COALESCE((
                         SELECT COUNT(DISTINCT srsl.root_scenario_id) != COUNT(DISTINCT swcc.root_scenario_id)
                         FROM simulation_root_scenarios_list srsl
                         LEFT JOIN scenarios_with_completed_chats swcc ON swcc.root_scenario_id = srsl.root_scenario_id
-                    )
+                    ), true)
                 END as should_show_controls
             FROM chats_with_all_data
         )
@@ -785,9 +837,18 @@
                 (
                     SELECT jsonb_agg(
                         jsonb_build_object(
-                            'scenarioId', scenario_id::text,
-                            'position', position,
-                            'scenarioName', scenario_name,
+                            'id', scenario_data->>'id',
+                            'name', scenario_data->>'name',
+                            'problemStatement', scenario_data->>'problemStatement',
+                            'departmentId', scenario_data->>'departmentId',
+                            'active', (scenario_data->>'active')::boolean,
+                            'personaId', CASE WHEN scenario_data->>'personaId' != '' THEN scenario_data->>'personaId' ELSE NULL END,
+                            'createdAt', scenario_data->>'createdAt',
+                            'updatedAt', scenario_data->>'updatedAt',
+                            'generated', (scenario_data->>'generated')::boolean,
+                            'defaultScenario', (scenario_data->>'defaultScenario')::boolean,
+                            'copyPasteAllowed', (scenario_data->>'copyPasteAllowed')::boolean,
+                            'objectives', scenario_data->'objectives',
                             'previousChats', previous_chats
                         ) ORDER BY position
                     )

@@ -110,15 +110,24 @@ export function SimulationControls() {
 
   // Get all simulation scenarios with their previous chats for permutation generation
   const allSimulationScenarios = useMemo(() => {
-    if (!attemptData?.allSimulationScenarios) return [];
+    // Early return if attemptData is not available
+    if (!attemptData) {
+      return [];
+    }
+
+    if (
+      !attemptData.allSimulationScenarios ||
+      !Array.isArray(attemptData.allSimulationScenarios)
+    ) {
+      return [];
+    }
 
     // Map to include chatId if a chat exists for this scenario
     return attemptData.allSimulationScenarios.map((scenarioData) => {
       // Find all chats for this scenario in the current attempt
       const scenarioChats =
-        attemptData.chats?.filter(
-          (c) => c.scenario?.id === scenarioData.id
-        ) || [];
+        attemptData.chats?.filter((c) => c.scenario?.id === scenarioData.id) ||
+        [];
 
       // Check if this scenario has at least one chat with a grade (completed and graded)
       const hasGradedChat = scenarioChats.some(
@@ -133,10 +142,12 @@ export function SimulationControls() {
         scenarioName: scenarioData.name || "Scenario",
         chatId: firstChat?.chat.id || null,
         hasCompletedChat: hasGradedChat,
-        previousChats: firstChat?.previousChats || [],
+        // previousChats comes from allSimulationScenarios (v3)
+        previousChats:
+          scenarioData.previousChats || firstChat?.previousChats || [],
       };
     });
-  }, [attemptData?.allSimulationScenarios, attemptData?.chats]);
+  }, [attemptData]);
 
   // Filter to only include scenarios without completed chats for End All permutations
   const remainingScenarios = useMemo(() => {
@@ -277,6 +288,11 @@ export function SimulationControls() {
 
   // Don't show buttons while data is still loading
   if (isLoadingChats) {
+    return null;
+  }
+
+  // Don't show buttons if attemptData is not available
+  if (!attemptData) {
     return null;
   }
 
@@ -428,8 +444,8 @@ export function SimulationControls() {
               </Button>
             )}
 
-            {/* End Session button - show when there are 2+ remaining scenarios OR when all scenarios have graded chats */}
-            {(shouldShowControls && remainingScenarios.length > 1) ||
+            {/* End Session button - show when there are remaining scenarios OR when all scenarios have graded chats */}
+            {(shouldShowControls && remainingScenarios.length >= 1) ||
             !shouldShowControls ? (
               <Button
                 type="button"
