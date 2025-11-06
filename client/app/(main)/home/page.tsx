@@ -49,7 +49,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   // Get filters from search params or defaults, then subset to Home fields
   const defaultFilters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Extract subset for Home: startDate, endDate (required)

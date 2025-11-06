@@ -29,12 +29,12 @@ type CreateParameterItemOut = OutputOf<
 const getParametersList = cache(
   async (input: ParametersListIn): Promise<ParametersListOut> => {
     return api.post("/parameters/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateParameter(
-  input: DuplicateParameterIn
+  input: DuplicateParameterIn,
 ): Promise<DuplicateParameterOut> {
   "use server";
   const out = await api.post("/parameters/duplicate", input);
@@ -43,7 +43,7 @@ export async function duplicateParameter(
 }
 
 export async function deleteParameter(
-  input: DeleteParameterIn
+  input: DeleteParameterIn,
 ): Promise<DeleteParameterOut> {
   "use server";
   const out = await api.post("/parameters/delete", input);
@@ -52,7 +52,7 @@ export async function deleteParameter(
 }
 
 export async function createParameterItem(
-  input: CreateParameterItemIn
+  input: CreateParameterItemIn,
 ): Promise<CreateParameterItemOut> {
   "use server";
   const out = await api.post("/parameters/items/create", input);

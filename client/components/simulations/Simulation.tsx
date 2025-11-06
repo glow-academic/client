@@ -58,10 +58,10 @@ export interface SimulationProps {
   simulationDetail?: SimulationDetailOut;
   simulationDetailDefault?: SimulationDetailDefaultOut;
   createSimulationAction?: (
-    input: CreateSimulationIn
+    input: CreateSimulationIn,
   ) => Promise<CreateSimulationOut>;
   updateSimulationAction?: (
-    input: UpdateSimulationIn
+    input: UpdateSimulationIn,
   ) => Promise<UpdateSimulationOut>;
 }
 
@@ -96,7 +96,7 @@ export default function Simulation({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null
+    null,
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -164,13 +164,12 @@ export default function Simulation({
         ? [effectiveProfile.primaryDepartmentId]
         : [],
     }),
-    [effectiveProfile?.primaryDepartmentId]
+    [effectiveProfile?.primaryDepartmentId],
   );
 
   const [formData, setFormData] = useState<FormData>();
   const [originalFormData, setOriginalFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
-
 
   // Permission logic - server computes can_edit flag
   const isReadonly = useMemo(() => {
@@ -181,7 +180,7 @@ export default function Simulation({
   // Extract department mapping
   const departmentMapping = useMemo(
     () => simulationData?.department_mapping || {},
-    [simulationData]
+    [simulationData],
   );
 
   // State for managing scenario IDs (declared early for use in validScenarioIds useMemo)
@@ -345,7 +344,7 @@ export default function Simulation({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | number | boolean | string[] | null
+    value: string | number | boolean | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -372,7 +371,7 @@ export default function Simulation({
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
   // Use ref to capture currentScenarioIds before they get filtered
   const currentScenarioIdsRef = useRef<string[]>([]);
@@ -405,12 +404,12 @@ export default function Simulation({
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id)
+      (id) => !currentDeptIds.includes(id),
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id)
+      (id) => !prevDeptIds.includes(id),
     );
 
     // Save selections for deselected departments
@@ -438,7 +437,7 @@ export default function Simulation({
             if (staged.scenario_ids && staged.scenario_ids.length > 0) {
               const validScenarioSet = new Set(validScenarioIds);
               const validScenarios = staged.scenario_ids.filter((id) =>
-                validScenarioSet.has(id)
+                validScenarioSet.has(id),
               );
               if (validScenarios.length > 0) {
                 setCurrentScenarioIds((prevScenarios) => {
@@ -625,7 +624,7 @@ export default function Simulation({
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -839,7 +838,7 @@ export default function Simulation({
                 onChange={(e) =>
                   handleInputChange(
                     "timeLimit",
-                    parseInt(e.target.value) || null
+                    parseInt(e.target.value) || null,
                   )
                 }
                 className={errors.timeLimit ? "border-destructive" : ""}
@@ -900,15 +899,14 @@ export default function Simulation({
               validScenarioIds={validScenarioIds}
               selectedScenarioIds={currentScenarioIds}
               onSelect={handleScenarioSelection}
-                label=""
-                placeholder="Select scenarios..."
-                description="Choose scenarios to include in this simulation"
-                hideSelectedChips={true}
-                showOnlyActive={true}
-                showLabel={false}
-                isPracticeSimulation={formData?.practiceSimulation ?? false}
-              />
-            )}
+              label=""
+              placeholder="Select scenarios..."
+              description="Choose scenarios to include in this simulation"
+              hideSelectedChips={true}
+              showOnlyActive={true}
+              showLabel={false}
+              isPracticeSimulation={formData?.practiceSimulation ?? false}
+            />
           </div>
 
           {/* Display selected scenarios with preview functionality */}
@@ -925,7 +923,7 @@ export default function Simulation({
 
                 // Get scenario statistics from scenarios array (only for existing scenarios)
                 const scenarioStats = simulationData?.scenarios.find(
-                  (s) => s.scenario_id === scenarioId
+                  (s) => s.scenario_id === scenarioId,
                 );
 
                 // Determine if Remove button should show

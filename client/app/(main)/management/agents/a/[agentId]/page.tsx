@@ -33,19 +33,19 @@ type DeleteAgentPromptOut = OutputOf<"/api/v3/agents/delete-prompt", "post">;
 const getAgent = cache(
   async (input: AgentDetailIn): Promise<AgentDetailOut> => {
     return api.post("/agents/detail", input);
-  }
+  },
 );
 
 const getAgentDefault = cache(
   async (input: AgentDetailDefaultIn): Promise<AgentDetailDefaultOut> => {
     return api.post("/agents/detail-default", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { agentId } = await params;
   const session = await auth();
@@ -67,7 +67,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createAgent(
-  input: CreateAgentIn
+  input: CreateAgentIn,
 ): Promise<CreateAgentOut> {
   "use server";
   const out = await api.post("/agents/create", input);
@@ -76,7 +76,7 @@ export async function createAgent(
 }
 
 export async function updateAgent(
-  input: UpdateAgentIn
+  input: UpdateAgentIn,
 ): Promise<UpdateAgentOut> {
   "use server";
   const out = await api.post("/agents/update", input);
@@ -85,7 +85,7 @@ export async function updateAgent(
 }
 
 export async function deleteAgentPrompt(
-  input: DeleteAgentPromptIn
+  input: DeleteAgentPromptIn,
 ): Promise<DeleteAgentPromptOut> {
   "use server";
   const out = await api.post("/agents/delete-prompt", input);
@@ -117,8 +117,8 @@ export default async function AgentEditPage({
     <div className="space-y-6">
       <SystemAgent
         agentId={agentId}
-        agentDetail={agentDetail || undefined}
-        agentDetailDefault={agentDetailDefault || undefined}
+        {...(agentDetail && { agentDetail })}
+        {...(agentDetailDefault && { agentDetailDefault })}
         createAgentAction={createAgent}
         updateAgentAction={updateAgent}
         deleteAgentPromptAction={deleteAgentPrompt}

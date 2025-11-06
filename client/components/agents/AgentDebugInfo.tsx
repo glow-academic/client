@@ -50,12 +50,7 @@ export function AgentDebugInfo({
     }));
   }, [debugInfo, modelMapping]);
 
-  return (
-    <AgentDebugInfoDataTable
-      data={rows}
-      isLoading={false}
-    />
-  );
+  return <AgentDebugInfoDataTable data={rows} isLoading={false} />;
 }
 
 export default AgentDebugInfo;

@@ -34,13 +34,13 @@ export interface ProviderProps {
   // Optional server-provided data and actions (for server-side rendering)
   providerDetail?: ProviderDetailOut;
   createProviderAction?: (
-    input: CreateProviderIn
+    input: CreateProviderIn,
   ) => Promise<CreateProviderOut>;
   updateProviderAction?: (
-    input: UpdateProviderIn
+    input: UpdateProviderIn,
   ) => Promise<UpdateProviderOut>;
   decryptProviderKeyAction?: (
-    input: DecryptProviderKeyIn
+    input: DecryptProviderKeyIn,
   ) => Promise<DecryptProviderKeyOut>;
 }
 
@@ -82,7 +82,7 @@ export default function Provider({
       apiKey: "",
       baseUrl: "",
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -158,7 +158,7 @@ export default function Provider({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | undefined
+    value: string | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -235,7 +235,7 @@ export default function Provider({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }

@@ -17,7 +17,7 @@ type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
 
 /** ---- Strongly-typed server action (single source of truth) ---- */
 export async function createProvider(
-  input: CreateProviderIn
+  input: CreateProviderIn,
 ): Promise<CreateProviderOut> {
   "use server";
   const out = await api.post("/providers/create", input);

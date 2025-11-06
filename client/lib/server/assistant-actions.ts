@@ -10,13 +10,13 @@ type AssistantChatFullIn = InputOf<"/api/v3/assistant/chats/full", "post">;
 type AssistantChatFullOut = OutputOf<"/api/v3/assistant/chats/full", "post">;
 
 export async function getAssistantChatList(
-  input: AssistantChatListIn
+  input: AssistantChatListIn,
 ): Promise<AssistantChatListOut> {
   return api.post("/assistant/chats/list", input);
 }
 
 export async function getAssistantChatFull(
-  input: AssistantChatFullIn
+  input: AssistantChatFullIn,
 ): Promise<AssistantChatFullOut> {
   return api.post("/assistant/chats/full", input);
 }

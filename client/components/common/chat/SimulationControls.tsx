@@ -67,7 +67,7 @@ export function SimulationControls() {
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export function SimulationControls() {
 
       // Check if this scenario has at least one chat with a grade (completed and graded)
       const hasGradedChat = scenarioChats.some(
-        (c) => c.chat.completed && c.gradingState !== null
+        (c) => c.chat.completed && c.gradingState !== null,
       );
 
       // Get the first chat ID if any exist
@@ -152,7 +152,7 @@ export function SimulationControls() {
   // Filter to only include scenarios without completed chats for End All permutations
   const remainingScenarios = useMemo(() => {
     return allSimulationScenarios.filter(
-      (scenario) => !scenario.hasCompletedChat
+      (scenario) => !scenario.hasCompletedChat,
     );
   }, [allSimulationScenarios]);
 
@@ -164,7 +164,7 @@ export function SimulationControls() {
     const generatePermutations = (
       scenarios: typeof remainingScenarios,
       index: number = 0,
-      currentPermutation: PermutationOption[] = []
+      currentPermutation: PermutationOption[] = [],
     ): PermutationOption[][] => {
       if (index >= scenarios.length) {
         return [currentPermutation];
@@ -200,7 +200,7 @@ export function SimulationControls() {
       for (const option of options) {
         const newPermutation = [...currentPermutation, option];
         results.push(
-          ...generatePermutations(scenarios, index + 1, newPermutation)
+          ...generatePermutations(scenarios, index + 1, newPermutation),
         );
       }
 
@@ -215,7 +215,7 @@ export function SimulationControls() {
         const totalScore = perm.reduce((sum, opt) => sum + (opt.score || 0), 0);
         const totalTimeTaken = perm.reduce(
           (sum, opt) => sum + (opt.timeTaken || 0),
-          0
+          0,
         );
 
         // Calculate total percentage - include skipped sessions as 0 in the average
@@ -224,7 +224,7 @@ export function SimulationControls() {
           perm.length > 0
             ? Math.round(
                 perm.reduce((sum, opt) => sum + (opt.percentage || 0), 0) /
-                  perm.length
+                  perm.length,
               )
             : null;
 
@@ -235,7 +235,7 @@ export function SimulationControls() {
           totalPercentage,
           totalTimeTaken,
         };
-      }
+      },
     );
 
     // Sort by total score (descending), then by total percentage (descending)
@@ -342,7 +342,7 @@ export function SimulationControls() {
           chatId: safeCurrentChat?.id,
           attemptId: safeAttemptId,
         },
-      })
+      }),
     );
     setEndingAction("endChat");
     safeEndChat();
@@ -566,14 +566,14 @@ export function SimulationControls() {
                       attemptId: safeAttemptId,
                       remainingSessions: endAllRemainingSessions,
                     },
-                  })
+                  }),
                 );
 
                 // Extract permutation map if one is selected
                 let previousChatMap: Record<string, string | null> | undefined;
                 if (selectedPermutation && permutations.length > 0) {
                   const selectedPerm = permutations.find(
-                    (p) => p.id === selectedPermutation
+                    (p) => p.id === selectedPermutation,
                   );
                   if (selectedPerm) {
                     previousChatMap = {};
@@ -620,7 +620,7 @@ export function SimulationControls() {
                       chatId: safeCurrentChat?.id,
                       attemptId: safeAttemptId,
                     },
-                  })
+                  }),
                 );
                 setConfirmEndChatOpen(false);
                 setEndingAction("endChat");
@@ -652,7 +652,7 @@ export function SimulationControls() {
           <div className="py-4">
             {(() => {
               const currentChatData = attemptData?.chats.find(
-                (c) => c.chat.id === safeCurrentChat?.id
+                (c) => c.chat.id === safeCurrentChat?.id,
               );
               const previousChats = currentChatData?.previousChats || [];
 
@@ -725,7 +725,7 @@ export function SimulationControls() {
                       chatId: safeCurrentChat?.id,
                       attemptId: safeAttemptId,
                     },
-                  })
+                  }),
                 );
                 setShowPreviousChatsDialog(false);
                 setEndingAction("endChat");
@@ -733,7 +733,7 @@ export function SimulationControls() {
                   undefined,
                   selectedPreviousChatId && selectedPreviousChatId !== ""
                     ? selectedPreviousChatId
-                    : undefined
+                    : undefined,
                 );
                 setSelectedPreviousChatId(null);
               }}

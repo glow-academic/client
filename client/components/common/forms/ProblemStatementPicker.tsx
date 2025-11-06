@@ -142,7 +142,7 @@ export function ProblemStatementPicker({
                           <Check
                             className={cn(
                               "h-4 w-4",
-                              isSelected ? "opacity-100" : "opacity-0"
+                              isSelected ? "opacity-100" : "opacity-0",
                             )}
                           />
                           <span className="font-medium">

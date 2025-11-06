@@ -5,14 +5,6 @@
  * 01/20/2025
  */
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export default function Loading() {
   return (
@@ -101,4 +93,3 @@ export default function Loading() {
     </div>
   );
 }
-

@@ -233,7 +233,7 @@ export function PersonaPicker<
                   className="p-1 rounded-md shadow-sm flex-shrink-0"
                   style={{
                     background: generateGradientFromHex(
-                      selectedPersona.color || "#64748b"
+                      selectedPersona.color || "#64748b",
                     ),
                   }}
                 >

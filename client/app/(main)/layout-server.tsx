@@ -31,14 +31,14 @@ type MarkChatCompleteOut = OutputOf<
 const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
     return api.post("/profile/context", input);
-  }
+  },
 );
 
 /** ---- Cached fetch for attempt data ---- */
 const getAttemptFull = cache(
   async (input: AttemptFullIn): Promise<AttemptFullOut> => {
     return api.post("/attempts/full", input);
-  }
+  },
 );
 
 /** ---- Export type for client (type-only imports) ---- */
@@ -95,7 +95,7 @@ export async function getLayoutContextData() {
 
 /** ---- Strongly-typed server actions for TATour (single source of truth) ---- */
 export async function markIntroComplete(
-  input: MarkIntroCompleteIn
+  input: MarkIntroCompleteIn,
 ): Promise<MarkIntroCompleteOut> {
   "use server";
   const session = await auth();
@@ -108,7 +108,7 @@ export async function markIntroComplete(
 }
 
 export async function markChatComplete(
-  input: MarkChatCompleteIn
+  input: MarkChatCompleteIn,
 ): Promise<MarkChatCompleteOut> {
   "use server";
   const session = await auth();

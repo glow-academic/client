@@ -79,7 +79,7 @@ interface SimulationContextType {
   shouldShowControls: boolean;
   freshlyCompletedChats: Set<string>;
   setFreshlyCompletedChats: (
-    value: Set<string> | ((prev: Set<string>) => Set<string>)
+    value: Set<string> | ((prev: Set<string>) => Set<string>),
   ) => void;
   // UI preferences that persist across chat switches
   showGrades: boolean;
@@ -95,7 +95,7 @@ interface SimulationContextType {
   stopMessage: () => Promise<void>;
   endChat: (chatId?: string, previousChatId?: string) => Promise<void>;
   endAllChats: (
-    previousChatMap?: Record<string, string | null>
+    previousChatMap?: Record<string, string | null>,
   ) => Promise<void>;
   // Loading states
   isSendingMessage: boolean;
@@ -181,7 +181,7 @@ export function SimulationProvider({
 
   // Initialize state from server snapshot
   const [attemptData, setAttemptData] = useState<AttemptFullResponse | null>(
-    initial
+    initial,
   );
 
   // Update state when initial prop changes (from router.refresh())
@@ -196,7 +196,7 @@ export function SimulationProvider({
   // Extract data from v3 response
   const chats = useMemo(
     () => attemptData?.chats.map((c) => c.chat) || [],
-    [attemptData]
+    [attemptData],
   );
   const attempt = attemptData?.attempt || null;
   const simulation = attemptData?.simulation || null;
@@ -212,7 +212,7 @@ export function SimulationProvider({
   const scenario = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return null;
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     return chatData?.scenario ?? null;
   }, [attemptData, currentChat]);
@@ -220,7 +220,7 @@ export function SimulationProvider({
   const scenarioDocuments = attemptData?.scenarioDocuments || [];
   const attemptProfiles = useMemo(
     () => attemptData?.attemptProfiles || [],
-    [attemptData?.attemptProfiles]
+    [attemptData?.attemptProfiles],
   );
   const attemptProfileId = useMemo(() => {
     const activeProfile = attemptProfiles.find((ap) => ap["active"]);
@@ -256,7 +256,7 @@ export function SimulationProvider({
   const currentMessages = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     return chatData?.messages ?? [];
   }, [attemptData, currentChat]);
@@ -265,7 +265,7 @@ export function SimulationProvider({
   const currentChatHints = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     return chatData?.hints || [];
   }, [attemptData, currentChat]);
@@ -274,7 +274,7 @@ export function SimulationProvider({
   const currentDynamicRubric = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return null;
     const chatData = attemptData.chats.find(
-      (c) => c.chat.id === currentChat.id
+      (c) => c.chat.id === currentChat.id,
     );
     return chatData?.dynamicRubric;
   }, [attemptData, currentChat]);
@@ -284,9 +284,9 @@ export function SimulationProvider({
       attemptData?.chats
         .map((c) => c.dynamicRubric)
         .filter(
-          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null
+          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null,
         ) || [],
-    [attemptData]
+    [attemptData],
   );
 
   const aggregatedResults = attemptData?.aggregatedResults || null;
@@ -340,7 +340,7 @@ export function SimulationProvider({
     const interval = setInterval(() => {
       const now = Date.now();
       const secondsSinceFetch = Math.floor(
-        (now - dataFetchedAtRef.current) / 1000
+        (now - dataFetchedAtRef.current) / 1000,
       );
       setLocalElapsedOffset(secondsSinceFetch);
     }, 1000);
@@ -381,11 +381,11 @@ export function SimulationProvider({
     if (chats && chats.length > 0 && currentChatIndex === 0) {
       const sortedChats = [...chats].sort(
         (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
 
       const firstIncompleteIndex = sortedChats.findIndex(
-        (chat) => !chat.completed
+        (chat) => !chat.completed,
       );
 
       if (
@@ -413,7 +413,7 @@ export function SimulationProvider({
             setCurrentChatIndex((prev) => {
               const nextIndex = prev + 1;
               toast.success(
-                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`
+                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`,
               );
               return nextIndex;
             });
@@ -504,7 +504,7 @@ export function SimulationProvider({
         setIsSendingMessage(false);
       }
     },
-    [currentChat, isSendingMessage, emitSendSimulationMessage, readOnly]
+    [currentChat, isSendingMessage, emitSendSimulationMessage, readOnly],
   );
 
   // Stop message function
@@ -562,7 +562,7 @@ export function SimulationProvider({
       attemptId,
       readOnly,
       simulation?.departmentId,
-    ]
+    ],
   );
 
   const endAllChats = useCallback(
@@ -602,7 +602,7 @@ export function SimulationProvider({
       attemptId,
       emitContinueSimulation,
       readOnly,
-    ]
+    ],
   );
 
   // Listen for WebSocket loading state changes
@@ -628,7 +628,7 @@ export function SimulationProvider({
               messageId: event.detail.messageId,
               finalContent: event.detail.finalContent,
             },
-          })
+          }),
         );
       }
     };
@@ -674,7 +674,7 @@ export function SimulationProvider({
       if (event.detail.completedChatId === currentChatIdRef.current) {
         // Mark the chat as freshly completed so the UI can auto-advance
         setFreshlyCompletedChats((prev) =>
-          new Set(prev).add(event.detail.completedChatId)
+          new Set(prev).add(event.detail.completedChatId),
         );
         freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
 
@@ -696,7 +696,7 @@ export function SimulationProvider({
               chatId: event.detail.completedChatId,
               attemptId: attemptId,
             },
-          })
+          }),
         );
       }
     };
@@ -726,81 +726,81 @@ export function SimulationProvider({
 
     window.addEventListener(
       "simulationMessageStart",
-      handleSimulationMessageStart as EventListener
+      handleSimulationMessageStart as EventListener,
     );
     window.addEventListener(
       "simulationMessageComplete",
-      handleSimulationMessageComplete as EventListener
+      handleSimulationMessageComplete as EventListener,
     );
     window.addEventListener(
       "simulationMessageCancelled",
-      handleSimulationMessageCancelled as EventListener
+      handleSimulationMessageCancelled as EventListener,
     );
     window.addEventListener(
       "simulationMessageError",
-      handleSimulationMessageError as EventListener
+      handleSimulationMessageError as EventListener,
     );
     window.addEventListener(
       "simulationStopped",
-      handleSimulationStopped as EventListener
+      handleSimulationStopped as EventListener,
     );
     // Listen for the custom event dispatched from the WebSocketProvider
     window.addEventListener(
       "simulationChatEnded",
-      handleChatEnded as EventListener
+      handleChatEnded as EventListener,
     );
     window.addEventListener(
       "simulationError",
-      handleSimulationError as EventListener
+      handleSimulationError as EventListener,
     );
 
     window.addEventListener(
       "endAllCompleted",
-      handleEndAllCompleted as EventListener
+      handleEndAllCompleted as EventListener,
     );
     // Listen for data channel events
     window.addEventListener(
       "simulationMessageToken",
-      handleSimulationMessageToken as EventListener
+      handleSimulationMessageToken as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "simulationMessageStart",
-        handleSimulationMessageStart as EventListener
+        handleSimulationMessageStart as EventListener,
       );
       window.removeEventListener(
         "simulationMessageComplete",
-        handleSimulationMessageComplete as EventListener
+        handleSimulationMessageComplete as EventListener,
       );
       window.removeEventListener(
         "simulationMessageCancelled",
-        handleSimulationMessageCancelled as EventListener
+        handleSimulationMessageCancelled as EventListener,
       );
       window.removeEventListener(
         "simulationMessageError",
-        handleSimulationMessageError as EventListener
+        handleSimulationMessageError as EventListener,
       );
       window.removeEventListener(
         "simulationStopped",
-        handleSimulationStopped as EventListener
+        handleSimulationStopped as EventListener,
       );
       window.removeEventListener(
         "simulationChatEnded",
-        handleChatEnded as EventListener
+        handleChatEnded as EventListener,
       );
       window.removeEventListener(
         "simulationError",
-        handleSimulationError as EventListener
+        handleSimulationError as EventListener,
       );
       window.removeEventListener(
         "endAllCompleted",
-        handleEndAllCompleted as EventListener
+        handleEndAllCompleted as EventListener,
       );
       // Remove data channel event listeners
       window.removeEventListener(
         "simulationMessageToken",
-        handleSimulationMessageToken as EventListener
+        handleSimulationMessageToken as EventListener,
       );
     };
   }, [attemptId, onSimulationFinished, handleSimulationCompletion, router]);
@@ -863,7 +863,7 @@ export function SimulationProvider({
             // Tools phase: (completed/total) * 90, max 90%
             displayedProgress = Math.min(
               (completed_count / total_count) * 90,
-              90
+              90,
             );
           } else {
             // Summary phase: 95%
@@ -928,7 +928,7 @@ export function SimulationProvider({
     return () => {
       window.removeEventListener(
         "simulationGradingProgress",
-        handleGradingProgress
+        handleGradingProgress,
       );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -947,7 +947,7 @@ export function SimulationProvider({
 
     const sortedChats = [...chats].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
     const idx = sortedChats.findIndex((c) => c.id === desiredNextId);
     if (idx !== -1) {

@@ -47,7 +47,7 @@ export function PracticeCustomizeButton() {
     "superadmin",
     "ta",
   ];
-  if (!role || !privilegedRoles.includes(role)) {
+  if (!role || !privilegedRoles.includes(role as ProfileItem["role"])) {
     return null;
   }
 

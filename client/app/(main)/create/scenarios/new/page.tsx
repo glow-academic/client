@@ -35,12 +35,12 @@ type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 const getScenarioDefault = cache(
   async (input: ScenarioDetailDefaultIn): Promise<ScenarioDetailDefaultOut> => {
     return api.post("/scenarios/detail-default", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createScenario(
-  input: CreateScenarioIn
+  input: CreateScenarioIn,
 ): Promise<CreateScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/create", input);
@@ -49,7 +49,7 @@ export async function createScenario(
 }
 
 export async function updateScenario(
-  input: UpdateScenarioIn
+  input: UpdateScenarioIn,
 ): Promise<UpdateScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/update", input);
@@ -58,7 +58,7 @@ export async function updateScenario(
 }
 
 export async function generateAIScenario(
-  input: GenerateAIScenarioIn
+  input: GenerateAIScenarioIn,
 ): Promise<GenerateAIScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/generate-ai", input);
@@ -67,7 +67,7 @@ export async function generateAIScenario(
 }
 
 export async function randomizeScenario(
-  input: RandomizeScenarioIn
+  input: RandomizeScenarioIn,
 ): Promise<RandomizeScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/randomize", input);

@@ -25,7 +25,7 @@ export interface Model {
  * The v2 API returns parameters grouped by parameter_id with nested item IDs
  */
 export function getParameterItemIdsFromStructure(
-  parameters: Record<string, ParameterDetail>
+  parameters: Record<string, ParameterDetail>,
 ): string[] {
   return Object.values(parameters).flatMap((p) => p.parameter_item_ids);
 }
@@ -36,7 +36,7 @@ export function getParameterItemIdsFromStructure(
  */
 export function groupParameterItemsByParameterId(
   parameterItemIds: string[],
-  parameterItemMapping: Record<string, { parameter_id: string }>
+  parameterItemMapping: Record<string, { parameter_id: string }>,
 ): Record<string, string[]> {
   const grouped: Record<string, string[]> = {};
 
@@ -60,7 +60,7 @@ export function groupParameterItemsByParameterId(
  */
 export function getObjectivesFromMapping(
   objectiveIds: string[],
-  objectiveMapping: Record<string, { name: string }>
+  objectiveMapping: Record<string, { name: string }>,
 ): string[] {
   return objectiveIds.map((id) => objectiveMapping[id]?.name || "");
 }
@@ -70,7 +70,7 @@ export function getObjectivesFromMapping(
  * This includes all available parameter items across all parameters
  */
 export function getAllValidParameterItemIds(
-  parameters: Record<string, ParameterDetail>
+  parameters: Record<string, ParameterDetail>,
 ): string[] {
   const allIds = new Set<string>();
 

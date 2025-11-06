@@ -60,7 +60,15 @@ export interface CohortPerformanceProps {
   cohortFacts: CohortFact[];
   dailyFacts: DailyFact[];
   /** Simulation mapping object */
-  simulationMapping: Record<string, { name: string; description: string, department_ids?: string[] | null, time_limit?: number | null }>;
+  simulationMapping: Record<
+    string,
+    {
+      name: string;
+      description: string;
+      department_ids?: string[] | null;
+      time_limit?: number | null;
+    }
+  >;
   /** Valid simulation IDs */
   validSimulationIds: string[];
   /** If rendering for a single learner detail view */
@@ -119,7 +127,7 @@ export default function CohortPerformance({
         w: 0,
         totalAttempts: 0,
         passedAttempts: c.passedAttempts, // not recomputed (per-student), keep original
-      })
+      }),
     );
 
     cohortFacts.forEach((f) => {
@@ -161,7 +169,6 @@ export default function CohortPerformance({
   };
 
   const thresholdStatus = getThresholdStatus();
-
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -286,7 +293,7 @@ export default function CohortPerformance({
                     {(() => {
                       // Filter daily data for this specific cohort
                       const cohortDailyData = dailyData.filter(
-                        (d: DailyRow) => d.cohortId === cohort.id
+                        (d: DailyRow) => d.cohortId === cohort.id,
                       );
                       if (cohortDailyData.length === 0) return null;
 

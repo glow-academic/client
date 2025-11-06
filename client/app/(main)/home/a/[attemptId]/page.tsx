@@ -28,13 +28,13 @@ type UpdateChatCreatedAtOut = OutputOf<
 const getAttemptFull = cache(
   async (input: AttemptFullIn): Promise<AttemptFullOut> => {
     return api.post("/attempts/full", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { attemptId } = await params;
 
@@ -57,7 +57,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function updateChatCreatedAt(
-  input: UpdateChatCreatedAtIn
+  input: UpdateChatCreatedAtIn,
 ): Promise<UpdateChatCreatedAtOut> {
   "use server";
   const out = await api.post("/attempts/chats/update-created-at", input);

@@ -103,7 +103,7 @@ export default function SimulationHistory({
         }
         return acc;
       },
-      [] as { value: string; label: string }[]
+      [] as { value: string; label: string }[],
     );
 
     return uniqueProfiles;
@@ -127,7 +127,7 @@ export default function SimulationHistory({
         }
         return acc;
       },
-      [] as { value: string; label: string }[]
+      [] as { value: string; label: string }[],
     );
 
     return uniqueSimulations;
@@ -178,7 +178,7 @@ export default function SimulationHistory({
           // Search in persona names
           if (
             item.personaNames.some((name) =>
-              name.toLowerCase().includes(searchValue)
+              name.toLowerCase().includes(searchValue),
             )
           ) {
             return true;
@@ -294,7 +294,7 @@ export default function SimulationHistory({
               filterFn: (
                 row: Row<HistoryDataItem>,
                 _id: string,
-                value: string[]
+                value: string[],
               ) => {
                 return value.includes(row.original.profileId);
               },
@@ -373,7 +373,7 @@ export default function SimulationHistory({
           if (!value || value.length === 0) return true;
           const scenarioIds = row.original.scenario_ids || [];
           return value.some((scenarioId: string) =>
-            scenarioIds.includes(scenarioId)
+            scenarioIds.includes(scenarioId),
           );
         },
       },
@@ -435,7 +435,7 @@ export default function SimulationHistory({
           if (!value || !Array.isArray(value) || value.length === 0)
             return true;
           return value.some((filterPersona: string) =>
-            personaNames?.includes(filterPersona)
+            personaNames?.includes(filterPersona),
           );
         },
       },
@@ -525,7 +525,7 @@ export default function SimulationHistory({
 
     // Filter data to only include entries for the current effective profile
     const profileData = data.filter(
-      (item) => item.profileId === effectiveProfile.id
+      (item) => item.profileId === effectiveProfile.id,
     );
 
     if (profileData.length === 0) return [];

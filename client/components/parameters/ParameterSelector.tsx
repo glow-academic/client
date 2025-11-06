@@ -65,7 +65,7 @@ function SliderLabelContainer({
     const updateHandlePositions = () => {
       if (containerRef.current && sliderRef.current) {
         const handles = sliderRef.current.querySelectorAll(
-          '[data-slot="slider-thumb"]'
+          '[data-slot="slider-thumb"]',
         ) as NodeListOf<HTMLElement>;
         const containerRect = containerRef.current.getBoundingClientRect();
         const positions: Record<number, number> = {};
@@ -276,10 +276,10 @@ export function ParameterSelector({
 
   const handleNonNumericalParameterChange = (
     parameterId: string,
-    newIds: string[]
+    newIds: string[],
   ) => {
     const currentItems = selectedParameterItemIds.filter(
-      (id) => parameterItemMapping[id]?.parameter_id !== parameterId
+      (id) => parameterItemMapping[id]?.parameter_id !== parameterId,
     );
 
     // Accept all selected IDs (unlimited multi-select)
@@ -292,10 +292,10 @@ export function ParameterSelector({
 
   const handleNumericalParameterChange = (
     parameterId: string,
-    newIds: string[]
+    newIds: string[],
   ) => {
     const currentItems = selectedParameterItemIds.filter(
-      (id) => parameterItemMapping[id]?.parameter_id !== parameterId
+      (id) => parameterItemMapping[id]?.parameter_id !== parameterId,
     );
 
     // Accept all IDs (for range selection, multiple items within range)
@@ -334,7 +334,7 @@ export function ParameterSelector({
   };
 
   const getNumericalParameterRange = (
-    parameterId: string
+    parameterId: string,
   ): { min: number; max: number; step: number } => {
     const itemIds = parameterItemsByParameter[parameterId] || [];
     const values = itemIds
@@ -355,7 +355,7 @@ export function ParameterSelector({
 
   const handleNumericalSliderChange = (
     parameterId: string,
-    value: number[]
+    value: number[],
   ) => {
     const itemIds = parameterItemsByParameter[parameterId] || [];
 

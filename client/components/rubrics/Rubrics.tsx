@@ -5,15 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import {
-  Copy,
-  Edit,
-  Eye,
-  FileCheck,
-  Star,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Copy, Edit, Eye, FileCheck, Star, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -65,7 +57,7 @@ export interface RubricsProps {
   listData: RubricsListOut;
   // Server actions (replaces useMutation)
   duplicateRubricAction?: (
-    input: DuplicateRubricIn
+    input: DuplicateRubricIn,
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
   createRubricAction?: (input: CreateRubricIn) => Promise<CreateRubricOut>;
@@ -100,11 +92,11 @@ export default function Rubrics({
   const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
   const standardGroupsMapping = useMemo(
     () => rubricsData?.standard_groups_mapping || {},
-    [rubricsData]
+    [rubricsData],
   );
   const standardsMapping = useMemo(
     () => rubricsData?.standards_mapping || {},
-    [rubricsData]
+    [rubricsData],
   );
   const departmentMapping = useMemo(
     () =>
@@ -112,7 +104,7 @@ export default function Rubrics({
         string,
         { name: string; description: string }
       >) || {},
-    [rubricsData]
+    [rubricsData],
   );
 
   // Build filter options
@@ -220,7 +212,7 @@ export default function Rubrics({
           const percentage =
             row.original.points > 0
               ? Math.round(
-                  (row.original.passPoints / row.original.points) * 100
+                  (row.original.passPoints / row.original.points) * 100,
                 )
               : 0;
           return value.some((range) => {
@@ -250,7 +242,7 @@ export default function Rubrics({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -429,84 +421,83 @@ export default function Rubrics({
   return (
     <div className="space-y-6">
       <div className="space-y-4" data-testid="rubrics-data-table">
-          {/* Toolbar */}
-          <div className="flex items-center justify-between">
-            <div className="flex flex-1 items-center space-x-2 flex-wrap">
-              <div className="mb-2">
-                <Input
-                  placeholder="Search rubrics..."
-                  value={(nameColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    nameColumn?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-[150px] lg:w-[250px]"
+        {/* Toolbar */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="mb-2">
+              <Input
+                placeholder="Search rubrics..."
+                value={(nameColumn?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  nameColumn?.setFilterValue(event.target.value)
+                }
+                className="h-8 w-[150px] lg:w-[250px]"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2 flex-wrap mb-2">
+              {passPointsColumn && passPointsOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={passPointsColumn}
+                  title="Pass Points"
+                  options={passPointsOptions}
                 />
-              </div>
+              )}
 
-              <div className="flex items-center space-x-2 flex-wrap mb-2">
-                {passPointsColumn && passPointsOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={passPointsColumn}
-                    title="Pass Points"
-                    options={passPointsOptions}
-                  />
-                )}
+              {pointsColumn && totalPointsOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={pointsColumn}
+                  title="Total Points"
+                  options={totalPointsOptions}
+                />
+              )}
 
-                {pointsColumn && totalPointsOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={pointsColumn}
-                    title="Total Points"
-                    options={totalPointsOptions}
-                  />
-                )}
+              {passPercentageColumn && passPercentageOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={passPercentageColumn}
+                  title="Pass %"
+                  options={passPercentageOptions}
+                />
+              )}
 
-                {passPercentageColumn && passPercentageOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={passPercentageColumn}
-                    title="Pass %"
-                    options={passPercentageOptions}
-                  />
-                )}
+              {departmentsColumn && departmentOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={departmentsColumn}
+                  title="Department"
+                  options={departmentOptions}
+                />
+              )}
 
-                {departmentsColumn && departmentOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                  />
-                )}
-
-                {isFiltered && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
-                    className="h-8 px-2 lg:px-3"
-                  >
-                    Reset
-                    <X className="ml-2 h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
-
-          {/* Rubrics cards */}
-          <div className="space-y-4">
-            {table.getRowModel().rows.length ? (
-              table
-                .getRowModel()
-                .rows.map((row) => renderRubricCard(row.original))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No rubrics match the current filters.
-              </div>
-            )}
-          </div>
-
-          {/* Pagination */}
-          <DataTablePagination table={table} card={true} />
         </div>
-      )}
+
+        {/* Rubrics cards */}
+        <div className="space-y-4">
+          {table.getRowModel().rows.length ? (
+            table
+              .getRowModel()
+              .rows.map((row) => renderRubricCard(row.original))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No rubrics match the current filters.
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        <DataTablePagination table={table} card={true} />
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

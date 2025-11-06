@@ -20,7 +20,7 @@ type DashboardOut = OutputOf<"/api/v3/dashboard", "post">;
 const getDashboard = cache(
   async (input: DashboardIn): Promise<DashboardOut> => {
     return api.post("/dashboard", input);
-  }
+  },
 );
 
 export const metadata: Metadata = {
@@ -50,7 +50,7 @@ export default async function DashboardPage({
 
   // Get filters from search params or defaults
   const filters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Fetch dashboard data server-side

@@ -37,7 +37,8 @@ export interface TAUsersKPIProps {
 }
 
 const COLOR_CONFIG = {
-  gradient: "from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900",
+  gradient:
+    "from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900",
   border: "border-purple-200",
   text: "text-purple-700",
   icon: "text-purple-600",
@@ -121,4 +122,3 @@ export default function TAUsersKPI({
     </>
   );
 }
-

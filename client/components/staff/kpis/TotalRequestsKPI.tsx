@@ -37,7 +37,8 @@ export interface TotalRequestsKPIProps {
 }
 
 const COLOR_CONFIG = {
-  gradient: "from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900",
+  gradient:
+    "from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900",
   border: "border-orange-200",
   text: "text-orange-700",
   icon: "text-orange-600",
@@ -105,7 +106,9 @@ export default function TotalRequestsKPI({
                 <YAxis tickFormatter={formatNumber} />
                 <Tooltip
                   formatter={(value: number, name: string) => [
-                    name === "value" ? formatNumber(Math.round(value)) : formatNumber(value),
+                    name === "value"
+                      ? formatNumber(Math.round(value))
+                      : formatNumber(value),
                     name === "value" ? "Total Requests" : "New Requests",
                   ]}
                   labelFormatter={formatDate}
@@ -126,4 +129,3 @@ export default function TotalRequestsKPI({
     </>
   );
 }
-

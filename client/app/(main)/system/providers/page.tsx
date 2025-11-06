@@ -28,12 +28,12 @@ type DeleteModelOut = OutputOf<"/api/v3/providers/models/delete", "post">;
 const getProvidersList = cache(
   async (input: ProvidersListIn): Promise<ProvidersListOut> => {
     return api.post("/providers/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateProvider(
-  input: DuplicateProviderIn
+  input: DuplicateProviderIn,
 ): Promise<DuplicateProviderOut> {
   "use server";
   const out = await api.post("/providers/duplicate", input);
@@ -42,7 +42,7 @@ export async function duplicateProvider(
 }
 
 export async function deleteProvider(
-  input: DeleteProviderIn
+  input: DeleteProviderIn,
 ): Promise<DeleteProviderOut> {
   "use server";
   const out = await api.post("/providers/delete", input);
@@ -51,7 +51,7 @@ export async function deleteProvider(
 }
 
 export async function duplicateModel(
-  input: DuplicateModelIn
+  input: DuplicateModelIn,
 ): Promise<DuplicateModelOut> {
   "use server";
   const out = await api.post("/providers/models/duplicate", input);
@@ -60,7 +60,7 @@ export async function duplicateModel(
 }
 
 export async function deleteModel(
-  input: DeleteModelIn
+  input: DeleteModelIn,
 ): Promise<DeleteModelOut> {
   "use server";
   const out = await api.post("/providers/models/delete", input);

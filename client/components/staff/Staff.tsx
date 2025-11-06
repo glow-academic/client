@@ -58,29 +58,29 @@ import type {
 
 // Explicitly define server action types (matching the page exports)
 export type DeleteStaffAction = (
-  input: DeleteStaffIn
+  input: DeleteStaffIn,
 ) => Promise<DeleteStaffOut>;
 export type BulkDeleteStaffAction = (
-  input: BulkDeleteStaffIn
+  input: BulkDeleteStaffIn,
 ) => Promise<BulkDeleteStaffOut>;
 export type UpdateStaffAction = (
-  input: UpdateStaffIn
+  input: UpdateStaffIn,
 ) => Promise<UpdateStaffOut>;
 export type BulkUpdateStaffAction = (
-  input: BulkUpdateStaffIn
+  input: BulkUpdateStaffIn,
 ) => Promise<BulkUpdateStaffOut>;
 export type GetStaffDetailAction = (
-  input: StaffDetailIn
+  input: StaffDetailIn,
 ) => Promise<StaffDetailOut>;
 export type GetStaffDetailBulkAction = (
-  input: StaffDetailBulkIn
+  input: StaffDetailBulkIn,
 ) => Promise<StaffDetailBulkOut>;
 export type SearchStaffAction = (
-  input: SearchStaffIn
+  input: SearchStaffIn,
 ) => Promise<SearchStaffOut>;
 export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
 export type BulkCreateOrUpdateStaffAction = (
-  input: BulkCreateOrUpdateStaffIn
+  input: BulkCreateOrUpdateStaffIn,
 ) => Promise<BulkCreateOrUpdateStaffOut>;
 
 export interface StaffProps {
@@ -148,11 +148,11 @@ export default function Staff({
   const staff = React.useMemo(() => staffData?.staff || [], [staffData?.staff]);
   const cohortMapping = React.useMemo(
     () => staffData?.cohort_mapping || {},
-    [staffData?.cohort_mapping]
+    [staffData?.cohort_mapping],
   );
   const departmentMapping = React.useMemo(
     () => staffData?.department_mapping || {},
-    [staffData?.department_mapping]
+    [staffData?.department_mapping],
   );
   const trendData = React.useMemo(
     () =>
@@ -163,7 +163,7 @@ export default function Staff({
         ta: [],
         total_requests: [],
       },
-    [staffData?.trend_data]
+    [staffData?.trend_data],
   );
 
   // Calculate counts for KPI cards
@@ -285,7 +285,7 @@ export default function Staff({
         selectedStaffIds={selectedStaffIds}
         onStaffSelect={(id, checked) =>
           setSelectedStaffIds((prev) =>
-            checked ? [...prev, id] : prev.filter((x) => x !== id)
+            checked ? [...prev, id] : prev.filter((x) => x !== id),
           )
         }
         onSelectAll={(checked, visibleRowIds) => {
@@ -303,7 +303,7 @@ export default function Staff({
           } else {
             // Deselect all visible rows
             setSelectedStaffIds((prev) =>
-              prev.filter((id) => !visibleRowIds?.includes(id))
+              prev.filter((id) => !visibleRowIds?.includes(id)),
             );
           }
         }}
@@ -315,7 +315,7 @@ export default function Staff({
           window.open(
             `/analytics/reports/p/${staffMember.profile_id}`,
             "_blank",
-            "noopener,noreferrer"
+            "noopener,noreferrer",
           );
         }}
         onEdit={async (staffMember) => {
@@ -451,7 +451,7 @@ export default function Staff({
           </AlertDialogHeader>
           {(() => {
             const selected = staff.filter((s) =>
-              selectedStaffIds.includes(s.profile_id)
+              selectedStaffIds.includes(s.profile_id),
             );
             const nonDeletable = selected.filter((s) => !s.can_delete);
             const deletable = selected.filter((s) => s.can_delete);
@@ -529,7 +529,7 @@ export default function Staff({
                   const deletableIds = staff
                     .filter(
                       (s) =>
-                        selectedStaffIds.includes(s.profile_id) && s.can_delete
+                        selectedStaffIds.includes(s.profile_id) && s.can_delete,
                     )
                     .map((s) => s.profile_id);
                   if (deletableIds.length === 0) {

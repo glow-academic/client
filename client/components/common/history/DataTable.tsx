@@ -87,7 +87,7 @@ export function DataTable<TData, TValue>({
       scenarios: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "date", desc: true }, // Default to descending order by date
@@ -96,7 +96,7 @@ export function DataTable<TData, TValue>({
   // State for archive dialog
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
   const [archiveAction, setArchiveAction] = React.useState<boolean | null>(
-    null
+    null,
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
   // Helper functions to normalize id and archived fields
@@ -247,7 +247,7 @@ export function DataTable<TData, TValue>({
       });
 
       toast.success(
-        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
+        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`,
       );
 
       // Clear selection after success
@@ -292,7 +292,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -311,7 +311,7 @@ export function DataTable<TData, TValue>({
                     <TableCell key={cell.id} className="px-6">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

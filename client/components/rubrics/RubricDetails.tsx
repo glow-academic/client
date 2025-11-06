@@ -131,7 +131,7 @@ export default function RubricDetails({
 
       // Check if this group is in the updates
       const update = params.standardGroupUpdates.find(
-        (g) => g.id === groupId && !g.deleted
+        (g) => g.id === groupId && !g.deleted,
       );
 
       if (!update) {
@@ -163,7 +163,7 @@ export default function RubricDetails({
           })
           .filter(
             (s): s is { name: string; description?: string; points: number } =>
-              s !== null
+              s !== null,
           );
 
         const groupName = groupMapping["name"];
@@ -233,7 +233,7 @@ export default function RubricDetails({
 
   const handleInputChange = (
     field: keyof typeof formData,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -291,7 +291,7 @@ export default function RubricDetails({
         });
 
         toast.success(
-          `Rubric updated successfully. Total points: ${result.points}`
+          `Rubric updated successfully. Total points: ${result.points}`,
         );
         setIsEditing(false);
         router.refresh();
@@ -301,7 +301,7 @@ export default function RubricDetails({
         isCreateMode ? "Failed to create rubric" : "Failed to update rubric",
         {
           description: error instanceof Error ? error.message : "Unknown error",
-        }
+        },
       );
     } finally {
       setIsCreating(false);

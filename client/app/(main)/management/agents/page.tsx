@@ -24,12 +24,12 @@ type DeleteAgentOut = OutputOf<"/api/v3/agents/delete", "post">;
 const getAgentsList = cache(
   async (input: AgentsListIn): Promise<AgentsListOut> => {
     return api.post("/agents/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateAgent(
-  input: DuplicateAgentIn
+  input: DuplicateAgentIn,
 ): Promise<DuplicateAgentOut> {
   "use server";
   const out = await api.post("/agents/duplicate", input);
@@ -38,7 +38,7 @@ export async function duplicateAgent(
 }
 
 export async function deleteAgent(
-  input: DeleteAgentIn
+  input: DeleteAgentIn,
 ): Promise<DeleteAgentOut> {
   "use server";
   const out = await api.post("/agents/delete", input);

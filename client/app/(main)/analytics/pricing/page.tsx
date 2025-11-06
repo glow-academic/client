@@ -45,7 +45,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 
   // Get filters from search params or defaults
   const filters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Fetch pricing data server-side

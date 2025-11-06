@@ -102,7 +102,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                       .sort(
                         (a, b) =>
                           new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime()
+                          new Date(a.createdAt).getTime(),
                       )
                       .map((pastChat) => (
                         <SelectItem key={pastChat.id} value={pastChat.id}>

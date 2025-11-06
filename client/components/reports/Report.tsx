@@ -73,7 +73,7 @@ export default function Report({
             role: profileData.role || "",
           }
         : null,
-    [profileData]
+    [profileData],
   );
 
   // Set breadcrumb context when profile data is loaded

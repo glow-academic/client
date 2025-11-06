@@ -59,18 +59,18 @@ type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
 const getStaffList = cache(
   async (input: StaffListIn): Promise<StaffListOut> => {
     return api.post("/profile/staff/list", input);
-  }
+  },
 );
 
 const getInitialSearchData = cache(
   async (input: SearchStaffIn): Promise<SearchStaffOut> => {
     return api.post("/profile/staff/search-staff", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function deleteStaff(
-  input: DeleteStaffIn
+  input: DeleteStaffIn,
 ): Promise<DeleteStaffOut> {
   "use server";
   const out = await api.post("/profile/staff/delete", input);
@@ -79,7 +79,7 @@ export async function deleteStaff(
 }
 
 export async function bulkDeleteStaff(
-  input: BulkDeleteStaffIn
+  input: BulkDeleteStaffIn,
 ): Promise<BulkDeleteStaffOut> {
   "use server";
   const out = await api.post("/profile/staff/bulk-delete", input);
@@ -88,7 +88,7 @@ export async function bulkDeleteStaff(
 }
 
 export async function updateStaff(
-  input: UpdateStaffIn
+  input: UpdateStaffIn,
 ): Promise<UpdateStaffOut> {
   "use server";
   const out = await api.post("/profile/staff/update", input);
@@ -97,7 +97,7 @@ export async function updateStaff(
 }
 
 export async function bulkUpdateStaff(
-  input: BulkUpdateStaffIn
+  input: BulkUpdateStaffIn,
 ): Promise<BulkUpdateStaffOut> {
   "use server";
   const out = await api.post("/profile/staff/bulk-update", input);
@@ -106,28 +106,28 @@ export async function bulkUpdateStaff(
 }
 
 export async function getStaffDetail(
-  input: StaffDetailIn
+  input: StaffDetailIn,
 ): Promise<StaffDetailOut> {
   "use server";
   return api.post("/profile/staff/detail", input);
 }
 
 export async function getStaffDetailBulk(
-  input: StaffDetailBulkIn
+  input: StaffDetailBulkIn,
 ): Promise<StaffDetailBulkOut> {
   "use server";
   return api.post("/profile/staff/detail-bulk", input);
 }
 
 export async function searchStaff(
-  input: SearchStaffIn
+  input: SearchStaffIn,
 ): Promise<SearchStaffOut> {
   "use server";
   return api.post("/profile/staff/search-staff", input);
 }
 
 export async function getCreateStaffData(
-  input: CreateStaffDataIn
+  input: CreateStaffDataIn,
 ): Promise<CreateStaffDataOut> {
   "use server";
   return api.post("/profile/staff/create-staff-data", input);
@@ -139,12 +139,12 @@ export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
 }
 
 export async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn
+  input: BulkCreateOrUpdateStaffIn,
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
   const out = await api.post(
     "/profile/staff/bulk-create-or-update-staff",
-    input
+    input,
   );
   revalidateTag("profile");
   return out;

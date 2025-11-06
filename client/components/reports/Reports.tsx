@@ -169,7 +169,7 @@ export default function Reports({
         value: id,
         label: scenario.name,
       })),
-    [scenarioMapping]
+    [scenarioMapping],
   );
 
   // Build simulation options from mapping
@@ -179,7 +179,7 @@ export default function Reports({
         value: id,
         label: simulation.name,
       })),
-    [simulationMapping]
+    [simulationMapping],
   );
 
   // Build simulations array for ReportsDataTable
@@ -189,7 +189,7 @@ export default function Reports({
         id,
         title: simulation.name,
       })),
-    [simulationMapping]
+    [simulationMapping],
   );
 
   // Create comprehensive columns matching useReportColumns pattern

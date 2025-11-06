@@ -42,7 +42,6 @@ async def test_update_agent(
             "department_ids": [str(dept_id)],
             "prompt_id": None,
             "department_id": None,
-            "department_prompt_id": None,
         },
     )
 
@@ -174,7 +173,6 @@ async def test_update_agent_removes_department_links(
             "department_ids": [str(new_dept_id)] if new_dept_id else [],
             "prompt_id": None,
             "department_id": None,
-            "department_prompt_id": None,
         },
     )
 
@@ -224,7 +222,6 @@ async def test_update_agent_not_found(
             "department_ids": None,
             "prompt_id": None,
             "department_id": None,
-            "department_prompt_id": None,
         },
     )
 

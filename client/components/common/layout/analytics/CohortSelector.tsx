@@ -58,7 +58,7 @@ export function CohortSelector({
 }: CohortSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const [peekedCohort, setPeekedCohort] = React.useState<Cohort | undefined>(
-    cohorts[0]
+    cohorts[0],
   );
 
   const handleSelect = (cohort: Cohort) => {
@@ -87,7 +87,7 @@ export function CohortSelector({
   const handleRemoveItem = (cohortToRemove: Cohort, e: React.MouseEvent) => {
     e.stopPropagation();
     const newSelectedCohorts = selectedCohorts.filter(
-      (c) => c.id !== cohortToRemove.id
+      (c) => c.id !== cohortToRemove.id,
     );
     onSelect?.(newSelectedCohorts);
   };
@@ -190,7 +190,7 @@ export function CohortSelector({
                       key={cohort.id}
                       cohort={cohort}
                       isSelected={selectedCohorts.some(
-                        (c) => c.id === cohort.id
+                        (c) => c.id === cohort.id,
                       )}
                       onPeek={(cohort) => setPeekedCohort(cohort)}
                       onSelect={() => handleSelect(cohort)}

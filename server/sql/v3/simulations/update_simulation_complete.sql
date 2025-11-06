@@ -19,8 +19,8 @@ replace_time_limit AS (
 link_time_limit AS (
     -- Insert new time limit if provided
     INSERT INTO simulation_time_limits (simulation_id, time_limit_seconds, active, created_at, updated_at)
-    SELECT $1::uuid, $8, true, NOW(), NOW()
-    WHERE $8 IS NOT NULL
+    SELECT $1::uuid, $8::int, true, NOW(), NOW()
+    WHERE $8::int IS NOT NULL
 ),
 replace_departments AS (
     -- Deactivate all existing department links

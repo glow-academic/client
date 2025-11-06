@@ -127,12 +127,12 @@ export function PracticeCustomizeDialog({
   // Build valid IDs from mappings (server already filtered to relevant items)
   const validSimulationIds = useMemo(
     () => Object.keys(simulationMapping),
-    [simulationMapping]
+    [simulationMapping],
   );
 
   const validPersonaIds = useMemo(
     () => Object.keys(personaMapping),
-    [personaMapping]
+    [personaMapping],
   );
 
   // Build arrays from mappings for components that need them
@@ -147,7 +147,7 @@ export function PracticeCustomizeDialog({
             ? sc.persona_ids[0]
             : undefined,
       })),
-    [scenarioMapping]
+    [scenarioMapping],
   );
 
   const personas = useMemo(
@@ -156,7 +156,7 @@ export function PracticeCustomizeDialog({
         id,
         name: p.name,
       })),
-    [personaMapping]
+    [personaMapping],
   );
 
   const handleStartAttempt = async () => {
@@ -189,14 +189,14 @@ export function PracticeCustomizeDialog({
 
       // Find base default practice scenario for this persona
       const baseScenario = scenarios.find((s) =>
-        s.name.toLowerCase().includes(selectedPersona.name.toLowerCase())
+        s.name.toLowerCase().includes(selectedPersona.name.toLowerCase()),
       );
 
       // Use first available practice simulation (server filtered to practice only)
       const firstSimulationId = validSimulationIds[0];
       if (!firstSimulationId || !baseScenario) {
         toast.error(
-          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`
+          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`,
         );
         return;
       }

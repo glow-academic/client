@@ -117,7 +117,7 @@ export function ProfileProviderClient({
 
   // Department filter state
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
 
   const bootstrapProfile = initial.actualProfile ?? null;
@@ -138,7 +138,7 @@ export function ProfileProviderClient({
         effectiveProfile &&
         effectiveProfile.id !== bootstrapProfile.id &&
         sessionSnapshot.emulationTTL &&
-        sessionSnapshot.fullEmulation
+        sessionSnapshot.fullEmulation,
     );
   }, [
     bootstrapProfile,
@@ -178,7 +178,7 @@ export function ProfileProviderClient({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname]
+    [router, pathname],
   );
 
   const isSectionAvailable = useCallback(
@@ -188,7 +188,7 @@ export function ProfileProviderClient({
         "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role]
+    [effectiveProfile?.role],
   );
 
   const value: ProfileContextType = {

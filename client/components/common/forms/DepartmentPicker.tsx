@@ -158,7 +158,7 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
             aria-label="Select departments"
             className={cn(
               compact ? "h-8 justify-between" : "w-full justify-between",
-              buttonClassName
+              buttonClassName,
             )}
             disabled={disabled}
           >
@@ -266,7 +266,7 @@ function DepartmentItem<T extends MappingItem>({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>

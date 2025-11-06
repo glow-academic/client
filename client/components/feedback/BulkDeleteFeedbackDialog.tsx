@@ -37,7 +37,7 @@ export interface BulkDeleteFeedbackDialogProps {
   feedback: FeedbackItem[];
   onSuccess?: () => void;
   bulkDeleteFeedbackAction?: (
-    input: BulkDeleteFeedbackIn
+    input: BulkDeleteFeedbackIn,
   ) => Promise<BulkDeleteFeedbackOut>;
 }
 
@@ -56,7 +56,7 @@ export function BulkDeleteFeedbackDialog({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const getFeedbackToDelete = (
-    percentage: DeletePercentage
+    percentage: DeletePercentage,
   ): FeedbackItem[] => {
     const totalFeedback = feedback.length;
     if (totalFeedback === 0) return [];
@@ -96,7 +96,7 @@ export function BulkDeleteFeedbackDialog({
 
       // Show success toast and close dialog only after successful deletion
       toast.success(
-        `Successfully deleted ${feedbackToDeleteCount} feedback item${feedbackToDeleteCount === 1 ? "" : "s"}`
+        `Successfully deleted ${feedbackToDeleteCount} feedback item${feedbackToDeleteCount === 1 ? "" : "s"}`,
       );
       onSuccess?.();
       onOpenChange(false);

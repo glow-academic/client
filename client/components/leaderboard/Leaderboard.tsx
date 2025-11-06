@@ -138,11 +138,11 @@ export default function Leaderboard({
           const curValue = getCurrentValue(cur.metrics[metricKey]);
           return curValue > bestValue ? cur : best;
         },
-        hydratedRows[0] as LeaderboardRow | undefined
+        hydratedRows[0] as LeaderboardRow | undefined,
       );
 
     const pickMinPositiveByMetric = (
-      metricKey: keyof LeaderboardRow["metrics"]
+      metricKey: keyof LeaderboardRow["metrics"],
     ) => {
       const positives = hydratedRows.filter((r) => {
         const value = getCurrentValue(r.metrics[metricKey]);
@@ -307,7 +307,7 @@ export default function Leaderboard({
     if (!allAccolades.length) return [];
     const rotated = Array.from(
       { length: allAccolades.length },
-      (_, i) => allAccolades[(i + seed) % allAccolades.length]
+      (_, i) => allAccolades[(i + seed) % allAccolades.length],
     );
     return rotated.slice(0, 8);
   }, [allAccolades, seed]);
@@ -315,7 +315,7 @@ export default function Leaderboard({
   // Calculate challengers for each accolade using currentValue from server
   const getChallengers = (
     accoladeKey: string,
-    currentWinner: LeaderboardRow | null | undefined
+    currentWinner: LeaderboardRow | null | undefined,
   ) => {
     if (!hydratedRows || hydratedRows.length === 0) return [];
 
@@ -331,7 +331,7 @@ export default function Leaderboard({
 
     // Filter out the current winner
     const challengers = hydratedRows.filter(
-      (r) => !currentWinner || r.profileId !== currentWinner.profileId
+      (r) => !currentWinner || r.profileId !== currentWinner.profileId,
     );
 
     // Sort by the relevant metric for each accolade
@@ -356,10 +356,10 @@ export default function Leaderboard({
         case "responseTimes":
           // For response times, we want the lowest positive values (fastest responders)
           const aResponseTime = getCurrentValue(
-            a.metrics.personaResponseSeconds
+            a.metrics.personaResponseSeconds,
           );
           const bResponseTime = getCurrentValue(
-            b.metrics.personaResponseSeconds
+            b.metrics.personaResponseSeconds,
           );
           if (aResponseTime <= 0 && bResponseTime <= 0) return 0;
           if (aResponseTime <= 0) return 1;
@@ -477,19 +477,19 @@ export default function Leaderboard({
         totalAttempts: getCurrentValue(r.metrics.totalAttempts),
         highestScoreAvg: getCurrentValue(r.metrics.highestScoreAvg),
         personaResponseSeconds: getCurrentValue(
-          r.metrics.personaResponseSeconds
+          r.metrics.personaResponseSeconds,
         ),
       }));
 
       // Sort by highest score descending
       const sortedByHighestScore = rows.sort(
-        (a, b) => b.highestScoreAvg - a.highestScoreAvg
+        (a, b) => b.highestScoreAvg - a.highestScoreAvg,
       );
 
       // Take top 25% based on highest score
       const topCount = Math.max(
         1,
-        Math.ceil(sortedByHighestScore.length * 0.25)
+        Math.ceil(sortedByHighestScore.length * 0.25),
       );
       return sortedByHighestScore.slice(0, topCount);
     }
@@ -522,7 +522,7 @@ export default function Leaderboard({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {displayedAccolades
                 .filter((item): item is NonNullable<typeof item> =>
-                  Boolean(item)
+                  Boolean(item),
                 )
                 .map(({ key, icon, title, accolade }) => (
                   <AccoladeCard
@@ -614,7 +614,7 @@ export default function Leaderboard({
                         <AvatarFallback>
                           {getInitials(
                             selected.accolade.holder.firstName ?? "",
-                            selected.accolade.holder.lastName ?? ""
+                            selected.accolade.holder.lastName ?? "",
                           )}
                         </AvatarFallback>
                       </Avatar>
@@ -651,7 +651,7 @@ export default function Leaderboard({
                     {(() => {
                       const challengers = getChallengers(
                         selected.key,
-                        selected.accolade.holder
+                        selected.accolade.holder,
                       );
                       if (challengers.length === 0) {
                         return (
@@ -680,7 +680,7 @@ export default function Leaderboard({
                                 <AvatarFallback>
                                   {getInitials(
                                     challenger.row.firstName ?? "",
-                                    challenger.row.lastName ?? ""
+                                    challenger.row.lastName ?? "",
                                   )}
                                 </AvatarFallback>
                               </Avatar>

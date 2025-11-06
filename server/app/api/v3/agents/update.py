@@ -24,7 +24,7 @@ class UpdateAgentRequest(BaseModel):
     role: str
     department_ids: list[str] | None
     department_id: str | None = None
-    department_prompt_id: str | None = None
+    # Note: department_prompt_id removed - not used in SQL
 
 
 class UpdateAgentResponse(BaseModel):
@@ -65,7 +65,7 @@ async def update_agent(
                 request.system_prompt if not request.prompt_id else None,
                 dept_ids,  # Always pass array (empty array if no departments)
                 request.department_id,
-                request.department_prompt_id,
+                # Note: department_prompt_id ($13) is not currently used in SQL
             )
 
             if not result:

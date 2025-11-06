@@ -34,19 +34,18 @@ type DepartmentDetailDefaultOut = OutputOf<
 type CreateDepartmentIn = InputOf<"/api/v3/departments/create", "post">;
 type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
 
-
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
   async (
-    input: DepartmentDetailDefaultIn
+    input: DepartmentDetailDefaultIn,
   ): Promise<DepartmentDetailDefaultOut> => {
     return api.post("/departments/detail-default", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server action ---- */
 export async function createDepartment(
-  input: CreateDepartmentIn
+  input: CreateDepartmentIn,
 ): Promise<CreateDepartmentOut> {
   "use server";
   const out = await api.post("/departments/create", input);
@@ -104,7 +103,8 @@ export default async function NewDepartmentPage() {
 }
 
 /** ---- Derived types from server responses ---- */
-export type DepartmentDefaultStaffItem = DepartmentDetailDefaultOut["staff"][number];
+type DepartmentDefaultStaffItem =
+  DepartmentDetailDefaultOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {

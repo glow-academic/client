@@ -30,19 +30,19 @@ type CreateModelOut = OutputOf<"/api/v3/providers/models/create", "post">;
 const getModel = cache(
   async (input: ModelDetailIn): Promise<ModelDetailOut> => {
     return api.post("/providers/models/detail", input);
-  }
+  },
 );
 
 const getProvider = cache(
   async (input: ProviderDetailIn): Promise<ProviderDetailOut> => {
     return api.post("/providers/detail", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ modelId: string; providerId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { modelId, providerId } = await params;
   const session = await auth();
@@ -66,7 +66,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createModel(
-  input: CreateModelIn
+  input: CreateModelIn,
 ): Promise<CreateModelOut> {
   "use server";
   const out = await api.post("/providers/models/create", input);
@@ -75,7 +75,7 @@ export async function createModel(
 }
 
 export async function updateModel(
-  input: UpdateModelIn
+  input: UpdateModelIn,
 ): Promise<UpdateModelOut> {
   "use server";
   const out = await api.post("/providers/models/update", input);
@@ -100,7 +100,7 @@ export default async function ModelEditPage({
   ]);
 
   return (
-      <div className="space-y-6">
+    <div className="space-y-6">
       <Model
         modelId={modelId}
         providerId={providerId}
@@ -109,7 +109,7 @@ export default async function ModelEditPage({
         createModelAction={createModel}
         updateModelAction={updateModel}
       />
-      </div>
+    </div>
   );
 }
 

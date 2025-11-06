@@ -91,7 +91,9 @@ export function SimulationPicker({
   const [peekedSimulation, setPeekedSimulation] = React.useState<
     ({ id: string } & SimulationMappingItem) | undefined
   >(
-    sortedSimulations[0] as ({ id: string } & SimulationMappingItem) | undefined
+    sortedSimulations[0] as
+      | ({ id: string } & SimulationMappingItem)
+      | undefined,
   );
 
   const handleSelect = (simulationId: string) => {
@@ -313,7 +315,7 @@ function SimulationItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>

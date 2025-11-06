@@ -48,7 +48,7 @@ import { BulkDeleteFeedbackDialog } from "./BulkDeleteFeedbackDialog";
 
 // Helper functions
 const getFeedbackTypeVariant = (
-  type: string
+  type: string,
 ): "destructive" | "default" | "secondary" | "outline" => {
   switch (type) {
     case "bug":
@@ -84,7 +84,7 @@ export interface FeedbackProps {
   listData: FeedbackListOut;
   // Server actions (replaces useMutation)
   bulkDeleteFeedbackAction?: (
-    input: BulkDeleteFeedbackIn
+    input: BulkDeleteFeedbackIn,
   ) => Promise<BulkDeleteFeedbackOut>;
 }
 
@@ -110,7 +110,7 @@ export default function Feedback({
   // Extract data from V3 response
   const feedback = useMemo(
     () => feedbackData?.feedback || [],
-    [feedbackData?.feedback]
+    [feedbackData?.feedback],
   );
 
   // Filter options (inline)
@@ -121,12 +121,12 @@ export default function Feedback({
       { value: "question", label: "❓ Question" },
       { value: "other", label: "📝 Other" },
     ],
-    []
+    [],
   );
 
   const profileOptions = useMemo(() => {
     const uniqueAuthors = new Set(
-      feedback.map((f) => f.author_name).filter(Boolean)
+      feedback.map((f) => f.author_name).filter(Boolean),
     );
     return Array.from(uniqueAuthors).map((name) => ({
       value: name,
@@ -245,7 +245,7 @@ export default function Feedback({
         enableHiding: false,
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -289,8 +289,8 @@ export default function Feedback({
     table.getFilteredRowModel().rows.forEach((row) => {
       uniqueIds.add(
         String(
-          (row as { original: { feedback_id: number } }).original.feedback_id
-        )
+          (row as { original: { feedback_id: number } }).original.feedback_id,
+        ),
       );
     });
     return Array.from(uniqueIds)
@@ -407,7 +407,7 @@ export default function Feedback({
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </TableHead>
                     );
@@ -436,7 +436,7 @@ export default function Feedback({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
@@ -460,11 +460,11 @@ export default function Feedback({
 
       {/* Bulk Delete Dialog */}
       <BulkDeleteFeedbackDialog
+        {...(bulkDeleteFeedbackAction && { bulkDeleteFeedbackAction })}
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
         feedback={feedback}
         onSuccess={handleBulkDeleteSuccess}
-        bulkDeleteFeedbackAction={bulkDeleteFeedbackAction}
       />
     </>
   );

@@ -24,12 +24,12 @@ type DeleteSimulationOut = OutputOf<"/api/v3/simulations/delete", "post">;
 const getSimulationsList = cache(
   async (input: SimulationsListIn): Promise<SimulationsListOut> => {
     return api.post("/simulations/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateSimulation(
-  input: DuplicateSimulationIn
+  input: DuplicateSimulationIn,
 ): Promise<DuplicateSimulationOut> {
   "use server";
   const out = await api.post("/simulations/duplicate", input);
@@ -38,7 +38,7 @@ export async function duplicateSimulation(
 }
 
 export async function deleteSimulation(
-  input: DeleteSimulationIn
+  input: DeleteSimulationIn,
 ): Promise<DeleteSimulationOut> {
   "use server";
   const out = await api.post("/simulations/delete", input);

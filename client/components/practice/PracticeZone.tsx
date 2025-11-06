@@ -173,7 +173,7 @@ export default function PracticeZone({
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
               />
-            )
+            ),
         )}
       </div>
 

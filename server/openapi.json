@@ -21786,17 +21786,6 @@
               }
             ],
             "title": "Department Id"
-          },
-          "department_prompt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Prompt Id"
           }
         },
         "type": "object",

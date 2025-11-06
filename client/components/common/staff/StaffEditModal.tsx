@@ -105,7 +105,7 @@ export default function StaffEditModal({
     (field: string, value: string | number | boolean) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    []
+    [],
   );
 
   const handleSubmit = useCallback(
@@ -114,7 +114,7 @@ export default function StaffEditModal({
       if (!profileId) return;
       setShowConfirmDialog(true);
     },
-    [profileId]
+    [profileId],
   );
 
   const handleConfirm = useCallback(async () => {
@@ -276,7 +276,7 @@ export default function StaffEditModal({
                           const num = parseInt(val, 10);
                           handleInputChange(
                             "reqPerDay",
-                            Number.isNaN(num) ? "" : num
+                            Number.isNaN(num) ? "" : num,
                           );
                         }
                       }}

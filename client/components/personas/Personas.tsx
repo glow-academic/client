@@ -81,7 +81,7 @@ export interface PersonasProps {
   listData: PersonasListOut;
   // Server actions (replaces useMutation)
   duplicatePersonaAction?: (
-    input: DuplicatePersonaIn
+    input: DuplicatePersonaIn,
   ) => Promise<DuplicatePersonaOut>;
   deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
 }
@@ -123,7 +123,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.scenario_options]
+    [personasData?.scenario_options],
   );
   const modelOptions = useMemo(
     () =>
@@ -133,7 +133,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.model_options]
+    [personasData?.model_options],
   );
   const reasoningOptions = useMemo(
     () =>
@@ -141,7 +141,7 @@ export default function Personas({
         value: val,
         label: val.charAt(0).toUpperCase() + val.slice(1),
       })),
-    [personasData?.reasoning_options]
+    [personasData?.reasoning_options],
   );
   const temperatureOptions = useMemo(
     () =>
@@ -154,7 +154,7 @@ export default function Personas({
               ? "Medium (0.34-0.66)"
               : "High (0.67-1.0)",
       })),
-    [personasData?.temperature_options]
+    [personasData?.temperature_options],
   );
   const departmentOptions = useMemo(
     () =>
@@ -164,7 +164,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.department_options]
+    [personasData?.department_options],
   );
 
   // Define table columns
@@ -513,7 +513,7 @@ export default function Personas({
                       onClick={() =>
                         handleDeleteClick(
                           persona.persona_id,
-                          persona.name || "Unnamed Persona"
+                          persona.name || "Unnamed Persona",
                         )
                       }
                       aria-label={`Delete persona ${persona.name}`}

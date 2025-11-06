@@ -68,7 +68,7 @@ export interface AnalyticsContextType {
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface AnalyticsProviderProps {
@@ -206,17 +206,17 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
   // Cohort filtering - empty array means all cohorts
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>(
-    initialFilters.selectedCohortIds
+    initialFilters.selectedCohortIds,
   );
   // Department filtering - empty array means all departments
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    initialFilters.selectedDepartmentIds
+    initialFilters.selectedDepartmentIds,
   );
   // Document filtering - empty array means all documents
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
   const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(
-    initialFilters.selectedRoles
+    initialFilters.selectedRoles,
   );
   // New dual flags for practice/assigned filtering
   const [simulationFilters, setSimulationFilters] = useState<
@@ -300,14 +300,14 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Compute effective cohort IDs (all user cohorts if none selected)
   const effectiveCohortIds = useMemo(
     () => (selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds),
-    [selectedCohortIds, cohortIds]
+    [selectedCohortIds, cohortIds],
   );
 
   // Compute effective department IDs (all user departments if none selected)
   const effectiveDepartmentIds = useMemo(
     () =>
       selectedDepartmentIds.length > 0 ? selectedDepartmentIds : departmentIds,
-    [selectedDepartmentIds, departmentIds]
+    [selectedDepartmentIds, departmentIds],
   );
 
   // Compute effective document IDs (all documents if none selected)
@@ -315,18 +315,18 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // For now, empty array means all documents (will be handled by analytics queries)
   const effectiveDocumentIds = useMemo(
     () => selectedDocumentIds,
-    [selectedDocumentIds]
+    [selectedDocumentIds],
   );
 
   // Route-aware flags
   const isPracticePage = useMemo(
     () => pathname?.startsWith("/practice") === true,
-    [pathname]
+    [pathname],
   );
   const isHomePage = useMemo(() => pathname === "/home", [pathname]);
   const isTALeaderboardPage = useMemo(
     () => pathname?.startsWith("/cohorts/c/") === true,
-    [pathname]
+    [pathname],
   );
 
   // Resolve effective roles: force TA-only for TA users, default to all when empty
@@ -393,7 +393,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     (departmentIds: string[]) => {
       setSelectedDepartmentIds(departmentIds);
     },
-    []
+    [],
   );
 
   const wrappedSetSelectedDocumentIds = useCallback((documentIds: string[]) => {
@@ -408,7 +408,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     (filters: SimulationFilter[]) => {
       setSimulationFilters(filters);
     },
-    []
+    [],
   );
 
   const value: AnalyticsContextType = useMemo(
@@ -455,7 +455,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       hasActiveFilters,
       selectedRoles,
       simulationFilters,
-    ]
+    ],
   );
 
   return (

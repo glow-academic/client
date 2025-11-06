@@ -77,7 +77,7 @@ export default function Model({
       inputPpm: "0",
       outputPpm: "0",
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -163,7 +163,7 @@ export default function Model({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -241,7 +241,7 @@ export default function Model({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setIsSubmitting(false);
     }
@@ -351,7 +351,7 @@ export default function Model({
                 onChange={(e) =>
                   handleInputChange(
                     "inputPpm" as keyof FormData,
-                    e.target.value
+                    e.target.value,
                   )
                 }
                 placeholder="e.g. 3.00"
@@ -374,7 +374,7 @@ export default function Model({
                 onChange={(e) =>
                   handleInputChange(
                     "outputPpm" as keyof FormData,
-                    e.target.value
+                    e.target.value,
                   )
                 }
                 placeholder="e.g. 15.00"

@@ -34,12 +34,12 @@ type CreateCohortOut = OutputOf<"/api/v3/cohorts/create", "post">;
 const getCohortDefault = cache(
   async (input: CohortDetailDefaultIn): Promise<CohortDetailDefaultOut> => {
     return api.post("/cohorts/detail-default", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server action ---- */
 export async function createCohort(
-  input: CreateCohortIn
+  input: CreateCohortIn,
 ): Promise<CreateCohortOut> {
   "use server";
   const out = await api.post("/cohorts/create", input);
@@ -94,7 +94,7 @@ export default async function NewCohortPage() {
 }
 
 /** ---- Derived types from server responses ---- */
-export type CohortDefaultStaffItem = CohortDetailDefaultOut["staff"][number];
+type CohortDefaultStaffItem = CohortDetailDefaultOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {

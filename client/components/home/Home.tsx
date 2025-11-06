@@ -6,12 +6,6 @@
  */
 "use client";
 import type { HomeOut } from "@/app/(main)/home/page";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
 
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
@@ -411,7 +405,15 @@ export default function Home({ homeData }: HomeProps) {
                   type="cohort"
                   onStartSimulation={handleStartSimulation}
                   loadingSimulation={loadingSimulation}
-                  effectiveProfile={{...effectiveProfile, role: effectiveProfile.role as "ta" | "instructional" | "superadmin" | "admin" | "guest"}}
+                  effectiveProfile={{
+                    ...effectiveProfile,
+                    role: effectiveProfile.role as
+                      | "ta"
+                      | "instructional"
+                      | "superadmin"
+                      | "admin"
+                      | "guest",
+                  }}
                 />
               ) : null
             )}

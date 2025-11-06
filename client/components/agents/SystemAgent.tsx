@@ -79,7 +79,7 @@ export interface SystemAgentProps {
   createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
   updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
   deleteAgentPromptAction?: (
-    input: DeleteAgentPromptIn
+    input: DeleteAgentPromptIn,
   ) => Promise<DeleteAgentPromptOut>;
 }
 
@@ -106,7 +106,7 @@ export default function SystemAgent({
   const [formData, setFormData] = useState<SystemAgentFormData>();
   const [errors, setErrors] = useState<FormErrors>({});
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor"
+    "editor",
   );
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | null
@@ -169,7 +169,7 @@ export default function SystemAgent({
 
     const filtered: Record<string, PromptInfo> = {};
     for (const [promptId, promptInfo] of Object.entries(
-      agentDetail.prompt_mapping
+      agentDetail.prompt_mapping,
     )) {
       if (!selectedDepartmentId) {
         // "All Departments" selected - only show default prompts (null/empty department_ids)
@@ -221,7 +221,7 @@ export default function SystemAgent({
         ? [effectiveProfile.primaryDepartmentId]
         : [],
     }),
-    [effectiveProfile?.primaryDepartmentId]
+    [effectiveProfile?.primaryDepartmentId],
   );
 
   // Set breadcrumb context when agent data is loaded
@@ -369,7 +369,7 @@ export default function SystemAgent({
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,
-    value: string | number | boolean | null | undefined
+    value: string | number | boolean | null | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -476,7 +476,7 @@ export default function SystemAgent({
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
+        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`,
       );
       setIsSubmitting(false);
     }
@@ -636,7 +636,7 @@ export default function SystemAgent({
                           | "minimal"
                           | "low"
                           | "medium"
-                          | "high"
+                          | "high",
                       )
                     }
                     placeholder="Select reasoning effort"
@@ -689,7 +689,7 @@ export default function SystemAgent({
                       }
                       onSelect={(ids) => {
                         setSelectedDepartmentId(
-                          ids.length > 0 ? ids[0]! : null
+                          ids.length > 0 ? ids[0]! : null,
                         );
                       }}
                       multiSelect={false}
@@ -786,7 +786,7 @@ export default function SystemAgent({
                             size="sm"
                             onClick={() =>
                               setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview"
+                                editorMode === "preview" ? "editor" : "preview",
                               )
                             }
                             className="h-8 w-8 p-0"
@@ -809,7 +809,7 @@ export default function SystemAgent({
                               size="sm"
                               onClick={() =>
                                 setEditorMode(
-                                  editorMode === "debug" ? "editor" : "debug"
+                                  editorMode === "debug" ? "editor" : "debug",
                                 )
                               }
                               className="h-8 w-8 p-0"

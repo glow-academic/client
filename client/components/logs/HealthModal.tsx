@@ -158,8 +158,8 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
               lastChecked: new Date(),
               responseTime: isConnected ? 0 : undefined,
             }
-          : check
-      )
+          : check,
+      ),
     );
   }, [isConnected]);
 
@@ -177,8 +177,8 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
               lastChecked: new Date(),
               responseTime: 0,
             }
-          : check
-      )
+          : check,
+      ),
     );
   }, [effectiveProfile]);
 
@@ -196,7 +196,7 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
       setHealthChecks((prev) =>
         prev.map((check) => {
           const serverCheck = healthData.checks.find(
-            (c: HealthCheckItem) => c.id === check.id
+            (c: HealthCheckItem) => c.id === check.id,
           );
           if (serverCheck) {
             return {
@@ -208,22 +208,22 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
             };
           }
           return check;
-        })
+        }),
       );
 
       // Show toast with results
       const healthyCount = healthData.checks.filter(
-        (c: HealthCheckItem) => c.status === "healthy"
+        (c: HealthCheckItem) => c.status === "healthy",
       ).length;
       const totalCount = healthData.checks.length;
 
       if (healthyCount === totalCount) {
         toast.success(
-          `All health checks passed! (${healthyCount}/${totalCount})`
+          `All health checks passed! (${healthyCount}/${totalCount})`,
         );
       } else {
         toast.error(
-          `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`
+          `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`,
         );
       }
     } catch {

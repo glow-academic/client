@@ -18,7 +18,10 @@ type RubricDetailIn = InputOf<"/api/v3/rubrics/detail", "post">;
 type RubricDetailOut = OutputOf<"/api/v3/rubrics/detail", "post">;
 
 type RubricDetailDefaultIn = InputOf<"/api/v3/rubrics/detail-default", "post">;
-type RubricDetailDefaultOut = OutputOf<"/api/v3/rubrics/detail-default", "post">;
+type RubricDetailDefaultOut = OutputOf<
+  "/api/v3/rubrics/detail-default",
+  "post"
+>;
 type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
 type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 
@@ -26,19 +29,19 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 const getRubric = cache(
   async (input: RubricDetailIn): Promise<RubricDetailOut> => {
     return api.post("/rubrics/detail", input);
-  }
+  },
 );
 
 const getRubricDefault = cache(
   async (input: RubricDetailDefaultIn): Promise<RubricDetailDefaultOut> => {
     return api.post("/rubrics/detail-default", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ rubricId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { rubricId } = await params;
   const session = await auth();
@@ -82,8 +85,8 @@ export default async function EditRubricPage({
     <div className="space-y-6">
       <Rubric
         rubricId={rubricId}
-        rubricDetail={rubricDetail || undefined}
-        rubricDetailDefault={rubricDetailDefault || undefined}
+        {...(rubricDetail && { rubricDetail })}
+        {...(rubricDetailDefault && { rubricDetailDefault })}
         updateRubricAction={updateRubric}
       />
     </div>
@@ -92,7 +95,7 @@ export default async function EditRubricPage({
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function updateRubric(
-  input: UpdateRubricIn
+  input: UpdateRubricIn,
 ): Promise<UpdateRubricOut> {
   "use server";
   const out = await api.post("/rubrics/update", input);

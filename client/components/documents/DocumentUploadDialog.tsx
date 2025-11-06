@@ -42,7 +42,7 @@ interface DocumentUploadDialogProps {
   parameterMapping: Record<string, ParameterMappingItem>;
   validParameterItemIds: string[];
   finalizeDocumentUploadAction?: (
-    input: FinalizeDocumentUploadIn
+    input: FinalizeDocumentUploadIn,
   ) => Promise<FinalizeDocumentUploadOut>;
 }
 
@@ -58,7 +58,7 @@ export function DocumentUploadDialog({
 }: DocumentUploadDialogProps) {
   const { effectiveProfile } = useProfile();
   const router = useRouter();
-  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [_isFinalizing, setIsFinalizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -108,7 +108,7 @@ export function DocumentUploadDialog({
       type: string;
       parameterItemIds: string[];
       departmentIds?: string[];
-    }
+    },
   ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
@@ -126,14 +126,14 @@ export function DocumentUploadDialog({
         progress: 0,
         toastId: toastId as string,
         status: "uploading",
-      })
+      }),
     );
 
     try {
       // Create TUS upload
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
       const upload = new tus.Upload(file, {
-        endpoint: `${appPrefix}/api/v2/documents/upload`,
+        endpoint: `${appPrefix}/api/v2/documents/upload`, // TODO: FIX THIS
         retryDelays: [0, 3000, 5000, 10000, 20000],
         metadata: {
           filename: file.name,

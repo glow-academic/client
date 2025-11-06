@@ -36,21 +36,21 @@ type UpdateSimulationOut = OutputOf<"/api/v3/simulations/update", "post">;
 const getSimulation = cache(
   async (input: SimulationDetailIn): Promise<SimulationDetailOut> => {
     return api.post("/simulations/detail", input);
-  }
+  },
 );
 
 const getSimulationDefault = cache(
   async (
-    input: SimulationDetailDefaultIn
+    input: SimulationDetailDefaultIn,
   ): Promise<SimulationDetailDefaultOut> => {
     return api.post("/simulations/detail-default", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ simulationId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { simulationId } = await params;
   const session = await auth();
@@ -74,7 +74,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createSimulation(
-  input: CreateSimulationIn
+  input: CreateSimulationIn,
 ): Promise<CreateSimulationOut> {
   "use server";
   const out = await api.post("/simulations/create", input);
@@ -83,7 +83,7 @@ export async function createSimulation(
 }
 
 export async function updateSimulation(
-  input: UpdateSimulationIn
+  input: UpdateSimulationIn,
 ): Promise<UpdateSimulationOut> {
   "use server";
   const out = await api.post("/simulations/update", input);
@@ -115,8 +115,8 @@ export default async function EditSimulationPage({
     <div className="space-y-6">
       <Simulation
         simulationId={simulationId}
-        simulationDetail={simulationDetail || undefined}
-        simulationDetailDefault={simulationDetailDefault || undefined}
+        {...(simulationDetail && { simulationDetail })}
+        {...(simulationDetailDefault && { simulationDetailDefault })}
         createSimulationAction={createSimulation}
         updateSimulationAction={updateSimulation}
       />

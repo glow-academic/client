@@ -21,13 +21,13 @@ type LeaderboardOut = OutputOf<"/api/v3/leaderboard", "post">;
 const getLeaderboard = cache(
   async (input: LeaderboardIn): Promise<LeaderboardOut> => {
     return api.post("/leaderboard", input);
-  }
+  },
 );
 
 /** ---- Metadata ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { cohortId } = await params;
   const session = await auth();
@@ -76,7 +76,7 @@ export default async function CohortDashboardPage({
 
   // Get filters from search params or defaults, then override cohortIds with the cohortId from URL
   const defaultFilters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
   const filters = { ...defaultFilters, cohortIds: [cohortId] };
 

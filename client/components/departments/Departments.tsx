@@ -53,10 +53,10 @@ export interface DepartmentsProps {
   listData: DepartmentsListOut;
   // Server actions (replaces useMutation)
   duplicateDepartmentAction?: (
-    input: DuplicateDepartmentIn
+    input: DuplicateDepartmentIn,
   ) => Promise<DuplicateDepartmentOut>;
   deleteDepartmentAction?: (
-    input: DeleteDepartmentIn
+    input: DeleteDepartmentIn,
   ) => Promise<DeleteDepartmentOut>;
 }
 
@@ -87,7 +87,7 @@ export default function Departments({
   // Extract data from response
   const departments = useMemo(
     () => departmentsData?.departments || [],
-    [departmentsData?.departments]
+    [departmentsData?.departments],
   );
 
   // Filter options (inline)
@@ -98,7 +98,7 @@ export default function Departments({
       { value: "50-100", label: "$50 - $100" },
       { value: "100+", label: "$100+" },
     ],
-    []
+    [],
   );
 
   const staffCountOptions = useMemo(
@@ -108,7 +108,7 @@ export default function Departments({
       { value: "11-20", label: "11-20 staff" },
       { value: "20+", label: "20+ staff" },
     ],
-    []
+    [],
   );
 
   // Define table columns inline
@@ -155,7 +155,7 @@ export default function Departments({
         header: "Active",
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -221,7 +221,7 @@ export default function Departments({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete department"
+        error instanceof Error ? error.message : "Failed to delete department",
       );
     } finally {
       setShowDeleteDialog(false);

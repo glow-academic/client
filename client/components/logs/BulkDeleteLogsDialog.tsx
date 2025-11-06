@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type {
   BulkDeleteLogsIn,
   BulkDeleteLogsOut,
+  LogsListOut,
 } from "@/app/(main)/system/logs/page";
 import {
   AlertDialog,
@@ -20,13 +21,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/contexts/profile-context";
-import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import { useRouter } from "next/navigation";
 
 export interface BulkDeleteLogsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  logs: LogItem[];
+  logs: LogsListOut["logs"][number][];
   onSuccess?: () => void;
   bulkDeleteLogsAction: (input: BulkDeleteLogsIn) => Promise<BulkDeleteLogsOut>;
 }
@@ -46,7 +46,7 @@ export function BulkDeleteLogsDialog({
     useState<DeletePercentage>("10");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const getLogsToDelete = (percentage: DeletePercentage): LogItem[] => {
+  const getLogsToDelete = (percentage: DeletePercentage): LogsListOut["logs"][number][] => {
     const totalLogs = logs.length;
     if (totalLogs === 0) return [];
 
@@ -77,14 +77,14 @@ export function BulkDeleteLogsDialog({
       await bulkDeleteLogsAction({
         body: {
           profileId: effectiveProfile?.id || "",
-          ids: logsToDelete.map((log) => log.log_id),
+          ids: logsToDelete.map((log) => parseInt(log.log_id)),
         },
       });
       router.refresh();
 
       // Show success toast and close dialog only after successful deletion
       toast.success(
-        `Successfully deleted ${logsToDeleteCount} log${logsToDeleteCount === 1 ? "" : "s"}`
+        `Successfully deleted ${logsToDeleteCount} log${logsToDeleteCount === 1 ? "" : "s"}`,
       );
       onSuccess?.();
       onOpenChange(false);

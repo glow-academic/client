@@ -82,7 +82,7 @@ type UpdateChatCreatedAtBody = UpdateChatCreatedAtIn extends { body: infer B }
 
 interface AttemptChatProps {
   updateChatCreatedAtAction?: (
-    input: UpdateChatCreatedAtIn
+    input: UpdateChatCreatedAtIn,
   ) => Promise<UpdateChatCreatedAtOut>;
 }
 
@@ -107,7 +107,7 @@ export default function AttemptChat({
       }
       await updateChatCreatedAtAction({ body });
     },
-    [updateChatCreatedAtAction]
+    [updateChatCreatedAtAction],
   );
 
   // Wrapper function for compatibility (matching original async signature)
@@ -115,12 +115,12 @@ export default function AttemptChat({
     async (request: { chatId: string; createdAt: string }) => {
       await handleUpdateChatCreatedAt(request);
     },
-    [handleUpdateChatCreatedAt]
+    [handleUpdateChatCreatedAt],
   );
   const isMobile = useIsMobile();
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
-    null
+    null,
   );
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70); // Default height in pixels
   const [showObjectives, setShowObjectives] = useState<boolean>(false);
@@ -190,7 +190,7 @@ export default function AttemptChat({
         }
         onValueChange={(chatId) => {
           const chatIndex = simulationContext?.chats.findIndex(
-            (chat) => chat.id === chatId
+            (chat) => chat.id === chatId,
           );
           if (chatIndex !== undefined && chatIndex >= 0) {
             simulationContext?.setCurrentChatIndex(chatIndex);
@@ -204,7 +204,7 @@ export default function AttemptChat({
           {simulationContext?.chats?.map((chat: Chat) => {
             // Find rubric result for this chat
             const rubricResult = simulationContext?.allDynamicRubrics.find(
-              (rubric) => rubric.chatId === chat.id
+              (rubric) => rubric.chatId === chat.id,
             );
 
             return (
@@ -283,7 +283,7 @@ export default function AttemptChat({
       // For single simulation attempts, use the full time limit
       return totalTimeLimitSeconds;
     },
-    [simulationContext?.simulation?.timeLimit, simulationContext?.chats]
+    [simulationContext?.simulation?.timeLimit, simulationContext?.chats],
   );
 
   // Helper function to calculate how much time was exceeded for a chat
@@ -296,7 +296,7 @@ export default function AttemptChat({
 
       return Math.max(0, timeTaken - adjustedTimeLimit);
     },
-    [calculateChatTimeTaken, calculateAdjustedTimeLimit]
+    [calculateChatTimeTaken, calculateAdjustedTimeLimit],
   );
 
   // Reset createdAt timestamp when chat is first loaded (if createdAt and updatedAt are the same)
@@ -361,7 +361,7 @@ export default function AttemptChat({
 
       // If all chats are completed, default to showing rubric (only if user hasn't manually toggled)
       const completedChats = simulationContext?.chats.filter(
-        (chat: Chat) => chat.completed
+        (chat: Chat) => chat.completed,
       );
       if (
         completedChats.length === simulationContext?.chats.length &&
@@ -389,7 +389,7 @@ export default function AttemptChat({
     // Filter documents to only include current chat's documents
     const currentChatDocIds = displayChat.documentIds || [];
     const filteredDocs = simulationContext.scenarioDocuments.filter((doc) =>
-      currentChatDocIds.includes(doc.document_id)
+      currentChatDocIds.includes(doc.document_id),
     );
 
     // Set to first document of current chat, or null if no documents
@@ -413,7 +413,6 @@ export default function AttemptChat({
     simulationContext?.scenarioDocuments,
     selectedDocumentId,
   ]);
-
 
   if (!simulationContext?.chats || simulationContext?.chats.length === 0) {
     return (
@@ -493,10 +492,10 @@ export default function AttemptChat({
                                       size="sm"
                                       onClick={() => {
                                         simulationContext?.setShowGrades(
-                                          !showGrades
+                                          !showGrades,
                                         );
                                         simulationContext?.setUserHasManuallyToggledGrades(
-                                          true
+                                          true,
                                         );
                                       }}
                                       className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
@@ -523,7 +522,7 @@ export default function AttemptChat({
                               const hasDocumentsForCurrentChat =
                                 simulationContext?.scenarioDocuments?.some(
                                   (doc) =>
-                                    currentChatDocIds.includes(doc.document_id)
+                                    currentChatDocIds.includes(doc.document_id),
                                 );
                               return hasDocumentsForCurrentChat;
                             })() && (
@@ -541,7 +540,7 @@ export default function AttemptChat({
                                           setShowDocumentModal(true);
                                         } else {
                                           simulationContext?.setShowDocuments(
-                                            !showDocuments
+                                            !showDocuments,
                                           );
                                         }
                                       }}
@@ -619,11 +618,11 @@ export default function AttemptChat({
                                       displayChat &&
                                       simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
-                                          rubric.chatId === displayChat.id
+                                          rubric.chatId === displayChat.id,
                                       )
                                         ? simulationContext?.allDynamicRubrics.find(
                                             (rubric) =>
-                                              rubric.chatId === displayChat.id
+                                              rubric.chatId === displayChat.id,
                                           )?.passed
                                           ? "bg-green-100 dark:bg-green-900/30"
                                           : "bg-red-100 dark:bg-red-900/30"
@@ -657,23 +656,23 @@ export default function AttemptChat({
                                     >
                                       {displayChat && displayChat.completed
                                         ? formatTime(
-                                            calculateChatTimeTaken(displayChat)
+                                            calculateChatTimeTaken(displayChat),
                                           )
                                         : isInfiniteMode
                                           ? infiniteLimitMinutes
                                             ? formatTime(
-                                                infiniteLimitMinutes * 60
+                                                infiniteLimitMinutes * 60,
                                               )
                                             : formatTime(
                                                 simulationContext?.timer
-                                                  .elapsed || 0
+                                                  .elapsed || 0,
                                               )
                                           : simulationContext?.simulation
                                                 ?.timeLimit && displayChat
                                             ? formatTime(
                                                 calculateAdjustedTimeLimit(
-                                                  displayChat
-                                                )
+                                                  displayChat,
+                                                ),
                                               )
                                             : "No time limit"}
                                     </span>
@@ -682,14 +681,14 @@ export default function AttemptChat({
                                 {displayChat &&
                                 showGrades &&
                                 simulationContext?.allDynamicRubrics.find(
-                                  (rubric) => rubric.chatId === displayChat.id
+                                  (rubric) => rubric.chatId === displayChat.id,
                                 ) ? (
                                   <TooltipContent>
                                     <p className="flex items-center flex-wrap gap-x-0">
                                       <span>
                                         {simulationContext?.allDynamicRubrics.find(
                                           (rubric) =>
-                                            rubric.chatId === displayChat.id
+                                            rubric.chatId === displayChat.id,
                                         )?.passed
                                           ? "Passed"
                                           : "Failed"}
@@ -697,14 +696,14 @@ export default function AttemptChat({
                                         {
                                           simulationContext?.allDynamicRubrics.find(
                                             (rubric) =>
-                                              rubric.chatId === displayChat.id
+                                              rubric.chatId === displayChat.id,
                                           )?.score
                                         }
                                         /
                                         {
                                           simulationContext?.allDynamicRubrics.find(
                                             (rubric) =>
-                                              rubric.chatId === displayChat.id
+                                              rubric.chatId === displayChat.id,
                                           )?.totalPossiblePoints
                                         }
                                         )
@@ -715,7 +714,9 @@ export default function AttemptChat({
                                           <span className="text-xs text-muted-foreground ml-2">
                                             +
                                             {formatTime(
-                                              calculateTimeExceeded(displayChat)
+                                              calculateTimeExceeded(
+                                                displayChat,
+                                              ),
                                             )}
                                           </span>
                                         )}
@@ -756,7 +757,7 @@ export default function AttemptChat({
                                               percentage?: number;
                                             }
                                           )?.percentage ??
-                                          0
+                                          0,
                                       )}
                                       /
                                       {simulationContext?.allDynamicRubrics?.[0]
@@ -884,7 +885,7 @@ export default function AttemptChat({
               const currentChatDocIds = displayChat?.documentIds || [];
               const filteredDocs =
                 simulationContext?.scenarioDocuments.filter((doc) =>
-                  currentChatDocIds.includes(doc.document_id)
+                  currentChatDocIds.includes(doc.document_id),
                 ) || [];
 
               return (
@@ -916,7 +917,7 @@ export default function AttemptChat({
                                 const document =
                                   filteredDocs.find(
                                     (doc) =>
-                                      doc.document_id === selectedDocumentId
+                                      doc.document_id === selectedDocumentId,
                                   ) || filteredDocs[0];
                                 return document ? (
                                   <DocumentViewer
@@ -947,11 +948,11 @@ export default function AttemptChat({
                   const currentChatDocIds = displayChat?.documentIds || [];
                   const filteredDocs =
                     simulationContext?.scenarioDocuments.filter((doc) =>
-                      currentChatDocIds.includes(doc.document_id)
+                      currentChatDocIds.includes(doc.document_id),
                     ) || [];
                   return (
                     filteredDocs.find(
-                      (doc) => doc.document_id === selectedDocumentId
+                      (doc) => doc.document_id === selectedDocumentId,
                     )?.name ||
                     filteredDocs[0]?.name ||
                     "Document"
@@ -966,7 +967,7 @@ export default function AttemptChat({
               const currentChatDocIds = displayChat?.documentIds || [];
               const filteredDocs =
                 simulationContext?.scenarioDocuments.filter((doc) =>
-                  currentChatDocIds.includes(doc.document_id)
+                  currentChatDocIds.includes(doc.document_id),
                 ) || [];
               return filteredDocs.length > 1 ? (
                 <div className="pb-3">
@@ -986,11 +987,11 @@ export default function AttemptChat({
                   const currentChatDocIds = displayChat?.documentIds || [];
                   const filteredDocs =
                     simulationContext?.scenarioDocuments.filter((doc) =>
-                      currentChatDocIds.includes(doc.document_id)
+                      currentChatDocIds.includes(doc.document_id),
                     ) || [];
                   const document =
                     filteredDocs.find(
-                      (doc) => doc.document_id === selectedDocumentId
+                      (doc) => doc.document_id === selectedDocumentId,
                     ) || filteredDocs[0];
                   return document ? (
                     <DocumentViewer document={document} bare={true} />
@@ -1117,7 +1118,7 @@ export default function AttemptChat({
                                 simulationContext?.currentChat?.completed &&
                                 simulationContext?.expectedChatCount ===
                                   simulationContext?.chats.filter(
-                                    (chat: Chat) => chat.completed
+                                    (chat: Chat) => chat.completed,
                                   ).length && (
                                   <Badge variant="default">Completed</Badge>
                                 )}
@@ -1131,8 +1132,8 @@ export default function AttemptChat({
                                   simulationContext?.scenarioDocuments?.some(
                                     (doc) =>
                                       currentChatDocIds.includes(
-                                        doc.document_id
-                                      )
+                                        doc.document_id,
+                                      ),
                                   );
                                 return hasDocumentsForCurrentChat;
                               })() && (
@@ -1149,7 +1150,7 @@ export default function AttemptChat({
                                           setShowDocumentModal(true);
                                         } else {
                                           simulationContext?.setShowDocuments(
-                                            !showDocuments
+                                            !showDocuments,
                                           );
                                         }
                                       }}
@@ -1226,7 +1227,7 @@ export default function AttemptChat({
                                       simulationContext?.currentDynamicRubric &&
                                       simulationContext?.expectedChatCount ===
                                         simulationContext?.chats.filter(
-                                          (chat: Chat) => chat.completed
+                                          (chat: Chat) => chat.completed,
                                         ).length
                                         ? simulationContext
                                             ?.currentDynamicRubric.passed
@@ -1263,21 +1264,22 @@ export default function AttemptChat({
                                               Math.max(
                                                 simulationContext?.timer
                                                   .remaining || 0,
-                                                0
-                                              )
+                                                0,
+                                              ),
                                             )
                                           : formatTime(
-                                              simulationContext?.timer.elapsed
+                                              simulationContext?.timer.elapsed,
                                             )
                                         : simulationContext?.simulation
                                               ?.timeLimit &&
                                             simulationContext?.timer
                                               .remaining !== null
                                           ? formatTime(
-                                              simulationContext?.timer.remaining
+                                              simulationContext?.timer
+                                                .remaining,
                                             )
                                           : formatTime(
-                                              simulationContext?.timer.elapsed
+                                              simulationContext?.timer.elapsed,
                                             )}
                                     </span>
                                     {/* In infinite mode, we don't show negative state; we auto-finish on expiry */}
@@ -1288,7 +1290,7 @@ export default function AttemptChat({
                                   simulationContext?.currentDynamicRubric &&
                                   simulationContext?.expectedChatCount ===
                                     simulationContext?.chats.filter(
-                                      (chat: Chat) => chat.completed
+                                      (chat: Chat) => chat.completed,
                                     ).length && (
                                     <TooltipContent>
                                       <p>
@@ -1376,10 +1378,10 @@ export default function AttemptChat({
                                     chatData.scenario?.id
                                   ) {
                                     scenariosWithGrades.add(
-                                      chatData.scenario.id
+                                      chatData.scenario.id,
                                     );
                                   }
-                                }
+                                },
                               );
                               return (
                                 (scenariosWithGrades.size /
@@ -1421,7 +1423,7 @@ export default function AttemptChat({
             const currentChatDocIds = displayChat?.documentIds || [];
             const filteredDocs =
               simulationContext?.scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id)
+                currentChatDocIds.includes(doc.document_id),
               ) || [];
 
             return (
@@ -1453,7 +1455,7 @@ export default function AttemptChat({
                               const document =
                                 filteredDocs.find(
                                   (doc) =>
-                                    doc.document_id === selectedDocumentId
+                                    doc.document_id === selectedDocumentId,
                                 ) || filteredDocs[0];
                               return document ? (
                                 <DocumentViewer
@@ -1484,11 +1486,11 @@ export default function AttemptChat({
                 const currentChatDocIds = displayChat?.documentIds || [];
                 const filteredDocs =
                   simulationContext?.scenarioDocuments.filter((doc) =>
-                    currentChatDocIds.includes(doc.document_id)
+                    currentChatDocIds.includes(doc.document_id),
                   ) || [];
                 return (
                   filteredDocs.find(
-                    (doc) => doc.document_id === selectedDocumentId
+                    (doc) => doc.document_id === selectedDocumentId,
                   )?.name ||
                   filteredDocs[0]?.name ||
                   "Document"
@@ -1503,7 +1505,7 @@ export default function AttemptChat({
             const currentChatDocIds = displayChat?.documentIds || [];
             const filteredDocs =
               simulationContext?.scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id)
+                currentChatDocIds.includes(doc.document_id),
               ) || [];
             return filteredDocs.length > 1 ? (
               <div className="pb-3">
@@ -1523,11 +1525,11 @@ export default function AttemptChat({
                 const currentChatDocIds = displayChat?.documentIds || [];
                 const filteredDocs =
                   simulationContext?.scenarioDocuments.filter((doc) =>
-                    currentChatDocIds.includes(doc.document_id)
+                    currentChatDocIds.includes(doc.document_id),
                   ) || [];
                 const document =
                   filteredDocs.find(
-                    (doc) => doc.document_id === selectedDocumentId
+                    (doc) => doc.document_id === selectedDocumentId,
                   ) || filteredDocs[0];
                 return document ? (
                   <DocumentViewer document={document} bare={true} />

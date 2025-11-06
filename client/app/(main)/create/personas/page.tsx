@@ -24,12 +24,12 @@ type DeletePersonaOut = OutputOf<"/api/v3/personas/delete", "post">;
 const getPersonasList = cache(
   async (input: PersonasListIn): Promise<PersonasListOut> => {
     return api.post("/personas/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicatePersona(
-  input: DuplicatePersonaIn
+  input: DuplicatePersonaIn,
 ): Promise<DuplicatePersonaOut> {
   "use server";
   const out = await api.post("/personas/duplicate", input);
@@ -38,7 +38,7 @@ export async function duplicatePersona(
 }
 
 export async function deletePersona(
-  input: DeletePersonaIn
+  input: DeletePersonaIn,
 ): Promise<DeletePersonaOut> {
   "use server";
   const out = await api.post("/personas/delete", input);

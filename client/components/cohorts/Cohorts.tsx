@@ -67,7 +67,7 @@ export interface CohortsProps {
   listData: CohortsListOut;
   // Server actions (replaces useMutation)
   duplicateCohortAction?: (
-    input: DuplicateCohortIn
+    input: DuplicateCohortIn,
   ) => Promise<DuplicateCohortOut>;
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
   leaveCohortAction?: (input: LeaveCohortIn) => Promise<LeaveCohortOut>;
@@ -110,15 +110,15 @@ export default function Cohorts({
   // Extract data from response
   const cohorts = useMemo(
     () => cohortsData?.cohorts || [],
-    [cohortsData?.cohorts]
+    [cohortsData?.cohorts],
   );
   const profileMapping = useMemo(
     () => cohortsData?.profile_mapping || {},
-    [cohortsData?.profile_mapping]
+    [cohortsData?.profile_mapping],
   );
   const simulationMapping = useMemo(
     () => cohortsData?.simulation_mapping || {},
-    [cohortsData?.simulation_mapping]
+    [cohortsData?.simulation_mapping],
   );
 
   // Create filter options from mappings
@@ -143,7 +143,7 @@ export default function Cohorts({
         string,
         { name: string; description: string }
       >) || {},
-    [cohortsData?.department_mapping]
+    [cohortsData?.department_mapping],
   );
 
   const departmentOptions = useMemo(() => {
@@ -184,7 +184,7 @@ export default function Cohorts({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance

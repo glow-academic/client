@@ -99,13 +99,13 @@ export interface ProvidersProps {
   listData: ProvidersListOut;
   // Server actions (replaces useMutation)
   duplicateProviderAction?: (
-    input: DuplicateProviderIn
+    input: DuplicateProviderIn,
   ) => Promise<DuplicateProviderOut>;
   deleteProviderAction?: (
-    input: DeleteProviderIn
+    input: DeleteProviderIn,
   ) => Promise<DeleteProviderOut>;
   duplicateModelAction?: (
-    input: DuplicateModelIn
+    input: DuplicateModelIn,
   ) => Promise<DuplicateModelOut>;
   deleteModelAction?: (input: DeleteModelIn) => Promise<DeleteModelOut>;
 }
@@ -137,12 +137,12 @@ export default function Providers({
   // Build filter options
   const providers = useMemo(
     () => providersData?.providers || [],
-    [providersData]
+    [providersData],
   );
 
   const providerOptions = useMemo(
     () => providers.map((p) => ({ value: p.provider_id, label: p.name })),
-    [providers]
+    [providers],
   );
 
   const customModelOptions = [
@@ -271,7 +271,7 @@ export default function Providers({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -322,7 +322,7 @@ export default function Providers({
     providers.forEach((provider) => {
       // Filter models for this provider based on filtered rows
       const filteredModels = provider.models.filter((model) =>
-        filteredModelIds.has(model.model_id)
+        filteredModelIds.has(model.model_id),
       );
 
       // Include provider if:
@@ -441,7 +441,7 @@ export default function Providers({
 
   const handleEdit = (model: ModelItem, provider: ProviderWithModels) => {
     router.push(
-      `/system/providers/p/${provider.provider_id}/m/${model.model_id}`
+      `/system/providers/p/${provider.provider_id}/m/${model.model_id}`,
     );
   };
 
@@ -672,7 +672,7 @@ export default function Providers({
             ) : (
               <div className="space-y-6">
                 {filteredProviders.map((provider) =>
-                  renderProviderGroup(provider)
+                  renderProviderGroup(provider),
                 )}
               </div>
             )}

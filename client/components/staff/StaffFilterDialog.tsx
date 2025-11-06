@@ -90,7 +90,7 @@ export function StaffFilterDialog({
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60)
+      (now.getTime() - date.getTime()) / (1000 * 60),
     );
 
     if (diffInMinutes < 1) return "Just now";

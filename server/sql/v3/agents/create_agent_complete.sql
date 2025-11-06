@@ -8,17 +8,17 @@ WITH new_agent AS (
 new_prompt AS (
     -- Create prompt only if system_prompt provided and prompt_id not provided
     INSERT INTO prompts (system_prompt, created_at, updated_at)
-    SELECT $9, NOW(), NOW()
-    WHERE $8 IS NULL AND $9 IS NOT NULL AND $9 != ''
+    SELECT $9::text, NOW(), NOW()
+    WHERE $8::text IS NULL AND $9::text IS NOT NULL AND $9::text != ''
     RETURNING id::text as prompt_id
 ),
 selected_prompt_id AS (
     -- Use provided prompt_id or newly created prompt_id (only return row if prompt exists)
     SELECT COALESCE(
-        $8,
+        $8::text,
         (SELECT prompt_id FROM new_prompt LIMIT 1)
     ) as prompt_id
-    WHERE $8 IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
+    WHERE $8::text IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
 ),
 link_prompt AS (
     -- Link agent to prompt if prompt_id exists

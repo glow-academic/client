@@ -66,17 +66,16 @@ export default function AttemptMessages({
   const messages = useMemo(() => {
     if (!targetChatId || !simulationContext?.attemptData?.chats) return [];
     const chatData = simulationContext.attemptData.chats.find(
-      (c) => c.chat.id === targetChatId
+      (c) => c.chat.id === targetChatId,
     );
     return chatData?.messages || [];
   }, [targetChatId, simulationContext?.attemptData]);
-  const messagesLoading = false; // Always false with SSR
 
   // Group messages by conversation turns (user message + all its responses)
   const groupedMessages = useMemo(() => {
     const sortedMessages = messages.sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
 
     const groups: Array<{
@@ -134,7 +133,7 @@ export default function AttemptMessages({
 
   const handleResponseNavigation = (
     groupId: string,
-    direction: "prev" | "next"
+    direction: "prev" | "next",
   ) => {
     const group = groupedMessages.find((g) => g.groupId === groupId);
     if (!group || group.responses.length <= 1) return;
@@ -182,7 +181,7 @@ export default function AttemptMessages({
           chatId: targetChatId,
           isTourMessage: false,
         },
-      })
+      }),
     );
     simulationContext?.sendMessage(prompt);
   };
@@ -191,7 +190,7 @@ export default function AttemptMessages({
     // Find the previous user message to retry with
     const sortedMessages = messages.sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
 
     // Find the previous user message (query type) that came before this error
@@ -205,7 +204,7 @@ export default function AttemptMessages({
       const errorMessage = sortedMessages[errorMessageIndex];
       if (errorMessage) {
         const group = groupedMessages.find((g) =>
-          g.responses.some((r) => r.id === errorMessage.id)
+          g.responses.some((r) => r.id === errorMessage.id),
         );
 
         if (group) {
@@ -225,7 +224,7 @@ export default function AttemptMessages({
             chatId: targetChatId,
             isTourMessage: false,
           },
-        })
+        }),
       );
       simulationContext?.sendMessage(previousUserMessage.content, true);
     }
@@ -235,7 +234,7 @@ export default function AttemptMessages({
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
       const viewport = scrollArea.querySelector(
-        "[data-radix-scroll-area-viewport]"
+        "[data-radix-scroll-area-viewport]",
       ) as HTMLElement;
       if (viewport)
         viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
@@ -255,7 +254,7 @@ export default function AttemptMessages({
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
     const viewport = scrollArea.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     ) as HTMLElement;
     if (!viewport) return;
     const handleScrollEvent = () => {
@@ -268,7 +267,6 @@ export default function AttemptMessages({
     viewport.addEventListener("scroll", handleScrollEvent);
     return () => viewport.removeEventListener("scroll", handleScrollEvent);
   }, [messages.length, messages]);
-
 
   return (
     <div className="flex-1 flex flex-col p-0 min-h-0 relative">
@@ -321,7 +319,7 @@ export default function AttemptMessages({
                         <div className="max-w-[80%] relative group p-2 -m-2">
                           {(() => {
                             const currentResponse = getCurrentResponse(
-                              group.groupId
+                              group.groupId,
                             );
                             if (!currentResponse) return null;
 
@@ -345,7 +343,7 @@ export default function AttemptMessages({
                                   </div>
                                 ) : currentResponse.completed &&
                                   currentResponse.content.startsWith(
-                                    "Error:"
+                                    "Error:",
                                   ) ? (
                                   // Show error messages in red with retry button (only if no successful responses exist)
                                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
@@ -361,8 +359,8 @@ export default function AttemptMessages({
                                           (response) =>
                                             response.completed &&
                                             !response.content.startsWith(
-                                              "Error:"
-                                            )
+                                              "Error:",
+                                            ),
                                         );
 
                                       return (
@@ -403,8 +401,8 @@ export default function AttemptMessages({
                                                   onClick={() =>
                                                     handleRetry(
                                                       messages.indexOf(
-                                                        currentResponse
-                                                      )
+                                                        currentResponse,
+                                                      ),
                                                     )
                                                   }
                                                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
@@ -452,7 +450,7 @@ export default function AttemptMessages({
                                         onClick={() =>
                                           handleResponseNavigation(
                                             group.groupId,
-                                            "prev"
+                                            "prev",
                                           )
                                         }
                                         disabled={
@@ -474,7 +472,7 @@ export default function AttemptMessages({
                                         onClick={() =>
                                           handleResponseNavigation(
                                             group.groupId,
-                                            "next"
+                                            "next",
                                           )
                                         }
                                         disabled={

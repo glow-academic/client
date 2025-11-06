@@ -24,12 +24,12 @@ type DeleteDepartmentOut = OutputOf<"/api/v3/departments/delete", "post">;
 const getDepartmentsList = cache(
   async (input: DepartmentsListIn): Promise<DepartmentsListOut> => {
     return api.post("/departments/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateDepartment(
-  input: DuplicateDepartmentIn
+  input: DuplicateDepartmentIn,
 ): Promise<DuplicateDepartmentOut> {
   "use server";
   const out = await api.post("/departments/duplicate", input);
@@ -38,7 +38,7 @@ export async function duplicateDepartment(
 }
 
 export async function deleteDepartment(
-  input: DeleteDepartmentIn
+  input: DeleteDepartmentIn,
 ): Promise<DeleteDepartmentOut> {
   "use server";
   const out = await api.post("/departments/delete", input);
@@ -54,13 +54,10 @@ export const metadata: Metadata = {
 export default async function DepartmentsPage() {
   const session = await auth();
   const profileId = session?.effectiveProfileId || "";
-  // Note: departmentIds would need to come from profile context or a server-side fetch
-  // For now, pass empty array - the component may handle this via profile context
-  const departmentIds: string[] = [];
 
   // Fetch list data server-side
   const listData = await getDepartmentsList({
-    body: { profileId, departmentIds },
+    body: { profileId },
   });
 
   return (

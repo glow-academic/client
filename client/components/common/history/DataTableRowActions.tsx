@@ -105,8 +105,7 @@ export function DataTableRowActions({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (disabledForEmulation || !isConnected)
-                  return;
+                if (disabledForEmulation || !isConnected) return;
                 setIsRetrying(true);
                 try {
                   const profileIdForEmit =

@@ -67,7 +67,7 @@ export function DepartmentSelector({
     if (isSelected) {
       // Remove from selection
       newSelectedDepartments = selectedDepartments.filter(
-        (d) => d.id !== department.id
+        (d) => d.id !== department.id,
       );
     } else {
       // Add to selection
@@ -87,11 +87,11 @@ export function DepartmentSelector({
   // Remove individual item
   const handleRemoveItem = (
     departmentToRemove: Department,
-    e: React.MouseEvent
+    e: React.MouseEvent,
   ) => {
     e.stopPropagation();
     const newSelectedDepartments = selectedDepartments.filter(
-      (d) => d.id !== departmentToRemove.id
+      (d) => d.id !== departmentToRemove.id,
     );
     onSelect?.(newSelectedDepartments);
   };
@@ -185,7 +185,7 @@ export function DepartmentSelector({
                       key={department.id}
                       department={department}
                       isSelected={selectedDepartments.some(
-                        (d) => d.id === department.id
+                        (d) => d.id === department.id,
                       )}
                       onPeek={(department) => setPeekedDepartment(department)}
                       onSelect={() => handleSelect(department)}

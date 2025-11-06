@@ -118,7 +118,9 @@ export default function Loading() {
                       <div className="flex items-center gap-3">
                         <Skeleton className="h-9 w-9 rounded-full" />
                         <Skeleton className="h-4 w-32" />
-                        {i === 0 && <Skeleton className="h-5 w-12 rounded-full" />}
+                        {i === 0 && (
+                          <Skeleton className="h-5 w-12 rounded-full" />
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -152,4 +154,3 @@ export default function Loading() {
     </div>
   );
 }
-

@@ -59,7 +59,7 @@ export default function StaffBulkEditModal({
   const [bulkReqPerDay, setBulkReqPerDay] = useState<string>("");
   const [bulkUnlimited, setBulkUnlimited] = useState<boolean>(false);
   const [bulkDefaultProfile, setBulkDefaultProfile] = useState<boolean | null>(
-    null
+    null,
   );
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,7 +114,7 @@ export default function StaffBulkEditModal({
       if (profileIds.length === 0) return;
       setShowConfirmDialog(true);
     },
-    [profileIds]
+    [profileIds],
   );
 
   const handleConfirm = useCallback(async () => {

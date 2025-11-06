@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import RubricDetails from "./RubricDetails";
@@ -105,7 +104,7 @@ export default function Rubric({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }),
-    []
+    [],
   );
 
   // Transform v3 data to current rubric format

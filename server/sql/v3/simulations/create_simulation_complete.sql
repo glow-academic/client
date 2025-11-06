@@ -33,9 +33,9 @@ link_departments AS (
 link_time_limit AS (
     -- Link time limit if provided
     INSERT INTO simulation_time_limits (simulation_id, time_limit_seconds, active, created_at, updated_at)
-    SELECT ns.simulation_id::uuid, $7, true, NOW(), NOW()
+    SELECT ns.simulation_id::uuid, $7::int, true, NOW(), NOW()
     FROM new_simulation ns
-    WHERE $7 IS NOT NULL
+    WHERE $7::int IS NOT NULL
 ),
 scenarios_data AS (
     -- Prepare scenarios with their active flags

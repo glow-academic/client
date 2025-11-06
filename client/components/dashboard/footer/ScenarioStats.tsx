@@ -150,7 +150,7 @@ export default function ScenarioStats({
         numerical: true,
         active: true,
       })),
-    [parameterMapping, validNumericParameterIds]
+    [parameterMapping, validNumericParameterIds],
   );
 
   const metricOptions = useMemo(
@@ -162,18 +162,18 @@ export default function ScenarioStats({
           name: p.name,
           description: `Performance by ${p.name.toLowerCase()} value`,
         })),
-    [allParameters]
+    [allParameters],
   );
 
   const activeParamId = useMemo(
     () => selectedParameterId || metricOptions[0]?.id || "",
-    [selectedParameterId, metricOptions]
+    [selectedParameterId, metricOptions],
   );
 
   // Build chart rows + scenarioCount using facts
   const chartRows = useMemo(() => {
     const facts = numericAttemptFacts.filter(
-      (f) => f.parameterId === activeParamId
+      (f) => f.parameterId === activeParamId,
     );
     const byLevel = new Map<
       string,
@@ -202,13 +202,13 @@ export default function ScenarioStats({
 
     // scenario counts per level
     const scen = numericScenarioFacts.filter(
-      (s) => s.parameterId === activeParamId
+      (s) => s.parameterId === activeParamId,
     );
     const scenCountByLevel = new Map<string, number>();
     for (const s of scen) {
       scenCountByLevel.set(
         s.levelLabel,
-        (scenCountByLevel.get(s.levelLabel) ?? 0) + 1
+        (scenCountByLevel.get(s.levelLabel) ?? 0) + 1,
       );
     }
 
@@ -226,7 +226,7 @@ export default function ScenarioStats({
   // Weighted Pearson correlation between levelValue and score using attempt counts as weights
   const { correlation, pValue } = useMemo(() => {
     const rows = numericAttemptFacts.filter(
-      (f) => f.parameterId === activeParamId
+      (f) => f.parameterId === activeParamId,
     );
     if (rows.length === 0) return { correlation: 0, pValue: 1 };
 
@@ -278,9 +278,8 @@ export default function ScenarioStats({
   // Create lookup for custom tooltip
   const chartRowsByName = useMemo(
     () => Object.fromEntries(chartRows.map((r) => [r.metricLevel, r] as const)),
-    [chartRows]
+    [chartRows],
   );
-
 
   return (
     <TooltipProvider>
@@ -435,7 +434,7 @@ function MetricPicker({
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    value === m.id ? "opacity-100" : "opacity-0"
+                    value === m.id ? "opacity-100" : "opacity-0",
                   )}
                 />
                 <div>

@@ -33,13 +33,13 @@ type CohortStaffItem = CohortDetailOut["staff"][number];
 const getCohort = cache(
   async (input: CohortDetailIn): Promise<CohortDetailOut> => {
     return api.post("/cohorts/detail", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { cohortId } = await params;
   const session = await auth();
@@ -61,7 +61,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server action ---- */
 export async function updateCohort(
-  input: UpdateCohortIn
+  input: UpdateCohortIn,
 ): Promise<UpdateCohortOut> {
   "use server";
   const out = await api.post("/cohorts/update", input);

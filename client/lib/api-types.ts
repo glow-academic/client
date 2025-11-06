@@ -9045,8 +9045,6 @@ export interface components {
             department_ids: string[] | null;
             /** Department Id */
             department_id?: string | null;
-            /** Department Prompt Id */
-            department_prompt_id?: string | null;
         };
         /** UpdateAgentResponse */
         app__api__v3__agents__update__UpdateAgentResponse: {

@@ -40,13 +40,13 @@ type RemoveProfilesFromDepartmentOut = OutputOf<
 const getDepartment = cache(
   async (input: DepartmentDetailIn): Promise<DepartmentDetailOut> => {
     return api.post("/departments/detail", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ departmentId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { departmentId } = await params;
   const session = await auth();
@@ -70,7 +70,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions ---- */
 export async function updateDepartment(
-  input: UpdateDepartmentIn
+  input: UpdateDepartmentIn,
 ): Promise<UpdateDepartmentOut> {
   "use server";
   const out = await api.post("/departments/update", input);
@@ -79,7 +79,7 @@ export async function updateDepartment(
 }
 
 export async function removeProfilesFromDepartment(
-  input: RemoveProfilesFromDepartmentIn
+  input: RemoveProfilesFromDepartmentIn,
 ): Promise<RemoveProfilesFromDepartmentOut> {
   "use server";
   const out = await api.post("/departments/remove-profiles", input);
@@ -139,7 +139,7 @@ export default async function DepartmentEditPage({
 }
 
 /** ---- Derived types from server responses ---- */
-export type DepartmentStaffItem = DepartmentDetailOut["staff"][number];
+type DepartmentStaffItem = DepartmentDetailOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {

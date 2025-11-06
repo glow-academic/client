@@ -29,12 +29,12 @@ type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
 const getPersonaDefault = cache(
   async (input: PersonaDetailDefaultIn): Promise<PersonaDetailDefaultOut> => {
     return api.post("/personas/detail-default", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createPersona(
-  input: CreatePersonaIn
+  input: CreatePersonaIn,
 ): Promise<CreatePersonaOut> {
   "use server";
   const out = await api.post("/personas/create", input);

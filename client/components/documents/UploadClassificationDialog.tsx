@@ -53,7 +53,7 @@ export interface UploadClassificationDialogProps {
   onClose: () => void;
   onConfirm: (
     perFile: Record<string, FileClassification>,
-    defaultsForZip: FileClassification
+    defaultsForZip: FileClassification,
   ) => void;
   onAddFiles?: (files: File[]) => void;
   onRemoveFile?: (fileName: string) => void;
@@ -104,7 +104,7 @@ export function UploadClassificationDialog({
   >(
     effectiveProfile?.primaryDepartmentId
       ? [effectiveProfile.primaryDepartmentId]
-      : []
+      : [],
   );
 
   // Staged selections per department (preserved when departments are deselected)
@@ -123,7 +123,7 @@ export function UploadClassificationDialog({
   // Identify document_parameter=true parameters (required for each document)
   const documentParameterIds = React.useMemo(() => {
     return Object.keys(parameterMapping).filter(
-      (paramId) => parameterMapping[paramId]?.document_parameter === true
+      (paramId) => parameterMapping[paramId]?.document_parameter === true,
     );
   }, [parameterMapping]);
 
@@ -147,7 +147,7 @@ export function UploadClassificationDialog({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          selectedDeptParameterItemIds.add(id)
+          selectedDeptParameterItemIds.add(id),
         );
       }
     });
@@ -160,7 +160,7 @@ export function UploadClassificationDialog({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          allDeptParameterItemIds.add(id)
+          allDeptParameterItemIds.add(id),
         );
       }
     });
@@ -195,12 +195,12 @@ export function UploadClassificationDialog({
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id)
+      (id) => !currentDeptIds.includes(id),
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id)
+      (id) => !prevDeptIds.includes(id),
     );
 
     // Save selections for deselected departments
@@ -239,7 +239,7 @@ export function UploadClassificationDialog({
             ) {
               const validParamSet = new Set(filteredValidParameterItemIds);
               const validParams = staged.apply_all_parameter_item_ids.filter(
-                (id) => validParamSet.has(id)
+                (id) => validParamSet.has(id),
               );
               if (validParams.length > 0) {
                 setGlobalDefaultParameterItemIds((prevParams) => {
@@ -264,7 +264,7 @@ export function UploadClassificationDialog({
                     const stagedParams =
                       staged.per_file_parameter_item_ids![fileName] || [];
                     const validParams = stagedParams.filter((id) =>
-                      validParamSet.has(id)
+                      validParamSet.has(id),
                     );
                     if (validParams.length > 0 && updated[fileName]) {
                       const combined = new Set([
@@ -276,7 +276,7 @@ export function UploadClassificationDialog({
                         parameterItemIds: Array.from(combined),
                       };
                     }
-                  }
+                  },
                 );
                 return updated;
               });
@@ -318,7 +318,7 @@ export function UploadClassificationDialog({
     if (globalDefaultParameterItemIds.length > 0) {
       const validSet = new Set(filteredValidParameterItemIds);
       const filtered = globalDefaultParameterItemIds.filter((id) =>
-        validSet.has(id)
+        validSet.has(id),
       );
       if (filtered.length !== globalDefaultParameterItemIds.length) {
         setGlobalDefaultParameterItemIds(filtered);
@@ -332,7 +332,7 @@ export function UploadClassificationDialog({
       Object.entries(prev).forEach(([fileName, fc]) => {
         const validSet = new Set(filteredValidParameterItemIds);
         const filtered = (fc.parameterItemIds || []).filter((id) =>
-          validSet.has(id)
+          validSet.has(id),
         );
         if (filtered.length !== (fc.parameterItemIds || []).length) {
           hasChanges = true;
@@ -379,8 +379,8 @@ export function UploadClassificationDialog({
     setGlobalDefaultType(type);
     setPerFile((prev) =>
       Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => [k, { ...v, type }])
-      )
+        Object.entries(prev).map(([k, v]) => [k, { ...v, type }]),
+      ),
     );
     setZipDefaults((p) => ({ ...p, type }));
   };
@@ -395,16 +395,16 @@ export function UploadClassificationDialog({
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const merged = Array.from(
-            new Set([...(v.parameterItemIds ?? []), ...incomingIds])
+            new Set([...(v.parameterItemIds ?? []), ...incomingIds]),
           );
           return [k, { ...v, parameterItemIds: merged }];
-        })
-      )
+        }),
+      ),
     );
     setZipDefaults((p) => ({
       ...p,
       parameterItemIds: Array.from(
-        new Set([...(p.parameterItemIds ?? []), ...incomingIds])
+        new Set([...(p.parameterItemIds ?? []), ...incomingIds]),
       ),
     }));
   };
@@ -412,22 +412,22 @@ export function UploadClassificationDialog({
   const removeParameterItemsFromAll = (idsToRemove: string[]) => {
     if (idsToRemove.length === 0) return;
     setGlobalDefaultParameterItemIds((prev) =>
-      prev.filter((id) => !idsToRemove.includes(id))
+      prev.filter((id) => !idsToRemove.includes(id)),
     );
     setPerFile((prev) =>
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const nextIds = (v.parameterItemIds ?? []).filter(
-            (id) => !idsToRemove.includes(id)
+            (id) => !idsToRemove.includes(id),
           );
           return [k, { ...v, parameterItemIds: nextIds }];
-        })
-      )
+        }),
+      ),
     );
     setZipDefaults((p) => ({
       ...p,
       parameterItemIds: (p.parameterItemIds ?? []).filter(
-        (id) => !idsToRemove.includes(id)
+        (id) => !idsToRemove.includes(id),
       ),
     }));
   };
@@ -442,8 +442,8 @@ export function UploadClassificationDialog({
             type: globalDefaultType,
             parameterItemIds: [...globalDefaultParameterItemIds],
           },
-        ])
-      )
+        ]),
+      ),
     );
     setZipDefaults({
       type: globalDefaultType,
@@ -477,7 +477,7 @@ export function UploadClassificationDialog({
 
         // Check if at least one item from this parameter is selected
         const hasItemForParam = itemsForParam.some((itemId) =>
-          selectedItemIds.includes(itemId)
+          selectedItemIds.includes(itemId),
         );
 
         if (!hasItemForParam && itemsForParam.length > 0) {
@@ -486,7 +486,7 @@ export function UploadClassificationDialog({
           }
           const paramName = parameterMapping[paramId]?.name || paramId;
           errors[file.name]!.push(
-            `Required: Select at least one ${paramName} option`
+            `Required: Select at least one ${paramName} option`,
           );
         }
       });
@@ -549,10 +549,10 @@ export function UploadClassificationDialog({
                 selectedIds={globalDefaultParameterItemIds}
                 onSelect={(next) => {
                   const added = next.filter(
-                    (id) => !globalDefaultParameterItemIds.includes(id)
+                    (id) => !globalDefaultParameterItemIds.includes(id),
                   );
                   const removed = globalDefaultParameterItemIds.filter(
-                    (id) => !next.includes(id)
+                    (id) => !next.includes(id),
                   );
                   if (added.length) applyParameterItemsToAll(added);
                   if (removed.length) removeParameterItemsFromAll(removed);
@@ -571,8 +571,8 @@ export function UploadClassificationDialog({
                   documentParameterIds.some((paramId) =>
                     filteredValidParameterItemIds.some(
                       (itemId) =>
-                        parameterItemMapping[itemId]?.parameter_id === paramId
-                    )
+                        parameterItemMapping[itemId]?.parameter_id === paramId,
+                    ),
                   )
                 }
               />
@@ -742,8 +742,8 @@ export function UploadClassificationDialog({
                           filteredValidParameterItemIds.some(
                             (itemId) =>
                               parameterItemMapping[itemId]?.parameter_id ===
-                              paramId
-                          )
+                              paramId,
+                          ),
                         )
                       }
                     />
@@ -797,7 +797,7 @@ export function UploadClassificationDialog({
                 size="sm"
                 onClick={() => {
                   const el = document.getElementById(
-                    "upload-dialog-file-input"
+                    "upload-dialog-file-input",
                   ) as HTMLInputElement | null;
                   el?.click();
                 }}
@@ -830,8 +830,8 @@ export function UploadClassificationDialog({
                           ...classification,
                           departmentIds: selectedDepartmentIds,
                         },
-                      ]
-                    )
+                      ],
+                    ),
                   );
                   const zipDefaultsWithDepartment = {
                     ...zipDefaults,

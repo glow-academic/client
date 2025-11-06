@@ -101,7 +101,9 @@ export default function InstructionalUsersKPI({
                 <Tooltip
                   formatter={(value: number, name: string) => [
                     name === "value" ? Math.round(value) : value,
-                    name === "value" ? "Total Instructional" : "New Instructional",
+                    name === "value"
+                      ? "Total Instructional"
+                      : "New Instructional",
                   ]}
                   labelFormatter={formatDate}
                 />
@@ -121,4 +123,3 @@ export default function InstructionalUsersKPI({
     </>
   );
 }
-

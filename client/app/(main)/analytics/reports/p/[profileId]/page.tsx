@@ -22,18 +22,18 @@ type DashboardOut = OutputOf<"/api/v3/dashboard", "post">;
 const getProfileDetail = cache(
   async (input: ProfileDetailIn): Promise<ProfileDetailOut> => {
     return api.post("/profile/staff/detail", input);
-  }
+  },
 );
 
 const getDashboard = cache(
   async (input: DashboardIn): Promise<DashboardOut> => {
     return api.post("/dashboard", input);
-  }
+  },
 );
 
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { profileId } = await params;
 
@@ -85,7 +85,7 @@ export default async function ReportsPage({
 
   // Get filters from search params or defaults, then set profileId
   const defaultFilters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
   const dashboardFilters = { ...defaultFilters, profileId };
 

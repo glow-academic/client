@@ -30,13 +30,13 @@ type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
 const getProvider = cache(
   async (input: ProviderDetailIn): Promise<ProviderDetailOut> => {
     return api.post("/providers/detail", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ providerId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { providerId } = await params;
   const session = await auth();
@@ -62,7 +62,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function updateProvider(
-  input: UpdateProviderIn
+  input: UpdateProviderIn,
 ): Promise<UpdateProviderOut> {
   "use server";
   const out = await api.post("/providers/update", input);
@@ -71,7 +71,7 @@ export async function updateProvider(
 }
 
 export async function decryptProviderKey(
-  input: DecryptProviderKeyIn
+  input: DecryptProviderKeyIn,
 ): Promise<DecryptProviderKeyOut> {
   "use server";
   const out = await api.post("/providers/decrypt-key", input);
@@ -79,7 +79,7 @@ export async function decryptProviderKey(
 }
 
 export async function createProvider(
-  input: CreateProviderIn
+  input: CreateProviderIn,
 ): Promise<CreateProviderOut> {
   "use server";
   const out = await api.post("/providers/create", input);

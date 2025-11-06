@@ -82,7 +82,7 @@ export interface ParameterItemPickerProps<
   required?: boolean;
   /** Server action for creating parameter items */
   createParameterItemAction?: (
-    input: CreateParameterItemIn
+    input: CreateParameterItemIn,
   ) => Promise<CreateParameterItemOut>;
 }
 
@@ -206,7 +206,7 @@ export function ParameterItemPicker<
     // Enforce uniqueness of value (which equals name) within this parameter
     const proposedValue = newName.trim();
     const duplicate = items.some(
-      (i) => i.name?.trim().toLowerCase() === proposedValue.toLowerCase()
+      (i) => i.name?.trim().toLowerCase() === proposedValue.toLowerCase(),
     );
     if (duplicate) {
       toast.error("An item with the same value already exists");
@@ -295,7 +295,7 @@ export function ParameterItemPicker<
               compact
                 ? "h-7 px-2 text-xs justify-between w-full"
                 : "w-full justify-between",
-              buttonClassName
+              buttonClassName,
             )}
             size={compact ? "sm" : "default"}
             disabled={disabled}
@@ -360,7 +360,7 @@ export function ParameterItemPicker<
                             "ml-auto",
                             selectedIds.includes(item.id)
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                       </div>

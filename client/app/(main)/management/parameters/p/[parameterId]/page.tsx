@@ -36,21 +36,21 @@ type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
 const getParameter = cache(
   async (input: ParameterDetailIn): Promise<ParameterDetailOut> => {
     return api.post("/parameters/detail", input);
-  }
+  },
 );
 
 const getParameterDefault = cache(
   async (
-    input: ParameterDetailDefaultIn
+    input: ParameterDetailDefaultIn,
   ): Promise<ParameterDetailDefaultOut> => {
     return api.post("/parameters/detail-default", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ parameterId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { parameterId } = await params;
   const session = await auth();
@@ -72,7 +72,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createParameter(
-  input: CreateParameterIn
+  input: CreateParameterIn,
 ): Promise<CreateParameterOut> {
   "use server";
   const out = await api.post("/parameters/create", input);
@@ -81,7 +81,7 @@ export async function createParameter(
 }
 
 export async function updateParameter(
-  input: UpdateParameterIn
+  input: UpdateParameterIn,
 ): Promise<UpdateParameterOut> {
   "use server";
   const out = await api.post("/parameters/update", input);
@@ -114,8 +114,8 @@ export default async function ParameterEditPage({
       <Parameter
         parameterId={parameterId}
         mode="edit"
-        parameterDetail={parameterDetail || undefined}
-        parameterDetailDefault={parameterDetailDefault || undefined}
+        {...(parameterDetail && { parameterDetail })}
+        {...(parameterDetailDefault && { parameterDetailDefault })}
         createParameterAction={createParameter}
         updateParameterAction={updateParameter}
       />

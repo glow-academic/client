@@ -52,10 +52,10 @@ export interface SimulationsProps {
   listData: SimulationsListOut;
   // Server actions (replaces useMutation)
   duplicateSimulationAction?: (
-    input: DuplicateSimulationIn
+    input: DuplicateSimulationIn,
   ) => Promise<DuplicateSimulationOut>;
   deleteSimulationAction?: (
-    input: DeleteSimulationIn
+    input: DeleteSimulationIn,
   ) => Promise<DeleteSimulationOut>;
 }
 
@@ -87,15 +87,15 @@ export function Simulations({
   // Extract data from response
   const simulations = useMemo(
     () => simulationsData?.simulations || [],
-    [simulationsData?.simulations]
+    [simulationsData?.simulations],
   );
   const scenarioMapping = useMemo(
     () => simulationsData?.scenario_mapping || {},
-    [simulationsData?.scenario_mapping]
+    [simulationsData?.scenario_mapping],
   );
   const rubricMapping = useMemo(
     () => simulationsData?.rubric_mapping || {},
-    [simulationsData?.rubric_mapping]
+    [simulationsData?.rubric_mapping],
   );
 
   // Create filter options from mappings (label is .name)
@@ -149,7 +149,7 @@ export function Simulations({
       { value: "60-120", label: "60-120 minutes" },
       { value: "120+", label: "120+ minutes" },
     ],
-    []
+    [],
   );
 
   // Build department options from mapping
@@ -159,7 +159,7 @@ export function Simulations({
         string,
         { name: string; description: string }
       >) || {},
-    [simulationsData?.department_mapping]
+    [simulationsData?.department_mapping],
   );
 
   const departmentOptions = useMemo(() => {
@@ -232,7 +232,7 @@ export function Simulations({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -294,7 +294,7 @@ export function Simulations({
 
   const handleDuplicate = async (
     simulationId: string,
-    _simulationName: string
+    _simulationName: string,
   ) => {
     if (!duplicateSimulationAction) return;
 

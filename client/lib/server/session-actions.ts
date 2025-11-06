@@ -20,7 +20,7 @@ export type SwitchEffectiveProfileResult = {
  * Uses server-side session mutation via NextAuth's unstable_update.
  */
 export async function switchEffectiveProfile(
-  input: SwitchEffectiveProfileParams
+  input: SwitchEffectiveProfileParams,
 ): Promise<SwitchEffectiveProfileResult> {
   try {
     const session = await auth();

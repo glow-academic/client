@@ -92,7 +92,7 @@ for (const [pathStr, pathItem] of Object.entries(spec.paths || {})) {
       .map((m) => m[1])
       .filter(
         (param): param is string =>
-          typeof param === "string" && param.length > 0
+          typeof param === "string" && param.length > 0,
       );
     templated.forEach((param) => {
       if (idLike(param)) info.idParams.add(param);
@@ -126,23 +126,23 @@ function emitNs(tag: string, info: TagInfo) {
   lines.push(`  ${tag}: Object.assign(`);
   lines.push(
     `    (p?: Record<string, unknown>) => p ? [${JSON.stringify(
-      tag
-    )}, "with", stable(p)] as const : [${JSON.stringify(tag)}] as const,`
+      tag,
+    )}, "with", stable(p)] as const : [${JSON.stringify(tag)}] as const,`,
   );
   lines.push(`    {`);
   lines.push(`      all: [${JSON.stringify(tag)}] as const,`);
   lines.push(
     `      with: (p: Record<string, unknown>) => [${JSON.stringify(
-      tag
-    )}, "with", stable(p)] as const,`
+      tag,
+    )}, "with", stable(p)] as const,`,
   );
 
   // `list(filters?)`
   if (info.hasList) {
     lines.push(
       `      list: (filters?: Record<string, unknown>) => filters ? [${JSON.stringify(
-        tag
-      )}, "list", stable(filters)] as const : [${JSON.stringify(tag)}, "list"] as const,`
+        tag,
+      )}, "list", stable(filters)] as const : [${JSON.stringify(tag)}, "list"] as const,`,
     );
   }
 
@@ -150,16 +150,16 @@ function emitNs(tag: string, info: TagInfo) {
   if (info.idParams.size || info.bodyIdFields.size) {
     lines.push(
       `      id: (id: string | number) => [${JSON.stringify(
-        tag
-      )}, "id", String(id)] as const,`
+        tag,
+      )}, "id", String(id)] as const,`,
     );
     // `detail(id, extra?)`
     lines.push(
       `      detail: (id: string | number, extra?: Record<string, unknown>) => extra ? [${JSON.stringify(
-        tag
+        tag,
       )}, "detail", String(id), stable(extra)] as const : [${JSON.stringify(
-        tag
-      )}, "detail", String(id)] as const,`
+        tag,
+      )}, "detail", String(id)] as const,`,
     );
   }
 

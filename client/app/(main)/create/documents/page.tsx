@@ -42,12 +42,12 @@ type FinalizeDocumentUploadOut = OutputOf<
 const getDocumentsList = cache(
   async (input: DocumentsListIn): Promise<DocumentsListOut> => {
     return api.post("/documents/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function deleteDocument(
-  input: DeleteDocumentIn
+  input: DeleteDocumentIn,
 ): Promise<DeleteDocumentOut> {
   "use server";
   const out = await api.post("/documents/delete", input);
@@ -56,7 +56,7 @@ export async function deleteDocument(
 }
 
 export async function bulkDeleteDocuments(
-  input: BulkDeleteDocumentsIn
+  input: BulkDeleteDocumentsIn,
 ): Promise<BulkDeleteDocumentsOut> {
   "use server";
   const out = await api.post("/documents/bulk-delete", input);
@@ -65,7 +65,7 @@ export async function bulkDeleteDocuments(
 }
 
 export async function updateDocument(
-  input: UpdateDocumentIn
+  input: UpdateDocumentIn,
 ): Promise<UpdateDocumentOut> {
   "use server";
   const out = await api.post("/documents/update", input);
@@ -74,7 +74,7 @@ export async function updateDocument(
 }
 
 export async function bulkUpdateDocuments(
-  input: BulkUpdateDocumentsIn
+  input: BulkUpdateDocumentsIn,
 ): Promise<BulkUpdateDocumentsOut> {
   "use server";
   const out = await api.post("/documents/bulk-update", input);
@@ -83,21 +83,21 @@ export async function bulkUpdateDocuments(
 }
 
 export async function getDocumentDetail(
-  input: DocumentDetailIn
+  input: DocumentDetailIn,
 ): Promise<DocumentDetailOut> {
   "use server";
   return api.post("/documents/detail", input);
 }
 
 export async function getDocumentDetailBulk(
-  input: DocumentDetailBulkIn
+  input: DocumentDetailBulkIn,
 ): Promise<DocumentDetailBulkOut> {
   "use server";
   return api.post("/documents/detail-bulk", input);
 }
 
 export async function finalizeDocumentUpload(
-  input: FinalizeDocumentUploadIn
+  input: FinalizeDocumentUploadIn,
 ): Promise<FinalizeDocumentUploadOut> {
   "use server";
   const out = await api.post("/documents/upload/finalize", input);

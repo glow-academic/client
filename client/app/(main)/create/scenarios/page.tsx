@@ -24,12 +24,12 @@ type DeleteScenarioOut = OutputOf<"/api/v3/scenarios/delete", "post">;
 const getScenariosList = cache(
   async (input: ScenariosListIn): Promise<ScenariosListOut> => {
     return api.post("/scenarios/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateScenario(
-  input: DuplicateScenarioIn
+  input: DuplicateScenarioIn,
 ): Promise<DuplicateScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/duplicate", input);
@@ -38,7 +38,7 @@ export async function duplicateScenario(
 }
 
 export async function deleteScenario(
-  input: DeleteScenarioIn
+  input: DeleteScenarioIn,
 ): Promise<DeleteScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/delete", input);

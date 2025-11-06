@@ -162,19 +162,35 @@ export function DocumentTypePicker({
             role="combobox"
             aria-expanded={open}
             aria-label="Select document type"
-            className={compact ? "h-7 px-2 text-xs justify-between w-full" : "w-full justify-between"}
+            className={
+              compact
+                ? "h-7 px-2 text-xs justify-between w-full"
+                : "w-full justify-between"
+            }
             size={compact ? "sm" : "default"}
             disabled={disabled}
           >
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               {selectedTypeData && (
-                <span className={compact ? "text-sm flex-shrink-0" : "text-base flex-shrink-0"}>
+                <span
+                  className={
+                    compact
+                      ? "text-sm flex-shrink-0"
+                      : "text-base flex-shrink-0"
+                  }
+                >
                   {selectedTypeData.emoji}
                 </span>
               )}
               <span className="truncate">{getButtonText()}</span>
             </div>
-            <ChevronsUpDown className={compact ? "h-3 w-3 opacity-50 ml-1 flex-shrink-0" : "opacity-50 ml-2 flex-shrink-0"} />
+            <ChevronsUpDown
+              className={
+                compact
+                  ? "h-3 w-3 opacity-50 ml-1 flex-shrink-0"
+                  : "opacity-50 ml-2 flex-shrink-0"
+              }
+            />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[300px] p-0">
@@ -279,4 +295,3 @@ function DocumentTypeItem({
     </CommandItem>
   );
 }
-

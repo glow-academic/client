@@ -78,7 +78,7 @@ export default function AccoladeCard({
         className={clsx(
           "relative group rounded-2xl p-4 h-full bg-card",
           asButton && "cursor-pointer",
-          "transition-shadow will-change-transform shadow-sm flex flex-col"
+          "transition-shadow will-change-transform shadow-sm flex flex-col",
         )}
         style={{
           transform: hovering

@@ -30,15 +30,15 @@ type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getParameterDefault = cache(
   async (
-    input: ParameterDetailDefaultIn
+    input: ParameterDetailDefaultIn,
   ): Promise<ParameterDetailDefaultOut> => {
     return api.post("/parameters/detail-default", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createParameter(
-  input: CreateParameterIn
+  input: CreateParameterIn,
 ): Promise<CreateParameterOut> {
   "use server";
   const out = await api.post("/parameters/create", input);
@@ -47,7 +47,7 @@ export async function createParameter(
 }
 
 export async function updateParameter(
-  input: UpdateParameterIn
+  input: UpdateParameterIn,
 ): Promise<UpdateParameterOut> {
   "use server";
   const out = await api.post("/parameters/update", input);

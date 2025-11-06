@@ -84,8 +84,12 @@ export interface ParameterProps {
   // Optional server-provided data and actions (for server-side rendering)
   parameterDetail?: ParameterDetailOut;
   parameterDetailDefault?: ParameterDetailDefaultOut;
-  createParameterAction?: (input: CreateParameterIn) => Promise<CreateParameterOut>;
-  updateParameterAction?: (input: UpdateParameterIn) => Promise<UpdateParameterOut>;
+  createParameterAction?: (
+    input: CreateParameterIn,
+  ) => Promise<CreateParameterOut>;
+  updateParameterAction?: (
+    input: UpdateParameterIn,
+  ) => Promise<UpdateParameterOut>;
 }
 
 export default function Parameter({
@@ -111,7 +115,7 @@ export default function Parameter({
       practice_parameter: false,
       departmentIds: null, // No longer used at parameter level
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,8 +130,12 @@ export default function Parameter({
   const parameterData = isEditMode ? parameterDetail : parameterDetailDefault;
 
   // Extract body types from server action types for type safety
-  type CreateParameterBody = CreateParameterIn extends { body: infer B } ? B : never;
-  type UpdateParameterBody = UpdateParameterIn extends { body: infer B } ? B : never;
+  type CreateParameterBody = CreateParameterIn extends { body: infer B }
+    ? B
+    : never;
+  type UpdateParameterBody = UpdateParameterIn extends { body: infer B }
+    ? B
+    : never;
 
   // Use server actions directly (no mutations needed)
   const handleCreateParameter = async (body: CreateParameterBody) => {
@@ -166,18 +174,18 @@ export default function Parameter({
   const departmentMapping = useMemo(
     () =>
       (parameterData?.department_mapping || {}) as Record<string, MappingItem>,
-    [parameterData]
+    [parameterData],
   );
 
   const validDepartmentIds = useMemo(
     () => parameterData?.valid_department_ids || [],
-    [parameterData]
+    [parameterData],
   );
 
   // Parameter items come nested in response
   const parameterItems = useMemo(
     () => parameterData?.parameter_items || [],
-    [parameterData]
+    [parameterData],
   );
 
   const [initiallySorted, setInitiallySorted] = useState(false);
@@ -310,7 +318,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -320,7 +328,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string | boolean | string[] | null
+    value: string | boolean | string[] | null,
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -372,7 +380,7 @@ export default function Parameter({
 
     // Validate parameter items
     const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted
+      (item) => !item.isDeleted,
     );
 
     activeItems.forEach((item, index) => {
@@ -390,7 +398,7 @@ export default function Parameter({
         const numValue = parseFloat(item.value);
         if (isNaN(numValue)) {
           errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`
+            `Parameter item ${index + 1}: Value must be a valid number`,
           );
         }
       }
@@ -594,7 +602,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "name",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="text-sm"
@@ -608,7 +616,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "description",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="text-sm min-h-[96px]"
@@ -625,7 +633,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "value",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="text-sm"
@@ -642,7 +650,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "departmentIds",
-                                ids.length > 0 ? ids : null
+                                ids.length > 0 ? ids : null,
                               )
                             }
                             placeholder="All Departments"
@@ -675,7 +683,7 @@ export default function Parameter({
                           </div>
                         </TableCell>
                       </TableRow>
-                    )
+                    ),
                   )}
                 </TableBody>
               </Table>
@@ -723,7 +731,7 @@ export default function Parameter({
                         departmentIds: item.department_ids ?? null,
                         isNew: false,
                         isDeleted: false,
-                      }))
+                      })),
                     ))
               }
             >

@@ -116,7 +116,7 @@ export function RunsDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true },
@@ -266,7 +266,7 @@ export function RunsDataTable({
   const filteredRows = React.useMemo(() => {
     if (!runIdSearch) return rows;
     return rows.filter((r) =>
-      r.id.toLowerCase().includes(runIdSearch.toLowerCase())
+      r.id.toLowerCase().includes(runIdSearch.toLowerCase()),
     );
   }, [rows, runIdSearch]);
 

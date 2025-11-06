@@ -49,7 +49,7 @@ import type { DepartmentDefaultStaffItem } from "@/app/(main)/system/departments
 
 // Helper to normalize department staff item to ProfileListItem format
 const normalizeDepartmentStaffItem = (
-  item: DepartmentStaffItem | DepartmentDefaultStaffItem
+  item: DepartmentStaffItem | DepartmentDefaultStaffItem,
 ): ProfileListItem => ({
   profile_id: item.profile_id,
   first_name: item.first_name,
@@ -78,13 +78,13 @@ export interface DepartmentProps {
   departmentDetailDefault?: DepartmentDetailDefaultOut;
   // Server actions (replaces useMutation)
   createDepartmentAction?: (
-    input: CreateDepartmentIn
+    input: CreateDepartmentIn,
   ) => Promise<CreateDepartmentOut>;
   updateDepartmentAction?: (
-    input: UpdateDepartmentIn
+    input: UpdateDepartmentIn,
   ) => Promise<UpdateDepartmentOut>;
   removeProfilesFromDepartmentAction?: (
-    input: RemoveProfilesFromDepartmentIn
+    input: RemoveProfilesFromDepartmentIn,
   ) => Promise<RemoveProfilesFromDepartmentOut>;
   // Staff actions for StaffDataTable
   processCSVAction?: ProcessCSVAction;
@@ -130,7 +130,7 @@ export default function Department({
       description: "",
       active: true,
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -193,7 +193,7 @@ export default function Department({
   };
 
   const handleRemoveProfilesFromDepartment = async (
-    body: RemoveProfilesFromDepartmentBody
+    body: RemoveProfilesFromDepartmentBody,
   ) => {
     if (!removeProfilesFromDepartmentAction) {
       throw new Error("removeProfilesFromDepartmentAction is required");
@@ -223,7 +223,7 @@ export default function Department({
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -283,7 +283,7 @@ export default function Department({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -397,7 +397,7 @@ export default function Department({
           <div className="space-y-4">
             <StaffDataTable
               data={(departmentData.staff || []).map(
-                normalizeDepartmentStaffItem
+                normalizeDepartmentStaffItem,
               )}
               cohortMapping={departmentData.cohort_mapping || {}}
               departmentMapping={departmentData.department_mapping || {}}
@@ -409,7 +409,7 @@ export default function Department({
                 { value: "guest", label: "Guest" },
               ]}
               cohortOptions={Object.entries(
-                departmentData.cohort_mapping || {}
+                departmentData.cohort_mapping || {},
               ).map(([id, item]) => ({
                 value: id,
                 label: item.name,
@@ -434,7 +434,9 @@ export default function Department({
               selectedStaffIds={selectedStaffIds}
               onStaffSelect={(id: string, checked: boolean) =>
                 setSelectedStaffIds((prev: string[]) =>
-                  checked ? [...prev, id] : prev.filter((x: string) => x !== id)
+                  checked
+                    ? [...prev, id]
+                    : prev.filter((x: string) => x !== id),
                 )
               }
               onSelectAll={(checked: boolean, visibleRowIds?: string[]) => {
@@ -450,7 +452,7 @@ export default function Department({
                   });
                 } else {
                   setSelectedStaffIds((prev: string[]) =>
-                    prev.filter((id: string) => !visibleRowIds?.includes(id))
+                    prev.filter((id: string) => !visibleRowIds?.includes(id)),
                   );
                 }
               }}
@@ -464,7 +466,7 @@ export default function Department({
                 window.open(
                   `/analytics/reports/p/${staff.profile_id}`,
                   "_blank",
-                  "noopener,noreferrer"
+                  "noopener,noreferrer",
                 );
               }}
               onEdit={() => {
@@ -484,7 +486,7 @@ export default function Department({
                     profileIds: selectedStaffIds,
                   });
                   toast.success(
-                    `Removed ${selectedStaffIds.length} profile(s) from department`
+                    `Removed ${selectedStaffIds.length} profile(s) from department`,
                   );
                   setSelectedStaffIds([]);
                   setIsRefreshing(true);
@@ -492,7 +494,7 @@ export default function Department({
                   setIsRefreshing(false);
                 } catch (error) {
                   toast.error(
-                    `Failed to remove profiles: ${error instanceof Error ? error.message : "Unknown error"}`
+                    `Failed to remove profiles: ${error instanceof Error ? error.message : "Unknown error"}`,
                   );
                 }
               }}

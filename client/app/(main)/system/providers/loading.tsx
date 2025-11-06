@@ -7,7 +7,6 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
@@ -106,4 +105,3 @@ export default function Loading() {
     </div>
   );
 }
-

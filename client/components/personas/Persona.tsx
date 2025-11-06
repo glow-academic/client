@@ -106,7 +106,7 @@ export interface PersonaProps {
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
   deletePersonaPromptAction?: (
-    input: DeletePersonaPromptIn
+    input: DeletePersonaPromptIn,
   ) => Promise<DeletePersonaPromptOut>;
 }
 
@@ -140,7 +140,7 @@ export default function Persona({
         ? [effectiveProfile.primaryDepartmentId]
         : [],
     }),
-    [effectiveProfile?.primaryDepartmentId]
+    [effectiveProfile?.primaryDepartmentId],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,7 +148,7 @@ export default function Persona({
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor"
+    "editor",
   );
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | null
@@ -194,7 +194,7 @@ export default function Persona({
   // Wrapper functions for compatibility (matching original mutate signature with callbacks)
   const createPersona = (
     body: CreatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
   ) => {
     handleCreatePersona(body)
       .then(() => {
@@ -211,7 +211,7 @@ export default function Persona({
 
   const updatePersona = (
     body: UpdatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
   ) => {
     handleUpdatePersona(body)
       .then(() => {
@@ -233,7 +233,7 @@ export default function Persona({
       promptId: string;
       departmentId: string | null;
     },
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
   ) => {
     if (!deletePersonaPromptAction) {
       const error = new Error("deletePersonaPromptAction is required");
@@ -270,7 +270,6 @@ export default function Persona({
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
 
-
   // Filter prompt_mapping based on selected department
   // When "All Departments" is selected, only show default prompts (null department_ids)
   // When a department is selected, only show department-specific prompts for that department
@@ -281,7 +280,7 @@ export default function Persona({
 
     const filtered: Record<string, PromptInfo> = {};
     for (const [promptId, promptInfo] of Object.entries(
-      personaData.prompt_mapping
+      personaData.prompt_mapping,
     )) {
       if (!selectedDepartmentId) {
         // "All Departments" selected - only show default prompts (null/empty department_ids)
@@ -514,7 +513,7 @@ export default function Persona({
               toast.error(`Failed to update persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          }
+          },
         );
       } else {
         createPersona(
@@ -541,12 +540,12 @@ export default function Persona({
               toast.error(`Failed to create persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          }
+          },
         );
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
       );
       setIsSubmitting(false);
     }
@@ -824,7 +823,7 @@ export default function Persona({
                                           "mr-2 h-4 w-4",
                                           formData.icon === iconName
                                             ? "opacity-100"
-                                            : "opacity-0"
+                                            : "opacity-0",
                                         )}
                                       />
                                       <IconComponent className="mr-2 h-4 w-4" />
@@ -860,14 +859,14 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0"
+                                          : "opacity-0",
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
                                     {iconName}
                                   </CommandItem>
                                 );
-                              }
+                              },
                             )}
                           </CommandGroup>
                         </CommandList>
@@ -977,7 +976,7 @@ export default function Persona({
                       }
                       onSelect={(ids) => {
                         setSelectedDepartmentId(
-                          ids.length > 0 ? ids[0]! : null
+                          ids.length > 0 ? ids[0]! : null,
                         );
                       }}
                       multiSelect={false}
@@ -1074,7 +1073,7 @@ export default function Persona({
                             size="sm"
                             onClick={() =>
                               setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview"
+                                editorMode === "preview" ? "editor" : "preview",
                               )
                             }
                             className="h-8 w-8 p-0"
@@ -1100,7 +1099,7 @@ export default function Persona({
                                 size="sm"
                                 onClick={() =>
                                   setEditorMode(
-                                    editorMode === "debug" ? "editor" : "debug"
+                                    editorMode === "debug" ? "editor" : "debug",
                                   )
                                 }
                                 className="h-8 w-8 p-0"
@@ -1355,10 +1354,10 @@ export default function Persona({
                       },
                       onError: (error) => {
                         toast.error(
-                          `Failed to delete prompt: ${error.message}`
+                          `Failed to delete prompt: ${error.message}`,
                         );
                       },
-                    }
+                    },
                   );
                 }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

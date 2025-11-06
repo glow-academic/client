@@ -58,19 +58,19 @@ export default function Pricing({ pricingData }: PricingProps) {
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
   const modelMapping = useMemo(
     () => pricingData?.model_mapping || {},
-    [pricingData]
+    [pricingData],
   );
   const profileMapping = useMemo(
     () => pricingData?.profile_mapping || {},
-    [pricingData]
+    [pricingData],
   );
   const agentMapping = useMemo(
     () => pricingData?.agent_mapping || {},
-    [pricingData]
+    [pricingData],
   );
   const personaMapping = useMemo(
     () => pricingData?.persona_mapping || {},
-    [pricingData]
+    [pricingData],
   );
 
   // Compute spend per run and aggregate by day, filtered by agents/personas/profiles; series per model
@@ -86,7 +86,7 @@ export default function Pricing({ pricingData }: PricingProps) {
 
     // Build include sets (empty selection means All)
     const includeModels = new Set(
-      selectedModelIds.length ? selectedModelIds : Object.keys(modelMapping)
+      selectedModelIds.length ? selectedModelIds : Object.keys(modelMapping),
     );
     const includeAgents = new Set(selectedAgentIds);
     const includePersonas = new Set(selectedPersonaIds);
@@ -159,7 +159,7 @@ export default function Pricing({ pricingData }: PricingProps) {
         row["total"] = Number(
           Object.values(values)
             .reduce((s, v) => s + (v || 0), 0)
-            .toFixed(2)
+            .toFixed(2),
         );
         return row;
       });
@@ -303,7 +303,7 @@ export default function Pricing({ pricingData }: PricingProps) {
                 Object.entries(chartConfig).map(([k, v]) => [
                   k,
                   { label: v.label, color: v.color },
-                ])
+                ]),
               )}
               className="aspect-[16/7]"
             >

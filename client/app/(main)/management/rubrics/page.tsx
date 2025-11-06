@@ -28,12 +28,12 @@ type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 const getRubricsList = cache(
   async (input: RubricsListIn): Promise<RubricsListOut> => {
     return api.post("/rubrics/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateRubric(
-  input: DuplicateRubricIn
+  input: DuplicateRubricIn,
 ): Promise<DuplicateRubricOut> {
   "use server";
   const out = await api.post("/rubrics/duplicate", input);
@@ -42,7 +42,7 @@ export async function duplicateRubric(
 }
 
 export async function deleteRubric(
-  input: DeleteRubricIn
+  input: DeleteRubricIn,
 ): Promise<DeleteRubricOut> {
   "use server";
   const out = await api.post("/rubrics/delete", input);
@@ -51,7 +51,7 @@ export async function deleteRubric(
 }
 
 export async function createRubric(
-  input: CreateRubricIn
+  input: CreateRubricIn,
 ): Promise<CreateRubricOut> {
   "use server";
   const out = await api.post("/rubrics/create", input);
@@ -60,7 +60,7 @@ export async function createRubric(
 }
 
 export async function updateRubric(
-  input: UpdateRubricIn
+  input: UpdateRubricIn,
 ): Promise<UpdateRubricOut> {
   "use server";
   const out = await api.post("/rubrics/update", input);

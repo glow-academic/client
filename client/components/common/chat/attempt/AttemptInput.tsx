@@ -57,7 +57,7 @@ export default function AttemptInput({
   // Get messages from context (v2 single source of truth)
   const messages = useMemo(
     () => simulationContext?.currentMessages || [],
-    [simulationContext?.currentMessages]
+    [simulationContext?.currentMessages],
   );
 
   // Get the most recent assistant message
@@ -66,19 +66,19 @@ export default function AttemptInput({
       .filter((msg) => msg.type === "response")
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )[0];
   }, [messages]);
 
   // Get hints from context (v2 single source of truth)
   const currentChatHints = useMemo(
     () => simulationContext?.currentChatHints || [],
-    [simulationContext?.currentChatHints]
+    [simulationContext?.currentChatHints],
   );
   const hintsData = useMemo(() => {
     if (!latestAssistantMessage?.id) return [];
     const hintsForMessage = currentChatHints.find(
-      (h) => h.messageId === latestAssistantMessage.id
+      (h) => h.messageId === latestAssistantMessage.id,
     );
     return hintsForMessage?.hints || [];
   }, [currentChatHints, latestAssistantMessage?.id]);
@@ -108,13 +108,13 @@ export default function AttemptInput({
     // Listen for hint generation events
     window.addEventListener(
       "hint_generation_progress",
-      handleHintGenerationProgress as EventListener
+      handleHintGenerationProgress as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "hint_generation_progress",
-        handleHintGenerationProgress as EventListener
+        handleHintGenerationProgress as EventListener,
       );
     };
   }, [
@@ -172,7 +172,7 @@ export default function AttemptInput({
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
-      | React.MouseEvent<HTMLButtonElement>
+      | React.MouseEvent<HTMLButtonElement>,
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
@@ -196,7 +196,7 @@ export default function AttemptInput({
           chatId: simulationContext.currentChat.id,
           isTourMessage: false,
         },
-      })
+      }),
     );
 
     simulationContext?.sendMessage(messageToSend);
@@ -221,7 +221,7 @@ export default function AttemptInput({
         const maxTextareaHeight = 128; // max-h-32 = 8rem = 128px
         const actualTextareaHeight = Math.min(
           textarea.scrollHeight,
-          maxTextareaHeight
+          maxTextareaHeight,
         );
         const totalHeight = actualTextareaHeight + 24; // Add padding (0px top + 8px bottom + 24px for button area)
         onHeightChange(Math.min(Math.max(totalHeight, 60), 160)); // Clamp between 60px and 160px
@@ -279,7 +279,7 @@ export default function AttemptInput({
               value={newMessage}
               onChange={(e) =>
                 pastePrevention.handleChange(e, (value) =>
-                  setNewMessage(sanitizeInputLength(value))
+                  setNewMessage(sanitizeInputLength(value)),
                 )
               }
               placeholder="Type your message (LaTeX supported)"

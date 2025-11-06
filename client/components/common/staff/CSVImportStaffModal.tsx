@@ -76,7 +76,7 @@ export interface CSVImportStaffModalProps {
       lastName?: string;
       alias?: string;
       role?: string;
-    }>
+    }>,
   ) => void;
   processCSVAction?: ProcessCSVAction;
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
@@ -143,7 +143,7 @@ const unparseCSV = (data: Record<string, string>[]): string => {
           }
           return value;
         })
-        .join(",")
+        .join(","),
     ),
   ];
   return csvContent.join("\n");
@@ -168,7 +168,7 @@ const autoMapColumn = (columnName: string): string | null => {
   // Alias/email patterns
   if (
     ["alias", "email", "username", "user", "login", "email address"].includes(
-      lower
+      lower,
     )
   ) {
     return "alias";
@@ -273,7 +273,7 @@ function ColumnPicker({
                     <Check
                       className={cn(
                         "ml-auto h-4 w-4 shrink-0",
-                        value === field.value ? "opacity-100" : "opacity-0"
+                        value === field.value ? "opacity-100" : "opacity-0",
                       )}
                     />
                   </div>
@@ -345,7 +345,7 @@ export default function CSVImportStaffModal({
 
     // Filter roleOptions to only include roles that are both in options and allowed by scope
     return roleOrder.filter(
-      (role) => allowedRoles.includes(role) && roleOptions.includes(role)
+      (role) => allowedRoles.includes(role) && roleOptions.includes(role),
     );
   }, [roleOptions, isCohortScoped, isDepartmentScoped]);
 
@@ -438,7 +438,7 @@ export default function CSVImportStaffModal({
   // Calculate hasErrors from processedRows
   const hasErrors = React.useMemo(
     () => processedRows.some((row) => row.errors.length > 0),
-    [processedRows]
+    [processedRows],
   );
 
   // Update showErrorRows default when errors appear
@@ -451,7 +451,7 @@ export default function CSVImportStaffModal({
   // Parse CSV file
   const parseCSV = useCallback(
     (
-      csvText: string
+      csvText: string,
     ): { headers: string[]; rows: Record<string, string>[] } => {
       const lines = csvText.split("\n").filter((line) => line.trim());
       if (lines.length < 2) {
@@ -475,7 +475,7 @@ export default function CSVImportStaffModal({
 
       return { headers, rows };
     },
-    []
+    [],
   );
 
   // Handle file upload
@@ -518,13 +518,13 @@ export default function CSVImportStaffModal({
           toast.success(`CSV file loaded with ${rows.length} row(s).`);
         } catch (error) {
           toast.error(
-            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Error parsing CSV: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
         }
       };
       reader.readAsText(file);
     },
-    [parseCSV]
+    [parseCSV],
   );
 
   // React-dropzone hook
@@ -535,7 +535,7 @@ export default function CSVImportStaffModal({
         handleFileUpload(file);
       }
     },
-    [handleFileUpload]
+    [handleFileUpload],
   );
 
   const {
@@ -571,7 +571,7 @@ export default function CSVImportStaffModal({
   const handleProcessCSV = useCallback(async () => {
     // Filter mappings to only include checked columns
     const activeMappings = columnMappings.filter(
-      (m) => includedColumns[m.csv_column] !== false
+      (m) => includedColumns[m.csv_column] !== false,
     );
 
     // Validate that required fields are mapped
@@ -581,11 +581,11 @@ export default function CSVImportStaffModal({
       .filter((f): f is string => f !== null);
 
     const missingFields = requiredFields.filter(
-      (field) => !mappedFields.includes(field)
+      (field) => !mappedFields.includes(field),
     );
     if (missingFields.length > 0) {
       toast.error(
-        `Please map the following required fields: ${missingFields.join(", ")}`
+        `Please map the following required fields: ${missingFields.join(", ")}`,
       );
       return;
     }
@@ -623,7 +623,7 @@ export default function CSVImportStaffModal({
     processedRows.forEach((row, idx) => {
       const editableRow = editableRows[idx] || row;
       const alias = extractAliasFromEmail(
-        editableRow.alias || ""
+        editableRow.alias || "",
       ).toLowerCase();
       if (alias) {
         if (!aliasMap[alias]) {
@@ -670,7 +670,7 @@ export default function CSVImportStaffModal({
         return { ...prev, [rowIndex]: updated };
       });
     },
-    [processedRows]
+    [processedRows],
   );
 
   // Submit review (create/update staff)
@@ -702,7 +702,7 @@ export default function CSVImportStaffModal({
     if (invalidRoles.length > 0) {
       toast.error(
         `Invalid roles found: ${invalidRoles.map((r) => r.role).join(", ")}. ` +
-          `Allowed roles: ${validRoles.join(", ")}`
+          `Allowed roles: ${validRoles.join(", ")}`,
       );
       return;
     }
@@ -725,7 +725,7 @@ export default function CSVImportStaffModal({
 
     if (duplicateAliases.length > 0) {
       toast.error(
-        `Duplicate aliases found in CSV: ${duplicateAliases.join(", ")}`
+        `Duplicate aliases found in CSV: ${duplicateAliases.join(", ")}`,
       );
       return;
     }
@@ -759,7 +759,7 @@ export default function CSVImportStaffModal({
               // Try to find by name
               const found = Object.entries(cohortMapping).find(
                 ([_, cohort]) =>
-                  cohort.name.toLowerCase() === cohortIdOrName.toLowerCase()
+                  cohort.name.toLowerCase() === cohortIdOrName.toLowerCase(),
               );
               return found ? found[0] : null;
             })
@@ -776,7 +776,7 @@ export default function CSVImportStaffModal({
               // Try to find by name
               const found = Object.entries(departmentMapping).find(
                 ([_, dept]) =>
-                  dept.name.toLowerCase() === deptIdOrName.toLowerCase()
+                  dept.name.toLowerCase() === deptIdOrName.toLowerCase(),
               );
               return found ? found[0] : null;
             })
@@ -791,7 +791,7 @@ export default function CSVImportStaffModal({
               // Try to find by name
               const found = Object.entries(cohortMapping).find(
                 ([_, cohort]) =>
-                  cohort.name.toLowerCase() === cohortIdOrName.toLowerCase()
+                  cohort.name.toLowerCase() === cohortIdOrName.toLowerCase(),
               );
               return found ? found[0] : null;
             })
@@ -839,11 +839,11 @@ export default function CSVImportStaffModal({
         });
         onStagedProfiles(stagedProfiles);
         toast.success(
-          `${response.created_count + response.updated_count} profile(s) staged. They will be added to the cohort when you click Update.`
+          `${response.created_count + response.updated_count} profile(s) staged. They will be added to the cohort when you click Update.`,
         );
       } else {
         toast.success(
-          `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
+          `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`,
         );
       }
 
@@ -880,7 +880,7 @@ export default function CSVImportStaffModal({
   ]);
 
   const validRowCount = processedRows.filter(
-    (row) => row.errors.length === 0
+    (row) => row.errors.length === 0,
   ).length;
 
   return (
@@ -955,7 +955,7 @@ export default function CSVImportStaffModal({
                   "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer",
                   isDragActive
                     ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-primary/50"
+                    : "border-muted-foreground/25 hover:border-primary/50",
                 )}
               >
                 <input {...getInputProps()} />
@@ -1056,7 +1056,7 @@ export default function CSVImportStaffModal({
                   <TableBody>
                     {csvHeaders.map((header) => {
                       const mapping = columnMappings.find(
-                        (m) => m.csv_column === header
+                        (m) => m.csv_column === header,
                       );
                       const targetField = mapping?.target_field || null;
                       const sampleData = csvRows[0]?.[header] || "";
@@ -1082,8 +1082,8 @@ export default function CSVImportStaffModal({
                                   prev.map((m) =>
                                     m.csv_column === header
                                       ? { ...m, target_field: newValue }
-                                      : m
-                                  )
+                                      : m,
+                                  ),
                                 );
                               }}
                               availableFields={availableTargetFields}
@@ -1172,31 +1172,31 @@ export default function CSVImportStaffModal({
                       .map((row, index) => {
                         const editableRow = editableRows[index] || row;
                         const hasFirstNameError = editableRow.errors.some(
-                          (e) => e.field === "firstName"
+                          (e) => e.field === "firstName",
                         );
                         const hasLastNameError = editableRow.errors.some(
-                          (e) => e.field === "lastName"
+                          (e) => e.field === "lastName",
                         );
                         const hasAliasError = editableRow.errors.some(
-                          (e) => e.field === "alias"
+                          (e) => e.field === "alias",
                         );
                         const hasDuplicateAlias = duplicateAliasMap.has(index);
                         const hasRoleError = editableRow.errors.some(
-                          (e) => e.field === "role"
+                          (e) => e.field === "role",
                         );
                         const hasDepartmentError =
                           (!departmentIds || departmentIds.length === 0) &&
                           editableRow.errors.some(
                             (e) =>
                               e.field === "department_ids" ||
-                              e.field === "department_id"
+                              e.field === "department_id",
                           );
                         const hasCohortError =
                           (!cohortIds || cohortIds.length === 0) &&
                           editableRow.errors.some(
                             (e) =>
                               e.field === "cohort_ids" ||
-                              e.field === "cohort_id"
+                              e.field === "cohort_id",
                           );
 
                         return (
@@ -1213,7 +1213,7 @@ export default function CSVImportStaffModal({
                                   updateEditableRow(
                                     index,
                                     "firstName",
-                                    e.target.value || null
+                                    e.target.value || null,
                                   )
                                 }
                                 className="h-8 w-full min-w-[120px]"
@@ -1230,7 +1230,7 @@ export default function CSVImportStaffModal({
                                   updateEditableRow(
                                     index,
                                     "lastName",
-                                    e.target.value || null
+                                    e.target.value || null,
                                   )
                                 }
                                 className="h-8 w-full min-w-[120px]"
@@ -1249,7 +1249,7 @@ export default function CSVImportStaffModal({
                                   updateEditableRow(
                                     index,
                                     "alias",
-                                    e.target.value || null
+                                    e.target.value || null,
                                   )
                                 }
                                 className="h-8 w-full min-w-[120px]"
@@ -1266,7 +1266,7 @@ export default function CSVImportStaffModal({
                                   updateEditableRow(
                                     index,
                                     "role",
-                                    value || null
+                                    value || null,
                                   )
                                 }
                                 roleOptions={validRoles}
@@ -1292,7 +1292,7 @@ export default function CSVImportStaffModal({
                                     updateEditableRow(
                                       index,
                                       "department_ids",
-                                      ids
+                                      ids,
                                     )
                                   }
                                   placeholder="Select departments"

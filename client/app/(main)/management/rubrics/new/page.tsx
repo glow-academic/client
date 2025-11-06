@@ -24,7 +24,7 @@ type RubricDetailDefaultOut = OutputOf<
 const getRubricDefault = cache(
   async (input: RubricDetailDefaultIn): Promise<RubricDetailDefaultOut> => {
     return api.post("/rubrics/detail-default", input);
-  }
+  },
 );
 
 export const metadata: Metadata = {

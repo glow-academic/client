@@ -142,7 +142,7 @@ export function StaffRolePicker({
                     <Check
                       className={cn(
                         "ml-auto flex-shrink-0",
-                        selectedRole === role.id ? "opacity-100" : "opacity-0"
+                        selectedRole === role.id ? "opacity-100" : "opacity-0",
                       )}
                     />
                   </div>
@@ -155,4 +155,3 @@ export function StaffRolePicker({
     </Popover>
   );
 }
-

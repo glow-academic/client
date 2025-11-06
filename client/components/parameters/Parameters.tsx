@@ -62,17 +62,16 @@ import type {
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Input } from "@/components/ui/input";
-import type { ParameterSampleItem } from "@/lib/api/v2/schemas/parameters";
 
 export interface ParametersProps {
   // Server-provided data (for server-side rendering)
   listData: ParametersListOut;
   // Server actions (replaces useMutation)
   duplicateParameterAction?: (
-    input: DuplicateParameterIn
+    input: DuplicateParameterIn,
   ) => Promise<DuplicateParameterOut>;
   deleteParameterAction?: (
-    input: DeleteParameterIn
+    input: DeleteParameterIn,
   ) => Promise<DeleteParameterOut>;
 }
 
@@ -102,7 +101,7 @@ export default function Parameters({
 
   const parameters = useMemo(
     () => parametersData?.parameters || [],
-    [parametersData]
+    [parametersData],
   );
 
   // Build department options from mapping
@@ -181,7 +180,7 @@ export default function Parameters({
         },
       },
     ],
-    []
+    [],
   );
 
   // Create table instance
@@ -227,7 +226,9 @@ export default function Parameters({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to duplicate parameter"
+        error instanceof Error
+          ? error.message
+          : "Failed to duplicate parameter",
       );
     } finally {
       setIsDuplicating(null);
@@ -243,7 +244,7 @@ export default function Parameters({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete parameter"
+        error instanceof Error ? error.message : "Failed to delete parameter",
       );
     } finally {
       setShowDeleteDialog(false);
@@ -272,9 +273,9 @@ export default function Parameters({
   };
 
   const renderPreview = (
-    items: ParameterSampleItem[],
+    items: ParametersListOut["parameters"][number]["sample_items"],
     numerical: boolean,
-    totalCount: number
+    totalCount: number,
   ) => {
     if (numerical) {
       // Sort by numeric value
@@ -376,7 +377,7 @@ export default function Parameters({
                   size="sm"
                   onClick={() =>
                     router.push(
-                      `/management/parameters/p/${parameter.parameter_id}`
+                      `/management/parameters/p/${parameter.parameter_id}`,
                     )
                   }
                   aria-label={`Edit ${parameter.name}`}
@@ -389,7 +390,7 @@ export default function Parameters({
                   size="sm"
                   onClick={() =>
                     router.push(
-                      `/management/parameters/p/${parameter.parameter_id}`
+                      `/management/parameters/p/${parameter.parameter_id}`,
                     )
                   }
                   aria-label={`View ${parameter.name}`}
@@ -434,7 +435,7 @@ export default function Parameters({
             renderPreview(
               parameter.sample_items,
               parameter.numerical,
-              parameter.num_items
+              parameter.num_items,
             )
           )}
         </CardContent>

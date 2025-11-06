@@ -34,7 +34,7 @@ export interface CreateStaffButtonProps {
       lastName?: string;
       alias?: string;
       role?: string;
-    }>
+    }>,
   ) => void;
   initialCreateStaffData?: CreateStaffDataOut;
   initialSearchData?: SearchStaffOut;
@@ -72,7 +72,7 @@ export default function CreateStaffButton({
               description: String(dept.description || ""),
             };
           }
-        }
+        },
       );
     }
     return mapping;

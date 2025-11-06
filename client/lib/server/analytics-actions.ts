@@ -7,7 +7,7 @@ type RefreshAnalyticsIn = InputOf<"/api/v3/analytics/refresh", "post">;
 type RefreshAnalyticsOut = OutputOf<"/api/v3/analytics/refresh", "post">;
 
 export async function refreshAnalytics(
-  input: RefreshAnalyticsIn
+  input: RefreshAnalyticsIn,
 ): Promise<RefreshAnalyticsOut> {
   return api.post("/analytics/refresh", input);
 }

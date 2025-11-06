@@ -137,20 +137,22 @@ export function PromptPicker({
                           <Check
                             className={cn(
                               "h-4 w-4",
-                              isSelected ? "opacity-100" : "opacity-0"
+                              isSelected ? "opacity-100" : "opacity-0",
                             )}
                           />
                           <span className="font-medium">
-                            {date.toLocaleDateString()} {date.toLocaleTimeString()}
+                            {date.toLocaleDateString()}{" "}
+                            {date.toLocaleTimeString()}
                           </span>
                         </div>
                       </div>
-                      {prompt.department_ids && prompt.department_ids.length > 0 && (
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {prompt.department_ids.length} department
-                          {prompt.department_ids.length !== 1 ? "s" : ""}
-                        </span>
-                      )}
+                      {prompt.department_ids &&
+                        prompt.department_ids.length > 0 && (
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {prompt.department_ids.length} department
+                            {prompt.department_ids.length !== 1 ? "s" : ""}
+                          </span>
+                        )}
                       <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {prompt.system_prompt.substring(0, 100)}
                         {prompt.system_prompt.length > 100 ? "..." : ""}
@@ -166,4 +168,3 @@ export function PromptPicker({
     </Popover>
   );
 }
-

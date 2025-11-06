@@ -48,7 +48,7 @@ export default async function ReportsFullPage({
 
   // Get filters from search params or defaults
   const filters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Fetch reports data server-side

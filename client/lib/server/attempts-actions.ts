@@ -7,7 +7,7 @@ type BulkArchiveAttemptsIn = InputOf<"/api/v3/attempts/bulk-archive", "post">;
 type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/bulk-archive", "post">;
 
 export async function bulkArchiveAttempts(
-  input: BulkArchiveAttemptsIn
+  input: BulkArchiveAttemptsIn,
 ): Promise<BulkArchiveAttemptsOut> {
   return api.post("/attempts/bulk-archive", input);
 }

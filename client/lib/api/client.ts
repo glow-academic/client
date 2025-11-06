@@ -14,70 +14,70 @@ export function createApi<V extends Version>(ver: V) {
   function get<P extends ShortPath<V>>(
     p: P,
     a?: InputOf<KeyFor<P>, "get">,
-    i?: RequestInit
+    i?: RequestInit,
   ) {
     return doRequest<OutputOf<KeyFor<P>, "get">>(
       pickBase(),
       "GET",
       full(p),
       a,
-      i
+      i,
     );
   }
 
   function post<P extends ShortPath<V>>(
     p: P,
     a: InputOf<KeyFor<P>, "post">,
-    i?: RequestInit
+    i?: RequestInit,
   ) {
     return doRequest<OutputOf<KeyFor<P>, "post">>(
       pickBase(),
       "POST",
       full(p),
       a,
-      i
+      i,
     );
   }
 
   function put<P extends ShortPath<V>>(
     p: P,
     a: InputOf<KeyFor<P>, "put">,
-    i?: RequestInit
+    i?: RequestInit,
   ) {
     return doRequest<OutputOf<KeyFor<P>, "put">>(
       pickBase(),
       "PUT",
       full(p),
       a,
-      i
+      i,
     );
   }
 
   function patch<P extends ShortPath<V>>(
     p: P,
     a: InputOf<KeyFor<P>, "patch">,
-    i?: RequestInit
+    i?: RequestInit,
   ) {
     return doRequest<OutputOf<KeyFor<P>, "patch">>(
       pickBase(),
       "PATCH",
       full(p),
       a,
-      i
+      i,
     );
   }
 
   function del<P extends ShortPath<V>>(
     p: P,
     a?: InputOf<KeyFor<P>, "delete">,
-    i?: RequestInit
+    i?: RequestInit,
   ) {
     return doRequest<OutputOf<KeyFor<P>, "delete">>(
       pickBase(),
       "DELETE",
       full(p),
       a,
-      i
+      i,
     );
   }
 

@@ -23,12 +23,12 @@ type BulkDeleteFeedbackOut = OutputOf<"/api/v3/feedback/bulk-delete", "post">;
 const getFeedbackList = cache(
   async (input: FeedbackListIn): Promise<FeedbackListOut> => {
     return api.post("/feedback/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function bulkDeleteFeedback(
-  input: BulkDeleteFeedbackIn
+  input: BulkDeleteFeedbackIn,
 ): Promise<BulkDeleteFeedbackOut> {
   "use server";
   const out = await api.post("/feedback/bulk-delete", input);

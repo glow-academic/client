@@ -46,7 +46,7 @@ export interface ManualAddStaffModalProps {
       lastName?: string;
       alias?: string;
       role?: string;
-    }>
+    }>,
   ) => void;
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
 }
@@ -100,7 +100,7 @@ export default function ManualAddStaffModal({
 
     // Filter roleOptions to only include roles that are both in options and allowed by scope
     return roleOrder.filter(
-      (role) => allowedRoles.includes(role) && roleOptions.includes(role)
+      (role) => allowedRoles.includes(role) && roleOptions.includes(role),
     );
   }, [roleOptions, isCohortScoped, isDepartmentScoped]);
 
@@ -138,7 +138,7 @@ export default function ManualAddStaffModal({
               const alias = parts[1] || "";
               const roleCandidate = parts[2]?.toLowerCase() || "ta";
               let role: RoleValue = validRoles.includes(
-                roleCandidate as RoleValue
+                roleCandidate as RoleValue,
               )
                 ? (roleCandidate as RoleValue)
                 : "ta";
@@ -199,7 +199,7 @@ export default function ManualAddStaffModal({
           alias = parts[2] || "";
           const roleCandidate = parts[3]?.toLowerCase() || "ta";
           let candidateRole: RoleValue = validRoles.includes(
-            roleCandidate as RoleValue
+            roleCandidate as RoleValue,
           )
             ? (roleCandidate as RoleValue)
             : "ta";
@@ -234,7 +234,7 @@ export default function ManualAddStaffModal({
 
       return entries;
     },
-    [validRoles]
+    [validRoles],
   );
 
   // Update parsed entries when input changes
@@ -262,7 +262,7 @@ export default function ManualAddStaffModal({
         setInputText(newLines.join("\n"));
       }
     },
-    [parsedEntries, inputText]
+    [parsedEntries, inputText],
   );
 
   // Submit handler
@@ -333,11 +333,11 @@ export default function ManualAddStaffModal({
         }));
         onStagedProfiles(stagedProfiles);
         toast.success(
-          `${parsedEntries.length} profile(s) staged. They will be added to the cohort when you click Update.`
+          `${parsedEntries.length} profile(s) staged. They will be added to the cohort when you click Update.`,
         );
       } else {
         toast.success(
-          `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`
+          `Successfully processed ${response.created_count} created, ${response.updated_count} updated staff member(s)!`,
         );
       }
 

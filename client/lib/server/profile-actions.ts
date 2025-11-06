@@ -13,7 +13,7 @@ type AuthorizeEmulationOut = OutputOf<
 >;
 
 export async function authorizeEmulation(
-  input: AuthorizeEmulationIn
+  input: AuthorizeEmulationIn,
 ): Promise<AuthorizeEmulationOut> {
   return api.post("/profile/authorize-emulation", input);
 }

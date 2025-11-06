@@ -120,10 +120,10 @@ const truncateText = (text: string, maxLength: number = 30): string => {
 
 // Explicitly define server action types (matching the page exports)
 export type GetDocumentDetailAction = (
-  input: DocumentDetailIn
+  input: DocumentDetailIn,
 ) => Promise<DocumentDetailOut>;
 export type GetDocumentDetailBulkAction = (
-  input: DocumentDetailBulkIn
+  input: DocumentDetailBulkIn,
 ) => Promise<DocumentDetailBulkOut>;
 
 export interface DocumentsProps {
@@ -131,26 +131,26 @@ export interface DocumentsProps {
   listData: DocumentsListOut;
   // Server actions (replaces useMutation)
   deleteDocumentAction?: (
-    input: DeleteDocumentIn
+    input: DeleteDocumentIn,
   ) => Promise<DeleteDocumentOut>;
   bulkDeleteDocumentsAction?: (
-    input: BulkDeleteDocumentsIn
+    input: BulkDeleteDocumentsIn,
   ) => Promise<BulkDeleteDocumentsOut>;
   updateDocumentAction?: (
-    input: UpdateDocumentIn
+    input: UpdateDocumentIn,
   ) => Promise<UpdateDocumentOut>;
   bulkUpdateDocumentsAction?: (
-    input: BulkUpdateDocumentsIn
+    input: BulkUpdateDocumentsIn,
   ) => Promise<BulkUpdateDocumentsOut>;
   // Server actions for fetching detail data
   getDocumentDetailAction?: GetDocumentDetailAction;
   getDocumentDetailBulkAction?: GetDocumentDetailBulkAction;
   // Server actions for upload and parameter item creation
   finalizeDocumentUploadAction?: (
-    input: FinalizeDocumentUploadIn
+    input: FinalizeDocumentUploadIn,
   ) => Promise<FinalizeDocumentUploadOut>;
   createParameterItemAction?: (
-    input: CreateParameterItemIn
+    input: CreateParameterItemIn,
   ) => Promise<CreateParameterItemOut>;
 }
 
@@ -199,10 +199,10 @@ export default function Documents({
   const [isLoadingDocumentDetail, setIsLoadingDocumentDetail] = useState(false);
   const [isLoadingBulkDetail, setIsLoadingBulkDetail] = useState(false);
   const [bulkType, setBulkType] = useState<DocumentType | "__keep__">(
-    "__keep__"
+    "__keep__",
   );
   const [bulkParameterItemIds, setBulkParameterItemIds] = useState<string[]>(
-    []
+    [],
   );
   const [bulkDepartmentId, setBulkDepartmentId] = useState<string | null>(null);
 
@@ -238,29 +238,29 @@ export default function Documents({
   // Extract data from V3 response
   const documents = useMemo(
     () => documentsData?.documents || [],
-    [documentsData]
+    [documentsData],
   );
   const scenarioMapping = useMemo(
     () => documentsData?.scenario_mapping || {},
-    [documentsData]
+    [documentsData],
   );
   const parameterItemMapping = useMemo(
     () => documentsData?.parameter_item_mapping || {},
-    [documentsData]
+    [documentsData],
   );
   const parameterMapping = useMemo(
     () => documentsData?.parameter_mapping || {},
-    [documentsData]
+    [documentsData],
   );
   const departmentMapping = useMemo(
     () => documentsData?.department_mapping || {},
-    [documentsData]
+    [documentsData],
   );
 
   // Compute valid department IDs for upload dialog
   const validDepartmentIds = useMemo(
     () => effectiveDepartmentIds,
-    [effectiveDepartmentIds]
+    [effectiveDepartmentIds],
   );
 
   // Filter valid parameter item IDs for edit dialog based on selected departments
@@ -342,12 +342,12 @@ export default function Documents({
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id: string) => !currentDeptIds.includes(id)
+      (id: string) => !currentDeptIds.includes(id),
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id: string) => !prevDeptIds.includes(id)
+      (id: string) => !prevDeptIds.includes(id),
     );
 
     // Save selections for deselected departments
@@ -375,7 +375,7 @@ export default function Documents({
           ) {
             const validParamSet = new Set(validParameterItemIdsForEdit);
             const validParams = staged.parameter_item_ids.filter((id) =>
-              validParamSet.has(id)
+              validParamSet.has(id),
             );
             if (validParams.length > 0) {
               setEditingDocument(
@@ -389,7 +389,7 @@ export default function Documents({
                     ...prevDoc,
                     parameter_item_ids: Array.from(combined),
                   };
-                }
+                },
               );
             }
           }
@@ -442,7 +442,7 @@ export default function Documents({
         ) {
           const validParamSet = new Set(validParameterItemIdsForBulk);
           const validParams = staged.parameter_item_ids.filter((id) =>
-            validParamSet.has(id)
+            validParamSet.has(id),
           );
           if (validParams.length > 0) {
             setBulkParameterItemIds((prevParams: string[]) => {
@@ -501,11 +501,11 @@ export default function Documents({
     if (documentDetail && documentDetail.parameter_item_ids) {
       const validSet = new Set(validParameterItemIdsForEdit);
       const filtered = documentDetail.parameter_item_ids.filter((id) =>
-        validSet.has(id)
+        validSet.has(id),
       );
       if (filtered.length !== documentDetail.parameter_item_ids.length) {
         setEditingDocument((prev: (typeof documents)[number] | null) =>
-          prev ? { ...prev, parameter_item_ids: filtered } : null
+          prev ? { ...prev, parameter_item_ids: filtered } : null,
         );
       }
     }
@@ -533,7 +533,7 @@ export default function Documents({
       { value: "lecture", label: "📖 Lecture" },
       { value: "syllabus", label: "📋 Syllabus" },
     ],
-    []
+    [],
   );
 
   const scenarioOptions = useMemo(
@@ -542,7 +542,7 @@ export default function Documents({
         value: id,
         label: item["name"] as string,
       })),
-    [scenarioMapping]
+    [scenarioMapping],
   );
 
   // Build department options from mapping
@@ -552,7 +552,7 @@ export default function Documents({
         string,
         { name: string; description: string }
       >) || {},
-    [documentsData?.department_mapping]
+    [documentsData?.department_mapping],
   );
 
   const departmentOptions = useMemo(() => {
@@ -797,7 +797,7 @@ export default function Documents({
         sortingFn: "datetime",
       },
     ],
-    [scenarioMapping, parameterItemMapping, typeOptions, handlePreview]
+    [scenarioMapping, parameterItemMapping, typeOptions, handlePreview],
   );
 
   // Permission checking using server-provided flags
@@ -806,7 +806,7 @@ export default function Documents({
       const doc = documents.find((d) => d.document_id === documentId);
       return doc?.can_delete ?? false;
     },
-    [documents]
+    [documents],
   );
 
   // Handle document selection (for bulk operations in list view only)
@@ -818,7 +818,7 @@ export default function Documents({
         setSelectedDocuments((prev) => prev.filter((id) => id !== documentId));
       }
     },
-    []
+    [],
   );
 
   const handleSelectAll = useCallback(
@@ -829,7 +829,7 @@ export default function Documents({
         setSelectedDocuments([]);
       }
     },
-    [documents]
+    [documents],
   );
 
   // Handle document edit - fetch detail data on demand
@@ -838,7 +838,7 @@ export default function Documents({
       setEditingDocument({ ...document });
       // Initialize previousDepartmentIdsEdit when opening edit dialog
       setPreviousDepartmentIdsEdit((prev) =>
-        prev.length === 0 ? document.department_ids || [] : prev
+        prev.length === 0 ? document.department_ids || [] : prev,
       );
 
       // Fetch document detail on demand
@@ -856,7 +856,7 @@ export default function Documents({
           toast.error(
             error instanceof Error
               ? error.message
-              : "Failed to load document details"
+              : "Failed to load document details",
           );
           setDocumentDetail(null);
         } finally {
@@ -866,7 +866,7 @@ export default function Documents({
 
       setShowEditDialog(true);
     },
-    [getDocumentDetailAction, effectiveProfile?.id]
+    [getDocumentDetailAction, effectiveProfile?.id],
   );
 
   // Handle single document delete
@@ -875,7 +875,7 @@ export default function Documents({
       setEditingDocument(document);
       setShowDeleteDialog(true);
     },
-    []
+    [],
   );
 
   // Add checkbox and actions columns to the columns array
@@ -955,7 +955,7 @@ export default function Documents({
 
     // Filter out the existing select and actions columns and add our custom ones
     const filteredColumns = columns.filter(
-      (col) => col.id !== "select" && col.id !== "actions"
+      (col) => col.id !== "select" && col.id !== "actions",
     );
     return [checkboxColumn, ...filteredColumns, actionsColumn];
   }, [
@@ -1039,7 +1039,7 @@ export default function Documents({
         toast.error(
           error instanceof Error
             ? error.message
-            : "Failed to load bulk document details"
+            : "Failed to load bulk document details",
         );
         setBulkDocumentDetail(null);
       } finally {
@@ -1061,7 +1061,7 @@ export default function Documents({
 
       if (!canDeleteDocument(editingDocument.document_id)) {
         toast.error(
-          "This document cannot be deleted as it is used in active scenarios"
+          "This document cannot be deleted as it is used in active scenarios",
         );
         setShowDeleteDialog(false);
         setEditingDocument(null);
@@ -1080,7 +1080,7 @@ export default function Documents({
         setEditingDocument(null);
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to delete document"
+          error instanceof Error ? error.message : "Failed to delete document",
         );
       } finally {
         setIsDeleting(false);
@@ -1091,7 +1091,7 @@ export default function Documents({
 
       // Filter to only deletable documents
       const deletableDocuments = selectedDocuments.filter((documentId) =>
-        canDeleteDocument(documentId)
+        canDeleteDocument(documentId),
       );
 
       if (deletableDocuments.length === 0) {
@@ -1121,7 +1121,7 @@ export default function Documents({
         setShowDeleteDialog(false);
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Failed to delete documents"
+          error instanceof Error ? error.message : "Failed to delete documents",
         );
       } finally {
         setIsDeleting(false);
@@ -1155,7 +1155,7 @@ export default function Documents({
       setEditingDocument(null);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update document"
+        error instanceof Error ? error.message : "Failed to update document",
       );
     } finally {
       setIsUpdating(false);
@@ -1199,7 +1199,7 @@ export default function Documents({
       setSelectedDocuments([]);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to update documents"
+        error instanceof Error ? error.message : "Failed to update documents",
       );
     } finally {
       setIsBulkUpdating(false);
@@ -1337,7 +1337,7 @@ export default function Documents({
                     Edit {selectedDocuments.length}
                   </Button>
                   {selectedDocuments.filter((documentId) =>
-                    canDeleteDocument(documentId)
+                    canDeleteDocument(documentId),
                   ).length === 0 ? (
                     <TooltipProvider>
                       <Tooltip>
@@ -1368,7 +1368,7 @@ export default function Documents({
                       Delete{" "}
                       {
                         selectedDocuments.filter((documentId) =>
-                          canDeleteDocument(documentId)
+                          canDeleteDocument(documentId),
                         ).length
                       }{" "}
                       of {selectedDocuments.length}
@@ -1416,7 +1416,7 @@ export default function Documents({
                                 ? null
                                 : flexRender(
                                     header.column.columnDef.header,
-                                    header.getContext()
+                                    header.getContext(),
                                   )}
                             </TableHead>
                           );
@@ -1435,7 +1435,7 @@ export default function Documents({
                             <TableCell key={cell.id}>
                               {flexRender(
                                 cell.column.columnDef.cell,
-                                cell.getContext()
+                                cell.getContext(),
                               )}
                             </TableCell>
                           ))}
@@ -1501,7 +1501,7 @@ export default function Documents({
                     onChange={(e) =>
                       setEditingDocument(
                         (prev: (typeof documents)[number] | null) =>
-                          prev ? { ...prev, name: e.target.value } : null
+                          prev ? { ...prev, name: e.target.value } : null,
                       )
                     }
                   />
@@ -1514,7 +1514,7 @@ export default function Documents({
                     checked={editingDocument.active}
                     onCheckedChange={(checked) =>
                       setEditingDocument((prev) =>
-                        prev ? { ...prev, active: checked } : null
+                        prev ? { ...prev, active: checked } : null,
                       )
                     }
                   />
@@ -1528,7 +1528,9 @@ export default function Documents({
                       // Update in temporary state for submission
                       setEditingDocument(
                         (prev: (typeof documents)[number] | null) =>
-                          prev ? { ...prev, type: value as DocumentType } : null
+                          prev
+                            ? { ...prev, type: value as DocumentType }
+                            : null,
                       );
                     }}
                   >
@@ -1556,7 +1558,7 @@ export default function Documents({
                     onSelect={(ids) =>
                       setEditingDocument(
                         (prev: (typeof documents)[number] | null) =>
-                          prev ? { ...prev, department_ids: ids } : null
+                          prev ? { ...prev, department_ids: ids } : null,
                       )
                     }
                     multiSelect={true}
@@ -1573,7 +1575,7 @@ export default function Documents({
                         (prev: (typeof documents)[number] | null) =>
                           prev
                             ? { ...prev, parameter_item_ids: ids as string[] }
-                            : null
+                            : null,
                       )
                     }
                     {...(createParameterItemAction && {
@@ -1725,10 +1727,10 @@ export default function Documents({
 
                   {(() => {
                     const deletableDocuments = selectedDocuments.filter(
-                      (documentId) => canDeleteDocument(documentId)
+                      (documentId) => canDeleteDocument(documentId),
                     );
                     const nonDeletableDocuments = selectedDocuments.filter(
-                      (documentId) => !canDeleteDocument(documentId)
+                      (documentId) => !canDeleteDocument(documentId),
                     );
 
                     return (
@@ -1743,7 +1745,7 @@ export default function Documents({
                               <ul className="text-sm space-y-1">
                                 {deletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.document_id === documentId
+                                    (d) => d.document_id === documentId,
                                   );
                                   return (
                                     <li
@@ -1769,7 +1771,7 @@ export default function Documents({
                               <ul className="text-sm space-y-1">
                                 {nonDeletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.document_id === documentId
+                                    (d) => d.document_id === documentId,
                                   );
                                   return (
                                     <li
@@ -1813,7 +1815,7 @@ export default function Documents({
                 (editingDocument && !selectedDocuments.length
                   ? !canDeleteDocument(editingDocument.document_id)
                   : selectedDocuments.filter((documentId) =>
-                      canDeleteDocument(documentId)
+                      canDeleteDocument(documentId),
                     ).length === 0)
               }
               className="bg-red-600 hover:bg-red-700 text-white"

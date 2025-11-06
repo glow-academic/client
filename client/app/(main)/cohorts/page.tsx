@@ -26,12 +26,12 @@ type LeaveCohortOut = OutputOf<"/api/v3/cohorts/leave", "post">;
 const getCohortsList = cache(
   async (input: CohortsListIn): Promise<CohortsListOut> => {
     return api.post("/cohorts/list", input);
-  }
+  },
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateCohort(
-  input: DuplicateCohortIn
+  input: DuplicateCohortIn,
 ): Promise<DuplicateCohortOut> {
   "use server";
   const out = await api.post("/cohorts/duplicate", input);
@@ -40,7 +40,7 @@ export async function duplicateCohort(
 }
 
 export async function deleteCohort(
-  input: DeleteCohortIn
+  input: DeleteCohortIn,
 ): Promise<DeleteCohortOut> {
   "use server";
   const out = await api.post("/cohorts/delete", input);
@@ -49,7 +49,7 @@ export async function deleteCohort(
 }
 
 export async function leaveCohort(
-  input: LeaveCohortIn
+  input: LeaveCohortIn,
 ): Promise<LeaveCohortOut> {
   "use server";
   const out = await api.post("/cohorts/leave", input);

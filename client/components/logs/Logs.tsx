@@ -28,7 +28,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import { formatTimestamp, getLogLevelVariant } from "@/utils/logs/log-utils";
 import {
   ColumnDef,
@@ -85,7 +84,7 @@ export default function Logs({
   const logs = useMemo(() => {
     if (!logsData?.logs) return [];
 
-    return logsData.logs.map((log): LogItem => {
+    return logsData.logs.map((log): LogsListOut["logs"][number] => {
       // V3 API returns log_id as string, convert to number
       const logId =
         typeof log.log_id === "string"
@@ -93,8 +92,12 @@ export default function Logs({
           : log.log_id;
 
       // Normalize optional properties to avoid undefined
-      const normalizeActor = (actor: typeof log.actor): LogItem["actor"] => {
-        if (!actor) return null;
+      const normalizeActor = (actor: typeof log.actor): LogsListOut["logs"][number]["actor"] => {
+        if (!actor) return {
+          userId: null,
+          profileId: null,
+          profileName: null,
+        };
         return {
           userId: actor.userId ?? null,
           profileId: actor.profileId ?? null,
@@ -103,9 +106,12 @@ export default function Logs({
       };
 
       const normalizeSubject = (
-        subject: typeof log.subject
-      ): LogItem["subject"] => {
-        if (!subject) return null;
+        subject: typeof log.subject,
+      ): LogsListOut["logs"][number]["subject"] => {
+        if (!subject) return {
+          entityId: null,
+          entityType: null,
+        };
         return {
           entityId: subject.entityId ?? null,
           entityType: subject.entityType ?? null,
@@ -113,9 +119,15 @@ export default function Logs({
       };
 
       const normalizeContext = (
-        context: typeof log.context
-      ): LogItem["context"] => {
-        if (!context) return null;
+        context: typeof log.context,
+      ): LogsListOut["logs"][number]["context"] => {
+        if (!context) return {
+          route: null,
+          function: null,
+          component: null,
+          provider: null,
+          model: null,
+        };
         return {
           route: context.route ?? null,
           function: context.function ?? null,
@@ -125,8 +137,13 @@ export default function Logs({
         };
       };
 
-      const normalizeError = (error: typeof log.error): LogItem["error"] => {
-        if (!error) return null;
+      const normalizeError = (error: typeof log.error): LogsListOut["logs"][number]["error"] => {
+        if (!error) return {
+          code: null,
+          name: null,
+          stack: null,
+          message: null,
+        };
         return {
           code: error.code ?? null,
           name: error.name ?? null,
@@ -136,7 +153,7 @@ export default function Logs({
       };
 
       return {
-        log_id: logId,
+        log_id: logId.toString(),
         event: log.event,
         level: log.level,
         message: log.message ?? "",
@@ -184,7 +201,7 @@ export default function Logs({
       { value: "info", label: "Info" },
       { value: "debug", label: "Debug" },
     ],
-    []
+    [],
   );
 
   const {
@@ -197,36 +214,36 @@ export default function Logs({
     dateOptions,
     timeOptions,
   } = useMemo(() => {
-    const events = new Set<string>(logs.map((l: LogItem) => l.event));
+    const events = new Set<string>(logs.map((l: LogsListOut["logs"][number]) => l.event));
     const providers = new Set<string>(
       logs
-        .map((l: LogItem) => l.context?.provider)
-        .filter((v): v is string => typeof v === "string" && v !== "")
+        .map((l: LogsListOut["logs"][number]) => l.context?.provider)
+        .filter((v): v is string => typeof v === "string" && v !== ""),
     );
     const models = new Set<string>(
       logs
-        .map((l: LogItem) => l.context?.model)
-        .filter((v): v is string => typeof v === "string" && v !== "")
+        .map((l: LogsListOut["logs"][number]) => l.context?.model)
+        .filter((v): v is string => typeof v === "string" && v !== ""),
     );
     const actors = new Set<string>(
       logs
-        .map((l: LogItem) => l.actor_name)
-        .filter((v): v is string => typeof v === "string" && v !== "")
+        .map((l: LogsListOut["logs"][number]) => l.actor_name)
+        .filter((v): v is string => typeof v === "string" && v !== ""),
     );
     const components = new Set<string>(
       logs
-        .map((l: LogItem) => l.context?.component)
-        .filter((v): v is string => typeof v === "string" && v !== "")
+        .map((l: LogsListOut["logs"][number]) => l.context?.component)
+        .filter((v): v is string => typeof v === "string" && v !== ""),
     );
     const functions = new Set<string>(
       logs
-        .map((l: LogItem) => l.context?.function)
-        .filter((v): v is string => typeof v === "string" && v !== "")
+        .map((l: LogsListOut["logs"][number]) => l.context?.function)
+        .filter((v): v is string => typeof v === "string" && v !== ""),
     );
     const dates = new Set<string>();
     const hours = new Set<number>();
 
-    logs.forEach((logItem: LogItem) => {
+    logs.forEach((logItem: LogsListOut["logs"][number]) => {
       if (logItem.created_at) {
         const date = new Date(logItem.created_at);
         // Format as MM/DD for date options
@@ -268,7 +285,7 @@ export default function Logs({
   }, [logs]);
 
   const [selectedLog, setSelectedLog] = useState<(typeof logs)[number] | null>(
-    null
+    null,
   );
 
   // Define columns with rich visual styling
@@ -500,7 +517,7 @@ export default function Logs({
         enableSorting: false,
       },
     ],
-    [handleViewLog]
+    [handleViewLog],
   );
 
   // Create table instance
@@ -717,7 +734,7 @@ export default function Logs({
                         : typeof header.column.columnDef.header === "string"
                           ? header.column.columnDef.header
                           : header.column.columnDef.header?.(
-                              header.getContext()
+                              header.getContext(),
                             )}
                     </th>
                   ))}

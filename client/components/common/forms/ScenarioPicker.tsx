@@ -125,7 +125,7 @@ export function ScenarioPicker<
   const [filterPopoverOpen, setFilterPopoverOpen] = React.useState(false);
   const [filterPersonaIds, setFilterPersonaIds] = React.useState<string[]>([]);
   const [filterDocumentIds, setFilterDocumentIds] = React.useState<string[]>(
-    []
+    [],
   );
   const [filterParameterItemIds, setFilterParameterItemIds] = React.useState<
     string[]
@@ -156,7 +156,7 @@ export function ScenarioPicker<
         hasNoPersona = true;
       } else {
         const persona = Object.entries(sc.persona_mapping || {}).find(
-          ([id]) => id === sc.persona_ids?.[0]
+          ([id]) => id === sc.persona_ids?.[0],
         )?.[1];
         if (persona) {
           const existing = personaMap.get(sc.persona_ids?.[0] || "");
@@ -185,7 +185,7 @@ export function ScenarioPicker<
         color: "#gray",
         icon: "user-x",
         count: baseScenarios.filter(
-          (sc) => !sc.persona_ids || sc.persona_ids.length === 0
+          (sc) => !sc.persona_ids || sc.persona_ids.length === 0,
         ).length,
       });
     }
@@ -233,7 +233,7 @@ export function ScenarioPicker<
         name: "No Documents",
         description: "",
         count: baseScenarios.filter(
-          (sc) => !sc.document_ids || sc.document_ids.length === 0
+          (sc) => !sc.document_ids || sc.document_ids.length === 0,
         ).length,
       });
     }
@@ -290,7 +290,7 @@ export function ScenarioPicker<
         parameterName: "",
         description: "",
         count: baseScenarios.filter(
-          (sc) => !sc.parameter_item_ids || sc.parameter_item_ids.length === 0
+          (sc) => !sc.parameter_item_ids || sc.parameter_item_ids.length === 0,
         ).length,
       });
     }
@@ -322,7 +322,7 @@ export function ScenarioPicker<
       if (filterDocumentIds.length > 0) {
         const hasNoDocuments = filterDocumentIds.includes(NO_DOCUMENTS_KEY);
         const matchesDocument = scenario.document_ids?.some((id) =>
-          filterDocumentIds.includes(id)
+          filterDocumentIds.includes(id),
         );
         if (!hasNoDocuments && !matchesDocument) return false;
         if (
@@ -338,7 +338,7 @@ export function ScenarioPicker<
       if (filterParameterItemIds.length > 0) {
         const hasNoParams = filterParameterItemIds.includes(NO_PARAMS_KEY);
         const matchesParam = scenario.parameter_item_ids?.some((id) =>
-          filterParameterItemIds.includes(id)
+          filterParameterItemIds.includes(id),
         );
         if (!hasNoParams && !matchesParam) return false;
         if (
@@ -514,7 +514,7 @@ export function ScenarioPicker<
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                        )
+                        ),
                       )}
                     </>
                   )}
@@ -543,7 +543,7 @@ export function ScenarioPicker<
                               filterDocumentIds.length > 0 ||
                               filterParameterItemIds.length > 0
                               ? "text-primary"
-                              : "text-muted-foreground"
+                              : "text-muted-foreground",
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -581,7 +581,7 @@ export function ScenarioPicker<
                                 <div className="space-y-2 pl-6">
                                   {personaOptions.map((opt) => {
                                     const checked = filterPersonaIds.includes(
-                                      opt.id
+                                      opt.id,
                                     );
                                     return (
                                       <label
@@ -598,7 +598,7 @@ export function ScenarioPicker<
                                                 return [...prev, opt.id];
                                               }
                                               return prev.filter(
-                                                (x) => x !== opt.id
+                                                (x) => x !== opt.id,
                                               );
                                             });
                                           }}
@@ -626,7 +626,7 @@ export function ScenarioPicker<
                                 <div className="space-y-2 pl-6">
                                   {documentOptions.map((opt) => {
                                     const checked = filterDocumentIds.includes(
-                                      opt.id
+                                      opt.id,
                                     );
                                     return (
                                       <label
@@ -643,7 +643,7 @@ export function ScenarioPicker<
                                                 return [...prev, opt.id];
                                               }
                                               return prev.filter(
-                                                (x) => x !== opt.id
+                                                (x) => x !== opt.id,
                                               );
                                             });
                                           }}
@@ -688,9 +688,9 @@ export function ScenarioPicker<
                                                   return [...prev, opt.id];
                                                 }
                                                 return prev.filter(
-                                                  (x) => x !== opt.id
+                                                  (x) => x !== opt.id,
                                                 );
-                                              }
+                                              },
                                             );
                                           }}
                                         />
@@ -831,7 +831,7 @@ function ScenarioItem<T extends ScenarioMappingItem>({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>

@@ -20,7 +20,7 @@ type LeaderboardOut = OutputOf<"/api/v3/leaderboard", "post">;
 const getLeaderboard = cache(
   async (input: LeaderboardIn): Promise<LeaderboardOut> => {
     return api.post("/leaderboard", input);
-  }
+  },
 );
 
 export const metadata: Metadata = {
@@ -50,7 +50,7 @@ export default async function LeaderboardPage({
 
   // Get filters from search params or defaults
   const filters = await getDefaultAnalyticsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
+    searchParamsObj.toString() ? searchParamsObj : undefined,
   );
 
   // Fetch leaderboard data server-side

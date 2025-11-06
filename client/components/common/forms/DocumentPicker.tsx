@@ -239,7 +239,7 @@ export function DocumentPicker<
                 <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
                   {(() => {
                     const fullDoc = documentDetails.find(
-                      (d) => d.document_id === id
+                      (d) => d.document_id === id,
                     );
                     if (fullDoc) {
                       return (
@@ -395,7 +395,7 @@ export function DocumentPicker<
           {previewDocumentId &&
             (() => {
               const fullDoc = documentDetails.find(
-                (d) => d.document_id === previewDocumentId
+                (d) => d.document_id === previewDocumentId,
               );
               if (fullDoc) {
                 return (

@@ -60,10 +60,10 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
   markIntroCompleteAction: (
-    input: MarkIntroCompleteIn
+    input: MarkIntroCompleteIn,
   ) => Promise<MarkIntroCompleteOut>;
   markChatCompleteAction: (
-    input: MarkChatCompleteIn
+    input: MarkChatCompleteIn,
   ) => Promise<MarkChatCompleteOut>;
 }) {
   const pathname = usePathname() || "/";
@@ -387,10 +387,10 @@ export function MainLayoutClient({
   attemptData?: OutputOf<"/api/v3/attempts/full", "post"> | null;
   attemptId?: string | null;
   markIntroCompleteAction: (
-    input: MarkIntroCompleteIn
+    input: MarkIntroCompleteIn,
   ) => Promise<MarkIntroCompleteOut>;
   markChatCompleteAction: (
-    input: MarkChatCompleteIn
+    input: MarkChatCompleteIn,
   ) => Promise<MarkChatCompleteOut>;
 }) {
   return (

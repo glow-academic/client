@@ -25,7 +25,7 @@ const getLogsList = cache(async (input: LogsListIn): Promise<LogsListOut> => {
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function bulkDeleteLogs(
-  input: BulkDeleteLogsIn
+  input: BulkDeleteLogsIn,
 ): Promise<BulkDeleteLogsOut> {
   "use server";
   const session = await auth();

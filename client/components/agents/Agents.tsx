@@ -5,16 +5,28 @@
  * 07/20/2025
  */
 "use client";
-import { Brain, Copy, Edit, Thermometer, X } from "lucide-react";
+import { Brain, Copy, Edit, Thermometer, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type {
   AgentsListOut,
+  DeleteAgentIn,
+  DeleteAgentOut,
   DuplicateAgentIn,
   DuplicateAgentOut,
 } from "@/app/(main)/management/agents/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,13 +54,23 @@ export interface AgentsProps {
   duplicateAgentAction?: (
     input: DuplicateAgentIn
   ) => Promise<DuplicateAgentOut>;
+  deleteAgentAction?: (input: DeleteAgentIn) => Promise<DeleteAgentOut>;
 }
 
 export default function Agents({
   listData: serverListData,
   duplicateAgentAction,
+  deleteAgentAction,
 }: AgentsProps) {
   const router = useRouter();
+
+  // Delete dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Table state
   const [rowSelection, setRowSelection] = useState({});
@@ -60,7 +82,6 @@ export default function Agents({
 
   // Use server-provided data directly
   const agentsData = serverListData;
-  const isLoading = false; // No loading when using server data
 
   // Extract data from response
   const agents = useMemo(() => agentsData?.agents || [], [agentsData?.agents]);
@@ -227,6 +248,28 @@ export default function Agents({
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteItem || !deleteAgentAction) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteAgentAction({ body: { agentId: deleteItem.id } });
+      toast.success("Agent deleted successfully");
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete agent");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setDeleteItem(null);
+    }
+  };
+
+  const handleDeleteClick = (id: string, name: string) => {
+    setDeleteItem({ id, name });
+    setShowDeleteDialog(true);
+  };
+
   const formatTemperature = (temp: number) => {
     return temp.toFixed(2);
   };
@@ -279,6 +322,20 @@ export default function Agents({
                 onClick={() => handleEdit(agent.agent_id)}
               >
                 <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {agent.can_delete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleDeleteClick(
+                    agent.agent_id,
+                    agent.name || "Unnamed Agent"
+                  )
+                }
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -395,6 +452,29 @@ export default function Agents({
         {/* Pagination */}
         <DataTablePagination table={table} card={true} />
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the agent "{deleteItem?.name}
+              "? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

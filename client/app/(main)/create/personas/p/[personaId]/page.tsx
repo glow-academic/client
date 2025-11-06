@@ -38,13 +38,13 @@ type DeletePersonaPromptOut = OutputOf<
 const getPersona = cache(
   async (input: PersonaDetailIn): Promise<PersonaDetailOut> => {
     return api.post("/personas/detail", input);
-  }
+  },
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ personaId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { personaId } = await params;
   const session = await auth();
@@ -66,7 +66,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createPersona(
-  input: CreatePersonaIn
+  input: CreatePersonaIn,
 ): Promise<CreatePersonaOut> {
   "use server";
   const out = await api.post("/personas/create", input);
@@ -75,7 +75,7 @@ export async function createPersona(
 }
 
 export async function updatePersona(
-  input: UpdatePersonaIn
+  input: UpdatePersonaIn,
 ): Promise<UpdatePersonaOut> {
   "use server";
   const out = await api.post("/personas/update", input);
@@ -84,7 +84,7 @@ export async function updatePersona(
 }
 
 export async function deletePersonaPrompt(
-  input: DeletePersonaPromptIn
+  input: DeletePersonaPromptIn,
 ): Promise<DeletePersonaPromptOut> {
   "use server";
   const out = await api.post("/personas/delete-prompt", input);

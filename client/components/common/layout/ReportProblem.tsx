@@ -154,12 +154,12 @@ export default function ReportProblem({
         await handleSuccess();
       } else {
         await handleError(
-          new Error(result.message || "Failed to submit feedback")
+          new Error(result.message || "Failed to submit feedback"),
         );
       }
     } catch (error) {
       await handleError(
-        error instanceof Error ? error : new Error("Failed to submit feedback")
+        error instanceof Error ? error : new Error("Failed to submit feedback"),
       );
     } finally {
       setIsSubmitting(false);
