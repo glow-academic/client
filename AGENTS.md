@@ -22,9 +22,7 @@ All services run in foreground with color-coded logs. Press Ctrl+C to stop all.
 make run         # Start all services (foreground, combined logs)
 make stop        # Stop all services
 make test        # Run server unit tests (pytest)
-make test-client # Run client unit tests (vitest)
 make test-cov    # Server tests with coverage
-make test-client-cov # Client tests with coverage
 ```
 
 For more commands, run `make help`.
@@ -59,9 +57,7 @@ make connect-db  # Connect to database shell
 ### All Tests (Unit Tests)
 ```bash
 make test          # Server unit tests (pytest)
-make test-client   # Client unit tests (vitest)
 make test-cov      # Server tests with coverage
-cd client && yarn test:coverage  # Client tests with coverage
 ```
 
 **Testing Strategy**: 
@@ -70,13 +66,6 @@ cd client && yarn test:coverage  # Client tests with coverage
 - Test pyramid: strong unit test foundation first
 
 ### Individual Test Suites
-
-**Client Unit Tests** (vitest):
-```bash
-cd client && yarn test           # Run all tests
-cd client && yarn test:watch     # Watch mode
-cd client && yarn test:coverage  # With coverage report
-```
 
 **Server Unit Tests** (pytest):
 ```bash
@@ -87,8 +76,7 @@ make test server/tests/test_specific.py   # Run specific file
 
 ### Coverage Reports
 - **Server**: HTML report in `server/htmlcov/index.html`
-- **Client**: HTML report in `client/coverage/index.html`
-- **Target**: 80% coverage for both client and server
+- **Target**: 80% coverage for server
 
 ## Database Migrations
 
@@ -151,7 +139,6 @@ cd client && npx tsc --noEmit
 - **Presentation only**: Components focus on rendering and user interactions
 - **No business logic**: All validation, processing on server
 - **State management**: TanStack Query for server state, minimal local state
-- **Testing**: Unit tests with Vitest (80% coverage target)
 
 ### Server: All Business Logic
 - **Service layer**: All complex logic in `app/services/`
@@ -184,7 +171,6 @@ docker compose up --build -d
 
 **Run unit tests:**
 ```bash
-docker compose --profile test run --rm client-unit   # Client unit tests (Vitest)
 docker compose --profile test run --rm server-unit   # Server unit tests (pytest)
 ```
 

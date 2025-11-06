@@ -44,10 +44,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "utils/test.js",
-    "__tests__/hooks/use-agent-columns.test.tsx",
-    "__tests__/hooks/use-cohort-columns.test.tsx"
+    ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

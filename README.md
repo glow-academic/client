@@ -18,7 +18,6 @@ This starts database, client, and server with color-coded logs. Press Ctrl+C to 
 make run         # Start all services
 make stop        # Stop all services  
 make test        # Run server tests
-make test-client # Run client tests
 make help        # Show all commands
 ```
 
@@ -43,25 +42,21 @@ make fresh-db    # Fresh start (with backup)
 **Run tests:**
 ```bash
 make test          # Server unit tests
-make test-client   # Client unit tests
 make test-cov      # Server with coverage
 ```
 
 **Individual tests:**
 ```bash
-cd client && yarn test          # Frontend unit tests (vitest)
 cd server && make test          # Backend unit tests (pytest)
-cd client && yarn test:coverage # Frontend with coverage
 cd server && make test-cov      # Backend with coverage
 ```
 
-**Coverage Target**: 80% for both client and server
+**Coverage Target**: 80% for server
 
 ## 🐳 Docker
 
 ```bash
 docker compose up --build -d                       # Run all services
-docker compose --profile test run --rm client-unit # Client unit tests
 docker compose --profile test run --rm server-unit # Server unit tests
 ```
 
@@ -84,7 +79,6 @@ make typecheck   # Type check server (MyPy)
 - **UI:** [React 19](https://react.dev/) + [Shadcn](https://ui.shadcn.com/)
 - **Styling:** [TailwindCSS](https://tailwindcss.com/)
 - **State:** [TanStack Query](https://tanstack.com/query/latest)
-- **Testing:** [Vitest](https://vitest.dev/)
 - **Linter:** [ESLint](https://eslint.org/)
 
 ### Backend

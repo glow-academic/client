@@ -1,4 +1,4 @@
 SELECT COUNT(*) as usage_count
-FROM simulation_attempts
+FROM cohort_simulations
 WHERE simulation_id = $1
 

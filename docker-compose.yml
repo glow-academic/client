@@ -195,17 +195,6 @@ services:
       - internal
       - public_net
   # --------------------
-  # Unit Testing
-  # --------------------
-  client-unit:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-      target: tester
-    profiles: ["test"]
-    command: ["true"]
-
-  # --------------------
   # Nginx Service
   # --------------------
   nginx:

@@ -4,8 +4,9 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 
@@ -29,9 +30,12 @@ router = APIRouter()
 @router.post("/delete", response_model=DeleteSimulationResponse)
 async def delete_simulation(
     request: DeleteSimulationRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteSimulationResponse:
     """Delete a simulation."""
+    tags = ["simulations"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Check if simulation is in use
@@ -43,7 +47,7 @@ async def delete_simulation(
 
             usage_count = usage.get("usage_count", 0)
             if usage_count > 0:
-                raise ValueError("Cannot delete simulation that is in use")
+                raise ValueError("Cannot delete simulation that is linked to cohorts")
 
             # Get simulation name
             get_name_sql = load_sql("sql/v3/simulations/get_simulation_name.sql")

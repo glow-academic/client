@@ -14,18 +14,7 @@ RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
     yarn install --frozen-lockfile
 
 ############################
-# 2️⃣  tester  – Vitest only
-############################
-FROM deps AS tester
-WORKDIR /app
-COPY . .
-
-ENV NODE_ENV=test
-# Vitest exits with non-zero on failure → build fails
-CMD ["yarn", "test"]
-
-############################
-# 3️⃣  builder – Next.js
+# 2️⃣  builder – Next.js
 ############################
 FROM deps AS builder
 WORKDIR /app

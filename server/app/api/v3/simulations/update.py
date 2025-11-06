@@ -4,8 +4,9 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 
@@ -44,9 +45,12 @@ router = APIRouter()
 @router.post("/update", response_model=UpdateSimulationResponse)
 async def update_simulation(
     request: UpdateSimulationRequest,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateSimulationResponse:
     """Update an existing simulation."""
+    tags = ["simulations"]  # From router tags
+    
     try:
         async with transaction(conn):
             # Check if simulation exists

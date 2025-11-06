@@ -5,13 +5,14 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               ParameterItemMapping, ParameterItemMappingItem,
                               ParameterMapping, ParameterMappingItem,
                               RubricMapping, RubricMappingItem,
                               ScenarioMapping, ScenarioMappingItem)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -115,10 +116,25 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
 
 @router.post("/detail-default", response_model=SimulationDetailResponse)
 async def get_simulation_detail_default(
-    request: SimulationDetailDefaultRequest,
+    request_data: SimulationDetailDefaultRequest,
+    http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SimulationDetailResponse:
     """Get default simulation details based on profile."""
+    tags = ["simulations"]  # From router tags
+    
+    # Generate cache key from path and parsed body
+    body_dict = request_data.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return SimulationDetailResponse.model_validate(cached["data"])
+    
     try:
         # Load SQL string
         sql = load_sql("sql/v3/simulations/get_simulation_detail_default_complete.sql")
@@ -134,13 +150,15 @@ async def get_simulation_detail_default(
         # Extract user role and cohort count for permissions
         user_role = result.get("user_role", "trainee")
         cohort_count = result.get("cohort_count", 0)
+        practice_simulation = result.get("practice_simulation", False)
         in_use = cohort_count > 0
 
-        # Compute permissions
-        is_admin = user_role in ("admin", "superadmin")
-        can_edit = is_admin
+        # Compute permissions (matching list_simulations.sql logic)
+        is_admin = user_role in ("admin", "instructional", "superadmin")
+        can_edit = is_admin and not in_use  # Can't edit if has active cohorts
         can_duplicate = is_admin
-        can_delete = is_admin and not in_use
+        # Can't delete if practice OR has cohort links OR not admin
+        can_delete = is_admin and not practice_simulation and not in_use
 
         # Parse scenarios list from JSONB
         scenarios_list: list[ScenarioInSimulation] = []
