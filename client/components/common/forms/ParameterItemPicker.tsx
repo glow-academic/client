@@ -11,9 +11,11 @@ import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type {
+  CreateParameterItemIn,
+  CreateParameterItemOut,
+} from "@/app/(main)/management/parameters/page";
+import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,6 +80,10 @@ export interface ParameterItemPickerProps<
   buttonClassName?: string;
   /** Show required indicator */
   required?: boolean;
+  /** Server action for creating parameter items */
+  createParameterItemAction?: (
+    input: CreateParameterItemIn
+  ) => Promise<CreateParameterItemOut>;
 }
 
 export function ParameterItemPicker<
@@ -101,24 +107,15 @@ export function ParameterItemPicker<
   compact = false,
   buttonClassName,
   required = false,
+  createParameterItemAction,
 }: ParameterItemPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const queryClient = useQueryClient();
-  const createParameterItemMutation = useMutation({
-    mutationFn: (req: {
-      parameterId: string;
-      name: string;
-      description: string;
-      value: string;
-    }) => api.post("/parameters/items/create", { body: req }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.parameters.all });
-    },
-  });
+  const router = useRouter();
+  const [isCreating, setIsCreating] = useState(false);
 
   // Build items from mapping
   const items = useMemo(() => {
@@ -184,6 +181,7 @@ export function ParameterItemPicker<
 
   const canOfferCreate =
     allowCreate &&
+    !!createParameterItemAction &&
     (allowCreateForDefaultParameters || !isDefaultParameter) &&
     search.trim().length > 0 &&
     filteredItems.length === 0;
@@ -200,6 +198,11 @@ export function ParameterItemPicker<
       return;
     }
 
+    if (!createParameterItemAction) {
+      toast.error("Create action is not available");
+      return;
+    }
+
     // Enforce uniqueness of value (which equals name) within this parameter
     const proposedValue = newName.trim();
     const duplicate = items.some(
@@ -210,26 +213,35 @@ export function ParameterItemPicker<
       return;
     }
     try {
-      const created = (await createParameterItemMutation.mutateAsync({
-        parameterId: parameterId,
-        name: newName.trim(),
-        description: newDescription.trim(),
-        value: proposedValue,
-      })) as { parameterItemId: string };
+      setIsCreating(true);
+      const created = await createParameterItemAction({
+        body: {
+          parameterId: parameterId,
+          name: newName.trim(),
+          description: newDescription.trim(),
+          value: proposedValue,
+        },
+      });
 
       toast.success("Parameter item created");
       setShowCreateDialog(false);
       if (!multiSelect) {
         setOpen(false);
       }
+      // Refresh to get updated parameter items
+      router.refresh();
       // In multi-select mode, add to existing selection; in single-select, replace
-      if (multiSelect) {
+      if (multiSelect && created.parameterItemId) {
         onSelect([...selectedIds, created.parameterItemId]);
-      } else {
+      } else if (created.parameterItemId) {
         onSelect([created.parameterItemId]);
       }
-    } catch {
-      toast.error("Failed to create parameter item");
+    } catch (error) {
+      toast.error("Failed to create parameter item", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -415,15 +427,12 @@ export function ParameterItemPicker<
             <Button
               variant="outline"
               onClick={() => setShowCreateDialog(false)}
-              disabled={createParameterItemMutation.isPending}
+              disabled={isCreating}
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={createParameterItemMutation.isPending}
-            >
-              {createParameterItemMutation.isPending ? "Creating..." : "Create"}
+            <Button onClick={handleCreate} disabled={isCreating}>
+              {isCreating ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 
+import { createParameterItem } from "@/app/(main)/management/parameters/page";
 import { auth } from "@/auth";
 import Documents from "@/components/documents/Documents";
 import { api } from "@/lib/api/client";
@@ -28,6 +29,14 @@ type DocumentDetailIn = InputOf<"/api/v3/documents/detail", "post">;
 type DocumentDetailOut = OutputOf<"/api/v3/documents/detail", "post">;
 type DocumentDetailBulkIn = InputOf<"/api/v3/documents/detail-bulk", "post">;
 type DocumentDetailBulkOut = OutputOf<"/api/v3/documents/detail-bulk", "post">;
+type FinalizeDocumentUploadIn = InputOf<
+  "/api/v3/documents/upload/finalize",
+  "post"
+>;
+type FinalizeDocumentUploadOut = OutputOf<
+  "/api/v3/documents/upload/finalize",
+  "post"
+>;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getDocumentsList = cache(
@@ -87,6 +96,15 @@ export async function getDocumentDetailBulk(
   return api.post("/documents/detail-bulk", input);
 }
 
+export async function finalizeDocumentUpload(
+  input: FinalizeDocumentUploadIn
+): Promise<FinalizeDocumentUploadOut> {
+  "use server";
+  const out = await api.post("/documents/upload/finalize", input);
+  revalidateTag("documents");
+  return out;
+}
+
 export const metadata: Metadata = {
   title: "Documents",
   description: `Documents in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -111,6 +129,8 @@ export default async function DocumentsPage() {
         bulkUpdateDocumentsAction={bulkUpdateDocuments}
         getDocumentDetailAction={getDocumentDetail}
         getDocumentDetailBulkAction={getDocumentDetailBulk}
+        finalizeDocumentUploadAction={finalizeDocumentUpload}
+        createParameterItemAction={createParameterItem}
       />
     </div>
   );
@@ -130,6 +150,8 @@ export type {
   DocumentDetailOut,
   DocumentsListIn,
   DocumentsListOut,
+  FinalizeDocumentUploadIn,
+  FinalizeDocumentUploadOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
 };

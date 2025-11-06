@@ -19,8 +19,14 @@ import RubricStandardGroup from "./RubricStandardGroup";
 
 // Type-only import from server page
 import type {
+  CreateRubricIn,
+  CreateRubricOut,
+} from "@/app/(main)/management/rubrics/page";
+import type {
   RubricDetailDefaultOut,
   RubricDetailOut,
+  UpdateRubricIn,
+  UpdateRubricOut,
 } from "@/app/(main)/management/rubrics/r/[rubricId]/page";
 
 type RubricItem = {
@@ -41,12 +47,17 @@ export interface RubricProps {
   // Optional server-provided data (for server-side rendering)
   rubricDetail?: RubricDetailOut;
   rubricDetailDefault?: RubricDetailDefaultOut;
+  // Server actions for mutations
+  updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
+  createRubricAction?: (input: CreateRubricIn) => Promise<CreateRubricOut>;
 }
 
 export default function Rubric({
   rubricId,
   rubricDetail: serverRubricDetail,
   rubricDetailDefault: serverRubricDetailDefault,
+  updateRubricAction,
+  createRubricAction,
 }: RubricProps) {
   const router = useRouter();
   const isEditMode = !!rubricId;
@@ -268,6 +279,8 @@ export default function Rubric({
         isCreateMode={!isEditMode}
         isReadonly={isReadonly}
         profileId={effectiveProfile?.id || ""}
+        {...(createRubricAction && { createRubricAction })}
+        {...(updateRubricAction && { updateRubricAction })}
       />
 
       {/* Standard Groups - Only show in edit mode */}
@@ -289,6 +302,7 @@ export default function Rubric({
               rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
               rubricActive={currentRubric.active}
               profileId={effectiveProfile?.id || ""}
+              {...(updateRubricAction && { updateRubricAction })}
             />
           ))}
 
@@ -305,6 +319,7 @@ export default function Rubric({
             rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
             rubricActive={currentRubric.active}
             profileId={effectiveProfile?.id || ""}
+            {...(updateRubricAction && { updateRubricAction })}
           />
         </div>
       )}

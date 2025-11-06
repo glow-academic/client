@@ -19,6 +19,11 @@ type DuplicateParameterIn = InputOf<"/api/v3/parameters/duplicate", "post">;
 type DuplicateParameterOut = OutputOf<"/api/v3/parameters/duplicate", "post">;
 type DeleteParameterIn = InputOf<"/api/v3/parameters/delete", "post">;
 type DeleteParameterOut = OutputOf<"/api/v3/parameters/delete", "post">;
+type CreateParameterItemIn = InputOf<"/api/v3/parameters/items/create", "post">;
+type CreateParameterItemOut = OutputOf<
+  "/api/v3/parameters/items/create",
+  "post"
+>;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getParametersList = cache(
@@ -42,6 +47,15 @@ export async function deleteParameter(
 ): Promise<DeleteParameterOut> {
   "use server";
   const out = await api.post("/parameters/delete", input);
+  revalidateTag("parameters");
+  return out;
+}
+
+export async function createParameterItem(
+  input: CreateParameterItemIn
+): Promise<CreateParameterItemOut> {
+  "use server";
+  const out = await api.post("/parameters/items/create", input);
   revalidateTag("parameters");
   return out;
 }
@@ -73,6 +87,8 @@ export default async function ContextPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  CreateParameterItemIn,
+  CreateParameterItemOut,
   DeleteParameterIn,
   DeleteParameterOut,
   DuplicateParameterIn,

@@ -6,12 +6,14 @@
  */
 "use client";
 
+import type {
+  FinalizeDocumentUploadIn,
+  FinalizeDocumentUploadOut,
+} from "@/app/(main)/create/documents/page";
 import UploadClassificationDialog from "@/components/documents/UploadClassificationDialog";
 import { useProfile } from "@/contexts/profile-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
@@ -39,6 +41,9 @@ interface DocumentUploadDialogProps {
   parameterItemMapping: Record<string, ParameterItemMappingItem>;
   parameterMapping: Record<string, ParameterMappingItem>;
   validParameterItemIds: string[];
+  finalizeDocumentUploadAction?: (
+    input: FinalizeDocumentUploadIn
+  ) => Promise<FinalizeDocumentUploadOut>;
 }
 
 export function DocumentUploadDialog({
@@ -49,38 +54,11 @@ export function DocumentUploadDialog({
   parameterItemMapping,
   parameterMapping,
   validParameterItemIds,
+  finalizeDocumentUploadAction,
 }: DocumentUploadDialogProps) {
   const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
-  const finalizeMutation = useMutation({
-    mutationFn: async (req: {
-      uploadId: string;
-      fileId: string;
-      zip?: boolean;
-      autoClassify?: boolean;
-      csv?: boolean;
-      test?: boolean;
-      profileId?: string;
-      departmentIds?: string[] | null;
-      parameterItemIds?: string[];
-    }) =>
-      api.post("/documents/upload/finalize", {
-        body: {
-          uploadId: "", // Will be derived from fileId on server
-          fileId: req.fileId,
-          zip: req.zip || false,
-          autoClassify: req.autoClassify || false,
-          csv: req.csv || false,
-          test: req.test || false,
-          profileId: req.profileId || null,
-          departmentIds: req.departmentIds || null,
-          parameterItemIds: req.parameterItemIds || null,
-        },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.documents.all });
-    },
-  });
+  const router = useRouter();
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -220,15 +198,23 @@ export function DocumentUploadDialog({
             // Auto-classify ZIP files by default
             const shouldAutoClassify = isZipFile;
 
-            // Call finalize using mutation hook
-            const result = await finalizeMutation.mutateAsync({
-              uploadId: "", // Server will find by fileId
-              fileId,
-              zip: isZipFile,
-              autoClassify: shouldAutoClassify,
-              profileId: effectiveProfile?.id || "",
-              departmentIds: classification?.departmentIds || null,
-              parameterItemIds: classification?.parameterItemIds || [],
+            // Call finalize using server action
+            if (!finalizeDocumentUploadAction) {
+              throw new Error("finalizeDocumentUploadAction is required");
+            }
+            setIsFinalizing(true);
+            const result = await finalizeDocumentUploadAction({
+              body: {
+                uploadId: "", // Server will find by fileId
+                fileId,
+                zip: isZipFile,
+                autoClassify: shouldAutoClassify,
+                csv: false,
+                test: false,
+                profileId: effectiveProfile?.id || "",
+                departmentIds: classification?.departmentIds || null,
+                parameterItemIds: classification?.parameterItemIds || [],
+              },
             });
 
             if (result.success) {
@@ -279,10 +265,14 @@ export function DocumentUploadDialog({
                 newMap.delete(fileId);
                 return newMap;
               });
+              router.refresh();
             }
-          } catch {
+          } catch (error) {
             toast.error(`Upload processing failed: ${file.name}`, {
-              description: "Failed to process uploaded file",
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to process uploaded file",
               id: toastId,
             });
 
@@ -292,6 +282,8 @@ export function DocumentUploadDialog({
               newMap.delete(fileId);
               return newMap;
             });
+          } finally {
+            setIsFinalizing(false);
           }
 
           // Clear the file input

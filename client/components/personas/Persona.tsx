@@ -13,6 +13,17 @@ import { toast } from "sonner";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 
+import type {
+  CreatePersonaIn,
+  CreatePersonaOut,
+  DeletePersonaPromptIn,
+  DeletePersonaPromptOut,
+  PersonaDetailDefaultOut,
+  PersonaDetailOut,
+  UpdatePersonaIn,
+  UpdatePersonaOut,
+} from "@/app/(main)/create/personas/p/[personaId]/page";
+import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
 import {
@@ -56,17 +67,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useMutation } from "@tanstack/react-query";
-// import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
-import type {
-  CreatePersonaIn,
-  CreatePersonaOut,
-  PersonaDetailDefaultOut,
-  PersonaDetailOut,
-  UpdatePersonaIn,
-  UpdatePersonaOut,
-} from "@/app/(main)/create/personas/p/[personaId]/page";
-import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
 import { cn } from "@/lib/utils";
 import {
   getPersonaIconComponent,
@@ -106,6 +106,9 @@ export interface PersonaProps {
   // Server actions (replaces useMutation)
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
+  deletePersonaPromptAction?: (
+    input: DeletePersonaPromptIn
+  ) => Promise<DeletePersonaPromptOut>;
 }
 
 export default function Persona({
@@ -115,6 +118,7 @@ export default function Persona({
   personaDetailDefault: serverPersonaDetailDefault,
   createPersonaAction,
   updatePersonaAction,
+  deletePersonaPromptAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
@@ -224,29 +228,43 @@ export default function Persona({
       });
   };
 
-  // Note: deletePersonaPrompt - v3 endpoint doesn't exist yet, using v2 hook temporarily
-  // TODO: Create v3 endpoint for delete persona prompt
-  const deletePersonaPromptMutation = useMutation({
-    mutationFn: async (body: {
+  // Delete persona prompt handler using server action
+  const deletePersonaPrompt = (
+    body: {
       personaId: string;
       promptId: string;
       departmentId: string | null;
-    }) => {
-      // For now, using v2 API directly until v3 endpoint is created
-      const response = await fetch("/api/v2/personas/delete-prompt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw new Error("Failed to delete prompt");
-      return response.json();
     },
-    onSuccess: () => {
-      router.refresh(); // Refresh to get updated data
-    },
-  });
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    if (!deletePersonaPromptAction) {
+      const error = new Error("deletePersonaPromptAction is required");
+      options?.onError?.(error);
+      if (!options?.onError) {
+        toast.error(`Failed to delete prompt: ${error.message}`);
+      }
+      return;
+    }
 
-  const deletePersonaPrompt = deletePersonaPromptMutation.mutate;
+    deletePersonaPromptAction({
+      body: {
+        personaId: body.personaId,
+        promptId: body.promptId,
+        departmentId: body.departmentId,
+      },
+    })
+      .then(() => {
+        router.refresh(); // Refresh to get updated data
+        options?.onSuccess?.();
+      })
+      .catch((error) => {
+        const err = error instanceof Error ? error : new Error("Unknown error");
+        options?.onError?.(err);
+        if (!options?.onError) {
+          toast.error(`Failed to delete prompt: ${err.message}`);
+        }
+      });
+  };
 
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {

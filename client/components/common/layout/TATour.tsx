@@ -5,18 +5,21 @@
  * 01/15/2025
  */
 "use client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { HelpCircle, Play } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
+import type {
+  MarkChatCompleteIn,
+  MarkChatCompleteOut,
+  MarkIntroCompleteIn,
+  MarkIntroCompleteOut,
+} from "@/app/(main)/layout-server";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
 import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component
@@ -84,7 +87,19 @@ function GuideButton() {
   );
 }
 
-export default function TATour() {
+export interface TATourProps {
+  markIntroCompleteAction: (
+    input: MarkIntroCompleteIn
+  ) => Promise<MarkIntroCompleteOut>;
+  markChatCompleteAction: (
+    input: MarkChatCompleteIn
+  ) => Promise<MarkChatCompleteOut>;
+}
+
+export default function TATour({
+  markIntroCompleteAction,
+  markChatCompleteAction,
+}: TATourProps) {
   const router = useRouter();
   const pathname = usePathname();
   const {
@@ -95,25 +110,6 @@ export default function TATour() {
   } = useProfile();
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
-  const queryClient = useQueryClient();
-
-  // V3 API: Mark intro complete mutation
-  const markIntroCompleteMutation = useMutation({
-    mutationFn: (request: { profileId: string }) =>
-      api.post("/profile/mark-intro-complete", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
-
-  // V3 API: Mark chat complete mutation
-  const markChatCompleteMutation = useMutation({
-    mutationFn: (request: { profileId: string }) =>
-      api.post("/profile/mark-chat-complete", { body: request }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.profile.all });
-    },
-  });
 
   const {
     state: tourState,
@@ -174,25 +170,22 @@ export default function TATour() {
         let profileUpdated = false;
 
         if (introStepsComplete && !effectiveProfile.viewedIntro) {
-          await markIntroCompleteMutation.mutateAsync({
-            profileId: effectiveProfile.id,
+          await markIntroCompleteAction({
+            body: { profileId: effectiveProfile.id },
           });
           profileUpdated = true;
         }
 
         if (chatStepsComplete && !effectiveProfile.viewedChat) {
-          await markChatCompleteMutation.mutateAsync({
-            profileId: effectiveProfile.id,
+          await markChatCompleteAction({
+            body: { profileId: effectiveProfile.id },
           });
           profileUpdated = true;
         }
 
-        // Invalidate profile queries to ensure immediate UI updates
+        // Refresh page to get updated profile data
         if (profileUpdated) {
-          // Invalidate layout context (includes profile data)
-          queryClient.invalidateQueries({
-            queryKey: keys.profile.all,
-          });
+          router.refresh();
         }
       } catch (err) {
         toast.error("Failed to complete step. Please try again.", {
@@ -203,9 +196,9 @@ export default function TATour() {
     [
       effectiveProfile,
       completeStep,
-      markIntroCompleteMutation,
-      markChatCompleteMutation,
-      queryClient,
+      markIntroCompleteAction,
+      markChatCompleteAction,
+      router,
     ]
   );
 
@@ -437,7 +430,15 @@ export default function TATour() {
 
     // Create tour steps for TAs (we know they have at least one cohort here)
     const steps = createTATourSteps(
-      { ...effectiveProfile, role: effectiveProfile.role as "superadmin" | "admin" | "instructional" | "ta" | "guest" },
+      {
+        ...effectiveProfile,
+        role: effectiveProfile.role as
+          | "superadmin"
+          | "admin"
+          | "instructional"
+          | "ta"
+          | "guest",
+      },
       () => router.push("/home"),
       (cohortId: string) => router.push(`/cohorts/c/${cohortId}`),
       (simulationId: string) => handleStartPracticeSimulation(simulationId),
@@ -459,7 +460,19 @@ export default function TATour() {
     }
 
     // Always initialize the tour with steps (this sets up the guide button)
-    openTour(steps, { ...effectiveProfile, role: effectiveProfile.role as "superadmin" | "admin" | "instructional" | "ta" | "guest" }, initialStep);
+    openTour(
+      steps,
+      {
+        ...effectiveProfile,
+        role: effectiveProfile.role as
+          | "superadmin"
+          | "admin"
+          | "instructional"
+          | "ta"
+          | "guest",
+      },
+      initialStep
+    );
 
     // Navigate to the correct page for the initial step
     if (initialStep >= 0 && initialStep < steps.length) {
@@ -669,17 +682,9 @@ export default function TATour() {
       }
       setLoadingSimulation(null);
 
-      // Invalidate simulation context queries to ensure fresh data when navigating to step 3
+      // Refresh data when navigating to step 3
       if (attemptId) {
-        // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
-        queryClient.invalidateQueries({
-          queryKey: keys.attempts.all,
-        });
-
-        // Invalidate v2 layout context (for updated simulations list)
-        queryClient.invalidateQueries({
-          queryKey: keys.profile.all,
-        });
+        router.refresh();
       }
 
       // Complete step 2 and advance to step 3 when simulation is actually started
@@ -800,17 +805,9 @@ export default function TATour() {
         setNavigating(false);
       }
 
-      // Invalidate simulation context queries when navigating to existing simulation
+      // Refresh data when navigating to existing simulation
       if (event.detail?.attemptId) {
-        // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
-        queryClient.invalidateQueries({
-          queryKey: keys.attempts.all,
-        });
-
-        // Invalidate v2 layout context (for updated simulations list)
-        queryClient.invalidateQueries({
-          queryKey: keys.profile.all,
-        });
+        router.refresh();
       }
     };
 
@@ -894,7 +891,6 @@ export default function TATour() {
     pathname,
     effectiveProfile?.viewedIntro,
     effectiveProfile?.viewedChat,
-    queryClient,
   ]);
 
   // Custom step actions mapping - handles Next button clicks
@@ -928,15 +924,8 @@ export default function TATour() {
         if (tourState.attemptId) {
           // If we have an attemptId, navigate directly to the simulation
 
-          // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
-          queryClient.invalidateQueries({
-            queryKey: keys.attempts.all,
-          });
-
-          // Invalidate v2 layout context (for updated simulations list)
-          queryClient.invalidateQueries({
-            queryKey: keys.profile.all,
-          });
+          // Refresh data to get updated attempts and profile
+          router.refresh();
 
           // Dispatch existingSimulationNavigation event to set navigating to false
           window.dispatchEvent(
@@ -1082,7 +1071,6 @@ export default function TATour() {
     effectiveProfile?.viewedChat,
     setAttemptId,
     startingSimulationId,
-    queryClient,
   ]);
 
   // Set up global action handlers for the tour context

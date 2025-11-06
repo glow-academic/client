@@ -10,6 +10,7 @@ import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
+import { revalidateTag } from "next/cache";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -18,6 +19,8 @@ type RubricDetailOut = OutputOf<"/api/v3/rubrics/detail", "post">;
 
 type RubricDetailDefaultIn = InputOf<"/api/v3/rubrics/detail-default", "post">;
 type RubricDetailDefaultOut = OutputOf<"/api/v3/rubrics/detail-default", "post">;
+type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
+type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getRubric = cache(
@@ -81,9 +84,20 @@ export default async function EditRubricPage({
         rubricId={rubricId}
         rubricDetail={rubricDetail || undefined}
         rubricDetailDefault={rubricDetailDefault || undefined}
+        updateRubricAction={updateRubric}
       />
     </div>
   );
+}
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+export async function updateRubric(
+  input: UpdateRubricIn
+): Promise<UpdateRubricOut> {
+  "use server";
+  const out = await api.post("/rubrics/update", input);
+  revalidateTag("rubrics");
+  return out;
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
@@ -92,4 +106,6 @@ export type {
   RubricDetailDefaultOut,
   RubricDetailIn,
   RubricDetailOut,
+  UpdateRubricIn,
+  UpdateRubricOut,
 };

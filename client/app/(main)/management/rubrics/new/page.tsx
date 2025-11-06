@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 
+import { createRubric } from "@/app/(main)/management/rubrics/page";
 import { auth } from "@/auth";
 import Rubric from "@/components/rubrics/Rubric";
 import { api } from "@/lib/api/client";
@@ -43,7 +44,10 @@ export default async function NewRubricPage() {
 
   return (
     <div className="space-y-6">
-      <Rubric rubricDetailDefault={rubricDetailDefault} />
+      <Rubric
+        rubricDetailDefault={rubricDetailDefault}
+        createRubricAction={createRubric}
+      />
     </div>
   );
 }

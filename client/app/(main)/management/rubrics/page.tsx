@@ -19,6 +19,10 @@ type DuplicateRubricIn = InputOf<"/api/v3/rubrics/duplicate", "post">;
 type DuplicateRubricOut = OutputOf<"/api/v3/rubrics/duplicate", "post">;
 type DeleteRubricIn = InputOf<"/api/v3/rubrics/delete", "post">;
 type DeleteRubricOut = OutputOf<"/api/v3/rubrics/delete", "post">;
+type CreateRubricIn = InputOf<"/api/v3/rubrics/create", "post">;
+type CreateRubricOut = OutputOf<"/api/v3/rubrics/create", "post">;
+type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
+type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getRubricsList = cache(
@@ -46,6 +50,24 @@ export async function deleteRubric(
   return out;
 }
 
+export async function createRubric(
+  input: CreateRubricIn
+): Promise<CreateRubricOut> {
+  "use server";
+  const out = await api.post("/rubrics/create", input);
+  revalidateTag("rubrics");
+  return out;
+}
+
+export async function updateRubric(
+  input: UpdateRubricIn
+): Promise<UpdateRubricOut> {
+  "use server";
+  const out = await api.post("/rubrics/update", input);
+  revalidateTag("rubrics");
+  return out;
+}
+
 export const metadata: Metadata = {
   title: "Rubrics",
   description: `Rubrics in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -66,6 +88,8 @@ export default async function RubricsPage() {
         listData={listData}
         duplicateRubricAction={duplicateRubric}
         deleteRubricAction={deleteRubric}
+        createRubricAction={createRubric}
+        updateRubricAction={updateRubric}
       />
     </div>
   );
@@ -73,9 +97,13 @@ export default async function RubricsPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  CreateRubricIn,
+  CreateRubricOut,
   DeleteRubricIn,
   DeleteRubricOut,
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
+  UpdateRubricIn,
+  UpdateRubricOut,
 };

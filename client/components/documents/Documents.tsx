@@ -81,9 +81,15 @@ import type {
   DocumentDetailIn,
   DocumentDetailOut,
   DocumentsListOut,
+  FinalizeDocumentUploadIn,
+  FinalizeDocumentUploadOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
 } from "@/app/(main)/create/documents/page";
+import type {
+  CreateParameterItemIn,
+  CreateParameterItemOut,
+} from "@/app/(main)/management/parameters/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
@@ -140,6 +146,13 @@ export interface DocumentsProps {
   // Server actions for fetching detail data
   getDocumentDetailAction?: GetDocumentDetailAction;
   getDocumentDetailBulkAction?: GetDocumentDetailBulkAction;
+  // Server actions for upload and parameter item creation
+  finalizeDocumentUploadAction?: (
+    input: FinalizeDocumentUploadIn
+  ) => Promise<FinalizeDocumentUploadOut>;
+  createParameterItemAction?: (
+    input: CreateParameterItemIn
+  ) => Promise<CreateParameterItemOut>;
 }
 
 export default function Documents({
@@ -150,6 +163,8 @@ export default function Documents({
   bulkUpdateDocumentsAction,
   getDocumentDetailAction,
   getDocumentDetailBulkAction,
+  finalizeDocumentUploadAction,
+  createParameterItemAction,
 }: DocumentsProps) {
   const router = useRouter();
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
@@ -1577,6 +1592,9 @@ export default function Documents({
                             : null
                       )
                     }
+                    {...(createParameterItemAction && {
+                      createParameterItemAction,
+                    })}
                     validIds={validParameterItemIdsForEdit}
                     parameterId=""
                     parameterName="Parameter Items"
@@ -1672,6 +1690,9 @@ export default function Documents({
                   multiSelect={true}
                   badgesPosition="below"
                   showClearAll={true}
+                  {...(createParameterItemAction && {
+                    createParameterItemAction,
+                  })}
                 />
               </div>
             </div>
@@ -1878,6 +1899,9 @@ export default function Documents({
           parameterItemMapping={parameterItemMapping}
           parameterMapping={parameterMapping}
           validParameterItemIds={Object.keys(parameterItemMapping)}
+          {...(finalizeDocumentUploadAction && {
+            finalizeDocumentUploadAction,
+          })}
         />
       )}
     </div>

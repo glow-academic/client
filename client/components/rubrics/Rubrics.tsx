@@ -34,11 +34,15 @@ import {
 } from "@tanstack/react-table";
 
 import type {
+  CreateRubricIn,
+  CreateRubricOut,
   DeleteRubricIn,
   DeleteRubricOut,
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
+  UpdateRubricIn,
+  UpdateRubricOut,
 } from "@/app/(main)/management/rubrics/page";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
@@ -65,6 +69,8 @@ export interface RubricsProps {
     input: DuplicateRubricIn
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
+  createRubricAction?: (input: CreateRubricIn) => Promise<CreateRubricOut>;
+  updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
 }
 
 export default function Rubrics({

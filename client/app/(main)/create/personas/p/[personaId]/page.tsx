@@ -28,17 +28,16 @@ type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
 type UpdatePersonaIn = InputOf<"/api/v3/personas/update", "post">;
 type UpdatePersonaOut = OutputOf<"/api/v3/personas/update", "post">;
+type DeletePersonaPromptIn = InputOf<"/api/v3/personas/delete-prompt", "post">;
+type DeletePersonaPromptOut = OutputOf<
+  "/api/v3/personas/delete-prompt",
+  "post"
+>;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getPersona = cache(
   async (input: PersonaDetailIn): Promise<PersonaDetailOut> => {
     return api.post("/personas/detail", input);
-  }
-);
-
-const getPersonaDefault = cache(
-  async (input: PersonaDetailDefaultIn): Promise<PersonaDetailDefaultOut> => {
-    return api.post("/personas/detail-default", input);
   }
 );
 
@@ -84,6 +83,15 @@ export async function updatePersona(
   return out;
 }
 
+export async function deletePersonaPrompt(
+  input: DeletePersonaPromptIn
+): Promise<DeletePersonaPromptOut> {
+  "use server";
+  const out = await api.post("/personas/delete-prompt", input);
+  revalidateTag("personas");
+  return out;
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function PersonaEditPage({
   params,
@@ -105,6 +113,7 @@ export default async function PersonaEditPage({
         personaDetail={personaDetail}
         createPersonaAction={createPersona}
         updatePersonaAction={updatePersona}
+        deletePersonaPromptAction={deletePersonaPrompt}
       />
     </div>
   );
@@ -114,6 +123,8 @@ export default async function PersonaEditPage({
 export type {
   CreatePersonaIn,
   CreatePersonaOut,
+  DeletePersonaPromptIn,
+  DeletePersonaPromptOut,
   PersonaDetailDefaultIn,
   PersonaDetailDefaultOut,
   PersonaDetailIn,

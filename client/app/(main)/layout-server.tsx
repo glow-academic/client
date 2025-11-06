@@ -4,6 +4,7 @@
 import { auth } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { cache } from "react";
 
@@ -12,6 +13,19 @@ type LayoutContextIn = InputOf<"/api/v3/profile/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v3/profile/context", "post">;
 type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
 type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
+type MarkIntroCompleteIn = InputOf<
+  "/api/v3/profile/mark-intro-complete",
+  "post"
+>;
+type MarkIntroCompleteOut = OutputOf<
+  "/api/v3/profile/mark-intro-complete",
+  "post"
+>;
+type MarkChatCompleteIn = InputOf<"/api/v3/profile/mark-chat-complete", "post">;
+type MarkChatCompleteOut = OutputOf<
+  "/api/v3/profile/mark-chat-complete",
+  "post"
+>;
 
 /** ---- Cached fetch ---- */
 const getLayoutContext = cache(
@@ -78,3 +92,38 @@ export async function getLayoutContextData() {
 
   return { initial, snapshot, attemptData, attemptId };
 }
+
+/** ---- Strongly-typed server actions for TATour (single source of truth) ---- */
+export async function markIntroComplete(
+  input: MarkIntroCompleteIn
+): Promise<MarkIntroCompleteOut> {
+  "use server";
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+  const out = await api.post("/profile/mark-intro-complete", {
+    body: { ...input.body, profileId },
+  });
+  revalidateTag("profile");
+  return out;
+}
+
+export async function markChatComplete(
+  input: MarkChatCompleteIn
+): Promise<MarkChatCompleteOut> {
+  "use server";
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+  const out = await api.post("/profile/mark-chat-complete", {
+    body: { ...input.body, profileId },
+  });
+  revalidateTag("profile");
+  return out;
+}
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  MarkChatCompleteIn,
+  MarkChatCompleteOut,
+  MarkIntroCompleteIn,
+  MarkIntroCompleteOut,
+};

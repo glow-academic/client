@@ -8,6 +8,10 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import type {
+  UpdateRubricIn,
+  UpdateRubricOut,
+} from "@/app/(main)/management/rubrics/r/[rubricId]/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,8 +38,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api/client";
-import { keys } from "@/lib/query/keys";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 type StandardUpdate = {
   id?: string | undefined;
   name: string;
@@ -270,6 +273,7 @@ export interface RubricStandardGroupProps {
   rubricDepartmentId: string;
   rubricActive: boolean;
   profileId: string;
+  updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
 }
 
 interface StandardFormData {
@@ -301,9 +305,11 @@ export default function RubricStandardGroup({
   rubricDepartmentId,
   rubricActive,
   profileId,
+  updateRubricAction,
 }: RubricStandardGroupProps) {
   const [isEditing, setIsEditing] = useState(mode === "create");
-  const queryClient = useQueryClient();
+  const router = useRouter();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Unified update helper - merges updates with existing data (same as RubricDetails)
   const updateRubricUnified = async (params: {
@@ -330,42 +336,17 @@ export default function RubricStandardGroup({
       deleted: boolean;
     }>;
   }) => {
-    // Get current rubric detail from cache or fetch
-    const currentDetail = queryClient.getQueryData<{
-      name: string;
-      description: string;
-      department_ids: string[] | null;
-      points: number;
-      passPoints: number;
-      active: boolean;
-      standard_group_ids: string[];
-      standard_groups_detail: Record<
-        string,
-        { points: number; passPoints: number; standard_ids: string[] }
-      >;
-      standard_groups_mapping: Record<
-        string,
-        { name: string; description: string }
-      >;
-      standards_mapping: Record<
-        string,
-        { name: string; description: string; points: number }
-      >;
-    }>(
-      keys.rubrics.with({
+    if (!updateRubricAction) {
+      throw new Error("updateRubricAction is required");
+    }
+
+    // Fetch current rubric detail
+    const detail = await api.post("/rubrics/detail", {
+      body: {
         rubricId: params.rubricId,
         profileId: params.profileId,
-      })
-    );
-
-    const detail =
-      currentDetail ||
-      (await api.post("/rubrics/detail", {
-        body: {
-          rubricId: params.rubricId,
-          profileId: params.profileId,
-        },
-      }));
+      },
+    });
 
     // Build complete standard groups array
     const allGroups: Array<{
@@ -407,11 +388,18 @@ export default function RubricStandardGroup({
               return null;
             }
             const desc = stdMapping["description"];
-            return {
+            const result: {
+              name: string;
+              description?: string;
+              points: number;
+            } = {
               name,
-              ...(desc ? { description: desc } : {}),
               points,
             };
+            if (desc) {
+              result.description = desc;
+            }
+            return result;
           })
           .filter(
             (s): s is { name: string; description?: string; points: number } =>
@@ -460,8 +448,8 @@ export default function RubricStandardGroup({
     const totalPoints = allGroups.reduce((sum, g) => sum + g.points, 0);
     const totalPassPoints = allGroups.reduce((sum, g) => sum + g.passPoints, 0);
 
-    // Make the update request
-    const response = await api.post("/rubrics/update", {
+    // Make the update request using server action
+    const response = await updateRubricAction({
       body: {
         rubricId: params.rubricId,
         name: params.name,
@@ -474,23 +462,8 @@ export default function RubricStandardGroup({
       },
     });
 
-    // Invalidate the detail query
-    queryClient.invalidateQueries({
-      queryKey: keys.rubrics.with({
-        rubricId: params.rubricId,
-        profileId: params.profileId,
-      }),
-    });
-
     return { ...response, points: totalPoints, passPoints: totalPassPoints };
   };
-
-  const updateRubricMutation = useMutation({
-    mutationFn: updateRubricUnified,
-  });
-
-  const updateRubric = updateRubricMutation.mutateAsync;
-  const isPending = updateRubricMutation.isPending;
   // Form state for standard group
   const [groupFormData, setGroupFormData] = useState<StandardGroupFormData>({
     name: group?.name || "",
@@ -658,75 +631,76 @@ export default function RubricStandardGroup({
       return;
     }
 
-    try {
-      // Build the standard group update for this group
-      const standards: StandardUpdate[] = standardsFormData.map((standard) => ({
-        id: standard.id,
-        name: standard.name,
-        description: standard.description,
-        points: parseInt(standard.points),
-        deleted: standard.isDeleted ?? false,
-      }));
+    // Build the standard group update for this group
+    const standards: StandardUpdate[] = standardsFormData.map((standard) => ({
+      id: standard.id,
+      name: standard.name,
+      description: standard.description,
+      points: parseInt(standard.points),
+      deleted: standard.isDeleted ?? false,
+    }));
 
-      const groupUpdate: StandardGroupUpdate = {
-        id: mode === "create" ? undefined : group?.id,
-        name: groupFormData.name,
-        short_name: groupFormData.name.substring(0, 10).toUpperCase(),
-        description: groupFormData.description,
-        points: parseInt(groupFormData.points),
-        passPoints: parseInt(groupFormData.passPoints),
-        standards,
-        deleted: false,
-      };
+    const groupUpdate: StandardGroupUpdate = {
+      id: mode === "create" ? undefined : group?.id,
+      name: groupFormData.name,
+      short_name: groupFormData.name.substring(0, 10).toUpperCase(),
+      description: groupFormData.description,
+      points: parseInt(groupFormData.points),
+      passPoints: parseInt(groupFormData.passPoints),
+      standards,
+      deleted: false,
+    };
 
-      // Call unified update with this group's changes
-      // Convert StandardGroupUpdate to the expected format
-      const standardGroupUpdateForAPI: {
+    // Call unified update with this group's changes
+    // Convert StandardGroupUpdate to the expected format
+    const standardGroupUpdateForAPI: {
+      id?: string;
+      name: string;
+      short_name: string;
+      description: string;
+      points: number;
+      passPoints: number;
+      standards: Array<{
         id?: string;
         name: string;
-        short_name: string;
         description: string;
         points: number;
-        passPoints: number;
-        standards: Array<{
+        deleted: boolean;
+      }>;
+      deleted: boolean;
+    } = {
+      name: groupUpdate.name,
+      short_name: groupUpdate.short_name,
+      description: groupUpdate.description,
+      points: groupUpdate.points,
+      passPoints: groupUpdate.passPoints,
+      standards: groupUpdate.standards.map((s) => {
+        const result: {
           id?: string;
           name: string;
           description: string;
           points: number;
           deleted: boolean;
-        }>;
-        deleted: boolean;
-      } = {
-        name: groupUpdate.name,
-        short_name: groupUpdate.short_name,
-        description: groupUpdate.description,
-        points: groupUpdate.points,
-        passPoints: groupUpdate.passPoints,
-        standards: groupUpdate.standards.map((s) => {
-          const result: {
-            id?: string;
-            name: string;
-            description: string;
-            points: number;
-            deleted: boolean;
-          } = {
-            name: s.name,
-            description: s.description,
-            points: s.points,
-            deleted: s.deleted,
-          };
-          if (s.id) {
-            result.id = s.id;
-          }
-          return result;
-        }),
-        deleted: groupUpdate.deleted,
-      };
-      if (groupUpdate.id) {
-        standardGroupUpdateForAPI.id = groupUpdate.id;
-      }
+        } = {
+          name: s.name,
+          description: s.description,
+          points: s.points,
+          deleted: s.deleted,
+        };
+        if (s.id) {
+          result.id = s.id;
+        }
+        return result;
+      }),
+      deleted: groupUpdate.deleted,
+    };
+    if (groupUpdate.id) {
+      standardGroupUpdateForAPI.id = groupUpdate.id;
+    }
 
-      const result = await updateRubric({
+    setIsUpdating(true);
+    try {
+      const result = await updateRubricUnified({
         rubricId,
         profileId,
         name: rubricName,
@@ -742,8 +716,13 @@ export default function RubricStandardGroup({
           ? `Standard group created successfully. Total points: ${result.points}`
           : `Changes saved successfully. Total points: ${result.points}`
       );
-    } catch {
-      toast.error("Failed to save changes");
+      router.refresh();
+    } catch (error) {
+      toast.error("Failed to save changes", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -795,66 +774,67 @@ export default function RubricStandardGroup({
       return;
     }
 
-    try {
-      // Mark this group as deleted and update via unified endpoint
-      const groupUpdate: StandardGroupUpdate = {
-        id: group!.id,
-        name: groupFormData.name,
-        short_name: groupFormData.name.substring(0, 10).toUpperCase(),
-        description: groupFormData.description,
-        points: parseInt(groupFormData.points),
-        passPoints: parseInt(groupFormData.passPoints),
-        standards: [],
-        deleted: true, // Mark for deletion
-      };
+    // Mark this group as deleted and update via unified endpoint
+    const groupUpdate: StandardGroupUpdate = {
+      id: group!.id,
+      name: groupFormData.name,
+      short_name: groupFormData.name.substring(0, 10).toUpperCase(),
+      description: groupFormData.description,
+      points: parseInt(groupFormData.points),
+      passPoints: parseInt(groupFormData.passPoints),
+      standards: [],
+      deleted: true, // Mark for deletion
+    };
 
-      // Convert StandardGroupUpdate to the expected format
-      const standardGroupUpdateForAPI: {
+    // Convert StandardGroupUpdate to the expected format
+    const standardGroupUpdateForAPI: {
+      id?: string;
+      name: string;
+      short_name: string;
+      description: string;
+      points: number;
+      passPoints: number;
+      standards: Array<{
         id?: string;
         name: string;
-        short_name: string;
         description: string;
         points: number;
-        passPoints: number;
-        standards: Array<{
+        deleted: boolean;
+      }>;
+      deleted: boolean;
+    } = {
+      name: groupUpdate.name,
+      short_name: groupUpdate.short_name,
+      description: groupUpdate.description,
+      points: groupUpdate.points,
+      passPoints: groupUpdate.passPoints,
+      standards: groupUpdate.standards.map((s) => {
+        const result: {
           id?: string;
           name: string;
           description: string;
           points: number;
           deleted: boolean;
-        }>;
-        deleted: boolean;
-      } = {
-        name: groupUpdate.name,
-        short_name: groupUpdate.short_name,
-        description: groupUpdate.description,
-        points: groupUpdate.points,
-        passPoints: groupUpdate.passPoints,
-        standards: groupUpdate.standards.map((s) => {
-          const result: {
-            id?: string;
-            name: string;
-            description: string;
-            points: number;
-            deleted: boolean;
-          } = {
-            name: s.name,
-            description: s.description,
-            points: s.points,
-            deleted: s.deleted,
-          };
-          if (s.id) {
-            result.id = s.id;
-          }
-          return result;
-        }),
-        deleted: groupUpdate.deleted,
-      };
-      if (groupUpdate.id) {
-        standardGroupUpdateForAPI.id = groupUpdate.id;
-      }
+        } = {
+          name: s.name,
+          description: s.description,
+          points: s.points,
+          deleted: s.deleted,
+        };
+        if (s.id) {
+          result.id = s.id;
+        }
+        return result;
+      }),
+      deleted: groupUpdate.deleted,
+    };
+    if (groupUpdate.id) {
+      standardGroupUpdateForAPI.id = groupUpdate.id;
+    }
 
-      const result = await updateRubric({
+    setIsUpdating(true);
+    try {
+      const result = await updateRubricUnified({
         rubricId,
         profileId,
         name: rubricName,
@@ -867,8 +847,13 @@ export default function RubricStandardGroup({
       toast.success(
         `Standard group deleted successfully. Total points: ${result.points}`
       );
-    } catch {
-      toast.error("Failed to delete standard group");
+      router.refresh();
+    } catch (error) {
+      toast.error("Failed to delete standard group", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -1135,12 +1120,12 @@ export default function RubricStandardGroup({
                 <Button
                   variant="outline"
                   onClick={handleCancel}
-                  disabled={isPending}
+                  disabled={isUpdating}
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSave} disabled={isPending}>
-                  {isPending
+                <Button onClick={handleSave} disabled={isUpdating}>
+                  {isUpdating
                     ? "Saving..."
                     : mode === "create"
                       ? "Create"

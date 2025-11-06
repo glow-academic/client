@@ -5,7 +5,11 @@
  * 06/08/2025
  */
 import { MainLayoutClient } from "./layout-client";
-import { getLayoutContextData } from "./layout-server";
+import {
+  getLayoutContextData,
+  markChatComplete,
+  markIntroComplete,
+} from "./layout-server";
 
 export default async function MainLayout({
   children,
@@ -21,6 +25,8 @@ export default async function MainLayout({
       sessionSnapshot={snapshot}
       attemptData={attemptData}
       attemptId={attemptId}
+      markIntroCompleteAction={markIntroComplete}
+      markChatCompleteAction={markChatComplete}
     >
       {children}
     </MainLayoutClient>

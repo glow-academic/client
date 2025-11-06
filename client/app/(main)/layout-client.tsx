@@ -45,11 +45,27 @@ import {
 } from "@/utils/navigation-utils";
 import type {
   LayoutContextResponse,
+  MarkChatCompleteIn,
+  MarkChatCompleteOut,
+  MarkIntroCompleteIn,
+  MarkIntroCompleteOut,
   SafeSessionSnapshot,
 } from "./layout-server";
 
 // Inner component that uses the role context
-function MainLayoutContent({ children }: { children: React.ReactNode }) {
+function MainLayoutContent({
+  children,
+  markIntroCompleteAction,
+  markChatCompleteAction,
+}: {
+  children: React.ReactNode;
+  markIntroCompleteAction: (
+    input: MarkIntroCompleteIn
+  ) => Promise<MarkIntroCompleteOut>;
+  markChatCompleteAction: (
+    input: MarkChatCompleteIn
+  ) => Promise<MarkChatCompleteOut>;
+}) {
   const pathname = usePathname() || "/";
 
   // Check if we're on an attempt page (home/a/[attemptId] or practice/a/[attemptId])
@@ -307,7 +323,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Tour Component - Available globally for TA users; hide when acting on behalf of another */}
       {effectiveProfile?.role === "ta" &&
-        activeProfile?.id === effectiveProfile?.id && <TATour />}
+        activeProfile?.id === effectiveProfile?.id && (
+          <TATour
+            markIntroCompleteAction={markIntroCompleteAction}
+            markChatCompleteAction={markChatCompleteAction}
+          />
+        )}
     </AssistantProvider>
   );
 }
@@ -357,12 +378,20 @@ export function MainLayoutClient({
   sessionSnapshot,
   attemptData,
   attemptId,
+  markIntroCompleteAction,
+  markChatCompleteAction,
 }: {
   children: React.ReactNode;
   initial: LayoutContextResponse;
   sessionSnapshot: SafeSessionSnapshot;
   attemptData?: OutputOf<"/api/v3/attempts/full", "post"> | null;
   attemptId?: string | null;
+  markIntroCompleteAction: (
+    input: MarkIntroCompleteIn
+  ) => Promise<MarkIntroCompleteOut>;
+  markChatCompleteAction: (
+    input: MarkChatCompleteIn
+  ) => Promise<MarkChatCompleteOut>;
 }) {
   return (
     <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
@@ -374,7 +403,12 @@ export function MainLayoutClient({
                 attemptData={attemptData ?? null}
                 attemptId={attemptId ?? null}
               >
-                <MainLayoutContent>{children}</MainLayoutContent>
+                <MainLayoutContent
+                  markIntroCompleteAction={markIntroCompleteAction}
+                  markChatCompleteAction={markChatCompleteAction}
+                >
+                  {children}
+                </MainLayoutContent>
               </SimulationProviderWrapper>
             </AnalyticsProvider>
           </BreadcrumbProvider>
