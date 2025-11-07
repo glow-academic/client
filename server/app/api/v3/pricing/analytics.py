@@ -6,7 +6,6 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.utils.analytics_query_builder import get_profile_role_query
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import AnalyticsFilters
 from app.utils.sql_helper import load_sql
@@ -98,8 +97,8 @@ async def get_pricing(
         effective_profile_id = None
         if filters.profileId:
             # Fetch profile role to determine if we should use profileId
-            role_query, role_params = get_profile_role_query(filters.profileId)
-            role_row = await conn.fetchrow(role_query, *role_params)
+            role_query = load_sql("sql/v3/profile/get_profile_role.sql")
+            role_row = await conn.fetchrow(role_query, filters.profileId)
             if role_row:
                 role = role_row["role"]
                 # Only use profileId for non-admin roles (ta, guest, etc.)

@@ -80,17 +80,15 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
     # Update database to mark profile as inactive
     try:
         from app.db import get_pool
-        from app.queries.profile_queries import ProfileQueries
+        from app.utils.sql_helper import load_sql
 
         pool = get_pool()
         if pool:
             async with pool.acquire() as conn:
                 async with conn.transaction():
-                    queries = ProfileQueries()
-                    update_query, insert_query = queries.update_profile_to_inactive()
+                    sql = load_sql("sql/v3/profile/update_profile_to_inactive_complete.sql")
                     last_active = datetime.now(UTC)
-                    await conn.execute(update_query, profile_id)
-                    await conn.execute(insert_query, profile_id, last_active)
+                    await conn.fetchrow(sql, profile_id, last_active)
             logger.info(f"Updated profile {profile_id} to inactive in database")
     except Exception as e:
         logger.error(f"Error updating profile {profile_id} in database: {e}")
@@ -190,13 +188,11 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                 if pool:
                     async with pool.acquire() as conn:
                         # Create an error message in the database
-                        from app.queries.simulation_queries import \
-                            SimulationQueries
+                        from app.utils.sql_helper import load_sql
 
-                        queries = SimulationQueries()
-                        query = queries.insert_error_message()
+                        sql = load_sql("sql/v3/simulations/insert_error_message.sql")
                         error_message = await conn.fetchrow(
-                            query,
+                            sql,
                             uuid.UUID(chat_id),
                             "response",
                             f"Error: {str(e)}",
@@ -291,17 +287,15 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
     if profile_id == "guest-profile-id":
         try:
             from app.db import get_pool
-            from app.services.profile_service import ProfileService
+            from app.utils.sql_helper import load_sql
 
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
-                    profile_service = ProfileService(conn)
-                    resolved_guest_id = (
-                        await profile_service.get_default_guest_profile_id()
-                    )
-                    if resolved_guest_id:
-                        profile_id = str(resolved_guest_id)
+                    sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+                    guest_row = await conn.fetchrow(sql)
+                    if guest_row:
+                        profile_id = str(guest_row["id"])
                         logger.info(
                             f"Resolved 'guest-profile-id' to actual guest profile: {profile_id}"
                         )
@@ -339,17 +333,15 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         # Update database to mark profile as active
         try:
             from app.db import get_pool
-            from app.queries.profile_queries import ProfileQueries
+            from app.utils.sql_helper import load_sql
 
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
                     async with conn.transaction():
-                        queries = ProfileQueries()
-                        update_query, insert_query = queries.update_profile_to_active()
+                        sql = load_sql("sql/v3/profile/update_profile_to_active_complete.sql")
                         last_active = datetime.now(UTC)
-                        await conn.execute(update_query, profile_id)
-                        await conn.execute(insert_query, profile_id, last_active)
+                        await conn.fetchrow(sql, profile_id, last_active)
                     logger.info(f"Updated profile {profile_id} to active in database")
         except Exception as e:
             logger.error(f"Error updating profile {profile_id} in database: {e}")
@@ -365,17 +357,15 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                 await increment_guest_count()
 
                 from app.db import get_pool
-                from app.queries.profile_queries import ProfileQueries
+                from app.utils.sql_helper import load_sql
 
                 pool = get_pool()
                 if pool:
                     async with pool.acquire() as conn:
                         async with conn.transaction():
                             # Find and update default guest profile
-                            queries = ProfileQueries()
-                            update_query, insert_query = queries.update_default_guest_profile_to_active()
-                            await conn.execute(update_query)
-                            await conn.execute(insert_query, datetime.now(UTC))
+                            sql = load_sql("sql/v3/profile/update_default_guest_profile_to_active_complete.sql")
+                            await conn.fetchrow(sql, datetime.now(UTC))
                         logger.info(
                             "Marked default guest profile active (guest connection added)"
                         )
@@ -423,17 +413,15 @@ async def disconnect(sid: str) -> None:
             remaining_guests = await decrement_guest_count()
 
             from app.db import get_pool
-            from app.queries.profile_queries import ProfileQueries
+            from app.utils.sql_helper import load_sql
 
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
                     async with conn.transaction():
                         # Update default guest profile: refresh last_active, set active False only when all guests are gone
-                        queries = ProfileQueries()
-                        update_query, insert_query = queries.update_default_guest_profile_activity()
-                        await conn.execute(update_query, datetime.now(UTC), remaining_guests > 0)
-                        await conn.execute(insert_query, datetime.now(UTC))
+                        sql = load_sql("sql/v3/profile/update_default_guest_profile_activity_complete.sql")
+                        await conn.fetchrow(sql, datetime.now(UTC), remaining_guests > 0)
                     logger.info(
                         f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
                     )

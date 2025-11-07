@@ -84,8 +84,6 @@ def build_base_filter(
     return where_clause, params
 
 
-def get_profile_role_query(profile_id: str) -> tuple[str, list[Any]]:
-    """Build query to get profile role."""
-    query = "SELECT role FROM profiles WHERE id = $1"
-    return (query, [profile_id])
+# Removed get_profile_role_query - use load_sql("sql/v3/profile/get_profile_role.sql") directly
+# The query takes $1=profile_id parameter
 

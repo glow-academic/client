@@ -13,10 +13,11 @@ from typing import Any
 
 import socketio  # type: ignore
 from agents import gen_trace_id
-
-from app.agents.collection.assistant import cancel_assistant_run, run_assistant_agent
+from app.agents.collection.assistant import (cancel_assistant_run,
+                                             run_assistant_agent)
 from app.agents.collection.title import run_title_agent
 from app.db import get_pool
+from app.utils.sql_helper import load_sql
 
 # Suppress Pydantic serialization warnings from OpenAI SDK
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
@@ -65,13 +66,10 @@ async def handle_start_assistant(sid: str, data: dict[str, Any]) -> None:
             return
 
         async with pool.acquire() as conn:
-            # Import service layer
-            from app.services.assistant_service import AssistantService
-
-            service = AssistantService(conn)
-
             # Verify profile exists
-            if not await service.verify_profile_exists(uuid.UUID(profile_id)):
+            sql = load_sql("sql/v3/profile/verify_profile_exists.sql")
+            profile_row = await conn.fetchrow(sql, profile_id)
+            if not profile_row:
                 await emit_assistant_error(sid, "Profile not found")
                 return
 
@@ -79,12 +77,17 @@ async def handle_start_assistant(sid: str, data: dict[str, Any]) -> None:
             trace_id = gen_trace_id()
 
             # Create the assistant chat
-            chat = await service.create_chat(
-                uuid.UUID(profile_id),
+            from datetime import UTC, datetime
+            sql = load_sql("sql/v3/assistant/create_chat.sql")
+            chat_row = await conn.fetchrow(
+                sql,
+                datetime.now(UTC),
                 "New Chat",  # Will be updated by title agent
+                profile_id,
                 trace_id,
             )
-            chat_id = chat["id"]
+            chat_id_uuid = chat_row["id"]  # Keep as UUID for run_title_agent
+            chat_id = str(chat_id_uuid)
             logger.info(f"Created new assistant chat: {chat_id}")
 
             # Ensure client is joined to the assistant room
@@ -95,7 +98,7 @@ async def handle_start_assistant(sid: str, data: dict[str, Any]) -> None:
 
             # Update the title with the title agent
             chat_title = await run_title_agent(
-                chat["id"],
+                chat_id_uuid,
                 initial_message,
                 department_id,
                 conn,  # type: ignore[arg-type]
@@ -146,13 +149,10 @@ async def handle_stop_assistant(sid: str, data: dict[str, Any]) -> None:
             return
 
         async with pool.acquire() as conn:
-            # Import service layer
-            from app.services.assistant_service import AssistantService
-
-            service = AssistantService(conn)
-
             # Verify the chat exists
-            if not await service.verify_chat_exists(uuid.UUID(chat_id)):
+            sql = load_sql("sql/v3/assistant/verify_chat_exists.sql")
+            chat_row = await conn.fetchrow(sql, chat_id)
+            if not chat_row:
                 await emit_assistant_error(sid, "Chat not found")
                 return
 
@@ -214,18 +214,23 @@ async def process_assistant_message_websocket(
     active_tool_calls = {}  # Track tool calls by ID
 
     async with pool.acquire() as conn:
-        # Import service layer
-        from app.services.assistant_service import AssistantService
-
-        service = AssistantService(conn)
-
         try:
             # Verify the chat exists
-            if not await service.verify_chat_exists(chat_id):
+            sql = load_sql("sql/v3/assistant/verify_chat_exists.sql")
+            chat_row = await conn.fetchrow(sql, chat_id)
+            if not chat_row:
                 raise ValueError(f"Chat {chat_id} not found")
 
             # 1. Add the user message to the chat
-            user_message = await service.create_user_message(chat_id, message)
+            from datetime import UTC, datetime
+            sql = load_sql("sql/v3/assistant/create_message.sql")
+            user_message_row = await conn.fetchrow(
+                sql, chat_id, "user", message, True, datetime.now(UTC)
+            )
+            user_message = {
+                "id": user_message_row["id"],
+                "created_at": user_message_row["created_at"],
+            }
 
             # 2. Emit user message to connected clients
             await sio_instance.emit(
@@ -258,8 +263,9 @@ async def process_assistant_message_websocket(
                     # If we have accumulated content, complete the current message and create a new one
                     if accumulated_content.strip() and current_message:
                         # Complete current message
-                        await service.complete_message(
-                            current_message["id"], accumulated_content
+                        sql = load_sql("sql/v3/assistant/complete_message.sql")
+                        await conn.execute(
+                            sql, accumulated_content, True, current_message["id"]
                         )
 
                         # Emit completion for current message
@@ -307,12 +313,21 @@ async def process_assistant_message_websocket(
                         # Otherwise defaults to 'read' for find, get, list, etc.
 
                         # Save tool call to database (without associating to a message)
-                        tool_call = await service.create_tool_call(
+                        import json as json_module
+                        from datetime import UTC, datetime
+                        sql = load_sql("sql/v3/assistant/create_tool_call.sql")
+                        tool_call_row = await conn.fetchrow(
+                            sql,
                             chat_id,
                             tool_name,
                             tool_type,
-                            tool_call_data.get("arguments", {}),
+                            json_module.dumps(tool_call_data.get("arguments", {})),
+                            datetime.now(UTC),
                         )
+                        if not tool_call_row:
+                            logger.error("Failed to create tool call record")
+                            continue
+                        tool_call = {"id": tool_call_row["id"]}
                         logger.info(
                             f"Successfully created tool call record: {tool_call['id']}"
                         )
@@ -352,12 +367,16 @@ async def process_assistant_message_websocket(
                         tool_call_id = tool_result_data.get("id")
 
                         # Update the corresponding tool call record with the result
+                        import json as json_module
                         tool_call_record = None
                         if tool_call_id and tool_call_id in active_tool_calls:
                             tool_call_record = active_tool_calls[tool_call_id]
-                            await service.complete_tool_call(
+                            sql = load_sql("sql/v3/assistant/complete_tool_call.sql")
+                            await conn.execute(
+                                sql,
                                 tool_call_record["id"],
-                                tool_result_data.get("result", {}),
+                                json_module.dumps(tool_result_data.get("result", {})),
+                                True,  # completed = True
                             )
                             logger.info(
                                 f"Successfully updated tool call record {tool_call_record['id']} with result"
@@ -390,9 +409,14 @@ async def process_assistant_message_websocket(
 
                     # Create assistant message if we don't have one yet
                     if not current_message:
-                        current_message = await service.create_assistant_message(
-                            chat_id
+                        sql = load_sql("sql/v3/assistant/create_message.sql")
+                        assistant_message_row = await conn.fetchrow(
+                            sql, chat_id, "assistant", "", False, datetime.now(UTC)
                         )
+                        current_message = {
+                            "id": assistant_message_row["id"],
+                            "created_at": assistant_message_row["created_at"],
+                        }
 
                         # Emit new placeholder message
                         await sio_instance.emit(
@@ -409,9 +433,8 @@ async def process_assistant_message_websocket(
                         )
 
                     # Update the database with accumulated content
-                    await service.update_message_content(
-                        current_message["id"], accumulated_content
-                    )
+                    sql = load_sql("sql/v3/assistant/update_message_content.sql")
+                    await conn.execute(sql, accumulated_content, current_message["id"])
 
                     # Emit token update to connected clients
                     await sio_instance.emit(
@@ -427,8 +450,9 @@ async def process_assistant_message_websocket(
 
             # 4. Mark current message as completed (if we have one)
             if current_message:
-                await service.complete_message(
-                    current_message["id"], accumulated_content
+                sql = load_sql("sql/v3/assistant/complete_message.sql")
+                await conn.execute(
+                    sql, accumulated_content, True, current_message["id"]
                 )
 
                 # 5. Emit completion signal
@@ -449,8 +473,9 @@ async def process_assistant_message_websocket(
 
                 # Finalize the message with the content received so far
                 if current_message:
-                    await service.complete_message(
-                        current_message["id"], accumulated_content
+                    sql = load_sql("sql/v3/assistant/complete_message.sql")
+                    await conn.execute(
+                        sql, accumulated_content, True, current_message["id"]
                     )
 
                     # Emit a cancellation event

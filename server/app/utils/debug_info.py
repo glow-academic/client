@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import asyncpg  # type: ignore
 from agents import RunContextWrapper, function_tool
 
-from app.services.model_run_service import ModelRunService
+from app.utils.sql_helper import load_sql
 
 
 @dataclass
@@ -37,9 +37,9 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
     conn = ctx.context.conn
 
     try:
-        # Create service and insert debug info asynchronously (fire-and-forget)
-        service = ModelRunService(conn)
-        asyncio.create_task(service.insert_debug_info(model_run_id, content))
+        # Insert debug info asynchronously (fire-and-forget)
+        sql = load_sql("sql/v3/model_runs/insert_debug_info.sql")
+        asyncio.create_task(conn.execute(sql, model_run_id, content))
     except Exception as e:
         print(f"Error saving debug info: {e}")
         return f"Error saving debug info: {e}"

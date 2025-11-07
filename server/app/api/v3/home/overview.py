@@ -6,7 +6,6 @@ from typing import Annotated, Any, Literal
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.profile_utils import get_default_guest_profile_query
 from app.utils.schema import (SimulationMapping, SimulationMappingItem,
                               StandardGroupsMapping, StandardsMapping)
 from app.utils.sql_helper import load_sql
@@ -140,8 +139,8 @@ async def get_home_overview(
         profile_id = filters.profileId
         if profile_id == "guest-profile-id":
             # Get default guest profile
-            guest_query, guest_params = get_default_guest_profile_query()
-            guest_row = await conn.fetchrow(guest_query, *guest_params)
+            guest_query = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+            guest_row = await conn.fetchrow(guest_query)
             if guest_row:
                 profile_id = str(guest_row["id"])
             else:
