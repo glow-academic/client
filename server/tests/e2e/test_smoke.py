@@ -10,7 +10,7 @@ pytestmark = pytest.mark.e2e
 
 def test_home_renders(page: Page, base_url: str) -> None:
     """Test that the home page loads and renders correctly."""
-    page.goto(f"{base_url}/")
+    page.goto(f"{base_url}")
     
     # Wait for page to load
     page.wait_for_load_state("networkidle")
@@ -26,7 +26,7 @@ def test_home_renders(page: Page, base_url: str) -> None:
 
 def test_guest_login_flow(page: Page, base_url: str) -> None:
     """Test guest login flow from login page."""
-    page.goto(f"{base_url}/")
+    page.goto(f"{base_url}")
     
     # Wait for login page to load
     page.wait_for_load_state("networkidle")

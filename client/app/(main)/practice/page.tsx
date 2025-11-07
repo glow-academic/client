@@ -32,15 +32,15 @@ export default async function PracticePage() {
   // Get profileId and departmentIds from profile context
   const profileContext = await api.post("/profile/context", {
     body: {
-      actualProfileId: session?.user?.profileId || "",
-      effectiveProfileId: session?.effectiveProfileId || "",
+      actualProfileId: session?.user?.profileId || "guest-profile-id",
+      effectiveProfileId: session?.effectiveProfileId || "guest-profile-id",
       pathname: "/practice",
     },
   });
 
   // Build practice filters (only profileId and departmentIds)
   const practiceFiltersBody: PracticeIn["body"] = {
-    profileId: session?.effectiveProfileId || "",
+    profileId: session?.effectiveProfileId || "guest-profile-id",
   };
 
   // Only include departmentIds if they exist

@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client install-e2e start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -137,6 +137,11 @@ build-client:
 	@echo "Building client for production..."
 	@cd client && yarn build
 	@echo "✅ Client build complete"
+
+install-e2e: check-venv
+	@echo "Installing Playwright browsers..."
+	@$(VENV_BIN)/playwright install
+	@echo "✅ Playwright browsers installed"
 
 # Generate OpenAPI schema manually
 openapi-gen: check-venv

@@ -78,8 +78,8 @@ export async function getLayoutContextData() {
     emulationTTL: session?.emulationTTL ?? null,
   };
 
-  const effectiveProfileId = session?.effectiveProfileId || "";
-  const actualProfileId = session?.user?.profileId || "";
+  const effectiveProfileId = session?.effectiveProfileId || "guest-profile-id";
+  const actualProfileId = session?.user?.profileId || "guest-profile-id";
 
   // IMPORTANT: server overrides IDs internally; you still pass something for typing parity
   const initial = await getLayoutContext({

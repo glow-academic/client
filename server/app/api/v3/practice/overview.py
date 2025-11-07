@@ -147,10 +147,23 @@ async def get_practice_overview(
         if not filters.profileId:
             raise ValueError("profileId is required for practice overview")
 
+        profile_id_clean = filters.profileId.strip()
+        profile_id_final = profile_id_clean or "guest-profile-id"
+
+        if profile_id_final == "guest-profile-id":
+            guest_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+            guest_row = await conn.fetchrow(guest_sql)
+            if guest_row:
+                profile_id_final = str(guest_row["id"])
+            else:
+                raise HTTPException(
+                    status_code=404, detail="No default guest profile found in database"
+                )
+
         # Load SQL file
         query = load_sql("sql/v3/practice/practice_overview.sql")
         params = [
-            filters.profileId,
+            profile_id_final,
             filters.departmentIds if filters.departmentIds else [],
         ]
 
