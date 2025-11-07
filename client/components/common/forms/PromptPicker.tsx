@@ -35,6 +35,13 @@ export interface PromptInfo {
   can_delete: boolean;
 }
 
+type TriggerButtonProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "data-testid"
+> & {
+  "data-testid"?: string;
+};
+
 export interface PromptPickerProps extends PopoverProps {
   promptMapping: Record<string, PromptInfo>;
   selectedPromptId: string | null;
@@ -43,6 +50,7 @@ export interface PromptPickerProps extends PopoverProps {
   placeholder?: string;
   disabled?: boolean;
   buttonClassName?: string;
+  triggerProps?: TriggerButtonProps;
 }
 
 export function PromptPicker({
@@ -53,6 +61,7 @@ export function PromptPicker({
   placeholder = "Select prompt version...",
   disabled = false,
   buttonClassName,
+  triggerProps,
   ...props
 }: PromptPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -95,6 +104,11 @@ export function PromptPicker({
     return `Version ${date.toLocaleDateString()}`;
   };
 
+  const { className: triggerClassName, ...restTriggerProps } =
+    triggerProps ?? {};
+
+  const buttonClasses = cn("justify-between", buttonClassName, triggerClassName);
+
   return (
     <Popover open={open} onOpenChange={setOpen} {...props}>
       <PopoverTrigger asChild>
@@ -103,8 +117,9 @@ export function PromptPicker({
           role="combobox"
           aria-expanded={open}
           aria-label="Select prompt version"
-          className={cn("justify-between", buttonClassName)}
+          className={buttonClasses}
           disabled={disabled}
+          {...restTriggerProps}
         >
           <span className="truncate">{getButtonText()}</span>
           <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2 h-4 w-4" />

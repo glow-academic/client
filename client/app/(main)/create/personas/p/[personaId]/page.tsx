@@ -11,11 +11,9 @@ import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonaDetailIn = InputOf<"/api/v3/personas/detail", "post">;
 type PersonaDetailOut = OutputOf<"/api/v3/personas/detail", "post">;
 type PersonaDetailDefaultIn = InputOf<
   "/api/v3/personas/detail-default",
@@ -36,23 +34,28 @@ type DeletePersonaPromptOut = OutputOf<
 >;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getPersona = cache(
-  async (input: PersonaDetailIn): Promise<PersonaDetailOut> => {
-    return api.post("/personas/detail", input);
-  },
-);
+const getPersona = (personaId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<PersonaDetailOut> => {
+      return api.post("/personas/detail", {
+        body: { personaId, profileId },
+      });
+    },
+    ["personas:detail", personaId],
+    { tags: ["personas", `persona:${personaId}`] }
+  );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ personaId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { personaId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const persona = await getPersona({ body: { personaId, profileId } });
+    const persona = await getPersona(personaId)(profileId);
     return {
       title: `${persona?.name || "Persona"} Persona`,
       description: `${persona ? `${persona.name} ${persona.description || ""}` : "Persona"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -67,7 +70,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createPersona(
-  input: CreatePersonaIn,
+  input: CreatePersonaIn
 ): Promise<CreatePersonaOut> {
   "use server";
   const out = await api.post("/personas/create", input);
@@ -76,20 +79,28 @@ export async function createPersona(
 }
 
 export async function updatePersona(
-  input: UpdatePersonaIn,
+  input: UpdatePersonaIn
 ): Promise<UpdatePersonaOut> {
   "use server";
   const out = await api.post("/personas/update", input);
   revalidateTag("personas");
+  const personaId = input.body?.personaId;
+  if (personaId) {
+    revalidateTag(`persona:${personaId}`);
+  }
   return out;
 }
 
 export async function deletePersonaPrompt(
-  input: DeletePersonaPromptIn,
+  input: DeletePersonaPromptIn
 ): Promise<DeletePersonaPromptOut> {
   "use server";
   const out = await api.post("/personas/delete-prompt", input);
   revalidateTag("personas");
+  const personaId = input.body?.personaId;
+  if (personaId) {
+    revalidateTag(`persona:${personaId}`);
+  }
   return out;
 }
 
@@ -104,10 +115,14 @@ export default async function PersonaEditPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch persona detail (cached, won't duplicate with metadata)
-  const personaDetail = await getPersona({ body: { personaId, profileId } });
+  const personaDetail = await getPersona(personaId)(profileId);
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="persona-edit"
+      data-persona-id={personaId}
+    >
       <Persona
         personaId={personaId}
         mode="edit"
@@ -128,7 +143,6 @@ export type {
   DeletePersonaPromptOut,
   PersonaDetailDefaultIn,
   PersonaDetailDefaultOut,
-  PersonaDetailIn,
   PersonaDetailOut,
   UpdatePersonaIn,
   UpdatePersonaOut,

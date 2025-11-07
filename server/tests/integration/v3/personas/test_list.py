@@ -30,8 +30,8 @@ async def test_list_personas(
     assert "department_mapping" in data
     assert "scenario_options" in data
     assert "model_options" in data
-    assert "reasoning_options" in data
-    assert "temperature_options" in data
+    assert "reasoning_options" not in data
+    assert "temperature_options" not in data
     assert "department_options" in data
     assert isinstance(data["personas"], list)
     assert len(data["personas"]) >= 0

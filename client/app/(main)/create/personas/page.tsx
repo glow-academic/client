@@ -10,40 +10,51 @@ import Personas from "@/components/personas/Personas";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonasListIn = InputOf<"/api/v3/personas/list", "post">;
 type PersonasListOut = OutputOf<"/api/v3/personas/list", "post">;
 type DuplicatePersonaIn = InputOf<"/api/v3/personas/duplicate", "post">;
 type DuplicatePersonaOut = OutputOf<"/api/v3/personas/duplicate", "post">;
 type DeletePersonaIn = InputOf<"/api/v3/personas/delete", "post">;
 type DeletePersonaOut = OutputOf<"/api/v3/personas/delete", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getPersonasList = cache(
-  async (input: PersonasListIn): Promise<PersonasListOut> => {
-    return api.post("/personas/list", input);
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes profileId so entries are per-user.
+ * Tags allow revalidateTag("personas") to invalidate.
+ */
+const getPersonasList = unstable_cache(
+  async (profileId: string): Promise<PersonasListOut> => {
+    return api.post("/personas/list", { body: { profileId } });
   },
+  ["personas:list"],
+  { tags: ["personas"] }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicatePersona(
-  input: DuplicatePersonaIn,
+  input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
   const out = await api.post("/personas/duplicate", input);
   revalidateTag("personas");
+  const personaId = input.body?.personaId;
+  if (personaId) {
+    revalidateTag(`persona:${personaId}`);
+  }
   return out;
 }
 
 export async function deletePersona(
-  input: DeletePersonaIn,
+  input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";
   const out = await api.post("/personas/delete", input);
   revalidateTag("personas");
+  const personaId = input.body?.personaId;
+  if (personaId) {
+    revalidateTag(`persona:${personaId}`);
+  }
   return out;
 }
 
@@ -57,12 +68,10 @@ export default async function PersonasPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side
-  const listData = await getPersonasList({
-    body: { profileId },
-  });
+  const listData = await getPersonasList(profileId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="personas-index">
       <Personas
         listData={listData}
         duplicatePersonaAction={duplicatePersona}

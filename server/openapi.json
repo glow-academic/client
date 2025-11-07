@@ -26131,15 +26131,6 @@
             "type": "string",
             "title": "Temperature Display"
           },
-          "temperature_category": {
-            "type": "string",
-            "enum": [
-              "low",
-              "medium",
-              "high"
-            ],
-            "title": "Temperature Category"
-          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -26179,7 +26170,6 @@
           "reasoning",
           "temperature",
           "temperature_display",
-          "temperature_category",
           "active",
           "is_inactive",
           "num_scenarios",
@@ -26240,20 +26230,6 @@
             "type": "array",
             "title": "Model Options"
           },
-          "reasoning_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Reasoning Options"
-          },
-          "temperature_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Temperature Options"
-          },
           "department_options": {
             "items": {
               "additionalProperties": {
@@ -26273,8 +26249,6 @@
           "department_mapping",
           "scenario_options",
           "model_options",
-          "reasoning_options",
-          "temperature_options",
           "department_options"
         ],
         "title": "PersonasListResponse",

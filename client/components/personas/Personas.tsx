@@ -81,7 +81,7 @@ export interface PersonasProps {
   listData: PersonasListOut;
   // Server actions (replaces useMutation)
   duplicatePersonaAction?: (
-    input: DuplicatePersonaIn,
+    input: DuplicatePersonaIn
   ) => Promise<DuplicatePersonaOut>;
   deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
 }
@@ -123,7 +123,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.scenario_options],
+    [personasData?.scenario_options]
   );
   const modelOptions = useMemo(
     () =>
@@ -133,28 +133,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.model_options],
-  );
-  const reasoningOptions = useMemo(
-    () =>
-      (personasData?.reasoning_options || []).map((val) => ({
-        value: val,
-        label: val.charAt(0).toUpperCase() + val.slice(1),
-      })),
-    [personasData?.reasoning_options],
-  );
-  const temperatureOptions = useMemo(
-    () =>
-      (personasData?.temperature_options || []).map((val) => ({
-        value: val,
-        label:
-          val === "low"
-            ? "Low (0.0-0.33)"
-            : val === "medium"
-              ? "Medium (0.34-0.66)"
-              : "High (0.67-1.0)",
-      })),
-    [personasData?.temperature_options],
+    [personasData?.model_options]
   );
   const departmentOptions = useMemo(
     () =>
@@ -164,7 +143,7 @@ export default function Personas({
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.department_options],
+    [personasData?.department_options]
   );
 
   // Define table columns
@@ -224,17 +203,6 @@ export default function Personas({
             </div>
           );
         },
-      },
-      // Hidden faceting column for Temperature (categorical) - returns category for filtering
-      {
-        id: "temperature",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        // Return the temperature category for faceting and filtering (from server)
-        accessorFn: (row: (typeof personas)[number]) =>
-          row.temperature_category,
       },
       // Display column for Temperature - shows actual value
       {
@@ -389,6 +357,8 @@ export default function Personas({
         className="hover:shadow-md transition-shadow"
         data-testid="persona-card"
         data-persona-id={persona.persona_id}
+        role="gridcell"
+        aria-label={`persona card ${persona.name || "Unnamed Persona"}`}
       >
         <CardHeader>
           <div className="flex justify-between items-start">
@@ -455,6 +425,7 @@ export default function Personas({
                       size="sm"
                       onClick={() => handleEdit(persona.persona_id)}
                       aria-label={`Edit persona ${persona.name}`}
+                      data-testid="btn-edit-persona"
                       title={`Edit persona ${persona.name}`}
                     >
                       <Edit className="h-4 w-4" />
@@ -472,6 +443,7 @@ export default function Personas({
                       size="sm"
                       onClick={() => handleView(persona.persona_id)}
                       aria-label={`View persona ${persona.name}`}
+                      data-testid="btn-view-persona"
                       title={`View persona ${persona.name}`}
                     >
                       <Eye className="h-4 w-4" />
@@ -492,7 +464,11 @@ export default function Personas({
                         handleDuplicate(persona.persona_id, persona.name)
                       }
                       disabled={isDuplicating === persona.persona_id}
+                      aria-busy={
+                        isDuplicating === persona.persona_id ? true : undefined
+                      }
                       aria-label={`Duplicate persona ${persona.name}`}
+                      data-testid="btn-duplicate-persona"
                       title={`Duplicate persona ${persona.name}`}
                     >
                       <Copy className="h-4 w-4" />
@@ -513,10 +489,11 @@ export default function Personas({
                       onClick={() =>
                         handleDeleteClick(
                           persona.persona_id,
-                          persona.name || "Unnamed Persona",
+                          persona.name || "Unnamed Persona"
                         )
                       }
                       aria-label={`Delete persona ${persona.name}`}
+                      data-testid="btn-delete-persona"
                       title={`Delete persona ${persona.name}`}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -545,29 +522,32 @@ export default function Personas({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const reasoningColumn = table.getColumn("reasoning");
   const modelColumn = table.getColumn("modelId");
-  const temperatureColumn = table.getColumn("temperature");
   const scenarioColumn = table.getColumn("scenarios");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
     <TooltipProvider>
-      <div className="space-y-8">
+      <div className="space-y-8" data-page="personas-index">
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="flex items-center justify-between">
+          <div
+            className="flex items-center justify-between"
+            data-testid="personas-toolbar"
+          >
             <div className="flex flex-1 items-center space-x-2 flex-wrap">
               <div className="mb-2">
                 <Input
+                  data-testid="personas-search"
                   placeholder="Search personas..."
                   value={(nameColumn?.getFilterValue() as string) ?? ""}
                   onChange={(event) =>
                     nameColumn?.setFilterValue(event.target.value)
                   }
                   className="h-8 w-[150px] lg:w-[250px]"
-                  aria-label="Search personas"
+                  aria-label="Search personas by name"
+                  aria-controls="personas-grid"
                 />
               </div>
 
@@ -581,30 +561,12 @@ export default function Personas({
                   />
                 )}
 
-                {/* Reasoning Filter */}
-                {reasoningColumn && reasoningOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={reasoningColumn}
-                    title="Reasoning"
-                    options={reasoningOptions}
-                  />
-                )}
-
                 {/* Model Filter */}
                 {modelColumn && modelOptions.length > 0 && (
                   <DataTableFacetedFilter
                     column={modelColumn}
                     title="Model"
                     options={modelOptions}
-                  />
-                )}
-
-                {/* Temperature Filter */}
-                {temperatureColumn && temperatureOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={temperatureColumn}
-                    title="Temperature"
-                    options={temperatureOptions}
                   />
                 )}
 
@@ -632,7 +594,12 @@ export default function Personas({
           </div>
 
           {/* Cards Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            role="grid"
+            aria-label="personas grid"
+            data-testid="personas-grid"
+          >
             {table.getRowModel().rows.length ? (
               table
                 .getRowModel()
@@ -645,27 +612,38 @@ export default function Personas({
           </div>
 
           {/* Pagination */}
-          <DataTablePagination table={table} card={true} />
+          <div aria-label="pagination controls">
+            <DataTablePagination table={table} card={true} />
+          </div>
         </div>
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
+          <AlertDialogContent
+            aria-labelledby="delete-persona-title"
+            data-testid="dialog-delete-persona"
+          >
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Persona</AlertDialogTitle>
+              <AlertDialogTitle id="delete-persona-title">
+                Delete Persona
+              </AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to delete the persona "{deleteItem?.name}
                 "? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+              <AlertDialogCancel
+                disabled={isDeleting}
+                data-testid="btn-cancel-delete"
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={isDeleting}
                 className="bg-red-600 hover:bg-red-700 text-white"
+                data-testid="btn-confirm-delete"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>

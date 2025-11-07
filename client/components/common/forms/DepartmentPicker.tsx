@@ -39,6 +39,13 @@ type MappingItem = {
   description: string;
 };
 
+type TriggerButtonProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "data-testid"
+> & {
+  "data-testid"?: string;
+};
+
 export interface DepartmentPickerProps<T extends MappingItem = MappingItem>
   extends PopoverProps {
   mapping: Record<string, T>;
@@ -51,6 +58,7 @@ export interface DepartmentPickerProps<T extends MappingItem = MappingItem>
   buttonClassName?: string;
   disabled?: boolean;
   compact?: boolean; // Compact mode for single-select, smaller button
+  triggerProps?: TriggerButtonProps;
 }
 
 export function DepartmentPicker<T extends MappingItem = MappingItem>({
@@ -64,6 +72,7 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
   buttonClassName,
   disabled = false,
   compact = false,
+  triggerProps,
   ...props
 }: DepartmentPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
@@ -122,6 +131,15 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
     return `No departments found.`;
   };
 
+  const { className: triggerClassName, ...restTriggerProps } =
+    triggerProps ?? {};
+
+  const buttonClasses = cn(
+    compact ? "h-8 justify-between" : "w-full justify-between",
+    buttonClassName,
+    triggerClassName
+  );
+
   return (
     <div>
       {/* Show selected items */}
@@ -156,11 +174,9 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
             role="combobox"
             aria-expanded={open}
             aria-label="Select departments"
-            className={cn(
-              compact ? "h-8 justify-between" : "w-full justify-between",
-              buttonClassName,
-            )}
+            className={buttonClasses}
             disabled={disabled}
+            {...restTriggerProps}
           >
             <span className="truncate text-left">{getButtonText()}</span>
             <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2 h-4 w-4" />
@@ -266,7 +282,7 @@ function DepartmentItem<T extends MappingItem>({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0",
+            isSelected ? "opacity-100" : "opacity-0"
           )}
         />
       </div>

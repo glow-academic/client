@@ -763,7 +763,10 @@ export default function Persona({
 
   return (
     <TooltipProvider>
-      <div className="space-y-6 py-4 px-4">
+      <div
+        className="space-y-6 py-4 px-4"
+        data-page={`persona-${isEditMode ? "edit" : "new"}`}
+      >
         {isReadonly && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
             <div className="flex items-center">
@@ -803,6 +806,7 @@ export default function Persona({
               {formData?.name !== undefined ? (
                 <Input
                   id="name"
+                  data-testid="input-persona-name"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -819,6 +823,7 @@ export default function Persona({
               {formData?.description !== undefined ? (
                 <Textarea
                   id="description"
+                  data-testid="input-persona-description"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -851,6 +856,7 @@ export default function Persona({
                   placeholder="All Departments"
                   disabled={isReadonly}
                   multiSelect={true}
+                  triggerProps={{ "data-testid": "picker-department" }}
                 />
               ) : null}
             </div>
@@ -1095,6 +1101,7 @@ export default function Persona({
                     placeholder="Select a model"
                     disabled={isReadonly}
                     multiSelect={false}
+                    triggerProps={{ "data-testid": "picker-model" }}
                   />
                 ) : null}
               </div>
@@ -1123,6 +1130,7 @@ export default function Persona({
                     placeholder="Select reasoning effort"
                     disabled={isReadonly}
                     multiSelect={false}
+                    triggerProps={{ "data-testid": "picker-reasoning" }}
                   />
                 ) : null}
               </div>
@@ -1183,6 +1191,9 @@ export default function Persona({
                       disabled={isReadonly}
                       compact={true}
                       buttonClassName="h-8"
+                      triggerProps={{
+                        "data-testid": "picker-department-filter",
+                      }}
                     />
                   )}
                   {isEditMode &&
@@ -1221,6 +1232,7 @@ export default function Persona({
                         placeholder="Select prompt version..."
                         disabled={isReadonly}
                         buttonClassName="h-8"
+                        triggerProps={{ "data-testid": "picker-prompt" }}
                       />
                     )}
                   {formData?.systemPrompt !== undefined && (
@@ -1424,7 +1436,10 @@ export default function Persona({
                       </div>
                     </div>
                   ) : (
-                    <div className="h-[500px]">
+                    <div
+                      className="h-[500px]"
+                      data-testid="editor-system-prompt"
+                    >
                       <UnifiedPromptEditor
                         value={formData?.systemPrompt || ""}
                         onChange={(value) => {
@@ -1469,7 +1484,11 @@ export default function Persona({
               >
                 Back
               </Button>
-              <Button type="submit" disabled={isSubmitting || isReadonly}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || isReadonly}
+                data-testid="btn-submit-persona"
+              >
                 {isSubmitting
                   ? isEditMode
                     ? "Updating..."

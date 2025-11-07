@@ -39,6 +39,13 @@ type MappingItem = {
   description: string;
 };
 
+type TriggerButtonProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "data-testid"
+> & {
+  "data-testid"?: string;
+};
+
 export interface ReasoningPickerProps<T extends MappingItem = MappingItem>
   extends PopoverProps {
   mapping: Record<string, T>;
@@ -50,6 +57,7 @@ export interface ReasoningPickerProps<T extends MappingItem = MappingItem>
   hideSelectedChips?: boolean;
   buttonClassName?: string;
   disabled?: boolean;
+  triggerProps?: TriggerButtonProps;
 }
 
 export function ReasoningPicker<T extends MappingItem = MappingItem>({
@@ -62,6 +70,7 @@ export function ReasoningPicker<T extends MappingItem = MappingItem>({
   hideSelectedChips = true,
   buttonClassName,
   disabled = false,
+  triggerProps,
   ...props
 }: ReasoningPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
@@ -120,6 +129,15 @@ export function ReasoningPicker<T extends MappingItem = MappingItem>({
     return `No reasoning levels found.`;
   };
 
+  const { className: triggerClassName, ...restTriggerProps } =
+    triggerProps ?? {};
+
+  const buttonClasses = cn(
+    "w-full justify-between",
+    buttonClassName,
+    triggerClassName,
+  );
+
   return (
     <div>
       {/* Show selected items */}
@@ -154,8 +172,9 @@ export function ReasoningPicker<T extends MappingItem = MappingItem>({
             role="combobox"
             aria-expanded={open}
             aria-label="Select reasoning effort"
-            className={cn("w-full justify-between", buttonClassName)}
+            className={buttonClasses}
             disabled={disabled}
+            {...restTriggerProps}
           >
             <span className="truncate text-left">{getButtonText()}</span>
             <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />

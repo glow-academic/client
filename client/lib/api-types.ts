@@ -10706,11 +10706,6 @@ export interface components {
             temperature: number;
             /** Temperature Display */
             temperature_display: string;
-            /**
-             * Temperature Category
-             * @enum {string}
-             */
-            temperature_category: "low" | "medium" | "high";
             /** Active */
             active: boolean;
             /** Is Inactive */
@@ -10751,10 +10746,6 @@ export interface components {
             model_options: {
                 [key: string]: string;
             }[];
-            /** Reasoning Options */
-            reasoning_options: string[];
-            /** Temperature Options */
-            temperature_options: string[];
             /** Department Options */
             department_options: {
                 [key: string]: string;

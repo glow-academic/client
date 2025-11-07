@@ -2,7 +2,7 @@
 
 import json
 from collections import Counter
-from typing import Annotated, Literal
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
@@ -37,7 +37,6 @@ class PersonaItem(BaseModel):
     reasoning: str | None
     temperature: float
     temperature_display: str  # Precomputed formatted temperature (e.g. "0.44")
-    temperature_category: Literal["low", "medium", "high"]  # Precomputed category
     active: bool
     is_inactive: bool  # Mirror of !active for easier badge rendering
     num_scenarios: int
@@ -56,22 +55,10 @@ class PersonasListResponse(BaseModel):
     # UI-ready facet options (precomputed on server)
     scenario_options: list[dict[str, str]]  # Array of {value, label}
     model_options: list[dict[str, str]]  # Array of {value, label}
-    reasoning_options: list[str]  # ["none", "minimal", "low", "medium", "high"]
-    temperature_options: list[str]  # ["low", "medium", "high"]
     department_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
-
-
-def temp_cat(t: float) -> Literal["low", "medium", "high"]:
-    """Categorize temperature into low/medium/high."""
-    if t <= 0.33:
-        return "low"
-    elif t <= 0.66:
-        return "medium"
-    else:
-        return "high"
 
 
 def disambiguate_scenarios(smap: ScenarioMapping) -> list[dict[str, str]]:
@@ -194,7 +181,6 @@ async def get_personas_list(
                     reasoning=row["reasoning"],
                     temperature=temperature,
                     temperature_display=f"{temperature:.2f}",
-                    temperature_category=temp_cat(temperature),
                     active=row["active"],
                     is_inactive=not row["active"],
                     num_scenarios=row["num_scenarios"],
@@ -210,8 +196,6 @@ async def get_personas_list(
         department_options = [
             {"value": did, "label": d.name or did} for (did, d) in department_mapping.items()
         ]
-        reasoning_options = ["none", "minimal", "low", "medium", "high"]
-        temperature_options = ["low", "medium", "high"]
 
         response_data = PersonasListResponse(
             personas=personas,
@@ -220,8 +204,6 @@ async def get_personas_list(
             department_mapping=department_mapping,
             scenario_options=scenario_options,
             model_options=model_options,
-            reasoning_options=reasoning_options,
-            temperature_options=temperature_options,
             department_options=department_options,
         )
         
