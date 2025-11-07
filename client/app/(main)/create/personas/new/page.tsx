@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NewPersonaPage() {
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch default persona detail server-side

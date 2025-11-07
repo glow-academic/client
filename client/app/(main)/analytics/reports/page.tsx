@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import ReportsPage from "@/components/reports/ReportsPage";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -24,7 +25,7 @@ const getReports = cache(async (input: ReportsIn): Promise<ReportsOut> => {
 
 /** ---- Inline filters function for reports page ---- */
 const getReportsFilters = cache(async (searchParams?: URLSearchParams) => {
-  const session = await auth();
+  const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await api.post("/profile/context", {

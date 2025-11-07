@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -60,7 +61,7 @@ export const metadata: Metadata = {
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewDepartmentPage() {
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch default department detail server-side

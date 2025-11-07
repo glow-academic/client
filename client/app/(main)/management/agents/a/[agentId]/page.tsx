@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import SystemAgent from "@/components/agents/SystemAgent";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -48,7 +49,7 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { agentId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
@@ -100,7 +101,7 @@ export default async function AgentEditPage({
   params: Promise<{ agentId: string }>;
 }) {
   const { agentId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch data based on mode (edit vs create)

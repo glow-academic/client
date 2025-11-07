@@ -181,7 +181,7 @@ run: check-venv
 
 run-test:
 	@echo "🚀 Starting all GLOW services in TEST mode..."
-	@ENV=TEST $(MAKE) run
+	@ENV=test $(MAKE) run
 
 # Stop all services (for cleanup)
 stop:

@@ -2,7 +2,7 @@
  * Server component that fetches profile context data
  */
 "use server";
-import { auth, update } from "@/auth";
+import { getSession, update } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { revalidateTag } from "next/cache";
@@ -68,7 +68,7 @@ export type SafeSessionSnapshot = {
 };
 
 export async function getLayoutContextData() {
-  const session = await auth();
+  const session = await getSession();
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
 
@@ -114,7 +114,7 @@ export async function getLayoutContextData() {
 export async function markIntroComplete(
   input: MarkIntroCompleteIn
 ): Promise<MarkIntroCompleteOut> {
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
   const out = await api.post("/profile/mark-intro-complete", {
     body: { ...input.body, profileId },
@@ -126,7 +126,7 @@ export async function markIntroComplete(
 export async function markChatComplete(
   input: MarkChatCompleteIn
 ): Promise<MarkChatCompleteOut> {
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
   const out = await api.post("/profile/mark-chat-complete", {
     body: { ...input.body, profileId },
@@ -175,7 +175,7 @@ export async function switchEffectiveProfile(
   input: SwitchEffectiveProfileParams
 ): Promise<SwitchEffectiveProfileResult> {
   try {
-    const session = await auth();
+    const session = await getSession();
     if (!session?.user?.profileId) {
       return { ok: false, reason: "Unauthorized" };
     }

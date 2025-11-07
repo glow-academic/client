@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -27,7 +28,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth(); // server-side; no client network
+  const session = await getSession(); // server-side; no client network
   return (
     <html lang="en">
       <body

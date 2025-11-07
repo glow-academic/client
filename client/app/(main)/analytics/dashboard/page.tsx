@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Dashboard from "@/components/dashboard/Dashboard";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -28,7 +29,7 @@ const getDashboard = cache(
 
 /** ---- Inline filters function for dashboard page ---- */
 const getDashboardFilters = cache(async (searchParams?: URLSearchParams) => {
-  const session = await auth();
+  const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await api.post("/profile/context", {

@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Model from "@/components/providers/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -45,7 +46,7 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { modelId, providerId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
@@ -90,7 +91,7 @@ export default async function ModelEditPage({
   params: Promise<{ providerId: string; modelId: string }>;
 }) {
   const { providerId, modelId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch both model and provider data (cached, won't duplicate)

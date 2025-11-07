@@ -62,3 +62,16 @@ def test_practice_page_accessible(page: Page, base_url: str) -> None:
     body = page.locator("body")
     expect(body).to_be_visible()
 
+
+@pytest.mark.test_profile_id("6a2518eb-eba7-4650-aee0-d387c3fb8265")
+def test_home_page_authenticated(page: Page, base_url: str) -> None:
+    """Verify the home page renders for an authenticated profile."""
+    page.goto(f"{base_url}/home")
+
+    page.wait_for_load_state("networkidle")
+
+    expect(page).to_have_url(re.compile(r".*/home.*"))
+    simulation_progress = page.get_by_test_id("simulation-progress")
+    simulation_progress.first.wait_for(state="visible")
+    expect(simulation_progress.first).to_be_visible()
+

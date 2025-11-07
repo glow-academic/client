@@ -6,7 +6,8 @@
  */
 
 import { createParameterItem } from "@/app/(main)/management/parameters/page";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Documents from "@/components/documents/Documents";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -111,7 +112,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DocumentsPage() {
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side

@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Practice from "@/components/practice/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PracticePage() {
-  const session = await auth();
+  const session = await getSession();
 
   // Get profileId and departmentIds from profile context
   const profileContext = await api.post("/profile/context", {

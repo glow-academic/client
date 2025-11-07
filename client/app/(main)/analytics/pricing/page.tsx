@@ -4,7 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 08/10/2025
  */
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Pricing from "@/components/pricing/Pricing";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -23,7 +24,7 @@ const getPricing = cache(async (input: PricingIn): Promise<PricingOut> => {
 
 /** ---- Inline filters function for pricing page ---- */
 const getPricingFilters = cache(async (searchParams?: URLSearchParams) => {
-  const session = await auth();
+  const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await api.post("/profile/context", {

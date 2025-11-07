@@ -5,7 +5,8 @@
  * 06/09/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -53,7 +54,7 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { simulationId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
@@ -98,7 +99,7 @@ export default async function EditSimulationPage({
   params: Promise<{ simulationId: string }>;
 }) {
   const { simulationId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch data based on mode (edit vs create)

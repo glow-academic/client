@@ -6,7 +6,8 @@
  */
 
 import Rubric from "@/components/rubrics/Rubric";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -44,7 +45,7 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { rubricId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
@@ -68,7 +69,7 @@ export default async function EditRubricPage({
   params: Promise<{ rubricId: string }>;
 }) {
   const { rubricId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch data based on mode (edit vs create)

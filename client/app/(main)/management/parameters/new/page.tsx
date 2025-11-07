@@ -5,7 +5,8 @@
  * 07/26/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -61,7 +62,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NewParameterPage() {
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch default parameter detail server-side

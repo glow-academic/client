@@ -96,6 +96,9 @@ async def get_profile_context(
 ) -> ProfileContextResponse:
     """Get consolidated profile context (profile, departments, cohorts, breadcrumbs)."""
     try:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Request: {request}")
         # Validate emulation is authorized when profiles differ (before fetching context)
         if request.actualProfileId != request.effectiveProfileId:
             # Check if emulation is authorized using a separate SQL file

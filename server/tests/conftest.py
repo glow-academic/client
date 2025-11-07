@@ -16,7 +16,11 @@ os.environ["OPENAI_AGENTS_DISABLE_TRACING"] = "1"
 # Set SECRET_KEY for encryption/decryption in tests
 os.environ["SECRET_KEY"] = os.getenv("SECRET_KEY", "test_secret_key_for_integration_tests")
 # Ensure Testcontainers-backed DB is used
-os.environ.setdefault("ENV", "TEST")
+os.environ["ENV"] = os.getenv("ENV", "TEST")
+# Ensure header signing works in test environment
+os.environ["AUTH_SECRET"] = os.getenv("AUTH_SECRET", "test_secret_key_for_integration_tests")
+os.environ["E2E_PROFILE_ID"] = os.getenv("E2E_PROFILE_ID", "guest-profile-id")
+os.environ["E2E_STORAGE"] = os.getenv("E2E_STORAGE", "")
 
 # Add the server directory to Python's path
 server_dir = Path(__file__).parent.parent

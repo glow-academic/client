@@ -5,7 +5,8 @@
  * 06/09/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -46,7 +47,7 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { scenarioId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
@@ -107,7 +108,7 @@ export default async function EditScenarioPage({
   params: Promise<{ scenarioId: string }>;
 }) {
   const { scenarioId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch scenario detail (cached, won't duplicate with metadata)

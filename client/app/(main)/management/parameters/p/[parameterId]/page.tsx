@@ -5,7 +5,8 @@
  * 07/26/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -53,7 +54,7 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { parameterId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
@@ -96,7 +97,7 @@ export default async function ParameterEditPage({
   params: Promise<{ parameterId: string }>;
 }) {
   const { parameterId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch data based on mode (edit vs create)

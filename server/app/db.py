@@ -26,7 +26,8 @@ async def init_db_pool() -> None:
     """Initialize asyncpg connection pool."""
     global _pool, _test_container
 
-    env_name = os.getenv("ENV", "DEV").upper()
+    env_value = os.getenv("ENV", "TEST")
+    env_name = env_value.upper()
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")

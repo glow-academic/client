@@ -5,7 +5,8 @@
  * 07/20/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Cohort from "@/components/cohorts/Cohort";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -42,7 +43,7 @@ export async function generateMetadata(
   _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { cohortId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
@@ -76,7 +77,7 @@ export default async function CohortEditPage({
   params: Promise<{ cohortId: string }>;
 }) {
   const { cohortId } = await params;
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch cohort detail (cached, won't duplicate with metadata)

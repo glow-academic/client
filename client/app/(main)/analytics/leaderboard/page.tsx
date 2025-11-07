@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Leaderboard from "@/components/leaderboard/Leaderboard";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -26,7 +27,7 @@ const getLeaderboard = cache(
 
 /** ---- Inline filters function for leaderboard page ---- */
 const getLeaderboardFilters = cache(async (searchParams?: URLSearchParams) => {
-  const session = await auth();
+  const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await api.post("/profile/context", {

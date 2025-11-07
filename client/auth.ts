@@ -1,7 +1,9 @@
 // auth.ts
 import { api } from "@/lib/api/client";
+import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import { headers } from "next/headers";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
@@ -193,3 +195,17 @@ export const {
     },
   },
 });
+
+export async function getSession() {
+  try {
+    const headerList = await headers();
+    const override = validateTestHeaders(headerList);
+    if (override) {
+      return createTestSession(override);
+    }
+  } catch {
+    // Ignore header access errors and fall back to real auth.
+  }
+
+  return auth();
+}

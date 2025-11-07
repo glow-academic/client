@@ -6,7 +6,8 @@
  */
 
 import { createRubric } from "@/app/(main)/management/rubrics/page";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Rubric from "@/components/rubrics/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
 
 /** ---- Server renders client with typed data (mutations in child components) ---- */
 export default async function NewRubricPage() {
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch default rubric detail server-side

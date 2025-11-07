@@ -5,7 +5,8 @@
  * 06/08/2025
  */
 
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Home from "@/components/home/Home";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -24,7 +25,7 @@ const getHome = cache(async (input: HomeIn): Promise<HomeOut> => {
 
 /** ---- Inline filters function for home page ---- */
 const getHomeFilters = cache(async (searchParams?: URLSearchParams) => {
-  const session = await auth();
+  const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
   const profileContext = await api.post("/profile/context", {
@@ -77,7 +78,7 @@ interface HomePageProps {
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const session = await auth();
+  const session = await getSession();
 
   // Parse search params
   const paramsObj = await searchParams;

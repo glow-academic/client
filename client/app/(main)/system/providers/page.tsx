@@ -4,7 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
+
 import Providers from "@/components/providers/Providers";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -74,7 +75,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ProvidersPage() {
-  const session = await auth();
+  const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side
