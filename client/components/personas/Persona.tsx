@@ -31,6 +31,7 @@ import {
   PromptPicker,
 } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -57,6 +59,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,7 +83,20 @@ import {
   Power,
   Trash2,
 } from "lucide-react";
-import PersonaDebugInfo from "./PersonaDebugInfo";
+
+import {
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type VisibilityState,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 interface FormData {
   name?: string;
@@ -96,6 +112,159 @@ interface FormData {
   departmentIds?: string[] | null;
 }
 
+type PersonaDebugInfoRow = {
+  id: string;
+  createdAt: string;
+  content: string;
+  modelId: string | null;
+  modelName: string;
+};
+
+interface PersonaDebugInfoSectionProps {
+  rows: PersonaDebugInfoRow[];
+}
+
+function PersonaDebugInfoSection({ rows }: PersonaDebugInfoSectionProps) {
+  const columns = React.useMemo<ColumnDef<PersonaDebugInfoRow>[]>(
+    () => [
+      {
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Created" />
+        ),
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap">
+            {new Date(row.original.createdAt).toLocaleString()}
+          </span>
+        ),
+        enableSorting: true,
+      },
+      {
+        accessorKey: "modelId",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Model" />
+        ),
+        cell: ({ row }) => (
+          <Badge variant="outline">
+            {row.original.modelName || row.original.modelId}
+          </Badge>
+        ),
+        enableColumnFilter: true,
+        enableSorting: true,
+      },
+      {
+        accessorKey: "content",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Content" />
+        ),
+        cell: ({ row }) => (
+          <div className="max-w-[800px] whitespace-pre-wrap break-words text-sm">
+            {row.original.content}
+          </div>
+        ),
+        enableSorting: true,
+        sortingFn: (rowA, rowB, columnId) => {
+          const a = ((rowA.getValue(columnId) as string) || "").length;
+          const b = ((rowB.getValue(columnId) as string) || "").length;
+          if (a === b) return 0;
+          return a > b ? 1 : -1;
+        },
+      },
+    ],
+    []
+  );
+
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "createdAt", desc: true },
+  ]);
+
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: { pageSize: 10 },
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border">
+        <div className="grid grid-cols-12 gap-3 p-3 font-medium text-sm bg-muted/50">
+          <div className="col-span-3">
+            <DataTableColumnHeader
+              column={table.getColumn("createdAt")!}
+              title="Created"
+            />
+          </div>
+          <div className="col-span-3">
+            <DataTableColumnHeader
+              column={table.getColumn("modelId")!}
+              title="Model"
+            />
+          </div>
+          <div className="col-span-6">
+            <DataTableColumnHeader
+              column={table.getColumn("content")!}
+              title="Content"
+            />
+          </div>
+        </div>
+        <ScrollArea className="h-[360px]">
+          <div className="divide-y">
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <div
+                  key={row.id}
+                  className="grid grid-cols-12 gap-3 p-3 text-sm"
+                >
+                  <div className="col-span-3 whitespace-nowrap">
+                    {new Date(row.original.createdAt).toLocaleString()}
+                  </div>
+                  <div className="col-span-3">
+                    <Badge variant="outline">
+                      {row.original.modelName || row.original.modelId}
+                    </Badge>
+                  </div>
+                  <div className="col-span-6 whitespace-pre-wrap break-words">
+                    {row.original.content}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center text-muted-foreground text-sm">
+                No debug info yet for this persona.
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    </div>
+  );
+}
+
 export interface PersonaProps {
   personaId?: string;
   mode?: "create" | "edit";
@@ -106,7 +275,7 @@ export interface PersonaProps {
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
   deletePersonaPromptAction?: (
-    input: DeletePersonaPromptIn,
+    input: DeletePersonaPromptIn
   ) => Promise<DeletePersonaPromptOut>;
 }
 
@@ -140,7 +309,7 @@ export default function Persona({
         ? [effectiveProfile.primaryDepartmentId]
         : [],
     }),
-    [effectiveProfile?.primaryDepartmentId],
+    [effectiveProfile?.primaryDepartmentId]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,7 +317,7 @@ export default function Persona({
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor",
+    "editor"
   );
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | null
@@ -194,7 +363,7 @@ export default function Persona({
   // Wrapper functions for compatibility (matching original mutate signature with callbacks)
   const createPersona = (
     body: CreatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
   ) => {
     handleCreatePersona(body)
       .then(() => {
@@ -211,7 +380,7 @@ export default function Persona({
 
   const updatePersona = (
     body: UpdatePersonaBody,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
   ) => {
     handleUpdatePersona(body)
       .then(() => {
@@ -233,7 +402,7 @@ export default function Persona({
       promptId: string;
       departmentId: string | null;
     },
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
   ) => {
     if (!deletePersonaPromptAction) {
       const error = new Error("deletePersonaPromptAction is required");
@@ -280,7 +449,7 @@ export default function Persona({
 
     const filtered: Record<string, PromptInfo> = {};
     for (const [promptId, promptInfo] of Object.entries(
-      personaData.prompt_mapping,
+      personaData.prompt_mapping
     )) {
       if (!selectedDepartmentId) {
         // "All Departments" selected - only show default prompts (null/empty department_ids)
@@ -316,6 +485,36 @@ export default function Persona({
     const defaultPrompt = personaData.prompt_mapping[personaData.prompt_id];
     return defaultPrompt?.system_prompt || "";
   }, [personaData, isEditMode]);
+
+  const personaDebugInfoRows = useMemo<PersonaDebugInfoRow[]>(() => {
+    if (!personaData?.debug_info) return [];
+    return personaData.debug_info.map((item, idx) => {
+      const createdAt =
+        (item as { timestamp?: string }).timestamp ||
+        (item as { created_at?: string }).created_at ||
+        "";
+      const modelId =
+        (item as { model_id?: string }).model_id ??
+        (item as { modelId?: string }).modelId ??
+        null;
+      const content =
+        (item as { message?: string }).message ||
+        (item as { content?: string }).content ||
+        "";
+      const modelName =
+        modelId && personaData.model_mapping
+          ? personaData.model_mapping[modelId]?.name || modelId
+          : modelId || "";
+
+      return {
+        id: `${createdAt}-${idx}`,
+        createdAt,
+        content,
+        modelId,
+        modelName,
+      };
+    });
+  }, [personaData?.debug_info, personaData?.model_mapping]);
 
   useEffect(() => {
     if (personaData && isEditMode) {
@@ -513,7 +712,7 @@ export default function Persona({
               toast.error(`Failed to update persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          },
+          }
         );
       } else {
         createPersona(
@@ -540,12 +739,12 @@ export default function Persona({
               toast.error(`Failed to create persona: ${error.message}`);
               setIsSubmitting(false);
             },
-          },
+          }
         );
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
       );
       setIsSubmitting(false);
     }
@@ -823,7 +1022,7 @@ export default function Persona({
                                           "mr-2 h-4 w-4",
                                           formData.icon === iconName
                                             ? "opacity-100"
-                                            : "opacity-0",
+                                            : "opacity-0"
                                         )}
                                       />
                                       <IconComponent className="mr-2 h-4 w-4" />
@@ -859,14 +1058,14 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0",
+                                          : "opacity-0"
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
                                     {iconName}
                                   </CommandItem>
                                 );
-                              },
+                              }
                             )}
                           </CommandGroup>
                         </CommandList>
@@ -976,7 +1175,7 @@ export default function Persona({
                       }
                       onSelect={(ids) => {
                         setSelectedDepartmentId(
-                          ids.length > 0 ? ids[0]! : null,
+                          ids.length > 0 ? ids[0]! : null
                         );
                       }}
                       multiSelect={false}
@@ -1073,7 +1272,7 @@ export default function Persona({
                             size="sm"
                             onClick={() =>
                               setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview",
+                                editorMode === "preview" ? "editor" : "preview"
                               )
                             }
                             className="h-8 w-8 p-0"
@@ -1099,7 +1298,7 @@ export default function Persona({
                                 size="sm"
                                 onClick={() =>
                                   setEditorMode(
-                                    editorMode === "debug" ? "editor" : "debug",
+                                    editorMode === "debug" ? "editor" : "debug"
                                   )
                                 }
                                 className="h-8 w-8 p-0"
@@ -1243,26 +1442,8 @@ export default function Persona({
                           isEditMode &&
                           personaData &&
                           effectiveProfile?.role === "superadmin" ? (
-                            <PersonaDebugInfo
-                              debugInfo={
-                                // Map v3 API format (timestamp, message) to v2 format (created_at, model_id, content)
-                                personaData.debug_info?.map((item) => ({
-                                  created_at:
-                                    (item as { timestamp?: string })
-                                      .timestamp ||
-                                    (item as { created_at?: string })
-                                      .created_at ||
-                                    "",
-                                  model_id:
-                                    (item as { model_id?: string }).model_id ||
-                                    "",
-                                  content:
-                                    (item as { message?: string }).message ||
-                                    (item as { content?: string }).content ||
-                                    "",
-                                })) || []
-                              }
-                              modelMapping={personaData.model_mapping}
+                            <PersonaDebugInfoSection
+                              rows={personaDebugInfoRows}
                             />
                           ) : undefined
                         }
@@ -1354,10 +1535,10 @@ export default function Persona({
                       },
                       onError: (error) => {
                         toast.error(
-                          `Failed to delete prompt: ${error.message}`,
+                          `Failed to delete prompt: ${error.message}`
                         );
                       },
-                    },
+                    }
                   );
                 }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
