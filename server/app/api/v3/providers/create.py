@@ -70,5 +70,8 @@ async def create_provider(
     except HTTPException:
         raise
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Provider create error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 

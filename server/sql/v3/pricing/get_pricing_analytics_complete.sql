@@ -50,7 +50,7 @@ WITH model_runs_base AS (
             OR $5::text[] IS NULL
             OR COALESCE(array_length($5::text[], 1), 0) = 0
             OR mrp.profile_id IN (
-                SELECT id FROM profiles WHERE role = ANY($5::text[])
+                SELECT id FROM profiles WHERE role::text = ANY($5::text[])
             )
         )
         -- Cohort filter (via cohort_profiles)

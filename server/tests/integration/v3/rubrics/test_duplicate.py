@@ -33,14 +33,14 @@ async def test_duplicate_rubric(
 
     # Create standard groups and standards
     group_id = await db.fetchval(
-        "INSERT INTO standard_groups(rubric_id, name, short_name, points, pass_points) "
-        "VALUES($1, 'Test Group', 'TEST', 50, 35) RETURNING id",
+        "INSERT INTO standard_groups(rubric_id, name, short_name, description, points, pass_points) "
+        "VALUES($1, 'Test Group', 'TEST', 'Test Description', 50, 35) RETURNING id",
         rubric_id,
     )
 
     await db.execute(
-        "INSERT INTO standards(standard_group_id, name, points) "
-        "VALUES($1, 'Test Standard', 10)",
+        "INSERT INTO standards(standard_group_id, name, description, points) "
+        "VALUES($1, 'Test Standard', 'Test Description', 10)",
         group_id,
     )
 

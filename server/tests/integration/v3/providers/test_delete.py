@@ -56,8 +56,8 @@ async def test_delete_provider_in_use_by_personas(
 
     # Use the model in a persona
     await db.execute(
-        "INSERT INTO personas(name, description, model_id, active, temperature, reasoning) "
-        "VALUES('Test Persona', 'Test', $1, true, 0.7, 'none')",
+        "INSERT INTO personas(name, description, model_id, active, temperature, reasoning, color, icon) "
+        "VALUES('Test Persona', 'Test', $1, true, 0.7, 'none', '#000000', 'user')",
         model_id,
     )
 

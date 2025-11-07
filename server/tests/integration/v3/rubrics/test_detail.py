@@ -127,15 +127,15 @@ async def test_get_rubric_detail_with_standard_groups(
 
     # Create a standard group
     group_id = await db.fetchval(
-        "INSERT INTO standard_groups(rubric_id, name, short_name, points, pass_points) "
-        "VALUES($1, 'Test Group', 'TEST', 50, 35) RETURNING id",
+        "INSERT INTO standard_groups(rubric_id, name, short_name, description, points, pass_points) "
+        "VALUES($1, 'Test Group', 'TEST', 'Test Description', 50, 35) RETURNING id",
         rubric_id,
     )
 
     # Create a standard
     await db.execute(
-        "INSERT INTO standards(standard_group_id, name, points) "
-        "VALUES($1, 'Test Standard', 10)",
+        "INSERT INTO standards(standard_group_id, name, description, points) "
+        "VALUES($1, 'Test Standard', 'Test Description', 10)",
         group_id,
     )
 

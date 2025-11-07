@@ -79,5 +79,8 @@ async def update_provider(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Provider update error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 

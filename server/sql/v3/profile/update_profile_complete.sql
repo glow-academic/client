@@ -33,37 +33,51 @@ update_profile AS (
     WHERE id IN (SELECT id FROM profile_exists)
       -- Dummy check for $9 to help PostgreSQL infer type (req_per_day not used here, always true)
       AND ($9::int IS NULL OR $9::int IS NOT NULL)
-    RETURNING id::text as profile_id
+    RETURNING 
+        id,
+        first_name,
+        last_name,
+        alias,
+        role,
+        active,
+        viewed_intro,
+        viewed_chat,
+        default_profile,
+        last_login,
+        created_at,
+        updated_at
 ),
 insert_activity AS (
     -- Insert into profile_activity if last_active is provided
     INSERT INTO profile_activity (profile_id, last_active)
     SELECT 
-        (SELECT resolved_profile_id::uuid FROM resolve_profile_id),
+        up.id,
         $10::timestamp with time zone
-    WHERE $10 IS NOT NULL
-        AND EXISTS (SELECT 1 FROM update_profile)
+    FROM update_profile up
+    WHERE $10::timestamp with time zone IS NOT NULL
 ),
 get_updated_profile AS (
-    -- Get the updated profile with all related data
+    -- Get the updated profile with all related data (use data directly from update_profile)
     SELECT 
-        p.id,
-        p.first_name,
-        p.last_name,
-        p.alias,
-        p.role,
-        p.active,
-        p.viewed_intro,
-        p.viewed_chat,
-        p.default_profile,
-        (SELECT requests_per_day FROM profile_request_limits WHERE profile_id = p.id AND active = true LIMIT 1) as req_per_day,
-        p.last_login,
-        (SELECT last_active FROM profile_activity WHERE profile_id = p.id ORDER BY created_at DESC LIMIT 1) as last_active,
-        p.created_at,
-        p.updated_at,
-        (SELECT department_id FROM profile_departments WHERE profile_id = p.id AND is_primary = TRUE LIMIT 1) as primary_department_id
-    FROM profiles p
-    WHERE p.id IN (SELECT id FROM profile_exists)
+        up.id,
+        up.first_name,
+        up.last_name,
+        up.alias,
+        up.role,
+        up.active,
+        up.viewed_intro,
+        up.viewed_chat,
+        up.default_profile,
+        (SELECT requests_per_day FROM profile_request_limits WHERE profile_id = up.id AND active = true LIMIT 1) as req_per_day,
+        up.last_login,
+        COALESCE(
+            (SELECT last_active FROM profile_activity WHERE profile_id = up.id ORDER BY created_at DESC LIMIT 1),
+            $10::timestamp with time zone
+        ) as last_active,
+        up.created_at,
+        up.updated_at,
+        (SELECT department_id FROM profile_departments WHERE profile_id = up.id AND is_primary = TRUE LIMIT 1) as primary_department_id
+    FROM update_profile up
 )
 SELECT * FROM get_updated_profile
 

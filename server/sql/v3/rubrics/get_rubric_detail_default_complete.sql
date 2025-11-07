@@ -27,10 +27,13 @@ rubric_data AS (
 ),
 rubric_departments_data AS (
     SELECT 
-        ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) as department_ids
-    FROM rubric_departments rd
-    JOIN default_rubric dr ON rd.rubric_id = dr.id
-    WHERE rd.active = true
+        COALESCE(
+            ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) FILTER (WHERE rd.department_id IS NOT NULL),
+            ARRAY[]::text[]
+        ) as department_ids
+    FROM default_rubric dr
+    LEFT JOIN rubric_departments rd ON rd.rubric_id = dr.id AND rd.active = true
+    GROUP BY dr.id
 ),
 valid_depts AS (
     SELECT 
@@ -90,7 +93,7 @@ standard_groups_with_standards AS (
 )
 SELECT 
     r.*,
-    rdd.department_ids,
+    COALESCE(rdd.department_ids, ARRAY[]::text[]) as department_ids,
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
     pr.user_role,

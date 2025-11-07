@@ -8,12 +8,14 @@ WITH provider_exists AS (
     WHERE id = $1::uuid
 ),
 update_provider AS (
-    -- Update provider basic fields only if provider exists
+    -- Update provider fields (name, description, and optionally api_key) if provider exists
     UPDATE providers SET
         name = $2,
         description = $3,
+        api_key = COALESCE(NULLIF($4::text, ''), api_key),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM provider_exists)
+      AND ($4::text IS NULL OR $4::text != '')
     RETURNING id::text as provider_id
 ),
 upsert_endpoint AS (
@@ -21,21 +23,13 @@ upsert_endpoint AS (
     INSERT INTO provider_endpoints (provider_id, base_url)
     SELECT 
         pe.id,
-        $5
+        $5::text
     FROM provider_exists pe
-    WHERE $5 IS NOT NULL AND COALESCE(TRIM($5), '') != ''
+    WHERE $5::text IS NOT NULL AND COALESCE(TRIM($5::text), '') != ''
     ON CONFLICT (provider_id)
     DO UPDATE SET
         base_url = EXCLUDED.base_url,
         updated_at = NOW()
-),
-update_api_key AS (
-    -- Update API key if provided and provider exists
-    UPDATE providers SET
-        api_key = $4,
-        updated_at = NOW()
-    WHERE id IN (SELECT id FROM provider_exists)
-      AND $4 IS NOT NULL
 )
 SELECT provider_id FROM update_provider
 

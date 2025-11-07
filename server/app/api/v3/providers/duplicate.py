@@ -41,7 +41,11 @@ async def duplicate_provider(
         async with transaction(conn):
             # Use the duplicate_provider.sql which handles everything in one query
             duplicate_sql = load_sql("sql/v3/providers/duplicate_provider.sql")
-            result = await conn.fetchrow(duplicate_sql, request.providerId)
+            try:
+                result = await conn.fetchrow(duplicate_sql, request.providerId)
+            except Exception as sql_error:
+                # If SQL fails (e.g., provider doesn't exist), return 400
+                raise ValueError(f"Provider not found: {request.providerId}") from sql_error
 
             if not result:
                 raise ValueError(f"Provider not found or failed to duplicate: {request.providerId}")
@@ -64,5 +68,8 @@ async def duplicate_provider(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Provider duplicate error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -60,8 +60,8 @@ async def test_list_providers_with_models(
 
     # Create a persona using the model (to test usage count)
     persona_id = await db.fetchval(
-        "INSERT INTO personas(name, description, model_id, active, temperature, reasoning) "
-        "VALUES('Test Persona', 'Test', $1, true, 0.7, 'none') RETURNING id",
+        "INSERT INTO personas(name, description, model_id, active, temperature, reasoning, color, icon) "
+        "VALUES('Test Persona', 'Test', $1, true, 0.7, 'none', '#000000', 'user') RETURNING id",
         model_id,
     )
 
@@ -109,8 +109,8 @@ async def test_list_providers_model_usage_calculation(
 
     # Create personas and agents using the model
     await db.execute(
-        "INSERT INTO personas(name, description, model_id, active, temperature, reasoning) "
-        "SELECT 'Persona ' || generate_series(1, 5), 'Test', $1, true, 0.7, 'none'",
+        "INSERT INTO personas(name, description, model_id, active, temperature, reasoning, color, icon) "
+        "SELECT 'Persona ' || generate_series(1, 5), 'Test', $1, true, 0.7, 'none', '#000000', 'user'",
         model_id,
     )
 
@@ -162,8 +162,8 @@ async def test_list_providers_can_delete_based_on_models(
 
     # Use the model
     await db.execute(
-        "INSERT INTO personas(name, description, model_id, active) "
-        "VALUES('Test Persona', 'Test', $1, true)",
+        "INSERT INTO personas(name, description, model_id, active, temperature, reasoning, color, icon) "
+        "VALUES('Test Persona', 'Test', $1, true, 0.7, 'none', '#000000', 'user')",
         model_id1,
     )
 

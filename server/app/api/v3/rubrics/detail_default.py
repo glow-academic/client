@@ -112,8 +112,9 @@ async def get_rubric_detail_default(
 
         # Convert arrays
         valid_department_ids = [str(did) for did in (row.get("valid_department_ids") or [])]
+        # department_ids can be an empty array, so check for None specifically
         dept_ids = None
-        if row.get("department_ids"):
+        if row.get("department_ids") is not None:
             dept_ids = [str(d) for d in row["department_ids"]]
 
         response_data = RubricDetailResponse(

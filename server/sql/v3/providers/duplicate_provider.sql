@@ -15,8 +15,8 @@ new_provider AS (
         api_key
     )
     SELECT 
-        sp.name,
-        sp.description || ' Copy',
+        sp.name || ' Copy',
+        sp.description,
         sp.api_key
     FROM source_provider sp
     RETURNING id as provider_id
@@ -40,26 +40,29 @@ source_models AS (
     FROM models
     WHERE provider_id = $1
     ORDER BY created_at
+),
+duplicate_models AS (
+    INSERT INTO models (
+        provider_id,
+        name,
+        description,
+        active,
+        custom_model,
+        image_model,
+        input_ppm,
+        output_ppm
+    )
+    SELECT 
+        np.provider_id,
+        sm.name,
+        sm.description || ' Copy',
+        sm.active,
+        sm.custom_model,
+        sm.image_model,
+        sm.input_ppm,
+        sm.output_ppm
+    FROM new_provider np
+    CROSS JOIN source_models sm
 )
-INSERT INTO models (
-    provider_id,
-    name,
-    description,
-    active,
-    custom_model,
-    image_model,
-    input_ppm,
-    output_ppm
-)
-SELECT 
-    (SELECT provider_id FROM new_provider),
-    name,
-    description || ' Copy',
-    active,
-    custom_model,
-    image_model,
-    input_ppm,
-    output_ppm
-FROM source_models
-RETURNING (SELECT provider_id FROM new_provider) as provider_id
+SELECT provider_id FROM new_provider
 

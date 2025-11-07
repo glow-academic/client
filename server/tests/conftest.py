@@ -14,6 +14,8 @@ from testcontainers.postgres import PostgresContainer
 
 # Disable tracing globally BEFORE importing agents
 os.environ["OPENAI_AGENTS_DISABLE_TRACING"] = "1"
+# Set SECRET_KEY for encryption/decryption in tests
+os.environ["SECRET_KEY"] = os.getenv("SECRET_KEY", "test_secret_key_for_integration_tests")
 
 # Add the server directory to Python's path
 server_dir = Path(__file__).parent.parent

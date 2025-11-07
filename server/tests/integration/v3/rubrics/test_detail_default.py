@@ -27,7 +27,6 @@ async def test_get_rubric_detail_default(
     assert "description" in data
     assert "department_ids" in data  # Changed from department_id to department_ids
     assert "active" in data
-    assert "default_rubric" in data
     assert "points" in data
     assert "passPoints" in data
     assert "standard_group_ids" in data

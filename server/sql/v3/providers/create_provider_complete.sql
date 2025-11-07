@@ -19,9 +19,9 @@ link_endpoint AS (
     INSERT INTO provider_endpoints (provider_id, base_url)
     SELECT 
         np.provider_id::uuid,
-        $4
+        $4::text
     FROM new_provider np
-    WHERE $4 IS NOT NULL AND COALESCE(TRIM($4), '') != ''
+    WHERE $4::text IS NOT NULL AND COALESCE(TRIM($4::text), '') != ''
     ON CONFLICT (provider_id)
     DO UPDATE SET
         base_url = EXCLUDED.base_url,

@@ -109,9 +109,22 @@ async def get_pricing(
         # Build parameters for consolidated SQL file
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
-        department_ids = filters.departmentIds or None
+        
+        # Convert string UUIDs to UUID objects for asyncpg array parameters
+        import uuid
+        department_ids = None
+        if filters.departmentIds:
+            department_ids = [uuid.UUID(d) for d in filters.departmentIds]
+        
+        cohort_ids = None
+        if filters.cohortIds:
+            cohort_ids = [uuid.UUID(c) for c in filters.cohortIds]
+        
+        effective_profile_uuid = None
+        if effective_profile_id:
+            effective_profile_uuid = uuid.UUID(effective_profile_id)
+        
         roles = filters.roles or None
-        cohort_ids = filters.cohortIds or None
 
         # Execute consolidated SQL query with all filter logic
         sql = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
@@ -120,7 +133,7 @@ async def get_pricing(
             start_dt,
             end_dt,
             department_ids,
-            effective_profile_id,
+            effective_profile_uuid,
             roles,
             cohort_ids,
         )
@@ -209,6 +222,11 @@ async def get_pricing(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Pricing analytics error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
