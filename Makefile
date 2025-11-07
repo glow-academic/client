@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -173,6 +173,10 @@ run: check-venv
 	(cd client && yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
 	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
 	wait
+
+run-test:
+	@echo "🚀 Starting all GLOW services in TEST mode..."
+	@ENV=TEST $(MAKE) run
 
 # Stop all services (for cleanup)
 stop:

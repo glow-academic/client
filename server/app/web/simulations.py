@@ -1044,9 +1044,9 @@ async def process_simulation_message_websocket(
                 )
             else:
                 if is_retry:
-                logger.info(
-                    f"Skipping user message creation for retry in chat {chat_id}"
-                )
+                    logger.info(
+                        f"Skipping user message creation for retry in chat {chat_id}"
+                    )
 
             # 3. Create placeholder assistant message
             sql = load_sql("sql/v3/simulations/create_message.sql")
