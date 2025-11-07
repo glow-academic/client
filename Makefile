@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests generate-test-schema stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
+.PHONY: help setup install clean format lint typecheck run test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -91,14 +91,24 @@ generate-test-schema:
 	@cd database && yarn generate-test-schema
 	@echo "✅ Test schema generated at server/tests/test-schema.sql"
 
-# Run all tests
+# Run unit tests
+test-unit: check-venv
+	@echo "Running unit tests..."
+	@$(VENV_PYTHON) -m pytest server/tests/unit -v
+
+# Run integration tests
+test-integration: check-venv
+	@echo "Running integration tests..."
+	@$(VENV_PYTHON) -m pytest server/tests/integration -v
+
+# Run all tests (unit + integration)
 test: check-venv
 	@if [ -n "$(ARGS)" ]; then \
 		echo "Running pytest on specific file(s): $(ARGS)"; \
 		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
 	else \
-		echo "Running all pytest tests..."; \
-		$(VENV_PYTHON) -m pytest server/tests/ -v; \
+		$(MAKE) test-unit; \
+		$(MAKE) test-integration; \
 	fi
 
 # Run tests with coverage
