@@ -146,6 +146,8 @@ export function PromptPicker({
                       key={prompt.id}
                       onSelect={() => handleSelect(prompt.id)}
                       className="flex flex-col items-start py-3"
+                      data-testid="prompt-option"
+                      data-prompt-id={prompt.id}
                     >
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2">

@@ -181,7 +181,7 @@ run: check-venv
 
 run-test:
 	@echo "🚀 Starting all GLOW services in TEST mode..."
-	@ENV=test $(MAKE) run
+	@ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(MAKE) run
 
 # Stop all services (for cleanup)
 stop:

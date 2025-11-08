@@ -907,6 +907,7 @@ export default function Persona({
                         variant="outline"
                         className="w-full justify-start text-left font-normal"
                         disabled={isReadonly}
+                        data-testid="button-persona-color"
                       >
                         <div className="flex items-center gap-2">
                           <div
@@ -962,6 +963,8 @@ export default function Persona({
                                   setFormData((prev) => ({ ...prev, color }));
                                   setColorPickerOpen(false);
                                 }}
+                                data-testid="preset-color"
+                                data-color={color}
                               />
                             ))}
                           </div>
@@ -985,6 +988,7 @@ export default function Persona({
                         variant="outline"
                         className="w-full justify-start text-left font-normal"
                         disabled={isReadonly}
+                        data-testid="button-persona-icon"
                       >
                         <div className="flex items-center gap-2">
                           {IconComponent && (
@@ -1022,6 +1026,8 @@ export default function Persona({
                                         }));
                                         setIconPickerOpen(false);
                                       }}
+                                      data-testid="icon-option"
+                                      data-icon={iconName}
                                     >
                                       <Check
                                         className={cn(
@@ -1058,6 +1064,8 @@ export default function Persona({
                                       }));
                                       setIconPickerOpen(false);
                                     }}
+                                    data-testid="icon-option"
+                                    data-icon={iconName}
                                   >
                                     <Check
                                       className={cn(
@@ -1261,6 +1269,7 @@ export default function Persona({
                                   }));
                                 }}
                                 className="h-8 w-8 p-0"
+                                data-testid="btn-duplicate-prompt"
                               >
                                 <Copy className="h-4 w-4" />
                               </Button>
@@ -1406,6 +1415,7 @@ export default function Persona({
                                 }));
                               }}
                               disabled={isReadonly}
+                              data-testid="btn-create-new-prompt"
                             >
                               Create New Prompt
                               {selectedDepartmentId &&
@@ -1428,6 +1438,7 @@ export default function Persona({
                                 }));
                               }}
                               disabled={isReadonly}
+                              data-testid="btn-branch-prompt"
                             >
                               Branch from Default
                             </Button>

@@ -267,6 +267,8 @@ function DepartmentItem<T extends MappingItem>({
       onSelect={onSelect}
       ref={ref}
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
+      data-testid="department-option"
+      data-department-id={department.id}
     >
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2 flex-1 min-w-0">

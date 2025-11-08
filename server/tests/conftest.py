@@ -19,7 +19,7 @@ os.environ["SECRET_KEY"] = os.getenv("SECRET_KEY", "test_secret_key_for_integrat
 os.environ["ENV"] = os.getenv("ENV", "TEST")
 # Ensure header signing works in test environment
 os.environ["AUTH_SECRET"] = os.getenv("AUTH_SECRET", "test_secret_key_for_integration_tests")
-os.environ["E2E_PROFILE_ID"] = os.getenv("E2E_PROFILE_ID", "guest-profile-id")
+os.environ["E2E_PROFILE_ID"] = os.getenv("E2E_PROFILE_ID", "965bd24f-dfae-4063-b370-e1373df46322")
 os.environ["E2E_STORAGE"] = os.getenv("E2E_STORAGE", "")
 
 # Add the server directory to Python's path

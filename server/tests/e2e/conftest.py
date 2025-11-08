@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 BASE_URL = os.getenv("E2E_BASE_URL", "http://localhost:3000")
-PROFILE_ID = os.getenv("E2E_PROFILE_ID", "guest-profile-id")
+PROFILE_ID = os.getenv("E2E_PROFILE_ID", "965bd24f-dfae-4063-b370-e1373df46322")
 SECRET = os.getenv("AUTH_SECRET", "test_secret_key_for_integration_tests")
 STORAGE_STATE = os.getenv("E2E_STORAGE", "")
 
