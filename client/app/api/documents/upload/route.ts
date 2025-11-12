@@ -12,7 +12,7 @@ export async function OPTIONS(request: NextRequest) {
           "Tus-Resumable": request.headers.get("Tus-Resumable") || "1.0.0",
           "Tus-Version": request.headers.get("Tus-Version") || "1.0.0",
         },
-      },
+      }
     );
 
     // Forward all TUS headers
@@ -28,7 +28,7 @@ export async function OPTIONS(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -53,9 +53,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Get request body if present (for creation-with-upload)
-    const body = request.headers.get("Content-Length") !== "0"
-      ? await request.arrayBuffer()
-      : null;
+    const body =
+      request.headers.get("Content-Length") !== "0"
+        ? await request.arrayBuffer()
+        : null;
 
     const response = await fetch(
       `${INTERNAL_HTTP_BASE}/api/v3/documents/upload`,
@@ -63,13 +64,23 @@ export async function POST(request: NextRequest) {
         method: "POST",
         headers: tusHeaders,
         body: body || null,
-      },
+      }
     );
 
-    // Forward all TUS response headers
+    // Forward all TUS response headers, but rewrite Location to use BFF route
     const headers = new Headers();
     response.headers.forEach((value, key) => {
-      headers.set(key, value);
+      if (key.toLowerCase() === "location") {
+        // Rewrite v3 location to BFF location
+        // Handle both with and without app prefix: /api/v3/... or /prefix/api/v3/...
+        const location = value.replace(
+          /\/api\/v3\/documents\/upload\//,
+          "/api/documents/upload/"
+        );
+        headers.set(key, location);
+      } else {
+        headers.set(key, value);
+      }
     });
 
     // TUS responses typically don't have a body, but handle it if present
@@ -82,8 +93,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
-
