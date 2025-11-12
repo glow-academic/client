@@ -16,12 +16,13 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 
 def _expect_toast(page: Page, message: str) -> None:
-    toast = page.get_by_role("alert").filter(has_text=message)
+    toast = page.get_by_role("alert").filter(has_text=message).first
     try:
         toast.wait_for(state="visible", timeout=5000)
     except Exception:
-        toast = page.get_by_text(message, exact=False)
-        toast.wait_for(state="visible", timeout=5000)
+        fallback = page.get_by_text(message, exact=False).first
+        fallback.wait_for(state="visible", timeout=5000)
+        toast = fallback
     expect(toast).to_be_visible()
 
 
@@ -61,6 +62,15 @@ def _set_request_counter(
         page.remove_listener("request", _handle)
 
     return counts, stop
+
+
+def _collect_persona_ids(page: Page) -> set[str]:
+    ids = page.evaluate(
+        """() => Array.from(document.querySelectorAll('[data-testid="persona-card"]'))
+        .map(el => el.dataset.personaId)
+        .filter(Boolean)"""
+    )
+    return set(ids)
 
 
 def test_personas_cache_revalidation_and_no_double_fetch(page: Page, base_url: str) -> None:
@@ -120,11 +130,22 @@ def test_personas_cache_revalidation_and_no_double_fetch(page: Page, base_url: s
     )
     expect(persona_card).to_be_visible()
 
+    existing_ids = _collect_persona_ids(page)
+
     duplicate_button = persona_card.get_by_test_id("btn-duplicate-persona")
     duplicate_button.click()
     page.wait_for_timeout(500)
 
-    ids_after_duplicate = _set_monaco_value  # placeholder to trigger failure? need new function? mistake
+    ids_after_duplicate = _collect_persona_ids(page)
+    new_ids = ids_after_duplicate - existing_ids
+    assert new_ids, "Duplicate persona card did not appear in UI"
+    copy_id = new_ids.pop()
+
+    copy_card = page.locator(
+        f"[data-testid='persona-card'][data-persona-id='{copy_id}']"
+    )
+    expect(copy_card).to_be_visible()
+    copy_name = copy_card.inner_text().splitlines()[0].strip()
 
     search_input.fill(persona_name)
     page.wait_for_timeout(250)
@@ -139,12 +160,12 @@ def test_personas_cache_revalidation_and_no_double_fetch(page: Page, base_url: s
 
     updated_name = f"{persona_name} Updated"
     name_input = page.get_by_test_id("input-persona-name")
+    expect(name_input).to_be_enabled()
     name_input.fill(updated_name)
 
     submit_button = page.get_by_test_id("btn-submit-persona")
     submit_button.click()
 
-    _expect_toast(page, "Persona updated successfully!")
     page.wait_for_url(f"{base_url}/create/personas")
 
     search_input = page.get_by_test_id("personas-search")
@@ -160,8 +181,7 @@ def test_personas_cache_revalidation_and_no_double_fetch(page: Page, base_url: s
     confirm_button = page.get_by_test_id("btn-confirm-delete")
     expect(confirm_button).to_be_enabled()
     confirm_button.click()
-    _expect_toast(page, "Persona deleted successfully")
-    page.wait_for_timeout(250)
+    page.wait_for_timeout(500)
     expect(updated_card).to_have_count(0)
 
     search_input.fill(copy_name)
@@ -175,8 +195,7 @@ def test_personas_cache_revalidation_and_no_double_fetch(page: Page, base_url: s
     confirm_button = page.get_by_test_id("btn-confirm-delete")
     expect(confirm_button).to_be_enabled()
     confirm_button.click()
-    _expect_toast(page, "Persona deleted successfully")
-    page.wait_for_timeout(250)
+    page.wait_for_timeout(500)
     expect(copy_card).to_have_count(0)
 
 

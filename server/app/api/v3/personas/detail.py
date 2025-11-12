@@ -4,19 +4,14 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.db import get_db
+from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+                              ModelMapping, ModelMappingItem, ReasoningMapping,
+                              ReasoningMappingItem)
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ModelMapping,
-    ModelMappingItem,
-    ReasoningMapping,
-    ReasoningMappingItem,
-)
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class PersonaDetailRequest(BaseModel):
@@ -96,10 +91,15 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     """Parse JSONB data with type safety."""
     if isinstance(data, str):
         try:
-            return json.loads(data)
+            loaded = json.loads(data)
         except json.JSONDecodeError:
             return {}
-    return data or {}
+        if isinstance(loaded, (dict, list)):
+            return loaded
+        return None
+    if isinstance(data, (dict, list)):
+        return data
+    return None
 
 
 @router.post("/detail", response_model=PersonaDetailResponse)
@@ -146,14 +146,35 @@ async def get_persona_detail(
                         description=ddata.get("description", ""),
                     )
 
+        # Parse department_ids for permissions logic
+        raw_department_ids = result.get("department_ids")
+        department_ids: list[str] | None = None
+        if raw_department_ids:
+            department_ids = [str(d) for d in raw_department_ids]
+
         # Get usage and permissions
         scenario_count = int(result.get("usage_count", 0))
         in_use = scenario_count > 0
+        total_scenario_links = int(
+            result.get("total_scenario_links", scenario_count)
+        )
+        user_role = str(result.get("user_role", "")).lower()
+        has_department_links = bool(department_ids)
 
-        # Permissions come from query
-        can_edit = result.get("can_edit", False)
-        can_duplicate = result.get("can_duplicate", True)
-        can_delete = result.get("can_delete", not in_use)
+        # Permissions mirror list endpoint logic
+        can_edit = False
+        if scenario_count == 0:
+            if has_department_links or user_role == "superadmin":
+                if user_role in {"admin", "instructional", "superadmin"}:
+                    can_edit = True
+
+        can_duplicate = True
+
+        can_delete = False
+        if total_scenario_links == 0:
+            if has_department_links or user_role == "superadmin":
+                if user_role in {"admin", "instructional", "superadmin"}:
+                    can_delete = True
 
         # Build reasoning_mapping
         reasoning_mapping: ReasoningMapping = {
@@ -175,11 +196,6 @@ async def get_persona_detail(
                 description="Deep reasoning for complex, multi-step problems",
             ),
         }
-
-        # Parse department_ids
-        department_ids = result.get("department_ids")
-        if department_ids:
-            department_ids = [str(d) for d in department_ids]
 
         # Parse prompt_mapping
         prompt_mapping: dict[str, PromptInfo] = {}

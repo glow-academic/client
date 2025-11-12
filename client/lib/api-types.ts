@@ -4046,7 +4046,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/upload/init": {
+    "/api/v3/documents/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -4056,17 +4056,21 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload Init
-         * @description Initialize a document upload.
+         * Tus Creation
+         * @description Handle POST request for tus protocol - create upload.
          */
-        post: operations["upload_init_api_v3_documents_upload_init_post"];
+        post: operations["tus_creation_api_v3_documents_upload_post"];
         delete?: never;
-        options?: never;
+        /**
+         * Tus Options
+         * @description Handle OPTIONS request for tus protocol discovery.
+         */
+        options: operations["tus_options_api_v3_documents_upload_options"];
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/upload/chunk": {
+    "/api/v3/documents/upload/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4075,15 +4079,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Upload Chunk
-         * @description Upload a chunk of data.
-         */
-        post: operations["upload_chunk_api_v3_documents_upload_chunk_post"];
+        post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
+        /**
+         * Tus Options Upload Id
+         * @description Handle OPTIONS request for specific upload.
+         */
+        options: operations["tus_options_upload_id_api_v3_documents_upload__upload_id__options"];
+        /**
+         * Tus Head
+         * @description Handle HEAD request for tus protocol - get upload info.
+         */
+        head: operations["tus_head_api_v3_documents_upload__upload_id__head"];
+        /**
+         * Tus Patch
+         * @description Handle PATCH request for tus protocol - upload chunk.
+         */
+        patch: operations["tus_patch_api_v3_documents_upload__upload_id__patch"];
         trace?: never;
     };
     "/api/v3/documents/upload/finalize": {
@@ -8628,30 +8640,6 @@ export interface components {
             message: string;
         };
         /**
-         * UploadChunkRequest
-         * @description Request to upload a chunk.
-         */
-        UploadChunkRequest: {
-            /** Uploadid */
-            uploadId: string;
-            /** Chunk */
-            chunk: string;
-            /** Offset */
-            offset: number;
-        };
-        /**
-         * UploadChunkResponse
-         * @description Response from upload chunk.
-         */
-        UploadChunkResponse: {
-            /** Success */
-            success: boolean;
-            /** Offset */
-            offset: number;
-            /** Message */
-            message: string;
-        };
-        /**
          * UploadFinalizeRequest
          * @description Request to finalize upload.
          */
@@ -8710,32 +8698,6 @@ export interface components {
             usersSkipped?: number | null;
             /** Errors */
             errors?: string[] | null;
-        };
-        /**
-         * UploadInitRequest
-         * @description Request to initialize document upload.
-         */
-        UploadInitRequest: {
-            /** Filename */
-            filename: string;
-            /** Contenttype */
-            contentType: string;
-            /** Uploadlength */
-            uploadLength: number;
-        };
-        /**
-         * UploadInitResponse
-         * @description Response from upload init.
-         */
-        UploadInitResponse: {
-            /** Success */
-            success: boolean;
-            /** Uploadid */
-            uploadId: string;
-            /** Location */
-            location: string;
-            /** Message */
-            message: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -21954,18 +21916,14 @@ export interface operations {
             };
         };
     };
-    upload_init_api_v3_documents_upload_init_post: {
+    tus_creation_api_v3_documents_upload_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UploadInitRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -21973,7 +21931,49 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadInitResponse"];
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    tus_options_api_v3_documents_upload_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    tus_options_upload_id_api_v3_documents_upload__upload_id__options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -21987,18 +21987,16 @@ export interface operations {
             };
         };
     };
-    upload_chunk_api_v3_documents_upload_chunk_post: {
+    tus_head_api_v3_documents_upload__upload_id__head: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                upload_id: string;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UploadChunkRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -22006,7 +22004,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadChunkResponse"];
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_patch_api_v3_documents_upload__upload_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

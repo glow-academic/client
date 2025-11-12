@@ -6,12 +6,11 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from server.tests.e2e.personas.helpers import (
-    create_persona_api,
     delete_persona_api,
     fetch_persona_detail,
-    fetch_persona_detail_default,
     generate_unique_persona_name,
 )
+from server.tests.e2e.personas.ui_flows import create_persona_via_ui
 
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
@@ -23,8 +22,7 @@ def _get_monaco_value(page: Page) -> str:
     return (
         page.evaluate(
             """() => {
-                const win = window as typeof window & { monaco?: any };
-                const monaco = win.monaco;
+                const monaco = window.monaco;
                 if (!monaco || !monaco.editor) {
                     return "";
                 }
@@ -61,23 +59,25 @@ def _set_monaco_value(page: Page, value: str) -> None:
 
 def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None:
     """Edit an existing persona, branch prompts, and verify persistence."""
-    default_detail = fetch_persona_detail_default(
-        page.context.request,
-        profile_id=ADMIN_PROFILE_ID,
-    )
-    valid_departments = default_detail.get("valid_department_ids") or []
-    department_ids = valid_departments[:1] if valid_departments else None
-
-    persona_name = generate_unique_persona_name("Editable Persona")
-    persona_id = create_persona_api(
-        page.context.request,
-        name=persona_name,
+    persona_name, persona_id = create_persona_via_ui(
+        page,
+        base_url,
+        name=generate_unique_persona_name("Editable Persona"),
         description="Persona created for edit workflow E2E test.",
-        system_prompt="Initial prompt before edits.",
+        prompt="Initial prompt before edits.",
+    )
+
+    detail = fetch_persona_detail(
+        page.context.request,
+        persona_id,
         profile_id=ADMIN_PROFILE_ID,
         effective_profile_id=ADMIN_PROFILE_ID,
-        department_ids=department_ids,
+        bypass_cache=True,
     )
+    department_ids = detail.get("valid_department_ids") or []
+    target_department_id = department_ids[0] if department_ids else None
+    if not target_department_id:
+        pytest.skip("Persona has no departments available for prompt branching flow")
 
     updated_name = f"{persona_name} Updated"
     updated_prompt = "Updated default prompt content via E2E."
@@ -123,13 +123,10 @@ def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None
         department_picker = page.get_by_test_id("picker-department-filter")
         department_picker.wait_for(state="visible", timeout=10000)
         department_picker.click()
-        department_options = page.locator("[data-testid='department-option']")
-        if department_options.count() == 0:
-            pytest.skip("No departments available for prompt branching flow")
-        department_option = department_options.first
-        target_department_id = department_option.get_attribute("data-department-id")
-        if not target_department_id:
-            pytest.skip("Department option missing identifier")
+        department_option = page.locator(
+            f"[data-testid='department-option'][data-department-id='{target_department_id}']"
+        )
+        expect(department_option).to_be_visible()
         department_option.click()
         expect(page.get_by_text("Using Default Prompt")).to_be_visible()
 
@@ -166,7 +163,11 @@ def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None
                 .locator("[role='slider']")
                 .first
             )
-            expect(slider_thumb).to_have_attribute("aria-valuenow", updated_temp)
+            current_temp_attr = slider_thumb.get_attribute("aria-valuenow")
+            assert current_temp_attr is not None
+            assert pytest.approx(float(updated_temp), rel=1e-3) == float(
+                current_temp_attr
+            )
 
         department_picker = page.get_by_test_id("picker-department-filter")
         department_picker.click()
@@ -188,7 +189,7 @@ def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None
                 }
                 return models[0].getValue().includes(expected);
             }""",
-            department_prompt,
+            arg=department_prompt,
         )
 
         prompt_picker = page.get_by_test_id("picker-prompt")

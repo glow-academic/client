@@ -14,6 +14,7 @@ import { BulkDeleteLogsDialog } from "./BulkDeleteLogsDialog";
 import type {
   BulkDeleteLogsIn,
   BulkDeleteLogsOut,
+  GetHealthCheckOut,
   LogsListOut,
 } from "@/app/(main)/system/logs/page";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
@@ -51,11 +52,13 @@ export interface LogsProps {
   listData: LogsListOut;
   // Server actions (replaces useMutation)
   bulkDeleteLogsAction: (input: BulkDeleteLogsIn) => Promise<BulkDeleteLogsOut>;
+  getHealthCheckAction: () => Promise<GetHealthCheckOut>;
 }
 
 export default function Logs({
   listData: serverListData,
   bulkDeleteLogsAction,
+  getHealthCheckAction,
 }: LogsProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -774,7 +777,11 @@ export default function Logs({
       </div>
 
       {/* Health Modal */}
-      <HealthModal open={showHealthModal} onOpenChange={setShowHealthModal} />
+      <HealthModal
+        open={showHealthModal}
+        onOpenChange={setShowHealthModal}
+        getHealthCheckAction={getHealthCheckAction}
+      />
 
       {/* Detail Dialog */}
       <Dialog

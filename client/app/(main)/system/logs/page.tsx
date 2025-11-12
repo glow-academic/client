@@ -18,6 +18,8 @@ type LogsListIn = InputOf<"/api/v3/logs/list", "post">;
 type LogsListOut = OutputOf<"/api/v3/logs/list", "post">;
 type BulkDeleteLogsIn = InputOf<"/api/v3/logs/bulk-delete", "post">;
 type BulkDeleteLogsOut = OutputOf<"/api/v3/logs/bulk-delete", "post">;
+type GetHealthCheckIn = InputOf<"/api/v3/logs/health", "get">;
+type GetHealthCheckOut = OutputOf<"/api/v3/logs/health", "get">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getLogsList = cache(async (input: LogsListIn): Promise<LogsListOut> => {
@@ -43,6 +45,11 @@ export async function bulkDeleteLogs(
   return out;
 }
 
+export async function getHealthCheck(): Promise<GetHealthCheckOut> {
+  "use server";
+  return api.get("/logs/health", undefined);
+}
+
 export const metadata: Metadata = {
   title: "System",
   description: `Manage system in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -59,10 +66,20 @@ export default async function SystemPage() {
 
   return (
     <div className="space-y-6">
-      <Logs listData={listData} bulkDeleteLogsAction={bulkDeleteLogs} />
+      <Logs
+        listData={listData}
+        bulkDeleteLogsAction={bulkDeleteLogs}
+        getHealthCheckAction={getHealthCheck}
+      />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { BulkDeleteLogsIn, BulkDeleteLogsOut, LogsListOut };
+export type {
+  BulkDeleteLogsIn,
+  BulkDeleteLogsOut,
+  GetHealthCheckIn,
+  GetHealthCheckOut,
+  LogsListOut,
+};

@@ -71,8 +71,6 @@ export default function DocumentViewer({
         setLoading(true);
         setError(null);
 
-        const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-
         // Call the API route directly or use blob URL for form documents
         let response;
         if (isFormDocument && document.file_path?.startsWith("blob:")) {
@@ -80,11 +78,11 @@ export default function DocumentViewer({
           response = await fetch(document.file_path);
         } else {
           response = await fetch(
-            `${appPrefix}/api/v2/documents/download/${document.document_id}`,
+            `/api/documents/download/${document.document_id}`,
             {
               method: "GET",
               credentials: "include",
-            },
+            }
           );
         }
 

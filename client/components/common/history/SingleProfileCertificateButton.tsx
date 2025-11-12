@@ -57,7 +57,7 @@ export function SingleProfileCertificateButton<TData>({
       const finalCohortData: CohortData[] = cohortData;
 
       // Call the certificate generation API
-      const response = await fetch("/api/v2/documents/certificate", {
+      const response = await fetch("/api/documents/certificate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

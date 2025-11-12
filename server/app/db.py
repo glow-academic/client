@@ -26,7 +26,7 @@ async def init_db_pool() -> None:
     """Initialize asyncpg connection pool."""
     global _pool, _test_container
 
-    env_value = os.getenv("ENV", "TEST")
+    env_value = os.getenv("ENV", "")
     env_name = env_value.upper()
 
     if env_name == "TEST":

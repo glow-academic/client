@@ -9282,33 +9282,80 @@
         ]
       }
     },
-    "/api/v3/documents/upload/init": {
+    "/api/v3/documents/upload": {
       "post": {
         "tags": [
           "v3",
           "documents"
         ],
-        "summary": "Upload Init",
-        "description": "Initialize a document upload.",
-        "operationId": "upload_init_api_v3_documents_upload_init_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UploadInitRequest"
-              }
-            }
-          },
-          "required": true
-        },
+        "summary": "Tus Creation",
+        "description": "Handle POST request for tus protocol - create upload.",
+        "operationId": "tus_creation_api_v3_documents_upload_post",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadInitResponse"
-                }
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      },
+      "options": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Tus Options",
+        "description": "Handle OPTIONS request for tus protocol discovery.",
+        "operationId": "tus_options_api_v3_documents_upload_options",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
+    "/api/v3/documents/upload/{upload_id}": {
+      "head": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Tus Head",
+        "description": "Handle HEAD request for tus protocol - get upload info.",
+        "operationId": "tus_head_api_v3_documents_upload__upload_id__head",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -9327,35 +9374,76 @@
           "v3",
           "documents"
         ]
-      }
-    },
-    "/api/v3/documents/upload/chunk": {
-      "post": {
+      },
+      "patch": {
         "tags": [
           "v3",
           "documents"
         ],
-        "summary": "Upload Chunk",
-        "description": "Upload a chunk of data.",
-        "operationId": "upload_chunk_api_v3_documents_upload_chunk_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UploadChunkRequest"
-              }
+        "summary": "Tus Patch",
+        "description": "Handle PATCH request for tus protocol - upload chunk.",
+        "operationId": "tus_patch_api_v3_documents_upload__upload_id__patch",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
             }
-          },
-          "required": true
-        },
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadChunkResponse"
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      },
+      "options": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Tus Options Upload Id",
+        "description": "Handle OPTIONS request for specific upload.",
+        "operationId": "tus_options_upload_id_api_v3_documents_upload__upload_id__options",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -20616,54 +20704,6 @@
         "title": "UpdateStaffResponse",
         "description": "Response from update staff."
       },
-      "UploadChunkRequest": {
-        "properties": {
-          "uploadId": {
-            "type": "string",
-            "title": "Uploadid"
-          },
-          "chunk": {
-            "type": "string",
-            "title": "Chunk"
-          },
-          "offset": {
-            "type": "integer",
-            "title": "Offset"
-          }
-        },
-        "type": "object",
-        "required": [
-          "uploadId",
-          "chunk",
-          "offset"
-        ],
-        "title": "UploadChunkRequest",
-        "description": "Request to upload a chunk."
-      },
-      "UploadChunkResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "offset": {
-            "type": "integer",
-            "title": "Offset"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "offset",
-          "message"
-        ],
-        "title": "UploadChunkResponse",
-        "description": "Response from upload chunk."
-      },
       "UploadFinalizeRequest": {
         "properties": {
           "uploadId": {
@@ -20857,59 +20897,6 @@
         ],
         "title": "UploadFinalizeResponse",
         "description": "Response from finalize upload."
-      },
-      "UploadInitRequest": {
-        "properties": {
-          "filename": {
-            "type": "string",
-            "title": "Filename"
-          },
-          "contentType": {
-            "type": "string",
-            "title": "Contenttype"
-          },
-          "uploadLength": {
-            "type": "integer",
-            "title": "Uploadlength"
-          }
-        },
-        "type": "object",
-        "required": [
-          "filename",
-          "contentType",
-          "uploadLength"
-        ],
-        "title": "UploadInitRequest",
-        "description": "Request to initialize document upload."
-      },
-      "UploadInitResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "uploadId": {
-            "type": "string",
-            "title": "Uploadid"
-          },
-          "location": {
-            "type": "string",
-            "title": "Location"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "uploadId",
-          "location",
-          "message"
-        ],
-        "title": "UploadInitResponse",
-        "description": "Response from upload init."
       },
       "ValidationError": {
         "properties": {

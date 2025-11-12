@@ -119,12 +119,12 @@ test-cov: check-venv
 
 test-e2e: check-venv
 	@echo "Running E2E tests (headless)..."
-	@$(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q
+	@ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q
 	@echo "✅ E2E tests complete"
 
 test-e2e-headed: check-venv
 	@echo "Running E2E tests (headed)..."
-	@E2E_HEADED=1 $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q --headed
+	@ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q --headed
 	@echo "✅ E2E tests complete"
 # Run client typecheck
 typecheck-client:

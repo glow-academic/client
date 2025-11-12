@@ -6,6 +6,7 @@
  */
 "use client";
 
+import type { GetHealthCheckOut } from "@/app/(main)/system/logs/page";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -53,11 +54,18 @@ type HealthCheckItem = {
   error?: string | null;
 };
 
+type HealthResponse = {
+  status: "healthy" | "degraded" | "unhealthy";
+  checks: HealthCheckItem[];
+  timestamp: string;
+  overall_response_time: number;
+};
+
 interface HealthCheck {
   id: string;
   name: string;
   description: string;
-  status: "healthy" | "unhealthy" | "loading" | "warning";
+  status: "healthy" | "unhealthy" | "loading" | "warning" | "n/a";
   responseTime?: number | undefined;
   error?: string | undefined;
   lastChecked?: Date | undefined;
@@ -67,9 +75,14 @@ interface HealthCheck {
 interface HealthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  getHealthCheckAction: () => Promise<GetHealthCheckOut>;
 }
 
-export function HealthModal({ open, onOpenChange }: HealthModalProps) {
+export function HealthModal({
+  open,
+  onOpenChange,
+  getHealthCheckAction,
+}: HealthModalProps) {
   const { isConnected } = useWebSocket();
   const { effectiveProfile } = useProfile();
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([]);
@@ -158,8 +171,8 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
               lastChecked: new Date(),
               responseTime: isConnected ? 0 : undefined,
             }
-          : check,
-      ),
+          : check
+      )
     );
   }, [isConnected]);
 
@@ -177,26 +190,20 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
               lastChecked: new Date(),
               responseTime: 0,
             }
-          : check,
-      ),
+          : check
+      )
     );
   }, [effectiveProfile]);
 
   const runAllHealthChecks = useCallback(async () => {
     try {
-      const response = await fetch("/api/v2/logs/health");
-
-      if (!response.ok) {
-        throw new Error(`Health endpoint returned ${response.status}`);
-      }
-
-      const healthData = await response.json();
+      const healthData = (await getHealthCheckAction()) as HealthResponse;
 
       // Map server health checks to UI state
       setHealthChecks((prev) =>
         prev.map((check) => {
           const serverCheck = healthData.checks.find(
-            (c: HealthCheckItem) => c.id === check.id,
+            (c: HealthCheckItem) => c.id === check.id
           );
           if (serverCheck) {
             return {
@@ -208,28 +215,28 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
             };
           }
           return check;
-        }),
+        })
       );
 
       // Show toast with results
       const healthyCount = healthData.checks.filter(
-        (c: HealthCheckItem) => c.status === "healthy",
+        (c: HealthCheckItem) => c.status === "healthy"
       ).length;
       const totalCount = healthData.checks.length;
 
       if (healthyCount === totalCount) {
         toast.success(
-          `All health checks passed! (${healthyCount}/${totalCount})`,
+          `All health checks passed! (${healthyCount}/${totalCount})`
         );
       } else {
         toast.error(
-          `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`,
+          `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`
         );
       }
     } catch {
       toast.error("Failed to run health checks");
     }
-  }, []);
+  }, [getHealthCheckAction]);
 
   // Run health checks when modal opens
   useEffect(() => {
