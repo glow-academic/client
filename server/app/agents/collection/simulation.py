@@ -3,11 +3,8 @@ import uuid
 from collections.abc import AsyncGenerator
 
 import asyncpg  # type: ignore
-from agents import Runner, trace
+from agents import Runner, gen_trace_id, trace
 from agents.items import TResponseInputItem
-from fastapi import Depends
-from openai.types.responses import ResponseTextDeltaEvent
-
 from app.agents.collection.guardrail import get_output_guardrails
 from app.agents.generic import GenericAgent
 from app.db import get_db
@@ -15,6 +12,8 @@ from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document import format_document_info
+from fastapi import Depends
+from openai.types.responses import ResponseTextDeltaEvent
 
 
 async def run_simulation_agent(
@@ -145,12 +144,8 @@ async def _handle_simulation_chat(
         )
 
     # Store the result in active runs for potential cancellation using unified tracking
-    from app.main import (
-        remove_active_result,
-        store_active_events,
-        store_active_result,
-        store_active_run,
-    )
+    from app.main import (remove_active_result, store_active_events,
+                          store_active_result, store_active_run)
 
     chat_id_str = str(chat_id)
     await store_active_run(chat_id_str, result)

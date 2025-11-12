@@ -11,6 +11,7 @@ import uuid
 from typing import Any
 
 import socketio  # type: ignore
+from agents import gen_trace_id
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from app.agents.collection.hint import run_hint_agent
 from app.agents.collection.simulation import (cancel_simulation_run,
@@ -83,6 +84,9 @@ async def handle_start_simulation(sid: str, data: dict[str, Any]) -> None:
             # Note: infinite_time_limit parameter removed - time limits now managed via
             # simulation_time_limits junction table. Use infinite_mode boolean to bypass limits.
 
+            # Generate trace_id using Python's gen_trace_id() for consistency
+            trace_id = gen_trace_id()
+
             # Create attempt and chat using SQL
             sql = load_sql("sql/v3/simulations/start_simulation_attempt_complete.sql")
             row = await conn.fetchrow(
@@ -91,6 +95,7 @@ async def handle_start_simulation(sid: str, data: dict[str, Any]) -> None:
                 infinite,
                 profile_id if profile_id else None,
                 scenario_id_override if scenario_id_override else None,
+                trace_id,
             )
             
             if not row:
@@ -440,24 +445,24 @@ async def _randomly_fill_scenario_attributes_sql(
     # Step 8: Random document selection if documents still don't exist
     scenario_documents: list[uuid_module.UUID] = []
     if not existing_doc_ids:
-        # First, get parameter items for this scenario
-        scenario_parameter_item_ids = existing_param_ids.copy() if existing_param_ids else []
+        # First, get parameter items for this scenario (for document matching)
+        doc_matching_param_item_ids = existing_param_ids.copy() if existing_param_ids else []
         
         # If no parameter items, randomly select one per active parameter
-        if not scenario_parameter_item_ids and active_parameters:
+        if not doc_matching_param_item_ids and active_parameters:
             for param in active_parameters:
                 param_items = parameter_items_by_param_id.get(param["id"], [])
                 if param_items:
                     selected_item = random.choice(param_items)
-                    scenario_parameter_item_ids.append(selected_item["id"])
+                    doc_matching_param_item_ids.append(selected_item["id"])
         
         # Try to find documents that match parameter items via document_parameter_items junction
         matching_documents = []
-        if scenario_parameter_item_ids:
+        if doc_matching_param_item_ids:
             matching_documents = [
                 documents_by_id[j["document_id"]]
                 for j in document_parameter_items_junction
-                if j["parameter_item_id"] in scenario_parameter_item_ids
+                if j["parameter_item_id"] in doc_matching_param_item_ids
                 and j["document_id"] in documents_by_id
             ]
             logger.info(f"Found {len(matching_documents)} documents matching parameter items")
@@ -480,7 +485,7 @@ async def _randomly_fill_scenario_attributes_sql(
         logger.info(f"Scenario already has {len(existing_doc_ids)} documents, keeping them")
     
     # Step 9: Random parameter item selection if no parameters linked via junction
-    scenario_parameter_item_ids: list[uuid_module.UUID] = []
+    scenario_parameter_item_ids = []
     if not existing_param_ids:
         if active_parameters:
             # For each active parameter, randomly select one parameter item
@@ -1181,9 +1186,9 @@ async def process_simulation_message_websocket(
                     # Re-raise other exceptions
                     raise e
 
-            # 6. Mark as completed
+            # 6. Mark as completed and ensure final content is persisted
             sql = load_sql("sql/v3/simulations/complete_message.sql")
-            await conn.execute(sql, None, str(assistant_message["id"]))
+            await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
 
             # 7. Emit completion signal (only if not cancelled)
             if not cancelled:

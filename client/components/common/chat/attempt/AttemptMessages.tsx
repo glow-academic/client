@@ -63,20 +63,43 @@ export default function AttemptMessages({
   // State to track if report dialog is open
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
+  // State to track streaming content for messages (messageId -> accumulatedContent)
+  const [streamingContent, setStreamingContent] = useState<Map<string, string>>(
+    new Map()
+  );
+
   // Get messages from context for the specific chat (not just currentMessages)
+  // Merge with streaming content for real-time updates
   const messages = useMemo(() => {
     if (!targetChatId || !simulationContext?.attemptData?.chats) return [];
     const chatData = simulationContext.attemptData.chats.find(
-      (c) => c.chat.id === targetChatId,
+      (c) => c.chat.id === targetChatId
     );
-    return chatData?.messages || [];
-  }, [targetChatId, simulationContext?.attemptData]);
+    const baseMessages = chatData?.messages || [];
+
+    // Merge streaming content with SSR messages
+    // Only use streaming content if message is not completed (still streaming)
+    // or if streaming content is more recent than SSR content
+    return baseMessages.map((msg) => {
+      const streaming = streamingContent.get(msg.id);
+      if (
+        streaming !== undefined &&
+        (!msg.completed || streaming.length > msg.content.length)
+      ) {
+        return {
+          ...msg,
+          content: streaming,
+        };
+      }
+      return msg;
+    });
+  }, [targetChatId, simulationContext?.attemptData, streamingContent]);
 
   // Group messages by conversation turns (user message + all its responses)
   const groupedMessages = useMemo(() => {
     const sortedMessages = messages.sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     const groups: Array<{
@@ -134,7 +157,7 @@ export default function AttemptMessages({
 
   const handleResponseNavigation = (
     groupId: string,
-    direction: "prev" | "next",
+    direction: "prev" | "next"
   ) => {
     const group = groupedMessages.find((g) => g.groupId === groupId);
     if (!group || group.responses.length <= 1) return;
@@ -182,7 +205,7 @@ export default function AttemptMessages({
           chatId: targetChatId,
           isTourMessage: false,
         },
-      }),
+      })
     );
     simulationContext?.sendMessage(prompt);
   };
@@ -191,7 +214,7 @@ export default function AttemptMessages({
     // Find the previous user message to retry with
     const sortedMessages = messages.sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     // Find the previous user message (query type) that came before this error
@@ -205,7 +228,7 @@ export default function AttemptMessages({
       const errorMessage = sortedMessages[errorMessageIndex];
       if (errorMessage) {
         const group = groupedMessages.find((g) =>
-          g.responses.some((r) => r.id === errorMessage.id),
+          g.responses.some((r) => r.id === errorMessage.id)
         );
 
         if (group) {
@@ -225,7 +248,7 @@ export default function AttemptMessages({
             chatId: targetChatId,
             isTourMessage: false,
           },
-        }),
+        })
       );
       simulationContext?.sendMessage(previousUserMessage.content, true);
     }
@@ -235,7 +258,7 @@ export default function AttemptMessages({
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
       const viewport = scrollArea.querySelector(
-        "[data-radix-scroll-area-viewport]",
+        "[data-radix-scroll-area-viewport]"
       ) as HTMLElement;
       if (viewport)
         viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
@@ -255,7 +278,7 @@ export default function AttemptMessages({
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
     const viewport = scrollArea.querySelector(
-      "[data-radix-scroll-area-viewport]",
+      "[data-radix-scroll-area-viewport]"
     ) as HTMLElement;
     if (!viewport) return;
     const handleScrollEvent = () => {
@@ -268,6 +291,89 @@ export default function AttemptMessages({
     viewport.addEventListener("scroll", handleScrollEvent);
     return () => viewport.removeEventListener("scroll", handleScrollEvent);
   }, [messages.length, messages]);
+
+  // Clear streaming content when chat changes
+  useEffect(() => {
+    setStreamingContent(new Map());
+  }, [targetChatId]);
+
+  // Clear streaming content for completed messages when SSR data refreshes
+  useEffect(() => {
+    if (!simulationContext?.attemptData?.chats) return;
+    const chatData = simulationContext.attemptData.chats.find(
+      (c) => c.chat.id === targetChatId
+    );
+    if (!chatData) return;
+
+    // Clear streaming content for messages that are completed in SSR data
+    setStreamingContent((prev) => {
+      const newMap = new Map(prev);
+      let changed = false;
+      chatData.messages.forEach((msg) => {
+        if (msg.completed && newMap.has(msg.id)) {
+          // Only clear if SSR content matches or is longer (SSR has final content)
+          const streaming = newMap.get(msg.id);
+          if (streaming && msg.content.length >= streaming.length) {
+            newMap.delete(msg.id);
+            changed = true;
+          }
+        }
+      });
+      return changed ? newMap : prev;
+    });
+  }, [targetChatId, simulationContext?.attemptData]);
+
+  // Listen for streaming token events to update message content in real-time
+  useEffect(() => {
+    const handleSimulationMessageToken = (event: CustomEvent) => {
+      const { messageId, chatId, accumulatedContent } = event.detail;
+
+      // Only update if this token is for the current chat
+      if (chatId === targetChatId && accumulatedContent !== undefined) {
+        setStreamingContent((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(messageId, accumulatedContent);
+          return newMap;
+        });
+      }
+    };
+
+    // Listen for message completion - keep streaming content until SSR refresh completes
+    // The streaming content will be cleared when SSR data is refreshed and has the final content
+    const handleSimulationMessageComplete = (event: CustomEvent) => {
+      const { messageId, chatId, finalContent } = event.detail;
+
+      if (chatId === targetChatId && finalContent !== undefined) {
+        // Update streaming content with final content to prevent flicker
+        // This will be cleared when SSR data refreshes
+        setStreamingContent((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(messageId, finalContent);
+          return newMap;
+        });
+      }
+    };
+
+    window.addEventListener(
+      "simulationMessageToken",
+      handleSimulationMessageToken as EventListener
+    );
+    window.addEventListener(
+      "simulationMessageComplete",
+      handleSimulationMessageComplete as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "simulationMessageToken",
+        handleSimulationMessageToken as EventListener
+      );
+      window.removeEventListener(
+        "simulationMessageComplete",
+        handleSimulationMessageComplete as EventListener
+      );
+    };
+  }, [targetChatId]);
 
   return (
     <div className="flex-1 flex flex-col p-0 min-h-0 relative">
@@ -320,7 +426,7 @@ export default function AttemptMessages({
                         <div className="max-w-[80%] relative group p-2 -m-2">
                           {(() => {
                             const currentResponse = getCurrentResponse(
-                              group.groupId,
+                              group.groupId
                             );
                             if (!currentResponse) return null;
 
@@ -344,7 +450,7 @@ export default function AttemptMessages({
                                   </div>
                                 ) : currentResponse.completed &&
                                   currentResponse.content.startsWith(
-                                    "Error:",
+                                    "Error:"
                                   ) ? (
                                   // Show error messages in red with retry button (only if no successful responses exist)
                                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
@@ -360,8 +466,8 @@ export default function AttemptMessages({
                                           (response) =>
                                             response.completed &&
                                             !response.content.startsWith(
-                                              "Error:",
-                                            ),
+                                              "Error:"
+                                            )
                                         );
 
                                       return (
@@ -403,8 +509,8 @@ export default function AttemptMessages({
                                                   onClick={() =>
                                                     handleRetry(
                                                       messages.indexOf(
-                                                        currentResponse,
-                                                      ),
+                                                        currentResponse
+                                                      )
                                                     )
                                                   }
                                                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
@@ -452,7 +558,7 @@ export default function AttemptMessages({
                                         onClick={() =>
                                           handleResponseNavigation(
                                             group.groupId,
-                                            "prev",
+                                            "prev"
                                           )
                                         }
                                         disabled={
@@ -474,7 +580,7 @@ export default function AttemptMessages({
                                         onClick={() =>
                                           handleResponseNavigation(
                                             group.groupId,
-                                            "next",
+                                            "next"
                                           )
                                         }
                                         disabled={

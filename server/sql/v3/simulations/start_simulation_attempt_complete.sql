@@ -1,5 +1,5 @@
 -- Start simulation attempt: create attempt, link profile, select scenario, create chat
--- Parameters: $1=simulation_id (uuid), $2=infinite_mode (boolean), $3=profile_id (uuid, nullable), $4=scenario_id_override (uuid, nullable)
+-- Parameters: $1=simulation_id (uuid), $2=infinite_mode (boolean), $3=profile_id (uuid, nullable), $4=scenario_id_override (uuid, nullable), $5=trace_id (text)
 -- Returns: attempt_id, chat_id, chat_title, scenario_id, scenario_name, problem_statement, needs_generation, simulation_data (jsonb), scenario_metadata (jsonb)
 WITH 
 -- Create the attempt first
@@ -140,7 +140,7 @@ new_chat AS (
         COALESCE(sfd.scenario_name, 'New Simulation'),
         sfd.scenario_id,
         false,
-        gen_random_uuid(),
+        $5::text,
         now()
     FROM new_attempt na
     CROSS JOIN scenario_full_data sfd

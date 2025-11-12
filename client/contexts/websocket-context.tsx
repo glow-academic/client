@@ -175,7 +175,19 @@ export function WebSocketProvider({
           );
         }
 
-        // Window event dispatched - simulation-context will handle refresh via router.refresh()
+        // Dispatch simulationNewMessage event to trigger SSR data refresh
+        window.dispatchEvent(
+          new CustomEvent("simulationNewMessage", {
+            detail: {
+              messageId: data.message_id,
+              chatId: data.chat_id,
+              role: data.role,
+              content: data.content,
+              completed: data.completed,
+              createdAt: data.created_at,
+            },
+          }),
+        );
       },
     );
 
