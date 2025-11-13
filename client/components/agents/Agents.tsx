@@ -264,11 +264,11 @@ export default function Agents({
       <CardHeader>
         <div className="flex justify-between items-start">
           <div className="space-y-2 flex-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-base">
-                {agent.name || "Unnamed Agent"}
-              </CardTitle>
-              <div className="flex gap-1">
+            <CardTitle className="text-base">
+              {agent.name || "Unnamed Agent"}
+            </CardTitle>
+            <div className="mt-1 space-y-2">
+              <div className="flex items-center gap-2">
                 {agent.reasoning && (
                   <Badge variant="outline" className="text-xs">
                     <Brain className="h-3 w-3 mr-1" />

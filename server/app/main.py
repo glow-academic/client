@@ -34,10 +34,14 @@ load_dotenv()
 # MCP server instance for tool registration
 server = FastMCP("Domain-API", stateless_http=True)
 
-# Configure logging first
+# Configure logging first - compact format to reduce whitespace
+# Use basicConfig with force=True to override uvicorn's default logging (Python 3.8+)
+# This ensures compact format is applied before uvicorn sets up its loggers
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    force=True,  # Override any existing configuration
 )
 logger = logging.getLogger(__name__)
 
@@ -562,6 +566,20 @@ def get_socketio_instance() -> socketio.AsyncServer:
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
+        # Configure uvicorn loggers to use compact format (after uvicorn has initialized)
+        compact_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        for logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access"]:
+            uvicorn_logger = logging.getLogger(logger_name)
+            uvicorn_logger.propagate = False  # Prevent double logging
+            # Update existing handlers or add new one
+            if uvicorn_logger.handlers:
+                for handler in uvicorn_logger.handlers:
+                    handler.setFormatter(compact_formatter)
+            else:
+                handler = logging.StreamHandler()
+                handler.setFormatter(compact_formatter)
+                uvicorn_logger.addHandler(handler)
+        
         # Initialize Redis client for socket ownership management
         await init_redis_client()
 

@@ -244,13 +244,21 @@ export default function SystemAgent({
 
   useEffect(() => {
     if (isEditMode && agentDetail) {
+      // Ensure modelId is set - use agent's model_id or first valid model
+      const defaultModelId =
+        agentDetail.model_id ||
+        (agentDetail.valid_model_ids &&
+        agentDetail.valid_model_ids.length > 0
+          ? agentDetail.valid_model_ids[0]
+          : "");
+      
       setFormData({
         name: agentDetail.name,
         description: agentDetail.description,
         systemPrompt: agentDetail.system_prompt,
         promptId: agentDetail.prompt_id || null,
         temperature: agentDetail.temperature,
-        modelId: agentDetail.model_id || "",
+        modelId: defaultModelId,
         reasoning:
           (agentDetail.reasoning as
             | "minimal"
@@ -264,11 +272,19 @@ export default function SystemAgent({
       });
     } else if (!isEditMode && agentDetailDefault) {
       // For create mode, use defaults from API response
+      // Ensure modelId is set - use default from API or first valid model
+      const defaultModelId =
+        agentDetailDefault.model_id ||
+        (agentDetailDefault.valid_model_ids &&
+        agentDetailDefault.valid_model_ids.length > 0
+          ? agentDetailDefault.valid_model_ids[0]
+          : "");
+      
       setFormData({
         ...initialFormData,
         temperature:
           agentDetailDefault.temperature ?? initialFormData.temperature ?? 0.7,
-        modelId: agentDetailDefault.model_id || initialFormData.modelId || "",
+        modelId: defaultModelId,
         systemPrompt:
           agentDetailDefault.system_prompt ||
           initialFormData.systemPrompt ||
@@ -427,7 +443,7 @@ export default function SystemAgent({
           prompt_id: formData.promptId || null,
           system_prompt: formData.systemPrompt!,
           temperature: Number(formData.temperature),
-          model_id: formData.modelId!,
+          model_id: formData.modelId!.trim(),
           reasoning:
             formData.reasoning && formData.reasoning !== "none"
               ? formData.reasoning
@@ -456,7 +472,7 @@ export default function SystemAgent({
           prompt_id: formData.promptId || null,
           system_prompt: formData.systemPrompt!,
           temperature: Number(formData.temperature),
-          model_id: formData.modelId!,
+          model_id: formData.modelId!.trim(),
           reasoning:
             formData.reasoning && formData.reasoning !== "none"
               ? formData.reasoning
@@ -601,8 +617,8 @@ export default function SystemAgent({
                 {formData?.modelId !== undefined ? (
                   <>
                     <ModelPicker
-                      mapping={agentDetail?.model_mapping || {}}
-                      validIds={agentDetail?.valid_model_ids || []}
+                      mapping={agentData?.model_mapping || {}}
+                      validIds={agentData?.valid_model_ids || []}
                       selectedIds={formData?.modelId ? [formData.modelId] : []}
                       onSelect={(ids) =>
                         handleInputChange("modelId", ids[0] || "")

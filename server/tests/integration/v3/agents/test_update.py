@@ -229,3 +229,43 @@ async def test_update_agent_not_found(
     # The update might fail when trying to create prompt for non-existent agent
     assert response.status_code in [200, 500]
 
+
+async def test_update_agent_empty_model_id(
+    client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test updating an agent with empty model_id should return proper error."""
+    profile_id = await get_superadmin_alias(db)
+
+    # Create an agent first
+    model_id = await db.fetchval(
+        "SELECT id FROM models WHERE active = true LIMIT 1"
+    )
+    agent_id = await db.fetchval(
+        "INSERT INTO agents(name, description, temperature, model_id, reasoning, active, role) "
+        "SELECT 'Test Agent', 'Test', 0.5, id, 'low', true, 'assistant' "
+        "FROM models WHERE active = true LIMIT 1 RETURNING id"
+    )
+
+    response = await client.post(
+        "/api/v3/agents/update",
+        json={
+            "agentId": str(agent_id),
+            "name": "Updated Name",
+            "description": "Updated Description",
+            "system_prompt": "Updated prompt",
+            "temperature": 0.9,
+            "model_id": "",  # Empty string should be rejected
+            "reasoning": "high",
+            "active": False,
+            "role": "assistant",
+            "department_ids": None,
+            "prompt_id": None,
+            "department_id": None,
+        },
+    )
+
+    # Should return 400 for invalid model_id, not 500
+    assert response.status_code == 400
+    error_detail = response.json().get("detail", "")
+    assert "model_id" in error_detail.lower() or "required" in error_detail.lower()
+

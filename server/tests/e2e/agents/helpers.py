@@ -183,12 +183,17 @@ def create_agent_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
+    # Get default model_id - use first valid_model_id if model_id is empty
+    default_model_id = defaults.get("model_id") or ""
+    if not default_model_id and defaults.get("valid_model_ids"):
+        default_model_id = defaults["valid_model_ids"][0]
+    
     payload = {
         "name": name,
         "description": description,
         "system_prompt": system_prompt,
         "department_ids": department_ids,
-        "model_id": model_id or defaults.get("model_id"),
+        "model_id": model_id or default_model_id,
         "role": role or defaults.get("role") or "assistant",
         "reasoning": reasoning or defaults.get("reasoning"),
         "temperature": float(

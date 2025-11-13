@@ -67,28 +67,8 @@ def create_agent_via_ui(
     """Create an agent through the UI and return (name, agent_id)."""
     agent_name = name or generate_unique_agent_name("UI Agent")
 
-    # Navigate to agents list first, then we'll need to find/create page
-    # For now, assume we can navigate directly to create/edit page
-    # Note: Agents may not have a separate /new route, might need to check
-    page.goto(f"{base_url}/management/agents")
+    page.goto(f"{base_url}/management/agents/new")
     page.wait_for_load_state("networkidle")
-
-    # Check if there's a create button or if we navigate directly
-    # For agents, we might need to navigate to a specific agentId route or use a create button
-    # Let's assume we can create by navigating to a new agent route or using a button
-    # Since agents might not have /new, we'll try to find a create button or navigate directly
-    
-    # Try to find create button first
-    create_button = page.get_by_role("button", name=re.compile(r"create|new", re.I))
-    if create_button.count() > 0:
-        create_button.first.click()
-        page.wait_for_load_state("networkidle")
-    else:
-        # If no create button, agents might use a different pattern
-        # For now, we'll assume we can navigate to edit page with no agentId
-        # This might need adjustment based on actual routing
-        page.goto(f"{base_url}/management/agents/a/new")
-        page.wait_for_load_state("networkidle")
 
     name_input = page.get_by_test_id("input-agent-name")
     name_input.wait_for(state="visible", timeout=15000)

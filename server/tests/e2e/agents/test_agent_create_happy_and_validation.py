@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -49,21 +47,8 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_agent_create_validation_and_success(page: Page, base_url: str) -> None:
     """Validate required fields and create an agent successfully."""
-    # Navigate to agents list first to find/create button or navigate to create page
-    page.goto(f"{base_url}/management/agents")
+    page.goto(f"{base_url}/management/agents/new")
     page.wait_for_load_state("networkidle")
-
-    # Try to find create button or navigate to create route
-    # Note: Agents might not have a separate /new route - may need to check actual routing
-    create_button = page.get_by_role("button", name=re.compile(r"create|new", re.I))
-    if create_button.count() > 0:
-        create_button.first.click()
-        page.wait_for_load_state("networkidle")
-    else:
-        # If no create button, try navigating to edit page with no agentId
-        # This might need adjustment based on actual routing
-        page.goto(f"{base_url}/management/agents/a/new")
-        page.wait_for_load_state("networkidle")
 
     name_input = page.get_by_test_id("input-agent-name")
     name_input.wait_for(state="visible", timeout=20000)

@@ -1,5 +1,6 @@
 """Agent create endpoint."""
 
+import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
@@ -41,6 +42,21 @@ async def create_agent(
 ) -> CreateAgentResponse:
     """Create a new agent."""
     tags = ["agents"]  # From router tags
+    
+    # Validate model_id is not empty and is a valid UUID
+    if not request.model_id or not request.model_id.strip():
+        raise HTTPException(
+            status_code=400, detail="model_id is required and cannot be empty"
+        )
+    
+    # Validate model_id is a valid UUID format
+    try:
+        uuid.UUID(request.model_id.strip())
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=400,
+            detail=f"model_id must be a valid UUID, got: {request.model_id!r}",
+        )
     
     try:
         async with conn.transaction():

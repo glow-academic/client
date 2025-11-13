@@ -264,6 +264,8 @@ function ModelItem<T extends MappingItem>({
       key={model.id}
       onSelect={onSelect}
       ref={ref}
+      data-testid="model-option"
+      data-model-id={model.id}
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
       <div className="flex items-center justify-between w-full">

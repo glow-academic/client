@@ -115,8 +115,11 @@ def test_agent_edit_update_prompt_branching(page: Page, base_url: str) -> None:
         model_picker = page.get_by_test_id("picker-model")
         if model_picker.count() > 0:
             model_picker.click()
-            model_option = page.get_by_role("option").nth(1)
+            # Wait for options to appear, then select first model option (skip "Clear Selection" if present)
+            page.wait_for_selector("[data-testid='model-option']", timeout=5000)
+            model_option = page.get_by_test_id("model-option").first
             if model_option.count() > 0:
+                model_option.wait_for(state="visible", timeout=5000)
                 model_option.click()
 
         # Update role if picker exists
