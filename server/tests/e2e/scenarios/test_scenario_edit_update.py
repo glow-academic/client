@@ -35,16 +35,19 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
         grid = page.get_by_test_id("scenarios-grid")
         grid.wait_for(state="visible", timeout=15000)
 
-        # Search for scenario
+        # Search for scenario - wait for search to filter results
         search_input = page.get_by_test_id("scenarios-search")
         search_input.wait_for(state="visible", timeout=10000)
         search_input.fill(scenario_name)
+        
+        # Wait for search to filter - check that cards are filtered
         page.wait_for_timeout(500)
-
+        # Wait for the specific scenario card to appear in filtered results
         scenario_card = page.locator(
             f"[data-testid='scenario-card'][data-scenario-id='{scenario_id}']"
         )
-        expect(scenario_card).to_be_visible(timeout=10000)
+        scenario_card.wait_for(state="visible", timeout=10000)
+        expect(scenario_card).to_be_visible()
 
         # Click edit button
         edit_button = scenario_card.get_by_test_id("btn-edit-scenario")

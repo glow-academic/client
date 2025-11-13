@@ -118,13 +118,23 @@ test-cov: check-venv
 	@echo "✅ Coverage report generated"
 
 test-e2e: check-venv
-	@echo "Running E2E tests (headless)..."
-	@ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q
+	@if [ -n "$(ARGS)" ]; then \
+		echo "Running E2E tests (headless) on: $(ARGS)"; \
+		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest $(ARGS) -m e2e -q; \
+	else \
+		echo "Running E2E tests (headless)..."; \
+		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q; \
+	fi
 	@echo "✅ E2E tests complete"
 
 test-e2e-headed: check-venv
-	@echo "Running E2E tests (headed)..."
-	@ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q --headed
+	@if [ -n "$(ARGS)" ]; then \
+		echo "Running E2E tests (headed) on: $(ARGS)"; \
+		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest $(ARGS) -m e2e -q --headed; \
+	else \
+		echo "Running E2E tests (headed)..."; \
+		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q --headed; \
+	fi
 	@echo "✅ E2E tests complete"
 # Run client typecheck
 typecheck-client:

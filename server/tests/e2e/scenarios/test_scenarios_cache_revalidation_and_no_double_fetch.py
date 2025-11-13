@@ -118,16 +118,21 @@ def test_scenarios_cache_revalidation_and_no_double_fetch(page: Page, base_url: 
         # Fallback: just wait a bit if toast doesn't appear
         page.wait_for_timeout(1000)
     
-    # Wait for router refresh to complete - reload the page to ensure we get fresh data
-    page.reload()
+    # Wait for router.refresh() to complete - wait for network idle after the mutation
     page.wait_for_load_state("networkidle")
     
-    # Wait for grid to be visible
+    # Wait for grid to be visible and retry getting IDs in case refresh is still in progress
     grid = page.get_by_test_id("scenarios-grid")
     grid.wait_for(state="visible", timeout=10000)
     
-    # Get IDs after refresh
+    # Retry getting IDs a few times in case refresh is still in progress
     ids_after_duplicate = _collect_scenario_ids(page)
+    retries = 0
+    while not (ids_after_duplicate - existing_ids) and retries < 5:
+        page.wait_for_timeout(500)
+        ids_after_duplicate = _collect_scenario_ids(page)
+        retries += 1
+    
     new_ids = ids_after_duplicate - existing_ids
     assert new_ids, "Duplicate scenario card did not appear in UI"
     copy_id = new_ids.pop()

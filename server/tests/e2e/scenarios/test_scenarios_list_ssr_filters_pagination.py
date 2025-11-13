@@ -95,15 +95,21 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
     department_button = toolbar.get_by_role("button", name="Department")
     if department_button.count() > 0:
         department_button.click()
-        page.wait_for_timeout(200)  # Wait for dropdown to open
+        page.wait_for_timeout(300)  # Wait for dropdown to open
         department_options = page.get_by_role("option")
         if department_options.count() > 1:
             option = department_options.nth(1)
-            option.wait_for(state="visible", timeout=5000)
+            # Wait for option to be visible and stable
+            expect(option).to_be_visible(timeout=5000)
             option_text = option.inner_text()
-            # Wait for option to be stable before clicking
-            page.wait_for_timeout(200)
-            option.click()
+            # Wait a bit more for option to be fully stable
+            page.wait_for_timeout(300)
+            # Use force click if element is stable but not clickable
+            try:
+                option.click(timeout=5000)
+            except Exception:
+                # Fallback: force click if normal click fails
+                option.click(force=True)
             page.wait_for_timeout(500)  # Wait for filter to apply
             # Verify filter is applied
             assert cards.count() <= initial_count

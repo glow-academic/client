@@ -50,16 +50,21 @@ def test_scenario_duplicate_refreshes_list(page: Page, base_url: str) -> None:
         # Fallback: just wait a bit if toast doesn't appear
         page.wait_for_timeout(1000)
     
-    # Wait for router refresh to complete - reload the page to ensure we get fresh data
-    page.reload()
+    # Wait for router.refresh() to complete - wait for network idle after the mutation
     page.wait_for_load_state("networkidle")
     
-    # Wait for grid to be visible
+    # Wait for grid to be visible and retry getting IDs in case refresh is still in progress
     grid = page.get_by_test_id("scenarios-grid")
     grid.wait_for(state="visible", timeout=10000)
     
-    # Get new IDs after refresh
+    # Retry getting IDs a few times in case refresh is still in progress
     new_ids = _get_scenario_ids(page)
+    retries = 0
+    while not (new_ids - existing_ids) and retries < 5:
+        page.wait_for_timeout(500)
+        new_ids = _get_scenario_ids(page)
+        retries += 1
+    
     diff_ids = new_ids - existing_ids
     assert diff_ids, "Duplicate scenario ID not found in UI"
     new_scenario_id = diff_ids.pop()
