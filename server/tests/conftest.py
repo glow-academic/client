@@ -27,14 +27,24 @@ server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
 from app.db import (close_db_pool, get_pool,  # type: ignore[import]
-                    init_db_pool)
+                    get_test_db_url, init_db_pool)
+
+# Store the test database URL for direct connections
+_test_db_url: str | None = None
+
 
 # --- CORE TEST FIXTURES ---
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def initialize_test_db() -> AsyncGenerator[None, None]:
-    """Spin up disposable Postgres via init_db_pool and tear it down."""
+    """Spin up disposable Postgres via init_db_pool and tear it down.
+    
+    This initializes the test container and applies the schema.
+    Individual tests create their own connections to avoid event loop issues.
+    """
+    global _test_db_url
+    
     schema_file = Path(__file__).parent / "test-schema.sql"
 
     if not schema_file.exists():
@@ -44,10 +54,18 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
         )
 
     await init_db_pool()
+    
+    # Get the connection URL from the test container for direct connections
+    # This avoids event loop issues with the pool
+    _test_db_url = get_test_db_url()
+    if _test_db_url is None:
+        raise RuntimeError("Test database URL not available")
+    
     try:
         yield
     finally:
         await close_db_pool()
+        _test_db_url = None
 
 
 @pytest_asyncio.fixture
@@ -57,18 +75,38 @@ async def db() -> AsyncGenerator[asyncpg.Connection, None]:
     Each test gets:
     - Connection to database with schema already applied (session level)
     - Transaction that rolls back after test completes (test isolation)
+    
+    Creates connections directly instead of using the pool to avoid event loop issues.
     """
-    pool = get_pool()
-    if pool is None:
-        raise RuntimeError("Database pool not initialized. Did initialize_test_db run?")
+    global _test_db_url
+    
+    if _test_db_url is None:
+        raise RuntimeError("Test database URL not available. Did initialize_test_db run?")
+    
+    # Create connection directly (not from pool) to avoid event loop issues
+    conn = await asyncpg.connect(_test_db_url)
+    
+    tx = conn.transaction()
+    await tx.start()
+    try:
+        yield conn
+    finally:
+        await tx.rollback()  # Undo all test changes
+        await conn.close()
 
-    async with pool.acquire() as conn:
-        tx = conn.transaction()
-        await tx.start()
-        try:
-            yield conn
-        finally:
-            await tx.rollback()  # Undo all test changes
+
+@pytest.fixture
+def disable_cache() -> None:
+    """Disable caching in tests.
+    
+    This is a no-op fixture since the codebase uses manual caching
+    (get_cached/set_cached) rather than a decorator. Tests include this
+    fixture for consistency and in case caching behavior needs to be
+    disabled in the future.
+    """
+    # No-op: caching is done manually via get_cached/set_cached,
+    # not via a decorator, so there's nothing to disable
+    pass
 
 # --- OTHER CONFIG ---
 

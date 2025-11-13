@@ -158,3 +158,14 @@ async def transaction(
 def get_pool() -> asyncpg.Pool | None:
     """Get the global connection pool (for WebSocket handlers)."""
     return _pool
+
+
+def get_test_db_url() -> str | None:
+    """Get the test database connection URL (for test fixtures).
+    
+    Returns None if not in test mode or container not started.
+    """
+    if _test_container is None:
+        return None
+    raw_url = _test_container.get_connection_url()
+    return raw_url.replace("postgresql+psycopg2://", "postgresql://") # type: ignore
