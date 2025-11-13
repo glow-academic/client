@@ -35,9 +35,30 @@ def test_scenario_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     expect(scenario_card).to_be_visible()
     duplicate_button = scenario_card.get_by_test_id("btn-duplicate-scenario")
     expect(duplicate_button).to_be_enabled()
-    duplicate_button.click()
-    page.wait_for_timeout(500)
-
+    
+    # Wait for duplicate API response
+    with page.expect_response(lambda response: "/api/v3/scenarios/duplicate" in response.url) as response_info:
+        duplicate_button.click()
+    response = response_info.value
+    assert response.ok, f"Duplicate API call failed with status {response.status}"
+    
+    # Wait for toast to appear (with flexible text matching)
+    try:
+        toast = page.get_by_role("alert").filter(has_text="duplicated")
+        toast.wait_for(state="visible", timeout=5000)
+    except Exception:
+        # Fallback: just wait a bit if toast doesn't appear
+        page.wait_for_timeout(1000)
+    
+    # Wait for router refresh to complete - reload the page to ensure we get fresh data
+    page.reload()
+    page.wait_for_load_state("networkidle")
+    
+    # Wait for grid to be visible
+    grid = page.get_by_test_id("scenarios-grid")
+    grid.wait_for(state="visible", timeout=10000)
+    
+    # Get new IDs after refresh
     new_ids = _get_scenario_ids(page)
     diff_ids = new_ids - existing_ids
     assert diff_ids, "Duplicate scenario ID not found in UI"

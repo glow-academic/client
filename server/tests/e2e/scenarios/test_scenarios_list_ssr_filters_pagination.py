@@ -31,17 +31,23 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
     assert initial_count > 0
 
     first_card = cards.first
-    scenario_title = first_card.locator("h3, .font-medium").first.inner_text()
-    search_title = scenario_title.strip() if scenario_title else ""
+    # Get title from CardTitle (h3) element, avoiding badges
+    card_title = first_card.locator("h3").first
+    search_title = card_title.inner_text().strip() if card_title.count() > 0 else ""
 
     if not search_title:
-        # Fallback: get text from card
-        search_title = first_card.inner_text().splitlines()[0].strip()
+        # Fallback: get text from card, excluding badges
+        all_text = first_card.inner_text()
+        # Remove common badge text and get first meaningful line
+        lines = [line.strip() for line in all_text.splitlines() if line.strip() and line.strip() != "Inactive"]
+        search_title = lines[0] if lines else ""
+
+    assert search_title, "Could not extract scenario title for search test"
 
     search_input = page.get_by_test_id("scenarios-search")
     search_input.wait_for(state="visible", timeout=10000)
     search_input.fill(search_title)
-    page.wait_for_timeout(250)
+    page.wait_for_timeout(500)
     filtered_count = cards.count()
     assert filtered_count <= initial_count
     assert (
@@ -89,13 +95,16 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
     department_button = toolbar.get_by_role("button", name="Department")
     if department_button.count() > 0:
         department_button.click()
+        page.wait_for_timeout(200)  # Wait for dropdown to open
         department_options = page.get_by_role("option")
         if department_options.count() > 1:
             option = department_options.nth(1)
             option.wait_for(state="visible", timeout=5000)
             option_text = option.inner_text()
+            # Wait for option to be stable before clicking
+            page.wait_for_timeout(200)
             option.click()
-            page.wait_for_timeout(250)
+            page.wait_for_timeout(500)  # Wait for filter to apply
             # Verify filter is applied
             assert cards.count() <= initial_count
 

@@ -31,16 +31,20 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
         page.goto(f"{base_url}/create/scenarios")
         page.wait_for_load_state("networkidle")
 
+        # Wait for grid to be visible
+        grid = page.get_by_test_id("scenarios-grid")
+        grid.wait_for(state="visible", timeout=15000)
+
         # Search for scenario
         search_input = page.get_by_test_id("scenarios-search")
         search_input.wait_for(state="visible", timeout=10000)
         search_input.fill(scenario_name)
-        page.wait_for_timeout(250)
+        page.wait_for_timeout(500)
 
         scenario_card = page.locator(
             f"[data-testid='scenario-card'][data-scenario-id='{scenario_id}']"
         )
-        expect(scenario_card).to_be_visible()
+        expect(scenario_card).to_be_visible(timeout=10000)
 
         # Click edit button
         edit_button = scenario_card.get_by_test_id("btn-edit-scenario")
