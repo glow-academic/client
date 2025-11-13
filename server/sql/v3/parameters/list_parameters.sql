@@ -1,7 +1,17 @@
-WITH user_departments AS (
-    SELECT department_id
-    FROM profile_departments
-    WHERE profile_id = $1 AND active = true
+WITH resolve_profile_id AS (
+    -- Resolve "guest-profile-id" to actual default guest profile ID
+    SELECT 
+        CASE 
+            WHEN $1::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+user_departments AS (
+    SELECT rpi.resolved_profile_id, pd.department_id
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    WHERE pd.active = true
 ),
 parameter_active_scenario_links AS (
     SELECT 
@@ -23,7 +33,7 @@ parameter_all_scenario_links AS (
 parameter_scenarios AS (
     SELECT 
         pi.parameter_id,
-        ARRAY_AGG(DISTINCT spi.scenario_id::text ORDER BY spi.scenario_id) as scenario_ids,
+        ARRAY_AGG(DISTINCT spi.scenario_id::text ORDER BY spi.scenario_id::text) as scenario_ids,
         COUNT(DISTINCT spi.scenario_id) as num_scenarios
     FROM parameter_items pi
     JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
@@ -74,14 +84,16 @@ parameter_item_departments_for_filter AS (
     WHERE pid.active = true
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
+    SELECT p.role
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids)::uuid as department_id
     FROM parameter_item_departments_data
     WHERE department_ids IS NOT NULL
     UNION
-    SELECT department_id FROM user_departments
+    SELECT ud.department_id FROM user_departments ud
 ),
 all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids)::uuid as scenario_id
@@ -168,7 +180,7 @@ GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pidd.
          ps.scenario_ids, pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, sm.mapping, dmd.mapping
 HAVING 
     -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
-    COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0
+    COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT ud.department_id FROM user_departments ud)) > 0
     OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
                   JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
                   WHERE pi2.parameter_id = p.id AND pid2.active = true)

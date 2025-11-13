@@ -6,12 +6,12 @@ WITH resolve_profile_ids AS (
     SELECT 
         CASE 
             WHEN $1::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
             ELSE $1::uuid
         END as resolved_actual_profile_id,
         CASE 
             WHEN $2::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
             ELSE $2::uuid
         END as resolved_effective_profile_id
 ),
