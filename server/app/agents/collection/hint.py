@@ -5,16 +5,16 @@ from typing import Any
 import asyncpg  # type: ignore
 from agents import Runner, Tool, ToolsToFinalOutputResult, function_tool, trace
 from agents.items import TResponseInputItem
-from fastapi import Depends
-from pydantic import Field
-
 from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.agent_service import AgentService
 from app.services.model_run_service import ModelRunService
-from app.utils.chat import format_chat_scenario, get_simulation_conversation_history
+from app.utils.chat import (format_chat_scenario,
+                            get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext, debug_info
 from app.utils.document import format_document_info
+from app.utils.sql_helper import load_sql
+from fastapi import Depends
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -170,9 +170,71 @@ async def run_hint_agent(
         _hint_sio_instance = sio_instance
         _hint_chat_id = chat_id
 
-        # Get all hint context data in one optimized query
-        service = AgentService(conn)
-        context = await service.get_hint_run_context(message_id, chat_id, department_id)
+        # Get all hint context data using SQL file (replacing deprecated AgentService)
+        sql = load_sql("sql/v3/simulations/get_hint_run_context.sql")
+        context_row = await conn.fetchrow(sql, str(message_id), str(chat_id), str(department_id))
+        
+        if not context_row:
+            raise ValueError(
+                f"Message {message_id} in chat {chat_id} not found or "
+                f"no hint agent configured for department {department_id}"
+            )
+        
+        # Parse JSON array for documents
+        import json
+        documents = (
+            json.loads(context_row["documents"])
+            if isinstance(context_row["documents"], str)
+            else context_row["documents"]
+        )
+        
+        # Resolve guest profile if needed
+        profile_id = context_row["profile_id"]
+        if not profile_id:
+            from app.services.agent_service import AgentService
+            service_temp = AgentService(conn)
+            profile_id = await service_temp._get_default_guest_profile_id()
+        
+        context = {
+            # Message data
+            "message_id": context_row["message_id"],
+            "message_created_at": context_row["message_created_at"],
+            # Chat data
+            "chat_id": context_row["chat_id"],
+            "attempt_id": context_row["attempt_id"],
+            "scenario_id": context_row["scenario_id"],
+            "trace_id": context_row["trace_id"],
+            "chat_title": context_row["chat_title"],
+            # Attempt data
+            "simulation_id": context_row["simulation_id"],
+            # Scenario data
+            "problem_statement": context_row["problem_statement"],
+            # Agent data
+            "agent_id": context_row["agent_id"],
+            "agent_name": context_row["agent_name"],
+            "system_prompt": context_row["system_prompt"],
+            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+            "reasoning": context_row["reasoning"],
+            # Model data
+            "model_id": context_row["model_id"],
+            "model_name": context_row["model_name"],
+            "custom_model": context_row["custom_model"],
+            # Provider data
+            "provider_id": context_row["provider_id"],
+            "provider_name": context_row["provider_name"],
+            "base_url": context_row["base_url"],
+            "api_key": context_row["api_key"],
+            # Profile data (resolved to guest if null)
+            "profile_id": profile_id,
+            # Documents (full document data, not just IDs)
+            "documents": documents,
+        }
+        
+        logger.info(
+            f"[HINT TRACE] Found hint agent - agent_id={context['agent_id']}, "
+            f"agent_name={context['agent_name']}, "
+            f"system_prompt_length={len(context['system_prompt'])}"
+        )
 
         # Extract data from context
         chat = {
@@ -212,8 +274,10 @@ async def run_hint_agent(
             document_info = format_document_info(context["documents"], False)
             input_items.append(document_info)
 
-        # Get all messages for the chat
-        all_messages = await service.get_simulation_messages(chat_id)
+        # Get all messages for the chat using SQL file
+        sql = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+        message_rows = await conn.fetch(sql, str(chat_id))
+        all_messages = [dict(row) for row in message_rows]
 
         # Filter messages up to and including the target message
         messages = [
@@ -284,13 +348,32 @@ async def run_hint_agent(
                 f"Got: hint_1={bool(hint_1)}, hint_2={bool(hint_2)}, hint_3={bool(hint_3)}"
             )
 
-        # Create SimulationHints records
+        # Create SimulationHints records using direct SQL (replacing deprecated AgentService)
         hint_ids: list[dict[str, Any]] = []
         for i, hint_text in enumerate([hint_1, hint_2, hint_3], 1):
             if hint_text:  # Only save non-empty hints
-                hint_result = await service.create_simulation_hint(
-                    hint_text, message_id
+                # Get the next idx for this message
+                sql_max_idx = """
+                    SELECT COALESCE(MAX(idx), -1) + 1 as next_idx
+                    FROM simulation_hints
+                    WHERE simulation_message_id = $1::uuid
+                """
+                max_idx_row = await conn.fetchrow(sql_max_idx, str(message_id))
+                next_idx = max_idx_row["next_idx"] if max_idx_row else 0
+                
+                # Insert the hint
+                sql_insert = """
+                    INSERT INTO simulation_hints (simulation_message_id, idx, hint)
+                    VALUES ($1::uuid, $2, $3)
+                    RETURNING simulation_message_id::text, idx
+                """
+                hint_result_row = await conn.fetchrow(
+                    sql_insert, str(message_id), next_idx, hint_text
                 )
+                hint_result = {
+                    "simulation_message_id": hint_result_row["simulation_message_id"],
+                    "idx": hint_result_row["idx"],
+                }
                 hint_ids.append(hint_result)
                 logger.info(
                     f"Created hint {i} (idx={hint_result['idx']}): {hint_text[:80]}..."

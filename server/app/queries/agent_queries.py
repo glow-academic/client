@@ -1183,6 +1183,7 @@ class AgentQueries:
             FROM agents a
             LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
             WHERE a.role = 'hint'
+            AND a.active = true
             AND (
                 -- Include if agent is linked to the specified department
                 ad.department_id = $3::uuid

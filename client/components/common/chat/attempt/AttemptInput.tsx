@@ -98,8 +98,8 @@ export default function AttemptInput({
 
       // Only handle hints for the current message
       if (data.message_id === latestAssistantMessage.id) {
-        if (data.type === "complete" && data.hint_ids) {
-          // Refresh server data to get updated hints
+        if (data.type === "complete") {
+          // Refresh server data to get updated hints (even if 0 hints were generated)
           router.refresh();
         }
       }
