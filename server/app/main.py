@@ -21,6 +21,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
+from mcp.server.fastmcp import FastMCP
 
 # Redis is nice in production, but optional in dev
 try:
@@ -29,6 +30,9 @@ except ImportError:  # pip install redis-py not present
     AsyncRedisManager = None  # type: ignore
 
 load_dotenv()
+
+# MCP server instance for tool registration
+server = FastMCP("Domain-API", stateless_http=True)
 
 # Configure logging first
 logging.basicConfig(
@@ -559,8 +563,6 @@ def get_socketio_instance() -> socketio.AsyncServer:
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
-        from app.mcp import server  # noqa: E402
-
         # Initialize Redis client for socket ownership management
         await init_redis_client()
 
@@ -629,8 +631,6 @@ from app.api.v3.router import router as api_v3_router  # noqa: E402
 fastapi_app.include_router(api_v3_router)
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
-from app.mcp import server  # noqa: E402
-
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
 
 # Create the combined ASGI app with Socket.IO

@@ -104,48 +104,124 @@ async def upload_finalize(
 
         # Handle CSV uploads
         if request.csv:
-            from app.services.profile_service import ProfileService
+            from app.utils.csv import parse_csv_file
 
-            # Process CSV file to create profiles
-            profile_service = ProfileService(conn)
-            result = await profile_service.create_profiles_from_csv(file_path)
+            logger.info(f"Processing CSV upload: fileId={request.fileId}")
+            
+            # Parse the CSV file
+            parse_result = parse_csv_file(file_path)
 
-            # Clean up upload directory
-            try:
-                shutil.rmtree(upload_dir)
-            except Exception as e:
-                logger.warning(f"Failed to clean up upload directory: {str(e)}")
-
-            if not result["success"]:
+            if not parse_result["success"]:
+                # Clean up upload directory
+                try:
+                    shutil.rmtree(upload_dir)
+                except Exception as e:
+                    logger.warning(f"Failed to clean up upload directory: {str(e)}")
+                
                 return UploadFinalizeResponse(
                     success=False,
-                    message=result.get("error", "Failed to process CSV file"),
+                    message=parse_result.get("error", "Failed to parse CSV file"),
                     status="error",
+                    errors=parse_result.get("errors", []),
                 )
 
-            # Build success message
-            message_parts = [f"Created {result['users_created']} users"]
-            if result["users_skipped"] > 0:
-                message_parts.append(
-                    f"skipped {result['users_skipped']} existing users"
+            users_data = parse_result["users"]
+            errors = parse_result["errors"].copy()
+            users_created = []
+            users_skipped = []
+
+            # Load SQL queries
+            check_profile_sql = load_sql("sql/v3/profile/check_profile_exists_by_alias.sql")
+            insert_profile_sql = load_sql("sql/v3/profile/insert_profile.sql")
+
+            # Process each user within a transaction
+            try:
+                async with conn.transaction():
+                    for user in users_data:
+                        try:
+                            name = user["name"]
+                            username = user["username"]
+                            row_num = user["row_num"]
+
+                            # Check if user already exists
+                            existing_user = await conn.fetchrow(
+                                check_profile_sql,
+                                username,
+                            )
+
+                            if existing_user:
+                                users_skipped.append(
+                                    {"username": username, "reason": "User already exists"}
+                                )
+                                continue
+
+                            # Create new user with 'ta' role
+                            user_id = str(uuid.uuid4())
+                            await conn.execute(
+                                insert_profile_sql,
+                                user_id,
+                                name,  # first_name (using full name as first_name)
+                                username,  # alias
+                                "ta",  # role
+                                False,  # viewed_intro
+                            )
+
+                            users_created.append({"name": name, "username": username})
+
+                        except Exception as e:
+                            errors.append(f"Row {row_num}: {str(e)}")
+                            continue
+
+                # Clean up upload directory
+                try:
+                    shutil.rmtree(upload_dir)
+                except Exception as e:
+                    logger.warning(f"Failed to clean up upload directory: {str(e)}")
+
+                # Build success message
+                message_parts = [f"Created {len(users_created)} users"]
+                if len(users_skipped) > 0:
+                    message_parts.append(
+                        f"skipped {len(users_skipped)} existing users"
+                    )
+                if errors:
+                    message_parts.append(f"{len(errors)} errors encountered")
+
+                logger.info(
+                    f"CSV processing complete: created={len(users_created)}, "
+                    f"skipped={len(users_skipped)}, errors={len(errors)}"
                 )
-            if result["errors"]:
-                message_parts.append(f"{len(result['errors'])} errors encountered")
 
-            result_data = UploadFinalizeResponse(
-                success=True,
-                message=", ".join(message_parts),
-                status="complete",
-                usersCreated=result.get("users_created", 0),
-                usersSkipped=result.get("users_skipped", 0),
-                errors=result.get("errors"),
-            )
+                result_data = UploadFinalizeResponse(
+                    success=True,
+                    message=", ".join(message_parts),
+                    status="complete",
+                    usersCreated=len(users_created),
+                    usersSkipped=len(users_skipped),
+                    errors=errors if errors else None,
+                )
 
-            # Invalidate cache after mutation
-            await invalidate_tags(tags)
-            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+                # Invalidate cache after mutation
+                await invalidate_tags(tags)
+                response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-            return result_data
+                return result_data
+
+            except Exception as e:
+                logger.error(f"Database error processing CSV: {str(e)}")
+                
+                # Clean up upload directory
+                try:
+                    shutil.rmtree(upload_dir)
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to clean up upload directory: {str(cleanup_error)}")
+                
+                return UploadFinalizeResponse(
+                    success=False,
+                    message=f"Database error: {str(e)}",
+                    status="error",
+                    errors=errors,
+                )
 
         # Handle ZIP file uploads
         if request.zip:

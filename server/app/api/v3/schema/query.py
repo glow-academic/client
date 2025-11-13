@@ -4,7 +4,7 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.mcp import server
+from app.main import server
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
