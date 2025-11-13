@@ -30,7 +30,7 @@ class SimulationItem(BaseModel):
     id: str
     title: str
     description: str
-    departmentId: str
+    departmentId: str | None
     active: bool
     defaultSimulation: bool
     practiceSimulation: bool
@@ -69,7 +69,7 @@ class ScenarioItem(BaseModel):
     id: str
     name: str
     problemStatement: str
-    departmentId: str
+    departmentId: str | None
     active: bool
     personaId: str | None
     createdAt: str
@@ -174,7 +174,7 @@ class AllSimulationScenarioItem(BaseModel):
     id: str
     name: str
     problemStatement: str
-    departmentId: str
+    departmentId: str | None
     active: bool
     personaId: str | None
     createdAt: str

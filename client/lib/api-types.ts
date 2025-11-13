@@ -3226,6 +3226,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/scenarios/select-attributes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Select Scenario Attributes Endpoint
+         * @description API endpoint for selecting scenario attributes.
+         */
+        post: operations["select_scenario_attributes_endpoint_api_v3_scenarios_select_attributes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/simulations/list": {
         parameters: {
             query?: never;
@@ -5352,7 +5372,7 @@ export interface components {
             /** Problemstatement */
             problemStatement: string;
             /** Departmentid */
-            departmentId: string;
+            departmentId: string | null;
             /** Active */
             active: boolean;
             /** Personaid */
@@ -7969,6 +7989,45 @@ export interface components {
             profileId: string;
         };
         /**
+         * SelectAttributesRequest
+         * @description Request to select scenario attributes.
+         */
+        SelectAttributesRequest: {
+            /** Scenarioid */
+            scenarioId: string;
+            /** Departmentid */
+            departmentId: string;
+            /** Profileid */
+            profileId?: string | null;
+        };
+        /**
+         * SelectAttributesResponse
+         * @description Response with selected scenario attributes.
+         */
+        SelectAttributesResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Personaid */
+            personaId?: string | null;
+            /**
+             * Personaids
+             * @default []
+             */
+            personaIds: string[];
+            /**
+             * Documentids
+             * @default []
+             */
+            documentIds: string[];
+            /**
+             * Parameteritemids
+             * @default []
+             */
+            parameterItemIds: string[];
+        };
+        /**
          * SimulationCompositionResponse
          * @description Simulation composition response.
          */
@@ -9040,7 +9099,7 @@ export interface components {
             /** Problemstatement */
             problemStatement: string;
             /** Departmentid */
-            departmentId: string;
+            departmentId: string | null;
             /** Active */
             active: boolean;
             /** Personaid */
@@ -9067,7 +9126,7 @@ export interface components {
             /** Description */
             description: string;
             /** Departmentid */
-            departmentId: string;
+            departmentId: string | null;
             /** Active */
             active: boolean;
             /** Defaultsimulation */
@@ -20550,6 +20609,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RandomizeScenarioResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    select_scenario_attributes_endpoint_api_v3_scenarios_select_attributes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectAttributesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectAttributesResponse"];
                 };
             };
             /** @description Validation Error */

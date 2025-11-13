@@ -7355,6 +7355,53 @@
         ]
       }
     },
+    "/api/v3/scenarios/select-attributes": {
+      "post": {
+        "tags": [
+          "v3",
+          "scenarios"
+        ],
+        "summary": "Select Scenario Attributes Endpoint",
+        "description": "API endpoint for selecting scenario attributes.",
+        "operationId": "select_scenario_attributes_endpoint_api_v3_scenarios_select_attributes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectAttributesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectAttributesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "scenarios"
+        ]
+      }
+    },
     "/api/v3/simulations/list": {
       "post": {
         "tags": [
@@ -12339,7 +12386,14 @@
             "title": "Problemstatement"
           },
           "departmentId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Departmentid"
           },
           "active": {
@@ -19127,6 +19181,90 @@
         "title": "SearchStaffRequest",
         "description": "Request for staff search."
       },
+      "SelectAttributesRequest": {
+        "properties": {
+          "scenarioId": {
+            "type": "string",
+            "title": "Scenarioid"
+          },
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenarioId",
+          "departmentId"
+        ],
+        "title": "SelectAttributesRequest",
+        "description": "Request to select scenario attributes."
+      },
+      "SelectAttributesResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          },
+          "personaIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personaids",
+            "default": []
+          },
+          "documentIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Documentids",
+            "default": []
+          },
+          "parameterItemIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameteritemids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "SelectAttributesResponse",
+        "description": "Response with selected scenario attributes."
+      },
       "SimulationCompositionResponse": {
         "properties": {
           "validSimulationIds": {
@@ -21870,7 +22008,14 @@
             "title": "Problemstatement"
           },
           "departmentId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Departmentid"
           },
           "active": {
@@ -21954,7 +22099,14 @@
             "title": "Description"
           },
           "departmentId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Departmentid"
           },
           "active": {
