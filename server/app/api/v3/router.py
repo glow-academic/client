@@ -39,6 +39,7 @@ from app.api.v3.rubrics import router as rubrics_router
 # Batch C: Core Content Resources (Complete CRUD)
 # ============================================================================
 from app.api.v3.scenarios import router as scenarios_router
+from app.api.v3.schema import router as schema_router
 from app.api.v3.simulations import router as simulations_router
 from fastapi import APIRouter
 
@@ -80,3 +81,4 @@ router.include_router(home_router)
 router.include_router(practice_router)
 router.include_router(pricing_router)
 router.include_router(assistant_router)
+router.include_router(schema_router)

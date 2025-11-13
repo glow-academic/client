@@ -1,6 +1,4 @@
 """Permissions utilities for v3 API.
-
-Extracted from app.services.permissions_service to remove v2 dependencies.
 """
 
 from typing import Literal

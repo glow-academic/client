@@ -559,7 +559,7 @@ def get_socketio_instance() -> socketio.AsyncServer:
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
-        from app.mcp.server import server  # noqa: E402
+        from app.mcp import server  # noqa: E402
 
         # Initialize Redis client for socket ownership management
         await init_redis_client()
@@ -629,7 +629,7 @@ from app.api.v3.router import router as api_v3_router  # noqa: E402
 fastapi_app.include_router(api_v3_router)
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
-from app.mcp.server import server  # noqa: E402
+from app.mcp import server  # noqa: E402
 
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
 

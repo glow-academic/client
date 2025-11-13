@@ -7,7 +7,9 @@ from app.api.v3.scenarios.detail_default import router as detail_default_router
 from app.api.v3.scenarios.duplicate import router as duplicate_router
 from app.api.v3.scenarios.generate_ai import router as generate_ai_router
 from app.api.v3.scenarios.list import router as list_router
+from app.api.v3.scenarios.overview import router as overview_router
 from app.api.v3.scenarios.randomize import router as randomize_router
+from app.api.v3.scenarios.search import router as search_router
 from app.api.v3.scenarios.select_attributes import router as select_attributes_router
 from app.api.v3.scenarios.update import router as update_router
 from fastapi import APIRouter
@@ -25,4 +27,6 @@ router.include_router(delete_router)
 router.include_router(generate_ai_router)
 router.include_router(randomize_router)
 router.include_router(select_attributes_router)
+router.include_router(overview_router)
+router.include_router(search_router)
 

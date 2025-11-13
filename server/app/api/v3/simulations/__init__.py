@@ -1,11 +1,14 @@
 """Simulations v3 router."""
 
+from app.api.v3.simulations.attempts import router as attempts_router
 from app.api.v3.simulations.create import router as create_router
 from app.api.v3.simulations.delete import router as delete_router
 from app.api.v3.simulations.detail import router as detail_router
 from app.api.v3.simulations.detail_default import router as detail_default_router
 from app.api.v3.simulations.duplicate import router as duplicate_router
 from app.api.v3.simulations.list import router as list_router
+from app.api.v3.simulations.overview import router as overview_router
+from app.api.v3.simulations.search import router as search_router
 from app.api.v3.simulations.update import router as update_router
 from fastapi import APIRouter
 
@@ -19,4 +22,7 @@ router.include_router(create_router)
 router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
+router.include_router(overview_router)
+router.include_router(search_router)
+router.include_router(attempts_router)
 

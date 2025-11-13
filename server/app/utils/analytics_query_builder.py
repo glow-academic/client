@@ -1,6 +1,4 @@
 """Analytics query builder utilities for v3 API.
-
-Extracted from app.queries.base_queries.AnalyticsFilters to remove v2 dependencies.
 """
 
 from datetime import datetime

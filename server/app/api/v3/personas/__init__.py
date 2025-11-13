@@ -7,6 +7,9 @@ from app.api.v3.personas.detail import router as detail_router
 from app.api.v3.personas.detail_default import router as detail_default_router
 from app.api.v3.personas.duplicate import router as duplicate_router
 from app.api.v3.personas.list import router as list_router
+from app.api.v3.personas.overview import router as overview_router
+from app.api.v3.personas.response_times import router as response_times_router
+from app.api.v3.personas.search import router as search_router
 from app.api.v3.personas.update import router as update_router
 from fastapi import APIRouter
 
@@ -21,4 +24,7 @@ router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
 router.include_router(delete_prompt_router)
+router.include_router(overview_router)
+router.include_router(search_router)
+router.include_router(response_times_router)
 
