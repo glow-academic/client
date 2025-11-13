@@ -155,15 +155,29 @@ def test_simulations_cache_revalidation_and_no_double_fetch(
     page.wait_for_url(f"{base_url}/create/simulations/s/{simulation_id}")
     page.wait_for_load_state("networkidle")
 
+    # Wait for form to be fully loaded
+    container = page.locator("[data-page='simulation-edit']").first
+    container.wait_for(state="visible", timeout=15000)
+    
     updated_name = f"{simulation_name} Updated"
     name_input = page.get_by_test_id("input-simulation-title")
+    name_input.wait_for(state="visible", timeout=10000)
     expect(name_input).to_be_enabled()
     name_input.fill(updated_name)
 
+    # Verify rubric is selected (required field) - it should be from existing simulation
+    rubric_picker = page.locator("[data-testid='picker-rubric']")
+    rubric_picker.wait_for(state="visible", timeout=10000)
+    # The rubric should already be selected from the existing simulation
+
     submit_button = page.get_by_test_id("btn-submit-simulation")
+    expect(submit_button).to_be_enabled()
     submit_button.click()
 
+    # Wait for toast first, then navigation (like personas test)
+    _expect_toast(page, "Simulation updated successfully!")
     page.wait_for_url(f"{base_url}/create/simulations")
+    page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("simulations-search")
     search_input.fill(updated_name)

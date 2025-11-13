@@ -33,7 +33,7 @@ def test_simulation_create_validation_and_success(page: Page, base_url: str) -> 
         page.wait_for_load_state("networkidle")
 
         # Verify data-page attribute
-        page_container = page.locator("[data-page='simulation-new']")
+        page_container = page.locator("[data-page='simulation-new']").first
         expect(page_container).to_be_visible()
 
         name_input = page.get_by_test_id("input-simulation-title")

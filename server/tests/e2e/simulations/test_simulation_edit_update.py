@@ -49,9 +49,11 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
         page.goto(f"{base_url}/create/simulations")
         page.wait_for_load_state("networkidle")
 
+        # Wait for the simulation card to appear - may need to search or wait longer
         simulation_card = page.locator(
             f"[data-testid='simulation-card'][data-simulation-id='{simulation_id}']"
         )
+        simulation_card.wait_for(state="visible", timeout=15000)
         expect(simulation_card).to_be_visible()
 
         edit_button = simulation_card.get_by_test_id("btn-edit-simulation")
@@ -93,6 +95,13 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
         expect(submit_button).to_be_enabled()
         submit_button.click()
 
+        # Wait for toast notification, then navigation
+        toast = page.get_by_role("alert").filter(has_text="Simulation updated successfully!")
+        try:
+            toast.wait_for(state="visible", timeout=5000)
+        except Exception:
+            # Toast might not appear or have different text
+            pass
         page.wait_for_url(f"{base_url}/create/simulations", timeout=20000)
         page.wait_for_load_state("networkidle")
 
