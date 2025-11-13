@@ -5,10 +5,10 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -33,7 +33,6 @@ class ScenarioOverviewResponse(BaseModel):
 @server.tool()
 async def scenario_overview(
     request: ScenarioOverviewRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ScenarioOverviewResponse:
     """
     🎭 Scenario overview with metadata & usage
@@ -59,42 +58,47 @@ async def scenario_overview(
             status_code=400, detail=f"Invalid scenario_id format: {request.scenario_id}"
         )
 
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
+
     try:
-        sql = load_sql("sql/v3/scenarios/overview.sql")
-        result = await conn.fetchrow(sql, scenario_uuid)
+        async with pool.acquire() as conn:
+            sql = load_sql("sql/v3/scenarios/overview.sql")
+            result = await conn.fetchrow(sql, scenario_uuid)
 
-        if not result:
-            raise HTTPException(
-                status_code=404, detail=f"Scenario not found: {request.scenario_id}"
+            if not result:
+                raise HTTPException(
+                    status_code=404, detail=f"Scenario not found: {request.scenario_id}"
+                )
+
+            # Parse simulations
+            simulations = []
+            simulations_data = result["simulations"]
+            if isinstance(simulations_data, str):
+                simulations_data = json.loads(simulations_data)
+            if simulations_data and isinstance(simulations_data, list):
+                simulations = [
+                    {
+                        "id": str(s["id"]),
+                        "title": s["title"],
+                        "active": s["active"],
+                        "time_limit": s["time_limit"],
+                        "created_at": s["created_at"].isoformat()
+                        if s.get("created_at")
+                        else None,
+                    }
+                    for s in simulations_data
+                ]
+
+            persona_ids = result["persona_ids"] or []
+
+            return ScenarioOverviewResponse(
+                id=str(result["id"]),
+                title=result["name"],
+                simulations=simulations,
+                persona_ids=persona_ids if persona_ids else None,
             )
-
-        # Parse simulations
-        simulations = []
-        simulations_data = result["simulations"]
-        if isinstance(simulations_data, str):
-            simulations_data = json.loads(simulations_data)
-        if simulations_data and isinstance(simulations_data, list):
-            simulations = [
-                {
-                    "id": str(s["id"]),
-                    "title": s["title"],
-                    "active": s["active"],
-                    "time_limit": s["time_limit"],
-                    "created_at": s["created_at"].isoformat()
-                    if s.get("created_at")
-                    else None,
-                }
-                for s in simulations_data
-            ]
-
-        persona_ids = result["persona_ids"] or []
-
-        return ScenarioOverviewResponse(
-            id=str(result["id"]),
-            title=result["name"],
-            simulations=simulations,
-            persona_ids=persona_ids if persona_ids else None,
-        )
     except HTTPException:
         raise
     except Exception as e:

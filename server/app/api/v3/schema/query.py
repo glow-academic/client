@@ -3,9 +3,9 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -21,7 +21,6 @@ class QueryDataRequest(BaseModel):
 @server.tool()
 async def query_data(
     request: QueryDataRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> str:
     """
     Custom SQL queries (read-only)
@@ -52,16 +51,21 @@ async def query_data(
             status_code=400, detail="Error: only read-only queries are allowed."
         )
 
-    try:
-        # Fetch up to 200 rows
-        rows = await conn.fetch(request.sql)
-        limited_rows = rows[:200]
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
 
-        # If there are rows, join them. Otherwise, return the "0 rows" message.
-        if limited_rows:
-            return "\n".join(str(dict(r)) for r in limited_rows)
-        else:
-            return "(0 rows)"
+    try:
+        async with pool.acquire() as conn:
+            # Fetch up to 200 rows
+            rows = await conn.fetch(request.sql)
+            limited_rows = rows[:200]
+
+            # If there are rows, join them. Otherwise, return the "0 rows" message.
+            if limited_rows:
+                return "\n".join(str(dict(r)) for r in limited_rows)
+            else:
+                return "(0 rows)"
     except Exception as e:
         # Return a concise version of the error to the model.
         # The full error is still logged for developers.

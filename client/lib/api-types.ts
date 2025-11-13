@@ -4,2628 +4,6 @@
  */
 
 export interface paths {
-    "/api/v2/profile/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile List
-         * @description Get profile/staff list with permissions and relationships.
-         */
-        post: operations["get_profile_list_api_v2_profile_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile Detail Staff
-         * @description Get detailed profile information (staff version with permissions).
-         */
-        post: operations["get_profile_detail_staff_api_v2_profile_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/detail-bulk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile Detail Bulk
-         * @description Get bulk profile detail information.
-         */
-        post: operations["get_profile_detail_bulk_api_v2_profile_detail_bulk_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Profile
-         * @description Create a new profile.
-         */
-        post: operations["create_profile_api_v2_profile_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/bulk-create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Create Profile
-         * @description Bulk create profiles.
-         */
-        post: operations["bulk_create_profile_api_v2_profile_bulk_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Profile
-         * @description Update a profile.
-         */
-        post: operations["update_profile_api_v2_profile_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/bulk-update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Update Profile
-         * @description Bulk update profiles.
-         */
-        post: operations["bulk_update_profile_api_v2_profile_bulk_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Profile
-         * @description Delete a profile.
-         */
-        post: operations["delete_profile_api_v2_profile_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Delete Profile
-         * @description Bulk delete profiles.
-         */
-        post: operations["bulk_delete_profile_api_v2_profile_bulk_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/create-staff-data": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Create Staff Data
-         * @description Get all data needed for create staff UI (mappings, etc.).
-         */
-        post: operations["get_create_staff_data_api_v2_profile_create_staff_data_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/search-staff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Staff
-         * @description Search staff with query and filters.
-         */
-        post: operations["search_staff_api_v2_profile_search_staff_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/process-csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Process Csv
-         * @description Process CSV file and map columns to target fields.
-         */
-        post: operations["process_csv_api_v2_profile_process_csv_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/create-or-update-staff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Or Update Staff
-         * @description Create or update a staff member based on alias.
-         */
-        post: operations["create_or_update_staff_api_v2_profile_create_or_update_staff_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/bulk-create-or-update-staff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Create Or Update Staff
-         * @description Bulk create or update staff members.
-         */
-        post: operations["bulk_create_or_update_staff_api_v2_profile_bulk_create_or_update_staff_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/detail-simple": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile Detail Simple
-         * @description Get simple profile by ID (auth version without permissions).
-         */
-        post: operations["get_profile_detail_simple_api_v2_profile_detail_simple_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/update-simple": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Profile Simple
-         * @description Update profile fields (simple auth version).
-         */
-        post: operations["update_profile_simple_api_v2_profile_update_simple_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/authorize-emulation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Authorize Emulation
-         * @description Check if emulation is authorized.
-         */
-        post: operations["authorize_emulation_api_v2_profile_authorize_emulation_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile Context
-         * @description Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
-         */
-        post: operations["get_profile_context_api_v2_profile_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/mark-intro-complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Mark Intro Complete
-         * @description Mark intro tour step as complete.
-         */
-        post: operations["mark_intro_complete_api_v2_profile_mark_intro_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/mark-chat-complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Mark Chat Complete
-         * @description Mark chat tour step as complete.
-         */
-        post: operations["mark_chat_complete_api_v2_profile_mark_chat_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/by-alias": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile By Alias
-         * @description Get profile by alias (for auth operations).
-         */
-        post: operations["get_profile_by_alias_api_v2_profile_by_alias_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/analytics/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh Analytics
-         * @description Refresh the analytics materialized view.
-         */
-        post: operations["refresh_analytics_api_v2_analytics_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/dashboard": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Dashboard
-         * @description Get complete dashboard bundle with all metrics, history, insights, and mappings.
-         */
-        post: operations["get_dashboard_api_v2_dashboard_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/home": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Home
-         * @description Get home overview with items, history, and mappings.
-         *
-         *     Home always shows general simulations only (no simulationFilters parameter).
-         */
-        post: operations["get_home_api_v2_home_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Practice
-         * @description Get practice overview with items, history, and all entity mappings.
-         *
-         *     Practice uses simplified filters: only profileId and departmentIds.
-         *     No cohort/role/date filtering for personal practice.
-         */
-        post: operations["get_practice_api_v2_practice_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/leaderboard": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Leaderboard
-         * @description Get leaderboard bundle with all metrics and profile data.
-         */
-        post: operations["get_leaderboard_api_v2_leaderboard_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Reports
-         * @description Get reports bundle with aggregated metrics per profile and entity mappings.
-         */
-        post: operations["get_reports_api_v2_reports_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/pricing": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Pricing
-         * @description Get pricing metrics with model usage and cost analysis.
-         */
-        post: operations["get_pricing_api_v2_pricing_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/personas/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Personas List
-         * @description Get personas list with permissions and scenario details.
-         */
-        post: operations["get_personas_list_api_v2_personas_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/personas/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Persona
-         * @description Duplicate a persona.
-         */
-        post: operations["duplicate_persona_api_v2_personas_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/personas/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Persona
-         * @description Delete a persona.
-         */
-        post: operations["delete_persona_api_v2_personas_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/personas/delete-prompt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Persona Prompt
-         * @description Delete a persona prompt.
-         */
-        post: operations["delete_persona_prompt_api_v2_personas_delete_prompt_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/personas/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Persona Detail
-         * @description Get detailed persona information.
-         */
-        post: operations["get_persona_detail_api_v2_personas_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/personas/detail-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Persona Detail Default
-         * @description Get default persona detail based on profile.
-         */
-        post: operations["get_persona_detail_default_api_v2_personas_detail_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/personas/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Persona
-         * @description Create a new persona.
-         */
-        post: operations["create_persona_api_v2_personas_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/personas/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Persona
-         * @description Update an existing persona.
-         */
-        post: operations["update_persona_api_v2_personas_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Documents List
-         * @description Get documents list with tags and scenarios.
-         */
-        post: operations["get_documents_list_api_v2_documents_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Document Detail
-         * @description Get detailed document information.
-         */
-        post: operations["get_document_detail_api_v2_documents_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/detail-bulk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Document Detail Bulk
-         * @description Get bulk document detail information.
-         */
-        post: operations["get_document_detail_bulk_api_v2_documents_detail_bulk_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Document
-         * @description Update a document.
-         */
-        post: operations["update_document_api_v2_documents_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/bulk-update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Update Documents
-         * @description Bulk update documents.
-         */
-        post: operations["bulk_update_documents_api_v2_documents_bulk_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Document
-         * @description Delete a document.
-         */
-        post: operations["delete_document_api_v2_documents_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Delete Documents
-         * @description Bulk delete documents.
-         */
-        post: operations["bulk_delete_documents_api_v2_documents_bulk_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Tus Creation
-         * @description Handle POST request for tus protocol - create upload.
-         */
-        post: operations["tus_creation_api_v2_documents_upload_post"];
-        delete?: never;
-        /**
-         * Tus Options
-         * @description Handle OPTIONS request for tus protocol discovery.
-         */
-        options: operations["tus_options_api_v2_documents_upload_options"];
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/upload/{upload_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        /**
-         * Tus Options Upload Id
-         * @description Handle OPTIONS request for specific upload.
-         */
-        options: operations["tus_options_upload_id_api_v2_documents_upload__upload_id__options"];
-        /**
-         * Tus Head
-         * @description Handle HEAD request for tus protocol - get upload info.
-         */
-        head: operations["tus_head_api_v2_documents_upload__upload_id__head"];
-        /**
-         * Tus Patch
-         * @description Handle PATCH request for tus protocol - upload chunk.
-         */
-        patch: operations["tus_patch_api_v2_documents_upload__upload_id__patch"];
-        trace?: never;
-    };
-    "/api/v2/documents/upload/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Finalize Upload
-         * @description Finalize an upload and process the file.
-         */
-        post: operations["finalize_upload_api_v2_documents_upload_finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/download/{document_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Document
-         * @description Download a document by ID.
-         */
-        get: operations["download_document_api_v2_documents_download__document_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/documents/certificate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Certificate
-         * @description Generate a certificate PDF/text for a profile.
-         */
-        post: operations["generate_certificate_api_v2_documents_certificate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Scenarios List
-         * @description Get scenarios list with all relationships.
-         */
-        post: operations["get_scenarios_list_api_v2_scenarios_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Scenario Detail
-         * @description Get detailed scenario information.
-         */
-        post: operations["get_scenario_detail_api_v2_scenarios_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/detail-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Scenario Detail Default
-         * @description Get default scenario detail based on profile.
-         */
-        post: operations["get_scenario_detail_default_api_v2_scenarios_detail_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Scenario
-         * @description Create a new scenario.
-         */
-        post: operations["create_scenario_api_v2_scenarios_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Scenario
-         * @description Update an existing scenario.
-         */
-        post: operations["update_scenario_api_v2_scenarios_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Scenario
-         * @description Duplicate a scenario.
-         */
-        post: operations["duplicate_scenario_api_v2_scenarios_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Scenario
-         * @description Delete a scenario.
-         */
-        post: operations["delete_scenario_api_v2_scenarios_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/generate-ai": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Scenario Ai
-         * @description Generate AI scenario content (title, description, objectives).
-         */
-        post: operations["generate_scenario_ai_api_v2_scenarios_generate_ai_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/scenarios/randomize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Randomize Scenario
-         * @description Suggest randomized scenario sections.
-         */
-        post: operations["randomize_scenario_api_v2_scenarios_randomize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/simulations/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Simulations List
-         * @description Get simulations list with permissions and relationships.
-         */
-        post: operations["get_simulations_list_api_v2_simulations_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/simulations/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Simulation Detail
-         * @description Get detailed simulation information.
-         */
-        post: operations["get_simulation_detail_api_v2_simulations_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/simulations/detail-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Simulation Detail Default
-         * @description Get default simulation details for a profile.
-         */
-        post: operations["get_simulation_detail_default_api_v2_simulations_detail_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/simulations/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Simulation
-         * @description Create a new simulation.
-         */
-        post: operations["create_simulation_api_v2_simulations_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/simulations/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Simulation
-         * @description Update an existing simulation.
-         */
-        post: operations["update_simulation_api_v2_simulations_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/simulations/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Simulation
-         * @description Duplicate a simulation.
-         */
-        post: operations["duplicate_simulation_api_v2_simulations_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/simulations/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Simulation
-         * @description Delete a simulation.
-         */
-        post: operations["delete_simulation_api_v2_simulations_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/rubrics/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Rubrics List
-         * @description Get rubrics list with hierarchical structure and permissions.
-         */
-        post: operations["get_rubrics_list_api_v2_rubrics_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/rubrics/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Rubric Detail
-         * @description Get detailed rubric information.
-         */
-        post: operations["get_rubric_detail_api_v2_rubrics_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/rubrics/detail-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Rubric Detail Default
-         * @description Get default rubric details for a profile.
-         */
-        post: operations["get_rubric_detail_default_api_v2_rubrics_detail_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/rubrics/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Rubric
-         * @description Create a new rubric with nested structure.
-         */
-        post: operations["create_rubric_api_v2_rubrics_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/rubrics/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Rubric
-         * @description Update an existing rubric (replaces entire hierarchy).
-         */
-        post: operations["update_rubric_api_v2_rubrics_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/rubrics/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Rubric
-         * @description Duplicate a rubric with entire hierarchy.
-         */
-        post: operations["duplicate_rubric_api_v2_rubrics_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/rubrics/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Rubric
-         * @description Delete a rubric.
-         */
-        post: operations["delete_rubric_api_v2_rubrics_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Cohorts List
-         * @description Get cohorts list with permissions and relationships.
-         */
-        post: operations["get_cohorts_list_api_v2_cohorts_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Cohort Detail
-         * @description Get detailed cohort information.
-         */
-        post: operations["get_cohort_detail_api_v2_cohorts_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/detail-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Cohort Detail Default
-         * @description Get default cohort details for a profile.
-         */
-        post: operations["get_cohort_detail_default_api_v2_cohorts_detail_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/detail-with-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Cohort Detail With Profiles
-         * @description Get cohort detail with available profiles in one call.
-         */
-        post: operations["get_cohort_detail_with_profiles_api_v2_cohorts_detail_with_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Cohort
-         * @description Create a new cohort.
-         */
-        post: operations["create_cohort_api_v2_cohorts_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Cohort
-         * @description Update an existing cohort.
-         */
-        post: operations["update_cohort_api_v2_cohorts_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Cohort
-         * @description Duplicate a cohort.
-         */
-        post: operations["duplicate_cohort_api_v2_cohorts_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Cohort
-         * @description Delete a cohort.
-         */
-        post: operations["delete_cohort_api_v2_cohorts_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/leave": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Leave Cohort
-         * @description Leave a cohort.
-         */
-        post: operations["leave_cohort_api_v2_cohorts_leave_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/add-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add Profiles To Cohort
-         * @description Add profiles to a cohort.
-         */
-        post: operations["add_profiles_to_cohort_api_v2_cohorts_add_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/cohorts/remove-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Remove Profiles From Cohort
-         * @description Remove profiles from a cohort.
-         */
-        post: operations["remove_profiles_from_cohort_api_v2_cohorts_remove_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Providers List
-         * @description Get providers list with nested models (hierarchical).
-         */
-        post: operations["get_providers_list_api_v2_providers_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Provider Detail
-         * @description Get detailed provider information.
-         */
-        post: operations["get_provider_detail_api_v2_providers_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Provider
-         * @description Create a new provider.
-         */
-        post: operations["create_provider_api_v2_providers_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Provider
-         * @description Update an existing provider.
-         */
-        post: operations["update_provider_api_v2_providers_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Provider
-         * @description Delete a provider.
-         */
-        post: operations["delete_provider_api_v2_providers_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Provider
-         * @description Duplicate a provider with all its models.
-         */
-        post: operations["duplicate_provider_api_v2_providers_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/decrypt-key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Decrypt Provider Key
-         * @description Decrypt provider API key for authorized users.
-         */
-        post: operations["decrypt_provider_key_api_v2_providers_decrypt_key_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/models/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Model Detail
-         * @description Get detailed model information.
-         */
-        post: operations["get_model_detail_api_v2_providers_models_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/models/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Model
-         * @description Create a new model.
-         */
-        post: operations["create_model_api_v2_providers_models_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/models/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Model
-         * @description Update an existing model.
-         */
-        post: operations["update_model_api_v2_providers_models_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/models/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Model
-         * @description Delete a model.
-         */
-        post: operations["delete_model_api_v2_providers_models_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/providers/models/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Model
-         * @description Duplicate a model.
-         */
-        post: operations["duplicate_model_api_v2_providers_models_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/parameters/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Parameters List
-         * @description Get parameters list with item counts and permissions.
-         */
-        post: operations["get_parameters_list_api_v2_parameters_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/parameters/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Parameter Detail
-         * @description Get detailed parameter information with nested items.
-         */
-        post: operations["get_parameter_detail_api_v2_parameters_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/parameters/detail-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Parameter Detail Default
-         * @description Get default parameter details for a profile.
-         */
-        post: operations["get_parameter_detail_default_api_v2_parameters_detail_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/parameters/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Parameter
-         * @description Create a new parameter with nested items.
-         */
-        post: operations["create_parameter_api_v2_parameters_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/parameters/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Parameter
-         * @description Update an existing parameter (replaces all items).
-         */
-        post: operations["update_parameter_api_v2_parameters_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/parameters/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Parameter
-         * @description Duplicate a parameter with all items.
-         */
-        post: operations["duplicate_parameter_api_v2_parameters_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/parameters/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Parameter
-         * @description Delete a parameter.
-         */
-        post: operations["delete_parameter_api_v2_parameters_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/parameters/items/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Parameter Item
-         * @description Create a single parameter item (for inline creation from pickers).
-         */
-        post: operations["create_parameter_item_api_v2_parameters_items_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/departments/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Departments
-         * @description Get list of departments with computed fields.
-         */
-        post: operations["list_departments_api_v2_departments_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/departments/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Department Detail
-         * @description Get department detail with agent role assignments.
-         */
-        post: operations["get_department_detail_api_v2_departments_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/departments/detail-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Department Detail Default
-         * @description Get default department detail for a profile.
-         */
-        post: operations["get_department_detail_default_api_v2_departments_detail_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/departments/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Department
-         * @description Create a new department with agent role assignments.
-         */
-        post: operations["create_department_api_v2_departments_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/departments/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Department
-         * @description Update a department with agent role assignments.
-         */
-        post: operations["update_department_api_v2_departments_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/departments/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Department
-         * @description Duplicate a department with all agent role assignments.
-         */
-        post: operations["duplicate_department_api_v2_departments_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/departments/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Department
-         * @description Delete a department (with usage check).
-         */
-        post: operations["delete_department_api_v2_departments_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/departments/remove-profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Remove Profiles From Department
-         * @description Remove profiles from department (set active = false in junction table).
-         *
-         *     NOTE: This does NOT delete profiles from the database, only removes the relationship.
-         *     Profiles remain in the system but are no longer associated with this department.
-         */
-        post: operations["remove_profiles_from_department_api_v2_departments_remove_profiles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/agents/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Agents
-         * @description Get list of agents with permissions.
-         */
-        post: operations["list_agents_api_v2_agents_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/agents/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Agent Detail
-         * @description Get agent detail with debug info and metadata.
-         */
-        post: operations["get_agent_detail_api_v2_agents_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/agents/detail-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Agent Detail Default
-         * @description Get default agent detail metadata for creating new agents.
-         */
-        post: operations["get_agent_detail_default_api_v2_agents_detail_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/agents/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Agent
-         * @description Create a new agent.
-         */
-        post: operations["create_agent_api_v2_agents_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/agents/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Agent
-         * @description Update an agent.
-         */
-        post: operations["update_agent_api_v2_agents_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/agents/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Agent
-         * @description Duplicate an agent.
-         */
-        post: operations["duplicate_agent_api_v2_agents_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/agents/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Agent
-         * @description Delete an agent (with usage check).
-         */
-        post: operations["delete_agent_api_v2_agents_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/agents/delete-prompt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Agent Prompt
-         * @description Delete an agent prompt.
-         */
-        post: operations["delete_agent_prompt_api_v2_agents_delete_prompt_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/feedback/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Feedback
-         * @description Get list of feedback with author information.
-         */
-        post: operations["list_feedback_api_v2_feedback_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/feedback/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Feedback
-         * @description Create new app feedback entry.
-         */
-        post: operations["create_feedback_api_v2_feedback_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/feedback/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Delete Feedback
-         * @description Bulk delete feedback. Only superadmin can delete feedback.
-         */
-        post: operations["bulk_delete_feedback_api_v2_feedback_bulk_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/logs/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * List Logs
-         * @description Get list of logs with actor information and all JSONB fields.
-         */
-        post: operations["list_logs_api_v2_logs_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/logs/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Log
-         * @description Create a new log entry.
-         */
-        post: operations["create_log_api_v2_logs_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/logs/bulk-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Delete Logs
-         * @description Bulk delete logs. Only superadmin can delete logs.
-         */
-        post: operations["bulk_delete_logs_api_v2_logs_bulk_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/logs/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get System Health
-         * @description Comprehensive system health check endpoint.
-         *     Tests all 9 system components with real functionality checks.
-         *     No authentication required (for monitoring tools).
-         */
-        get: operations["get_system_health_api_v2_logs_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/attempts/{attempt_id}/full": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Attempt Full
-         * @description Get complete attempt data with all related entities and computed values.
-         */
-        get: operations["get_attempt_full_api_v2_attempts__attempt_id__full_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/attempts/bulk-archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk Archive Attempts
-         * @description Bulk archive or unarchive simulation attempts.
-         */
-        post: operations["bulk_archive_attempts_api_v2_attempts_bulk_archive_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/attempts/chats/update-created-at": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Chat Created At
-         * @description Update simulation chat createdAt timestamp.
-         */
-        post: operations["update_chat_created_at_api_v2_attempts_chats_update_created_at_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/assistant/chats/{chat_id}/full": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Assistant Chat Full
-         * @description Get complete assistant chat data with all related entities.
-         */
-        get: operations["get_assistant_chat_full_api_v2_assistant_chats__chat_id__full_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/assistant/chats/list/{profile_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Assistant Chats List
-         * @description Get all chats for a profile (for new chat state without chat_id).
-         */
-        get: operations["get_assistant_chats_list_api_v2_assistant_chats_list__profile_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/profile/detail": {
         parameters: {
             query?: never;
@@ -2760,6 +138,121 @@ export interface paths {
          * @description Mark chat tour step as complete.
          */
         post: operations["mark_chat_complete_api_v3_profile_mark_chat_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/profile/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Profile Overview
+         * @description Profile overview
+         *     ----------------
+         *     Profile + last login, classes, dashboard flags, latest grades.
+         *     Accepts UUID or name.
+         *
+         *     Input
+         *       • profile_id - UUID or name/alias to search for
+         *
+         *     Returns
+         *       { "profile": { … }, "latest_grades": [ … ] }
+         *
+         *     Quick-start
+         *       ask:  "Show me Nina Park's profile"
+         *       call: profile_overview("Nina Park")
+         *
+         *     See also 👉 student_sim_report() for per-chat detail.
+         */
+        post: operations["profile_overview_api_v3_profile_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/profile/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find Profiles
+         * @description 🔎 Find profiles by name
+         *     ------------------------
+         *     Fuzzy first/last/alias search.
+         *
+         *     Input
+         *       • query - Name or alias to search for
+         *       • limit - Max results (default: 10)
+         *
+         *     Returns
+         *       [
+         *         {
+         *           "id": str,           # Profile UUID
+         *           "first_name": str | None,
+         *           "last_name": str | None,
+         *           "alias": str | None,
+         *           "role": str | None,
+         *           "full_name": str,    # "First Last" or alias or "Unknown"
+         *           "score": int         # Heuristic match score
+         *         },
+         *         ...
+         *       ]
+         *
+         *     Quick-start
+         *       ask:  "Find everyone named Jordan"
+         *       call: await find_profiles("Jordan")
+         *
+         *     See also 👉 profile_overview() for detailed profile data.
+         */
+        post: operations["find_profiles_api_v3_profile_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/profile/simulation-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Student Sim Report
+         * @description Deep dive: every attempt, chat, grade, feedback
+         *     Comprehensive student simulation report.
+         *
+         *     Input
+         *       • profile_id - UUID of the student profile
+         *       • recent - Limit messages per chat (default: 50)
+         *
+         *     Returns
+         *       { "profile": { … }, "attempts": [ … ] }
+         *
+         *     Quick-start
+         *       ask:  "Full report on student X"
+         *       call: student_sim_report("uuid-here")
+         *
+         *     See also profile_overview() for summary view.
+         */
+        post: operations["student_sim_report_api_v3_profile_simulation_report_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3246,6 +739,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/scenarios/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scenario Overview
+         * @description 🎭 Scenario overview with metadata & usage
+         *     -----------------------------------------
+         *     Show scenario details and associated simulations.
+         *
+         *     Input
+         *       • scenario_id – UUID of the scenario
+         *
+         *     Returns
+         *       { "id": "…", "title": "…", "simulations": […], … }
+         *
+         *     Quick-start
+         *       ask:  "Show me details for scenario X"
+         *       call: scenario_overview("uuid-here")
+         *
+         *     See also 👉 simulation_overview() for sim details.
+         */
+        post: operations["scenario_overview_api_v3_scenarios_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/scenarios/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find Scenarios
+         * @description 🔎 Find scenarios by name/problem_statement
+         *     --------------------------------------------
+         *     Fuzzy, case-insensitive search on scenario name and problem statement.
+         *
+         *     Input
+         *         • query - Scenario name or problem statement to search for
+         *         • limit - Max results (default: 10)
+         *
+         *     Returns
+         *         [
+         *             {
+         *                 "id": str,                       # Scenario UUID
+         *                 "name": str | None,              # Scenario name/title
+         *                 "problem_statement": str | None, # Scenario problem statement
+         *                 "persona_id": str | None,        # Linked persona UUID (if any)
+         *                 "default_scenario": bool,        # Is this the default scenario?
+         *                 "score": int                     # Heuristic match score
+         *             },
+         *             ...
+         *         ]
+         *
+         *     Quick-start
+         *         ask:  "Find scenarios for medication errors"
+         *         call: await find_scenarios("medication error")
+         *
+         *     See also 👉 scenario_overview() for detailed scenario data.
+         */
+        post: operations["find_scenarios_api_v3_scenarios_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/simulations/list": {
         parameters: {
             query?: never;
@@ -3380,6 +952,119 @@ export interface paths {
          * @description Delete a simulation (with usage check).
          */
         post: operations["delete_simulation_api_v3_simulations_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/simulations/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Overview
+         * @description 🔎 Simulation overview
+         *     ----------------------
+         *     Sim meta, rubric, cohorts, scenarios, pass stats.
+         *
+         *     Input
+         *       • sim_id – UUID of the simulation
+         *
+         *     Returns
+         *       { "simulation": { … }, "rubric": { … }, "cohorts": [ … ], "stats": { … } }
+         *
+         *     Quick-start
+         *       ask:  "Give me the Induction Homework sim stats"
+         *       call: simulation_overview("uuid-here")
+         *
+         *     See also 👉 simulation_attempts() for detailed attempt list.
+         */
+        post: operations["simulation_overview_api_v3_simulations_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/simulations/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find Simulations
+         * @description 🔎 Find simulations by title
+         *     ----------------------------
+         *     Fuzzy sim title search.
+         *
+         *     Input
+         *       • query - Simulation title to search for
+         *       • limit - Max results (default: 10)
+         *
+         *     Returns
+         *       [
+         *         {
+         *           "id": str,                # Simulation UUID
+         *           "title": str | None,      # Simulation title
+         *           "active": bool,           # Is the simulation active?
+         *           "time_limit": int | None, # Time limit in minutes (if any)
+         *           "created_at": str | None, # ISO8601 creation timestamp
+         *           "score": int              # Heuristic match score
+         *         },
+         *         ...
+         *       ]
+         *
+         *     Quick-start
+         *       ask:  "Which sims mention 'cardiac'?"
+         *       call: await find_simulations("cardiac")
+         *
+         *     See also 👉 simulation_overview() for detailed sim data.
+         */
+        post: operations["find_simulations_api_v3_simulations_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/simulations/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Simulation Attempts
+         * @description Flat list of attempts (who, when, score)
+         *     List all attempts for a specific simulation.
+         *
+         *     Input
+         *       • sim_id - UUID of the simulation
+         *       • limit - Max results (default: 200)
+         *
+         *     Returns
+         *       [ { "id": "…", "student": "…", "score": 85, … }, … ]
+         *
+         *     Quick-start
+         *       ask:  "List last 200 attempts on Sim Y"
+         *       call: simulation_attempts("uuid-here")
+         *
+         *     See also simulation_overview() for aggregate stats.
+         */
+        post: operations["simulation_attempts_api_v3_simulations_attempts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3540,6 +1225,110 @@ export interface paths {
          * @description Delete a persona prompt.
          */
         post: operations["delete_persona_prompt_api_v3_personas_delete_prompt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/personas/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Persona Overview
+         * @description Persona overview
+         *     --------------
+         *     Show persona details and associated simulations.
+         *
+         *     Input
+         *       • persona_id - UUID of the persona
+         *
+         *     Returns
+         *       { "id": "…", "name": "…", "scenarios": […], … }
+         *
+         *     Quick-start
+         *       ask:  "Show me details for persona X"
+         *       call: persona_overview("uuid-here")
+         *
+         *     See also 👉 simulation_overview() for sim details.
+         */
+        post: operations["persona_overview_api_v3_personas_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/personas/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find Personas
+         * @description 🔎 Find personas by name
+         *     ------------------------
+         *     Performs a case-insensitive, fuzzy search on persona names.
+         *
+         *     Input
+         *         • query - Name of the persona to search for
+         *         • limit - Max results (default: 10)
+         *
+         *     Returns
+         *         [ { "id": "...", "name": "...", "description": "...", "score": ... }, ... ]
+         *         or [ { "error": "Database error: ..." } ] on failure
+         *
+         *     Quick-start
+         *         ask:  "Find the aggressive persona"
+         *         call: await find_personas("Aggressive")
+         *
+         *     See also 👉 persona_overview() for detailed persona data.
+         */
+        post: operations["find_personas_api_v3_personas_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/personas/response-times": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Persona Response Times
+         * @description Persona response time analysis
+         *     Analyze response times for a specific persona.
+         *
+         *     Input
+         *       • persona_id - UUID of the persona
+         *       • window_days - Analysis window in days (default: 30)
+         *
+         *     Returns
+         *       { "persona": {…}, "stats": {…}, "recent_responses": […] }
+         *
+         *     Quick-start
+         *       ask:  "How fast does persona X respond?"
+         *       call: persona_response_times("uuid-here")
+         *
+         *     See also persona_overview() for persona details.
+         */
+        post: operations["persona_response_times_api_v3_personas_response_times_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3920,6 +1709,118 @@ export interface paths {
          * @description Delete a cohort.
          */
         post: operations["delete_cohort_api_v3_cohorts_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/cohorts/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cohort Overview
+         * @description 🔎 Cohort overview
+         *     ------------------
+         *     Cohort meta, roster, active sims, pass-rate.
+         *
+         *     Input
+         *       • cohort_id – UUID of the cohort
+         *
+         *     Returns
+         *       { "cohort": { … }, "roster": [ … ], "simulations": [ … ], "stats": { … } }
+         *
+         *     Quick-start
+         *       ask:  "How's Fall 2025 Cohort A doing?"
+         *       call: cohort_overview("uuid-here")
+         *
+         *     See also 👉 cohort_pass_matrix() for detailed pass/fail data.
+         */
+        post: operations["cohort_overview_api_v3_cohorts_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/cohorts/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find Cohorts
+         * @description 🔎 Find cohorts by title/description
+         *     ------------------------------------
+         *     Fuzzy, case-insensitive search on cohort title and description.
+         *
+         *     Input
+         *         • query - Cohort title or description to search for
+         *         • limit - Max results (default: 10)
+         *
+         *     Returns
+         *         [
+         *             {
+         *                 "id": "...",
+         *                 "title": "...",
+         *                 "active": <bool>,
+         *                 "description": "...",
+         *                 "profile_count": <int>,
+         *                 "score": <int>
+         *             },
+         *             ...
+         *         ]
+         *
+         *     Quick-start
+         *         ask:  "Find all Fall 2025 cohorts"
+         *         call: await find_cohorts("Fall 2025")
+         *
+         *     See also 👉 cohort_overview() for detailed cohort data.
+         */
+        post: operations["find_cohorts_api_v3_cohorts_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/cohorts/pass-matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cohort Pass Matrix
+         * @description Cohort pass/fail matrix across simulations
+         *     Show pass/fail rates for all students in a cohort.
+         *
+         *     Input
+         *       • cohort_id - UUID of the cohort
+         *
+         *     Returns
+         *       { "cohort": {…}, "matrix": [{…}], "summary": {…} }
+         *
+         *     Quick-start
+         *       ask:  "Show pass rates for cohort X"
+         *       call: cohort_pass_matrix("uuid-here")
+         *
+         *     See also cohort_overview() for cohort details.
+         */
+        post: operations["cohort_pass_matrix_api_v3_cohorts_pass_matrix_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5100,6 +3001,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/logs/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Recent App Logs
+         * @description 🔎 Fetch recent ERROR/WARN app logs
+         *     -----------------------------------
+         *     Recent application logs filtered by level.
+         *
+         *     Input
+         *       • level – Log level filter ('error', 'warn', 'info', 'debug')
+         *       • limit – Max results (default: 100)
+         *
+         *     Returns
+         *       [ { "id": …, "level": "…", "message": "…", … }, … ]
+         *
+         *     Quick-start
+         *       ask:  "Any critical errors today?"
+         *       call: recent_app_logs("error")
+         *
+         *     See also 👉 assistant_usage() for assistant-specific logs.
+         */
+        post: operations["recent_app_logs_api_v3_logs_recent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/logs/assistant-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assistant Usage
+         * @description 📊 Assistant usage statistics
+         *     -----------------------------
+         *     Show assistant chat usage over time period.
+         *
+         *     Input
+         *       • days – Analysis window in days (default: 7)
+         *
+         *     Returns
+         *       { "summary": {…}, "daily_stats": […], "top_users": […] }
+         *
+         *     Quick-start
+         *       ask:  "Show assistant usage last 7 days"
+         *       call: assistant_usage(7)
+         *
+         *     See also 👉 recent_app_logs() for system logs.
+         */
+        post: operations["assistant_usage_api_v3_logs_assistant_usage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/attempts/bulk-archive": {
         parameters: {
             query?: never;
@@ -5285,6 +3255,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/schema/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Schema
+         * @description Database schema overview
+         *     Lists all tables and columns in the public schema.
+         *
+         *     Quick-start
+         *       ask:  "What tables are in the DB?"
+         *       call: list_schema()
+         */
+        get: operations["list_schema_api_v3_schema_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/schema/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Query Data
+         * @description Custom SQL queries (read-only)
+         *     Run SELECT or EXPLAIN queries with a 200-row limit.
+         *     All standard SELECT clauses like WHERE, LIKE, JOIN, GROUP BY, ORDER BY are supported.
+         *
+         *     Input
+         *       • sql - A standard SQL SELECT or EXPLAIN statement.
+         *
+         *     Returns
+         *       Raw query results as text, or an error message.
+         *
+         *     Quick-start
+         *       ask:  "Run this SQL: SELECT * FROM profiles LIMIT 5"
+         *       call: query_data("SELECT first_name, last_name FROM profiles LIMIT 5")
+         *
+         *     Troubleshooting
+         *       • If you get a "no such column" or "no such table" error, your query is likely using an incorrect name.
+         *       • **Fallback:** Call the `list_schema()` tool first to see the available tables and exact column names before trying your query again.
+         *
+         *     Security
+         *       • Only SELECT and EXPLAIN statements are allowed.
+         *       • UPDATE, INSERT, DELETE, and other write operations are blocked.
+         */
+        post: operations["query_data_api_v3_schema_query_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -5347,6 +3382,83 @@ export interface components {
             profileId?: string | null;
             /** Profilename */
             profileName?: string | null;
+        };
+        /**
+         * AddProfilesToCohortRequest
+         * @description Request for adding profiles to cohort.
+         */
+        AddProfilesToCohortRequest: {
+            /** Cohortid */
+            cohortId: string;
+            /** Profileids */
+            profileIds: string[];
+        };
+        /**
+         * AddProfilesToCohortResponse
+         * @description Response for adding profiles to cohort.
+         */
+        AddProfilesToCohortResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** AgentDetailDefaultRequest */
+        AgentDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** AgentDetailRequest */
+        AgentDetailRequest: {
+            /** Agentid */
+            agentId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /** AgentItem */
+        AgentItem: {
+            /** Agent Id */
+            agent_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number;
+            /** Model Id */
+            model_id: string;
+            /** Role */
+            role: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Updated At */
+            updated_at: string;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /** AgentsListRequest */
+        AgentsListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** AgentsListResponse */
+        AgentsListResponse: {
+            /** Agents */
+            agents: components["schemas"]["AgentItem"][];
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: components["schemas"]["ModelMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
         };
         /** AggregatedResults */
         AggregatedResults: {
@@ -5462,6 +3574,35 @@ export interface components {
         AssistantChatListResponse: {
             /** Allchats */
             allChats: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * AssistantUsageRequest
+         * @description Request to get assistant usage stats.
+         */
+        AssistantUsageRequest: {
+            /**
+             * Days
+             * @default 7
+             */
+            days: number;
+        };
+        /**
+         * AssistantUsageResponse
+         * @description Response with assistant usage statistics.
+         */
+        AssistantUsageResponse: {
+            /** Summary */
+            summary: {
+                [key: string]: unknown;
+            };
+            /** Daily Stats */
+            daily_stats: {
+                [key: string]: unknown;
+            }[];
+            /** Top Users */
+            top_users: {
                 [key: string]: unknown;
             }[];
         };
@@ -5596,6 +3737,22 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** BulkArchiveAttemptsRequest */
+        BulkArchiveAttemptsRequest: {
+            /** Archived */
+            archived: boolean;
+            /** Attemptids */
+            attemptIds: string[];
+        };
+        /** BulkArchiveAttemptsResponse */
+        BulkArchiveAttemptsResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Count */
+            count: number;
+        };
         /**
          * BulkCreateOrUpdateStaffRequest
          * @description Request to bulk create or update staff members.
@@ -5660,6 +3817,38 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** BulkDeleteFeedbackRequest */
+        BulkDeleteFeedbackRequest: {
+            /** Profileid */
+            profileId: string;
+            /** Ids */
+            ids: number[];
+        };
+        /** BulkDeleteFeedbackResponse */
+        BulkDeleteFeedbackResponse: {
+            /** Success */
+            success: boolean;
+            /** Deleted Count */
+            deleted_count: number;
+            /** Message */
+            message: string;
+        };
+        /** BulkDeleteLogsRequest */
+        BulkDeleteLogsRequest: {
+            /** Profileid */
+            profileId: string;
+            /** Ids */
+            ids: number[];
+        };
+        /** BulkDeleteLogsResponse */
+        BulkDeleteLogsResponse: {
+            /** Success */
+            success: boolean;
+            /** Deleted Count */
+            deleted_count: number;
+            /** Message */
+            message: string;
+        };
         /**
          * BulkDeleteStaffRequest
          * @description Request to bulk delete staff.
@@ -5677,6 +3866,23 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /**
+         * BulkUpdateDocumentsRequest
+         * @description Request to bulk update documents.
+         */
+        BulkUpdateDocumentsRequest: {
+            /** Documentids */
+            documentIds: string[];
+            /** Type */
+            type: string;
+            /** Department Id */
+            department_id?: string | null;
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
         };
         /**
          * BulkUpdateDocumentsResponse
@@ -5831,6 +4037,54 @@ export interface components {
             profileId: string;
         };
         /**
+         * CohortDetailResponse
+         * @description Response for cohort detail endpoint.
+         */
+        CohortDetailResponse: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Active */
+            active: boolean;
+            /** Simulation Ids */
+            simulation_ids: string[];
+            /** Valid Simulation Ids */
+            valid_simulation_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Valid Profile Ids */
+            valid_profile_ids: string[];
+            /** Simulations */
+            simulations: components["schemas"]["SimulationInCohort"][];
+            /** Staff */
+            staff: components["schemas"]["app__api__v3__cohorts__detail__StaffItem"][];
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /** Profile Mapping */
+            profile_mapping: {
+                [key: string]: components["schemas"]["ProfileMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping?: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            } | null;
+            /** Department Mapping For Staff */
+            department_mapping_for_staff?: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            } | null;
+        };
+        /**
          * CohortDetailWithProfilesRequest
          * @description Request for cohort detail with available profiles.
          */
@@ -5841,6 +4095,34 @@ export interface components {
             departmentIds: string[];
             /** Currentprofileid */
             currentProfileId: string;
+        };
+        /**
+         * CohortDetailWithProfilesResponse
+         * @description Response for cohort detail with available profiles.
+         */
+        CohortDetailWithProfilesResponse: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean;
+            /** Current Profile Ids */
+            current_profile_ids: string[];
+            /** Available Profiles */
+            available_profiles: components["schemas"]["app__api__v3__cohorts__detail__StaffItem"][];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
         };
         /**
          * CohortFact
@@ -5869,6 +4151,66 @@ export interface components {
             description: string;
         };
         /**
+         * CohortOverviewRequest
+         * @description Request to get cohort overview.
+         */
+        CohortOverviewRequest: {
+            /** Cohort Id */
+            cohort_id: string;
+        };
+        /**
+         * CohortOverviewResponse
+         * @description Response with cohort overview data.
+         */
+        CohortOverviewResponse: {
+            /** Cohort */
+            cohort: {
+                [key: string]: unknown;
+            };
+            /** Roster */
+            roster: {
+                [key: string]: unknown;
+            }[];
+            /** Simulations */
+            simulations: {
+                [key: string]: unknown;
+            }[];
+            /** Stats */
+            stats: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * CohortPassMatrixRequest
+         * @description Request to get cohort pass matrix.
+         */
+        CohortPassMatrixRequest: {
+            /** Cohort Id */
+            cohort_id: string;
+        };
+        /**
+         * CohortPassMatrixResponse
+         * @description Response with cohort pass matrix data.
+         */
+        CohortPassMatrixResponse: {
+            /** Cohort */
+            cohort: {
+                [key: string]: unknown;
+            };
+            /** Matrix */
+            matrix: {
+                [key: string]: unknown;
+            }[];
+            /** Summary */
+            summary: {
+                [key: string]: unknown;
+            };
+            /** Simulations */
+            simulations: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
          * CohortPerformanceResponse
          * @description Cohort performance response.
          */
@@ -5885,12 +4227,34 @@ export interface components {
             validSimulationIds: string[];
         };
         /**
-         * CohortsFilters
-         * @description Filters for cohorts list.
+         * CohortSearchResult
+         * @description Cohort search result.
          */
-        CohortsFilters: {
-            /** Profileid */
-            profileId: string;
+        CohortSearchResult: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Active */
+            active: boolean;
+            /** Description */
+            description: string | null;
+            /** Profile Count */
+            profile_count: number;
+            /** Score */
+            score: number;
+        };
+        /**
+         * CohortsData
+         * @description Cohorts data with member counts.
+         */
+        CohortsData: {
+            /** Items */
+            items: components["schemas"]["app__api__v3__profile__context__CohortItem"][];
+            /** Membercounts */
+            memberCounts: {
+                [key: string]: number;
+            };
         };
         /**
          * CohortsListRequest
@@ -5899,6 +4263,26 @@ export interface components {
         CohortsListRequest: {
             /** Profileid */
             profileId: string;
+        };
+        /**
+         * CohortsListResponse
+         * @description Response for cohorts list.
+         */
+        CohortsListResponse: {
+            /** Cohorts */
+            cohorts: components["schemas"]["app__api__v3__cohorts__list__CohortItem"][];
+            /** Profile Mapping */
+            profile_mapping: {
+                [key: string]: components["schemas"]["ProfileMappingItem"];
+            };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
         };
         /** ContextData */
         "ContextData-Input": {
@@ -5925,6 +4309,85 @@ export interface components {
             /** Model */
             model?: string | null;
         };
+        /** CorrelationData */
+        CorrelationData: {
+            /** Correlationid */
+            correlationId?: string | null;
+        };
+        /** CreateAgentRequest */
+        CreateAgentRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Prompt Id */
+            prompt_id: string | null;
+            /** System Prompt */
+            system_prompt: string;
+            /** Temperature */
+            temperature: number;
+            /** Model Id */
+            model_id: string;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Active */
+            active: boolean;
+            /** Role */
+            role: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** CreateAgentResponse */
+        CreateAgentResponse: {
+            /** Success */
+            success: boolean;
+            /** Agentid */
+            agentId: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * CreateCohortRequest
+         * @description Request for creating a cohort.
+         */
+        CreateCohortRequest: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Profile Ids
+             * @default []
+             */
+            profile_ids: string[];
+            /**
+             * Simulation Ids
+             * @default []
+             */
+            simulation_ids: string[];
+        };
+        /**
+         * CreateCohortResponse
+         * @description Response for creating a cohort.
+         */
+        CreateCohortResponse: {
+            /** Success */
+            success: boolean;
+            /** Cohortid */
+            cohortId: string;
+            /** Message */
+            message: string;
+        };
         /**
          * CreateDepartmentRequest
          * @description Request for creating a department.
@@ -5950,6 +4413,45 @@ export interface components {
             departmentId: string;
             /** Message */
             message: string;
+        };
+        /** CreateFeedbackRequest */
+        CreateFeedbackRequest: {
+            /** Type */
+            type: string;
+            /** Message */
+            message: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /** CreateFeedbackResponse */
+        CreateFeedbackResponse: {
+            /** Feedback Id */
+            feedback_id: number;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** CreateLogRequest */
+        CreateLogRequest: {
+            /** Event */
+            event: string;
+            /** Level */
+            level: string;
+            /** Message */
+            message: string;
+            correlation?: components["schemas"]["CorrelationData"] | null;
+            actor?: components["schemas"]["ActorData-Input"] | null;
+            subject?: components["schemas"]["SubjectData-Input"] | null;
+            context?: components["schemas"]["ContextData-Input"] | null;
+            error?: components["schemas"]["ErrorData-Input"] | null;
+        };
+        /** CreateLogResponse */
+        CreateLogResponse: {
+            /** Success */
+            success: boolean;
+            /** Log Id */
+            log_id: number | null;
         };
         /**
          * CreateModelRequest
@@ -6090,6 +4592,107 @@ export interface components {
             message: string;
         };
         /**
+         * CreatePersonaRequest
+         * @description Request to create a persona.
+         */
+        CreatePersonaRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Active */
+            active: boolean;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Model Id */
+            model_id: string;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number;
+            /** System Prompt */
+            system_prompt: string | null;
+            /** Prompt Id */
+            prompt_id: string | null;
+        };
+        /**
+         * CreatePersonaResponse
+         * @description Response from create persona.
+         */
+        CreatePersonaResponse: {
+            /** Success */
+            success: boolean;
+            /** Personaid */
+            personaId: string;
+            /** Message */
+            message: string;
+        };
+        /** CreateProviderRequest */
+        CreateProviderRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Api Key */
+            api_key: string;
+            /** Base Url */
+            base_url?: string | null;
+        };
+        /** CreateProviderResponse */
+        CreateProviderResponse: {
+            /** Success */
+            success: boolean;
+            /** Providerid */
+            providerId: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * CreateRubricRequest
+         * @description Request for creating a rubric.
+         */
+        CreateRubricRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Standard Groups
+             * @default []
+             */
+            standard_groups: components["schemas"]["app__api__v3__rubrics__create__StandardGroupItem"][];
+        };
+        /**
+         * CreateRubricResponse
+         * @description Response for creating a rubric.
+         */
+        CreateRubricResponse: {
+            /** Success */
+            success: boolean;
+            /** Rubricid */
+            rubricId: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * CreateScenarioRequest
          * @description Request to create a scenario.
          */
@@ -6158,6 +4761,28 @@ export interface components {
             message: string;
         };
         /**
+         * CreateSimulationRequest
+         * @description Request to create a simulation.
+         */
+        CreateSimulationRequest: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Active */
+            active: boolean;
+            /** Practice Simulation */
+            practice_simulation: boolean;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[] | components["schemas"]["ScenarioInRequest"][];
+        };
+        /**
          * CreateSimulationResponse
          * @description Response from create simulation.
          */
@@ -6178,6 +4803,24 @@ export interface components {
             departmentIds: string[];
             /** Profileid */
             profileId: string;
+        };
+        /**
+         * CreateStaffDataResponse
+         * @description Response with all data needed for create staff UI.
+         */
+        CreateStaffDataResponse: {
+            /** Staff */
+            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Role Options */
+            role_options: string[];
         };
         /**
          * CreateStaffRequest
@@ -6220,6 +4863,62 @@ export interface components {
             cohortId?: string | null;
         };
         /**
+         * DashboardBundleResponse
+         * @description Complete dashboard bundle with all metrics, history, insights, and mappings.
+         */
+        DashboardBundleResponse: {
+            header: components["schemas"]["DashboardHeaderMetrics"];
+            primary: components["schemas"]["DashboardPrimaryMetrics"];
+            secondary: components["schemas"]["DashboardSecondaryMetrics"];
+            footer: components["schemas"]["DashboardFooterMetrics"];
+            /** History */
+            history: components["schemas"]["app__api__v3__dashboard__bundle__AttemptHistoryRow"][];
+            insights: components["schemas"]["DashboardInsights"];
+            thresholds: components["schemas"]["Thresholds"];
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /** Rubric Mapping */
+            rubric_mapping: {
+                [key: string]: components["schemas"]["RubricMappingItem"];
+            };
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: components["schemas"]["ParameterMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+            };
+        };
+        /**
+         * DashboardFooterMetrics
+         * @description Footer metrics (4 total).
+         */
+        DashboardFooterMetrics: {
+            scenarioPerformance: components["schemas"]["ScenarioPerformanceResponse"];
+            scenarioStats: components["schemas"]["ScenarioStatsResponse"];
+            simulationPerformance: components["schemas"]["SimulationPerformanceResponse"];
+            simulationComposition: components["schemas"]["SimulationCompositionResponse"];
+        };
+        /**
+         * DashboardHeaderMetrics
+         * @description Header metrics (10 total).
+         */
+        DashboardHeaderMetrics: {
+            averageScore: components["schemas"]["MetricResponse"];
+            completionPercentage: components["schemas"]["MetricResponse"];
+            firstAttemptPassRate: components["schemas"]["MetricResponse"];
+            highestScore: components["schemas"]["MetricResponse"];
+            messagesPerSession: components["schemas"]["MetricResponse"];
+            personaResponseTimes: components["schemas"]["MetricResponse"];
+            sessionEfficiency: components["schemas"]["MetricResponse"];
+            stagnationRate: components["schemas"]["MetricResponse"];
+            timeSpent: components["schemas"]["MetricResponse"];
+            totalAttempts: components["schemas"]["MetricResponse"];
+        };
+        /**
          * DashboardInsights
          * @description Actionable insights (computed server-side).
          */
@@ -6248,6 +4947,24 @@ export interface components {
             simulation_performance?: string | null;
             /** Simulation Composition */
             simulation_composition?: string | null;
+        };
+        /**
+         * DashboardPrimaryMetrics
+         * @description Primary metrics (3 total).
+         */
+        DashboardPrimaryMetrics: {
+            growthData: components["schemas"]["GrowthDataResponse"];
+            personaPerformance: components["schemas"]["PersonaPerformanceResponse"];
+            rubricHeatmap: components["schemas"]["RubricHeatmapResponse"];
+        };
+        /**
+         * DashboardSecondaryMetrics
+         * @description Secondary metrics (3 total).
+         */
+        DashboardSecondaryMetrics: {
+            attemptImprovement: components["schemas"]["AttemptImprovementResponse"];
+            cohortPerformance: components["schemas"]["CohortPerformanceResponse"];
+            skillPerformance: components["schemas"]["SkillPerformanceResponse"];
         };
         /**
          * DataPoint
@@ -6286,6 +5003,52 @@ export interface components {
         DecryptProviderKeyResponse: {
             /** Api Key */
             api_key: string;
+        };
+        /** DeleteAgentPromptRequest */
+        DeleteAgentPromptRequest: {
+            /** Agentid */
+            agentId: string;
+            /** Promptid */
+            promptId: string;
+            /** Departmentid */
+            departmentId?: string | null;
+        };
+        /** DeleteAgentPromptResponse */
+        DeleteAgentPromptResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /** DeleteAgentRequest */
+        DeleteAgentRequest: {
+            /** Agentid */
+            agentId: string;
+        };
+        /** DeleteAgentResponse */
+        DeleteAgentResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeleteCohortRequest
+         * @description Request for deleting a cohort.
+         */
+        DeleteCohortRequest: {
+            /** Cohortid */
+            cohortId: string;
+        };
+        /**
+         * DeleteCohortResponse
+         * @description Response for deleting a cohort.
+         */
+        DeleteCohortResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * DeleteDepartmentRequest
@@ -6360,6 +5123,46 @@ export interface components {
             message: string;
         };
         /**
+         * DeletePersonaPromptRequest
+         * @description Request to delete persona prompt.
+         */
+        DeletePersonaPromptRequest: {
+            /** Personaid */
+            personaId: string;
+            /** Promptid */
+            promptId: string;
+            /** Departmentid */
+            departmentId?: string | null;
+        };
+        /**
+         * DeletePersonaPromptResponse
+         * @description Response from delete persona prompt.
+         */
+        DeletePersonaPromptResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeletePersonaRequest
+         * @description Request to delete persona.
+         */
+        DeletePersonaRequest: {
+            /** Personaid */
+            personaId: string;
+        };
+        /**
+         * DeletePersonaResponse
+         * @description Response from delete persona.
+         */
+        DeletePersonaResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * DeleteProviderRequest
          * @description Request to delete provider.
          */
@@ -6372,6 +5175,24 @@ export interface components {
          * @description Response from delete provider.
          */
         DeleteProviderResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeleteRubricRequest
+         * @description Request for deleting a rubric.
+         */
+        DeleteRubricRequest: {
+            /** Rubricid */
+            rubricId: string;
+        };
+        /**
+         * DeleteRubricResponse
+         * @description Response for deleting a rubric.
+         */
+        DeleteRubricResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -6480,20 +5301,20 @@ export interface components {
             cohort_ids?: string[] | null;
         };
         /**
-         * DepartmentsFilters
-         * @description Filters for departments list.
-         */
-        DepartmentsFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * DepartmentsListRequest
          * @description Request for departments list.
          */
         DepartmentsListRequest: {
             /** Profileid */
             profileId: string;
+        };
+        /**
+         * DepartmentsListResponse
+         * @description Response for departments list.
+         */
+        DepartmentsListResponse: {
+            /** Departments */
+            departments: components["schemas"]["app__api__v3__departments__list__DepartmentItem"][];
         };
         /**
          * DocumentDetailBulkRequest
@@ -6530,6 +5351,38 @@ export interface components {
             parameter_item_mapping: {
                 [key: string]: components["schemas"]["ParameterItemMappingItem"];
             };
+        };
+        /**
+         * DocumentDetailItem
+         * @description Document detail for preview.
+         */
+        DocumentDetailItem: {
+            /** Document Id */
+            document_id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Extension */
+            extension: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** File Path */
+            file_path: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
         };
         /**
          * DocumentDetailRequest
@@ -6572,6 +5425,42 @@ export interface components {
             };
         };
         /**
+         * DocumentItem
+         * @description Document item for list view.
+         */
+        DocumentItem: {
+            /** Document Id */
+            document_id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Updated At */
+            updated_at: string;
+            /** Mime Type */
+            mime_type?: string | null;
+            /** Active */
+            active: boolean;
+            /** File Path */
+            file_path?: string | null;
+            /** Extension */
+            extension?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Active Scenario Count */
+            active_scenario_count: number;
+            /** Total Scenario Links */
+            total_scenario_links: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /**
          * DocumentMappingItem
          * @description Document mapping item - extends MappingItem with file metadata
          */
@@ -6586,20 +5475,70 @@ export interface components {
             mimeType?: string | null;
         };
         /**
-         * DocumentsFilters
-         * @description Filters for documents list request.
-         */
-        DocumentsFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * DocumentsListRequest
          * @description Request for documents list.
          */
         DocumentsListRequest: {
             /** Profileid */
             profileId: string;
+        };
+        /**
+         * DocumentsListResponse
+         * @description Response for documents list.
+         */
+        DocumentsListResponse: {
+            /** Documents */
+            documents: components["schemas"]["DocumentItem"][];
+            /** Scenario Mapping */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: components["schemas"]["ParameterMappingItem"];
+            };
+        };
+        /** DuplicateAgentRequest */
+        DuplicateAgentRequest: {
+            /** Agentid */
+            agentId: string;
+        };
+        /** DuplicateAgentResponse */
+        DuplicateAgentResponse: {
+            /** Success */
+            success: boolean;
+            /** Agentid */
+            agentId: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DuplicateCohortRequest
+         * @description Request for duplicating a cohort.
+         */
+        DuplicateCohortRequest: {
+            /** Cohortid */
+            cohortId: string;
+        };
+        /**
+         * DuplicateCohortResponse
+         * @description Response for duplicating a cohort.
+         */
+        DuplicateCohortResponse: {
+            /** Success */
+            success: boolean;
+            /** Cohortid */
+            cohortId: string;
+            /** Message */
+            message: string;
         };
         /**
          * DuplicateDepartmentRequest
@@ -6662,6 +5601,26 @@ export interface components {
             message: string;
         };
         /**
+         * DuplicatePersonaRequest
+         * @description Request to duplicate persona.
+         */
+        DuplicatePersonaRequest: {
+            /** Personaid */
+            personaId: string;
+        };
+        /**
+         * DuplicatePersonaResponse
+         * @description Response from duplicate persona.
+         */
+        DuplicatePersonaResponse: {
+            /** Success */
+            success: boolean;
+            /** Personaid */
+            personaId: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * DuplicateProviderRequest
          * @description Request to duplicate provider.
          */
@@ -6678,6 +5637,26 @@ export interface components {
             success: boolean;
             /** Providerid */
             providerId: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DuplicateRubricRequest
+         * @description Request for duplicating a rubric.
+         */
+        DuplicateRubricRequest: {
+            /** Rubricid */
+            rubricId: string;
+        };
+        /**
+         * DuplicateRubricResponse
+         * @description Response for duplicating a rubric.
+         */
+        DuplicateRubricResponse: {
+            /** Success */
+            success: boolean;
+            /** Rubricid */
+            rubricId: string;
             /** Message */
             message: string;
         };
@@ -6767,71 +5746,109 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /**
-         * FinalizeUploadRequest
-         * @description Request to finalize a TUS upload.
-         */
-        FinalizeUploadRequest: {
-            /** Fileid */
-            fileId: string;
-            /**
-             * Zip
-             * @default false
-             */
-            zip: boolean | null;
-            /**
-             * Autoclassify
-             * @default false
-             */
-            autoClassify: boolean | null;
-            /**
-             * Csv
-             * @default false
-             */
-            csv: boolean | null;
-            /**
-             * Test
-             * @default false
-             */
-            test: boolean | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-        };
-        /**
-         * FinalizeUploadResponse
-         * @description Response from finalizing an upload.
-         */
-        FinalizeUploadResponse: {
-            /** Success */
-            success: boolean;
+        /** FeedbackItem */
+        FeedbackItem: {
+            /** Feedback Id */
+            feedback_id: number;
+            /** Type */
+            type: string;
             /** Message */
             message: string;
-            /** Status */
-            status: string;
-            /** Document Id */
-            document_id?: string | null;
-            /** Documents */
-            documents?: {
+            /** Created At */
+            created_at: string;
+            /** Author Name */
+            author_name: string;
+            /** Author Alias */
+            author_alias: string;
+            /** Author Profile Id */
+            author_profile_id: string;
+        };
+        /** FeedbackListRequest */
+        FeedbackListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** FeedbackListResponse */
+        FeedbackListResponse: {
+            /** Feedback */
+            feedback: components["schemas"]["FeedbackItem"][];
+        };
+        /**
+         * FindCohortsRequest
+         * @description Request to search cohorts.
+         */
+        FindCohortsRequest: {
+            /** Query */
+            query: string;
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+        };
+        /**
+         * FindPersonasRequest
+         * @description Request to search personas.
+         */
+        FindPersonasRequest: {
+            /** Query */
+            query: string;
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+        };
+        /**
+         * FindProfilesRequest
+         * @description Request to search profiles.
+         */
+        FindProfilesRequest: {
+            /** Query */
+            query: string;
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+        };
+        /**
+         * FindScenariosRequest
+         * @description Request to search scenarios.
+         */
+        FindScenariosRequest: {
+            /** Query */
+            query: string;
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+        };
+        /**
+         * FindSimulationsRequest
+         * @description Request to search simulations.
+         */
+        FindSimulationsRequest: {
+            /** Query */
+            query: string;
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+        };
+        /**
+         * GenerateCertificateRequest
+         * @description Request to generate certificate.
+         */
+        GenerateCertificateRequest: {
+            /** Profilename */
+            profileName: string;
+            /** Cohortdata */
+            cohortData: {
                 [key: string]: unknown;
-            }[] | null;
-            /** Users Created */
-            users_created?: number | null;
-            /** Users Skipped */
-            users_skipped?: number | null;
-            /** Errors */
-            errors?: string[] | null;
-            /** Created Users */
-            created_users?: {
-                [key: string]: unknown;
-            }[] | null;
-            /** Skipped Users */
-            skipped_users?: {
-                [key: string]: unknown;
-            }[] | null;
+            }[];
         };
         /**
          * GenerateScenarioAIRequest
@@ -6918,6 +5935,17 @@ export interface components {
             totalAttempts?: number | null;
         };
         /**
+         * GrowthDataResponse
+         * @description Growth data response.
+         */
+        GrowthDataResponse: {
+            /** Chartdata */
+            chartData: components["schemas"]["GrowthDataPoint"][];
+            /** Availablemetrics */
+            availableMetrics: components["schemas"]["GrowthMetric"][];
+            windowAverages: components["schemas"]["GrowthWindowAverages"];
+        };
+        /**
          * GrowthMetric
          * @description Growth metric metadata.
          */
@@ -6962,48 +5990,6 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /**
-         * HealthCheckItem
-         * @description Individual health check result.
-         */
-        HealthCheckItem: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "healthy" | "unhealthy" | "warning" | "n/a";
-            /** Response Time */
-            response_time: number | null;
-            /** Last Checked */
-            last_checked: string;
-            /** Message */
-            message?: string | null;
-            /** Error */
-            error?: string | null;
-        };
-        /**
-         * HealthResponse
-         * @description Overall system health response.
-         */
-        HealthResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "healthy" | "degraded" | "unhealthy";
-            /** Checks */
-            checks: components["schemas"]["HealthCheckItem"][];
-            /** Timestamp */
-            timestamp: string;
-            /** Overall Response Time */
-            overall_response_time: number;
-        };
         /** HintItem */
         HintItem: {
             /** Simulationmessageid */
@@ -7037,6 +6023,35 @@ export interface components {
             profileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
+        };
+        /**
+         * HomeOverviewResponse
+         * @description Home overview response with mappings and history.
+         */
+        HomeOverviewResponse: {
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "ta" | "instructional" | "empty";
+            /** Hasdata */
+            hasData: boolean;
+            /** Items */
+            items: components["schemas"]["HomeSimulationItem"][];
+            /** History */
+            history: components["schemas"]["app__api__v3__home__overview__AttemptHistoryRow"][];
+            /** Standard Groups Mapping */
+            standard_groups_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
+            };
+            /** Standards Mapping */
+            standards_mapping: {
+                [key: string]: components["schemas"]["StandardMappingItem"];
+            };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
         };
         /**
          * HomeSimulationItem
@@ -7092,6 +6107,14 @@ export interface components {
             cohortNames?: string | null;
         };
         /**
+         * LeaderboardBundleResponse
+         * @description Leaderboard bundle response.
+         */
+        LeaderboardBundleResponse: {
+            /** Data */
+            data: components["schemas"]["LeaderboardRow"][];
+        };
+        /**
          * LeaderboardMetric
          * @description Leaderboard metric.
          */
@@ -7126,6 +6149,88 @@ export interface components {
             improvementRatePerDay: components["schemas"]["LeaderboardMetric"];
             perfectScoreCount: components["schemas"]["LeaderboardMetric"];
             quickestPassMinutes: components["schemas"]["LeaderboardMetric"];
+        };
+        /**
+         * LeaderboardRow
+         * @description Leaderboard row.
+         */
+        LeaderboardRow: {
+            /** Profileid */
+            profileId: string;
+            /** Firstname */
+            firstName: string;
+            /** Lastname */
+            lastName: string;
+            metrics: components["schemas"]["LeaderboardMetrics"];
+        };
+        /**
+         * LeaveCohortRequest
+         * @description Request for leaving a cohort.
+         */
+        LeaveCohortRequest: {
+            /** Cohortid */
+            cohortId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * LeaveCohortResponse
+         * @description Response for leaving a cohort.
+         */
+        LeaveCohortResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * LogEntry
+         * @description Log entry.
+         */
+        LogEntry: {
+            /** Id */
+            id: number;
+            /** Level */
+            level: string;
+            /** Message */
+            message: string;
+            /** Context */
+            context: {
+                [key: string]: unknown;
+            } | null;
+            /** Created At */
+            created_at: string;
+        };
+        /** LogItem */
+        LogItem: {
+            /** Log Id */
+            log_id: string;
+            /** Event */
+            event: string;
+            /** Level */
+            level: string;
+            /** Message */
+            message: string;
+            /** Correlation Id */
+            correlation_id: string | null;
+            actor: components["schemas"]["ActorData-Output"];
+            subject: components["schemas"]["SubjectData-Output"];
+            context: components["schemas"]["ContextData-Output"];
+            error: components["schemas"]["ErrorData-Output"];
+            /** Created At */
+            created_at: string;
+            /** Actor Name */
+            actor_name: string;
+        };
+        /** LogsListRequest */
+        LogsListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** LogsListResponse */
+        LogsListResponse: {
+            /** Logs */
+            logs: components["schemas"]["LogItem"][];
         };
         /**
          * MarkChatCompleteRequest
@@ -7201,6 +6306,59 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** ModelDetailRequest */
+        ModelDetailRequest: {
+            /** Modelid */
+            modelId: string;
+            /** Providerid */
+            providerId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /** ModelDetailResponse */
+        ModelDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Custom Model */
+            custom_model: boolean;
+            /** Image Model */
+            image_model: boolean;
+            /** Input Ppm */
+            input_ppm: number;
+            /** Output Ppm */
+            output_ppm: number;
+            /** Provider Id */
+            provider_id: string;
+            /** Valid Provider Ids */
+            valid_provider_ids: string[];
+            /** Provider Mapping */
+            provider_mapping: {
+                [key: string]: components["schemas"]["ProviderMappingItem"];
+            };
+        };
+        /** ModelItem */
+        ModelItem: {
+            /** Model Id */
+            model_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Custom Model */
+            custom_model: boolean;
+            /** Updated At */
+            updated_at: string;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
         /**
          * ModelMappingItem
          * @description Model mapping item - extends MappingItem
@@ -7226,18 +6384,28 @@ export interface components {
             output_ppm: number;
         };
         /**
-         * NewProfileForCohort
-         * @description New profile to create and add to cohort.
+         * ModelRunItem
+         * @description Model run item with aggregated metrics.
          */
-        NewProfileForCohort: {
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /** Alias */
-            alias: string;
-            /** Role */
-            role: string;
+        ModelRunItem: {
+            /** Model Run Id */
+            model_run_id: string;
+            /** Created At */
+            created_at: string;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Debug Info */
+            debug_info?: components["schemas"]["app__api__v3__pricing__analytics__DebugInfoItem"][] | null;
         };
         /**
          * NumericAttemptFact
@@ -7289,6 +6457,45 @@ export interface components {
             /** Valid Parameter Item Ids */
             valid_parameter_item_ids: string[];
         };
+        /** ParameterDetailDefaultRequest */
+        ParameterDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** ParameterDetailRequest */
+        ParameterDetailRequest: {
+            /** Parameterid */
+            parameterId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /** ParameterDetailResponse */
+        ParameterDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Numerical */
+            numerical: boolean;
+            /** Active */
+            active: boolean;
+            /** Document Parameter */
+            document_parameter: boolean;
+            /** Practice Parameter */
+            practice_parameter: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Parameter Items */
+            parameter_items: components["schemas"]["app__api__v3__parameters__detail__ParameterItemDetail"][];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+        };
         /**
          * ParameterItemCreate
          * @description Parameter item creation schema.
@@ -7333,6 +6540,33 @@ export interface components {
             /** Document Parameter */
             document_parameter: boolean;
         };
+        /** ParameterSampleItem */
+        ParameterSampleItem: {
+            /** Parameter Item Id */
+            parameter_item_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Value */
+            value: string;
+        };
+        /** ParametersFilters */
+        ParametersFilters: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** ParametersListResponse */
+        ParametersListResponse: {
+            /** Parameters */
+            parameters: components["schemas"]["app__api__v3__parameters__list__ParameterItem"][];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
         /**
          * PersonaDetailDefaultRequest
          * @description Request to get default persona details.
@@ -7352,6 +6586,48 @@ export interface components {
             profileId: string;
         };
         /**
+         * PersonaItem
+         * @description Individual persona item in the response.
+         */
+        PersonaItem: {
+            /** Persona Id */
+            persona_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Model Id */
+            model_id: string;
+            /** Model Name */
+            model_name: string | null;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number;
+            /** Temperature Display */
+            temperature_display: string;
+            /** Active */
+            active: boolean;
+            /** Is Inactive */
+            is_inactive: boolean;
+            /** Num Scenarios */
+            num_scenarios: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /**
          * PersonaMappingItem
          * @description Persona mapping item with custom color and icon fields
          */
@@ -7366,6 +6642,28 @@ export interface components {
             icon: string;
             /** Image Model */
             image_model?: boolean | null;
+        };
+        /**
+         * PersonaOverviewRequest
+         * @description Request to get persona overview.
+         */
+        PersonaOverviewRequest: {
+            /** Persona Id */
+            persona_id: string;
+        };
+        /**
+         * PersonaOverviewResponse
+         * @description Response with persona overview data.
+         */
+        PersonaOverviewResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Scenarios */
+            scenarios: {
+                [key: string]: unknown;
+            }[];
         };
         /**
          * PersonaPerformanceData
@@ -7384,6 +6682,65 @@ export interface components {
             simulationIds?: string[] | null;
             /** Trenddata */
             trendData: components["schemas"]["PersonaTrendData"][];
+        };
+        /**
+         * PersonaPerformanceResponse
+         * @description Persona performance response.
+         */
+        PersonaPerformanceResponse: {
+            /** Chartdata */
+            chartData: components["schemas"]["PersonaPerformanceData"][];
+            /** Validsimulationids */
+            validSimulationIds: string[];
+            /** Personacolors */
+            personaColors: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * PersonaResponseTimesRequest
+         * @description Request to get persona response times.
+         */
+        PersonaResponseTimesRequest: {
+            /** Persona Id */
+            persona_id: string;
+            /**
+             * Window Days
+             * @default 30
+             */
+            window_days: number;
+        };
+        /**
+         * PersonaResponseTimesResponse
+         * @description Response with persona response times data.
+         */
+        PersonaResponseTimesResponse: {
+            /** Persona */
+            persona: {
+                [key: string]: unknown;
+            };
+            /** Stats */
+            stats: {
+                [key: string]: unknown;
+            };
+            /** Recent Responses */
+            recent_responses: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * PersonaSearchResult
+         * @description Persona search result.
+         */
+        PersonaSearchResult: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Score */
+            score: number;
         };
         /**
          * PersonaTrendData
@@ -7408,6 +6765,38 @@ export interface components {
             profileId: string;
         };
         /**
+         * PersonasListResponse
+         * @description Response for personas list endpoint.
+         */
+        PersonasListResponse: {
+            /** Personas */
+            personas: components["schemas"]["PersonaItem"][];
+            /** Scenario Mapping */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: components["schemas"]["ModelMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+            /** Scenario Options */
+            scenario_options: {
+                [key: string]: string;
+            }[];
+            /** Model Options */
+            model_options: {
+                [key: string]: string;
+            }[];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
+        };
+        /**
          * PracticeFilters
          * @description Practice filter request schema - simplified to profile-only.
          */
@@ -7416,6 +6805,51 @@ export interface components {
             profileId: string;
             /** Departmentids */
             departmentIds?: string[] | null;
+        };
+        /**
+         * PracticeOverviewResponse
+         * @description Practice overview response with mappings and history.
+         */
+        PracticeOverviewResponse: {
+            /**
+             * Mode
+             * @constant
+             */
+            mode: "practice";
+            /** Hasdata */
+            hasData: boolean;
+            /** Items */
+            items: components["schemas"]["PracticeSimulationItem"][];
+            /** History */
+            history: components["schemas"]["app__api__v3__practice__overview__AttemptHistoryRow"][];
+            /** Standard Groups Mapping */
+            standard_groups_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
+            };
+            /** Standards Mapping */
+            standards_mapping: {
+                [key: string]: components["schemas"]["StandardMappingItem"];
+            };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /** Scenario Mapping */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: components["schemas"]["PersonaMappingItem"];
+            };
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: components["schemas"]["ParameterMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+            };
         };
         /**
          * PracticeSimulationItem
@@ -7496,6 +6930,30 @@ export interface components {
             percentage: number | null;
         };
         /**
+         * PricingAnalyticsResponse
+         * @description Response for pricing analytics.
+         */
+        PricingAnalyticsResponse: {
+            /** Model Runs */
+            model_runs: components["schemas"]["ModelRunItem"][];
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: components["schemas"]["ModelMappingWithPricing"];
+            };
+            /** Profile Mapping */
+            profile_mapping: {
+                [key: string]: string;
+            };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: string;
+            };
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: string;
+            };
+        };
+        /**
          * ProcessCSVRequest
          * @description Request to process CSV file.
          */
@@ -7504,6 +6962,18 @@ export interface components {
             csv_content: string;
             /** Column Mappings */
             column_mappings: components["schemas"]["CSVColumnMapping"][];
+        };
+        /**
+         * ProcessCSVResponse
+         * @description Response from CSV processing.
+         */
+        ProcessCSVResponse: {
+            /** Success */
+            success: boolean;
+            /** Rows */
+            rows: components["schemas"]["ProcessedCSVRow"][];
+            /** Headers */
+            headers: string[];
         };
         /**
          * ProcessedCSVRow
@@ -7552,6 +7022,49 @@ export interface components {
             effectiveProfileId: string;
             /** Pathname */
             pathname: string;
+        };
+        /**
+         * ProfileContextResponse
+         * @description Response with consolidated profile context data.
+         */
+        ProfileContextResponse: {
+            actualProfile: components["schemas"]["ProfileItem"];
+            effectiveProfile: components["schemas"]["ProfileItem"];
+            /** Departments */
+            departments: components["schemas"]["app__api__v3__profile__context__DepartmentItem"][];
+            /** Departmentids */
+            departmentIds: string[];
+            cohorts: components["schemas"]["CohortsData"];
+            /** Cohortids */
+            cohortIds: string[];
+            simulations: components["schemas"]["SimulationsData"];
+            /** Simulationids */
+            simulationIds: string[];
+            /** Simulatableprofiles */
+            simulatableProfiles: components["schemas"]["ProfileItem"][];
+            /** Earliestattemptdate */
+            earliestAttemptDate: string | null;
+            /** Availablesections */
+            availableSections: string[];
+            /** Redirectpath */
+            redirectPath: string;
+        };
+        /**
+         * ProfileDataEnhanced
+         * @description Enhanced profile data row.
+         */
+        ProfileDataEnhanced: {
+            /** Profileid */
+            profileId: string;
+            /** Firstname */
+            firstName: string;
+            /** Lastname */
+            lastName: string;
+            /** Alias */
+            alias: string | null;
+            /** Role */
+            role: string;
+            metrics: components["schemas"]["ProfileMetrics"];
         };
         /**
          * ProfileDetailRequest
@@ -7615,6 +7128,122 @@ export interface components {
             description: string;
         };
         /**
+         * ProfileMetrics
+         * @description Profile metrics - each metric is a full MetricResponse object.
+         */
+        ProfileMetrics: {
+            averageScore: components["schemas"]["MetricResponse"];
+            completionPercentage: components["schemas"]["MetricResponse"];
+            firstAttemptPassRate: components["schemas"]["MetricResponse"];
+            highestScore: components["schemas"]["MetricResponse"];
+            messagesPerSession: components["schemas"]["MetricResponse"];
+            personaResponseTimes: components["schemas"]["MetricResponse"];
+            sessionEfficiency: components["schemas"]["MetricResponse"];
+            stagnationRate: components["schemas"]["MetricResponse"];
+            timeSpent: components["schemas"]["MetricResponse"];
+            totalAttempts: components["schemas"]["MetricResponse"];
+        };
+        /**
+         * ProfileOverviewRequest
+         * @description Request to get profile overview.
+         */
+        ProfileOverviewRequest: {
+            /** Profile Id */
+            profile_id: string;
+        };
+        /**
+         * ProfileOverviewResponse
+         * @description Response with profile overview data.
+         */
+        ProfileOverviewResponse: {
+            /** Profile */
+            profile: {
+                [key: string]: unknown;
+            };
+            /** Latest Grades */
+            latest_grades: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * ProfileSearchResult
+         * @description Profile search result.
+         */
+        ProfileSearchResult: {
+            /** Id */
+            id: string;
+            /** First Name */
+            first_name: string | null;
+            /** Last Name */
+            last_name: string | null;
+            /** Alias */
+            alias: string | null;
+            /** Role */
+            role: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Score */
+            score: number;
+        };
+        /** ProviderDetailRequest */
+        ProviderDetailRequest: {
+            /** Providerid */
+            providerId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /** ProviderDetailResponse */
+        ProviderDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Api Key */
+            api_key: string;
+            /** Base Url */
+            base_url: string | null;
+        };
+        /** ProviderMappingItem */
+        ProviderMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** ProviderWithModels */
+        ProviderWithModels: {
+            /** Provider Id */
+            provider_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Models */
+            models: components["schemas"]["ModelItem"][];
+        };
+        /** ProvidersFilters */
+        ProvidersFilters: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** ProvidersListResponse */
+        ProvidersListResponse: {
+            /** Providers */
+            providers: components["schemas"]["ProviderWithModels"][];
+        };
+        /**
+         * QueryDataRequest
+         * @description Request to execute a SQL query.
+         */
+        QueryDataRequest: {
+            /** Sql */
+            sql: string;
+        };
+        /**
          * RandomizeScenarioRequest
          * @description Request to randomize scenario sections.
          */
@@ -7673,6 +7302,22 @@ export interface components {
             description: string;
         };
         /**
+         * RecentAppLogsRequest
+         * @description Request to get recent app logs.
+         */
+        RecentAppLogsRequest: {
+            /**
+             * Level
+             * @default error
+             */
+            level: string;
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+        };
+        /**
          * RefreshRequest
          * @description Request to refresh analytics (no parameters needed).
          */
@@ -7688,6 +7333,64 @@ export interface components {
             message: string;
             /** Status */
             status: string;
+        };
+        /**
+         * RemoveProfilesFromCohortRequest
+         * @description Request for removing profiles from cohort.
+         */
+        RemoveProfilesFromCohortRequest: {
+            /** Cohortid */
+            cohortId: string;
+            /** Profileids */
+            profileIds: string[];
+            /** Currentprofileid */
+            currentProfileId: string;
+        };
+        /**
+         * RemoveProfilesFromCohortResponse
+         * @description Response for removing profiles from cohort.
+         */
+        RemoveProfilesFromCohortResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * RemoveProfilesFromDepartmentRequest
+         * @description Request for removing profiles from department.
+         */
+        RemoveProfilesFromDepartmentRequest: {
+            /** Departmentid */
+            departmentId: string;
+            /** Profileids */
+            profileIds: string[];
+        };
+        /**
+         * RemoveProfilesFromDepartmentResponse
+         * @description Response for removing profiles from department.
+         */
+        RemoveProfilesFromDepartmentResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * ReportsBundleResponse
+         * @description Reports bundle response with entity mappings.
+         */
+        ReportsBundleResponse: {
+            /** Data */
+            data: components["schemas"]["ProfileDataEnhanced"][];
+            /** Scenario Mapping */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
         };
         /**
          * RubricDetailDefaultRequest
@@ -7708,6 +7411,50 @@ export interface components {
             profileId: string;
         };
         /**
+         * RubricDetailResponse
+         * @description Response for rubric detail endpoint.
+         */
+        RubricDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+            /** Active */
+            active: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Standard Group Ids */
+            standard_group_ids: string[];
+            /** Standard Groups Detail */
+            standard_groups_detail: {
+                [key: string]: components["schemas"]["StandardGroupDetail"];
+            };
+            /** Standard Groups Mapping */
+            standard_groups_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Standards Mapping */
+            standards_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+        };
+        /**
          * RubricHeatmapCell
          * @description Heatmap cell data.
          */
@@ -7724,6 +7471,48 @@ export interface components {
             strength: string;
             /** Datapoints */
             dataPoints: number;
+        };
+        /**
+         * RubricHeatmapResponse
+         * @description Rubric heatmap response.
+         */
+        RubricHeatmapResponse: {
+            /** Matrices */
+            matrices: components["schemas"]["RubricMatrixPackage"][];
+            /** Validrubricids */
+            validRubricIds: string[];
+        };
+        /**
+         * RubricItem
+         * @description Rubric item for list view.
+         */
+        RubricItem: {
+            /** Rubric Id */
+            rubric_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Active Simulation Count */
+            active_simulation_count: number;
+            /** Total Simulation Links */
+            total_simulation_links: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Standard Groups */
+            standard_groups: {
+                [key: string]: string[];
+            };
         };
         /**
          * RubricMappingItem
@@ -7769,20 +7558,32 @@ export interface components {
             };
         };
         /**
-         * RubricsFilters
-         * @description Filters for rubrics list.
-         */
-        RubricsFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * RubricsListRequest
          * @description Request for rubrics list.
          */
         RubricsListRequest: {
             /** Profileid */
             profileId: string;
+        };
+        /**
+         * RubricsListResponse
+         * @description Response for rubrics list.
+         */
+        RubricsListResponse: {
+            /** Rubrics */
+            rubrics: components["schemas"]["RubricItem"][];
+            /** Standard Groups Mapping */
+            standard_groups_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
+            };
+            /** Standards Mapping */
+            standards_mapping: {
+                [key: string]: components["schemas"]["StandardMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
         };
         /**
          * ScenarioAttributeAttemptFact
@@ -7884,6 +7685,19 @@ export interface components {
             completedAttempts: number;
         };
         /**
+         * ScenarioInRequest
+         * @description Scenario in request format.
+         */
+        ScenarioInRequest: {
+            /** Scenario Id */
+            scenario_id: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /**
          * ScenarioInSimulation
          * @description Scenario with position in simulation.
          */
@@ -7938,6 +7752,30 @@ export interface components {
             document_ids: string[];
         };
         /**
+         * ScenarioOverviewRequest
+         * @description Request to get scenario overview.
+         */
+        ScenarioOverviewRequest: {
+            /** Scenario Id */
+            scenario_id: string;
+        };
+        /**
+         * ScenarioOverviewResponse
+         * @description Response with scenario overview data.
+         */
+        ScenarioOverviewResponse: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Simulations */
+            simulations: {
+                [key: string]: unknown;
+            }[];
+            /** Persona Ids */
+            persona_ids: string[] | null;
+        };
+        /**
          * ScenarioPerformanceResponse
          * @description Scenario performance response.
          */
@@ -7948,6 +7786,24 @@ export interface components {
             attributeAttemptFacts: components["schemas"]["ScenarioAttributeAttemptFact"][];
             /** Attributescenariofacts */
             attributeScenarioFacts: components["schemas"]["ScenarioAttributeScenarioFact"][];
+        };
+        /**
+         * ScenarioSearchResult
+         * @description Scenario search result.
+         */
+        ScenarioSearchResult: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /** Problem Statement */
+            problem_statement: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Default Scenario */
+            default_scenario: boolean;
+            /** Score */
+            score: number;
         };
         /**
          * ScenarioStatsResponse
@@ -7970,6 +7826,38 @@ export interface components {
             profileId: string;
         };
         /**
+         * ScenariosListResponse
+         * @description Response for scenarios list endpoint.
+         */
+        ScenariosListResponse: {
+            /** Scenarios */
+            scenarios: components["schemas"]["app__api__v3__scenarios__list__ScenarioItem"][];
+            /** Objective Mapping */
+            objective_mapping: {
+                [key: string]: components["schemas"]["ObjectiveMappingItem"];
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: components["schemas"]["ParameterItemMappingItem"];
+            };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: components["schemas"]["PersonaMappingItem"];
+            };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+        };
+        /**
          * SearchStaffRequest
          * @description Request for staff search.
          */
@@ -7987,6 +7875,22 @@ export interface components {
             limit: number;
             /** Profileid */
             profileId: string;
+        };
+        /**
+         * SearchStaffResponse
+         * @description Response for staff search endpoint.
+         */
+        SearchStaffResponse: {
+            /** Staff */
+            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
         };
         /**
          * SelectAttributesRequest
@@ -8028,6 +7932,37 @@ export interface components {
             parameterItemIds: string[];
         };
         /**
+         * SimulationAttemptResult
+         * @description Simulation attempt result.
+         */
+        SimulationAttemptResult: {
+            /** Id */
+            id: string;
+            /** Student */
+            student: string;
+            /** Score */
+            score: number | null;
+            /** Passed */
+            passed: boolean | null;
+            /** Time Taken */
+            time_taken: number | null;
+            /** Created At */
+            created_at: string;
+        };
+        /**
+         * SimulationAttemptsRequest
+         * @description Request to get simulation attempts.
+         */
+        SimulationAttemptsRequest: {
+            /** Sim Id */
+            sim_id: string;
+            /**
+             * Limit
+             * @default 200
+             */
+            limit: number;
+        };
+        /**
          * SimulationCompositionResponse
          * @description Simulation composition response.
          */
@@ -8062,6 +7997,24 @@ export interface components {
             active: boolean;
             /** Practicesimulation */
             practiceSimulation: boolean;
+        };
+        /**
+         * SimulationDetailDefaultRequest
+         * @description Request to get default simulation details.
+         */
+        SimulationDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * SimulationDetailRequest
+         * @description Request to get simulation details.
+         */
+        SimulationDetailRequest: {
+            /** Simulationid */
+            simulationId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * SimulationFact
@@ -8112,19 +8065,6 @@ export interface components {
             can_remove: boolean;
         };
         /**
-         * SimulationInRequest
-         * @description Simulation with active state for create/update requests.
-         */
-        SimulationInRequest: {
-            /** Simulation Id */
-            simulation_id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /**
          * SimulationMappingItem
          * @description Simulation mapping item - extends MappingItem with time_limit
          */
@@ -8137,6 +8077,40 @@ export interface components {
             time_limit?: number | null;
             /** Department Ids */
             department_ids?: string[] | null;
+        };
+        /**
+         * SimulationOverviewRequest
+         * @description Request to get simulation overview.
+         */
+        SimulationOverviewRequest: {
+            /** Sim Id */
+            sim_id: string;
+        };
+        /**
+         * SimulationOverviewResponse
+         * @description Response with simulation overview data.
+         */
+        SimulationOverviewResponse: {
+            /** Simulation */
+            simulation: {
+                [key: string]: unknown;
+            };
+            /** Rubric */
+            rubric: {
+                [key: string]: unknown;
+            } | null;
+            /** Cohorts */
+            cohorts: {
+                [key: string]: unknown;
+            }[];
+            /** Scenarios */
+            scenarios: {
+                [key: string]: unknown;
+            }[];
+            /** Stats */
+            stats: {
+                [key: string]: unknown;
+            };
         };
         /**
          * SimulationParameterFactCategorical
@@ -8179,6 +8153,24 @@ export interface components {
             scenarioFacts: components["schemas"]["ScenarioFact"][];
         };
         /**
+         * SimulationSearchResult
+         * @description Simulation search result.
+         */
+        SimulationSearchResult: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string | null;
+            /** Active */
+            active: boolean;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Created At */
+            created_at: string | null;
+            /** Score */
+            score: number;
+        };
+        /**
          * SimulationsData
          * @description Simulations data.
          */
@@ -8195,6 +8187,26 @@ export interface components {
             profileId: string;
         };
         /**
+         * SimulationsListResponse
+         * @description Response for simulations list endpoint.
+         */
+        SimulationsListResponse: {
+            /** Simulations */
+            simulations: components["schemas"]["app__api__v3__simulations__list__SimulationItem"][];
+            /** Scenario Mapping */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
+            /** Rubric Mapping */
+            rubric_mapping: {
+                [key: string]: components["schemas"]["RubricMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+        };
+        /**
          * SkillPackage
          * @description Skill package.
          */
@@ -8205,6 +8217,16 @@ export interface components {
             radarData: components["schemas"]["SkillRadarData"][];
             /** Groupfacts */
             groupFacts: components["schemas"]["SkillStandardFact"][];
+        };
+        /**
+         * SkillPerformanceResponse
+         * @description Skill performance response.
+         */
+        SkillPerformanceResponse: {
+            /** Packages */
+            packages: components["schemas"]["SkillPackage"][];
+            /** Validrubricids */
+            validRubricIds: string[];
         };
         /**
          * SkillRadarData
@@ -8321,16 +8343,24 @@ export interface components {
             profileId: string;
         };
         /**
-         * StandardCreate
-         * @description Standard creation schema.
+         * StaffListResponse
+         * @description Response for staff list endpoint.
          */
-        StandardCreate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
+        StaffListResponse: {
+            /** Staff */
+            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+            /** Trend Data */
+            trend_data: {
+                [key: string]: components["schemas"]["TrendData"][];
+            };
         };
         /**
          * StandardGroup
@@ -8347,24 +8377,6 @@ export interface components {
             rubricId: string;
         };
         /**
-         * StandardGroupCreate
-         * @description Standard group creation schema with nested standards.
-         */
-        StandardGroupCreate: {
-            /** Name */
-            name: string;
-            /** Short Name */
-            short_name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Standards */
-            standards: components["schemas"]["StandardCreate"][];
-        };
-        /**
          * StandardGroupDetail
          * @description Standard group detail for detail response.
          */
@@ -8377,58 +8389,43 @@ export interface components {
             standard_ids: string[];
         };
         /**
-         * StandardGroupMappingDetail
-         * @description Standard group mapping for detail response - no points here, they're in detail.
+         * StandardMappingItem
+         * @description Standard mapping item with points
          */
-        StandardGroupMappingDetail: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * StandardGroupUpdate
-         * @description Standard group update schema for incremental updates.
-         */
-        StandardGroupUpdate: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name: string;
-            /** Short Name */
-            short_name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Standards */
-            standards: components["schemas"]["StandardUpdate"][];
-            /**
-             * Deleted
-             * @default false
-             */
-            deleted: boolean;
-        };
-        /**
-         * StandardUpdate
-         * @description Standard update schema for incremental updates.
-         */
-        StandardUpdate: {
-            /** Id */
-            id?: string | null;
+        StandardMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Points */
             points: number;
+        };
+        /**
+         * StudentSimReportRequest
+         * @description Request to get student simulation report.
+         */
+        StudentSimReportRequest: {
+            /** Profile Id */
+            profile_id: string;
             /**
-             * Deleted
-             * @default false
+             * Recent
+             * @default 50
              */
-            deleted: boolean;
+            recent: number;
+        };
+        /**
+         * StudentSimReportResponse
+         * @description Response with student simulation report.
+         */
+        StudentSimReportResponse: {
+            /** Profile */
+            profile: {
+                [key: string]: unknown;
+            };
+            /** Attempts */
+            attempts: {
+                [key: string]: unknown;
+            }[];
         };
         /** SubjectData */
         "SubjectData-Input": {
@@ -8482,12 +8479,99 @@ export interface components {
             /** Count */
             count: number;
         };
+        /** UpdateAgentRequest */
+        UpdateAgentRequest: {
+            /** Agentid */
+            agentId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Prompt Id */
+            prompt_id: string | null;
+            /** System Prompt */
+            system_prompt: string;
+            /** Temperature */
+            temperature: number;
+            /** Model Id */
+            model_id: string;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Active */
+            active: boolean;
+            /** Role */
+            role: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Department Id */
+            department_id?: string | null;
+        };
+        /** UpdateAgentResponse */
+        UpdateAgentResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
         /** UpdateChatCompletedAtRequest */
         UpdateChatCompletedAtRequest: {
             /** Chatid */
             chatId: string;
             /** Completedat */
             completedAt: string;
+        };
+        /** UpdateChatCreatedAtRequest */
+        UpdateChatCreatedAtRequest: {
+            /** Chatid */
+            chatId: string;
+            /** Createdat */
+            createdAt: string;
+        };
+        /** UpdateChatTimestampResponse */
+        UpdateChatTimestampResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * UpdateCohortRequest
+         * @description Request for updating a cohort.
+         */
+        UpdateCohortRequest: {
+            /** Cohortid */
+            cohortId: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active: boolean;
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Profile Ids
+             * @default []
+             */
+            profile_ids: string[];
+            /**
+             * Simulation Ids
+             * @default []
+             */
+            simulation_ids: string[];
+        };
+        /**
+         * UpdateCohortResponse
+         * @description Response for updating a cohort.
+         */
+        UpdateCohortResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * UpdateDepartmentRequest
@@ -8508,6 +8592,33 @@ export interface components {
          * @description Response for updating a department.
          */
         UpdateDepartmentResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * UpdateDocumentRequest
+         * @description Request for updating a document.
+         */
+        UpdateDocumentRequest: {
+            /** Documentid */
+            documentId: string;
+            /** Type */
+            type: string;
+            /** Department Id */
+            department_id?: string | null;
+            /**
+             * Parameter Item Ids
+             * @default []
+             */
+            parameter_item_ids: string[];
+        };
+        /**
+         * UpdateDocumentResponse
+         * @description Response for updating a document.
+         */
+        UpdateDocumentResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -8580,17 +8691,134 @@ export interface components {
             message: string;
         };
         /**
-         * UpdateProfileResponse
-         * @description Response containing updated profile.
+         * UpdatePersonaRequest
+         * @description Request to update persona.
          */
-        UpdateProfileResponse: {
-            profile: components["schemas"]["ProfileItem"];
+        UpdatePersonaRequest: {
+            /** Personaid */
+            personaId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Active */
+            active: boolean;
+            /** Color */
+            color: string;
+            /** Icon */
+            icon: string;
+            /** Model Id */
+            model_id: string;
+            /** Reasoning */
+            reasoning: string | null;
+            /** Temperature */
+            temperature: number;
+            /** System Prompt */
+            system_prompt: string | null;
+            /** Prompt Id */
+            prompt_id: string | null;
+            /** Department Id */
+            department_id: string | null;
+        };
+        /**
+         * UpdatePersonaResponse
+         * @description Response from update persona.
+         */
+        UpdatePersonaResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * UpdateProfileRequest
+         * @description Request to update profile fields.
+         */
+        UpdateProfileRequest: {
+            /** Profileid */
+            profileId: string;
+            /** Firstname */
+            firstName?: string | null;
+            /** Lastname */
+            lastName?: string | null;
+            /** Lastlogin */
+            lastLogin?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Viewedintro */
+            viewedIntro?: boolean | null;
+            /** Viewedchat */
+            viewedChat?: boolean | null;
+            /** Reqperday */
+            reqPerDay?: number | null;
+            /** Lastactive */
+            lastActive?: string | null;
+        };
+        /**
+         * UpdateProviderRequest
+         * @description Request to update provider.
+         *
+         *     Note: Providers are global (not department-specific).
+         */
+        UpdateProviderRequest: {
+            /** Providerid */
+            providerId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Api Key */
+            api_key?: string | null;
+            /** Base Url */
+            base_url?: string | null;
         };
         /**
          * UpdateProviderResponse
          * @description Response from update provider.
          */
         UpdateProviderResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * UpdateRubricRequest
+         * @description Request for updating a rubric.
+         */
+        UpdateRubricRequest: {
+            /** Rubricid */
+            rubricId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active: boolean;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Standard Groups
+             * @default []
+             */
+            standard_groups: components["schemas"]["app__api__v3__rubrics__update__StandardGroupItem"][];
+        };
+        /**
+         * UpdateRubricResponse
+         * @description Response for updating a rubric.
+         */
+        UpdateRubricResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -8661,6 +8889,30 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /**
+         * UpdateSimulationRequest
+         * @description Request to update simulation.
+         */
+        UpdateSimulationRequest: {
+            /** Simulationid */
+            simulationId: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Active */
+            active: boolean;
+            /** Practice Simulation */
+            practice_simulation: boolean;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Rubric Id */
+            rubric_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[] | components["schemas"]["ScenarioInRequest"][];
         };
         /**
          * UpdateSimulationResponse
@@ -8767,73 +9019,6 @@ export interface components {
             /** Error Type */
             type: string;
         };
-        /** CreateAgentRequest */
-        app__api__v3__agents__create__CreateAgentRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Active */
-            active: boolean;
-            /** Role */
-            role: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** CreateAgentResponse */
-        app__api__v3__agents__create__CreateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Agentid */
-            agentId: string;
-            /** Message */
-            message: string;
-        };
-        /** DeleteAgentRequest */
-        app__api__v3__agents__delete__DeleteAgentRequest: {
-            /** Agentid */
-            agentId: string;
-        };
-        /** DeleteAgentResponse */
-        app__api__v3__agents__delete__DeleteAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** DeleteAgentPromptRequest */
-        app__api__v3__agents__delete_prompt__DeleteAgentPromptRequest: {
-            /** Agentid */
-            agentId: string;
-            /** Promptid */
-            promptId: string;
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /** DeleteAgentPromptResponse */
-        app__api__v3__agents__delete_prompt__DeleteAgentPromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** AgentDetailRequest */
-        app__api__v3__agents__detail__AgentDetailRequest: {
-            /** Agentid */
-            agentId: string;
-            /** Profileid */
-            profileId: string;
-        };
         /** AgentDetailResponse */
         app__api__v3__agents__detail__AgentDetailResponse: {
             /** Name */
@@ -8917,11 +9102,6 @@ export interface components {
             /** Can Delete */
             can_delete: boolean;
         };
-        /** AgentDetailDefaultRequest */
-        app__api__v3__agents__detail_default__AgentDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
         /** AgentDetailResponse */
         app__api__v3__agents__detail_default__AgentDetailResponse: {
             /** Name */
@@ -8980,115 +9160,6 @@ export interface components {
             reasoning_mapping: {
                 [key: string]: components["schemas"]["ReasoningMappingItem"];
             };
-        };
-        /** DuplicateAgentRequest */
-        app__api__v3__agents__duplicate__DuplicateAgentRequest: {
-            /** Agentid */
-            agentId: string;
-        };
-        /** DuplicateAgentResponse */
-        app__api__v3__agents__duplicate__DuplicateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Agentid */
-            agentId: string;
-            /** Message */
-            message: string;
-        };
-        /** AgentItem */
-        app__api__v3__agents__list__AgentItem: {
-            /** Agent Id */
-            agent_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Role */
-            role: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Updated At */
-            updated_at: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /** AgentsListRequest */
-        app__api__v3__agents__list__AgentsListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** AgentsListResponse */
-        app__api__v3__agents__list__AgentsListResponse: {
-            /** Agents */
-            agents: components["schemas"]["app__api__v3__agents__list__AgentItem"][];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /** UpdateAgentRequest */
-        app__api__v3__agents__update__UpdateAgentRequest: {
-            /** Agentid */
-            agentId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Active */
-            active: boolean;
-            /** Role */
-            role: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Department Id */
-            department_id?: string | null;
-        };
-        /** UpdateAgentResponse */
-        app__api__v3__agents__update__UpdateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** BulkArchiveAttemptsRequest */
-        app__api__v3__attempts__bulk_archive__BulkArchiveAttemptsRequest: {
-            /** Archived */
-            archived: boolean;
-            /** Attemptids */
-            attemptIds: string[];
-        };
-        /** BulkArchiveAttemptsResponse */
-        app__api__v3__attempts__bulk_archive__BulkArchiveAttemptsResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Count */
-            count: number;
         };
         /** ScenarioItem */
         app__api__v3__attempts__full__ScenarioItem: {
@@ -9165,155 +9236,6 @@ export interface components {
             /** Passpoints */
             passPoints: number;
         };
-        /** UpdateChatTimestampResponse */
-        app__api__v3__attempts__update_chat_completed_at__UpdateChatTimestampResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** UpdateChatCreatedAtRequest */
-        app__api__v3__attempts__update_chat_created_at__UpdateChatCreatedAtRequest: {
-            /** Chatid */
-            chatId: string;
-            /** Createdat */
-            createdAt: string;
-        };
-        /** UpdateChatTimestampResponse */
-        app__api__v3__attempts__update_chat_created_at__UpdateChatTimestampResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * AddProfilesToCohortRequest
-         * @description Request for adding profiles to cohort.
-         */
-        app__api__v3__cohorts__add_profiles__AddProfilesToCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Profileids */
-            profileIds: string[];
-        };
-        /**
-         * AddProfilesToCohortResponse
-         * @description Response for adding profiles to cohort.
-         */
-        app__api__v3__cohorts__add_profiles__AddProfilesToCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * CreateCohortRequest
-         * @description Request for creating a cohort.
-         */
-        app__api__v3__cohorts__create__CreateCohortRequest: {
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /**
-             * Profile Ids
-             * @default []
-             */
-            profile_ids: string[];
-            /**
-             * Simulation Ids
-             * @default []
-             */
-            simulation_ids: string[];
-        };
-        /**
-         * CreateCohortResponse
-         * @description Response for creating a cohort.
-         */
-        app__api__v3__cohorts__create__CreateCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Cohortid */
-            cohortId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeleteCohortRequest
-         * @description Request for deleting a cohort.
-         */
-        app__api__v3__cohorts__delete__DeleteCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-        };
-        /**
-         * DeleteCohortResponse
-         * @description Response for deleting a cohort.
-         */
-        app__api__v3__cohorts__delete__DeleteCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * CohortDetailResponse
-         * @description Response for cohort detail endpoint.
-         */
-        app__api__v3__cohorts__detail__CohortDetailResponse: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Active */
-            active: boolean;
-            /** Simulation Ids */
-            simulation_ids: string[];
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[];
-            /** Profile Ids */
-            profile_ids: string[];
-            /** Valid Profile Ids */
-            valid_profile_ids: string[];
-            /** Simulations */
-            simulations: components["schemas"]["SimulationInCohort"][];
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__cohorts__detail__StaffItem"][];
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: components["schemas"]["ProfileMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping?: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            } | null;
-            /** Department Mapping For Staff */
-            department_mapping_for_staff?: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            } | null;
-        };
         /**
          * StaffItem
          * @description Staff item for cohort detail.
@@ -9359,74 +9281,6 @@ export interface components {
             can_remove: boolean;
         };
         /**
-         * CohortDetailWithProfilesResponse
-         * @description Response for cohort detail with available profiles.
-         */
-        app__api__v3__cohorts__detail_with_profiles__CohortDetailWithProfilesResponse: {
-            /** Cohort Id */
-            cohort_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean;
-            /** Current Profile Ids */
-            current_profile_ids: string[];
-            /** Available Profiles */
-            available_profiles: components["schemas"]["app__api__v3__cohorts__detail__StaffItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-        };
-        /**
-         * DuplicateCohortRequest
-         * @description Request for duplicating a cohort.
-         */
-        app__api__v3__cohorts__duplicate__DuplicateCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-        };
-        /**
-         * DuplicateCohortResponse
-         * @description Response for duplicating a cohort.
-         */
-        app__api__v3__cohorts__duplicate__DuplicateCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Cohortid */
-            cohortId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * LeaveCohortRequest
-         * @description Request for leaving a cohort.
-         */
-        app__api__v3__cohorts__leave__LeaveCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * LeaveCohortResponse
-         * @description Response for leaving a cohort.
-         */
-        app__api__v3__cohorts__leave__LeaveCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
          * CohortItem
          * @description Cohort item for list view.
          */
@@ -9457,87 +9311,6 @@ export interface components {
             can_duplicate: boolean;
             /** Can Leave */
             can_leave: boolean;
-        };
-        /**
-         * CohortsListResponse
-         * @description Response for cohorts list.
-         */
-        app__api__v3__cohorts__list__CohortsListResponse: {
-            /** Cohorts */
-            cohorts: components["schemas"]["app__api__v3__cohorts__list__CohortItem"][];
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: components["schemas"]["ProfileMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * RemoveProfilesFromCohortRequest
-         * @description Request for removing profiles from cohort.
-         */
-        app__api__v3__cohorts__remove_profiles__RemoveProfilesFromCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Profileids */
-            profileIds: string[];
-            /** Currentprofileid */
-            currentProfileId: string;
-        };
-        /**
-         * RemoveProfilesFromCohortResponse
-         * @description Response for removing profiles from cohort.
-         */
-        app__api__v3__cohorts__remove_profiles__RemoveProfilesFromCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * UpdateCohortRequest
-         * @description Request for updating a cohort.
-         */
-        app__api__v3__cohorts__update__UpdateCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active: boolean;
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /**
-             * Profile Ids
-             * @default []
-             */
-            profile_ids: string[];
-            /**
-             * Simulation Ids
-             * @default []
-             */
-            simulation_ids: string[];
-        };
-        /**
-         * UpdateCohortResponse
-         * @description Response for updating a cohort.
-         */
-        app__api__v3__cohorts__update__UpdateCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
         };
         /**
          * AttemptHistoryRow
@@ -9588,125 +9361,6 @@ export interface components {
             department_id?: string[] | null;
             /** Cohortnames */
             cohortNames: string[];
-        };
-        /**
-         * DashboardBundleResponse
-         * @description Complete dashboard bundle with all metrics, history, insights, and mappings.
-         */
-        app__api__v3__dashboard__bundle__DashboardBundleResponse: {
-            header: components["schemas"]["app__api__v3__dashboard__bundle__DashboardHeaderMetrics"];
-            primary: components["schemas"]["app__api__v3__dashboard__bundle__DashboardPrimaryMetrics"];
-            secondary: components["schemas"]["app__api__v3__dashboard__bundle__DashboardSecondaryMetrics"];
-            footer: components["schemas"]["app__api__v3__dashboard__bundle__DashboardFooterMetrics"];
-            /** History */
-            history: components["schemas"]["app__api__v3__dashboard__bundle__AttemptHistoryRow"][];
-            insights: components["schemas"]["DashboardInsights"];
-            thresholds: components["schemas"]["Thresholds"];
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-        };
-        /**
-         * DashboardFooterMetrics
-         * @description Footer metrics (4 total).
-         */
-        app__api__v3__dashboard__bundle__DashboardFooterMetrics: {
-            scenarioPerformance: components["schemas"]["ScenarioPerformanceResponse"];
-            scenarioStats: components["schemas"]["ScenarioStatsResponse"];
-            simulationPerformance: components["schemas"]["SimulationPerformanceResponse"];
-            simulationComposition: components["schemas"]["SimulationCompositionResponse"];
-        };
-        /**
-         * DashboardHeaderMetrics
-         * @description Header metrics (10 total).
-         */
-        app__api__v3__dashboard__bundle__DashboardHeaderMetrics: {
-            averageScore: components["schemas"]["MetricResponse"];
-            completionPercentage: components["schemas"]["MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["MetricResponse"];
-            highestScore: components["schemas"]["MetricResponse"];
-            messagesPerSession: components["schemas"]["MetricResponse"];
-            personaResponseTimes: components["schemas"]["MetricResponse"];
-            sessionEfficiency: components["schemas"]["MetricResponse"];
-            stagnationRate: components["schemas"]["MetricResponse"];
-            timeSpent: components["schemas"]["MetricResponse"];
-            totalAttempts: components["schemas"]["MetricResponse"];
-        };
-        /**
-         * DashboardPrimaryMetrics
-         * @description Primary metrics (3 total).
-         */
-        app__api__v3__dashboard__bundle__DashboardPrimaryMetrics: {
-            growthData: components["schemas"]["app__api__v3__dashboard__bundle__GrowthDataResponse"];
-            personaPerformance: components["schemas"]["app__api__v3__dashboard__bundle__PersonaPerformanceResponse"];
-            rubricHeatmap: components["schemas"]["app__api__v3__dashboard__bundle__RubricHeatmapResponse"];
-        };
-        /**
-         * DashboardSecondaryMetrics
-         * @description Secondary metrics (3 total).
-         */
-        app__api__v3__dashboard__bundle__DashboardSecondaryMetrics: {
-            attemptImprovement: components["schemas"]["AttemptImprovementResponse"];
-            cohortPerformance: components["schemas"]["CohortPerformanceResponse"];
-            skillPerformance: components["schemas"]["app__api__v3__dashboard__bundle__SkillPerformanceResponse"];
-        };
-        /**
-         * GrowthDataResponse
-         * @description Growth data response.
-         */
-        app__api__v3__dashboard__bundle__GrowthDataResponse: {
-            /** Chartdata */
-            chartData: components["schemas"]["GrowthDataPoint"][];
-            /** Availablemetrics */
-            availableMetrics: components["schemas"]["GrowthMetric"][];
-            windowAverages: components["schemas"]["GrowthWindowAverages"];
-        };
-        /**
-         * PersonaPerformanceResponse
-         * @description Persona performance response.
-         */
-        app__api__v3__dashboard__bundle__PersonaPerformanceResponse: {
-            /** Chartdata */
-            chartData: components["schemas"]["PersonaPerformanceData"][];
-            /** Validsimulationids */
-            validSimulationIds: string[];
-            /** Personacolors */
-            personaColors: {
-                [key: string]: string;
-            };
-        };
-        /**
-         * RubricHeatmapResponse
-         * @description Rubric heatmap response.
-         */
-        app__api__v3__dashboard__bundle__RubricHeatmapResponse: {
-            /** Matrices */
-            matrices: components["schemas"]["RubricMatrixPackage"][];
-            /** Validrubricids */
-            validRubricIds: string[];
-        };
-        /**
-         * SkillPerformanceResponse
-         * @description Skill performance response.
-         */
-        app__api__v3__dashboard__bundle__SkillPerformanceResponse: {
-            /** Packages */
-            packages: components["schemas"]["SkillPackage"][];
-            /** Validrubricids */
-            validRubricIds: string[];
         };
         /**
          * DepartmentDetailResponse
@@ -9911,211 +9565,6 @@ export interface components {
             can_duplicate: boolean;
         };
         /**
-         * DepartmentsListResponse
-         * @description Response for departments list.
-         */
-        app__api__v3__departments__list__DepartmentsListResponse: {
-            /** Departments */
-            departments: components["schemas"]["app__api__v3__departments__list__DepartmentItem"][];
-        };
-        /**
-         * RemoveProfilesFromDepartmentRequest
-         * @description Request for removing profiles from department.
-         */
-        app__api__v3__departments__remove_profiles__RemoveProfilesFromDepartmentRequest: {
-            /** Departmentid */
-            departmentId: string;
-            /** Profileids */
-            profileIds: string[];
-        };
-        /**
-         * RemoveProfilesFromDepartmentResponse
-         * @description Response for removing profiles from department.
-         */
-        app__api__v3__departments__remove_profiles__RemoveProfilesFromDepartmentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BulkUpdateDocumentsRequest
-         * @description Request to bulk update documents.
-         */
-        app__api__v3__documents__bulk_update__BulkUpdateDocumentsRequest: {
-            /** Documentids */
-            documentIds: string[];
-            /** Type */
-            type: string;
-            /** Department Id */
-            department_id?: string | null;
-            /**
-             * Parameter Item Ids
-             * @default []
-             */
-            parameter_item_ids: string[];
-        };
-        /**
-         * GenerateCertificateRequest
-         * @description Request to generate certificate.
-         */
-        app__api__v3__documents__certificate__GenerateCertificateRequest: {
-            /** Profilename */
-            profileName: string;
-            /** Cohortdata */
-            cohortData: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
-         * DocumentItem
-         * @description Document item for list view.
-         */
-        app__api__v3__documents__list__DocumentItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-            /** Updated At */
-            updated_at: string;
-            /** Mime Type */
-            mime_type?: string | null;
-            /** Active */
-            active: boolean;
-            /** File Path */
-            file_path?: string | null;
-            /** Extension */
-            extension?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Active Scenario Count */
-            active_scenario_count: number;
-            /** Total Scenario Links */
-            total_scenario_links: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * DocumentsListResponse
-         * @description Response for documents list.
-         */
-        app__api__v3__documents__list__DocumentsListResponse: {
-            /** Documents */
-            documents: components["schemas"]["app__api__v3__documents__list__DocumentItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-        };
-        /**
-         * UpdateDocumentRequest
-         * @description Request for updating a document.
-         */
-        app__api__v3__documents__update__UpdateDocumentRequest: {
-            /** Documentid */
-            documentId: string;
-            /** Type */
-            type: string;
-            /** Department Id */
-            department_id?: string | null;
-            /**
-             * Parameter Item Ids
-             * @default []
-             */
-            parameter_item_ids: string[];
-        };
-        /**
-         * UpdateDocumentResponse
-         * @description Response for updating a document.
-         */
-        app__api__v3__documents__update__UpdateDocumentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** BulkDeleteFeedbackRequest */
-        app__api__v3__feedback__bulk_delete__BulkDeleteFeedbackRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Ids */
-            ids: number[];
-        };
-        /** BulkDeleteFeedbackResponse */
-        app__api__v3__feedback__bulk_delete__BulkDeleteFeedbackResponse: {
-            /** Success */
-            success: boolean;
-            /** Deleted Count */
-            deleted_count: number;
-            /** Message */
-            message: string;
-        };
-        /** CreateFeedbackRequest */
-        app__api__v3__feedback__create__CreateFeedbackRequest: {
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /** CreateFeedbackResponse */
-        app__api__v3__feedback__create__CreateFeedbackResponse: {
-            /** Feedback Id */
-            feedback_id: number;
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /** FeedbackItem */
-        app__api__v3__feedback__list__FeedbackItem: {
-            /** Feedback Id */
-            feedback_id: number;
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-            /** Created At */
-            created_at: string;
-            /** Author Name */
-            author_name: string;
-            /** Author Alias */
-            author_alias: string;
-            /** Author Profile Id */
-            author_profile_id: string;
-        };
-        /** FeedbackListRequest */
-        app__api__v3__feedback__list__FeedbackListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** FeedbackListResponse */
-        app__api__v3__feedback__list__FeedbackListResponse: {
-            /** Feedback */
-            feedback: components["schemas"]["app__api__v3__feedback__list__FeedbackItem"][];
-        };
-        /**
          * AttemptHistoryRow
          * @description Attempt history row.
          */
@@ -10165,163 +9614,6 @@ export interface components {
             /** Cohortnames */
             cohortNames: string[];
         };
-        /**
-         * HomeOverviewResponse
-         * @description Home overview response with mappings and history.
-         */
-        app__api__v3__home__overview__HomeOverviewResponse: {
-            /**
-             * Mode
-             * @enum {string}
-             */
-            mode: "ta" | "instructional" | "empty";
-            /** Hasdata */
-            hasData: boolean;
-            /** Items */
-            items: components["schemas"]["HomeSimulationItem"][];
-            /** History */
-            history: components["schemas"]["app__api__v3__home__overview__AttemptHistoryRow"][];
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-        };
-        /**
-         * LeaderboardBundleResponse
-         * @description Leaderboard bundle response.
-         */
-        app__api__v3__leaderboard__bundle__LeaderboardBundleResponse: {
-            /** Data */
-            data: components["schemas"]["app__api__v3__leaderboard__bundle__LeaderboardRow"][];
-        };
-        /**
-         * LeaderboardRow
-         * @description Leaderboard row.
-         */
-        app__api__v3__leaderboard__bundle__LeaderboardRow: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            metrics: components["schemas"]["LeaderboardMetrics"];
-        };
-        /** BulkDeleteLogsRequest */
-        app__api__v3__logs__bulk_delete__BulkDeleteLogsRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Ids */
-            ids: number[];
-        };
-        /** BulkDeleteLogsResponse */
-        app__api__v3__logs__bulk_delete__BulkDeleteLogsResponse: {
-            /** Success */
-            success: boolean;
-            /** Deleted Count */
-            deleted_count: number;
-            /** Message */
-            message: string;
-        };
-        /** CorrelationData */
-        app__api__v3__logs__create__CorrelationData: {
-            /** Correlationid */
-            correlationId?: string | null;
-        };
-        /** CreateLogRequest */
-        app__api__v3__logs__create__CreateLogRequest: {
-            /** Event */
-            event: string;
-            /** Level */
-            level: string;
-            /** Message */
-            message: string;
-            correlation?: components["schemas"]["app__api__v3__logs__create__CorrelationData"] | null;
-            actor?: components["schemas"]["ActorData-Input"] | null;
-            subject?: components["schemas"]["SubjectData-Input"] | null;
-            context?: components["schemas"]["ContextData-Input"] | null;
-            error?: components["schemas"]["ErrorData-Input"] | null;
-        };
-        /** CreateLogResponse */
-        app__api__v3__logs__create__CreateLogResponse: {
-            /** Success */
-            success: boolean;
-            /** Log Id */
-            log_id: number | null;
-        };
-        /** LogItem */
-        app__api__v3__logs__list__LogItem: {
-            /** Log Id */
-            log_id: string;
-            /** Event */
-            event: string;
-            /** Level */
-            level: string;
-            /** Message */
-            message: string;
-            /** Correlation Id */
-            correlation_id: string | null;
-            actor: components["schemas"]["ActorData-Output"];
-            subject: components["schemas"]["SubjectData-Output"];
-            context: components["schemas"]["ContextData-Output"];
-            error: components["schemas"]["ErrorData-Output"];
-            /** Created At */
-            created_at: string;
-            /** Actor Name */
-            actor_name: string;
-        };
-        /** LogsListRequest */
-        app__api__v3__logs__list__LogsListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** LogsListResponse */
-        app__api__v3__logs__list__LogsListResponse: {
-            /** Logs */
-            logs: components["schemas"]["app__api__v3__logs__list__LogItem"][];
-        };
-        /** ParameterDetailRequest */
-        app__api__v3__parameters__detail__ParameterDetailRequest: {
-            /** Parameterid */
-            parameterId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /** ParameterDetailResponse */
-        app__api__v3__parameters__detail__ParameterDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Active */
-            active: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Practice Parameter */
-            practice_parameter: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Parameter Items */
-            parameter_items: components["schemas"]["app__api__v3__parameters__detail__ParameterItemDetail"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-        };
         /** ParameterItemDetail */
         app__api__v3__parameters__detail__ParameterItemDetail: {
             /** Parameter Item Id */
@@ -10336,11 +9628,6 @@ export interface components {
             usage_count: number;
             /** Department Ids */
             department_ids: string[] | null;
-        };
-        /** ParameterDetailDefaultRequest */
-        app__api__v3__parameters__detail_default__ParameterDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
         };
         /** ParameterItem */
         app__api__v3__parameters__list__ParameterItem: {
@@ -10359,120 +9646,13 @@ export interface components {
             /** Num Items */
             num_items: number;
             /** Sample Items */
-            sample_items: components["schemas"]["app__api__v3__parameters__list__ParameterSampleItem"][];
+            sample_items: components["schemas"]["ParameterSampleItem"][];
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
             can_delete: boolean;
             /** Can Duplicate */
             can_duplicate: boolean;
-        };
-        /** ParameterSampleItem */
-        app__api__v3__parameters__list__ParameterSampleItem: {
-            /** Parameter Item Id */
-            parameter_item_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value: string;
-        };
-        /** ParametersFilters */
-        app__api__v3__parameters__list__ParametersFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** ParametersListResponse */
-        app__api__v3__parameters__list__ParametersListResponse: {
-            /** Parameters */
-            parameters: components["schemas"]["app__api__v3__parameters__list__ParameterItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        /**
-         * CreatePersonaRequest
-         * @description Request to create a persona.
-         */
-        app__api__v3__personas__create__CreatePersonaRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** System Prompt */
-            system_prompt: string | null;
-            /** Prompt Id */
-            prompt_id: string | null;
-        };
-        /**
-         * CreatePersonaResponse
-         * @description Response from create persona.
-         */
-        app__api__v3__personas__create__CreatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Personaid */
-            personaId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeletePersonaRequest
-         * @description Request to delete persona.
-         */
-        app__api__v3__personas__delete__DeletePersonaRequest: {
-            /** Personaid */
-            personaId: string;
-        };
-        /**
-         * DeletePersonaResponse
-         * @description Response from delete persona.
-         */
-        app__api__v3__personas__delete__DeletePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeletePersonaPromptRequest
-         * @description Request to delete persona prompt.
-         */
-        app__api__v3__personas__delete_prompt__DeletePersonaPromptRequest: {
-            /** Personaid */
-            personaId: string;
-            /** Promptid */
-            promptId: string;
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /**
-         * DeletePersonaPromptResponse
-         * @description Response from delete persona prompt.
-         */
-        app__api__v3__personas__delete_prompt__DeletePersonaPromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
         };
         /**
          * DebugInfoItem
@@ -10679,142 +9859,6 @@ export interface components {
             can_delete: boolean;
         };
         /**
-         * DuplicatePersonaRequest
-         * @description Request to duplicate persona.
-         */
-        app__api__v3__personas__duplicate__DuplicatePersonaRequest: {
-            /** Personaid */
-            personaId: string;
-        };
-        /**
-         * DuplicatePersonaResponse
-         * @description Response from duplicate persona.
-         */
-        app__api__v3__personas__duplicate__DuplicatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Personaid */
-            personaId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * PersonaItem
-         * @description Individual persona item in the response.
-         */
-        app__api__v3__personas__list__PersonaItem: {
-            /** Persona Id */
-            persona_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Model Id */
-            model_id: string;
-            /** Model Name */
-            model_name: string | null;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Temperature Display */
-            temperature_display: string;
-            /** Active */
-            active: boolean;
-            /** Is Inactive */
-            is_inactive: boolean;
-            /** Num Scenarios */
-            num_scenarios: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * PersonasListResponse
-         * @description Response for personas list endpoint.
-         */
-        app__api__v3__personas__list__PersonasListResponse: {
-            /** Personas */
-            personas: components["schemas"]["app__api__v3__personas__list__PersonaItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Scenario Options */
-            scenario_options: {
-                [key: string]: string;
-            }[];
-            /** Model Options */
-            model_options: {
-                [key: string]: string;
-            }[];
-            /** Department Options */
-            department_options: {
-                [key: string]: string;
-            }[];
-        };
-        /**
-         * UpdatePersonaRequest
-         * @description Request to update persona.
-         */
-        app__api__v3__personas__update__UpdatePersonaRequest: {
-            /** Personaid */
-            personaId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** System Prompt */
-            system_prompt: string | null;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** Department Id */
-            department_id: string | null;
-        };
-        /**
-         * UpdatePersonaResponse
-         * @description Response from update persona.
-         */
-        app__api__v3__personas__update__UpdatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
          * AttemptHistoryRow
          * @description Attempt history row.
          */
@@ -10865,51 +9909,6 @@ export interface components {
             cohortNames: string[];
         };
         /**
-         * PracticeOverviewResponse
-         * @description Practice overview response with mappings and history.
-         */
-        app__api__v3__practice__overview__PracticeOverviewResponse: {
-            /**
-             * Mode
-             * @constant
-             */
-            mode: "practice";
-            /** Hasdata */
-            hasData: boolean;
-            /** Items */
-            items: components["schemas"]["PracticeSimulationItem"][];
-            /** History */
-            history: components["schemas"]["app__api__v3__practice__overview__AttemptHistoryRow"][];
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-        };
-        /**
          * DebugInfoItem
          * @description Debug information item.
          */
@@ -10920,54 +9919,6 @@ export interface components {
             created_at: string;
             /** Content */
             content: string;
-        };
-        /**
-         * ModelRunItem
-         * @description Model run item with aggregated metrics.
-         */
-        app__api__v3__pricing__analytics__ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Created At */
-            created_at: string;
-            /** Input Tokens */
-            input_tokens: number;
-            /** Output Tokens */
-            output_tokens: number;
-            /** Model Id */
-            model_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Debug Info */
-            debug_info?: components["schemas"]["app__api__v3__pricing__analytics__DebugInfoItem"][] | null;
-        };
-        /**
-         * PricingAnalyticsResponse
-         * @description Response for pricing analytics.
-         */
-        app__api__v3__pricing__analytics__PricingAnalyticsResponse: {
-            /** Model Runs */
-            model_runs: components["schemas"]["app__api__v3__pricing__analytics__ModelRunItem"][];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingWithPricing"];
-            };
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: string;
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: string;
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: string;
-            };
         };
         /**
          * CohortItem
@@ -10990,18 +9941,6 @@ export interface components {
             updatedAt: string;
         };
         /**
-         * CohortsData
-         * @description Cohorts data with member counts.
-         */
-        app__api__v3__profile__context__CohortsData: {
-            /** Items */
-            items: components["schemas"]["app__api__v3__profile__context__CohortItem"][];
-            /** Membercounts */
-            memberCounts: {
-                [key: string]: number;
-            };
-        };
-        /**
          * DepartmentItem
          * @description Department item.
          */
@@ -11018,50 +9957,6 @@ export interface components {
             createdAt: string;
             /** Updatedat */
             updatedAt: string;
-        };
-        /**
-         * ProfileContextResponse
-         * @description Response with consolidated profile context data.
-         */
-        app__api__v3__profile__context__ProfileContextResponse: {
-            actualProfile: components["schemas"]["ProfileItem"];
-            effectiveProfile: components["schemas"]["ProfileItem"];
-            /** Departments */
-            departments: components["schemas"]["app__api__v3__profile__context__DepartmentItem"][];
-            /** Departmentids */
-            departmentIds: string[];
-            cohorts: components["schemas"]["app__api__v3__profile__context__CohortsData"];
-            /** Cohortids */
-            cohortIds: string[];
-            simulations: components["schemas"]["SimulationsData"];
-            /** Simulationids */
-            simulationIds: string[];
-            /** Simulatableprofiles */
-            simulatableProfiles: components["schemas"]["ProfileItem"][];
-            /** Earliestattemptdate */
-            earliestAttemptDate: string | null;
-            /** Availablesections */
-            availableSections: string[];
-            /** Redirectpath */
-            redirectPath: string;
-        };
-        /**
-         * CreateStaffDataResponse
-         * @description Response with all data needed for create staff UI.
-         */
-        app__api__v3__profile__staff__create_staff_data__CreateStaffDataResponse: {
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Role Options */
-            role_options: string[];
         };
         /**
          * StaffItem
@@ -11106,311 +10001,6 @@ export interface components {
             can_delete: boolean;
         };
         /**
-         * StaffListResponse
-         * @description Response for staff list endpoint.
-         */
-        app__api__v3__profile__staff__list__StaffListResponse: {
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Trend Data */
-            trend_data: {
-                [key: string]: components["schemas"]["TrendData"][];
-            };
-        };
-        /**
-         * ProcessCSVResponse
-         * @description Response from CSV processing.
-         */
-        app__api__v3__profile__staff__process_csv__ProcessCSVResponse: {
-            /** Success */
-            success: boolean;
-            /** Rows */
-            rows: components["schemas"]["ProcessedCSVRow"][];
-            /** Headers */
-            headers: string[];
-        };
-        /**
-         * SearchStaffResponse
-         * @description Response for staff search endpoint.
-         */
-        app__api__v3__profile__staff__search_staff__SearchStaffResponse: {
-            /** Staff */
-            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * UpdateProfileRequest
-         * @description Request to update profile fields.
-         */
-        app__api__v3__profile__update__UpdateProfileRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName?: string | null;
-            /** Lastname */
-            lastName?: string | null;
-            /** Lastlogin */
-            lastLogin?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Viewedintro */
-            viewedIntro?: boolean | null;
-            /** Viewedchat */
-            viewedChat?: boolean | null;
-            /** Reqperday */
-            reqPerDay?: number | null;
-            /** Lastactive */
-            lastActive?: string | null;
-        };
-        /** CreateProviderRequest */
-        app__api__v3__providers__create__CreateProviderRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key: string;
-            /** Base Url */
-            base_url?: string | null;
-        };
-        /** CreateProviderResponse */
-        app__api__v3__providers__create__CreateProviderResponse: {
-            /** Success */
-            success: boolean;
-            /** Providerid */
-            providerId: string;
-            /** Message */
-            message: string;
-        };
-        /** ProviderDetailRequest */
-        app__api__v3__providers__detail__ProviderDetailRequest: {
-            /** Providerid */
-            providerId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /** ProviderDetailResponse */
-        app__api__v3__providers__detail__ProviderDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key: string;
-            /** Base Url */
-            base_url: string | null;
-        };
-        /** ModelItem */
-        app__api__v3__providers__list__ModelItem: {
-            /** Model Id */
-            model_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
-            /** Updated At */
-            updated_at: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /** ProviderWithModels */
-        app__api__v3__providers__list__ProviderWithModels: {
-            /** Provider Id */
-            provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Models */
-            models: components["schemas"]["app__api__v3__providers__list__ModelItem"][];
-        };
-        /** ProvidersFilters */
-        app__api__v3__providers__list__ProvidersFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** ProvidersListResponse */
-        app__api__v3__providers__list__ProvidersListResponse: {
-            /** Providers */
-            providers: components["schemas"]["app__api__v3__providers__list__ProviderWithModels"][];
-        };
-        /** ModelDetailRequest */
-        app__api__v3__providers__models__detail__ModelDetailRequest: {
-            /** Modelid */
-            modelId: string;
-            /** Providerid */
-            providerId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /** ModelDetailResponse */
-        app__api__v3__providers__models__detail__ModelDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
-            /** Image Model */
-            image_model: boolean;
-            /** Input Ppm */
-            input_ppm: number;
-            /** Output Ppm */
-            output_ppm: number;
-            /** Provider Id */
-            provider_id: string;
-            /** Valid Provider Ids */
-            valid_provider_ids: string[];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__providers__models__detail__ProviderMappingItem"];
-            };
-        };
-        /** ProviderMappingItem */
-        app__api__v3__providers__models__detail__ProviderMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * UpdateProviderRequest
-         * @description Request to update provider.
-         *
-         *     Note: Providers are global (not department-specific).
-         */
-        app__api__v3__providers__update__UpdateProviderRequest: {
-            /** Providerid */
-            providerId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key?: string | null;
-            /** Base Url */
-            base_url?: string | null;
-        };
-        /**
-         * ProfileDataEnhanced
-         * @description Enhanced profile data row.
-         */
-        app__api__v3__reports__bundle__ProfileDataEnhanced: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /** Alias */
-            alias: string | null;
-            /** Role */
-            role: string;
-            metrics: components["schemas"]["app__api__v3__reports__bundle__ProfileMetrics"];
-        };
-        /**
-         * ProfileMetrics
-         * @description Profile metrics - each metric is a full MetricResponse object.
-         */
-        app__api__v3__reports__bundle__ProfileMetrics: {
-            averageScore: components["schemas"]["MetricResponse"];
-            completionPercentage: components["schemas"]["MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["MetricResponse"];
-            highestScore: components["schemas"]["MetricResponse"];
-            messagesPerSession: components["schemas"]["MetricResponse"];
-            personaResponseTimes: components["schemas"]["MetricResponse"];
-            sessionEfficiency: components["schemas"]["MetricResponse"];
-            stagnationRate: components["schemas"]["MetricResponse"];
-            timeSpent: components["schemas"]["MetricResponse"];
-            totalAttempts: components["schemas"]["MetricResponse"];
-        };
-        /**
-         * ReportsBundleResponse
-         * @description Reports bundle response with entity mappings.
-         */
-        app__api__v3__reports__bundle__ReportsBundleResponse: {
-            /** Data */
-            data: components["schemas"]["app__api__v3__reports__bundle__ProfileDataEnhanced"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-        };
-        /**
-         * CreateRubricRequest
-         * @description Request for creating a rubric.
-         */
-        app__api__v3__rubrics__create__CreateRubricRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /**
-             * Standard Groups
-             * @default []
-             */
-            standard_groups: components["schemas"]["app__api__v3__rubrics__create__StandardGroupItem"][];
-        };
-        /**
-         * CreateRubricResponse
-         * @description Response for creating a rubric.
-         */
-        app__api__v3__rubrics__create__CreateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Rubricid */
-            rubricId: string;
-            /** Message */
-            message: string;
-        };
-        /**
          * StandardGroupItem
          * @description Standard group item for create.
          */
@@ -11444,140 +10034,6 @@ export interface components {
             points: number;
         };
         /**
-         * DeleteRubricRequest
-         * @description Request for deleting a rubric.
-         */
-        app__api__v3__rubrics__delete__DeleteRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
-        };
-        /**
-         * DeleteRubricResponse
-         * @description Response for deleting a rubric.
-         */
-        app__api__v3__rubrics__delete__DeleteRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * RubricDetailResponse
-         * @description Response for rubric detail endpoint.
-         */
-        app__api__v3__rubrics__detail__RubricDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Standard Group Ids */
-            standard_group_ids: string[];
-            /** Standard Groups Detail */
-            standard_groups_detail: {
-                [key: string]: components["schemas"]["StandardGroupDetail"];
-            };
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * DuplicateRubricRequest
-         * @description Request for duplicating a rubric.
-         */
-        app__api__v3__rubrics__duplicate__DuplicateRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
-        };
-        /**
-         * DuplicateRubricResponse
-         * @description Response for duplicating a rubric.
-         */
-        app__api__v3__rubrics__duplicate__DuplicateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Rubricid */
-            rubricId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * RubricItem
-         * @description Rubric item for list view.
-         */
-        app__api__v3__rubrics__list__RubricItem: {
-            /** Rubric Id */
-            rubric_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Active Simulation Count */
-            active_simulation_count: number;
-            /** Total Simulation Links */
-            total_simulation_links: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Standard Groups */
-            standard_groups: {
-                [key: string]: string[];
-            };
-        };
-        /**
-         * RubricsListResponse
-         * @description Response for rubrics list.
-         */
-        app__api__v3__rubrics__list__RubricsListResponse: {
-            /** Rubrics */
-            rubrics: components["schemas"]["app__api__v3__rubrics__list__RubricItem"][];
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__StandardMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
          * StandardGroupItem
          * @description Standard group item for update.
          */
@@ -11609,76 +10065,6 @@ export interface components {
             description?: string | null;
             /** Points */
             points: number;
-        };
-        /**
-         * UpdateRubricRequest
-         * @description Request for updating a rubric.
-         */
-        app__api__v3__rubrics__update__UpdateRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active: boolean;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /**
-             * Department Ids
-             * @default []
-             */
-            department_ids: string[];
-            /**
-             * Standard Groups
-             * @default []
-             */
-            standard_groups: components["schemas"]["app__api__v3__rubrics__update__StandardGroupItem"][];
-        };
-        /**
-         * UpdateRubricResponse
-         * @description Response for updating a rubric.
-         */
-        app__api__v3__rubrics__update__UpdateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DocumentDetailItem
-         * @description Document detail for preview.
-         */
-        app__api__v3__scenarios__detail__DocumentDetailItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Extension */
-            extension: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
         };
         /**
          * ObjectiveWithDepartments
@@ -11756,7 +10142,7 @@ export interface components {
             /** Active Simulation Ids */
             active_simulation_ids: string[];
             /** Document Details */
-            document_details: components["schemas"]["app__api__v3__scenarios__detail__DocumentDetailItem"][];
+            document_details: components["schemas"]["DocumentDetailItem"][];
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -11795,38 +10181,6 @@ export interface components {
             problem_statement_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__scenarios__detail__ProblemStatementInfo"];
             };
-        };
-        /**
-         * DocumentDetailItem
-         * @description Document detail for preview.
-         */
-        app__api__v3__scenarios__detail_default__DocumentDetailItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Extension */
-            extension: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
         };
         /**
          * ObjectiveWithDepartments
@@ -11904,7 +10258,7 @@ export interface components {
             /** Active Simulation Ids */
             active_simulation_ids: string[];
             /** Document Details */
-            document_details: components["schemas"]["app__api__v3__scenarios__detail_default__DocumentDetailItem"][];
+            document_details: components["schemas"]["DocumentDetailItem"][];
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -11983,73 +10337,6 @@ export interface components {
             cohort_ids: string[];
         };
         /**
-         * ScenariosListResponse
-         * @description Response for scenarios list endpoint.
-         */
-        app__api__v3__scenarios__list__ScenariosListResponse: {
-            /** Scenarios */
-            scenarios: components["schemas"]["app__api__v3__scenarios__list__ScenarioItem"][];
-            /** Objective Mapping */
-            objective_mapping: {
-                [key: string]: components["schemas"]["ObjectiveMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * CreateSimulationRequest
-         * @description Request to create a simulation.
-         */
-        app__api__v3__simulations__create__CreateSimulationRequest: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[] | components["schemas"]["app__api__v3__simulations__create__ScenarioInRequest"][];
-        };
-        /**
-         * ScenarioInRequest
-         * @description Scenario in request format.
-         */
-        app__api__v3__simulations__create__ScenarioInRequest: {
-            /** Scenario Id */
-            scenario_id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /**
          * ParameterItem
          * @description Parameter data for dropdown.
          */
@@ -12076,16 +10363,6 @@ export interface components {
             description: string | null;
             /** Parameter Id */
             parameter_id: string;
-        };
-        /**
-         * SimulationDetailRequest
-         * @description Request to get simulation details.
-         */
-        app__api__v3__simulations__detail__SimulationDetailRequest: {
-            /** Simulationid */
-            simulationId: string;
-            /** Profileid */
-            profileId: string;
         };
         /**
          * SimulationDetailResponse
@@ -12178,14 +10455,6 @@ export interface components {
             description: string | null;
             /** Parameter Id */
             parameter_id: string;
-        };
-        /**
-         * SimulationDetailDefaultRequest
-         * @description Request to get default simulation details.
-         */
-        app__api__v3__simulations__detail_default__SimulationDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
         };
         /**
          * SimulationDetailResponse
@@ -12284,2989 +10553,6 @@ export interface components {
             num_cohorts: number;
         };
         /**
-         * SimulationsListResponse
-         * @description Response for simulations list endpoint.
-         */
-        app__api__v3__simulations__list__SimulationsListResponse: {
-            /** Simulations */
-            simulations: components["schemas"]["app__api__v3__simulations__list__SimulationItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * ScenarioInRequest
-         * @description Scenario in request format.
-         */
-        app__api__v3__simulations__update__ScenarioInRequest: {
-            /** Scenario Id */
-            scenario_id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /**
-         * UpdateSimulationRequest
-         * @description Request to update simulation.
-         */
-        app__api__v3__simulations__update__UpdateSimulationRequest: {
-            /** Simulationid */
-            simulationId: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[] | components["schemas"]["app__api__v3__simulations__update__ScenarioInRequest"][];
-        };
-        /**
-         * AgentDetailDefaultRequest
-         * @description Request for default agent detail.
-         */
-        app__schemas__agents__AgentDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * AgentDetailRequest
-         * @description Request for agent detail.
-         */
-        app__schemas__agents__AgentDetailRequest: {
-            /** Agentid */
-            agentId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * AgentDetailResponse
-         * @description Response for agent detail.
-         */
-        app__schemas__agents__AgentDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** System Prompt */
-            system_prompt: string;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Active */
-            active: boolean;
-            /** Role */
-            role: string;
-            /** Valid Model Ids */
-            valid_model_ids: string[];
-            /** Reasoning Options */
-            reasoning_options: string[];
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Department Ids */
-            department_ids: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Department Prompt Links */
-            department_prompt_links: {
-                [key: string]: string;
-            };
-            /** Prompt Mapping */
-            prompt_mapping: {
-                [key: string]: components["schemas"]["app__schemas__agents__PromptInfo"];
-            };
-            /** Debug Info */
-            debug_info: components["schemas"]["app__schemas__agents__DebugInfoItem"][];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
-            };
-            /** Reasoning Mapping */
-            reasoning_mapping: {
-                [key: string]: components["schemas"]["ReasoningMappingItem"];
-            };
-        };
-        /**
-         * AgentItem
-         * @description Agent item for list view.
-         */
-        app__schemas__agents__AgentItem: {
-            /** Agent Id */
-            agent_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Role */
-            role: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Updated At */
-            updated_at: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * AgentsListRequest
-         * @description Request for agents list.
-         */
-        app__schemas__agents__AgentsListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * AgentsListResponse
-         * @description Response for agents list.
-         */
-        app__schemas__agents__AgentsListResponse: {
-            /** Agents */
-            agents: components["schemas"]["app__schemas__agents__AgentItem"][];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * CreateAgentRequest
-         * @description Request for creating an agent.
-         */
-        app__schemas__agents__CreateAgentRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Active */
-            active: boolean;
-            /** Role */
-            role: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /**
-         * CreateAgentResponse
-         * @description Response for creating an agent.
-         */
-        app__schemas__agents__CreateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Agentid */
-            agentId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DebugInfoItem
-         * @description Debug information item.
-         */
-        app__schemas__agents__DebugInfoItem: {
-            /** Created At */
-            created_at: string;
-            /** Model Id */
-            model_id: string;
-            /** Content */
-            content: string;
-        };
-        /**
-         * DeleteAgentPromptRequest
-         * @description Request to delete an agent prompt.
-         */
-        app__schemas__agents__DeleteAgentPromptRequest: {
-            /** Agentid */
-            agentId: string;
-            /** Promptid */
-            promptId: string;
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /**
-         * DeleteAgentPromptResponse
-         * @description Response from delete prompt operation.
-         */
-        app__schemas__agents__DeleteAgentPromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeleteAgentRequest
-         * @description Request for deleting an agent.
-         */
-        app__schemas__agents__DeleteAgentRequest: {
-            /** Agentid */
-            agentId: string;
-        };
-        /**
-         * DeleteAgentResponse
-         * @description Response for deleting an agent.
-         */
-        app__schemas__agents__DeleteAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DuplicateAgentRequest
-         * @description Request for duplicating an agent.
-         */
-        app__schemas__agents__DuplicateAgentRequest: {
-            /** Agentid */
-            agentId: string;
-        };
-        /**
-         * DuplicateAgentResponse
-         * @description Response for duplicating an agent.
-         */
-        app__schemas__agents__DuplicateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Agentid */
-            agentId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * PromptInfo
-         * @description Prompt information for version history.
-         */
-        app__schemas__agents__PromptInfo: {
-            /** System Prompt */
-            system_prompt: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * UpdateAgentRequest
-         * @description Request for updating an agent.
-         */
-        app__schemas__agents__UpdateAgentRequest: {
-            /** Agentid */
-            agentId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string;
-            /** Temperature */
-            temperature: number;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Active */
-            active: boolean;
-            /** Role */
-            role: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Department Id */
-            department_id?: string | null;
-            /** Department Prompt Id */
-            department_prompt_id?: string | null;
-        };
-        /**
-         * UpdateAgentResponse
-         * @description Response for updating an agent.
-         */
-        app__schemas__agents__UpdateAgentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BulkArchiveAttemptsRequest
-         * @description Request to bulk archive or unarchive simulation attempts.
-         */
-        app__schemas__attempts__BulkArchiveAttemptsRequest: {
-            /** Attemptids */
-            attemptIds: string[];
-            /** Archived */
-            archived: boolean;
-        };
-        /**
-         * BulkArchiveAttemptsResponse
-         * @description Response from bulk archive attempts.
-         */
-        app__schemas__attempts__BulkArchiveAttemptsResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Count */
-            count: number;
-        };
-        /**
-         * UpdateChatCreatedAtRequest
-         * @description Request to update chat createdAt timestamp.
-         */
-        app__schemas__attempts__UpdateChatCreatedAtRequest: {
-            /** Chatid */
-            chatId: string;
-            /** Createdat */
-            createdAt: string;
-        };
-        /**
-         * UpdateChatTimestampResponse
-         * @description Response from chat timestamp update.
-         */
-        app__schemas__attempts__UpdateChatTimestampResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * ProviderMappingItem
-         * @description Provider mapping item - extends MappingItem
-         */
-        app__schemas__base__ProviderMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /**
-         * StandardGroupMappingItem
-         * @description Standard group mapping item with rubric context
-         */
-        app__schemas__base__StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
-        /**
-         * StandardMappingItem
-         * @description Standard mapping item with points
-         */
-        app__schemas__base__StandardMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-        };
-        /**
-         * AddProfilesToCohortRequest
-         * @description Request to add profiles to cohort (supports both existing and new).
-         */
-        app__schemas__cohorts__AddProfilesToCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Departmentids */
-            departmentIds: string[];
-            /** Existingprofileids */
-            existingProfileIds?: string[] | null;
-            /** Newprofiles */
-            newProfiles?: components["schemas"]["NewProfileForCohort"][] | null;
-        };
-        /**
-         * AddProfilesToCohortResponse
-         * @description Response from add profiles to cohort.
-         */
-        app__schemas__cohorts__AddProfilesToCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * CohortDetailResponse
-         * @description Response for cohort detail endpoint.
-         */
-        app__schemas__cohorts__CohortDetailResponse: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Active */
-            active: boolean;
-            /** Simulation Ids */
-            simulation_ids: string[];
-            /** Valid Simulation Ids */
-            valid_simulation_ids: string[];
-            /** Profile Ids */
-            profile_ids: string[];
-            /** Valid Profile Ids */
-            valid_profile_ids: string[];
-            /** Simulations */
-            simulations: components["schemas"]["SimulationInCohort"][];
-            /** Staff */
-            staff: components["schemas"]["app__schemas__staff__StaffItem"][];
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: components["schemas"]["ProfileMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping?: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            } | null;
-            /** Department Mapping For Staff */
-            department_mapping_for_staff?: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            } | null;
-        };
-        /**
-         * CohortDetailWithProfilesResponse
-         * @description Response for cohort detail with available profiles.
-         */
-        app__schemas__cohorts__CohortDetailWithProfilesResponse: {
-            /** Cohort Id */
-            cohort_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean;
-            /** Current Profile Ids */
-            current_profile_ids: string[];
-            /** Available Profiles */
-            available_profiles: components["schemas"]["app__schemas__staff__StaffItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-        };
-        /**
-         * CohortItem
-         * @description Cohort item in list response.
-         */
-        app__schemas__cohorts__CohortItem: {
-            /** Cohort Id */
-            cohort_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Leave */
-            can_leave: boolean;
-            /** Profile Ids */
-            profile_ids: string[];
-            /** Simulation Ids */
-            simulation_ids: string[];
-            /** Num Members */
-            num_members: number;
-        };
-        /**
-         * CohortsListResponse
-         * @description Response for cohorts list endpoint.
-         */
-        app__schemas__cohorts__CohortsListResponse: {
-            /** Cohorts */
-            cohorts: components["schemas"]["app__schemas__cohorts__CohortItem"][];
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: components["schemas"]["ProfileMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * CreateCohortRequest
-         * @description Request to create cohort.
-         */
-        app__schemas__cohorts__CreateCohortRequest: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Simulation Ids */
-            simulation_ids: string[] | components["schemas"]["SimulationInRequest"][];
-            /** Profile Ids */
-            profile_ids: string[];
-        };
-        /**
-         * CreateCohortResponse
-         * @description Response from create cohort.
-         */
-        app__schemas__cohorts__CreateCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Cohortid */
-            cohortId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeleteCohortRequest
-         * @description Request to delete cohort.
-         */
-        app__schemas__cohorts__DeleteCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-        };
-        /**
-         * DeleteCohortResponse
-         * @description Response from delete cohort.
-         */
-        app__schemas__cohorts__DeleteCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DuplicateCohortRequest
-         * @description Request to duplicate cohort.
-         */
-        app__schemas__cohorts__DuplicateCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-        };
-        /**
-         * DuplicateCohortResponse
-         * @description Response from duplicate cohort.
-         */
-        app__schemas__cohorts__DuplicateCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Cohortid */
-            cohortId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * LeaveCohortRequest
-         * @description Request to leave cohort.
-         */
-        app__schemas__cohorts__LeaveCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * LeaveCohortResponse
-         * @description Response from leave cohort.
-         */
-        app__schemas__cohorts__LeaveCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * RemoveProfilesFromCohortRequest
-         * @description Request to remove profiles from cohort.
-         */
-        app__schemas__cohorts__RemoveProfilesFromCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Profileids */
-            profileIds: string[];
-            /** Currentprofileid */
-            currentProfileId: string;
-        };
-        /**
-         * RemoveProfilesFromCohortResponse
-         * @description Response from remove profiles from cohort.
-         */
-        app__schemas__cohorts__RemoveProfilesFromCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * UpdateCohortRequest
-         * @description Request to update cohort.
-         */
-        app__schemas__cohorts__UpdateCohortRequest: {
-            /** Cohortid */
-            cohortId: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Simulation Ids */
-            simulation_ids: string[] | components["schemas"]["SimulationInRequest"][];
-            /** Profile Ids */
-            profile_ids: string[];
-        };
-        /**
-         * UpdateCohortResponse
-         * @description Response from update cohort.
-         */
-        app__schemas__cohorts__UpdateCohortResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DashboardBundleResponse
-         * @description Complete dashboard bundle with all metrics, history, insights, and mappings.
-         */
-        app__schemas__dashboard__DashboardBundleResponse: {
-            header: components["schemas"]["app__schemas__dashboard__DashboardHeaderMetrics"];
-            primary: components["schemas"]["app__schemas__dashboard__DashboardPrimaryMetrics"];
-            secondary: components["schemas"]["app__schemas__dashboard__DashboardSecondaryMetrics"];
-            footer: components["schemas"]["app__schemas__dashboard__DashboardFooterMetrics"];
-            /** History */
-            history: components["schemas"]["app__schemas__home__AttemptHistoryRow"][];
-            insights: components["schemas"]["DashboardInsights"];
-            thresholds: components["schemas"]["Thresholds"];
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-        };
-        /**
-         * DashboardFooterMetrics
-         * @description Footer metrics (4 total).
-         */
-        app__schemas__dashboard__DashboardFooterMetrics: {
-            scenario_performance: components["schemas"]["ScenarioPerformanceResponse"];
-            scenario_stats: components["schemas"]["ScenarioStatsResponse"];
-            simulation_performance: components["schemas"]["SimulationPerformanceResponse"];
-            simulation_composition: components["schemas"]["SimulationCompositionResponse"];
-        };
-        /**
-         * DashboardHeaderMetrics
-         * @description Header metrics (10 total).
-         */
-        app__schemas__dashboard__DashboardHeaderMetrics: {
-            average_score: components["schemas"]["MetricResponse"];
-            completion_percentage: components["schemas"]["MetricResponse"];
-            first_attempt_pass_rate: components["schemas"]["MetricResponse"];
-            highest_score: components["schemas"]["MetricResponse"];
-            messages_per_session: components["schemas"]["MetricResponse"];
-            persona_response_times: components["schemas"]["MetricResponse"];
-            session_efficiency: components["schemas"]["MetricResponse"];
-            stagnation_rate: components["schemas"]["MetricResponse"];
-            time_spent: components["schemas"]["MetricResponse"];
-            total_attempts: components["schemas"]["MetricResponse"];
-        };
-        /**
-         * DashboardPrimaryMetrics
-         * @description Primary metrics (3 total).
-         */
-        app__schemas__dashboard__DashboardPrimaryMetrics: {
-            growth_data: components["schemas"]["app__schemas__dashboard__GrowthDataResponse"];
-            persona_performance: components["schemas"]["app__schemas__dashboard__PersonaPerformanceResponse"];
-            rubric_heatmap: components["schemas"]["app__schemas__dashboard__RubricHeatmapResponse"];
-        };
-        /**
-         * DashboardSecondaryMetrics
-         * @description Secondary metrics (3 total).
-         */
-        app__schemas__dashboard__DashboardSecondaryMetrics: {
-            attempt_improvement: components["schemas"]["AttemptImprovementResponse"];
-            cohort_performance: components["schemas"]["CohortPerformanceResponse"];
-            skill_performance: components["schemas"]["app__schemas__dashboard__SkillPerformanceResponse"];
-        };
-        /**
-         * GrowthDataResponse
-         * @description Growth data response.
-         */
-        app__schemas__dashboard__GrowthDataResponse: {
-            /** Chartdata */
-            chartData: components["schemas"]["GrowthDataPoint"][];
-            /** Availablemetrics */
-            availableMetrics: components["schemas"]["GrowthMetric"][];
-            windowAverages: components["schemas"]["GrowthWindowAverages"];
-        };
-        /**
-         * PersonaPerformanceResponse
-         * @description Persona performance response.
-         */
-        app__schemas__dashboard__PersonaPerformanceResponse: {
-            /** Chartdata */
-            chartData: components["schemas"]["PersonaPerformanceData"][];
-            /** Validsimulationids */
-            validSimulationIds: string[];
-            /** Personacolors */
-            personaColors: {
-                [key: string]: string;
-            };
-        };
-        /**
-         * RubricHeatmapResponse
-         * @description Rubric heatmap response.
-         */
-        app__schemas__dashboard__RubricHeatmapResponse: {
-            /** Matrices */
-            matrices: components["schemas"]["RubricMatrixPackage"][];
-            /** Validrubricids */
-            validRubricIds: string[];
-        };
-        /**
-         * SkillPerformanceResponse
-         * @description Skill performance response.
-         */
-        app__schemas__dashboard__SkillPerformanceResponse: {
-            /** Packages */
-            packages: components["schemas"]["SkillPackage"][];
-            /** Validrubricids */
-            validRubricIds: string[];
-        };
-        /**
-         * DepartmentDetailResponse
-         * @description Response for department detail.
-         */
-        app__schemas__departments__DepartmentDetailResponse: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** In Use */
-            in_use: boolean;
-            /** Staff Count */
-            staff_count: number;
-            /** Total Price Spent */
-            total_price_spent: number;
-            /** Staff */
-            staff: components["schemas"]["app__schemas__staff__StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * DepartmentItem
-         * @description Department item for list view.
-         */
-        app__schemas__departments__DepartmentItem: {
-            /** Department Id */
-            department_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Updated At */
-            updated_at: string;
-            /** Total Price Spent */
-            total_price_spent: number;
-            /** Staff Count */
-            staff_count: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-        };
-        /**
-         * DepartmentsListResponse
-         * @description Response for departments list.
-         */
-        app__schemas__departments__DepartmentsListResponse: {
-            /** Departments */
-            departments: components["schemas"]["app__schemas__departments__DepartmentItem"][];
-        };
-        /**
-         * RemoveProfilesFromDepartmentRequest
-         * @description Request to remove profiles from department (set active = false in junction table, NOT delete profiles).
-         */
-        app__schemas__departments__RemoveProfilesFromDepartmentRequest: {
-            /** Departmentid */
-            departmentId: string;
-            /** Profileids */
-            profileIds: string[];
-        };
-        /**
-         * RemoveProfilesFromDepartmentResponse
-         * @description Response from remove profiles from department.
-         */
-        app__schemas__departments__RemoveProfilesFromDepartmentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BulkUpdateDocumentsRequest
-         * @description Request to bulk update documents.
-         */
-        app__schemas__documents__BulkUpdateDocumentsRequest: {
-            /** Documentids */
-            documentIds: string[];
-            /** Type */
-            type: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-        };
-        /**
-         * DocumentItem
-         * @description Individual document item in the response.
-         */
-        app__schemas__documents__DocumentItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Extension */
-            extension: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-        };
-        /**
-         * DocumentsListResponse
-         * @description Response for documents list endpoint.
-         */
-        app__schemas__documents__DocumentsListResponse: {
-            /** Documents */
-            documents: components["schemas"]["app__schemas__documents__DocumentItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * GenerateCertificateRequest
-         * @description Request to generate a certificate.
-         */
-        app__schemas__documents__GenerateCertificateRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /**
-             * Cohortdata
-             * @default []
-             */
-            cohortData: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
-         * UpdateDocumentRequest
-         * @description Request to update a document.
-         */
-        app__schemas__documents__UpdateDocumentRequest: {
-            /** Documentid */
-            documentId: string;
-            /** Type */
-            type: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-        };
-        /**
-         * UpdateDocumentResponse
-         * @description Response from update operation.
-         */
-        app__schemas__documents__UpdateDocumentResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * BulkDeleteFeedbackRequest
-         * @description Request for bulk deleting feedback.
-         */
-        app__schemas__feedback__BulkDeleteFeedbackRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Ids */
-            ids: number[];
-        };
-        /**
-         * BulkDeleteFeedbackResponse
-         * @description Response for bulk deleting feedback.
-         */
-        app__schemas__feedback__BulkDeleteFeedbackResponse: {
-            /** Success */
-            success: boolean;
-            /** Deleted Count */
-            deleted_count: number;
-            /** Message */
-            message: string;
-        };
-        /**
-         * CreateFeedbackRequest
-         * @description Request for creating app feedback.
-         */
-        app__schemas__feedback__CreateFeedbackRequest: {
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * CreateFeedbackResponse
-         * @description Response for creating app feedback.
-         */
-        app__schemas__feedback__CreateFeedbackResponse: {
-            /** Feedback Id */
-            feedback_id: number;
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * FeedbackItem
-         * @description Feedback item for list view.
-         */
-        app__schemas__feedback__FeedbackItem: {
-            /** Feedback Id */
-            feedback_id: number;
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-            /** Created At */
-            created_at: string;
-            /** Author Name */
-            author_name: string;
-            /** Author Alias */
-            author_alias: string;
-            /** Author Profile Id */
-            author_profile_id: string;
-        };
-        /**
-         * FeedbackListRequest
-         * @description Request for feedback list.
-         */
-        app__schemas__feedback__FeedbackListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * FeedbackListResponse
-         * @description Response for feedback list.
-         */
-        app__schemas__feedback__FeedbackListResponse: {
-            /** Feedback */
-            feedback: components["schemas"]["app__schemas__feedback__FeedbackItem"][];
-        };
-        /**
-         * AttemptHistoryRow
-         * @description Attempt history row.
-         */
-        app__schemas__home__AttemptHistoryRow: {
-            /** Attemptid */
-            attemptId: string;
-            /** Date */
-            date: string;
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /** Simulationname */
-            simulationName: string;
-            /** Numscenarios */
-            numScenarios?: number | null;
-            /** Numscenarioscompleted */
-            numScenariosCompleted: number;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Personanames */
-            personaNames: string[];
-            /** Personacolors */
-            personaColors: string[];
-            /** Score */
-            score?: number | null;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Titles */
-            scenario_titles: string[];
-            /** Isarchived */
-            isArchived: boolean;
-            /** Showview */
-            showView: boolean;
-            /** Showcontinue */
-            showContinue: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Passpct */
-            passPct?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohortnames */
-            cohortNames: string[];
-        };
-        /**
-         * HomeOverviewResponse
-         * @description Home overview response with mappings and history.
-         */
-        app__schemas__home__HomeOverviewResponse: {
-            /**
-             * Mode
-             * @enum {string}
-             */
-            mode: "ta" | "instructional" | "empty";
-            /** Hasdata */
-            hasData: boolean;
-            /** Items */
-            items: components["schemas"]["HomeSimulationItem"][];
-            /** History */
-            history: components["schemas"]["app__schemas__home__AttemptHistoryRow"][];
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__schemas__base__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["app__schemas__base__StandardMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-        };
-        /**
-         * LeaderboardBundleResponse
-         * @description Leaderboard bundle response.
-         */
-        app__schemas__leaderboard__LeaderboardBundleResponse: {
-            /** Data */
-            data: components["schemas"]["app__schemas__leaderboard__LeaderboardRow"][];
-        };
-        /**
-         * LeaderboardRow
-         * @description Leaderboard row.
-         */
-        app__schemas__leaderboard__LeaderboardRow: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            metrics: components["schemas"]["LeaderboardMetrics"];
-        };
-        /**
-         * BulkDeleteLogsRequest
-         * @description Request to bulk delete logs.
-         */
-        app__schemas__logs__BulkDeleteLogsRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Ids */
-            ids: number[];
-        };
-        /**
-         * BulkDeleteLogsResponse
-         * @description Response for bulk delete logs.
-         */
-        app__schemas__logs__BulkDeleteLogsResponse: {
-            /** Success */
-            success: boolean;
-            /** Deleted Count */
-            deleted_count: number;
-            /** Message */
-            message: string;
-        };
-        /**
-         * CorrelationData
-         * @description Correlation data for log creation.
-         */
-        app__schemas__logs__CorrelationData: {
-            /** Correlationid */
-            correlationId?: string | null;
-            /** Requestid */
-            requestId?: string | null;
-            /** Sessionid */
-            sessionId?: string | null;
-            /** Attemptid */
-            attemptId?: string | null;
-            /** Chatid */
-            chatId?: string | null;
-        };
-        /**
-         * CreateLogRequest
-         * @description Request to create a log entry.
-         */
-        app__schemas__logs__CreateLogRequest: {
-            /**
-             * Event
-             * @default legacy.message
-             */
-            event: string;
-            /**
-             * Level
-             * @default info
-             */
-            level: string;
-            /**
-             * Message
-             * @default Default Message
-             */
-            message: string;
-            /** @default {} */
-            correlation: components["schemas"]["app__schemas__logs__CorrelationData"];
-            /**
-             * Actor
-             * @default {}
-             */
-            actor: {
-                [key: string]: unknown;
-            };
-            /**
-             * Subject
-             * @default {}
-             */
-            subject: {
-                [key: string]: unknown;
-            };
-            /**
-             * Context
-             * @default {}
-             */
-            context: {
-                [key: string]: unknown;
-            };
-            /**
-             * Error
-             * @default {}
-             */
-            error: {
-                [key: string]: unknown;
-            };
-        };
-        /**
-         * CreateLogResponse
-         * @description Response from creating a log entry.
-         */
-        app__schemas__logs__CreateLogResponse: {
-            /** Success */
-            success: boolean;
-            /** Log Id */
-            log_id?: number | null;
-        };
-        /**
-         * LogItem
-         * @description Log item for list view.
-         */
-        app__schemas__logs__LogItem: {
-            /** Log Id */
-            log_id: number;
-            /** Event */
-            event: string;
-            /** Level */
-            level: string;
-            /** Message */
-            message: string;
-            /** Correlation Id */
-            correlation_id: string;
-            actor: components["schemas"]["ActorData-Output"];
-            subject: components["schemas"]["SubjectData-Output"];
-            context: components["schemas"]["ContextData-Output"];
-            error: components["schemas"]["ErrorData-Output"];
-            /** Created At */
-            created_at: string;
-            /** Actor Name */
-            actor_name: string | null;
-        };
-        /**
-         * LogsListRequest
-         * @description Request for logs list.
-         */
-        app__schemas__logs__LogsListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * LogsListResponse
-         * @description Response for logs list.
-         */
-        app__schemas__logs__LogsListResponse: {
-            /** Logs */
-            logs: components["schemas"]["app__schemas__logs__LogItem"][];
-        };
-        /**
-         * ParameterDetailDefaultRequest
-         * @description Request for default parameter detail.
-         */
-        app__schemas__parameters__ParameterDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * ParameterDetailRequest
-         * @description Request for parameter detail.
-         */
-        app__schemas__parameters__ParameterDetailRequest: {
-            /** Parameterid */
-            parameterId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * ParameterDetailResponse
-         * @description Response for parameter detail endpoint.
-         */
-        app__schemas__parameters__ParameterDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Active */
-            active: boolean;
-            /** Document Parameter */
-            document_parameter: boolean;
-            /** Practice Parameter */
-            practice_parameter: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Parameter Items */
-            parameter_items: components["schemas"]["app__schemas__parameters__ParameterItemDetail"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * ParameterItem
-         * @description Parameter item in list response.
-         */
-        app__schemas__parameters__ParameterItem: {
-            /** Parameter Id */
-            parameter_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Numerical */
-            numerical: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Num Items */
-            num_items: number;
-            /**
-             * Sample Items
-             * @default []
-             */
-            sample_items?: components["schemas"]["app__schemas__parameters__ParameterSampleItem"][];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-        };
-        /**
-         * ParameterItemDetail
-         * @description Parameter item detail.
-         */
-        app__schemas__parameters__ParameterItemDetail: {
-            /** Parameter Item Id */
-            parameter_item_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * ParameterSampleItem
-         * @description Sample parameter item for list preview.
-         */
-        app__schemas__parameters__ParameterSampleItem: {
-            /** Parameter Item Id */
-            parameter_item_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value: string;
-        };
-        /**
-         * ParametersFilters
-         * @description Filters for parameters list.
-         */
-        app__schemas__parameters__ParametersFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * ParametersListResponse
-         * @description Response for parameters list endpoint.
-         */
-        app__schemas__parameters__ParametersListResponse: {
-            /** Parameters */
-            parameters: components["schemas"]["app__schemas__parameters__ParameterItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * CreatePersonaRequest
-         * @description Request to create a persona.
-         */
-        app__schemas__personas__CreatePersonaRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string;
-        };
-        /**
-         * CreatePersonaResponse
-         * @description Response from create operation.
-         */
-        app__schemas__personas__CreatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Personaid */
-            personaId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DebugInfoItem
-         * @description Debug information item.
-         */
-        app__schemas__personas__DebugInfoItem: {
-            /** Created At */
-            created_at: string;
-            /** Model Id */
-            model_id: string;
-            /** Content */
-            content: string;
-        };
-        /**
-         * DeletePersonaPromptRequest
-         * @description Request to delete a persona prompt.
-         */
-        app__schemas__personas__DeletePersonaPromptRequest: {
-            /** Personaid */
-            personaId: string;
-            /** Promptid */
-            promptId: string;
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /**
-         * DeletePersonaPromptResponse
-         * @description Response from delete prompt operation.
-         */
-        app__schemas__personas__DeletePersonaPromptResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeletePersonaRequest
-         * @description Request to delete a persona.
-         */
-        app__schemas__personas__DeletePersonaRequest: {
-            /** Personaid */
-            personaId: string;
-        };
-        /**
-         * DeletePersonaResponse
-         * @description Response from delete operation.
-         */
-        app__schemas__personas__DeletePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DuplicatePersonaRequest
-         * @description Request to duplicate a persona.
-         */
-        app__schemas__personas__DuplicatePersonaRequest: {
-            /** Personaid */
-            personaId: string;
-        };
-        /**
-         * DuplicatePersonaResponse
-         * @description Response from duplicate operation.
-         */
-        app__schemas__personas__DuplicatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Personaid */
-            personaId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * PersonaDetailResponse
-         * @description Detailed persona response with all fields and metadata.
-         */
-        app__schemas__personas__PersonaDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** System Prompt */
-            system_prompt: string;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** In Use */
-            in_use: boolean;
-            /** Scenario Count */
-            scenario_count: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Preset Colors */
-            preset_colors: string[];
-            /** Suggested Icons */
-            suggested_icons: string[];
-            /** Valid Icons */
-            valid_icons: string[];
-            /** Valid Model Ids */
-            valid_model_ids: string[];
-            /** Reasoning Options */
-            reasoning_options: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Prompt Mapping */
-            prompt_mapping: {
-                [key: string]: components["schemas"]["app__schemas__personas__PromptInfo"];
-            };
-            /** Department Prompt Links */
-            department_prompt_links: {
-                [key: string]: string;
-            };
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
-            };
-            /** Reasoning Mapping */
-            reasoning_mapping: {
-                [key: string]: components["schemas"]["ReasoningMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Debug Info */
-            debug_info: components["schemas"]["app__schemas__personas__DebugInfoItem"][];
-        };
-        /**
-         * PersonaItem
-         * @description Individual persona item in the response.
-         */
-        app__schemas__personas__PersonaItem: {
-            /** Persona Id */
-            persona_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Active */
-            active: boolean;
-            /** Num Scenarios */
-            num_scenarios: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * PersonasListResponse
-         * @description Response for personas list endpoint.
-         */
-        app__schemas__personas__PersonasListResponse: {
-            /** Personas */
-            personas: components["schemas"]["app__schemas__personas__PersonaItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * PromptInfo
-         * @description Prompt information for version history.
-         */
-        app__schemas__personas__PromptInfo: {
-            /** System Prompt */
-            system_prompt: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * UpdatePersonaRequest
-         * @description Request to update a persona.
-         */
-        app__schemas__personas__UpdatePersonaRequest: {
-            /** Personaid */
-            personaId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Model Id */
-            model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string;
-            /** Department Id */
-            department_id?: string | null;
-            /** Department Prompt Id */
-            department_prompt_id?: string | null;
-        };
-        /**
-         * UpdatePersonaResponse
-         * @description Response from update operation.
-         */
-        app__schemas__personas__UpdatePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * PracticeOverviewResponse
-         * @description Practice overview response with mappings and history.
-         */
-        app__schemas__practice__PracticeOverviewResponse: {
-            /**
-             * Mode
-             * @constant
-             */
-            mode: "practice";
-            /** Hasdata */
-            hasData: boolean;
-            /** Items */
-            items: components["schemas"]["PracticeSimulationItem"][];
-            /** History */
-            history: components["schemas"]["app__schemas__home__AttemptHistoryRow"][];
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__schemas__base__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["app__schemas__base__StandardMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-        };
-        /**
-         * DebugInfoItem
-         * @description Debug information item.
-         */
-        app__schemas__pricing__DebugInfoItem: {
-            /** Id */
-            id: string;
-            /** Created At */
-            created_at: string;
-            /** Content */
-            content: string;
-        };
-        /**
-         * ModelRunItem
-         * @description Model run item with aggregated metrics.
-         */
-        app__schemas__pricing__ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Created At */
-            created_at: string;
-            /** Input Tokens */
-            input_tokens: number;
-            /** Output Tokens */
-            output_tokens: number;
-            /** Model Id */
-            model_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Debug Info */
-            debug_info?: components["schemas"]["app__schemas__pricing__DebugInfoItem"][] | null;
-        };
-        /**
-         * PricingAnalyticsResponse
-         * @description Response for pricing analytics.
-         */
-        app__schemas__pricing__PricingAnalyticsResponse: {
-            /** Model Runs */
-            model_runs: components["schemas"]["app__schemas__pricing__ModelRunItem"][];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingWithPricing"];
-            };
-            /** Profile Mapping */
-            profile_mapping: {
-                [key: string]: string;
-            };
-            /** Agent Mapping */
-            agent_mapping: {
-                [key: string]: string;
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: string;
-            };
-        };
-        /**
-         * CohortItem
-         * @description Cohort item.
-         */
-        app__schemas__profile__CohortItem: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /**
-         * CohortsData
-         * @description Cohorts data with member counts.
-         */
-        app__schemas__profile__CohortsData: {
-            /** Items */
-            items: components["schemas"]["app__schemas__profile__CohortItem"][];
-            /** Membercounts */
-            memberCounts: {
-                [key: string]: number;
-            };
-        };
-        /**
-         * DepartmentItem
-         * @description Department item.
-         */
-        app__schemas__profile__DepartmentItem: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active: boolean;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /**
-         * ProfileContextResponse
-         * @description Response with consolidated profile context data.
-         */
-        app__schemas__profile__ProfileContextResponse: {
-            actualProfile: components["schemas"]["ProfileItem"];
-            effectiveProfile: components["schemas"]["ProfileItem"];
-            /** Departments */
-            departments: components["schemas"]["app__schemas__profile__DepartmentItem"][];
-            /** Departmentids */
-            departmentIds: string[];
-            cohorts: components["schemas"]["app__schemas__profile__CohortsData"];
-            /** Cohortids */
-            cohortIds: string[];
-            simulations: components["schemas"]["SimulationsData"];
-            /** Simulationids */
-            simulationIds: string[];
-            /** Simulatableprofiles */
-            simulatableProfiles: components["schemas"]["ProfileItem"][];
-            /** Earliestattemptdate */
-            earliestAttemptDate: string | null;
-            /** Availablesections */
-            availableSections: string[];
-            /** Redirectpath */
-            redirectPath: string;
-        };
-        /**
-         * UpdateProfileRequest
-         * @description Request to update profile fields.
-         */
-        app__schemas__profile__UpdateProfileRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName?: string | null;
-            /** Lastname */
-            lastName?: string | null;
-            /** Lastlogin */
-            lastLogin?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Viewedintro */
-            viewedIntro?: boolean | null;
-            /** Viewedchat */
-            viewedChat?: boolean | null;
-            /** Reqperday */
-            reqPerDay?: number | null;
-        };
-        /**
-         * CreateProviderRequest
-         * @description Request to create provider.
-         *
-         *     Note: Providers are global (not department-specific).
-         */
-        app__schemas__providers__CreateProviderRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key: string;
-            /** Base Url */
-            base_url: string | null;
-        };
-        /**
-         * CreateProviderResponse
-         * @description Response from create provider.
-         */
-        app__schemas__providers__CreateProviderResponse: {
-            /** Success */
-            success: boolean;
-            /** Providerid */
-            providerId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * ModelDetailRequest
-         * @description Request for model detail.
-         */
-        app__schemas__providers__ModelDetailRequest: {
-            /** Modelid */
-            modelId: string;
-            /** Providerid */
-            providerId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * ModelDetailResponse
-         * @description Response for model detail endpoint.
-         */
-        app__schemas__providers__ModelDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
-            /** Image Model */
-            image_model: boolean;
-            /** Input Ppm */
-            input_ppm: number;
-            /** Output Ppm */
-            output_ppm: number;
-            /** Provider Id */
-            provider_id: string;
-            /** Valid Provider Ids */
-            valid_provider_ids: string[];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: components["schemas"]["app__schemas__base__ProviderMappingItem"];
-            };
-        };
-        /**
-         * ModelItem
-         * @description Model item nested in provider (denormalized).
-         */
-        app__schemas__providers__ModelItem: {
-            /** Model Id */
-            model_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
-            /** Updated At */
-            updated_at: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * ProviderDetailRequest
-         * @description Request for provider detail.
-         */
-        app__schemas__providers__ProviderDetailRequest: {
-            /** Providerid */
-            providerId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * ProviderDetailResponse
-         * @description Response for provider detail endpoint.
-         *
-         *     Note: Providers are global (not department-specific).
-         */
-        app__schemas__providers__ProviderDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key: string;
-            /** Base Url */
-            base_url: string | null;
-        };
-        /**
-         * ProviderWithModels
-         * @description Provider with nested models.
-         */
-        app__schemas__providers__ProviderWithModels: {
-            /** Provider Id */
-            provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Models */
-            models: components["schemas"]["app__schemas__providers__ModelItem"][];
-        };
-        /**
-         * ProvidersFilters
-         * @description Filters for providers list.
-         *
-         *     Note: Providers are global (not department-specific), so no department filter.
-         */
-        app__schemas__providers__ProvidersFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * ProvidersListResponse
-         * @description Response for providers list endpoint.
-         */
-        app__schemas__providers__ProvidersListResponse: {
-            /** Providers */
-            providers: components["schemas"]["app__schemas__providers__ProviderWithModels"][];
-        };
-        /**
-         * UpdateProviderRequest
-         * @description Request to update provider.
-         *
-         *     Note: Providers are global (not department-specific).
-         */
-        app__schemas__providers__UpdateProviderRequest: {
-            /** Providerid */
-            providerId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key?: string | null;
-            /** Base Url */
-            base_url: string | null;
-        };
-        /**
-         * ProfileDataEnhanced
-         * @description Enhanced profile data row.
-         */
-        app__schemas__reports__ProfileDataEnhanced: {
-            /** Profileid */
-            profileId: string;
-            /** Firstname */
-            firstName: string;
-            /** Lastname */
-            lastName: string;
-            /** Alias */
-            alias: string | null;
-            /** Role */
-            role: string;
-            metrics: components["schemas"]["app__schemas__reports__ProfileMetrics"];
-        };
-        /**
-         * ProfileMetrics
-         * @description Profile metrics - each metric is a full MetricResponse object.
-         */
-        app__schemas__reports__ProfileMetrics: {
-            averageScore: components["schemas"]["MetricResponse"];
-            completionPercentage: components["schemas"]["MetricResponse"];
-            firstAttemptPassRate: components["schemas"]["MetricResponse"];
-            highestScore: components["schemas"]["MetricResponse"];
-            messagesPerSession: components["schemas"]["MetricResponse"];
-            personaResponseTimes: components["schemas"]["MetricResponse"];
-            sessionEfficiency: components["schemas"]["MetricResponse"];
-            stagnationRate: components["schemas"]["MetricResponse"];
-            timeSpent: components["schemas"]["MetricResponse"];
-            totalAttempts: components["schemas"]["MetricResponse"];
-        };
-        /**
-         * ReportsBundleResponse
-         * @description Reports bundle response with entity mappings.
-         */
-        app__schemas__reports__ReportsBundleResponse: {
-            /** Data */
-            data: components["schemas"]["app__schemas__reports__ProfileDataEnhanced"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-        };
-        /**
-         * CreateRubricRequest
-         * @description Request to create rubric with nested structure.
-         */
-        app__schemas__rubrics__CreateRubricRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Standard Groups */
-            standard_groups: components["schemas"]["StandardGroupCreate"][];
-        };
-        /**
-         * CreateRubricResponse
-         * @description Response from create rubric.
-         */
-        app__schemas__rubrics__CreateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Rubricid */
-            rubricId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeleteRubricRequest
-         * @description Request to delete rubric.
-         */
-        app__schemas__rubrics__DeleteRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
-        };
-        /**
-         * DeleteRubricResponse
-         * @description Response from delete rubric.
-         */
-        app__schemas__rubrics__DeleteRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DuplicateRubricRequest
-         * @description Request to duplicate rubric.
-         */
-        app__schemas__rubrics__DuplicateRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
-        };
-        /**
-         * DuplicateRubricResponse
-         * @description Response from duplicate rubric.
-         */
-        app__schemas__rubrics__DuplicateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Rubricid */
-            rubricId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * RubricDetailResponse
-         * @description Response for rubric detail endpoint.
-         */
-        app__schemas__rubrics__RubricDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Active */
-            active: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Standard Group Ids */
-            standard_group_ids: string[];
-            /** Standard Groups Detail */
-            standard_groups_detail: {
-                [key: string]: components["schemas"]["StandardGroupDetail"];
-            };
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["StandardGroupMappingDetail"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["app__schemas__rubrics__StandardMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * RubricItem
-         * @description Rubric item in list response with hierarchical structure.
-         */
-        app__schemas__rubrics__RubricItem: {
-            /** Rubric Id */
-            rubric_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Standard Groups */
-            standard_groups: {
-                [key: string]: string[];
-            };
-        };
-        /**
-         * RubricsListResponse
-         * @description Response for rubrics list endpoint.
-         */
-        app__schemas__rubrics__RubricsListResponse: {
-            /** Rubrics */
-            rubrics: components["schemas"]["app__schemas__rubrics__RubricItem"][];
-            /** Standard Groups Mapping */
-            standard_groups_mapping: {
-                [key: string]: components["schemas"]["app__schemas__rubrics__StandardGroupMappingItem"];
-            };
-            /** Standards Mapping */
-            standards_mapping: {
-                [key: string]: components["schemas"]["app__schemas__rubrics__StandardMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * StandardGroupMappingItem
-         * @description Standard group mapping item for list response.
-         */
-        app__schemas__rubrics__StandardGroupMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
-        /**
-         * StandardMappingItem
-         * @description Standard mapping item - includes points.
-         */
-        app__schemas__rubrics__StandardMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-        };
-        /**
-         * UpdateRubricRequest
-         * @description Request to update rubric with nested structure and incremental updates.
-         */
-        app__schemas__rubrics__UpdateRubricRequest: {
-            /** Rubricid */
-            rubricId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Standard Groups */
-            standard_groups: components["schemas"]["StandardGroupUpdate"][];
-        };
-        /**
-         * UpdateRubricResponse
-         * @description Response from update rubric with calculated points.
-         */
-        app__schemas__rubrics__UpdateRubricResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Points */
-            points: number;
-            /** Passpoints */
-            passPoints: number;
-        };
-        /**
-         * DocumentDetailItem
-         * @description Document detail for preview - matches client DocumentItem schema.
-         */
-        app__schemas__scenarios__DocumentDetailItem: {
-            /** Document Id */
-            document_id: string;
-            /** Name */
-            name: string;
-            /** Type */
-            type: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Extension */
-            extension: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-        };
-        /**
-         * ObjectiveWithDepartments
-         * @description Objective with associated department IDs.
-         */
-        app__schemas__scenarios__ObjectiveWithDepartments: {
-            /** Objective */
-            objective: string;
-            /** Department Ids */
-            department_ids: string[];
-        };
-        /**
-         * ProblemStatementInfo
-         * @description Problem statement information for version history.
-         */
-        app__schemas__scenarios__ProblemStatementInfo: {
-            /** Problem Statement */
-            problem_statement: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-        };
-        /**
-         * ScenarioDetailResponse
-         * @description Detailed scenario response with all fields and metadata.
-         */
-        app__schemas__scenarios__ScenarioDetailResponse: {
-            /** Name */
-            name: string;
-            /** Problem Statement */
-            problem_statement: string;
-            /** Problem Statement Id */
-            problem_statement_id: string | null;
-            /** Active */
-            active: boolean;
-            /** Generated */
-            generated: boolean;
-            /** Parent Scenario Id */
-            parent_scenario_id: string | null;
-            /** Hints Enabled */
-            hints_enabled: boolean;
-            /** Objectives Enabled */
-            objectives_enabled: boolean;
-            /** Image Input Enabled */
-            image_input_enabled: boolean;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled: boolean;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Valid Persona Ids */
-            valid_persona_ids: string[];
-            /** Document Ids */
-            document_ids: string[];
-            /** Valid Document Ids */
-            valid_document_ids: string[];
-            /** Objective Ids */
-            objective_ids: string[];
-            /** Valid Objectives */
-            valid_objectives: string[];
-            /** Objectives History */
-            objectives_history: components["schemas"]["app__schemas__scenarios__ObjectiveWithDepartments"][];
-            /** Parameters */
-            parameters: {
-                [key: string]: components["schemas"]["ParameterDetail"];
-            };
-            /** Active Simulation Ids */
-            active_simulation_ids: string[];
-            /**
-             * Document Details
-             * @default []
-             */
-            document_details: components["schemas"]["app__schemas__scenarios__DocumentDetailItem"][];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /** Document Mapping */
-            document_mapping: {
-                [key: string]: components["schemas"]["DocumentMappingItem"];
-            };
-            /** Objective Mapping */
-            objective_mapping: {
-                [key: string]: components["schemas"]["ObjectiveMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Problem Statement Mapping */
-            problem_statement_mapping: {
-                [key: string]: components["schemas"]["app__schemas__scenarios__ProblemStatementInfo"];
-            };
-        };
-        /**
-         * ScenarioItem
-         * @description Individual scenario item in the response.
-         */
-        app__schemas__scenarios__ScenarioItem: {
-            /** Scenario Id */
-            scenario_id: string;
-            /** Title */
-            title: string;
-            /** Problem Statement */
-            problem_statement: string;
-            /** Active */
-            active: boolean;
-            /** Generated */
-            generated: boolean;
-            /** Parent Scenario Id */
-            parent_scenario_id: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Objective Ids */
-            objective_ids: string[];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Simulation Ids */
-            simulation_ids: string[];
-            /** Num Simulations */
-            num_simulations: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Cohort Ids */
-            cohort_ids: string[];
-        };
-        /**
-         * ScenariosListResponse
-         * @description Response for scenarios list endpoint.
-         */
-        app__schemas__scenarios__ScenariosListResponse: {
-            /** Scenarios */
-            scenarios: components["schemas"]["app__schemas__scenarios__ScenarioItem"][];
-            /** Objective Mapping */
-            objective_mapping: {
-                [key: string]: components["schemas"]["ObjectiveMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Persona Mapping */
-            persona_mapping: {
-                [key: string]: components["schemas"]["PersonaMappingItem"];
-            };
-            /** Simulation Mapping */
-            simulation_mapping: {
-                [key: string]: components["schemas"]["SimulationMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * CreateSimulationRequest
-         * @description Request to create simulation.
-         */
-        app__schemas__simulations__CreateSimulationRequest: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[] | components["schemas"]["app__schemas__simulations__ScenarioInRequest"][];
-        };
-        /**
-         * ParameterItem
-         * @description Parameter data for dropdown.
-         */
-        app__schemas__simulations__ParameterItem: {
-            /** Id */
-            id: string;
-            /** Parameter Id */
-            parameter_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-        };
-        /**
-         * ParameterItemDetail
-         * @description Full parameter item details.
-         */
-        app__schemas__simulations__ParameterItemDetail: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string;
-        };
-        /**
-         * ScenarioInRequest
-         * @description Scenario with active state for create/update requests.
-         */
-        app__schemas__simulations__ScenarioInRequest: {
-            /** Scenario Id */
-            scenario_id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /**
-         * SimulationDetailDefaultRequest
-         * @description Request for default simulation detail.
-         */
-        app__schemas__simulations__SimulationDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * SimulationDetailRequest
-         * @description Request for simulation detail.
-         */
-        app__schemas__simulations__SimulationDetailRequest: {
-            /** Simulationid */
-            simulationId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * SimulationDetailResponse
-         * @description Response for simulation detail endpoint.
-         */
-        app__schemas__simulations__SimulationDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Valid Rubric Ids */
-            valid_rubric_ids: string[];
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Valid Scenario Ids */
-            valid_scenario_ids: string[];
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** In Use */
-            in_use: boolean;
-            /** Cohort Count */
-            cohort_count: number;
-            /** Scenarios */
-            scenarios: components["schemas"]["ScenarioInSimulation"][];
-            /** Parameters */
-            parameters: components["schemas"]["app__schemas__simulations__ParameterItem"][];
-            /** Parameter Items */
-            parameter_items: components["schemas"]["app__schemas__simulations__ParameterItemDetail"][];
-            /** Parameter Mapping */
-            parameter_mapping: {
-                [key: string]: components["schemas"]["ParameterMappingItem"];
-            };
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Parameter Item Mapping */
-            parameter_item_mapping: {
-                [key: string]: components["schemas"]["ParameterItemMappingItem"];
-            };
-        };
-        /**
-         * SimulationItem
-         * @description Simulation item in list response.
-         */
-        app__schemas__simulations__SimulationItem: {
-            /** Simulation Id */
-            simulation_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Rubric Id */
-            rubric_id: string;
-            /** Num Cohorts */
-            num_cohorts: number;
-        };
-        /**
-         * SimulationsListResponse
-         * @description Response for simulations list endpoint.
-         */
-        app__schemas__simulations__SimulationsListResponse: {
-            /** Simulations */
-            simulations: components["schemas"]["app__schemas__simulations__SimulationItem"][];
-            /** Scenario Mapping */
-            scenario_mapping: {
-                [key: string]: components["schemas"]["ScenarioMappingItem"];
-            };
-            /** Rubric Mapping */
-            rubric_mapping: {
-                [key: string]: components["schemas"]["RubricMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * UpdateSimulationRequest
-         * @description Request to update simulation.
-         */
-        app__schemas__simulations__UpdateSimulationRequest: {
-            /** Simulationid */
-            simulationId: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
-            rubric_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[] | components["schemas"]["app__schemas__simulations__ScenarioInRequest"][];
-        };
-        /**
-         * CreateStaffDataResponse
-         * @description Response with all data needed for create staff UI.
-         */
-        app__schemas__staff__CreateStaffDataResponse: {
-            /** Staff */
-            staff: components["schemas"]["app__schemas__staff__StaffItem"][];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Role Options */
-            role_options: string[];
-        };
-        /**
-         * ProcessCSVResponse
-         * @description Response from CSV processing.
-         */
-        app__schemas__staff__ProcessCSVResponse: {
-            /** Success */
-            success: boolean;
-            /** Rows */
-            rows: components["schemas"]["ProcessedCSVRow"][];
-            /** Headers */
-            headers: string[];
-        };
-        /**
-         * SearchStaffResponse
-         * @description Response for staff search endpoint.
-         */
-        app__schemas__staff__SearchStaffResponse: {
-            /** Staff */
-            staff: components["schemas"]["app__schemas__staff__StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * StaffItem
-         * @description Staff item in list response.
-         */
-        app__schemas__staff__StaffItem: {
-            /** Profile Id */
-            profile_id: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Alias */
-            alias: string;
-            /** Name */
-            name: string;
-            /** Role */
-            role: string;
-            /** Email */
-            email: string;
-            /** Initials */
-            initials: string;
-            /** Active */
-            active: boolean;
-            /** Last Active */
-            last_active: string | null;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Total Requests */
-            total_requests: number;
-            /** Default Profile */
-            default_profile: boolean;
-            /** Requests In Last Day */
-            requests_in_last_day: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-        };
-        /**
-         * StaffListResponse
-         * @description Response for staff list endpoint.
-         */
-        app__schemas__staff__StaffListResponse: {
-            /** Staff */
-            staff: components["schemas"]["app__schemas__staff__StaffItem"][];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-            /** Trend Data */
-            trend_data: {
-                [key: string]: components["schemas"]["TrendData"][];
-            };
-        };
-        /**
          * StandardGroupMappingItem
          * @description Standard group mapping item with rubric context
          */
@@ -15280,18 +10566,6 @@ export interface components {
             /** Passpoints */
             passPoints: number;
         };
-        /**
-         * StandardMappingItem
-         * @description Standard mapping item with points
-         */
-        app__utils__schema__StandardMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-        };
     };
     responses: never;
     parameters: never;
@@ -15301,4337 +10575,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_profile_list_api_v2_profile_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__staff__StaffListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_detail_staff_api_v2_profile_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_detail_bulk_api_v2_profile_detail_bulk_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffDetailBulkRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffDetailBulkResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_profile_api_v2_profile_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_create_profile_api_v2_profile_bulk_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkCreateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkCreateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_profile_api_v2_profile_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_update_profile_api_v2_profile_bulk_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkUpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkUpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_profile_api_v2_profile_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_delete_profile_api_v2_profile_bulk_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkDeleteStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkDeleteStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_create_staff_data_api_v2_profile_create_staff_data_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateStaffDataRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__staff__CreateStaffDataResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_staff_api_v2_profile_search_staff_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__staff__SearchStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    process_csv_api_v2_profile_process_csv_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProcessCSVRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__staff__ProcessCSVResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_or_update_staff_api_v2_profile_create_or_update_staff_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateOrUpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateOrUpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_create_or_update_staff_api_v2_profile_bulk_create_or_update_staff_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkCreateOrUpdateStaffRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkCreateOrUpdateStaffResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_detail_simple_api_v2_profile_detail_simple_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfileDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_profile_simple_api_v2_profile_update_simple_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__profile__UpdateProfileRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateProfileResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    authorize_emulation_api_v2_profile_authorize_emulation_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuthorizeEmulationRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthorizeEmulationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_context_api_v2_profile_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfileContextRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__profile__ProfileContextResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_intro_complete_api_v2_profile_mark_intro_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MarkIntroCompleteRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MarkTourStepResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_chat_complete_api_v2_profile_mark_chat_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MarkChatCompleteRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MarkTourStepResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_by_alias_api_v2_profile_by_alias_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfileByAliasRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_analytics_api_v2_analytics_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RefreshResponse"];
-                };
-            };
-        };
-    };
-    get_dashboard_api_v2_dashboard_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__dashboard__DashboardBundleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_home_api_v2_home_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HomeFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__home__HomeOverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_practice_api_v2_practice_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PracticeFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__practice__PracticeOverviewResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_leaderboard_api_v2_leaderboard_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__leaderboard__LeaderboardBundleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_reports_api_v2_reports_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__reports__ReportsBundleResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_pricing_api_v2_pricing_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__pricing__PricingAnalyticsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_personas_list_api_v2_personas_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PersonasFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__personas__PersonasListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_persona_api_v2_personas_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__personas__DuplicatePersonaRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__personas__DuplicatePersonaResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_persona_api_v2_personas_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__personas__DeletePersonaRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__personas__DeletePersonaResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_persona_prompt_api_v2_personas_delete_prompt_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__personas__DeletePersonaPromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__personas__DeletePersonaPromptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_persona_detail_api_v2_personas_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PersonaDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__personas__PersonaDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_persona_detail_default_api_v2_personas_detail_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PersonaDetailDefaultRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__personas__PersonaDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_persona_api_v2_personas_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__personas__CreatePersonaRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__personas__CreatePersonaResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_persona_api_v2_personas_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__personas__UpdatePersonaRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__personas__UpdatePersonaResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_documents_list_api_v2_documents_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocumentsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__documents__DocumentsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_document_detail_api_v2_documents_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocumentDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DocumentDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_document_detail_bulk_api_v2_documents_detail_bulk_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DocumentDetailBulkRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DocumentDetailBulkResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_document_api_v2_documents_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__documents__UpdateDocumentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__documents__UpdateDocumentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_update_documents_api_v2_documents_bulk_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__documents__BulkUpdateDocumentsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__documents__UpdateDocumentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_document_api_v2_documents_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteDocumentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteDocumentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_delete_documents_api_v2_documents_bulk_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkDeleteDocumentsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteDocumentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_creation_api_v2_documents_upload_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    tus_options_api_v2_documents_upload_options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    tus_options_upload_id_api_v2_documents_upload__upload_id__options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_head_api_v2_documents_upload__upload_id__head: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_patch_api_v2_documents_upload__upload_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    finalize_upload_api_v2_documents_upload_finalize_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FinalizeUploadRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinalizeUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_document_api_v2_documents_download__document_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                document_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_certificate_api_v2_documents_certificate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__documents__GenerateCertificateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_scenarios_list_api_v2_scenarios_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenariosFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__scenarios__ScenariosListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_scenario_detail_api_v2_scenarios_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenarioDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__scenarios__ScenarioDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_scenario_detail_default_api_v2_scenarios_detail_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScenarioDetailDefaultRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__scenarios__ScenarioDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_scenario_api_v2_scenarios_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateScenarioRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateScenarioResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_scenario_api_v2_scenarios_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateScenarioRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateScenarioResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_scenario_api_v2_scenarios_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DuplicateScenarioRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DuplicateScenarioResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_scenario_api_v2_scenarios_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteScenarioRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteScenarioResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_scenario_ai_api_v2_scenarios_generate_ai_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerateScenarioAIRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerateScenarioAIResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    randomize_scenario_api_v2_scenarios_randomize_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RandomizeScenarioRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RandomizeScenarioResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_simulations_list_api_v2_simulations_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SimulationsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__simulations__SimulationsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_simulation_detail_api_v2_simulations_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__simulations__SimulationDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__simulations__SimulationDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_simulation_detail_default_api_v2_simulations_detail_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__simulations__SimulationDetailDefaultRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__simulations__SimulationDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_simulation_api_v2_simulations_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__simulations__CreateSimulationRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateSimulationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_simulation_api_v2_simulations_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__simulations__UpdateSimulationRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateSimulationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_simulation_api_v2_simulations_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DuplicateSimulationRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DuplicateSimulationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_simulation_api_v2_simulations_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteSimulationRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteSimulationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_rubrics_list_api_v2_rubrics_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RubricsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__rubrics__RubricsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_rubric_detail_api_v2_rubrics_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RubricDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__rubrics__RubricDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_rubric_detail_default_api_v2_rubrics_detail_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RubricDetailDefaultRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__rubrics__RubricDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_rubric_api_v2_rubrics_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__rubrics__CreateRubricRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__rubrics__CreateRubricResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_rubric_api_v2_rubrics_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__rubrics__UpdateRubricRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__rubrics__UpdateRubricResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_rubric_api_v2_rubrics_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__rubrics__DuplicateRubricRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__rubrics__DuplicateRubricResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_rubric_api_v2_rubrics_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__rubrics__DeleteRubricRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__rubrics__DeleteRubricResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_cohorts_list_api_v2_cohorts_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CohortsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__CohortsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_cohort_detail_api_v2_cohorts_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CohortDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__CohortDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_cohort_detail_default_api_v2_cohorts_detail_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CohortDetailDefaultRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__CohortDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_cohort_detail_with_profiles_api_v2_cohorts_detail_with_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CohortDetailWithProfilesRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__CohortDetailWithProfilesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_cohort_api_v2_cohorts_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__cohorts__CreateCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__CreateCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_cohort_api_v2_cohorts_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__cohorts__UpdateCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__UpdateCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_cohort_api_v2_cohorts_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__cohorts__DuplicateCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__DuplicateCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_cohort_api_v2_cohorts_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__cohorts__DeleteCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__DeleteCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    leave_cohort_api_v2_cohorts_leave_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__cohorts__LeaveCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__LeaveCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_profiles_to_cohort_api_v2_cohorts_add_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__cohorts__AddProfilesToCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__AddProfilesToCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_profiles_from_cohort_api_v2_cohorts_remove_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__cohorts__RemoveProfilesFromCohortRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__cohorts__RemoveProfilesFromCohortResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_providers_list_api_v2_providers_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__providers__ProvidersFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__providers__ProvidersListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_provider_detail_api_v2_providers_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__providers__ProviderDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__providers__ProviderDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_provider_api_v2_providers_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__providers__CreateProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__providers__CreateProviderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_provider_api_v2_providers_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__providers__UpdateProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateProviderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_provider_api_v2_providers_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteProviderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_provider_api_v2_providers_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DuplicateProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DuplicateProviderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    decrypt_provider_key_api_v2_providers_decrypt_key_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DecryptProviderKeyRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DecryptProviderKeyResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_model_detail_api_v2_providers_models_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__providers__ModelDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__providers__ModelDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_model_api_v2_providers_models_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateModelRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateModelResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_model_api_v2_providers_models_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateModelRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateModelResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_model_api_v2_providers_models_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteModelRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteModelResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_model_api_v2_providers_models_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DuplicateModelRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DuplicateModelResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_parameters_list_api_v2_parameters_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__parameters__ParametersFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__parameters__ParametersListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_parameter_detail_api_v2_parameters_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__parameters__ParameterDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__parameters__ParameterDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_parameter_detail_default_api_v2_parameters_detail_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__parameters__ParameterDetailDefaultRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__parameters__ParameterDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_parameter_api_v2_parameters_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateParameterRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateParameterResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_parameter_api_v2_parameters_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateParameterRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateParameterResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_parameter_api_v2_parameters_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DuplicateParameterRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DuplicateParameterResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_parameter_api_v2_parameters_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteParameterRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteParameterResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_parameter_item_api_v2_parameters_items_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateParameterItemRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateParameterItemResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_departments_api_v2_departments_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartmentsFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__departments__DepartmentsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_department_detail_api_v2_departments_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartmentDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__departments__DepartmentDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_department_detail_default_api_v2_departments_detail_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartmentDetailDefaultRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__departments__DepartmentDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_department_api_v2_departments_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateDepartmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateDepartmentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_department_api_v2_departments_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateDepartmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateDepartmentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_department_api_v2_departments_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DuplicateDepartmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DuplicateDepartmentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_department_api_v2_departments_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteDepartmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteDepartmentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_profiles_from_department_api_v2_departments_remove_profiles_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__departments__RemoveProfilesFromDepartmentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__departments__RemoveProfilesFromDepartmentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_agents_api_v2_agents_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__agents__AgentsListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__agents__AgentsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_agent_detail_api_v2_agents_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__agents__AgentDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__agents__AgentDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_agent_detail_default_api_v2_agents_detail_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__agents__AgentDetailDefaultRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__agents__AgentDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_agent_api_v2_agents_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__agents__CreateAgentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__agents__CreateAgentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_agent_api_v2_agents_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__agents__UpdateAgentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__agents__UpdateAgentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_agent_api_v2_agents_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__agents__DuplicateAgentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__agents__DuplicateAgentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_agent_api_v2_agents_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__agents__DeleteAgentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__agents__DeleteAgentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_agent_prompt_api_v2_agents_delete_prompt_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__agents__DeleteAgentPromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__agents__DeleteAgentPromptResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_feedback_api_v2_feedback_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__feedback__FeedbackListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__feedback__FeedbackListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_feedback_api_v2_feedback_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__feedback__CreateFeedbackRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__feedback__CreateFeedbackResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_delete_feedback_api_v2_feedback_bulk_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__feedback__BulkDeleteFeedbackRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__feedback__BulkDeleteFeedbackResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_logs_api_v2_logs_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__logs__LogsListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__logs__LogsListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_log_api_v2_logs_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__logs__CreateLogRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__logs__CreateLogResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_delete_logs_api_v2_logs_bulk_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__logs__BulkDeleteLogsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__logs__BulkDeleteLogsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_system_health_api_v2_logs_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-        };
-    };
-    get_attempt_full_api_v2_attempts__attempt_id__full_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                attempt_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_archive_attempts_api_v2_attempts_bulk_archive_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__attempts__BulkArchiveAttemptsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__attempts__BulkArchiveAttemptsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_chat_created_at_api_v2_attempts_chats_update_created_at_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__schemas__attempts__UpdateChatCreatedAtRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__schemas__attempts__UpdateChatTimestampResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_assistant_chat_full_api_v2_assistant_chats__chat_id__full_get: {
-        parameters: {
-            query: {
-                profile_id: string;
-            };
-            header?: never;
-            path: {
-                chat_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_assistant_chats_list_api_v2_assistant_chats_list__profile_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                profile_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_profile_detail_api_v3_profile_detail_post: {
         parameters: {
             query?: never;
@@ -19674,7 +10617,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__profile__update__UpdateProfileRequest"];
+                "application/json": components["schemas"]["UpdateProfileRequest"];
             };
         };
         responses: {
@@ -19750,7 +10693,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__profile__context__ProfileContextResponse"];
+                    "application/json": components["schemas"]["ProfileContextResponse"];
                 };
             };
             /** @description Validation Error */
@@ -19863,6 +10806,105 @@ export interface operations {
             };
         };
     };
+    profile_overview_api_v3_profile_overview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileOverviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_profiles_api_v3_profile_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FindProfilesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    student_sim_report_api_v3_profile_simulation_report_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentSimReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentSimReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_profile_list_api_v3_profile_staff_list_post: {
         parameters: {
             query?: never;
@@ -19882,7 +10924,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__profile__staff__list__StaffListResponse"];
+                    "application/json": components["schemas"]["StaffListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20179,7 +11221,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__profile__staff__create_staff_data__CreateStaffDataResponse"];
+                    "application/json": components["schemas"]["CreateStaffDataResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20212,7 +11254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__profile__staff__search_staff__SearchStaffResponse"];
+                    "application/json": components["schemas"]["SearchStaffResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20245,7 +11287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__profile__staff__process_csv__ProcessCSVResponse"];
+                    "application/json": components["schemas"]["ProcessCSVResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20344,7 +11386,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__scenarios__list__ScenariosListResponse"];
+                    "application/json": components["schemas"]["ScenariosListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20655,6 +11697,72 @@ export interface operations {
             };
         };
     };
+    scenario_overview_api_v3_scenarios_overview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioOverviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_scenarios_api_v3_scenarios_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FindScenariosRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_simulations_list_api_v3_simulations_list_post: {
         parameters: {
             query?: never;
@@ -20674,7 +11782,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__simulations__list__SimulationsListResponse"];
+                    "application/json": components["schemas"]["SimulationsListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20697,7 +11805,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__simulations__detail__SimulationDetailRequest"];
+                "application/json": components["schemas"]["SimulationDetailRequest"];
             };
         };
         responses: {
@@ -20730,7 +11838,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__simulations__detail_default__SimulationDetailDefaultRequest"];
+                "application/json": components["schemas"]["SimulationDetailDefaultRequest"];
             };
         };
         responses: {
@@ -20763,7 +11871,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__simulations__create__CreateSimulationRequest"];
+                "application/json": components["schemas"]["CreateSimulationRequest"];
             };
         };
         responses: {
@@ -20796,7 +11904,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__simulations__update__UpdateSimulationRequest"];
+                "application/json": components["schemas"]["UpdateSimulationRequest"];
             };
         };
         responses: {
@@ -20886,6 +11994,105 @@ export interface operations {
             };
         };
     };
+    simulation_overview_api_v3_simulations_overview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationOverviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_simulations_api_v3_simulations_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FindSimulationsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_attempts_api_v3_simulations_attempts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationAttemptsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationAttemptResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_personas_list_api_v3_personas_list_post: {
         parameters: {
             query?: never;
@@ -20905,7 +12112,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__list__PersonasListResponse"];
+                    "application/json": components["schemas"]["PersonasListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20994,7 +12201,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__personas__create__CreatePersonaRequest"];
+                "application/json": components["schemas"]["CreatePersonaRequest"];
             };
         };
         responses: {
@@ -21004,7 +12211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__create__CreatePersonaResponse"];
+                    "application/json": components["schemas"]["CreatePersonaResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21027,7 +12234,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__personas__update__UpdatePersonaRequest"];
+                "application/json": components["schemas"]["UpdatePersonaRequest"];
             };
         };
         responses: {
@@ -21037,7 +12244,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__update__UpdatePersonaResponse"];
+                    "application/json": components["schemas"]["UpdatePersonaResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21060,7 +12267,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__personas__duplicate__DuplicatePersonaRequest"];
+                "application/json": components["schemas"]["DuplicatePersonaRequest"];
             };
         };
         responses: {
@@ -21070,7 +12277,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__duplicate__DuplicatePersonaResponse"];
+                    "application/json": components["schemas"]["DuplicatePersonaResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21093,7 +12300,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__personas__delete__DeletePersonaRequest"];
+                "application/json": components["schemas"]["DeletePersonaRequest"];
             };
         };
         responses: {
@@ -21103,7 +12310,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__delete__DeletePersonaResponse"];
+                    "application/json": components["schemas"]["DeletePersonaResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21126,7 +12333,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__personas__delete_prompt__DeletePersonaPromptRequest"];
+                "application/json": components["schemas"]["DeletePersonaPromptRequest"];
             };
         };
         responses: {
@@ -21136,7 +12343,106 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__delete_prompt__DeletePersonaPromptResponse"];
+                    "application/json": components["schemas"]["DeletePersonaPromptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    persona_overview_api_v3_personas_overview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaOverviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonaOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_personas_api_v3_personas_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FindPersonasRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonaSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    persona_response_times_api_v3_personas_response_times_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaResponseTimesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonaResponseTimesResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21169,7 +12475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__departments__list__DepartmentsListResponse"];
+                    "application/json": components["schemas"]["DepartmentsListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21390,7 +12696,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__departments__remove_profiles__RemoveProfilesFromDepartmentRequest"];
+                "application/json": components["schemas"]["RemoveProfilesFromDepartmentRequest"];
             };
         };
         responses: {
@@ -21400,7 +12706,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__departments__remove_profiles__RemoveProfilesFromDepartmentResponse"];
+                    "application/json": components["schemas"]["RemoveProfilesFromDepartmentResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21433,7 +12739,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__list__CohortsListResponse"];
+                    "application/json": components["schemas"]["CohortsListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21466,7 +12772,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__detail__CohortDetailResponse"];
+                    "application/json": components["schemas"]["CohortDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21499,7 +12805,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__detail__CohortDetailResponse"];
+                    "application/json": components["schemas"]["CohortDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21532,7 +12838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__detail_with_profiles__CohortDetailWithProfilesResponse"];
+                    "application/json": components["schemas"]["CohortDetailWithProfilesResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21555,7 +12861,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__cohorts__duplicate__DuplicateCohortRequest"];
+                "application/json": components["schemas"]["DuplicateCohortRequest"];
             };
         };
         responses: {
@@ -21565,7 +12871,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__duplicate__DuplicateCohortResponse"];
+                    "application/json": components["schemas"]["DuplicateCohortResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21588,7 +12894,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__cohorts__leave__LeaveCohortRequest"];
+                "application/json": components["schemas"]["LeaveCohortRequest"];
             };
         };
         responses: {
@@ -21598,7 +12904,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__leave__LeaveCohortResponse"];
+                    "application/json": components["schemas"]["LeaveCohortResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21621,7 +12927,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__cohorts__add_profiles__AddProfilesToCohortRequest"];
+                "application/json": components["schemas"]["AddProfilesToCohortRequest"];
             };
         };
         responses: {
@@ -21631,7 +12937,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__add_profiles__AddProfilesToCohortResponse"];
+                    "application/json": components["schemas"]["AddProfilesToCohortResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21654,7 +12960,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__cohorts__remove_profiles__RemoveProfilesFromCohortRequest"];
+                "application/json": components["schemas"]["RemoveProfilesFromCohortRequest"];
             };
         };
         responses: {
@@ -21664,7 +12970,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__remove_profiles__RemoveProfilesFromCohortResponse"];
+                    "application/json": components["schemas"]["RemoveProfilesFromCohortResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21687,7 +12993,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__cohorts__create__CreateCohortRequest"];
+                "application/json": components["schemas"]["CreateCohortRequest"];
             };
         };
         responses: {
@@ -21697,7 +13003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__create__CreateCohortResponse"];
+                    "application/json": components["schemas"]["CreateCohortResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21720,7 +13026,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__cohorts__update__UpdateCohortRequest"];
+                "application/json": components["schemas"]["UpdateCohortRequest"];
             };
         };
         responses: {
@@ -21730,7 +13036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__update__UpdateCohortResponse"];
+                    "application/json": components["schemas"]["UpdateCohortResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21753,7 +13059,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__cohorts__delete__DeleteCohortRequest"];
+                "application/json": components["schemas"]["DeleteCohortRequest"];
             };
         };
         responses: {
@@ -21763,7 +13069,106 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__cohorts__delete__DeleteCohortResponse"];
+                    "application/json": components["schemas"]["DeleteCohortResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cohort_overview_api_v3_cohorts_overview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CohortOverviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CohortOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_cohorts_api_v3_cohorts_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FindCohortsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CohortSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cohort_pass_matrix_api_v3_cohorts_pass_matrix_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CohortPassMatrixRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CohortPassMatrixResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21796,7 +13201,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__documents__list__DocumentsListResponse"];
+                    "application/json": components["schemas"]["DocumentsListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21918,7 +13323,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__documents__bulk_update__BulkUpdateDocumentsRequest"];
+                "application/json": components["schemas"]["BulkUpdateDocumentsRequest"];
             };
         };
         responses: {
@@ -21984,7 +13389,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__documents__update__UpdateDocumentRequest"];
+                "application/json": components["schemas"]["UpdateDocumentRequest"];
             };
         };
         responses: {
@@ -21994,7 +13399,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__documents__update__UpdateDocumentResponse"];
+                    "application/json": components["schemas"]["UpdateDocumentResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22214,7 +13619,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__documents__certificate__GenerateCertificateRequest"];
+                "application/json": components["schemas"]["GenerateCertificateRequest"];
             };
         };
         responses: {
@@ -22257,7 +13662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__rubrics__list__RubricsListResponse"];
+                    "application/json": components["schemas"]["RubricsListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22290,7 +13695,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__rubrics__detail__RubricDetailResponse"];
+                    "application/json": components["schemas"]["RubricDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22323,7 +13728,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__rubrics__detail__RubricDetailResponse"];
+                    "application/json": components["schemas"]["RubricDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22346,7 +13751,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__rubrics__duplicate__DuplicateRubricRequest"];
+                "application/json": components["schemas"]["DuplicateRubricRequest"];
             };
         };
         responses: {
@@ -22356,7 +13761,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__rubrics__duplicate__DuplicateRubricResponse"];
+                    "application/json": components["schemas"]["DuplicateRubricResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22379,7 +13784,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__rubrics__create__CreateRubricRequest"];
+                "application/json": components["schemas"]["CreateRubricRequest"];
             };
         };
         responses: {
@@ -22389,7 +13794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__rubrics__create__CreateRubricResponse"];
+                    "application/json": components["schemas"]["CreateRubricResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22412,7 +13817,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__rubrics__update__UpdateRubricRequest"];
+                "application/json": components["schemas"]["UpdateRubricRequest"];
             };
         };
         responses: {
@@ -22422,7 +13827,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__rubrics__update__UpdateRubricResponse"];
+                    "application/json": components["schemas"]["UpdateRubricResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22445,7 +13850,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__rubrics__delete__DeleteRubricRequest"];
+                "application/json": components["schemas"]["DeleteRubricRequest"];
             };
         };
         responses: {
@@ -22455,7 +13860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__rubrics__delete__DeleteRubricResponse"];
+                    "application/json": components["schemas"]["DeleteRubricResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22521,7 +13926,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__dashboard__bundle__DashboardBundleResponse"];
+                    "application/json": components["schemas"]["DashboardBundleResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22554,7 +13959,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__reports__bundle__ReportsBundleResponse"];
+                    "application/json": components["schemas"]["ReportsBundleResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22587,7 +13992,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__leaderboard__bundle__LeaderboardBundleResponse"];
+                    "application/json": components["schemas"]["LeaderboardBundleResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22610,7 +14015,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__agents__list__AgentsListRequest"];
+                "application/json": components["schemas"]["AgentsListRequest"];
             };
         };
         responses: {
@@ -22620,7 +14025,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__agents__list__AgentsListResponse"];
+                    "application/json": components["schemas"]["AgentsListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22643,7 +14048,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__agents__detail__AgentDetailRequest"];
+                "application/json": components["schemas"]["AgentDetailRequest"];
             };
         };
         responses: {
@@ -22676,7 +14081,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__agents__detail_default__AgentDetailDefaultRequest"];
+                "application/json": components["schemas"]["AgentDetailDefaultRequest"];
             };
         };
         responses: {
@@ -22709,7 +14114,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__agents__create__CreateAgentRequest"];
+                "application/json": components["schemas"]["CreateAgentRequest"];
             };
         };
         responses: {
@@ -22719,7 +14124,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__agents__create__CreateAgentResponse"];
+                    "application/json": components["schemas"]["CreateAgentResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22742,7 +14147,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__agents__update__UpdateAgentRequest"];
+                "application/json": components["schemas"]["UpdateAgentRequest"];
             };
         };
         responses: {
@@ -22752,7 +14157,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__agents__update__UpdateAgentResponse"];
+                    "application/json": components["schemas"]["UpdateAgentResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22775,7 +14180,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__agents__duplicate__DuplicateAgentRequest"];
+                "application/json": components["schemas"]["DuplicateAgentRequest"];
             };
         };
         responses: {
@@ -22785,7 +14190,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__agents__duplicate__DuplicateAgentResponse"];
+                    "application/json": components["schemas"]["DuplicateAgentResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22808,7 +14213,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__agents__delete__DeleteAgentRequest"];
+                "application/json": components["schemas"]["DeleteAgentRequest"];
             };
         };
         responses: {
@@ -22818,7 +14223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__agents__delete__DeleteAgentResponse"];
+                    "application/json": components["schemas"]["DeleteAgentResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22841,7 +14246,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__agents__delete_prompt__DeleteAgentPromptRequest"];
+                "application/json": components["schemas"]["DeleteAgentPromptRequest"];
             };
         };
         responses: {
@@ -22851,7 +14256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__agents__delete_prompt__DeleteAgentPromptResponse"];
+                    "application/json": components["schemas"]["DeleteAgentPromptResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22874,7 +14279,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__providers__list__ProvidersFilters"];
+                "application/json": components["schemas"]["ProvidersFilters"];
             };
         };
         responses: {
@@ -22884,7 +14289,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__providers__list__ProvidersListResponse"];
+                    "application/json": components["schemas"]["ProvidersListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22907,7 +14312,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__providers__detail__ProviderDetailRequest"];
+                "application/json": components["schemas"]["ProviderDetailRequest"];
             };
         };
         responses: {
@@ -22917,7 +14322,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__providers__detail__ProviderDetailResponse"];
+                    "application/json": components["schemas"]["ProviderDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22940,7 +14345,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__providers__create__CreateProviderRequest"];
+                "application/json": components["schemas"]["CreateProviderRequest"];
             };
         };
         responses: {
@@ -22950,7 +14355,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__providers__create__CreateProviderResponse"];
+                    "application/json": components["schemas"]["CreateProviderResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22973,7 +14378,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__providers__update__UpdateProviderRequest"];
+                "application/json": components["schemas"]["UpdateProviderRequest"];
             };
         };
         responses: {
@@ -23105,7 +14510,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__providers__models__detail__ModelDetailRequest"];
+                "application/json": components["schemas"]["ModelDetailRequest"];
             };
         };
         responses: {
@@ -23115,7 +14520,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__providers__models__detail__ModelDetailResponse"];
+                    "application/json": components["schemas"]["ModelDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23270,7 +14675,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__parameters__list__ParametersFilters"];
+                "application/json": components["schemas"]["ParametersFilters"];
             };
         };
         responses: {
@@ -23280,7 +14685,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__parameters__list__ParametersListResponse"];
+                    "application/json": components["schemas"]["ParametersListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23303,7 +14708,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__parameters__detail__ParameterDetailRequest"];
+                "application/json": components["schemas"]["ParameterDetailRequest"];
             };
         };
         responses: {
@@ -23313,7 +14718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__parameters__detail__ParameterDetailResponse"];
+                    "application/json": components["schemas"]["ParameterDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23336,7 +14741,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__parameters__detail_default__ParameterDetailDefaultRequest"];
+                "application/json": components["schemas"]["ParameterDetailDefaultRequest"];
             };
         };
         responses: {
@@ -23346,7 +14751,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__parameters__detail__ParameterDetailResponse"];
+                    "application/json": components["schemas"]["ParameterDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23534,7 +14939,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__feedback__list__FeedbackListRequest"];
+                "application/json": components["schemas"]["FeedbackListRequest"];
             };
         };
         responses: {
@@ -23544,7 +14949,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__feedback__list__FeedbackListResponse"];
+                    "application/json": components["schemas"]["FeedbackListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23567,7 +14972,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__feedback__create__CreateFeedbackRequest"];
+                "application/json": components["schemas"]["CreateFeedbackRequest"];
             };
         };
         responses: {
@@ -23577,7 +14982,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__feedback__create__CreateFeedbackResponse"];
+                    "application/json": components["schemas"]["CreateFeedbackResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23600,7 +15005,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__feedback__bulk_delete__BulkDeleteFeedbackRequest"];
+                "application/json": components["schemas"]["BulkDeleteFeedbackRequest"];
             };
         };
         responses: {
@@ -23610,7 +15015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__feedback__bulk_delete__BulkDeleteFeedbackResponse"];
+                    "application/json": components["schemas"]["BulkDeleteFeedbackResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23633,7 +15038,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__logs__list__LogsListRequest"];
+                "application/json": components["schemas"]["LogsListRequest"];
             };
         };
         responses: {
@@ -23643,7 +15048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__logs__list__LogsListResponse"];
+                    "application/json": components["schemas"]["LogsListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23666,7 +15071,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__logs__create__CreateLogRequest"];
+                "application/json": components["schemas"]["CreateLogRequest"];
             };
         };
         responses: {
@@ -23676,7 +15081,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__logs__create__CreateLogResponse"];
+                    "application/json": components["schemas"]["CreateLogResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23699,7 +15104,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__logs__bulk_delete__BulkDeleteLogsRequest"];
+                "application/json": components["schemas"]["BulkDeleteLogsRequest"];
             };
         };
         responses: {
@@ -23709,7 +15114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__logs__bulk_delete__BulkDeleteLogsResponse"];
+                    "application/json": components["schemas"]["BulkDeleteLogsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23745,7 +15150,7 @@ export interface operations {
             };
         };
     };
-    bulk_archive_attempts_api_v3_attempts_bulk_archive_post: {
+    recent_app_logs_api_v3_logs_recent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -23754,7 +15159,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__attempts__bulk_archive__BulkArchiveAttemptsRequest"];
+                "application/json": components["schemas"]["RecentAppLogsRequest"];
             };
         };
         responses: {
@@ -23764,7 +15169,73 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__attempts__bulk_archive__BulkArchiveAttemptsResponse"];
+                    "application/json": components["schemas"]["LogEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assistant_usage_api_v3_logs_assistant_usage_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantUsageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantUsageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_archive_attempts_api_v3_attempts_bulk_archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkArchiveAttemptsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkArchiveAttemptsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23787,7 +15258,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__attempts__update_chat_created_at__UpdateChatCreatedAtRequest"];
+                "application/json": components["schemas"]["UpdateChatCreatedAtRequest"];
             };
         };
         responses: {
@@ -23797,7 +15268,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__attempts__update_chat_created_at__UpdateChatTimestampResponse"];
+                    "application/json": components["schemas"]["UpdateChatTimestampResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23830,7 +15301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__attempts__update_chat_completed_at__UpdateChatTimestampResponse"];
+                    "application/json": components["schemas"]["UpdateChatTimestampResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23896,7 +15367,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__home__overview__HomeOverviewResponse"];
+                    "application/json": components["schemas"]["HomeOverviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23929,7 +15400,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__practice__overview__PracticeOverviewResponse"];
+                    "application/json": components["schemas"]["PracticeOverviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23962,7 +15433,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__pricing__analytics__PricingAnalyticsResponse"];
+                    "application/json": components["schemas"]["PricingAnalyticsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24029,6 +15500,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssistantChatListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_schema_api_v3_schema_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    query_data_api_v3_schema_query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QueryDataRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
             /** @description Validation Error */

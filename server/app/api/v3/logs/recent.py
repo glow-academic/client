@@ -3,10 +3,10 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -33,7 +33,6 @@ class LogEntry(BaseModel):
 @server.tool()
 async def recent_app_logs(
     request: RecentAppLogsRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> list[LogEntry]:
     """
     🔎 Fetch recent ERROR/WARN app logs
@@ -53,33 +52,38 @@ async def recent_app_logs(
 
     See also 👉 assistant_usage() for assistant-specific logs.
     """
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
+
     try:
-        sql = load_sql("sql/v3/logs/recent.sql")
-        rows = await conn.fetch(sql, request.level, request.limit)
+        async with pool.acquire() as conn:
+            sql = load_sql("sql/v3/logs/recent.sql")
+            rows = await conn.fetch(sql, request.level, request.limit)
 
-        results = []
-        for row in rows:
-            context = row["context"]
-            if isinstance(context, str):
-                import json
-                try:
-                    context = json.loads(context)
-                except:
-                    context = None
+            results = []
+            for row in rows:
+                context = row["context"]
+                if isinstance(context, str):
+                    import json
+                    try:
+                        context = json.loads(context)
+                    except:
+                        context = None
 
-            results.append(
-                LogEntry(
-                    id=row["id"],
-                    level=row["level"],
-                    message=row["message"],
-                    context=context,
-                    created_at=row["created_at"].isoformat()
-                    if row["created_at"]
-                    else "",
+                results.append(
+                    LogEntry(
+                        id=row["id"],
+                        level=row["level"],
+                        message=row["message"],
+                        context=context,
+                        created_at=row["created_at"].isoformat()
+                        if row["created_at"]
+                        else "",
+                    )
                 )
-            )
 
-        return results
+            return results
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Database error: {str(e)}"

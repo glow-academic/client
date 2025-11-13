@@ -4,10 +4,10 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -31,7 +31,6 @@ class StudentSimReportResponse(BaseModel):
 @server.tool()
 async def student_sim_report(
     request: StudentSimReportRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> StudentSimReportResponse:
     """
     Deep dive: every attempt, chat, grade, feedback
@@ -50,35 +49,40 @@ async def student_sim_report(
 
     See also profile_overview() for summary view.
     """
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
+
     try:
-        sql = load_sql("sql/v3/profile/simulation_report.sql")
-        result = await conn.fetchrow(sql, request.profile_id, request.recent)
+        async with pool.acquire() as conn:
+            sql = load_sql("sql/v3/profile/simulation_report.sql")
+            result = await conn.fetchrow(sql, request.profile_id, request.recent)
 
-        if not result:
-            raise HTTPException(
-                status_code=404, detail=f"Profile not found: {request.profile_id}"
-            )
+            if not result:
+                raise HTTPException(
+                    status_code=404, detail=f"Profile not found: {request.profile_id}"
+                )
 
-        profile_data = {
-            "id": str(result["id"]),
-            "first_name": result["first_name"],
-            "last_name": result["last_name"],
-            "alias": result["alias"],
-            "role": result["role"],
-            "created_at": result["created_at"].isoformat()
-            if result["created_at"]
-            else None,
-        }
+            profile_data = {
+                "id": str(result["id"]),
+                "first_name": result["first_name"],
+                "last_name": result["last_name"],
+                "alias": result["alias"],
+                "role": result["role"],
+                "created_at": result["created_at"].isoformat()
+                if result["created_at"]
+                else None,
+            }
 
-        # Parse attempts (jsonb array to list of dicts)
-        attempts = []
-        attempts_data = result["attempts"]
-        if isinstance(attempts_data, str):
-            attempts_data = json.loads(attempts_data)
-        if attempts_data and isinstance(attempts_data, list):
-            attempts = attempts_data
+            # Parse attempts (jsonb array to list of dicts)
+            attempts = []
+            attempts_data = result["attempts"]
+            if isinstance(attempts_data, str):
+                attempts_data = json.loads(attempts_data)
+            if attempts_data and isinstance(attempts_data, list):
+                attempts = attempts_data
 
-        return StudentSimReportResponse(profile=profile_data, attempts=attempts)
+            return StudentSimReportResponse(profile=profile_data, attempts=attempts)
     except HTTPException:
         raise
     except Exception as e:

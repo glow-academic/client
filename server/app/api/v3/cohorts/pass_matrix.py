@@ -5,10 +5,10 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -33,7 +33,6 @@ class CohortPassMatrixResponse(BaseModel):
 @server.tool()
 async def cohort_pass_matrix(
     request: CohortPassMatrixRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CohortPassMatrixResponse:
     """
     Cohort pass/fail matrix across simulations
@@ -58,117 +57,122 @@ async def cohort_pass_matrix(
             status_code=400, detail=f"Invalid cohort_id format: {request.cohort_id}"
         )
 
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
+
     try:
-        sql = load_sql("sql/v3/cohorts/pass_matrix.sql")
-        cohort_data = await conn.fetchrow(sql, cohort_uuid)
+        async with pool.acquire() as conn:
+            sql = load_sql("sql/v3/cohorts/pass_matrix.sql")
+            cohort_data = await conn.fetchrow(sql, cohort_uuid)
 
-        if not cohort_data:
-            raise HTTPException(
-                status_code=404, detail=f"Cohort not found: {request.cohort_id}"
+            if not cohort_data:
+                raise HTTPException(
+                    status_code=404, detail=f"Cohort not found: {request.cohort_id}"
+                )
+
+            # Parse JSON fields
+            members = cohort_data["members"] if cohort_data["members"] else []
+            if isinstance(members, str):
+                members = json.loads(members)
+            simulations = (
+                cohort_data["simulations"] if cohort_data["simulations"] else []
             )
-
-        # Parse JSON fields
-        members = cohort_data["members"] if cohort_data["members"] else []
-        if isinstance(members, str):
-            members = json.loads(members)
-        simulations = (
-            cohort_data["simulations"] if cohort_data["simulations"] else []
-        )
-        if isinstance(simulations, str):
-            simulations = json.loads(simulations)
-        student_results = (
-            cohort_data["student_results"]
-            if cohort_data["student_results"]
-            else {}
-        )
-        if isinstance(student_results, str):
-            student_results = json.loads(student_results)
-
-        # Build pass/fail matrix
-        matrix = []
-        for student in members:
-            student_id = str(student["id"])
-            student_name = (
-                f"{student['first_name'] or ''} {student['last_name'] or ''}".strip()
+            if isinstance(simulations, str):
+                simulations = json.loads(simulations)
+            student_results = (
+                cohort_data["student_results"]
+                if cohort_data["student_results"]
+                else {}
             )
-            if not student_name:
-                student_name = student["alias"] or "Unknown"
+            if isinstance(student_results, str):
+                student_results = json.loads(student_results)
 
-            student_row: dict[str, Any] = {
-                "student_id": student_id,
-                "student_name": student_name,
-                "alias": student["alias"],
-                "simulations": {},
+            # Build pass/fail matrix
+            matrix = []
+            for student in members:
+                student_id = str(student["id"])
+                student_name = (
+                    f"{student['first_name'] or ''} {student['last_name'] or ''}".strip()
+                )
+                if not student_name:
+                    student_name = student["alias"] or "Unknown"
+
+                student_row: dict[str, Any] = {
+                    "student_id": student_id,
+                    "student_name": student_name,
+                    "alias": student["alias"],
+                    "simulations": {},
+                }
+
+                # Get pre-fetched results for this student
+                student_sim_results = student_results.get(student_id, {})
+
+                # Build results for each simulation
+                for sim in simulations:
+                    sim_id = str(sim["id"])
+                    result_data = student_sim_results.get(sim_id)
+
+                    if result_data:
+                        student_row["simulations"][sim_id] = {
+                            "score": result_data["score"],
+                            "passed": result_data["passed"],
+                            "time_taken": result_data["time_taken"],
+                            "attempt_count": result_data["attempt_count"],
+                            "last_attempt": result_data["last_attempt"],
+                        }
+                    else:
+                        student_row["simulations"][sim_id] = None
+
+                matrix.append(student_row)
+
+            # Calculate summary statistics
+            summary: dict[str, Any] = {
+                "total_students": len(members),
+                "total_simulations": len(simulations),
+                "simulation_stats": {},
             }
 
-            # Get pre-fetched results for this student
-            student_sim_results = student_results.get(student_id, {})
-
-            # Build results for each simulation
             for sim in simulations:
                 sim_id = str(sim["id"])
-                result_data = student_sim_results.get(sim_id)
+                passed_count = 0
+                attempted_count = 0
+                total_score = 0
 
-                if result_data:
-                    student_row["simulations"][sim_id] = {
-                        "score": result_data["score"],
-                        "passed": result_data["passed"],
-                        "time_taken": result_data["time_taken"],
-                        "attempt_count": result_data["attempt_count"],
-                        "last_attempt": result_data["last_attempt"],
-                    }
-                else:
-                    student_row["simulations"][sim_id] = None
+                for student_result in matrix:
+                    result = student_result["simulations"].get(sim_id)
+                    if result:
+                        attempted_count += 1
+                        if result["passed"]:
+                            passed_count += 1
+                        total_score += result["score"]
 
-            matrix.append(student_row)
+                summary["simulation_stats"][sim_id] = {
+                    "simulation_title": sim["title"],
+                    "attempted_count": attempted_count,
+                    "passed_count": passed_count,
+                    "pass_rate": round(passed_count / attempted_count * 100, 1)
+                    if attempted_count > 0
+                    else 0,
+                    "average_score": round(total_score / attempted_count, 1)
+                    if attempted_count > 0
+                    else 0,
+                }
 
-        # Calculate summary statistics
-        summary: dict[str, Any] = {
-            "total_students": len(members),
-            "total_simulations": len(simulations),
-            "simulation_stats": {},
-        }
-
-        for sim in simulations:
-            sim_id = str(sim["id"])
-            passed_count = 0
-            attempted_count = 0
-            total_score = 0
-
-            for student_result in matrix:
-                result = student_result["simulations"].get(sim_id)
-                if result:
-                    attempted_count += 1
-                    if result["passed"]:
-                        passed_count += 1
-                    total_score += result["score"]
-
-            summary["simulation_stats"][sim_id] = {
-                "simulation_title": sim["title"],
-                "attempted_count": attempted_count,
-                "passed_count": passed_count,
-                "pass_rate": round(passed_count / attempted_count * 100, 1)
-                if attempted_count > 0
-                else 0,
-                "average_score": round(total_score / attempted_count, 1)
-                if attempted_count > 0
-                else 0,
-            }
-
-        return CohortPassMatrixResponse(
-            cohort={
-                "id": str(cohort_data["id"]),
-                "title": cohort_data["title"],
-                "description": cohort_data["description"],
-                "active": cohort_data["active"],
-                "created_at": cohort_data["created_at"].isoformat()
-                if cohort_data["created_at"]
-                else None,
-            },
-            matrix=matrix,
-            summary=summary,
-            simulations=simulations,
-        )
+            return CohortPassMatrixResponse(
+                cohort={
+                    "id": str(cohort_data["id"]),
+                    "title": cohort_data["title"],
+                    "description": cohort_data["description"],
+                    "active": cohort_data["active"],
+                    "created_at": cohort_data["created_at"].isoformat()
+                    if cohort_data["created_at"]
+                    else None,
+                },
+                matrix=matrix,
+                summary=summary,
+                simulations=simulations,
+            )
     except HTTPException:
         raise
     except Exception as e:

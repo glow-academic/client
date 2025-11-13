@@ -3,10 +3,10 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -35,7 +35,6 @@ class ProfileSearchResult(BaseModel):
 @server.tool()
 async def find_profiles(
     request: FindProfilesRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> list[ProfileSearchResult]:
     """
     🔎 Find profiles by name
@@ -66,32 +65,37 @@ async def find_profiles(
 
     See also 👉 profile_overview() for detailed profile data.
     """
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
+
     try:
-        sql = load_sql("sql/v3/profile/search.sql")
-        rows = await conn.fetch(sql, request.query, request.limit)
+        async with pool.acquire() as conn:
+            sql = load_sql("sql/v3/profile/search.sql")
+            rows = await conn.fetch(sql, request.query, request.limit)
 
-        results = []
-        for row in rows:
-            first = row["first_name"]
-            last = row["last_name"]
-            alias = row["alias"]
-            full_name = (
-                " ".join(x for x in (first, last) if x) or alias or "Unknown"
-            )
-
-            results.append(
-                ProfileSearchResult(
-                    id=str(row["id"]),
-                    first_name=first,
-                    last_name=last,
-                    alias=alias,
-                    role=row["role"],
-                    full_name=full_name,
-                    score=int(row["score"]),
+            results = []
+            for row in rows:
+                first = row["first_name"]
+                last = row["last_name"]
+                alias = row["alias"]
+                full_name = (
+                    " ".join(x for x in (first, last) if x) or alias or "Unknown"
                 )
-            )
 
-        return results
+                results.append(
+                    ProfileSearchResult(
+                        id=str(row["id"]),
+                        first_name=first,
+                        last_name=last,
+                        alias=alias,
+                        role=row["role"],
+                        full_name=full_name,
+                        score=int(row["score"]),
+                    )
+                )
+
+            return results
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Search error: {str(e)}"

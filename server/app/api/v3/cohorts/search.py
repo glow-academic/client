@@ -3,10 +3,10 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -34,7 +34,6 @@ class CohortSearchResult(BaseModel):
 @server.tool()
 async def find_cohorts(
     request: FindCohortsRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> list[CohortSearchResult]:
     """
     🔎 Find cohorts by title/description
@@ -64,24 +63,29 @@ async def find_cohorts(
 
     See also 👉 cohort_overview() for detailed cohort data.
     """
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
+
     try:
-        sql = load_sql("sql/v3/cohorts/search.sql")
-        rows = await conn.fetch(sql, request.query, request.limit)
+        async with pool.acquire() as conn:
+            sql = load_sql("sql/v3/cohorts/search.sql")
+            rows = await conn.fetch(sql, request.query, request.limit)
 
-        results = []
-        for row in rows:
-            results.append(
-                CohortSearchResult(
-                    id=str(row["id"]),
-                    title=row["title"],
-                    active=row["active"],
-                    description=row["description"],
-                    profile_count=int(row["profile_count"]),
-                    score=int(row["score"]),
+            results = []
+            for row in rows:
+                results.append(
+                    CohortSearchResult(
+                        id=str(row["id"]),
+                        title=row["title"],
+                        active=row["active"],
+                        description=row["description"],
+                        profile_count=int(row["profile_count"]),
+                        score=int(row["score"]),
+                    )
                 )
-            )
 
-        return results
+            return results
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Search error: {str(e)}"

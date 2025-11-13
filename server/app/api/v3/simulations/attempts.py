@@ -3,10 +3,10 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -34,7 +34,6 @@ class SimulationAttemptResult(BaseModel):
 @server.tool()
 async def simulation_attempts(
     request: SimulationAttemptsRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> list[SimulationAttemptResult]:
     """
     Flat list of attempts (who, when, score)
@@ -53,35 +52,40 @@ async def simulation_attempts(
 
     See also simulation_overview() for aggregate stats.
     """
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
+
     try:
-        sql = load_sql("sql/v3/simulations/attempts.sql")
-        rows = await conn.fetch(sql, request.sim_id, request.limit)
+        async with pool.acquire() as conn:
+            sql = load_sql("sql/v3/simulations/attempts.sql")
+            rows = await conn.fetch(sql, request.sim_id, request.limit)
 
-        results = []
-        for row in rows:
-            first = row["first_name"] or ""
-            last = row["last_name"] or ""
-            alias = row["alias"] or ""
-            student_name = (
-                " ".join(x for x in (first, last) if x).strip()
-                or alias
-                or "Unknown"
-            )
-
-            results.append(
-                SimulationAttemptResult(
-                    id=str(row["id"]),
-                    student=student_name,
-                    score=float(row["score"]) if row["score"] else None,
-                    passed=row["passed"],
-                    time_taken=row["time_taken"],
-                    created_at=row["created_at"].isoformat()
-                    if row["created_at"]
-                    else "",
+            results = []
+            for row in rows:
+                first = row["first_name"] or ""
+                last = row["last_name"] or ""
+                alias = row["alias"] or ""
+                student_name = (
+                    " ".join(x for x in (first, last) if x).strip()
+                    or alias
+                    or "Unknown"
                 )
-            )
 
-        return results
+                results.append(
+                    SimulationAttemptResult(
+                        id=str(row["id"]),
+                        student=student_name,
+                        score=float(row["score"]) if row["score"] else None,
+                        passed=row["passed"],
+                        time_taken=row["time_taken"],
+                        created_at=row["created_at"].isoformat()
+                        if row["created_at"]
+                        else "",
+                    )
+                )
+
+            return results
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Database error: {str(e)}"

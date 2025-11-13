@@ -3,10 +3,10 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
+from app.db import get_pool
 from app.main import server
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -34,7 +34,6 @@ class ScenarioSearchResult(BaseModel):
 @server.tool()
 async def find_scenarios(
     request: FindScenariosRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> list[ScenarioSearchResult]:
     """
     🔎 Find scenarios by name/problem_statement
@@ -64,24 +63,29 @@ async def find_scenarios(
 
     See also 👉 scenario_overview() for detailed scenario data.
     """
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database connection pool not available")
+
     try:
-        sql = load_sql("sql/v3/scenarios/search.sql")
-        rows = await conn.fetch(sql, request.query, request.limit)
+        async with pool.acquire() as conn:
+            sql = load_sql("sql/v3/scenarios/search.sql")
+            rows = await conn.fetch(sql, request.query, request.limit)
 
-        results = []
-        for row in rows:
-            results.append(
-                ScenarioSearchResult(
-                    id=str(row["id"]),
-                    name=row["name"],
-                    problem_statement=row["problem_statement"],
-                    persona_id=str(row["persona_id"]) if row["persona_id"] else None,
-                    default_scenario=row["default_scenario"],
-                    score=int(row["score"]),
+            results = []
+            for row in rows:
+                results.append(
+                    ScenarioSearchResult(
+                        id=str(row["id"]),
+                        name=row["name"],
+                        problem_statement=row["problem_statement"],
+                        persona_id=str(row["persona_id"]) if row["persona_id"] else None,
+                        default_scenario=row["default_scenario"],
+                        score=int(row["score"]),
+                    )
                 )
-            )
 
-        return results
+            return results
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Search error: {str(e)}"
