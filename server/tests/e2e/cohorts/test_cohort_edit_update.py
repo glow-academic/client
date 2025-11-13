@@ -30,10 +30,11 @@ def test_cohort_edit_updates_fields(page: Page, base_url: str) -> None:
     """Verify editing a cohort updates fields correctly."""
     cohort_id = None
     try:
-        # Create cohort via API
+        # Create cohort via API and store the actual generated name
+        original_name = generate_unique_cohort_name("Edit Test Cohort")
         cohort_id = create_cohort_api(
             page.context.request,
-            name=generate_unique_cohort_name("Edit Test Cohort"),
+            name=original_name,
             description="Original description",
             profile_id=ADMIN_PROFILE_ID,
             effective_profile_id=ADMIN_PROFILE_ID,
@@ -42,11 +43,14 @@ def test_cohort_edit_updates_fields(page: Page, base_url: str) -> None:
         # Navigate to edit page
         page.goto(f"{base_url}/cohorts/e/{cohort_id}")
         page.wait_for_load_state("networkidle")
+        
+        # Wait for the page container to be visible
+        page.wait_for_selector("[data-page='cohort-edit']", timeout=15000)
 
         # Verify form pre-populates
         name_input = page.get_by_test_id("input-cohort-title")
         name_input.wait_for(state="visible", timeout=20000)
-        expect(name_input).to_have_value("Edit Test Cohort")
+        expect(name_input).to_have_value(original_name)
 
         description_input = page.get_by_test_id("input-cohort-description")
         description_input.wait_for(state="visible", timeout=20000)
@@ -73,10 +77,13 @@ def test_cohort_edit_updates_fields(page: Page, base_url: str) -> None:
         # Verify changes persisted by navigating back to list
         page.goto(f"{base_url}/cohorts")
         page.wait_for_load_state("networkidle")
+        
+        # Wait for the grid to be visible
+        page.wait_for_selector("[data-testid='cohorts-grid']", timeout=10000)
 
         search_input = page.get_by_test_id("cohorts-search")
         search_input.fill(new_name)
-        page.wait_for_timeout(250)
+        page.wait_for_timeout(500)
 
         cohort_card = (
             page.get_by_test_id("cohort-card").filter(has_text=new_name).first
@@ -111,6 +118,9 @@ def test_cohort_edit_simulation_management(page: Page, base_url: str) -> None:
         # Navigate to edit page
         page.goto(f"{base_url}/cohorts/e/{cohort_id}")
         page.wait_for_load_state("networkidle")
+        
+        # Wait for the page container to be visible
+        page.wait_for_selector("[data-page='cohort-edit']", timeout=15000)
 
         # Check if simulation picker is available
         simulation_picker = page.get_by_test_id("picker-simulation")

@@ -30,6 +30,9 @@ def test_cohort_create_validation_and_success(page: Page, base_url: str) -> None
     """Validate required fields and create a cohort successfully."""
     page.goto(f"{base_url}/cohorts/new")
     page.wait_for_load_state("networkidle")
+    
+    # Wait for the page container to be visible
+    page.wait_for_selector("[data-page='cohort-new']", timeout=15000)
 
     name_input = page.get_by_test_id("input-cohort-title")
     name_input.wait_for(state="visible", timeout=20000)
@@ -74,11 +77,14 @@ def test_cohort_create_validation_and_success(page: Page, base_url: str) -> None
 
     page.wait_for_url(f"{base_url}/cohorts", timeout=20000)
     page.wait_for_load_state("networkidle")
+    
+    # Wait for the grid to be visible
+    page.wait_for_selector("[data-testid='cohorts-grid']", timeout=10000)
 
     search_input = page.get_by_test_id("cohorts-search")
     search_input.wait_for(state="visible", timeout=10000)
     search_input.fill(cohort_name)
-    page.wait_for_timeout(250)
+    page.wait_for_timeout(500)
 
     cohort_card = (
         page.get_by_test_id("cohort-card").filter(has_text=cohort_name).first

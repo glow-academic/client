@@ -42,27 +42,45 @@ def test_cohort_leave_cancel_then_confirm(page: Page, base_url: str) -> None:
 
     if not leaveable_cohort:
         # Create a cohort and add current user to it, then test leaving
+        cohort_name = generate_unique_cohort_name("Leave Test Cohort")
         cohort_id = create_cohort_api(
             page.context.request,
-            name=generate_unique_cohort_name("Leave Test Cohort"),
+            name=cohort_name,
             description="Cohort for leave test",
             profile_id=ADMIN_PROFILE_ID,
             effective_profile_id=ADMIN_PROFILE_ID,
             profile_ids=[ADMIN_PROFILE_ID],  # Add current user
         )
-        leaveable_cohort = {"cohort_id": cohort_id, "name": "Leave Test Cohort"}
+        leaveable_cohort = {"cohort_id": cohort_id, "name": cohort_name}
         should_cleanup = True
     else:
         cohort_id = leaveable_cohort["cohort_id"]
+        cohort_name = leaveable_cohort.get("name", "")
         should_cleanup = False
 
     try:
         page.goto(f"{base_url}/cohorts")
         page.wait_for_load_state("networkidle")
+        
+        # Wait for the grid to be visible
+        page.wait_for_selector("[data-testid='cohorts-grid']", timeout=10000)
+        
+        # If we created a new cohort, search for it to ensure it appears
+        if should_cleanup and cohort_name:
+            # Refresh the page to ensure the new cohort appears
+            page.reload()
+            page.wait_for_load_state("networkidle")
+            page.wait_for_selector("[data-testid='cohorts-grid']", timeout=10000)
+            
+            search_input = page.get_by_test_id("cohorts-search")
+            search_input.wait_for(state="visible", timeout=10000)
+            search_input.fill(cohort_name)
+            page.wait_for_timeout(1000)  # Wait longer for search to filter
 
         cohort_card = page.locator(
             f"[data-testid='cohort-card'][data-cohort-id='{cohort_id}']"
         )
+        cohort_card.wait_for(state="visible", timeout=10000)
         expect(cohort_card).to_be_visible()
 
         leave_button = cohort_card.get_by_test_id(f"leave-{cohort_id}")
