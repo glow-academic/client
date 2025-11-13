@@ -18551,6 +18551,36 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "persona_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Persona Options"
+          },
+          "simulation_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Simulation Options"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
           }
         },
         "type": "object",
@@ -18561,7 +18591,10 @@
           "cohort_mapping",
           "persona_mapping",
           "simulation_mapping",
-          "department_mapping"
+          "department_mapping",
+          "persona_options",
+          "simulation_options",
+          "department_options"
         ],
         "title": "ScenariosListResponse",
         "description": "Response for scenarios list endpoint."

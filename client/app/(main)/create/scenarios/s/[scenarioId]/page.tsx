@@ -11,8 +11,7 @@ import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ScenarioDetailIn = InputOf<"/api/v3/scenarios/detail", "post">;
@@ -35,23 +34,28 @@ type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
 type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getScenario = cache(
-  async (input: ScenarioDetailIn): Promise<ScenarioDetailOut> => {
-    return api.post("/scenarios/detail", input);
-  },
-);
+const getScenario = (scenarioId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<ScenarioDetailOut> => {
+      return api.post("/scenarios/detail", {
+        body: { scenarioId, profileId },
+      });
+    },
+    ["scenarios:detail", scenarioId],
+    { tags: ["scenarios", `scenario:${scenarioId}`] }
+  );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { scenarioId } = await params;
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const scenario = await getScenario({ body: { scenarioId, profileId } });
+    const scenario = await getScenario(scenarioId)(profileId);
     return {
       title: `${scenario?.name || "Scenario"}`,
       description: `${scenario ? `${scenario.name} ${scenario.problem_statement || ""}` : "Scenario"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -66,7 +70,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createScenario(
-  input: CreateScenarioIn,
+  input: CreateScenarioIn
 ): Promise<CreateScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/create", input);
@@ -75,16 +79,20 @@ export async function createScenario(
 }
 
 export async function updateScenario(
-  input: UpdateScenarioIn,
+  input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/update", input);
   revalidateTag("scenarios");
+  const scenarioId = input.body?.scenarioId;
+  if (scenarioId) {
+    revalidateTag(`scenario:${scenarioId}`);
+  }
   return out;
 }
 
 export async function generateAIScenario(
-  input: GenerateAIScenarioIn,
+  input: GenerateAIScenarioIn
 ): Promise<GenerateAIScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/generate-ai", input);
@@ -93,7 +101,7 @@ export async function generateAIScenario(
 }
 
 export async function randomizeScenario(
-  input: RandomizeScenarioIn,
+  input: RandomizeScenarioIn
 ): Promise<RandomizeScenarioOut> {
   "use server";
   const out = await api.post("/scenarios/randomize", input);
@@ -112,12 +120,14 @@ export default async function EditScenarioPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch scenario detail (cached, won't duplicate with metadata)
-  const scenarioDetail = await getScenario({
-    body: { scenarioId, profileId },
-  });
+  const scenarioDetail = await getScenario(scenarioId)(profileId);
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="scenario-edit"
+      data-scenario-id={scenarioId}
+    >
       <Scenario
         scenarioId={scenarioId}
         mode="edit"

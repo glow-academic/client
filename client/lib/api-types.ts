@@ -7856,6 +7856,18 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
+            /** Persona Options */
+            persona_options: {
+                [key: string]: string;
+            }[];
+            /** Simulation Options */
+            simulation_options: {
+                [key: string]: string;
+            }[];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * SearchStaffRequest

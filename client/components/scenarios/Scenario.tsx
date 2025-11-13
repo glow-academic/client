@@ -229,16 +229,16 @@ export interface ScenarioProps {
   scenarioDetailDefault?: ScenarioDetailDefaultOut;
   // Server actions (replaces useMutation)
   createScenarioAction?: (
-    input: CreateScenarioIn,
+    input: CreateScenarioIn
   ) => Promise<CreateScenarioOut>;
   updateScenarioAction?: (
-    input: UpdateScenarioIn,
+    input: UpdateScenarioIn
   ) => Promise<UpdateScenarioOut>;
   generateAIScenarioAction?: (
-    input: GenerateAIScenarioIn,
+    input: GenerateAIScenarioIn
   ) => Promise<GenerateAIScenarioOut>;
   randomizeScenarioAction?: (
-    input: RandomizeScenarioIn,
+    input: RandomizeScenarioIn
   ) => Promise<RandomizeScenarioOut>;
 }
 
@@ -355,7 +355,7 @@ export default function Scenario({
       inputGuardrailEnabled: false,
       outputGuardrailEnabled: false,
     }),
-    [effectiveProfile?.primaryDepartmentId],
+    [effectiveProfile?.primaryDepartmentId]
   );
 
   const [formData, setFormData] = useState(initialFormData);
@@ -416,13 +416,13 @@ export default function Scenario({
     Record<string, StagedSelections>
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
-    [],
+    []
   );
 
   // Extract mappings from V2 response
   const personaMapping = useMemo(
     () => scenarioData?.persona_mapping || {},
-    [scenarioData],
+    [scenarioData]
   );
   // Backend now includes selected documents in document_mapping with all necessary fields
   const documentMapping = useMemo((): Record<string, DocumentMappingItem> => {
@@ -433,7 +433,7 @@ export default function Scenario({
   }, [scenarioData]);
   const parameterMapping = useMemo(
     () => scenarioData?.parameter_mapping || {},
-    [scenarioData],
+    [scenarioData]
   );
   // Backend now includes selected parameter items in parameter_item_mapping with all necessary fields
   const parameterItemMapping = useMemo(() => {
@@ -441,7 +441,7 @@ export default function Scenario({
   }, [scenarioData]);
   const simulationMapping = useMemo(
     () => scenarioData?.simulation_mapping || {},
-    [scenarioData],
+    [scenarioData]
   );
   // Backend now includes selected departments in department_mapping
   const departmentMapping = useMemo(() => {
@@ -645,7 +645,7 @@ export default function Scenario({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          allDeptParameterItemIds.add(id),
+          allDeptParameterItemIds.add(id)
         );
       }
     });
@@ -659,7 +659,7 @@ export default function Scenario({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          selectedDeptParameterItemIds.add(id),
+          selectedDeptParameterItemIds.add(id)
         );
       }
     });
@@ -701,12 +701,12 @@ export default function Scenario({
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id),
+      (id) => !currentDeptIds.includes(id)
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id),
+      (id) => !prevDeptIds.includes(id)
     );
 
     // Save selections for deselected departments
@@ -735,7 +735,7 @@ export default function Scenario({
               // Restore personas that are still valid
               const validPersonaSet = new Set(validPersonaIds);
               const validPersonas = staged.persona_ids.filter((id) =>
-                validPersonaSet.has(id),
+                validPersonaSet.has(id)
               );
               if (validPersonas.length > 0) {
                 setSelectedPersonaIds((prevPersonas) => {
@@ -750,7 +750,7 @@ export default function Scenario({
             if (staged.document_ids && staged.document_ids.length > 0) {
               const validDocSet = new Set(validDocumentIds);
               const validDocs = staged.document_ids.filter((id) =>
-                validDocSet.has(id),
+                validDocSet.has(id)
               );
               if (validDocs.length > 0) {
                 setCurrentDocumentIds((prevDocs) => {
@@ -768,7 +768,7 @@ export default function Scenario({
             ) {
               const validParamSet = new Set(validParameterItemIds);
               const validParams = staged.parameter_item_ids.filter((id) =>
-                validParamSet.has(id),
+                validParamSet.has(id)
               );
               if (validParams.length > 0) {
                 setCurrentParameterItemIds((prevParams) => {
@@ -872,7 +872,7 @@ export default function Scenario({
       setLocalProblemStatementVersions([]);
       setCurrentDocumentIds(scenarioData.document_ids);
       setCurrentParameterItemIds(
-        getParameterItemIdsFromStructure(scenarioData.parameters),
+        getParameterItemIdsFromStructure(scenarioData.parameters)
       );
       setCurrentObjectives(
         getObjectivesFromMapping(
@@ -880,8 +880,8 @@ export default function Scenario({
           (scenarioData.objective_mapping || {}) as Record<
             string,
             { name: string }
-          >,
-        ),
+          >
+        )
       );
       // Store originals for change tracking
       setOriginalFormData({
@@ -898,7 +898,7 @@ export default function Scenario({
       });
       setOriginalDocumentIds(scenarioData.document_ids);
       setOriginalParameterItemIds(
-        getParameterItemIdsFromStructure(scenarioData.parameters),
+        getParameterItemIdsFromStructure(scenarioData.parameters)
       );
       setOriginalObjectives(
         getObjectivesFromMapping(
@@ -906,8 +906,8 @@ export default function Scenario({
           (scenarioData.objective_mapping || {}) as Record<
             string,
             { name: string }
-          >,
-        ),
+          >
+        )
       );
       formDataInitializedRef.current = true;
     } else if (!isEditMode && scenarioData && !formDataInitializedRef.current) {
@@ -1075,7 +1075,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: string,
-    value: string | string[] | boolean | null,
+    value: string | string[] | boolean | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -1248,7 +1248,7 @@ export default function Scenario({
 
   const handleGenerateScenario = async (
     userInstructions?: string,
-    shouldRegenerateObjectives?: boolean,
+    shouldRegenerateObjectives?: boolean
   ) => {
     setIsGeneratingScenario(true);
 
@@ -1326,7 +1326,7 @@ export default function Scenario({
               objective_ids: currentObjectives.filter((obj) => obj.trim()),
               parameters: groupParameterItemsByParameterId(
                 currentParameterItemIds,
-                parameterItemMapping,
+                parameterItemMapping
               ),
               hints_enabled: formData.hintsEnabled ?? false,
               objectives_enabled: formData.objectivesEnabled ?? false,
@@ -1341,7 +1341,7 @@ export default function Scenario({
             toast.success("Problem statement regenerated and saved!");
           } catch (error) {
             toast.error(
-              `Failed to save regenerated problem statement: ${error instanceof Error ? error.message : "Unknown error"}`,
+              `Failed to save regenerated problem statement: ${error instanceof Error ? error.message : "Unknown error"}`
             );
           }
         }
@@ -1366,7 +1366,7 @@ export default function Scenario({
       }
     } catch (error) {
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -1404,7 +1404,7 @@ export default function Scenario({
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
         parameters: groupParameterItemsByParameterId(
           currentParameterItemIds,
-          parameterItemMapping,
+          parameterItemMapping
         ),
         hints_enabled: formData.hintsEnabled ?? false,
         objectives_enabled: formData.objectivesEnabled ?? false,
@@ -1417,7 +1417,7 @@ export default function Scenario({
       // Include problem_statement_versions if in create mode and we have local versions
       if (!isEditMode && localProblemStatementVersions.length > 0) {
         const versions = localProblemStatementVersions.map(
-          (v) => v.problem_statement,
+          (v) => v.problem_statement
         );
         // Ensure current problem statement is included as the last version (most recent)
         const currentProblemStatement = formData.problemStatement?.trim() || "";
@@ -1441,7 +1441,7 @@ export default function Scenario({
           router.push("/create/scenarios");
         } catch (error) {
           toast.error(
-            `Failed to update scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+            `Failed to update scenario: ${error instanceof Error ? error.message : "Unknown error"}`
           );
           setIsSubmitting(false);
         }
@@ -1455,14 +1455,14 @@ export default function Scenario({
           router.push("/create/scenarios");
         } catch (error) {
           toast.error(
-            `Failed to create scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+            `Failed to create scenario: ${error instanceof Error ? error.message : "Unknown error"}`
           );
           setIsSubmitting(false);
         }
       }
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       setIsSubmitting(false);
     }
@@ -1543,6 +1543,7 @@ export default function Scenario({
               <div className="flex-1">
                 <input
                   type="text"
+                  data-testid="input-scenario-title"
                   value={formData.name || ""}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   onFocus={(e) => {
@@ -1579,7 +1580,7 @@ export default function Scenario({
                     new Set([
                       ...(scenarioData?.valid_department_ids || []),
                       ...(formData.departmentIds || []),
-                    ]),
+                    ])
                   )}
                   selectedIds={formData.departmentIds || []}
                   onSelect={(ids) => handleInputChange("departmentIds", ids)}
@@ -1603,6 +1604,7 @@ export default function Scenario({
                   </Label>
                   <Switch
                     id="active"
+                    data-testid="switch-scenario-active"
                     checked={formData.active ?? true}
                     onCheckedChange={(checked) =>
                       handleInputChange("active", checked)
@@ -1708,6 +1710,7 @@ export default function Scenario({
                   </Label>
                   <Switch
                     id="copyPasteAllowed"
+                    data-testid="switch-scenario-copy-paste"
                     checked={formData.copyPasteAllowed ?? false}
                     onCheckedChange={(checked) =>
                       handleInputChange("copyPasteAllowed", checked)
@@ -1731,6 +1734,7 @@ export default function Scenario({
                   </Label>
                   <Switch
                     id="inputGuardrailEnabled"
+                    data-testid="switch-scenario-input-guardrail"
                     checked={formData.inputGuardrailEnabled ?? false}
                     onCheckedChange={(checked) =>
                       handleInputChange("inputGuardrailEnabled", checked)
@@ -1754,6 +1758,7 @@ export default function Scenario({
                   </Label>
                   <Switch
                     id="outputGuardrailEnabled"
+                    data-testid="switch-scenario-output-guardrail"
                     checked={formData.outputGuardrailEnabled ?? false}
                     onCheckedChange={(checked) =>
                       handleInputChange("outputGuardrailEnabled", checked)
@@ -1888,6 +1893,7 @@ export default function Scenario({
                     </Label>
                     <Switch
                       id="imageInputEnabled"
+                      data-testid="switch-scenario-image-input"
                       checked={formData.imageInputEnabled ?? false}
                       onCheckedChange={(checked) =>
                         handleInputChange("imageInputEnabled", checked)
@@ -2025,7 +2031,7 @@ export default function Scenario({
                     if (id && problemStatementMapping[id]) {
                       handleInputChange(
                         "problemStatement",
-                        problemStatementMapping[id].problem_statement,
+                        problemStatementMapping[id].problem_statement
                       );
                     }
                   }}
@@ -2084,6 +2090,7 @@ export default function Scenario({
             <div className="space-y-2">
               <Textarea
                 id="description"
+                data-testid="input-scenario-problem-statement"
                 value={formData.problemStatement || ""}
                 onChange={(e) => {
                   handleInputChange("problemStatement", e.target.value);
@@ -2111,6 +2118,7 @@ export default function Scenario({
                   </Label>
                   <Switch
                     id="hintsEnabled"
+                    data-testid="switch-scenario-hints"
                     checked={formData.hintsEnabled ?? false}
                     onCheckedChange={(checked) =>
                       handleInputChange("hintsEnabled", checked)
@@ -2134,6 +2142,7 @@ export default function Scenario({
                   </Label>
                   <Switch
                     id="objectivesEnabled"
+                    data-testid="switch-scenario-objectives"
                     checked={formData.objectivesEnabled ?? false}
                     onCheckedChange={(checked) => {
                       handleInputChange("objectivesEnabled", checked);
@@ -2201,6 +2210,7 @@ export default function Scenario({
           Back
         </Button>
         <Button
+          data-testid="btn-submit-scenario"
           onClick={isEditMode ? handleUpdateClick : handleSubmit}
           disabled={
             isSubmitting ||
@@ -2286,7 +2296,7 @@ export default function Scenario({
               onClick={() => {
                 handleGenerateScenario(
                   regenerationInstructions.trim() || undefined,
-                  regenerateObjectives,
+                  regenerateObjectives
                 );
                 setShowRegenerationDialog(false);
                 setRegenerationInstructions("");

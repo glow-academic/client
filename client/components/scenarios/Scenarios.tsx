@@ -67,10 +67,10 @@ export interface ScenariosProps {
   listData: ScenariosListOut;
   // Server actions (replaces useMutation)
   duplicateScenarioAction?: (
-    input: DuplicateScenarioIn,
+    input: DuplicateScenarioIn
   ) => Promise<DuplicateScenarioOut>;
   deleteScenarioAction?: (
-    input: DeleteScenarioIn,
+    input: DeleteScenarioIn
   ) => Promise<DeleteScenarioOut>;
 }
 
@@ -88,7 +88,7 @@ export function Scenarios({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
 
   // Table state
@@ -105,19 +105,11 @@ export function Scenarios({
   // Extract data from response
   const scenarios = useMemo(
     () => scenariosData?.scenarios || [],
-    [scenariosData?.scenarios],
+    [scenariosData?.scenarios]
   );
   const personaMapping = useMemo(
     () => scenariosData?.persona_mapping || {},
-    [scenariosData?.persona_mapping],
-  );
-  const cohortMapping = useMemo(
-    () => scenariosData?.cohort_mapping || {},
-    [scenariosData?.cohort_mapping],
-  );
-  const simulationMapping = useMemo(
-    () => scenariosData?.simulation_mapping || {},
-    [scenariosData?.simulation_mapping],
+    [scenariosData?.persona_mapping]
   );
 
   // Define GroupedScenario type based on scenarios
@@ -135,7 +127,7 @@ export function Scenarios({
 
     roots.forEach((parent) => {
       const children = scenarios.filter(
-        (s) => s.parent_scenario_id === parent.scenario_id,
+        (s) => s.parent_scenario_id === parent.scenario_id
       );
       groups.push({ parent, children });
     });
@@ -143,44 +135,37 @@ export function Scenarios({
     return groups;
   }, [scenarios]);
 
-  // Create filter options from mappings
-  const personaOptions = useMemo(() => {
-    return Object.entries(personaMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj.name,
-    }));
-  }, [personaMapping]);
-
-  const cohortOptions = useMemo(() => {
-    return Object.entries(cohortMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj.name,
-    }));
-  }, [cohortMapping]);
-
-  const simulationOptions = useMemo(() => {
-    return Object.entries(simulationMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj.name,
-    }));
-  }, [simulationMapping]);
-
-  // Build department options from mapping
-  const departmentMapping = useMemo(
+  // Use server-provided facet options directly (no client-side computation)
+  const personaOptions = useMemo(
     () =>
-      (scenariosData?.department_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [scenariosData?.department_mapping],
+      (scenariosData?.persona_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [scenariosData?.persona_options]
   );
-
-  const departmentOptions = useMemo(() => {
-    return Object.entries(departmentMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
-    }));
-  }, [departmentMapping]);
+  const simulationOptions = useMemo(
+    () =>
+      (scenariosData?.simulation_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [scenariosData?.simulation_options]
+  );
+  const departmentOptions = useMemo(
+    () =>
+      (scenariosData?.department_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [scenariosData?.department_options]
+  );
 
   // Define table columns inline
   const columns: ColumnDef<(typeof scenarios)[number]>[] = useMemo(() => {
@@ -205,19 +190,6 @@ export function Scenarios({
               {row.original.problem_statement || "No problem statement"}
             </div>
           );
-        },
-      },
-      // Hidden faceting column for Cohorts (array of IDs)
-      {
-        id: "cohort_ids",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: (typeof scenarios)[number]) => row.cohort_ids ?? [],
-        filterFn: (row, _id, value: string[]) => {
-          const rowIds = (row.getValue("cohort_ids") as string[]) ?? [];
-          return value.some((v) => rowIds.includes(v));
         },
       },
       // Hidden faceting column for Persona (array of IDs)
@@ -335,13 +307,13 @@ export function Scenarios({
     for (const parentId of orderedParentIds) {
       const parent = scenarios.find(
         (scenario) =>
-          !scenario.parent_scenario_id && scenario.scenario_id === parentId,
+          !scenario.parent_scenario_id && scenario.scenario_id === parentId
       );
       if (!parent) continue;
 
       // Find children using parent_scenario_id from V2 API
       const children = scenarios.filter(
-        (s) => s.parent_scenario_id === parentId,
+        (s) => s.parent_scenario_id === parentId
       );
 
       groups.push({ parent, children });
@@ -415,10 +387,11 @@ export function Scenarios({
     isChild: boolean = false,
     showDropdown?: boolean,
     isCollapsed?: boolean,
-    onToggleCollapse?: () => void,
+    onToggleCollapse?: () => void
   ) => (
     <Card
       key={scenario.scenario_id}
+      data-testid="scenario-card"
       className={`hover:shadow-md transition-shadow flex flex-col h-full ${
         isChild ? "ml-8 border-l-2 border-l-blue-200" : ""
       }`}
@@ -462,6 +435,7 @@ export function Scenarios({
                     <Button
                       variant="outline"
                       size="sm"
+                      data-testid="btn-view-scenario"
                       onClick={() => handleView(scenario.scenario_id)}
                     >
                       <Eye className="h-4 w-4" />
@@ -475,6 +449,7 @@ export function Scenarios({
                   <Button
                     variant="outline"
                     size="sm"
+                    data-testid="btn-duplicate-scenario"
                     onClick={() =>
                       handleDuplicate(scenario.scenario_id, scenario.title)
                     }
@@ -492,6 +467,7 @@ export function Scenarios({
                   <Button
                     variant="outline"
                     size="sm"
+                    data-testid="btn-edit-scenario"
                     onClick={() => handleEdit(scenario.scenario_id)}
                   >
                     <Edit className="h-4 w-4" />
@@ -502,6 +478,7 @@ export function Scenarios({
                       <Button
                         variant="outline"
                         size="sm"
+                        data-testid="btn-view-scenario"
                         onClick={() => handleView(scenario.scenario_id)}
                       >
                         <Eye className="h-4 w-4" />
@@ -516,6 +493,7 @@ export function Scenarios({
                   <Button
                     variant="outline"
                     size="sm"
+                    data-testid="btn-duplicate-scenario"
                     onClick={() =>
                       handleDuplicate(scenario.scenario_id, scenario.title)
                     }
@@ -530,10 +508,11 @@ export function Scenarios({
                   <Button
                     variant="outline"
                     size="sm"
+                    data-testid="btn-delete-scenario"
                     onClick={() =>
                       handleDeleteClick(
                         scenario.scenario_id,
-                        scenario.title || "Unnamed Scenario",
+                        scenario.title || "Unnamed Scenario"
                       )
                     }
                   >
@@ -575,7 +554,7 @@ export function Scenarios({
             false,
             hasChildren,
             isCollapsed,
-            () => toggleGroupCollapse(group.parent.scenario_id),
+            () => toggleGroupCollapse(group.parent.scenario_id)
           )}
 
           {/* Child Scenarios */}
@@ -591,7 +570,6 @@ export function Scenarios({
 
   // Get column references for toolbar
   const titleColumn = table.getColumn("title");
-  const cohortColumn = table.getColumn("cohort_ids");
   const personaColumn = table.getColumn("persona_id");
   const simulationColumn = table.getColumn("simulation_ids");
   const departmentsColumn = table.getColumn("departments");
@@ -599,19 +577,25 @@ export function Scenarios({
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-8" data-page="scenarios-index">
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="flex items-center justify-between">
+          <div
+            className="flex items-center justify-between"
+            data-testid="scenarios-toolbar"
+          >
             <div className="flex flex-1 items-center space-x-2 flex-wrap">
               <div className="mb-2">
                 <Input
+                  data-testid="scenarios-search"
                   placeholder="Search scenarios..."
                   value={(titleColumn?.getFilterValue() as string) ?? ""}
                   onChange={(event) =>
                     titleColumn?.setFilterValue(event.target.value)
                   }
                   className="h-8 w-[150px] lg:w-[250px]"
+                  aria-label="Search scenarios by name"
+                  aria-controls="scenarios-grid"
                 />
               </div>
 
@@ -622,15 +606,6 @@ export function Scenarios({
                     column={simulationColumn}
                     title="Simulation"
                     options={simulationOptions}
-                  />
-                )}
-
-                {/* Cohort Filter */}
-                {cohortColumn && cohortOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={cohortColumn}
-                    title="Cohort"
-                    options={cohortOptions}
                   />
                 )}
 
@@ -667,7 +642,12 @@ export function Scenarios({
           </div>
 
           {/* Grouped Scenarios */}
-          <div className="space-y-4">
+          <div
+            className="space-y-4"
+            role="grid"
+            aria-label="scenarios grid"
+            data-testid="scenarios-grid"
+          >
             {table.getRowModel().rows.length ? (
               renderGroupedScenarios(currentPageGroupedScenarios)
             ) : (
@@ -683,25 +663,31 @@ export function Scenarios({
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
+          <AlertDialogContent
+            aria-labelledby="delete-scenario-title"
+            data-testid="dialog-delete-scenario"
+          >
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
+              <AlertDialogTitle id="delete-scenario-title">
+                Delete Scenario
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                <p>
-                  Are you sure you want to delete the scenario "
-                  {deleteItem?.name}
-                  "? This action cannot be undone.
-                </p>
+                Are you sure you want to delete the scenario "{deleteItem?.name}
+                "? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+              <AlertDialogCancel
+                disabled={isDeleting}
+                data-testid="btn-cancel-delete"
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={isDeleting}
                 className="bg-red-600 hover:bg-red-700 text-white"
+                data-testid="btn-confirm-delete"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
