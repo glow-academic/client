@@ -19,10 +19,13 @@ All services run in foreground with color-coded logs. Press Ctrl+C to stop all.
 ### Available Commands
 
 ```bash
-make run         # Start all services (foreground, combined logs)
-make stop        # Stop all services
-make test        # Run server unit tests (pytest)
-make test-cov    # Server tests with coverage
+make run              # Start all services (foreground, combined logs)
+make stop             # Stop all services
+make test             # Run all server tests (unit + integration)
+make test-unit        # Unit tests for utils and utilities
+make test-integration # Integration tests for all endpoints
+make test-e2e         # End-to-end tests with Playwright
+make test-cov         # Server tests with coverage
 ```
 
 For more commands, run `make help`.
@@ -54,25 +57,34 @@ make connect-db  # Connect to database shell
 
 ## Testing Instructions
 
-### All Tests (Unit Tests)
+### Test Structure
+
+**No client-side unit testing** - All testing happens on the server side.
+
+**Server Testing Strategy**:
+- **Unit tests**: For utils and small utilities (`server/tests/unit/`)
+- **Integration tests**: For all endpoints (`server/tests/integration/v3/`)
+- **E2E tests**: Playwright tests for whole user flows (`server/tests/e2e/`)
+
+### Running Tests
+
+**Unit and Integration Tests (no setup needed):**
 ```bash
-make test          # Server unit tests (pytest)
-make test-cov      # Server tests with coverage
+make test          # Run unit + integration tests
+make test-unit     # Unit tests (server/tests/unit/)
+make test-integration # Integration tests (server/tests/integration/)
+make test-cov      # Run with coverage report
+make test server/tests/test_specific.py  # Run specific test file
 ```
 
-**Testing Strategy**: 
-- Focus on comprehensive unit testing (80% coverage target)
-- No E2E tests until unit test coverage is established
-- Test pyramid: strong unit test foundation first
-
-### Individual Test Suites
-
-**Server Unit Tests** (pytest):
+**End-to-End Tests (requires test services running):**
 ```bash
-cd server && make test                    # Run all tests  
-cd server && make test-cov                # With coverage report
-make test server/tests/test_specific.py   # Run specific file
+make run-test      # Start all services in TEST mode (required first)
+make test-e2e      # Run E2E tests with Playwright (headless)
+make test-e2e-headed  # Run E2E tests with browser visible
 ```
+
+**Note**: Unit and integration tests can run directly without any services running. E2E tests require `make run-test` to spin up test services first.
 
 ### Coverage Reports
 - **Server**: HTML report in `server/htmlcov/index.html`
@@ -120,42 +132,45 @@ cd client && npx tsc --noEmit
 
 ### Client
 - `client/package.json` - Client dependencies and scripts
-- `client/app/api/` - BFF (Backend for Frontend) API routes
-- `client/components/` - React components (fast/dumb UI)
+- `client/app/(main)/` - Next.js pages with server actions (`"use server"`)
+- `client/components/` - React components (airgapped UI - presentation only)
 
 ### Database  
 - `database/drizzle/` - Migration files (Drizzle for migrations only)
 - `database/seed/` - Seed data scripts
 
 ### Server
-- `server/app/queries/` - Raw SQL queries (asyncpg)
-- `server/app/services/` - Business logic layer
-- `server/app/repositories/` - Data access layer
-- `server/app/api/` - FastAPI routes
+- `server/app/api/v3/[resource]/` - FastAPI routes (1 Python file per route)
+- `server/sql/v3/[resource]/` - SQL files (1 SQL file per route)
+- `server/app/utils/` - Utility functions (used by routes)
 
 ## Architecture Principles
 
-### Client: Fast & Dumb UI
+### Client: Airgapped UI (Server Actions Dominate)
+- **Server actions**: Next.js server actions (`"use server"`) are the primary pattern for backend communication
+- **Airgapped**: Client is airgapped to expose information only - no business logic
 - **Presentation only**: Components focus on rendering and user interactions
-- **No business logic**: All validation, processing on server
-- **State management**: TanStack Query for server state, minimal local state
+- **No client-side unit testing**: All testing happens on the server side
 
-### Server: All Business Logic
-- **Service layer**: All complex logic in `app/services/`
-- **Repository pattern**: Data access abstracted in `app/repositories/`
-- **No ORM**: Raw SQL with asyncpg in `app/queries/`
-- **Testing**: Unit tests with pytest (80% coverage target)
+### Server: DHH-Style Architecture
+- **1 SQL file per route**: Each route has a corresponding SQL file in `server/sql/v3/[resource]/[operation].sql`
+- **1 Python file per route**: Each route is a single Python file (e.g., `detail_default.py`, `create.py`)
+- **No abstraction layers**: Routes directly execute SQL using `load_sql()` helper - no service/repository layers
+- **Direct SQL execution**: Routes own transaction and execution control
+- **Testing**: Unit tests (utils), integration tests (endpoints), E2E tests (Playwright)
 
 ### Database: BCNF & No Nulls
 - **Chris Date principles**: Minimize nulls, eliminate redundancy
-- **BCNF normalization**: Third normal form with no transitive dependencies
+- **BCNF normalization**: Boyce-Codd Normal Form - third normal form with no transitive dependencies
 - **Referential integrity**: All foreign keys with proper constraints
 - **Drizzle for migrations only**: Used exclusively in `database/` folder
 
 ### Testing Strategy
-- **Unit tests first**: 80% coverage target before integration/E2E
-- **No E2E yet**: Focus on comprehensive unit testing foundation
-- **Test pyramid**: Strong unit test base, then integration, then E2E
+- **No client-side unit tests**: All testing happens on the server side
+- **Unit tests**: For utils and small utilities (`server/tests/unit/`)
+- **Integration tests**: For all endpoints (`server/tests/integration/v3/`)
+- **E2E tests**: Playwright tests for whole user flows (`server/tests/e2e/`)
+- **Coverage target**: 80% for server
 
 ### Workflow
 - **Make-based**: All commands via `make` from root directory
@@ -169,12 +184,7 @@ cd client && npx tsc --noEmit
 docker compose up --build -d
 ```
 
-**Run unit tests:**
-```bash
-docker compose --profile test run --rm server-unit   # Server unit tests (pytest)
-```
-
-**Note**: Only 'test' profile exists. Default compose includes all runtime services (database, client, server, nginx, redis).
+**Note**: All tests run locally using `make test` commands. No CI or Docker test setup. Default compose includes all runtime services (database, client, server, nginx, redis).
 
 ## Folder Structure
 

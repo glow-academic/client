@@ -8,29 +8,33 @@ alwaysApply: false
 # Server Folder Rules
 
 ## Core Principles
-- **Business logic lives here**: All validation, processing, and complex logic
+- **DHH-style architecture**: 1 SQL file per route, 1 Python file per route
+- **No abstraction layers**: Routes directly execute SQL, own transaction control
+- **Business logic in routes**: All validation, processing, and complex logic in route handlers
 - Client is just UI; server is the brain
-- Follow clean architecture: routes → services → repositories → database
 
-## Architecture Layers
-- **Routes** (`app/api/`): API endpoints, request validation, response formatting
-- **Services** (`app/services/`): Business logic, orchestration, workflows
-- **Repositories** (`app/repositories/`): Data access, query logic
-- **Queries** (`app/queries/`): Raw SQL queries using asyncpg
+## Architecture Pattern
+- **Routes** (`app/api/v3/[resource]/`): One Python file per route (e.g., `detail_default.py`, `create.py`)
+- **SQL files** (`sql/v3/[resource]/`): One SQL file per route (e.g., `get_persona_detail_default_complete.sql`)
+- **Routes load SQL**: Use `load_sql()` helper to load SQL files
+- **Routes own execution**: Routes control transactions and execution directly
 
 ## Database Access
-- **Use asyncpg** - no ORM (SQLModel removed from data layer)
-- All queries in `app/queries/` as raw SQL
-- Keep queries readable, well-commented, and parameterized
-- Use repositories to abstract query complexity from services
+- **Use asyncpg** - no ORM
+- **SQL files per route**: Each route has a corresponding SQL file in `server/sql/v3/[resource]/[operation].sql`
+- **Load SQL**: Routes use `load_sql("sql/v3/[resource]/[file].sql")` to load queries
+- **Direct execution**: Routes execute SQL directly with `conn.fetchrow()`, `conn.fetch()`, etc.
+- Keep SQL readable, well-commented, and parameterized
+- Routes own transaction control - use `transaction()` decorator when needed
 
 ## Testing
-- **Target**: 80% unit test coverage with pytest
-- Test command: `cd server && make test`
-- Coverage: `cd server && make test-cov`
-- Test all service methods, edge cases, and error handling
-- Mock database calls in service tests
-- Use fixtures for common test data
+- **Unit tests**: For utils and small utilities (`server/tests/unit/`)
+- **Integration tests**: For all endpoints (`server/tests/integration/v3/`)
+- **E2E tests**: Playwright tests for whole user flows (`server/tests/e2e/`)
+- **Target**: 80% coverage for server
+- Test commands: `make test-unit`, `make test-integration`, `make test-e2e`
+- Coverage: `make test-cov`
+- Use fixtures for common test data and database setup
 
 ## Code Quality
 - Run **`make typecheck`** (MyPy) before committing
@@ -41,5 +45,5 @@ alwaysApply: false
 ## WebSocket Implementation
 - Socket.IO with Redis for scaling
 - Event handlers in `app/web/` (simulations, assistants)
-- Keep handlers thin - delegate to services
+- Keep handlers thin - use SQL files directly or call route logic
 - Always handle errors gracefully and emit error events to clients

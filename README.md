@@ -41,14 +41,24 @@ make fresh-db    # Fresh start (with backup)
 
 **Run tests:**
 ```bash
-make test          # Server unit tests
-make test-cov      # Server with coverage
+make test          # Run all server tests (unit + integration)
+make test-unit     # Unit tests for utils and utilities (no setup needed)
+make test-integration  # Integration tests for all endpoints (no setup needed)
+make test-cov      # Server tests with coverage
 ```
 
-**Individual tests:**
+**End-to-end tests (requires test services running):**
 ```bash
-cd server && make test          # Backend unit tests (pytest)
-cd server && make test-cov      # Backend with coverage
+make run-test      # Start all services in TEST mode (required first)
+make test-e2e      # Run E2E tests with Playwright (headless)
+make test-e2e-headed  # Run E2E tests with browser visible
+```
+
+**Individual test suites:**
+```bash
+make test-unit                    # Unit tests (server/tests/unit/) - no setup needed
+make test-integration             # Integration tests (server/tests/integration/) - no setup needed
+make test server/tests/test_specific.py  # Run specific test file
 ```
 
 **Coverage Target**: 80% for server
@@ -56,9 +66,10 @@ cd server && make test-cov      # Backend with coverage
 ## 🐳 Docker
 
 ```bash
-docker compose up --build -d                       # Run all services
-docker compose --profile test run --rm server-unit # Server unit tests
+docker compose up --build -d  # Run all services
 ```
+
+**Note**: Tests run locally using `make test` commands. No CI/Docker test setup.
 
 ## 📚 Advanced Usage
 
@@ -78,14 +89,15 @@ make typecheck   # Type check server (MyPy)
 - **Framework:** [Next.js 15](https://nextjs.org/) with App Router
 - **UI:** [React 19](https://react.dev/) + [Shadcn](https://ui.shadcn.com/)
 - **Styling:** [TailwindCSS](https://tailwindcss.com/)
-- **State:** [TanStack Query](https://tanstack.com/query/latest)
+- **Server Actions:** Next.js server actions (`"use server"`) for all backend communication
 - **Linter:** [ESLint](https://eslint.org/)
 
 ### Backend
 - **Server:** [FastAPI](https://fastapi.tiangolo.com/)
 - **Database:** [asyncpg](https://github.com/MagicStack/asyncpg) (raw SQL)
+- **Architecture:** DHH-style - 1 SQL file per route, 1 Python file per route
 - **LLM:** [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
-- **Testing:** [pytest](https://docs.pytest.org/en/stable/)
+- **Testing:** [pytest](https://docs.pytest.org/en/stable/) + [Playwright](https://playwright.dev/) for E2E
 - **Linter:** [Ruff](https://docs.astral.sh/ruff/)
 - **Config:** [pyproject.toml](https://packaging.python.org/en/latest/specifications/pyproject-toml/)
 
@@ -94,8 +106,8 @@ make typecheck   # Type check server (MyPy)
 - **Migrations:** [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview) (database folder only)
 
 ### Architecture
-- **Client**: Fast/dumb UI - presentation only
-- **Server**: All business logic in service layer
-- **Database**: asyncpg (no ORM), BCNF normalization, no nulls
-- **Testing**: Unit tests only (80% target), no integration/E2E yet
+- **Client**: Airgapped UI - server actions dominate, presentation only
+- **Server**: DHH-style architecture - 1 SQL file per route, 1 Python file per route, no abstraction layers
+- **Database**: asyncpg (no ORM), BCNF normalization, no nulls (Chris Date principles)
+- **Testing**: Unit tests (utils), integration tests (endpoints), E2E tests (Playwright)
 - **WebSocket**: Socket.IO with Redis for real-time features
