@@ -827,7 +827,7 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
             profile_id = attempt_with_profile.get("profile_id")
             
             # Extract department_id from chat/scenario for grading
-            sql = load_sql("sql/v3/simulations/get_simulation_run_context.sql")
+            sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
             run_context = await conn.fetchrow(sql, chat_id)
             
             if not run_context or not run_context.get("department_id"):
@@ -1436,7 +1436,7 @@ async def process_simulation_message_websocket(
                         f"Triggering hint generation for practice message {assistant_message['id']}"
                     )
                     # Extract department_id from run context for hint generation
-                    sql = load_sql("sql/v3/simulations/get_simulation_run_context.sql")
+                    sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
                     run_context_for_hints = await conn.fetchrow(sql, str(chat_id))
                     hint_dept_id = run_context_for_hints.get("department_id") if run_context_for_hints else None
                     if not hint_dept_id:

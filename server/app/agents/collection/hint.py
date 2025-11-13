@@ -7,7 +7,6 @@ from agents import Runner, Tool, ToolsToFinalOutputResult, function_tool, trace
 from agents.items import TResponseInputItem
 from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.model_run_service import ModelRunService
 from app.utils.chat import (format_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext, debug_info
@@ -171,7 +170,7 @@ async def run_hint_agent(
         _hint_chat_id = chat_id
 
         # Get all hint context data using SQL file (replacing deprecated AgentService)
-        sql = load_sql("sql/v3/simulations/get_hint_run_context.sql")
+        sql = load_sql("sql/v3/agents/get_hint_run_context.sql")
         context_row = await conn.fetchrow(sql, str(message_id), str(chat_id), str(department_id))
         
         if not context_row:
@@ -191,9 +190,10 @@ async def run_hint_agent(
         # Resolve guest profile if needed
         profile_id = context_row["profile_id"]
         if not profile_id:
-            from app.services.agent_service import AgentService
-            service_temp = AgentService(conn)
-            profile_id = await service_temp._get_default_guest_profile_id()
+            sql_guest = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+            guest_row = await conn.fetchrow(sql_guest)
+            if guest_row:
+                profile_id = guest_row["id"]
         
         context = {
             # Message data
@@ -292,25 +292,59 @@ async def run_hint_agent(
         input_items.insert(0, chat_scenario)
         input_items.extend(conversation_history)
 
-        # Create model run service and check rate limit
-        model_run_service = ModelRunService(conn)
-        success, error_message = await model_run_service.check_rate_limit(
-            context["profile_id"]
+        # Check rate limit using SQL file
+        from datetime import UTC, datetime
+        profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+        if not profile_id_uuid:
+            raise ValueError("Profile not found. Please contact support.")
+        
+        # Calculate the start of the current day in UTC
+        now_utc = datetime.now(UTC)
+        start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        sql_rate_limit = load_sql("sql/v3/model_runs/check_rate_limit.sql")
+        rate_limit_row = await conn.fetchrow(
+            sql_rate_limit, context["profile_id"], start_of_day_utc.isoformat()
         )
-        if not success:
+        
+        if not rate_limit_row:
+            raise ValueError("Profile not found.")
+        
+        req_per_day = rate_limit_row["req_per_day"]
+        runs_today_count = rate_limit_row["runs_today_count"]
+        
+        if req_per_day is not None and runs_today_count >= req_per_day:
+            # Rate limit exceeded - format error message
+            from datetime import timedelta
+            from zoneinfo import ZoneInfo
+            earliest_run_created_at = rate_limit_row["earliest_run_created_at"]
+            if earliest_run_created_at:
+                next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                eastern_tz = ZoneInfo("America/New_York")
+                next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                error_message = (
+                    f"Daily request limit of {req_per_day} reached. "
+                    f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                    f"{next_allowed_et.strftime('%B %d, %Y')}."
+                )
+            else:
+                error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
             raise ValueError(error_message)
 
         # Build hint agent from context
         hint_agent = _build_hint_agent(context)
 
-        # Create model run with all junction records
-        model_run_id = await model_run_service.create_model_run(
-            department_id=department_id,
-            model_id=uuid.UUID(context["model_id"]),
-            entity_id=uuid.UUID(context["agent_id"]),
-            entity_type="agent",
-            profile_id=context["profile_id"],
+        # Create model run with all junction records using SQL file
+        sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+        model_run_row = await conn.fetchrow(
+            sql_create_run,
+            str(department_id),
+            context["model_id"],
+            context["agent_id"],
+            "agent",
+            context["profile_id"],
         )
+        model_run_id = uuid.UUID(model_run_row["model_run_id"])
 
         # Run the hint agent
         logger.info("Running hint agent with parallel tool calls...")
@@ -323,12 +357,14 @@ async def run_hint_agent(
                 context=DebugContext(conn=conn, model_run_id=model_run_id),
             )
 
-        # Update token usage
+        # Update token usage using SQL file
         usage = result.context_wrapper.usage
-        await model_run_service.update_model_run_tokens(
-            model_run_id=model_run_id,
-            input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens,
+        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+        await conn.execute(
+            sql_update_tokens,
+            str(model_run_id),
+            usage.input_tokens,
+            usage.output_tokens,
         )
 
         logger.info("Hint agent completed successfully")

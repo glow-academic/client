@@ -70,24 +70,6 @@ async def db() -> AsyncGenerator[asyncpg.Connection, None]:
         finally:
             await tx.rollback()  # Undo all test changes
 
-
-@pytest.fixture
-def disable_cache(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Make @with_cache decorator a no-op in tests."""
-    try:
-        from app.services.base_service import \
-            with_cache  # type: ignore[import]
-
-        monkeypatch.setattr(
-            "app.services.base_service.with_cache",
-            lambda _: lambda fn: fn,
-            raising=False,
-        )
-    except ImportError:
-        # If base service doesn't exist yet, skip
-        pass
-
-
 # --- OTHER CONFIG ---
 
 

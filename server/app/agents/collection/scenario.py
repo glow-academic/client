@@ -8,13 +8,12 @@ from agents import (Runner, ToolsToFinalOutputResult, function_tool,
 from agents.items import TResponseInputItem
 from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.agent_service import AgentService
-from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
+from app.utils.sql_helper import load_sql
 from fastapi import Depends
 from pydantic import Field
 
@@ -160,14 +159,58 @@ async def run_scenario_agent(
         scenario_results.clear()
         scenario_progress.clear()
 
-        # Get all context data in a single optimized query via service layer
-        agent_service = AgentService(conn)
-        context = await agent_service.get_scenario_run_context(
-            department_id=department_id,
-            persona_id=persona_id,
-            document_ids=document_ids,
-            parameter_item_ids=parameter_item_ids,
+        # Get all context data in a single optimized query using SQL file
+        # Convert None to empty arrays for proper SQL handling
+        doc_ids = [str(d) for d in document_ids] if document_ids else []
+        param_ids = [str(p) for p in parameter_item_ids] if parameter_item_ids else []
+        
+        sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
+        context_row = await conn.fetchrow(
+            sql,
+            str(department_id),
+            str(persona_id) if persona_id else None,
+            doc_ids,
+            param_ids,
         )
+        
+        if not context_row:
+            raise ValueError(f"No scenario agent configured for department {department_id}")
+        
+        # Parse JSON arrays
+        import json
+        documents = (
+            json.loads(context_row["documents"])
+            if isinstance(context_row["documents"], str)
+            else context_row["documents"]
+        )
+        parameter_items = (
+            json.loads(context_row["parameter_items"])
+            if isinstance(context_row["parameter_items"], str)
+            else context_row["parameter_items"]
+        )
+        
+        context = {
+            "agent_id": context_row["agent_id"],
+            "agent_name": context_row["agent_name"],
+            "system_prompt": context_row["system_prompt"],
+            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+            "reasoning": context_row["reasoning"],
+            "model_id": context_row["model_id"],
+            "model_name": context_row["model_name"],
+            "custom_model": context_row["custom_model"],
+            "provider_id": context_row["provider_id"],
+            "provider_name": context_row["provider_name"],
+            "base_url": context_row["base_url"],
+            "api_key": context_row["api_key"],
+            "persona": {
+                "id": context_row["persona_id"],
+                "name": context_row["persona_name"],
+                "description": context_row["persona_description"],
+            } if context_row["persona_id"] else None,
+            "documents": documents,
+            "parameter_items": parameter_items,
+            "default_guest_profile_id": context_row["guest_profile_id"],
+        }
 
         # Format persona info if persona was provided
         if persona_id is None or context["persona"] is None:
@@ -261,22 +304,56 @@ async def run_scenario_agent(
             profile_id if profile_id else context["default_guest_profile_id"]
         )
 
-        # Create model run service and check rate limit
-        model_run_service = ModelRunService(conn)
-        success, error_message = await model_run_service.check_rate_limit(
-            final_profile_id
+        # Check rate limit using SQL file
+        from datetime import UTC, datetime
+        profile_id_uuid = final_profile_id if final_profile_id else None
+        if not profile_id_uuid:
+            raise ValueError("Profile not found. Please contact support.")
+        
+        # Calculate the start of the current day in UTC
+        now_utc = datetime.now(UTC)
+        start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        sql_rate_limit = load_sql("sql/v3/model_runs/check_rate_limit.sql")
+        rate_limit_row = await conn.fetchrow(
+            sql_rate_limit, final_profile_id, start_of_day_utc.isoformat()
         )
-        if not success:
+        
+        if not rate_limit_row:
+            raise ValueError("Profile not found.")
+        
+        req_per_day = rate_limit_row["req_per_day"]
+        runs_today_count = rate_limit_row["runs_today_count"]
+        
+        if req_per_day is not None and runs_today_count >= req_per_day:
+            # Rate limit exceeded - format error message
+            from datetime import timedelta
+            from zoneinfo import ZoneInfo
+            earliest_run_created_at = rate_limit_row["earliest_run_created_at"]
+            if earliest_run_created_at:
+                next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                eastern_tz = ZoneInfo("America/New_York")
+                next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                error_message = (
+                    f"Daily request limit of {req_per_day} reached. "
+                    f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                    f"{next_allowed_et.strftime('%B %d, %Y')}."
+                )
+            else:
+                error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
             raise ValueError(error_message)
 
-        # Create model run with all junction records
-        model_run_id = await model_run_service.create_model_run(
-            department_id=department_id,
-            model_id=context["model_id"],
-            entity_id=context["agent_id"],
-            entity_type="agent",
-            profile_id=final_profile_id,
+        # Create model run with all junction records using SQL file
+        sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+        model_run_row = await conn.fetchrow(
+            sql_create_run,
+            str(department_id),
+            context["model_id"],
+            context["agent_id"],
+            "agent",
+            final_profile_id,
         )
+        model_run_id = uuid.UUID(model_run_row["model_run_id"])
 
         with trace("Scenario Agent", group_id=str(group_id), trace_id=trace_id):
             result = await Runner.run(
@@ -302,11 +379,13 @@ async def run_scenario_agent(
 
         usage = result.context_wrapper.usage
 
-        # Update model run with token usage
-        await model_run_service.update_model_run_tokens(
-            model_run_id=model_run_id,
-            input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens,
+        # Update model run with token usage using SQL file
+        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+        await conn.execute(
+            sql_update_tokens,
+            str(model_run_id),
+            usage.input_tokens,
+            usage.output_tokens,
         )
 
         # Get result values

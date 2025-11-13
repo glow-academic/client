@@ -4,15 +4,13 @@ from typing import Any
 
 import asyncpg  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, function_tool, trace
-from fastapi import Depends
-from pydantic import Field
-
 from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.agent_service import AgentService
-from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
+from app.utils.sql_helper import load_sql
+from fastapi import Depends
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -109,10 +107,10 @@ async def run_classify_agent(
 
     # Resolve guest profile if needed
     if not profile_id:
-        from app.services.profile_service import ProfileService
-
-        profile_service = ProfileService(conn)
-        profile_id = await profile_service.get_default_guest_profile_id()
+        sql_guest = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+        guest_row = await conn.fetchrow(sql_guest)
+        if guest_row:
+            profile_id = uuid.UUID(guest_row["id"])
 
     # Clear previous results and initialize all categories to empty
     global classification_results, classification_progress
@@ -123,11 +121,36 @@ async def run_classify_agent(
     for category in DEFAULT_CATEGORIES:
         classification_results[category] = []
 
-    # Get all agent/model/provider/documents data in single query via service
-    agent_service = AgentService(conn)
-    context = await agent_service.get_classification_run_context(
-        document_ids=document_ids, department_id=department_id
+    # Get all agent/model/provider/documents data in single query using SQL file
+    doc_ids = [str(d) for d in document_ids]
+    sql = load_sql("sql/v3/agents/get_classification_run_context.sql")
+    context_row = await conn.fetchrow(sql, doc_ids, str(department_id))
+    
+    if not context_row:
+        raise ValueError(f"No classification agent configured for department {department_id}")
+    
+    # Parse JSON array for documents
+    import json
+    documents = (
+        json.loads(context_row["documents"])
+        if isinstance(context_row["documents"], str)
+        else context_row["documents"]
     )
+    
+    context = {
+        "agent_id": context_row["agent_id"],
+        "name": context_row["agent_name"],
+        "system_prompt": context_row["system_prompt"],
+        "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+        "reasoning": context_row["reasoning"],
+        "model_id": context_row["model_id"],
+        "model_name": context_row["model_name"],
+        "custom_model": context_row["custom_model"],
+        "provider_name": context_row["provider_name"],
+        "base_url": context_row["base_url"],
+        "api_key": context_row["api_key"],
+        "documents": documents,
+    }
 
     documents = context["documents"]
     if not documents:
@@ -199,22 +222,56 @@ async def run_classify_agent(
                     "syllabi": [],
                 }
             else:
-                # Create model run service and check rate limit
-                model_run_service = ModelRunService(conn)
-                success, error_message = await model_run_service.check_rate_limit(
-                    profile_id
+                # Check rate limit using SQL file
+                from datetime import UTC, datetime
+                profile_id_uuid = profile_id if profile_id else None
+                if not profile_id_uuid:
+                    raise ValueError("Profile not found. Please contact support.")
+                
+                # Calculate the start of the current day in UTC
+                now_utc = datetime.now(UTC)
+                start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+                
+                sql_rate_limit = load_sql("sql/v3/model_runs/check_rate_limit.sql")
+                rate_limit_row = await conn.fetchrow(
+                    sql_rate_limit, str(profile_id), start_of_day_utc.isoformat()
                 )
-                if not success:
+                
+                if not rate_limit_row:
+                    raise ValueError("Profile not found.")
+                
+                req_per_day = rate_limit_row["req_per_day"]
+                runs_today_count = rate_limit_row["runs_today_count"]
+                
+                if req_per_day is not None and runs_today_count >= req_per_day:
+                    # Rate limit exceeded - format error message
+                    from datetime import timedelta
+                    from zoneinfo import ZoneInfo
+                    earliest_run_created_at = rate_limit_row["earliest_run_created_at"]
+                    if earliest_run_created_at:
+                        next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                        eastern_tz = ZoneInfo("America/New_York")
+                        next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                        error_message = (
+                            f"Daily request limit of {req_per_day} reached. "
+                            f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                            f"{next_allowed_et.strftime('%B %d, %Y')}."
+                        )
+                    else:
+                        error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                     raise ValueError(error_message)
 
-                # Create model run with all junction records
-                model_run_id = await model_run_service.create_model_run(
-                    department_id=department_id,
-                    model_id=uuid.UUID(context["model_id"]),
-                    entity_id=uuid.UUID(context["agent_id"]),
-                    entity_type="agent",
-                    profile_id=profile_id,
+                # Create model run with all junction records using SQL file
+                sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+                model_run_row = await conn.fetchrow(
+                    sql_create_run,
+                    str(department_id),
+                    context["model_id"],
+                    context["agent_id"],
+                    "agent",
+                    str(profile_id),
                 )
+                model_run_id = uuid.UUID(model_run_row["model_run_id"])
 
                 result = await Runner.run(
                     classify_agent.agent(),
@@ -224,11 +281,13 @@ async def run_classify_agent(
 
                 usage = result.context_wrapper.usage
 
-                # Update model run tokens
-                await model_run_service.update_model_run_tokens(
-                    model_run_id=model_run_id,
-                    input_tokens=usage.input_tokens,
-                    output_tokens=usage.output_tokens,
+                # Update model run tokens using SQL file
+                sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+                await conn.execute(
+                    sql_update_tokens,
+                    str(model_run_id),
+                    usage.input_tokens,
+                    usage.output_tokens,
                 )
 
                 # Extract results from the global storage
@@ -300,11 +359,26 @@ async def run_classify_agent(
                 list(unclassified_doc_nums)
             )
 
-        # Batch update all documents in single query
-        classified_count = await agent_service.batch_update_document_types(
-            document_updates
-        )
-        logger.info(f"Batch updated {classified_count} documents")
+        # Batch update all documents using SQL
+        if document_updates:
+            doc_ids = [str(d) for d in document_updates.keys()]
+            types = list(document_updates.values())
+            # Use UNNEST to update multiple documents with different types
+            sql_batch_update = """
+                UPDATE documents
+                SET type = data.type, updated_at = NOW()
+                FROM (
+                    SELECT UNNEST($1::uuid[]) as id, UNNEST($2::text[]) as type
+                ) as data
+                WHERE documents.id = data.id
+            """
+            result_str: str = await conn.execute(sql_batch_update, doc_ids, types)
+            # Parse result like "UPDATE 15" to get count
+            classified_count = int(result_str.split()[-1]) if result_str else 0
+            logger.info(f"Batch updated {classified_count} documents")
+        else:
+            classified_count = 0
+            logger.info("No documents to update")
 
         logger.info(
             f"Successfully classified {classified_count} documents for document_ids {document_ids}"

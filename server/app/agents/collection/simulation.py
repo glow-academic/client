@@ -8,7 +8,7 @@ from agents.items import TResponseInputItem
 from app.agents.collection.guardrail import get_output_guardrails
 from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.model_run_service import ModelRunService
+from app.utils.sql_helper import load_sql
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document import format_document_info
@@ -59,11 +59,47 @@ async def _handle_simulation_chat(
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
-    # Get all context data in a single optimized query
-    from app.services.agent_service import AgentService
-
-    agent_service = AgentService(conn)
-    context = await agent_service.get_simulation_run_context(chat_id)
+    # Get all context data in a single optimized query using SQL file
+    sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+    context_row = await conn.fetchrow(sql, str(chat_id))
+    
+    if not context_row:
+        raise ValueError(f"Chat {chat_id} not found or no persona configured")
+    
+    # Parse JSON array for documents
+    import json
+    documents = (
+        json.loads(context_row["documents"])
+        if isinstance(context_row["documents"], str)
+        else context_row["documents"]
+    )
+    
+    context = {
+        "chat_id": context_row["chat_id"],
+        "chat_title": context_row["chat_title"],
+        "trace_id": context_row["trace_id"],
+        "attempt_id": context_row["attempt_id"],
+        "simulation_id": context_row["simulation_id"],
+        "scenario_id": context_row["scenario_id"],
+        "department_id": context_row["department_id"],
+        "problem_statement": context_row["problem_statement"],
+        "persona_id": context_row["persona_id"],
+        "persona_name": context_row["persona_name"],
+        "system_prompt": context_row["system_prompt"],
+        "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+        "reasoning": context_row["reasoning"],
+        "model_id": context_row["model_id"],
+        "model_name": context_row["model_name"],
+        "custom_model": context_row["custom_model"],
+        "provider_id": context_row["provider_id"],
+        "provider_name": context_row["provider_name"],
+        "base_url": context_row["base_url"],
+        "api_key": context_row["api_key"],
+        "image_input_active": context_row["image_input_enabled"],
+        "output_guardrail_active": context_row["output_guardrail_enabled"],
+        "profile_id": context_row["profile_id"],
+        "documents": documents,
+    }
     
     # Extract department_id from context (already retrieved from scenario_departments junction)
     if not context.get("department_id"):
@@ -80,8 +116,10 @@ async def _handle_simulation_chat(
         )
         input_items.append(document_info)
 
-    # Get all messages using service layer (use direct method to bypass cache and get fresh data)
-    messages = await agent_service._get_simulation_messages_direct(chat_id)
+    # Get all messages using SQL file
+    sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+    message_rows = await conn.fetch(sql_messages, str(chat_id))
+    messages = [dict(row) for row in message_rows]
 
     # Prepare conversation history from chat_id
     conversation_history = get_simulation_conversation_history(messages)
@@ -115,22 +153,56 @@ async def _handle_simulation_chat(
         custom_model=context["custom_model"],
     )
 
-    # Create model run service and check rate limit
-    model_run_service = ModelRunService(conn)
-    success, error_message = await model_run_service.check_rate_limit(
-        context["profile_id"]
+    # Check rate limit using SQL file
+    from datetime import UTC, datetime
+    profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+    if not profile_id_uuid:
+        raise ValueError("Profile not found. Please contact support.")
+    
+    # Calculate the start of the current day in UTC
+    now_utc = datetime.now(UTC)
+    start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    sql_rate_limit = load_sql("sql/v3/model_runs/check_rate_limit.sql")
+    rate_limit_row = await conn.fetchrow(
+        sql_rate_limit, context["profile_id"], start_of_day_utc.isoformat()
     )
-    if not success:
+    
+    if not rate_limit_row:
+        raise ValueError("Profile not found.")
+    
+    req_per_day = rate_limit_row["req_per_day"]
+    runs_today_count = rate_limit_row["runs_today_count"]
+    
+    if req_per_day is not None and runs_today_count >= req_per_day:
+        # Rate limit exceeded - format error message
+        from datetime import timedelta
+        from zoneinfo import ZoneInfo
+        earliest_run_created_at = rate_limit_row["earliest_run_created_at"]
+        if earliest_run_created_at:
+            next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+            eastern_tz = ZoneInfo("America/New_York")
+            next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+            error_message = (
+                f"Daily request limit of {req_per_day} reached. "
+                f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                f"{next_allowed_et.strftime('%B %d, %Y')}."
+            )
+        else:
+            error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
         raise ValueError(error_message)
 
-    # Create model run with all junction records (using persona, not agent)
-    model_run_id = await model_run_service.create_model_run(
-        department_id=uuid.UUID(context["department_id"]),
-        model_id=uuid.UUID(context["model_id"]),
-        entity_id=uuid.UUID(context["persona_id"]),
-        entity_type="persona",
-        profile_id=context["profile_id"],
+    # Create model run with all junction records using SQL file (using persona, not agent)
+    sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+    model_run_row = await conn.fetchrow(
+        sql_create_run,
+        context["department_id"],
+        context["model_id"],
+        context["persona_id"],
+        "persona",
+        context["profile_id"],
     )
+    model_run_id = uuid.UUID(model_run_row["model_run_id"])
 
     with trace(
         context["chat_title"],
@@ -174,10 +246,12 @@ async def _handle_simulation_chat(
                     yield chunk
 
         usage = result.context_wrapper.usage
-        await model_run_service.update_model_run_tokens(
-            model_run_id=model_run_id,
-            input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens,
+        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+        await conn.execute(
+            sql_update_tokens,
+            str(model_run_id),
+            usage.input_tokens,
+            usage.output_tokens,
         )
     except (asyncio.CancelledError, GeneratorExit, StopAsyncIteration):
         # Treat explicit cancellation/closure as expected

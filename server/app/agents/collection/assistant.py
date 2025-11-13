@@ -3,26 +3,22 @@ import logging
 import os
 import uuid
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import asyncpg  # type: ignore
 from agents import Runner, trace
-from agents.items import (
-    ReasoningItem,
-    ToolCallItem,
-    ToolCallOutputItem,
-    TResponseInputItem,
-)
+from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
+                          TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
-from dotenv import load_dotenv
-from fastapi import Depends
-from openai.types.responses import ResponseFunctionToolCall, ResponseTextDeltaEvent
-
 from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.assistant_service import AssistantService
-from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
+from app.utils.sql_helper import load_sql
+from dotenv import load_dotenv
+from fastapi import Depends
+from openai.types.responses import (ResponseFunctionToolCall,
+                                    ResponseTextDeltaEvent)
 
 load_dotenv()
 
@@ -90,12 +86,73 @@ async def _handle_assistant_chat(
 ) -> AsyncGenerator[str, None]:
     """Handle assistant chat processing."""
 
-    # Get all context data in optimized queries (1 JOIN + 2 parallel queries)
-    # This also validates that the chat exists and has an assistant agent configured
-    assistant_service = AssistantService(conn)
-    context = await assistant_service.get_assistant_run_context(
-        chat_id=chat_id, department_id=department_id
-    )
+    # Get all context data using SQL file
+    sql = load_sql("sql/v3/agents/get_assistant_run_context.sql")
+    context_row = await conn.fetchrow(sql, str(chat_id), str(department_id))
+    
+    if not context_row:
+        raise ValueError(f"Chat {chat_id} not found or no assistant agent configured")
+    
+    # Fetch messages and tool_calls separately using existing SQL files
+    sql_messages = load_sql("sql/v3/assistant/get_chat_messages.sql")
+    message_rows = await conn.fetch(sql_messages, str(chat_id))
+    messages = [dict(row) for row in message_rows]
+    
+    sql_tool_calls = load_sql("sql/v3/assistant/get_chat_tool_calls.sql")
+    tool_call_rows = await conn.fetch(sql_tool_calls, str(chat_id))
+    tool_calls = [dict(row) for row in tool_call_rows]
+    
+    # Build context dict from SQL result
+    context_dict = {
+        "chat_id": context_row["chat_id"],
+        "title": context_row["title"],
+        "trace_id": context_row["trace_id"],
+        "profile_id": context_row["profile_id"],
+        "user_role": context_row["user_role"],
+        "user_first_name": context_row["user_first_name"],
+        "user_last_name": context_row["user_last_name"],
+        "agent_id": context_row["agent_id"],
+        "agent_name": context_row["agent_name"],
+        "system_prompt": context_row["system_prompt"],
+        "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+        "reasoning": context_row["reasoning"],
+        "model_id": context_row["model_id"],
+        "model_name": context_row["model_name"],
+        "custom_model": context_row["custom_model"],
+        "provider_id": context_row["provider_id"],
+        "provider_name": context_row["provider_name"],
+        "base_url": context_row["base_url"],
+        "api_key": context_row["api_key"],
+        "messages": messages,
+        "tool_calls": tool_calls,
+    }
+    
+    # Create a simple object-like context for compatibility
+    # Use type: ignore for dynamic attributes since we're replacing a Pydantic model
+    class SimpleContext:  # type: ignore
+        def __init__(self, d: dict[str, Any]) -> None:
+            for k, v in d.items():
+                setattr(self, k, v)
+        
+        @property
+        def user_name(self) -> str:
+            first = getattr(self, "user_first_name", "") or ""
+            last = getattr(self, "user_last_name", "") or ""
+            return f"{first} {last}".strip() or "User"
+        
+        @property
+        def user_role_display(self) -> str:
+            role = getattr(self, "user_role", "guest")
+            role_mapping = {
+                "superadmin": "Super Administrator",
+                "admin": "Administrator",
+                "instructional": "Instructional",
+                "ta": "GTA",
+                "guest": "Guest",
+            }
+            return role_mapping.get(role, role.capitalize())
+    
+    context: Any = SimpleContext(context_dict)
 
     input_items: list[TResponseInputItem] = []
 
@@ -129,20 +186,56 @@ async def _handle_assistant_chat(
 
     final_profile_id = uuid.UUID(context.profile_id)
 
-    # Create model run service and check rate limit
-    model_run_service = ModelRunService(conn)
-    success, error_message = await model_run_service.check_rate_limit(final_profile_id)
-    if not success:
+    # Check rate limit using SQL file
+    from datetime import UTC, datetime
+    profile_id_uuid = final_profile_id if final_profile_id else None
+    if not profile_id_uuid:
+        raise ValueError("Profile not found. Please contact support.")
+    
+    # Calculate the start of the current day in UTC
+    now_utc = datetime.now(UTC)
+    start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    sql_rate_limit = load_sql("sql/v3/model_runs/check_rate_limit.sql")
+    rate_limit_row = await conn.fetchrow(
+        sql_rate_limit, str(final_profile_id), start_of_day_utc.isoformat()
+    )
+    
+    if not rate_limit_row:
+        raise ValueError("Profile not found.")
+    
+    req_per_day = rate_limit_row["req_per_day"]
+    runs_today_count = rate_limit_row["runs_today_count"]
+    
+    if req_per_day is not None and runs_today_count >= req_per_day:
+        # Rate limit exceeded - format error message
+        from datetime import timedelta
+        from zoneinfo import ZoneInfo
+        earliest_run_created_at = rate_limit_row["earliest_run_created_at"]
+        if earliest_run_created_at:
+            next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+            eastern_tz = ZoneInfo("America/New_York")
+            next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+            error_message = (
+                f"Daily request limit of {req_per_day} reached. "
+                f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                f"{next_allowed_et.strftime('%B %d, %Y')}."
+            )
+        else:
+            error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
         raise ValueError(error_message)
 
-    # Create model run with all junction records
-    model_run_id = await model_run_service.create_model_run(
-        department_id=department_id,
-        model_id=uuid.UUID(context.model_id),
-        entity_id=uuid.UUID(context.agent_id),
-        entity_type="agent",
-        profile_id=final_profile_id,
+    # Create model run with all junction records using SQL file
+    sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+    model_run_row = await conn.fetchrow(
+        sql_create_run,
+        str(department_id),
+        context.model_id,
+        context.agent_id,
+        "agent",
+        str(final_profile_id),
     )
+    model_run_id = uuid.UUID(model_run_row["model_run_id"])
 
     with trace(context.title, trace_id=context.trace_id):
         result = Runner.run_streamed(
@@ -230,10 +323,12 @@ async def _handle_assistant_chat(
         usage = result.context_wrapper.usage
 
         # Update model run tokens
-        await model_run_service.update_model_run_tokens(
-            model_run_id=model_run_id,
-            input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens,
+        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+        await conn.execute(
+            sql_update_tokens,
+            str(model_run_id),
+            usage.input_tokens,
+            usage.output_tokens,
         )
 
     except Exception as e:
