@@ -392,6 +392,7 @@ export function Scenarios({
     <Card
       key={scenario.scenario_id}
       data-testid="scenario-card"
+      data-scenario-id={scenario.scenario_id}
       className={`hover:shadow-md transition-shadow flex flex-col h-full ${
         isChild ? "ml-8 border-l-2 border-l-blue-200" : ""
       }`}

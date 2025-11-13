@@ -95,15 +95,6 @@ export default function Agents({
   );
 
   // Filter options (inline)
-  const reasoningOptions = useMemo(
-    () => [
-      { value: "cot", label: "Chain of Thought" },
-      { value: "none", label: "None" },
-      { value: "null", label: "Not Set" },
-    ],
-    []
-  );
-
   const modelOptions = useMemo(
     () =>
       Object.entries(modelMapping).map(([id, name]) => ({
@@ -112,15 +103,6 @@ export default function Agents({
       })),
     [modelMapping]
   );
-
-  const temperatureOptions = useMemo(() => {
-    const temps = agents.map((a) => a.temperature);
-    const uniqueTemps = [...new Set(temps)].sort((a, b) => a - b);
-    return uniqueTemps.map((temp) => ({
-      value: temp.toString(),
-      label: temp.toFixed(2),
-    }));
-  }, [agents]);
 
   // Build role options from unique agent roles
   const roleOptions = useMemo(() => {
@@ -163,14 +145,6 @@ export default function Agents({
           const modelId = row.getValue("model_id") as string;
           return modelMapping[modelId]?.name || modelId;
         },
-      },
-      {
-        accessorKey: "reasoning",
-        header: "Reasoning",
-      },
-      {
-        accessorKey: "temperature",
-        header: "Temperature",
       },
       // Hidden faceting column for Role
       {
@@ -279,7 +253,14 @@ export default function Agents({
   };
 
   const renderAgentCard = (agent: (typeof agents)[0]) => (
-    <Card key={agent.agent_id} className="hover:shadow-md transition-shadow">
+    <Card
+      key={agent.agent_id}
+      className="hover:shadow-md transition-shadow"
+      data-testid="agent-card"
+      data-agent-id={agent.agent_id}
+      role="gridcell"
+      aria-label={`agent card ${agent.name || "Unnamed Agent"}`}
+    >
       <CardHeader>
         <div className="flex justify-between items-start">
           <div className="space-y-2 flex-1">
@@ -311,6 +292,9 @@ export default function Agents({
                 size="sm"
                 onClick={() => handleDuplicate(agent.agent_id)}
                 disabled={false} // No loading state for server action
+                aria-label={`Duplicate agent ${agent.name}`}
+                data-testid="btn-duplicate-agent"
+                title={`Duplicate agent ${agent.name}`}
               >
                 <Copy className="h-4 w-4" />
               </Button>
@@ -320,6 +304,9 @@ export default function Agents({
                 variant="outline"
                 size="sm"
                 onClick={() => handleEdit(agent.agent_id)}
+                aria-label={`Edit agent ${agent.name}`}
+                data-testid="btn-edit-agent"
+                title={`Edit agent ${agent.name}`}
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -334,6 +321,9 @@ export default function Agents({
                     agent.name || "Unnamed Agent"
                   )
                 }
+                aria-label={`Delete agent ${agent.name}`}
+                data-testid="btn-delete-agent"
+                title={`Delete agent ${agent.name}`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -354,9 +344,7 @@ export default function Agents({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const reasoningColumn = table.getColumn("reasoning");
   const modelColumn = table.getColumn("model_id");
-  const temperatureColumn = table.getColumn("temperature");
   const roleColumn = table.getColumn("role");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -365,44 +353,32 @@ export default function Agents({
     <div className="space-y-8">
       <div className="space-y-4">
         {/* Toolbar */}
-        <div className="flex items-center justify-between">
+        <div
+          className="flex items-center justify-between"
+          data-testid="agents-toolbar"
+        >
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
             <div className="mb-2">
               <Input
+                data-testid="agents-search"
                 placeholder="Search system agents..."
                 value={(nameColumn?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
                   nameColumn?.setFilterValue(event.target.value)
                 }
                 className="h-8 w-[150px] lg:w-[250px]"
+                aria-label="Search agents by name"
+                aria-controls="agents-grid"
               />
             </div>
 
             <div className="flex items-center space-x-2 flex-wrap mb-2">
-              {/* Reasoning Filter */}
-              {reasoningColumn && reasoningOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={reasoningColumn}
-                  title="Reasoning"
-                  options={reasoningOptions}
-                />
-              )}
-
               {/* Model Filter */}
               {modelColumn && modelOptions.length > 0 && (
                 <DataTableFacetedFilter
                   column={modelColumn}
                   title="Model"
                   options={modelOptions}
-                />
-              )}
-
-              {/* Temperature Filter */}
-              {temperatureColumn && temperatureOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={temperatureColumn}
-                  title="Temperature"
-                  options={temperatureOptions}
                 />
               )}
 
@@ -439,7 +415,12 @@ export default function Agents({
         </div>
 
         {/* Cards Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          role="grid"
+          aria-label="agents grid"
+          data-testid="agents-grid"
+        >
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => renderAgentCard(row.original))
           ) : (
@@ -450,25 +431,38 @@ export default function Agents({
         </div>
 
         {/* Pagination */}
-        <DataTablePagination table={table} card={true} />
+        <div aria-label="pagination controls">
+          <DataTablePagination table={table} card={true} />
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          aria-labelledby="delete-agent-title"
+          data-testid="dialog-delete-agent"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+            <AlertDialogTitle id="delete-agent-title">
+              Delete Agent
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the agent "{deleteItem?.name}
               "? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              data-testid="btn-cancel-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

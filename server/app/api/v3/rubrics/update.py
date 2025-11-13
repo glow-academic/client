@@ -109,9 +109,10 @@ async def update_rubric(
             message="Rubric updated successfully",
         )
         
-        # Invalidate cache after mutation
-        await invalidate_tags(tags)
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        # Invalidate cache after mutation (both list and individual rubric)
+        all_tags = tags + [f"rubric:{request.rubricId}"]
+        await invalidate_tags(all_tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(all_tags)
         
         return result
     except HTTPException:

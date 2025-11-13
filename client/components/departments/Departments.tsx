@@ -242,6 +242,10 @@ export default function Departments({
     <Card
       key={department.department_id}
       className="hover:shadow-md transition-shadow"
+      data-testid="department-card"
+      data-department-id={department.department_id}
+      role="gridcell"
+      aria-label={`department card ${department.title || "Unnamed Department"}`}
     >
       <CardHeader>
         <div className="flex justify-between items-start">
@@ -271,6 +275,9 @@ export default function Departments({
                 variant="outline"
                 size="sm"
                 onClick={() => handleEdit(department.department_id)}
+                aria-label={`Edit department ${department.title}`}
+                data-testid="btn-edit-department"
+                title={`Edit department ${department.title}`}
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -279,6 +286,9 @@ export default function Departments({
                 variant="outline"
                 size="sm"
                 onClick={() => handleEdit(department.department_id)}
+                aria-label={`View department ${department.title}`}
+                data-testid="btn-view-department"
+                title={`View department ${department.title}`}
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -289,6 +299,12 @@ export default function Departments({
                 size="sm"
                 onClick={() => handleDuplicate(department)}
                 disabled={isDuplicating === department.department_id}
+                aria-busy={
+                  isDuplicating === department.department_id ? true : undefined
+                }
+                aria-label={`Duplicate department ${department.title}`}
+                data-testid="btn-duplicate-department"
+                title={`Duplicate department ${department.title}`}
               >
                 {isDuplicating === department.department_id ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -304,6 +320,9 @@ export default function Departments({
                 onClick={() =>
                   handleDeleteClick(department.department_id, department.title)
                 }
+                aria-label={`Delete department ${department.title}`}
+                data-testid="btn-delete-department"
+                title={`Delete department ${department.title}`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -329,19 +348,25 @@ export default function Departments({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-page="departments-index">
       <div className="space-y-4">
         {/* Toolbar */}
-        <div className="flex items-center justify-between">
+        <div
+          className="flex items-center justify-between"
+          data-testid="departments-toolbar"
+        >
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
             <div className="mb-2">
               <Input
+                data-testid="departments-search"
                 placeholder="Search departments..."
                 value={(nameColumn?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
                   nameColumn?.setFilterValue(event.target.value)
                 }
                 className="h-8 w-[150px] lg:w-[250px]"
+                aria-label="Search departments by name"
+                aria-controls="departments-grid"
               />
             </div>
 
@@ -379,7 +404,12 @@ export default function Departments({
         </div>
 
         {/* Cards Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          role="grid"
+          aria-label="departments grid"
+          data-testid="departments-grid"
+        >
           {table.getRowModel().rows.length ? (
             table
               .getRowModel()
@@ -392,22 +422,37 @@ export default function Departments({
         </div>
 
         {/* Pagination */}
-        <DataTablePagination table={table} card={true} />
+        <div aria-label="pagination controls">
+          <DataTablePagination table={table} card={true} />
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          aria-labelledby="delete-department-title"
+          data-testid="dialog-delete-department"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Department</AlertDialogTitle>
+            <AlertDialogTitle id="delete-department-title">
+              Delete Department
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete &quot;{deleteItem?.name}&quot;?
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel data-testid="btn-cancel-delete">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

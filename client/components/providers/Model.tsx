@@ -256,6 +256,7 @@ export default function Model({
           {formData.name !== undefined ? (
             <Input
               id="name"
+              data-testid="input-model-name"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="Enter model name"
@@ -272,6 +273,7 @@ export default function Model({
           {formData.description !== undefined ? (
             <Textarea
               id="description"
+              data-testid="input-model-description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Enter model description"
@@ -299,6 +301,7 @@ export default function Model({
               {formData.active !== undefined ? (
                 <Switch
                   id="active"
+                  data-testid="switch-model-active"
                   checked={formData.active}
                   onCheckedChange={(checked) =>
                     handleInputChange("active", checked)
@@ -324,6 +327,7 @@ export default function Model({
               {formData.customModel !== undefined ? (
                 <Switch
                   id="customModel"
+                  data-testid="switch-model-custom"
                   checked={formData.customModel}
                   onCheckedChange={(checked) =>
                     handleInputChange("customModel", checked)
@@ -344,6 +348,7 @@ export default function Model({
             {formData.inputPpm !== undefined ? (
               <Input
                 id="inputPpm"
+                data-testid="input-model-input-ppm"
                 type="number"
                 step="0.0001"
                 min="0"
@@ -367,6 +372,7 @@ export default function Model({
             {formData.outputPpm !== undefined ? (
               <Input
                 id="outputPpm"
+                data-testid="input-model-output-ppm"
                 type="number"
                 step="0.0001"
                 min="0"
@@ -399,6 +405,7 @@ export default function Model({
           </Button>
           <Button
             type="submit"
+            data-testid="btn-submit-model"
             disabled={isSubmitting}
             className="min-w-[120px]"
           >

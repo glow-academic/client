@@ -11,8 +11,7 @@ import Model from "@/components/providers/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ModelDetailIn = InputOf<"/api/v3/providers/models/detail", "post">;
@@ -28,17 +27,27 @@ type CreateModelIn = InputOf<"/api/v3/providers/models/create", "post">;
 type CreateModelOut = OutputOf<"/api/v3/providers/models/create", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getModel = cache(
-  async (input: ModelDetailIn): Promise<ModelDetailOut> => {
-    return api.post("/providers/models/detail", input);
-  },
-);
+const getModel = (modelId: string, providerId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<ModelDetailOut> => {
+      return api.post("/providers/models/detail", {
+        body: { modelId, providerId, profileId },
+      });
+    },
+    ["providers:models:detail", modelId, providerId],
+    { tags: ["providers", `model:${modelId}`] }
+  );
 
-const getProvider = cache(
-  async (input: ProviderDetailIn): Promise<ProviderDetailOut> => {
-    return api.post("/providers/detail", input);
-  },
-);
+const getProvider = (providerId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<ProviderDetailOut> => {
+      return api.post("/providers/detail", {
+        body: { providerId, profileId },
+      });
+    },
+    ["providers:detail", providerId],
+    { tags: ["providers", `provider:${providerId}`] }
+  );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -50,7 +59,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const model = await getModel({ body: { modelId, providerId, profileId } });
+    const model = await getModel(modelId, providerId)(profileId);
     return {
       title: `${model?.name || "Model"}`,
       description:
@@ -72,6 +81,10 @@ export async function createModel(
   "use server";
   const out = await api.post("/providers/models/create", input);
   revalidateTag("providers");
+  const modelId = input.body?.modelId;
+  if (modelId) {
+    revalidateTag(`model:${modelId}`);
+  }
   return out;
 }
 
@@ -81,6 +94,10 @@ export async function updateModel(
   "use server";
   const out = await api.post("/providers/models/update", input);
   revalidateTag("providers");
+  const modelId = input.body?.modelId;
+  if (modelId) {
+    revalidateTag(`model:${modelId}`);
+  }
   return out;
 }
 
@@ -96,12 +113,17 @@ export default async function ModelEditPage({
 
   // Fetch both model and provider data (cached, won't duplicate)
   const [model, provider] = await Promise.all([
-    getModel({ body: { modelId, providerId, profileId } }),
-    getProvider({ body: { providerId, profileId } }),
+    getModel(modelId, providerId)(profileId),
+    getProvider(providerId)(profileId),
   ]);
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="model-edit"
+      data-model-id={modelId}
+      data-provider-id={providerId}
+    >
       <Model
         modelId={modelId}
         providerId={providerId}

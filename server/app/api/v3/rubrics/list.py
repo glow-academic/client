@@ -27,6 +27,7 @@ class RubricItem(BaseModel):
     description: str
     points: int
     passPoints: int
+    passPercentage: int
     department_ids: list[str] | None = None
     active_simulation_count: int
     total_simulation_links: int
@@ -140,14 +141,20 @@ async def get_rubrics_list(
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
+            # Compute passPercentage server-side
+            points = row["points"]
+            pass_points = row["passpoints"]
+            pass_percentage = round((pass_points / points) * 100) if points > 0 else 0
+
             rubrics.append(
                 RubricItem(
                     rubric_id=str(row["rubric_id"]),
                     name=row["name"],
                     description=row["description"],
                     department_ids=dept_ids,
-                    points=row["points"],
-                    passPoints=row["passpoints"],
+                    points=points,
+                    passPoints=pass_points,
+                    passPercentage=pass_percentage,
                     active_simulation_count=row["active_simulation_count"],
                     total_simulation_links=row["total_simulation_links"],
                     can_edit=row["can_edit"],

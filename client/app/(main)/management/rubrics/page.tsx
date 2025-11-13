@@ -10,8 +10,7 @@ import Rubrics from "@/components/rubrics/Rubrics";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type RubricsListIn = InputOf<"/api/v3/rubrics/list", "post">;
@@ -25,11 +24,16 @@ type CreateRubricOut = OutputOf<"/api/v3/rubrics/create", "post">;
 type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
 type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getRubricsList = cache(
-  async (input: RubricsListIn): Promise<RubricsListOut> => {
-    return api.post("/rubrics/list", input);
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes profileId so entries are per-user.
+ * Tags allow revalidateTag("rubrics") to invalidate.
+ */
+const getRubricsList = unstable_cache(
+  async (profileId: string): Promise<RubricsListOut> => {
+    return api.post("/rubrics/list", { body: { profileId } });
   },
+  ["rubrics:list"],
+  { tags: ["rubrics"] }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -39,6 +43,10 @@ export async function duplicateRubric(
   "use server";
   const out = await api.post("/rubrics/duplicate", input);
   revalidateTag("rubrics");
+  const rubricId = input.body?.rubricId;
+  if (rubricId) {
+    revalidateTag(`rubric:${rubricId}`);
+  }
   return out;
 }
 
@@ -48,6 +56,10 @@ export async function deleteRubric(
   "use server";
   const out = await api.post("/rubrics/delete", input);
   revalidateTag("rubrics");
+  const rubricId = input.body?.rubricId;
+  if (rubricId) {
+    revalidateTag(`rubric:${rubricId}`);
+  }
   return out;
 }
 
@@ -79,12 +91,10 @@ export default async function RubricsPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side
-  const listData = await getRubricsList({
-    body: { profileId },
-  });
+  const listData = await getRubricsList(profileId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="rubrics-index">
       <Rubrics
         listData={listData}
         duplicateRubricAction={duplicateRubric}

@@ -10,8 +10,7 @@ import Cohorts from "@/components/cohorts/Cohorts";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type CohortsListIn = InputOf<"/api/v3/cohorts/list", "post">;
@@ -23,11 +22,16 @@ type DeleteCohortOut = OutputOf<"/api/v3/cohorts/delete", "post">;
 type LeaveCohortIn = InputOf<"/api/v3/cohorts/leave", "post">;
 type LeaveCohortOut = OutputOf<"/api/v3/cohorts/leave", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getCohortsList = cache(
-  async (input: CohortsListIn): Promise<CohortsListOut> => {
-    return api.post("/cohorts/list", input);
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes profileId so entries are per-user.
+ * Tags allow revalidateTag("cohorts") to invalidate.
+ */
+const getCohortsList = unstable_cache(
+  async (profileId: string): Promise<CohortsListOut> => {
+    return api.post("/cohorts/list", { body: { profileId } });
   },
+  ["cohorts:list"],
+  { tags: ["cohorts"] }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -68,12 +72,10 @@ export default async function CohortsPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side
-  const listData = await getCohortsList({
-    body: { profileId },
-  });
+  const listData = await getCohortsList(profileId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="cohorts-index">
       <Cohorts
         listData={listData}
         duplicateCohortAction={duplicateCohort}

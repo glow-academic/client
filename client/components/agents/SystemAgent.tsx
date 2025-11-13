@@ -492,6 +492,7 @@ export default function SystemAgent({
               {formData?.name !== undefined ? (
                 <Input
                   id="name"
+                  data-testid="input-agent-name"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   placeholder="e.g., Enthusiastic Student Agent"
@@ -509,6 +510,7 @@ export default function SystemAgent({
               {formData?.description !== undefined ? (
                 <Textarea
                   id="description"
+                  data-testid="input-agent-description"
                   value={formData.description}
                   onChange={(e) =>
                     handleInputChange("description", e.target.value)
@@ -544,6 +546,7 @@ export default function SystemAgent({
                     placeholder="All Departments"
                     disabled={isSubmitting}
                     multiSelect={true}
+                    triggerProps={{ "data-testid": "picker-department" }}
                   />
                 ) : null}
               </div>
@@ -556,6 +559,7 @@ export default function SystemAgent({
                     selectedRole={formData.role || "assistant"}
                     onSelect={(role) => handleInputChange("role", role)}
                     placeholder="Select role"
+                    triggerProps={{ "data-testid": "picker-role" }}
                   />
                 ) : null}
               </div>
@@ -608,6 +612,7 @@ export default function SystemAgent({
                       buttonClassName={
                         errors.modelId ? "border-destructive" : ""
                       }
+                      triggerProps={{ "data-testid": "picker-model" }}
                     />
                     {errors.modelId && (
                       <p className="text-sm text-destructive">
@@ -641,6 +646,7 @@ export default function SystemAgent({
                     }
                     placeholder="Select reasoning effort"
                     multiSelect={false}
+                    triggerProps={{ "data-testid": "picker-reasoning" }}
                   />
                 ) : null}
               </div>
@@ -933,7 +939,7 @@ export default function SystemAgent({
                       </div>
                     </div>
                   ) : (
-                    <div className="h-[500px]">
+                    <div className="h-[500px]" data-testid="editor-system-prompt">
                       <UnifiedPromptEditor
                         value={formData?.systemPrompt || ""}
                         onChange={(value) => {
@@ -986,6 +992,7 @@ export default function SystemAgent({
               </Button>
               <Button
                 type="submit"
+                data-testid="btn-submit-agent"
                 disabled={
                   isSubmitting || !createAgentAction || !updateAgentAction
                 }

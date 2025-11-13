@@ -1,6 +1,7 @@
 """Parameters list endpoint."""
 
 import json
+from collections import Counter
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 
 from app.db import get_db
 from app.utils.http_cache import cache_key, get_cached, set_cached
+from app.utils.schema import ScenarioMapping, ScenarioMappingItem
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -30,6 +32,7 @@ class ParameterItem(BaseModel):
     numerical: bool
     active: bool
     department_ids: list[str] | None
+    scenario_ids: list[str]  # Array of scenario IDs
     num_items: int
     sample_items: list[ParameterSampleItem]
     can_edit: bool
@@ -39,10 +42,26 @@ class ParameterItem(BaseModel):
 
 class ParametersListResponse(BaseModel):
     parameters: list[ParameterItem]
+    scenario_mapping: ScenarioMapping
     department_mapping: dict[str, dict[str, Any]]
+    # UI-ready facet options (precomputed on server)
+    scenario_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
+
+
+def disambiguate_scenarios(smap: ScenarioMapping) -> list[dict[str, str]]:
+    """Build scenario options with disambiguation for duplicate names."""
+    names = Counter([v.name for v in smap.values()])
+    out = []
+    for sid, v in smap.items():
+        label = v.name
+        if names[v.name] > 1:
+            # Use last 8 characters of UUID for disambiguation
+            label = f"{v.name} ({sid[-8:]})"
+        out.append({"value": sid, "label": label})
+    return out
 
 
 @router.post("/list", response_model=ParametersListResponse)
@@ -71,7 +90,37 @@ async def get_parameters_list(
         result = await conn.fetch(sql, filters.profileId)
 
         parameters = []
+        scenario_mapping: ScenarioMapping = {}
         department_mapping: dict[str, dict[str, Any]] = {}
+
+        # Parse mappings from first row (same across all rows)
+        if result:
+            first_row = result[0]
+
+            # Parse scenario mapping from JSONB
+            scenario_mapping_data = first_row.get("scenario_mapping")
+            if isinstance(scenario_mapping_data, str):
+                scenario_mapping_data = json.loads(scenario_mapping_data)
+            if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
+                for sid, sdata in scenario_mapping_data.items():
+                    if isinstance(sdata, dict):
+                        scenario_mapping[sid] = ScenarioMappingItem(
+                            name=sdata.get("name", ""),
+                            description=sdata.get("description", ""),
+                            persona_ids=sdata.get("persona_ids", []),
+                            persona_mapping=sdata.get("persona_mapping", {}),
+                            document_mapping=sdata.get("document_mapping", {}),
+                            parameter_item_mapping=sdata.get("parameter_item_mapping", {}),
+                            parameter_item_ids=sdata.get("parameter_item_ids", []),
+                            document_ids=sdata.get("document_ids", []),
+                        )
+
+            # Parse department_mapping from JSONB
+            department_mapping_data = first_row.get("department_mapping")
+            if isinstance(department_mapping_data, str):
+                department_mapping_data = json.loads(department_mapping_data)
+            if department_mapping_data and isinstance(department_mapping_data, dict):
+                department_mapping = department_mapping_data
 
         for row in result:
             # Parse sample items from JSONB
@@ -96,6 +145,10 @@ async def get_parameters_list(
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
+            scenario_ids = []
+            if row.get("scenario_ids"):
+                scenario_ids = [str(sid) for sid in row["scenario_ids"]]
+
             parameters.append(
                 ParameterItem(
                     parameter_id=str(row["parameter_id"]),
@@ -104,6 +157,7 @@ async def get_parameters_list(
                     numerical=row["numerical"],
                     active=row["active"],
                     department_ids=dept_ids,
+                    scenario_ids=scenario_ids,
                     num_items=row["num_items"],
                     sample_items=sample_items,
                     can_edit=row["can_edit"],
@@ -112,16 +166,14 @@ async def get_parameters_list(
                 )
             )
 
-            # Parse department_mapping from first row
-            if not department_mapping and row.get("department_mapping"):
-                dm = row["department_mapping"]
-                if isinstance(dm, str):
-                    dm = json.loads(dm)
-                if isinstance(dm, dict):
-                    department_mapping = dm
+        # Build facet options
+        scenario_options = disambiguate_scenarios(scenario_mapping)
 
         response_data = ParametersListResponse(
-            parameters=parameters, department_mapping=department_mapping
+            parameters=parameters,
+            scenario_mapping=scenario_mapping,
+            department_mapping=department_mapping,
+            scenario_options=scenario_options,
         )
         
         # Cache response

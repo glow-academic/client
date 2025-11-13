@@ -11,8 +11,7 @@ import Provider from "@/components/providers/Provider";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProviderDetailIn = InputOf<"/api/v3/providers/detail", "post">;
@@ -28,11 +27,16 @@ type CreateProviderIn = InputOf<"/api/v3/providers/create", "post">;
 type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getProvider = cache(
-  async (input: ProviderDetailIn): Promise<ProviderDetailOut> => {
-    return api.post("/providers/detail", input);
-  },
-);
+const getProvider = (providerId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<ProviderDetailOut> => {
+      return api.post("/providers/detail", {
+        body: { providerId, profileId },
+      });
+    },
+    ["providers:detail", providerId],
+    { tags: ["providers", `provider:${providerId}`] }
+  );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -44,9 +48,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const provider = await getProvider({
-      body: { providerId, profileId },
-    });
+    const provider = await getProvider(providerId)(profileId);
     return {
       title: `${provider?.name || "Provider"}`,
       description:
@@ -68,6 +70,10 @@ export async function updateProvider(
   "use server";
   const out = await api.post("/providers/update", input);
   revalidateTag("providers");
+  const providerId = input.body?.providerId;
+  if (providerId) {
+    revalidateTag(`provider:${providerId}`);
+  }
   return out;
 }
 
@@ -85,6 +91,10 @@ export async function createProvider(
   "use server";
   const out = await api.post("/providers/create", input);
   revalidateTag("providers");
+  const providerId = input.body?.providerId;
+  if (providerId) {
+    revalidateTag(`provider:${providerId}`);
+  }
   return out;
 }
 
@@ -99,12 +109,14 @@ export default async function ProviderEditPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch provider detail (cached, won't duplicate with metadata)
-  const providerDetail = await getProvider({
-    body: { providerId, profileId },
-  });
+  const providerDetail = await getProvider(providerId)(profileId);
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="provider-edit"
+      data-provider-id={providerId}
+    >
       <Provider
         providerId={providerId}
         providerDetail={providerDetail}

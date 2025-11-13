@@ -11,37 +11,39 @@ import SystemAgent from "@/components/agents/SystemAgent";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentDetailIn = InputOf<"/api/v3/agents/detail", "post">;
 type AgentDetailOut = OutputOf<"/api/v3/agents/detail", "post">;
-
-type AgentDetailDefaultIn = InputOf<"/api/v3/agents/detail-default", "post">;
-type AgentDetailDefaultOut = OutputOf<"/api/v3/agents/detail-default", "post">;
-
+type AgentDetailDefaultIn = InputOf<
+  "/api/v3/agents/detail-default",
+  "post"
+>;
+type AgentDetailDefaultOut = OutputOf<
+  "/api/v3/agents/detail-default",
+  "post"
+>;
 type CreateAgentIn = InputOf<"/api/v3/agents/create", "post">;
 type CreateAgentOut = OutputOf<"/api/v3/agents/create", "post">;
-
 type UpdateAgentIn = InputOf<"/api/v3/agents/update", "post">;
 type UpdateAgentOut = OutputOf<"/api/v3/agents/update", "post">;
-
 type DeleteAgentPromptIn = InputOf<"/api/v3/agents/delete-prompt", "post">;
-type DeleteAgentPromptOut = OutputOf<"/api/v3/agents/delete-prompt", "post">;
+type DeleteAgentPromptOut = OutputOf<
+  "/api/v3/agents/delete-prompt",
+  "post"
+>;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getAgent = cache(
-  async (input: AgentDetailIn): Promise<AgentDetailOut> => {
-    return api.post("/agents/detail", input);
-  },
-);
-
-const getAgentDefault = cache(
-  async (input: AgentDetailDefaultIn): Promise<AgentDetailDefaultOut> => {
-    return api.post("/agents/detail-default", input);
-  },
-);
+const getAgent = (agentId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<AgentDetailOut> => {
+      return api.post("/agents/detail", {
+        body: { agentId, profileId },
+      });
+    },
+    ["agents:detail", agentId],
+    { tags: ["agents", `agent:${agentId}`] }
+  );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -53,7 +55,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const agent = await getAgent({ body: { agentId, profileId } });
+    const agent = await getAgent(agentId)(profileId);
     return {
       title: `${agent?.name || "Agent"} Agent`,
       description: `${agent ? `${agent.name} ${agent.description}` : "Agent"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -82,6 +84,10 @@ export async function updateAgent(
   "use server";
   const out = await api.post("/agents/update", input);
   revalidateTag("agents");
+  const agentId = input.body?.agentId;
+  if (agentId) {
+    revalidateTag(`agent:${agentId}`);
+  }
   return out;
 }
 
@@ -91,6 +97,10 @@ export async function deleteAgentPrompt(
   "use server";
   const out = await api.post("/agents/delete-prompt", input);
   revalidateTag("agents");
+  const agentId = input.body?.agentId;
+  if (agentId) {
+    revalidateTag(`agent:${agentId}`);
+  }
   return out;
 }
 
@@ -104,22 +114,20 @@ export default async function AgentEditPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch data based on mode (edit vs create)
-  const [agentDetail, agentDetailDefault] = await Promise.all([
-    agentId
-      ? getAgent({ body: { agentId, profileId } }).catch(() => null)
-      : Promise.resolve(null),
-    !agentId
-      ? getAgentDefault({ body: { profileId } }).catch(() => null)
-      : Promise.resolve(null),
-  ]);
+  // Fetch agent detail (cached, won't duplicate with metadata)
+  const agentDetail = agentId
+    ? await getAgent(agentId)(profileId).catch(() => null)
+    : null;
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="agent-edit"
+      data-agent-id={agentId}
+    >
       <SystemAgent
         agentId={agentId}
         {...(agentDetail && { agentDetail })}
-        {...(agentDetailDefault && { agentDetailDefault })}
         createAgentAction={createAgent}
         updateAgentAction={updateAgent}
         deleteAgentPromptAction={deleteAgentPrompt}

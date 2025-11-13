@@ -104,7 +104,17 @@ export default function Parameters({
     [parametersData],
   );
 
-  // Build department options from mapping
+  // Use server-provided facet options directly (no client-side computation)
+  const scenarioOptions = useMemo(
+    () =>
+      (parametersData?.scenario_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [parametersData?.scenario_options]
+  );
   const departmentOptions = useMemo(() => {
     const mapping = parametersData?.department_mapping || {};
     return Object.entries(mapping).map(([id, obj]) => ({
@@ -128,40 +138,29 @@ export default function Parameters({
         },
       },
       {
-        accessorKey: "numerical",
-        header: "Type",
-        cell: ({ row }) => (row.getValue("numerical") ? "Numerical" : "Text"),
-        filterFn: (row, id, value) => {
-          return value.includes(String(row.getValue(id)));
-        },
-      },
-      {
         accessorKey: "num_items",
         header: "Items",
         cell: ({ row }) => row.getValue("num_items"),
-        filterFn: (row, id, value) => {
-          const count = Number(row.getValue(id));
-          return value.some((range: string) => {
-            if (range === "0") return count === 0;
-            if (range === "1-3") return count >= 1 && count <= 3;
-            if (range === "4-6") return count >= 4 && count <= 6;
-            if (range === "7+") return count >= 7;
-            return false;
-          });
-        },
-      },
-      {
-        accessorKey: "active",
-        header: "Status",
-        cell: ({ row }) => (row.getValue("active") ? "Active" : "Inactive"),
-        filterFn: (row, id, value) => {
-          return value.includes(String(row.getValue(id)));
-        },
       },
       {
         accessorKey: "updated_at",
         header: "Updated",
         cell: ({ row }) => row.getValue("updated_at"),
+      },
+      // Hidden faceting column for Scenarios (array of IDs)
+      {
+        id: "scenarios",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        // Return the array of scenario IDs for this row
+        accessorFn: (row: (typeof parameters)[number]) => row.scenario_ids ?? [],
+        // Let filtering check membership - show if parameter is used in ANY selected scenario
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("scenarios") as string[]) ?? [];
+          return value.some((v) => rowIds.includes(v));
+        },
       },
       // Hidden faceting column for Departments (array of IDs)
       {
@@ -206,7 +205,7 @@ export default function Parameters({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
-        pageSize: 12,
+        pageSize: 3,
       },
     },
   });
@@ -341,6 +340,10 @@ export default function Parameters({
       <Card
         key={parameter.parameter_id}
         className="relative flex flex-col h-full"
+        data-testid="parameter-card"
+        data-parameter-id={parameter.parameter_id}
+        role="gridcell"
+        aria-label={`parameter card ${parameter.name}`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
@@ -381,6 +384,8 @@ export default function Parameters({
                     )
                   }
                   aria-label={`Edit ${parameter.name}`}
+                  data-testid="btn-edit-parameter"
+                  title={`Edit ${parameter.name}`}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -394,6 +399,8 @@ export default function Parameters({
                     )
                   }
                   aria-label={`View ${parameter.name}`}
+                  data-testid="btn-view-parameter"
+                  title={`View ${parameter.name}`}
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -404,7 +411,12 @@ export default function Parameters({
                   size="sm"
                   onClick={() => handleDuplicate(parameter)}
                   disabled={isDuplicating === parameter.parameter_id}
+                  aria-busy={
+                    isDuplicating === parameter.parameter_id ? true : undefined
+                  }
                   aria-label={`Duplicate ${parameter.name}`}
+                  data-testid="btn-duplicate-parameter"
+                  title={`Duplicate ${parameter.name}`}
                 >
                   {isDuplicating === parameter.parameter_id ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -421,6 +433,8 @@ export default function Parameters({
                     handleDeleteClick(parameter.parameter_id, parameter.name)
                   }
                   aria-label={`Delete ${parameter.name}`}
+                  data-testid="btn-delete-parameter"
+                  title={`Delete ${parameter.name}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -463,74 +477,47 @@ export default function Parameters({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const typeColumn = table.getColumn("numerical");
-  const itemCountColumn = table.getColumn("num_items");
-  const statusColumn = table.getColumn("active");
+  const scenarioColumn = table.getColumn("scenarios");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
-  const typeOptions = [
-    { value: "true", label: "Numerical" },
-    { value: "false", label: "Text" },
-  ];
-
-  const itemCountOptions = [
-    { value: "0", label: "0 items" },
-    { value: "1-3", label: "1-3 items" },
-    { value: "4-6", label: "4-6 items" },
-    { value: "7+", label: "7+ items" },
-  ];
-
-  const statusOptions = [
-    { value: "true", label: "Active" },
-    { value: "false", label: "Inactive" },
-  ];
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-8" data-page="parameters-index">
       {parameters.length === 0 ? (
         renderEmptyState()
       ) : (
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="flex items-center justify-between">
+          <div
+            className="flex items-center justify-between"
+            data-testid="parameters-toolbar"
+          >
             <div className="flex flex-1 items-center space-x-2 flex-wrap">
               <div className="mb-2">
                 <Input
+                  data-testid="parameters-search"
                   placeholder="Search parameters..."
                   value={(nameColumn?.getFilterValue() as string) ?? ""}
                   onChange={(event) =>
                     nameColumn?.setFilterValue(event.target.value)
                   }
                   className="h-8 w-[150px] lg:w-[250px]"
+                  aria-label="Search parameters by name"
+                  aria-controls="parameters-grid"
                 />
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap mb-2">
-                {typeColumn && (
+                {/* Scenario Filter */}
+                {scenarioColumn && scenarioOptions.length > 0 && (
                   <DataTableFacetedFilter
-                    column={typeColumn}
-                    title="Type"
-                    options={typeOptions}
+                    column={scenarioColumn}
+                    title="Scenario"
+                    options={scenarioOptions}
                   />
                 )}
 
-                {itemCountColumn && (
-                  <DataTableFacetedFilter
-                    column={itemCountColumn}
-                    title="Items"
-                    options={itemCountOptions}
-                  />
-                )}
-
-                {statusColumn && (
-                  <DataTableFacetedFilter
-                    column={statusColumn}
-                    title="Status"
-                    options={statusOptions}
-                  />
-                )}
-
+                {/* Department Filter */}
                 {departmentsColumn && departmentOptions.length > 0 && (
                   <DataTableFacetedFilter
                     column={departmentsColumn}
@@ -554,7 +541,12 @@ export default function Parameters({
           </div>
 
           {/* Cards Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            role="grid"
+            aria-label="parameters grid"
+            data-testid="parameters-grid"
+          >
             {table.getRowModel().rows.length ? (
               table
                 .getRowModel()
@@ -567,23 +559,38 @@ export default function Parameters({
           </div>
 
           {/* Pagination */}
-          <DataTablePagination table={table} card={true} />
+          <div aria-label="pagination controls">
+            <DataTablePagination table={table} card={true} />
+          </div>
         </div>
       )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          aria-labelledby="delete-parameter-title"
+          data-testid="dialog-delete-parameter"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Parameter</AlertDialogTitle>
+            <AlertDialogTitle id="delete-parameter-title">
+              Delete Parameter
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete &quot;{deleteItem?.name}&quot;?
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel data-testid="btn-cancel-delete">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

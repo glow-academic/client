@@ -9502,6 +9502,36 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "profile_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Profile Options"
+          },
+          "simulation_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Simulation Options"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
           }
         },
         "type": "object",
@@ -9509,7 +9539,10 @@
           "cohorts",
           "profile_mapping",
           "simulation_mapping",
-          "department_mapping"
+          "department_mapping",
+          "profile_options",
+          "simulation_options",
+          "department_options"
         ],
         "title": "CohortsListResponse",
         "description": "Response for cohorts list."
@@ -15306,6 +15339,13 @@
             "type": "array",
             "title": "Parameters"
           },
+          "scenario_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ScenarioMappingItem"
+            },
+            "type": "object",
+            "title": "Scenario Mapping"
+          },
           "department_mapping": {
             "additionalProperties": {
               "additionalProperties": true,
@@ -15313,12 +15353,24 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "scenario_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenario Options"
           }
         },
         "type": "object",
         "required": [
           "parameters",
-          "department_mapping"
+          "scenario_mapping",
+          "department_mapping",
+          "scenario_options"
         ],
         "title": "ParametersListResponse"
       },
@@ -17117,11 +17169,44 @@
             },
             "type": "array",
             "title": "Providers"
+          },
+          "provider_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Provider Options"
+          },
+          "custom_model_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Custom Model Options"
+          },
+          "status_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Status Options"
           }
         },
         "type": "object",
         "required": [
-          "providers"
+          "providers",
+          "provider_options",
+          "custom_model_options",
+          "status_options"
         ],
         "title": "ProvidersListResponse"
       },
@@ -17694,6 +17779,10 @@
             "type": "integer",
             "title": "Passpoints"
           },
+          "passPercentage": {
+            "type": "integer",
+            "title": "Passpercentage"
+          },
           "department_ids": {
             "anyOf": [
               {
@@ -17746,6 +17835,7 @@
           "description",
           "points",
           "passPoints",
+          "passPercentage",
           "active_simulation_count",
           "total_simulation_links",
           "can_edit",
@@ -19427,6 +19517,43 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "rubric_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rubric Options"
+          },
+          "cohort_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Cohort Options"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
           }
         },
         "type": "object",
@@ -19434,7 +19561,11 @@
           "simulations",
           "scenario_mapping",
           "rubric_mapping",
-          "department_mapping"
+          "department_mapping",
+          "cohort_mapping",
+          "rubric_options",
+          "cohort_options",
+          "department_options"
         ],
         "title": "SimulationsListResponse",
         "description": "Response for simulations list endpoint."
@@ -23221,6 +23352,13 @@
             ],
             "title": "Department Ids"
           },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
           "num_items": {
             "type": "integer",
             "title": "Num Items"
@@ -23253,6 +23391,7 @@
           "numerical",
           "active",
           "department_ids",
+          "scenario_ids",
           "num_items",
           "sample_items",
           "can_edit",
@@ -25741,6 +25880,13 @@
           "num_cohorts": {
             "type": "integer",
             "title": "Num Cohorts"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
           }
         },
         "type": "object",
@@ -25757,7 +25903,8 @@
           "can_duplicate",
           "scenario_ids",
           "rubric_id",
-          "num_cohorts"
+          "num_cohorts",
+          "cohort_ids"
         ],
         "title": "SimulationItem",
         "description": "Simulation item in list response."

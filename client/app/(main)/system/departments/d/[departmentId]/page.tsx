@@ -11,8 +11,7 @@ import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 // Import staff types and actions from staff page
 
@@ -24,7 +23,6 @@ import {
 } from "@/app/(main)/management/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
-type DepartmentDetailIn = InputOf<"/api/v3/departments/detail", "post">;
 type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;
 type UpdateDepartmentIn = InputOf<"/api/v3/departments/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/api/v3/departments/update", "post">;
@@ -37,12 +35,20 @@ type RemoveProfilesFromDepartmentOut = OutputOf<
   "post"
 >;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getDepartment = cache(
-  async (input: DepartmentDetailIn): Promise<DepartmentDetailOut> => {
-    return api.post("/departments/detail", input);
-  },
-);
+/** ---- Cached fetch used by both page + metadata (prevents double hit) ----
+ * Cache key includes departmentId and profileId so entries are per-user per-department.
+ * Tags allow revalidateTag("departments") and revalidateTag(`department:${departmentId}`) to invalidate.
+ */
+const getDepartment = (departmentId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<DepartmentDetailOut> => {
+      return api.post("/departments/detail", {
+        body: { departmentId, profileId },
+      });
+    },
+    ["departments:detail", departmentId],
+    { tags: ["departments", `department:${departmentId}`] }
+  );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -54,9 +60,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const department = await getDepartment({
-      body: { departmentId, profileId },
-    });
+    const department = await getDepartment(departmentId)(profileId);
     return {
       title: `${department?.title || "Department"} Department`,
       description: `${department ? `${department.title} ${department.description || ""}` : "Department"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -76,6 +80,10 @@ export async function updateDepartment(
   "use server";
   const out = await api.post("/departments/update", input);
   revalidateTag("departments");
+  const departmentId = input.body?.departmentId;
+  if (departmentId) {
+    revalidateTag(`department:${departmentId}`);
+  }
   return out;
 }
 
@@ -85,6 +93,10 @@ export async function removeProfilesFromDepartment(
   "use server";
   const out = await api.post("/departments/remove-profiles", input);
   revalidateTag("departments");
+  const departmentId = input.body?.departmentId;
+  if (departmentId) {
+    revalidateTag(`department:${departmentId}`);
+  }
   return out;
 }
 
@@ -99,9 +111,7 @@ export default async function DepartmentEditPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch department detail (cached, won't duplicate with metadata)
-  const departmentDetail = await getDepartment({
-    body: { departmentId, profileId },
-  });
+  const departmentDetail = await getDepartment(departmentId)(profileId);
 
   // Fetch initial search data (empty query) for SearchExistingStaffModal
   const initialSearchData = await searchStaff({
@@ -123,7 +133,11 @@ export default async function DepartmentEditPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="department-edit"
+      data-department-id={departmentId}
+    >
       <Department
         departmentId={departmentId}
         departmentDetail={departmentDetail}
@@ -144,7 +158,6 @@ type DepartmentStaffItem = DepartmentDetailOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  DepartmentDetailIn,
   DepartmentDetailOut,
   DepartmentStaffItem,
   RemoveProfilesFromDepartmentIn,

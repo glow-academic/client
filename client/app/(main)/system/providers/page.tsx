@@ -10,8 +10,7 @@ import Providers from "@/components/providers/Providers";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProvidersListIn = InputOf<"/api/v3/providers/list", "post">;
@@ -25,11 +24,16 @@ type DuplicateModelOut = OutputOf<"/api/v3/providers/models/duplicate", "post">;
 type DeleteModelIn = InputOf<"/api/v3/providers/models/delete", "post">;
 type DeleteModelOut = OutputOf<"/api/v3/providers/models/delete", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getProvidersList = cache(
-  async (input: ProvidersListIn): Promise<ProvidersListOut> => {
-    return api.post("/providers/list", input);
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes profileId so entries are per-user.
+ * Tags allow revalidateTag("providers") to invalidate.
+ */
+const getProvidersList = unstable_cache(
+  async (profileId: string): Promise<ProvidersListOut> => {
+    return api.post("/providers/list", { body: { profileId } });
   },
+  ["providers:list"],
+  { tags: ["providers"] }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -39,6 +43,10 @@ export async function duplicateProvider(
   "use server";
   const out = await api.post("/providers/duplicate", input);
   revalidateTag("providers");
+  const providerId = input.body?.providerId;
+  if (providerId) {
+    revalidateTag(`provider:${providerId}`);
+  }
   return out;
 }
 
@@ -48,6 +56,10 @@ export async function deleteProvider(
   "use server";
   const out = await api.post("/providers/delete", input);
   revalidateTag("providers");
+  const providerId = input.body?.providerId;
+  if (providerId) {
+    revalidateTag(`provider:${providerId}`);
+  }
   return out;
 }
 
@@ -57,6 +69,10 @@ export async function duplicateModel(
   "use server";
   const out = await api.post("/providers/models/duplicate", input);
   revalidateTag("providers");
+  const modelId = input.body?.modelId;
+  if (modelId) {
+    revalidateTag(`model:${modelId}`);
+  }
   return out;
 }
 
@@ -66,6 +82,10 @@ export async function deleteModel(
   "use server";
   const out = await api.post("/providers/models/delete", input);
   revalidateTag("providers");
+  const modelId = input.body?.modelId;
+  if (modelId) {
+    revalidateTag(`model:${modelId}`);
+  }
   return out;
 }
 
@@ -79,12 +99,10 @@ export default async function ProvidersPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side
-  const listData = await getProvidersList({
-    body: { profileId },
-  });
+  const listData = await getProvidersList(profileId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="providers-index">
       <Providers
         listData={listData}
         duplicateProviderAction={duplicateProvider}

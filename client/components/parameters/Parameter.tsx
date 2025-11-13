@@ -410,7 +410,10 @@ export default function Parameter({
   // (deprecated) visible items helper removed; we filter inline in the render
 
   return (
-    <div className="space-y-6 py-4 px-4">
+    <div
+      className="space-y-6 py-4 px-4"
+      data-page={`parameter-${isEditMode ? "edit" : "new"}`}
+    >
       <div className="w-full">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Parameter Basic Information */}
@@ -420,6 +423,7 @@ export default function Parameter({
               {formData?.name !== undefined ? (
                 <Input
                   id="name"
+                  data-testid="input-parameter-name"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -435,6 +439,7 @@ export default function Parameter({
               {formData?.description !== undefined ? (
                 <Textarea
                   id="description"
+                  data-testid="input-parameter-description"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -463,6 +468,7 @@ export default function Parameter({
                   {formData?.active !== undefined ? (
                     <Switch
                       id="active"
+                      data-testid="switch-parameter-active"
                       checked={formData.active}
                       onCheckedChange={(checked) =>
                         setFormData((prev) => ({ ...prev, active: checked }))
@@ -490,6 +496,7 @@ export default function Parameter({
                   {formData?.numerical !== undefined ? (
                     <Switch
                       id="numerical"
+                      data-testid="switch-parameter-numerical"
                       checked={formData.numerical}
                       onCheckedChange={(checked) =>
                         setFormData((prev) => ({ ...prev, numerical: checked }))
@@ -517,6 +524,7 @@ export default function Parameter({
                   {formData?.document_parameter !== undefined ? (
                     <Switch
                       id="document_parameter"
+                      data-testid="switch-parameter-document"
                       checked={formData.document_parameter}
                       onCheckedChange={(checked) =>
                         setFormData((prev) => ({
@@ -547,6 +555,7 @@ export default function Parameter({
                   {formData?.practice_parameter !== undefined ? (
                     <Switch
                       id="practice_parameter"
+                      data-testid="switch-parameter-practice"
                       checked={formData.practice_parameter}
                       onCheckedChange={(checked) =>
                         setFormData((prev) => ({
@@ -572,6 +581,7 @@ export default function Parameter({
                 onClick={handleAddParameterItem}
                 size="sm"
                 variant="default"
+                data-testid="btn-add-parameter-item"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add Item
@@ -655,6 +665,7 @@ export default function Parameter({
                             }
                             placeholder="All Departments"
                             multiSelect={true}
+                            triggerProps={{ "data-testid": "picker-department" }}
                           />
                         </TableCell>
                         <TableCell className="w-20">
@@ -671,6 +682,7 @@ export default function Parameter({
                                     }
                                     aria-label="Delete parameter item"
                                     className="pb-1"
+                                    data-testid="btn-delete-parameter-item"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
@@ -709,6 +721,7 @@ export default function Parameter({
             </Button>
             <Button
               type="submit"
+              data-testid="btn-submit-parameter"
               disabled={
                 isSubmitting ||
                 (isEditMode &&

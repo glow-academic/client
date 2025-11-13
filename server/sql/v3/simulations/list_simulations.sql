@@ -36,6 +36,15 @@ simulation_all_cohort_links AS (
     FROM cohort_simulations cs
     GROUP BY cs.simulation_id
 ),
+simulation_cohorts_data AS (
+    SELECT 
+        cs.simulation_id,
+        ARRAY_AGG(cs.cohort_id::text ORDER BY c.title) as cohort_ids
+    FROM cohort_simulations cs
+    JOIN cohorts c ON c.id = cs.cohort_id
+    WHERE cs.active = true
+    GROUP BY cs.simulation_id
+),
 simulation_departments_data AS (
     SELECT 
         sd.simulation_id,
@@ -60,7 +69,8 @@ simulation_data AS (
         COALESCE(sa.attempt_count, 0) as attempt_count,
         COALESCE(sacl.active_cohort_count, 0) as active_cohort_count,
         COALESCE(salcl.total_cohort_links, 0) as total_cohort_links,
-        COALESCE(salcl.num_cohorts, 0) as num_cohorts
+        COALESCE(salcl.num_cohorts, 0) as num_cohorts,
+        COALESCE(scd.cohort_ids, ARRAY[]::text[]) as cohort_ids
     FROM simulations s
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
@@ -69,9 +79,10 @@ simulation_data AS (
     LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id
     LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
     LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
+    LEFT JOIN simulation_cohorts_data scd ON scd.simulation_id = s.id
     GROUP BY s.id, s.title, s.description, stl.time_limit_seconds, s.active, s.practice_simulation, 
              s.rubric_id, s.updated_at, sdd.department_ids, ss.scenario_ids, ss.num_scenarios, sa.attempt_count, 
-             sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts
+             sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts, scd.cohort_ids
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -145,6 +156,25 @@ department_mapping_data AS (
     ) as mapping
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
+),
+all_cohort_ids AS (
+    SELECT DISTINCT unnest(cohort_ids) as cohort_id
+    FROM simulation_cohorts_data
+    WHERE cohort_ids IS NOT NULL
+),
+cohort_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            c.id::text,
+            jsonb_build_object(
+                'name', c.title,
+                'description', COALESCE(c.description, '')
+            )
+        ) FILTER (WHERE c.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_cohort_ids aci
+    LEFT JOIN cohorts c ON c.id = aci.cohort_id::uuid
 )
 SELECT 
     sd.*,
@@ -165,11 +195,13 @@ SELECT
     END as can_duplicate,
     sm.mapping as scenario_mapping,
     rm.mapping as rubric_mapping,
-    dm.mapping as department_mapping
+    dm.mapping as department_mapping,
+    cm.mapping as cohort_mapping
 FROM simulation_data sd
 CROSS JOIN user_profile up
 CROSS JOIN scenario_mapping_data sm
 CROSS JOIN rubric_mapping_data rm
 CROSS JOIN department_mapping_data dm
+CROSS JOIN cohort_mapping_data cm
 ORDER BY sd.updated_at DESC NULLS LAST
 

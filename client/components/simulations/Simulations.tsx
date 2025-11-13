@@ -52,10 +52,10 @@ export interface SimulationsProps {
   listData: SimulationsListOut;
   // Server actions (replaces useMutation)
   duplicateSimulationAction?: (
-    input: DuplicateSimulationIn,
+    input: DuplicateSimulationIn
   ) => Promise<DuplicateSimulationOut>;
   deleteSimulationAction?: (
-    input: DeleteSimulationIn,
+    input: DeleteSimulationIn
   ) => Promise<DeleteSimulationOut>;
 }
 
@@ -87,87 +87,40 @@ export function Simulations({
   // Extract data from response
   const simulations = useMemo(
     () => simulationsData?.simulations || [],
-    [simulationsData?.simulations],
-  );
-  const scenarioMapping = useMemo(
-    () => simulationsData?.scenario_mapping || {},
-    [simulationsData?.scenario_mapping],
-  );
-  const rubricMapping = useMemo(
-    () => simulationsData?.rubric_mapping || {},
-    [simulationsData?.rubric_mapping],
+    [simulationsData?.simulations]
   );
 
-  // Create filter options from mappings (label is .name)
-  const scenarioOptions = useMemo(() => {
-    const entries = Object.entries(scenarioMapping);
-
-    // Count occurrences of each name to detect duplicates
-    const nameCounts = new Map<string, number>();
-    entries.forEach(([_, obj]) => {
-      nameCounts.set(obj.name, (nameCounts.get(obj.name) || 0) + 1);
-    });
-
-    // Track how many times we've seen each duplicate name
-    const nameIndices = new Map<string, number>();
-
-    return entries.map(([id, obj]) => {
-      const isDuplicate = (nameCounts.get(obj.name) || 0) > 1;
-
-      if (isDuplicate) {
-        // For duplicates, add a disambiguator using short ID
-        const index = (nameIndices.get(obj.name) || 0) + 1;
-        nameIndices.set(obj.name, index);
-
-        // Use last 8 characters of UUID for disambiguation
-        const shortId = id.slice(-8);
-        return {
-          value: id,
-          label: `${obj.name} (${shortId})`,
-        };
-      }
-
-      return {
-        value: id,
-        label: obj.name,
-      };
-    });
-  }, [scenarioMapping]);
-
-  const rubricOptions = useMemo(() => {
-    return Object.entries(rubricMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj.name,
-    }));
-  }, [rubricMapping]);
-
-  const timeLimitOptions = useMemo(
-    () => [
-      { value: "no-limit", label: "No Time Limit" },
-      { value: "0-30", label: "0-30 minutes" },
-      { value: "30-60", label: "30-60 minutes" },
-      { value: "60-120", label: "60-120 minutes" },
-      { value: "120+", label: "120+ minutes" },
-    ],
-    [],
-  );
-
-  // Build department options from mapping
-  const departmentMapping = useMemo(
+  // Use server-provided facet options directly (no client-side computation)
+  const rubricOptions = useMemo(
     () =>
-      (simulationsData?.department_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [simulationsData?.department_mapping],
+      (simulationsData?.rubric_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [simulationsData?.rubric_options]
   );
-
-  const departmentOptions = useMemo(() => {
-    return Object.entries(departmentMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
-    }));
-  }, [departmentMapping]);
+  const cohortOptions = useMemo(
+    () =>
+      (simulationsData?.cohort_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [simulationsData?.cohort_options]
+  );
+  const departmentOptions = useMemo(
+    () =>
+      (simulationsData?.department_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [simulationsData?.department_options]
+  );
 
   // Define table columns inline
   const columns: ColumnDef<(typeof simulations)[number]>[] = useMemo(
@@ -175,20 +128,6 @@ export function Simulations({
       {
         accessorKey: "name",
         header: "Name",
-      },
-      // Hidden faceting column for Scenarios (array of IDs)
-      {
-        id: "scenario_ids",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: (typeof simulations)[number]) =>
-          row.scenario_ids ?? [],
-        filterFn: (row, _id, value: string[]) => {
-          const rowIds = (row.getValue("scenario_ids") as string[]) ?? [];
-          return value.some((v) => rowIds.includes(v));
-        },
       },
       // Hidden faceting column for Rubric (single ID)
       {
@@ -199,20 +138,19 @@ export function Simulations({
         enableSorting: false,
         accessorKey: "rubric_id",
       },
-      // Hidden faceting column for Time Limit (categorical)
+      // Hidden faceting column for Cohorts (array of IDs)
       {
-        id: "time_limit_category",
+        id: "cohort_ids",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof simulations)[number]) => {
-          const seconds = row.time_limit;
-          if (seconds === null) return "no-limit";
-          if (seconds <= 1800) return "0-30";
-          if (seconds <= 3600) return "30-60";
-          if (seconds <= 7200) return "60-120";
-          return "120+";
+        accessorFn: (row: (typeof simulations)[number]) => row.cohort_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("cohort_ids") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
         },
       },
       // Hidden faceting column for Departments (array of IDs)
@@ -232,7 +170,7 @@ export function Simulations({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -294,7 +232,7 @@ export function Simulations({
 
   const handleDuplicate = async (
     simulationId: string,
-    _simulationName: string,
+    _simulationName: string
   ) => {
     if (!duplicateSimulationAction) return;
 
@@ -314,8 +252,10 @@ export function Simulations({
     <Card
       key={simulation.simulation_id}
       aria-label={simulation.name}
-      data-testid={`card-${simulation.simulation_id}`}
+      data-testid="simulation-card"
+      data-simulation-id={simulation.simulation_id}
       className="relative flex flex-col h-full hover:shadow-md transition-shadow"
+      role="gridcell"
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -347,9 +287,10 @@ export function Simulations({
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`edit-${simulation.simulation_id}`}
+                data-testid="btn-edit-simulation"
                 onClick={() => handleEdit(simulation.simulation_id)}
                 aria-label={`Edit ${simulation.name}`}
+                title={`Edit ${simulation.name}`}
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -357,9 +298,10 @@ export function Simulations({
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`view-${simulation.simulation_id}`}
+                data-testid="btn-view-simulation"
                 onClick={() => handleEdit(simulation.simulation_id)}
                 aria-label={`View ${simulation.name}`}
+                title={`View ${simulation.name}`}
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -368,11 +310,16 @@ export function Simulations({
               <Button
                 variant="outline"
                 size="sm"
+                data-testid="btn-duplicate-simulation"
                 onClick={() =>
                   handleDuplicate(simulation.simulation_id, simulation.name)
                 }
                 disabled={isDuplicating === simulation.simulation_id || false}
+                aria-busy={
+                  isDuplicating === simulation.simulation_id ? true : undefined
+                }
                 aria-label={`Duplicate ${simulation.name}`}
+                title={`Duplicate ${simulation.name}`}
               >
                 {isDuplicating === simulation.simulation_id ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -385,11 +332,12 @@ export function Simulations({
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`delete-${simulation.simulation_id}`}
+                data-testid="btn-delete-simulation"
                 onClick={() =>
                   handleDeleteClick(simulation.simulation_id, simulation.name)
                 }
                 aria-label={`Delete ${simulation.name}`}
+                title={`Delete ${simulation.name}`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -412,42 +360,38 @@ export function Simulations({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const scenarioColumn = table.getColumn("scenario_ids");
   const rubricColumn = table.getColumn("rubric_id");
-  const timeLimitColumn = table.getColumn("time_limit_category");
+  const cohortColumn = table.getColumn("cohort_ids");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="simulations-index">
       <div className="space-y-4">
         {/* Toolbar */}
-        <div className="flex items-center justify-between">
+        <div
+          className="flex items-center justify-between"
+          data-testid="simulations-toolbar"
+        >
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
             <div className="mb-2">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
+                  data-testid="simulations-search"
                   placeholder="Search simulations..."
                   value={(nameColumn?.getFilterValue() as string) ?? ""}
                   onChange={(event) =>
                     nameColumn?.setFilterValue(event.target.value)
                   }
                   className="h-8 w-[150px] lg:w-[250px] pl-8"
+                  aria-label="Search simulations by name"
+                  aria-controls="simulations-grid"
                 />
               </div>
             </div>
 
             <div className="flex items-center space-x-2 flex-wrap mb-2">
-              {/* Scenario Filter */}
-              {scenarioColumn && scenarioOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={scenarioColumn}
-                  title="Scenario"
-                  options={scenarioOptions}
-                />
-              )}
-
               {/* Rubric Filter */}
               {rubricColumn && rubricOptions.length > 0 && (
                 <DataTableFacetedFilter
@@ -457,12 +401,12 @@ export function Simulations({
                 />
               )}
 
-              {/* Time Limit Filter */}
-              {timeLimitColumn && timeLimitOptions.length > 0 && (
+              {/* Cohort Filter */}
+              {cohortColumn && cohortOptions.length > 0 && (
                 <DataTableFacetedFilter
-                  column={timeLimitColumn}
-                  title="Time Limit"
-                  options={timeLimitOptions}
+                  column={cohortColumn}
+                  title="Cohort"
+                  options={cohortOptions}
                 />
               )}
 
@@ -490,13 +434,21 @@ export function Simulations({
         </div>
 
         {/* Cards Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {table.getRowModel().rows.map((row) => (
-            <div key={row.id}>{renderSimulationCard(row.original)}</div>
-          ))}
-          {table.getRowModel().rows.length === 0 && (
-            <div className="col-span-full text-center py-8">
-              <p className="text-muted-foreground">No simulations found.</p>
+        <div
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          role="grid"
+          aria-label="simulations grid"
+          data-testid="simulations-grid"
+        >
+          {table.getRowModel().rows.length ? (
+            table
+              .getRowModel()
+              .rows.map((row) => (
+                <div key={row.id}>{renderSimulationCard(row.original)}</div>
+              ))
+          ) : (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              No simulations match the current filters.
             </div>
           )}
         </div>
@@ -507,22 +459,31 @@ export function Simulations({
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          aria-labelledby="delete-simulation-title"
+          data-testid="dialog-delete-simulation"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Simulation</AlertDialogTitle>
+            <AlertDialogTitle id="delete-simulation-title">
+              Delete Simulation
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              <p>
-                Are you sure you want to delete the simulation "
-                {deleteItem?.name}"? This action cannot be undone.
-              </p>
+              Are you sure you want to delete the simulation "{deleteItem?.name}
+              "? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              data-testid="btn-cancel-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

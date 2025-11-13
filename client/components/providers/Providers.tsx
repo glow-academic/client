@@ -134,26 +134,43 @@ export default function Providers({
   // Use server-provided data directly
   const providersData = serverListData;
 
-  // Build filter options
+  // Use server-provided data directly
   const providers = useMemo(
     () => providersData?.providers || [],
     [providersData],
   );
 
+  // Use server-provided facet options directly (no client-side computation)
   const providerOptions = useMemo(
-    () => providers.map((p) => ({ value: p.provider_id, label: p.name })),
-    [providers],
+    () =>
+      (providersData?.provider_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [providersData?.provider_options]
   );
-
-  const customModelOptions = [
-    { value: "true", label: "Custom Models" },
-    { value: "false", label: "Standard Models" },
-  ];
-
-  const statusOptions = [
-    { value: "true", label: "Active" },
-    { value: "false", label: "Inactive" },
-  ];
+  const customModelOptions = useMemo(
+    () =>
+      (providersData?.custom_model_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [providersData?.custom_model_options]
+  );
+  const statusOptions = useMemo(
+    () =>
+      (providersData?.status_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [providersData?.status_options]
+  );
 
   // Column definitions for TanStack Table (flattened model rows)
   type ProviderModelRow = {
@@ -460,7 +477,12 @@ export default function Providers({
   );
 
   const renderProviderGroup = (provider: ProviderWithModels) => (
-    <div key={provider.provider_id} className="space-y-4">
+    <div
+      key={provider.provider_id}
+      className="space-y-4"
+      data-testid="provider-card"
+      data-provider-id={provider.provider_id}
+    >
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Badge variant="secondary" className="text-sm px-3 py-1">
@@ -480,6 +502,9 @@ export default function Providers({
                   onClick={() =>
                     router.push(`/system/providers/p/${provider.provider_id}`)
                   }
+                  aria-label={`Edit provider ${provider.name}`}
+                  data-testid="btn-edit-provider"
+                  title={`Edit provider ${provider.name}`}
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
@@ -496,6 +521,9 @@ export default function Providers({
                 size="sm"
                 onClick={() => handleDuplicateProviderClick(provider)}
                 disabled={false}
+                aria-label={`Duplicate provider ${provider.name}`}
+                data-testid="btn-duplicate-provider"
+                title={`Duplicate provider ${provider.name}`}
               >
                 <Copy className="h-4 w-4" />
               </Button>
@@ -511,6 +539,9 @@ export default function Providers({
                   variant="outline"
                   size="sm"
                   onClick={() => handleDeleteProviderClick(provider)}
+                  aria-label={`Delete provider ${provider.name}`}
+                  data-testid="btn-delete-provider"
+                  title={`Delete provider ${provider.name}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -530,6 +561,11 @@ export default function Providers({
             <Card
               key={model.model_id}
               className="hover:shadow-md transition-shadow flex flex-col h-full min-h-[220px]"
+              data-testid="model-card"
+              data-model-id={model.model_id}
+              data-provider-id={provider.provider_id}
+              role="gridcell"
+              aria-label={`model card ${model.name || "Unnamed Model"}`}
             >
               <CardHeader className="flex-0">
                 <div className="flex justify-between items-start">
@@ -558,6 +594,9 @@ export default function Providers({
                     variant="outline"
                     size="sm"
                     onClick={() => handleEdit(model, provider)}
+                    aria-label={`Edit model ${model.name}`}
+                    data-testid="btn-edit-model"
+                    title={`Edit model ${model.name}`}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -567,6 +606,9 @@ export default function Providers({
                   size="sm"
                   onClick={() => handleDuplicateModelClick(model)}
                   disabled={false}
+                  aria-label={`Duplicate model ${model.name}`}
+                  data-testid="btn-duplicate-model"
+                  title={`Duplicate model ${model.name}`}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -575,6 +617,9 @@ export default function Providers({
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteClick(model)}
+                    aria-label={`Delete model ${model.name}`}
+                    data-testid="btn-delete-model"
+                    title={`Delete model ${model.name}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -612,16 +657,22 @@ export default function Providers({
         ) : (
           <div className="space-y-4">
             {/* Toolbar */}
-            <div className="flex items-center justify-between">
+            <div
+              className="flex items-center justify-between"
+              data-testid="providers-toolbar"
+            >
               <div className="flex flex-1 items-center space-x-2 flex-wrap">
                 <div className="mb-2">
                   <Input
+                    data-testid="providers-search"
                     placeholder="Search models..."
                     value={(nameColumn?.getFilterValue() as string) ?? ""}
                     onChange={(event) =>
                       nameColumn?.setFilterValue(event.target.value)
                     }
                     className="h-8 w-[150px] lg:w-[250px]"
+                    aria-label="Search models by name"
+                    aria-controls="providers-grid"
                   />
                 </div>
 
@@ -670,7 +721,12 @@ export default function Providers({
                 No models match the current filters.
               </div>
             ) : (
-              <div className="space-y-6">
+              <div
+                className="space-y-6"
+                role="grid"
+                aria-label="providers grid"
+                data-testid="providers-grid"
+              >
                 {filteredProviders.map((provider) =>
                   renderProviderGroup(provider),
                 )}
@@ -683,22 +739,31 @@ export default function Providers({
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
+          <AlertDialogContent
+            aria-labelledby="delete-model-title"
+            data-testid="dialog-delete-model"
+          >
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogTitle id="delete-model-title">
+                Delete Model
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the model "{deleteItem?.name}".
-                This action cannot be undone.
+                Are you sure you want to delete the model "{deleteItem?.name}
+                "? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+              <AlertDialogCancel
+                disabled={isDeleting}
+                data-testid="btn-cancel-delete"
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                data-testid="btn-confirm-delete"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
               </AlertDialogAction>
@@ -711,15 +776,18 @@ export default function Providers({
           open={showDeleteProviderDialog}
           onOpenChange={setShowDeleteProviderDialog}
         >
-          <AlertDialogContent>
+          <AlertDialogContent
+            aria-labelledby="delete-provider-title"
+            data-testid="dialog-delete-provider"
+          >
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Provider</AlertDialogTitle>
+              <AlertDialogTitle id="delete-provider-title">
+                Delete Provider
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                <p>
-                  Are you sure you want to delete the provider "
-                  {deleteProviderItem?.name}"? This will also delete all
-                  associated models. This action cannot be undone.
-                </p>
+                Are you sure you want to delete the provider "
+                {deleteProviderItem?.name}"? This will also delete all
+                associated models. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -729,7 +797,7 @@ export default function Providers({
               <AlertDialogAction
                 onClick={handleDeleteProvider}
                 disabled={isDeletingProvider}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-red-600 hover:bg-red-700 text-white"
               >
                 {isDeletingProvider ? "Deleting..." : "Delete"}
               </AlertDialogAction>

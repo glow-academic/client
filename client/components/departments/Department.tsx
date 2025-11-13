@@ -291,7 +291,10 @@ export default function Department({
   };
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page={isEditMode ? "department-edit" : "department-new"}
+    >
       {isReadonly && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <div className="flex items-center">
@@ -331,6 +334,7 @@ export default function Department({
           {formData?.title !== undefined ? (
             <Input
               id="title"
+              data-testid="input-department-title"
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
               placeholder="Enter department title"
@@ -350,6 +354,7 @@ export default function Department({
           {formData?.description !== undefined ? (
             <Textarea
               id="description"
+              data-testid="input-department-description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Enter department description"
@@ -378,6 +383,7 @@ export default function Department({
               {formData?.active !== undefined ? (
                 <Switch
                   id="active"
+                  data-testid="switch-department-active"
                   checked={formData.active ?? true}
                   onCheckedChange={(checked) =>
                     handleInputChange("active", checked)
@@ -527,6 +533,7 @@ export default function Department({
             type="submit"
             disabled={isSubmitting || isReadonly}
             className="min-w-[120px]"
+            data-testid="btn-submit-department"
           >
             {isSubmitting ? (
               <>

@@ -112,46 +112,38 @@ export default function Cohorts({
     () => cohortsData?.cohorts || [],
     [cohortsData?.cohorts],
   );
-  const profileMapping = useMemo(
-    () => cohortsData?.profile_mapping || {},
-    [cohortsData?.profile_mapping],
-  );
-  const simulationMapping = useMemo(
-    () => cohortsData?.simulation_mapping || {},
-    [cohortsData?.simulation_mapping],
-  );
 
-  // Create filter options from mappings
-  const profileOptions = useMemo(() => {
-    return Object.entries(profileMapping).map(([id, profile]) => ({
-      value: id,
-      label: profile.name,
-    }));
-  }, [profileMapping]);
-
-  const simulationOptions = useMemo(() => {
-    return Object.entries(simulationMapping).map(([id, simulation]) => ({
-      value: id,
-      label: simulation.name,
-    }));
-  }, [simulationMapping]);
-
-  // Build department options from mapping
-  const departmentMapping = useMemo(
+  // Use server-provided facet options directly (no client-side computation)
+  const profileOptions = useMemo(
     () =>
-      (cohortsData?.department_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [cohortsData?.department_mapping],
+      (cohortsData?.profile_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [cohortsData?.profile_options]
   );
-
-  const departmentOptions = useMemo(() => {
-    return Object.entries(departmentMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
-    }));
-  }, [departmentMapping]);
+  const simulationOptions = useMemo(
+    () =>
+      (cohortsData?.simulation_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [cohortsData?.simulation_options]
+  );
+  const departmentOptions = useMemo(
+    () =>
+      (cohortsData?.department_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [cohortsData?.department_options]
+  );
 
   // Define table columns inline
   const columns: ColumnDef<(typeof cohorts)[number]>[] = useMemo(
@@ -337,7 +329,8 @@ export default function Cohorts({
     <Card
       key={cohort.cohort_id}
       aria-label={cohort.name}
-      data-testid={`card-${cohort.cohort_id}`}
+      data-testid="cohort-card"
+      data-cohort-id={cohort.cohort_id}
       className="relative flex flex-col h-full"
     >
       <CardHeader className="pb-3">
@@ -389,6 +382,8 @@ export default function Cohorts({
                   isDuplicating === cohort.cohort_id || false // No pending state for server action
                 }
                 aria-label={`Duplicate ${cohort.name}`}
+                data-testid="btn-duplicate-cohort"
+                title={`Duplicate ${cohort.name}`}
               >
                 {isDuplicating === cohort.cohort_id ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -466,16 +461,22 @@ export default function Cohorts({
       ) : (
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="flex items-center justify-between">
+          <div
+            className="flex items-center justify-between"
+            data-testid="cohorts-toolbar"
+          >
             <div className="flex flex-1 items-center space-x-2 flex-wrap">
               <div className="mb-2">
                 <Input
+                  data-testid="cohorts-search"
                   placeholder="Search cohorts..."
                   value={(nameColumn?.getFilterValue() as string) ?? ""}
                   onChange={(event) =>
                     nameColumn?.setFilterValue(event.target.value)
                   }
                   className="h-8 w-[150px] lg:w-[250px]"
+                  aria-label="Search cohorts by name"
+                  aria-controls="cohorts-grid"
                 />
               </div>
 
@@ -522,7 +523,12 @@ export default function Cohorts({
           </div>
 
           {/* Cards Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div
+            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            role="grid"
+            aria-label="cohorts grid"
+            data-testid="cohorts-grid"
+          >
             {table.getRowModel().rows.length ? (
               table
                 .getRowModel()
@@ -541,9 +547,14 @@ export default function Cohorts({
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          aria-labelledby="delete-cohort-title"
+          data-testid="dialog-delete-cohort"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Cohort</AlertDialogTitle>
+            <AlertDialogTitle id="delete-cohort-title">
+              Delete Cohort
+            </AlertDialogTitle>
             <AlertDialogDescription>
               <p>
                 Are you sure you want to delete the cohort "{deleteItem?.name}"?
@@ -552,11 +563,17 @@ export default function Cohorts({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              data-testid="btn-cancel-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
@@ -566,9 +583,14 @@ export default function Cohorts({
 
       {/* Leave Cohort Confirmation Dialog */}
       <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          aria-labelledby="leave-cohort-title"
+          data-testid="dialog-leave-cohort"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave Cohort</AlertDialogTitle>
+            <AlertDialogTitle id="leave-cohort-title">
+              Leave Cohort
+            </AlertDialogTitle>
             <AlertDialogDescription>
               <p>
                 Are you sure you want to leave the cohort "{leaveItem?.name}"?
@@ -577,11 +599,17 @@ export default function Cohorts({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLeaving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isLeaving}
+              data-testid="btn-cancel-leave"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleLeave}
               disabled={isLeaving}
               className="bg-orange-600 hover:bg-orange-700 text-white"
+              data-testid="btn-confirm-leave"
             >
               {isLeaving ? "Leaving..." : "Leave Cohort"}
             </AlertDialogAction>

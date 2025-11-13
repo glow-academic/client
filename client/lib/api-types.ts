@@ -4283,6 +4283,18 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
+            /** Profile Options */
+            profile_options: {
+                [key: string]: string;
+            }[];
+            /** Simulation Options */
+            simulation_options: {
+                [key: string]: string;
+            }[];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
         };
         /** ContextData */
         "ContextData-Input": {
@@ -6560,12 +6572,20 @@ export interface components {
         ParametersListResponse: {
             /** Parameters */
             parameters: components["schemas"]["app__api__v3__parameters__list__ParameterItem"][];
+            /** Scenario Mapping */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
             /** Department Mapping */
             department_mapping: {
                 [key: string]: {
                     [key: string]: unknown;
                 };
             };
+            /** Scenario Options */
+            scenario_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * PersonaDetailDefaultRequest
@@ -7234,6 +7254,18 @@ export interface components {
         ProvidersListResponse: {
             /** Providers */
             providers: components["schemas"]["ProviderWithModels"][];
+            /** Provider Options */
+            provider_options: {
+                [key: string]: string;
+            }[];
+            /** Custom Model Options */
+            custom_model_options: {
+                [key: string]: string;
+            }[];
+            /** Status Options */
+            status_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * QueryDataRequest
@@ -7497,6 +7529,8 @@ export interface components {
             points: number;
             /** Passpoints */
             passPoints: number;
+            /** Passpercentage */
+            passPercentage: number;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Active Simulation Count */
@@ -8217,6 +8251,22 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Rubric Options */
+            rubric_options: {
+                [key: string]: string;
+            }[];
+            /** Cohort Options */
+            cohort_options: {
+                [key: string]: string;
+            }[];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * SkillPackage
@@ -9655,6 +9705,8 @@ export interface components {
             active: boolean;
             /** Department Ids */
             department_ids: string[] | null;
+            /** Scenario Ids */
+            scenario_ids: string[];
             /** Num Items */
             num_items: number;
             /** Sample Items */
@@ -10563,6 +10615,8 @@ export interface components {
             rubric_id: string;
             /** Num Cohorts */
             num_cohorts: number;
+            /** Cohort Ids */
+            cohort_ids: string[];
         };
         /**
          * StandardGroupMappingItem

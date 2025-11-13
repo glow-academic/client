@@ -2,6 +2,7 @@
 
 import json
 import os
+from collections import Counter
 from typing import Annotated
 
 import asyncpg  # type: ignore
@@ -45,9 +46,39 @@ class CohortsListResponse(BaseModel):
     profile_mapping: dict[str, ProfileMappingItem]
     simulation_mapping: dict[str, SimulationMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
+    # UI-ready facet options (precomputed on server)
+    profile_options: list[dict[str, str]]  # Array of {value, label}
+    simulation_options: list[dict[str, str]]  # Array of {value, label}
+    department_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
+
+
+def disambiguate_profiles(pmap: dict[str, ProfileMappingItem]) -> list[dict[str, str]]:
+    """Build profile options with disambiguation for duplicate names."""
+    names = Counter([v.name for v in pmap.values()])
+    out = []
+    for pid, v in pmap.items():
+        label = v.name
+        if names[v.name] > 1:
+            # Use last 8 characters of UUID for disambiguation
+            label = f"{v.name} ({pid[-8:]})"
+        out.append({"value": pid, "label": label})
+    return out
+
+
+def disambiguate_simulations(smap: dict[str, SimulationMappingItem]) -> list[dict[str, str]]:
+    """Build simulation options with disambiguation for duplicate names."""
+    names = Counter([v.name for v in smap.values()])
+    out = []
+    for sid, v in smap.items():
+        label = v.name
+        if names[v.name] > 1:
+            # Use last 8 characters of UUID for disambiguation
+            label = f"{v.name} ({sid[-8:]})"
+        out.append({"value": sid, "label": label})
+    return out
 
 
 @router.post("/list", response_model=CohortsListResponse)
@@ -149,11 +180,21 @@ async def get_cohorts_list(
                                 description=ddata.get("description", ""),
                             )
 
+        # Build facet options
+        profile_options = disambiguate_profiles(profile_mapping)
+        simulation_options = disambiguate_simulations(simulation_mapping)
+        department_options = [
+            {"value": did, "label": d.name or did} for (did, d) in department_mapping.items()
+        ]
+
         response_data = CohortsListResponse(
             cohorts=cohorts,
             profile_mapping=profile_mapping,
             simulation_mapping=simulation_mapping,
             department_mapping=department_mapping,
+            profile_options=profile_options,
+            simulation_options=simulation_options,
+            department_options=department_options,
         )
         
         # Cache response

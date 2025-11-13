@@ -10,22 +10,25 @@ import Agents from "@/components/agents/Agents";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentsListIn = InputOf<"/api/v3/agents/list", "post">;
 type AgentsListOut = OutputOf<"/api/v3/agents/list", "post">;
 type DuplicateAgentIn = InputOf<"/api/v3/agents/duplicate", "post">;
 type DuplicateAgentOut = OutputOf<"/api/v3/agents/duplicate", "post">;
 type DeleteAgentIn = InputOf<"/api/v3/agents/delete", "post">;
 type DeleteAgentOut = OutputOf<"/api/v3/agents/delete", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getAgentsList = cache(
-  async (input: AgentsListIn): Promise<AgentsListOut> => {
-    return api.post("/agents/list", input);
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes profileId so entries are per-user.
+ * Tags allow revalidateTag("agents") to invalidate.
+ */
+const getAgentsList = unstable_cache(
+  async (profileId: string): Promise<AgentsListOut> => {
+    return api.post("/agents/list", { body: { profileId } });
   },
+  ["agents:list"],
+  { tags: ["agents"] }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -35,6 +38,10 @@ export async function duplicateAgent(
   "use server";
   const out = await api.post("/agents/duplicate", input);
   revalidateTag("agents");
+  const agentId = input.body?.agentId;
+  if (agentId) {
+    revalidateTag(`agent:${agentId}`);
+  }
   return out;
 }
 
@@ -44,6 +51,10 @@ export async function deleteAgent(
   "use server";
   const out = await api.post("/agents/delete", input);
   revalidateTag("agents");
+  const agentId = input.body?.agentId;
+  if (agentId) {
+    revalidateTag(`agent:${agentId}`);
+  }
   return out;
 }
 
@@ -57,12 +68,10 @@ export default async function AgentsPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side
-  const listData = await getAgentsList({
-    body: { profileId },
-  });
+  const listData = await getAgentsList(profileId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="agents-index">
       <Agents
         listData={listData}
         duplicateAgentAction={duplicateAgent}

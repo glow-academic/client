@@ -11,8 +11,7 @@ import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type SimulationDetailIn = InputOf<"/api/v3/simulations/detail", "post">;
@@ -34,18 +33,23 @@ type UpdateSimulationIn = InputOf<"/api/v3/simulations/update", "post">;
 type UpdateSimulationOut = OutputOf<"/api/v3/simulations/update", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getSimulation = cache(
-  async (input: SimulationDetailIn): Promise<SimulationDetailOut> => {
-    return api.post("/simulations/detail", input);
-  },
-);
+const getSimulation = (simulationId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<SimulationDetailOut> => {
+      return api.post("/simulations/detail", {
+        body: { simulationId, profileId },
+      });
+    },
+    ["simulations:detail", simulationId],
+    { tags: ["simulations", `simulation:${simulationId}`] }
+  );
 
-const getSimulationDefault = cache(
-  async (
-    input: SimulationDetailDefaultIn,
-  ): Promise<SimulationDetailDefaultOut> => {
-    return api.post("/simulations/detail-default", input);
+const getSimulationDefault = unstable_cache(
+  async (profileId: string): Promise<SimulationDetailDefaultOut> => {
+    return api.post("/simulations/detail-default", { body: { profileId } });
   },
+  ["simulations:detail-default"],
+  { tags: ["simulations"] }
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -58,9 +62,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const simulation = await getSimulation({
-      body: { simulationId, profileId },
-    });
+    const simulation = await getSimulation(simulationId)(profileId);
     return {
       title: `${simulation?.name || "Simulation"}`,
       description: `${simulation?.name || "Simulation"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -89,6 +91,10 @@ export async function updateSimulation(
   "use server";
   const out = await api.post("/simulations/update", input);
   revalidateTag("simulations");
+  const simulationId = input.body?.simulationId;
+  if (simulationId) {
+    revalidateTag(`simulation:${simulationId}`);
+  }
   return out;
 }
 
@@ -102,22 +108,18 @@ export default async function EditSimulationPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch data based on mode (edit vs create)
-  const [simulationDetail, simulationDetailDefault] = await Promise.all([
-    simulationId
-      ? getSimulation({ body: { simulationId, profileId } }).catch(() => null)
-      : Promise.resolve(null),
-    !simulationId
-      ? getSimulationDefault({ body: { profileId } }).catch(() => null)
-      : Promise.resolve(null),
-  ]);
+  // Fetch simulation detail (cached, won't duplicate with metadata)
+  const simulationDetail = await getSimulation(simulationId)(profileId);
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="simulation-edit"
+      data-simulation-id={simulationId}
+    >
       <Simulation
         simulationId={simulationId}
-        {...(simulationDetail && { simulationDetail })}
-        {...(simulationDetailDefault && { simulationDetailDefault })}
+        simulationDetail={simulationDetail}
         createSimulationAction={createSimulation}
         updateSimulationAction={updateSimulation}
       />

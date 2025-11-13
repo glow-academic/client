@@ -285,6 +285,7 @@ export default function Provider({
           {formData.name !== undefined ? (
             <Input
               id="name"
+              data-testid="input-provider-name"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="Enter provider name"
@@ -302,6 +303,7 @@ export default function Provider({
           {formData.description !== undefined ? (
             <Textarea
               id="description"
+              data-testid="input-provider-description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Enter provider description"
@@ -322,6 +324,7 @@ export default function Provider({
               <div className="flex gap-2">
                 <Input
                   id="apiKey"
+                  data-testid="input-provider-api-key"
                   type={showApiKey ? "text" : "password"}
                   value={
                     isEditMode
@@ -349,6 +352,7 @@ export default function Provider({
                       type="button"
                       variant="outline"
                       size="sm"
+                      data-testid="btn-toggle-api-key"
                       onClick={handleToggleApiKey}
                       disabled={isDecrypting}
                       className="px-3"
@@ -365,6 +369,7 @@ export default function Provider({
                       type="button"
                       variant="outline"
                       size="sm"
+                      data-testid="btn-edit-api-key"
                       onClick={handleStartEditApiKey}
                       className="px-3"
                     >
@@ -405,6 +410,7 @@ export default function Provider({
           {formData.baseUrl !== undefined ? (
             <Input
               id="baseUrl"
+              data-testid="input-provider-base-url"
               value={formData.baseUrl}
               onChange={(e) => handleInputChange("baseUrl", e.target.value)}
               placeholder="https://api.custom-provider.com/v1"
@@ -428,6 +434,7 @@ export default function Provider({
           </Button>
           <Button
             type="submit"
+            data-testid="btn-submit-provider"
             disabled={isSubmitting}
             className="min-w-[120px]"
           >

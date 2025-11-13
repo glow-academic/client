@@ -11,8 +11,7 @@ import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ParameterDetailDefaultIn = InputOf<
@@ -28,13 +27,15 @@ type CreateParameterOut = OutputOf<"/api/v3/parameters/create", "post">;
 type UpdateParameterIn = InputOf<"/api/v3/parameters/update", "post">;
 type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getParameterDefault = cache(
-  async (
-    input: ParameterDetailDefaultIn,
-  ): Promise<ParameterDetailDefaultOut> => {
-    return api.post("/parameters/detail-default", input);
+/** ---- Cached fetch with Next tags ---- */
+const getParameterDefault = unstable_cache(
+  async (profileId: string): Promise<ParameterDetailDefaultOut> => {
+    return api.post("/parameters/detail-default", {
+      body: { profileId },
+    });
   },
+  ["parameters:detail-default"],
+  { tags: ["parameters"] }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -66,12 +67,10 @@ export default async function NewParameterPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch default parameter detail server-side
-  const parameterDetailDefault = await getParameterDefault({
-    body: { profileId },
-  });
+  const parameterDetailDefault = await getParameterDefault(profileId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="parameter-new">
       <Parameter
         mode="create"
         parameterDetailDefault={parameterDetailDefault}

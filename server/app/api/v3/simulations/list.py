@@ -6,7 +6,8 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+from app.utils.schema import (CohortMapping, CohortMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
                               RubricMapping, RubricMappingItem,
                               ScenarioMapping, ScenarioMappingItem)
 from app.utils.sql_helper import load_sql
@@ -37,6 +38,7 @@ class SimulationItem(BaseModel):
     scenario_ids: list[str]
     rubric_id: str
     num_cohorts: int  # Number of cohorts using this simulation
+    cohort_ids: list[str]  # Array of cohort IDs linked to this simulation
 
 
 class SimulationsListResponse(BaseModel):
@@ -46,6 +48,11 @@ class SimulationsListResponse(BaseModel):
     scenario_mapping: ScenarioMapping
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
+    cohort_mapping: CohortMapping
+    # UI-ready facet options (precomputed on server)
+    rubric_options: list[dict[str, str]]  # Array of {value, label}
+    cohort_options: list[dict[str, str]]  # Array of {value, label}
+    department_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
@@ -84,6 +91,7 @@ async def get_simulations_list(
         scenario_mapping: ScenarioMapping = {}
         rubric_mapping: RubricMapping = {}
         department_mapping: DepartmentMapping = {}
+        cohort_mapping: CohortMapping = {}
 
         # Parse mappings from first row (same across all rows)
         if result:
@@ -131,12 +139,25 @@ async def get_simulations_list(
                             description=ddata.get("description", ""),
                         )
 
+            # Parse cohort_mapping from JSONB
+            cohort_mapping_data = first_row.get("cohort_mapping")
+            if isinstance(cohort_mapping_data, str):
+                cohort_mapping_data = json.loads(cohort_mapping_data)
+            if cohort_mapping_data and isinstance(cohort_mapping_data, dict):
+                for cid, cdata in cohort_mapping_data.items():
+                    if isinstance(cdata, dict):
+                        cohort_mapping[cid] = CohortMappingItem(
+                            name=cdata.get("name", ""),
+                            description=cdata.get("description", ""),
+                        )
+
         # Build simulation items
         for row in result:
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
             dept_ids = None
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
+            cohort_ids = [str(cid) for cid in (row.get("cohort_ids") or [])]
 
             simulations.append(
                 SimulationItem(
@@ -153,14 +174,31 @@ async def get_simulations_list(
                     scenario_ids=scenario_ids,
                     rubric_id=str(row["rubric_id"]) if row["rubric_id"] else "",
                     num_cohorts=row["num_cohorts"],
+                    cohort_ids=cohort_ids,
                 )
             )
+
+        # Build facet options
+        rubric_options = [
+            {"value": rid, "label": r.name} for (rid, r) in rubric_mapping.items()
+        ]
+        cohort_options = [
+            {"value": cid, "label": c.name} for (cid, c) in cohort_mapping.items()
+        ]
+        department_options = [
+            {"value": did, "label": d.name or did}
+            for (did, d) in department_mapping.items()
+        ]
 
         response_data = SimulationsListResponse(
             simulations=simulations,
             scenario_mapping=scenario_mapping,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
+            cohort_mapping=cohort_mapping,
+            rubric_options=rubric_options,
+            cohort_options=cohort_options,
+            department_options=department_options,
         )
         
         # Cache response

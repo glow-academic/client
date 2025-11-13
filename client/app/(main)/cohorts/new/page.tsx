@@ -11,8 +11,7 @@ import Cohort from "@/components/cohorts/Cohort";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 // Import staff actions from staff page
 import {
@@ -31,11 +30,15 @@ type CohortDetailDefaultOut = OutputOf<
 type CreateCohortIn = InputOf<"/api/v3/cohorts/create", "post">;
 type CreateCohortOut = OutputOf<"/api/v3/cohorts/create", "post">;
 
-/** ---- Cached fetch ---- */
-const getCohortDefault = cache(
-  async (input: CohortDetailDefaultIn): Promise<CohortDetailDefaultOut> => {
-    return api.post("/cohorts/detail-default", input);
+/** ---- Cached fetch with Next tags ----
+ * Per-profile cache entry tagged as 'cohorts' so create() can invalidate.
+ */
+const getCohortDefault = unstable_cache(
+  async (profileId: string): Promise<CohortDetailDefaultOut> => {
+    return api.post("/cohorts/detail-default", { body: { profileId } });
   },
+  ["cohorts:detail-default"],
+  { tags: ["cohorts"] }
 );
 
 /** ---- Strongly-typed server action ---- */
@@ -58,7 +61,7 @@ export default async function NewCohortPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch cohort default data (for dropdowns and defaults)
-  const cohortDetailDefault = await getCohortDefault({ body: { profileId } });
+  const cohortDetailDefault = await getCohortDefault(profileId);
 
   // Fetch initial search data (empty query) for SearchExistingStaffModal
   const initialSearchData = await searchStaff({
@@ -80,7 +83,11 @@ export default async function NewCohortPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="cohort-new"
+      aria-label="Create new cohort page"
+    >
       <Cohort
         cohortDetailDefault={cohortDetailDefault}
         createCohortAction={createCohort}

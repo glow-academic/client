@@ -38,6 +38,10 @@ class ProviderWithModels(BaseModel):
 
 class ProvidersListResponse(BaseModel):
     providers: list[ProviderWithModels]
+    # UI-ready facet options (precomputed on server)
+    provider_options: list[dict[str, str]]  # Array of {value, label}
+    custom_model_options: list[dict[str, str]]  # Array of {value, label}
+    status_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
@@ -114,7 +118,25 @@ async def get_providers_list(
             )
             providers.append(provider)
 
-        response_data = ProvidersListResponse(providers=providers)
+        # Build facet options server-side
+        provider_options = [
+            {"value": p.provider_id, "label": p.name} for p in providers
+        ]
+        custom_model_options = [
+            {"value": "true", "label": "Custom Models"},
+            {"value": "false", "label": "Standard Models"},
+        ]
+        status_options = [
+            {"value": "true", "label": "Active"},
+            {"value": "false", "label": "Inactive"},
+        ]
+
+        response_data = ProvidersListResponse(
+            providers=providers,
+            provider_options=provider_options,
+            custom_model_options=custom_model_options,
+            status_options=status_options,
+        )
         
         # Cache response
         await set_cached(

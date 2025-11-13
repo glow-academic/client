@@ -11,8 +11,7 @@ import Cohort from "@/components/cohorts/Cohort";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 // Import staff actions from staff page
 import {
@@ -31,11 +30,16 @@ type UpdateCohortOut = OutputOf<"/api/v3/cohorts/update", "post">;
 type CohortStaffItem = CohortDetailOut["staff"][number];
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getCohort = cache(
-  async (input: CohortDetailIn): Promise<CohortDetailOut> => {
-    return api.post("/cohorts/detail", input);
-  },
-);
+const getCohort = (cohortId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<CohortDetailOut> => {
+      return api.post("/cohorts/detail", {
+        body: { cohortId, profileId },
+      });
+    },
+    ["cohorts:detail", cohortId],
+    { tags: ["cohorts", `cohort:${cohortId}`] }
+  );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -47,7 +51,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const cohort = await getCohort({ body: { cohortId, profileId } });
+    const cohort = await getCohort(cohortId)(profileId);
     return {
       title: `${cohort?.title || "Cohort"} Edit`,
       description: `${cohort ? `${cohort.title} ${cohort.description || ""}` : "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -67,6 +71,10 @@ export async function updateCohort(
   "use server";
   const out = await api.post("/cohorts/update", input);
   revalidateTag("cohorts");
+  const cohortId = input.body?.cohortId;
+  if (cohortId) {
+    revalidateTag(`cohort:${cohortId}`);
+  }
   return out;
 }
 
@@ -81,7 +89,7 @@ export default async function CohortEditPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch cohort detail (cached, won't duplicate with metadata)
-  const cohortDetail = await getCohort({ body: { cohortId, profileId } });
+  const cohortDetail = await getCohort(cohortId)(profileId);
 
   // Fetch initial search data (empty query) for SearchExistingStaffModal
   const initialSearchData = await searchStaff({
@@ -103,7 +111,11 @@ export default async function CohortEditPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="cohort-edit"
+      data-cohort-id={cohortId}
+    >
       <Cohort
         cohortId={cohortId}
         cohortDetail={cohortDetail}

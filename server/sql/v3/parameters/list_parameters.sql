@@ -20,6 +20,16 @@ parameter_all_scenario_links AS (
     JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
     GROUP BY pi.parameter_id
 ),
+parameter_scenarios AS (
+    SELECT 
+        pi.parameter_id,
+        ARRAY_AGG(DISTINCT spi.scenario_id::text ORDER BY spi.scenario_id) as scenario_ids,
+        COUNT(DISTINCT spi.scenario_id) as num_scenarios
+    FROM parameter_items pi
+    JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+    WHERE spi.active = true
+    GROUP BY pi.parameter_id
+),
 parameter_item_counts AS (
     SELECT 
         parameter_id,
@@ -73,6 +83,33 @@ all_department_ids AS (
     UNION
     SELECT department_id FROM user_departments
 ),
+all_scenario_ids AS (
+    SELECT DISTINCT unnest(scenario_ids)::uuid as scenario_id
+    FROM parameter_scenarios
+    WHERE scenario_ids IS NOT NULL
+),
+scenario_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            s.id::text,
+            jsonb_build_object(
+                'name', s.name,
+                'description', COALESCE(sps.problem_statement, ''),
+                'active', s.active,
+                'persona_id', NULL,
+                'persona_mapping', '{}'::jsonb,
+                'document_mapping', '{}'::jsonb,
+                'parameter_item_mapping', '{}'::jsonb,
+                'parameter_item_ids', ARRAY[]::text[],
+                'document_ids', ARRAY[]::text[]
+            )
+        ) FILTER (WHERE s.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_scenario_ids asi
+    LEFT JOIN scenarios s ON s.id = asi.scenario_id
+    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+),
 department_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
@@ -96,9 +133,11 @@ SELECT
     p.updated_at,
     COALESCE(pidd.department_ids, NULL) as department_ids,
     COALESCE(pic.num_items, 0) as num_items,
+    COALESCE(ps.scenario_ids, ARRAY[]::text[]) as scenario_ids,
     COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
     COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
     COALESCE(psi.sample_items, '[]'::jsonb) as sample_items_json,
+    sm.mapping as scenario_mapping,
     dmd.mapping as department_mapping,
     CASE 
         WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
@@ -118,13 +157,15 @@ FROM parameters p
 LEFT JOIN parameter_item_departments_for_filter pidf ON pidf.parameter_id = p.id
 LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_id = p.id
 LEFT JOIN parameter_item_counts pic ON pic.parameter_id = p.id
+LEFT JOIN parameter_scenarios ps ON ps.parameter_id = p.id
 LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
 LEFT JOIN parameter_all_scenario_links pasl_all ON pasl_all.parameter_id = p.id
 LEFT JOIN parameter_sample_items psi ON psi.parameter_id = p.id
 CROSS JOIN user_profile up
+CROSS JOIN scenario_mapping_data sm
 CROSS JOIN department_mapping_data dmd
 GROUP BY p.id, p.name, p.description, p.numerical, p.active, p.updated_at, pidd.department_ids, pic.num_items, 
-         pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, dmd.mapping
+         ps.scenario_ids, pasl.active_scenario_count, pasl_all.total_scenario_links, psi.sample_items, up.role, sm.mapping, dmd.mapping
 HAVING 
     -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
     COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0

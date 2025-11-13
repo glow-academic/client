@@ -238,7 +238,10 @@ export default function Rubric({
   }
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page={`rubric-${isEditMode ? "edit" : "new"}`}
+    >
       {/* Rubric Header - Use RubricDetails component for both create and edit modes */}
       <RubricDetails
         rubric={currentRubric as RubricItem}

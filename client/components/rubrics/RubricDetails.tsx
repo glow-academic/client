@@ -70,6 +70,9 @@ export default function RubricDetails({
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Unified update helper - merges updates with existing data
+  // Note: This client-side fetch is necessary because the server update endpoint
+  // requires the full standard_groups array. For metadata-only updates, we need
+  // to fetch current rubric to preserve existing standard groups.
   const updateRubricUnified = async (params: {
     rubricId: string;
     profileId: string;
@@ -332,6 +335,7 @@ export default function RubricDetails({
               className="text-2xl font-bold"
               placeholder="Rubric Name"
               disabled={isCreating || isUpdating || isReadonly}
+              data-testid="input-rubric-name"
             />
           </div>
           <div className="space-y-2">
@@ -342,6 +346,7 @@ export default function RubricDetails({
               onChange={(e) => handleInputChange("description", e.target.value)}
               placeholder="Rubric Description"
               disabled={isCreating || isUpdating || isReadonly}
+              data-testid="input-rubric-description"
             />
           </div>
 
@@ -356,6 +361,7 @@ export default function RubricDetails({
               placeholder="All Departments"
               disabled={isCreating || isUpdating || isReadonly}
               multiSelect={true}
+              triggerProps={{ "data-testid": "picker-department" }}
             />
           </div>
 
@@ -377,6 +383,7 @@ export default function RubricDetails({
                     handleInputChange("active", checked)
                   }
                   disabled={isCreating || isUpdating || isReadonly}
+                  data-testid="switch-rubric-active"
                 />
               </div>
               <p className="text-xs text-muted-foreground pl-5">
@@ -428,12 +435,14 @@ export default function RubricDetails({
               variant="outline"
               onClick={handleCancel}
               disabled={isCreating || isUpdating}
+              data-testid="btn-cancel-rubric"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
               disabled={isCreating || isUpdating || isReadonly}
+              data-testid="btn-save-rubric"
             >
               {isCreating || isUpdating
                 ? isCreateMode
@@ -451,6 +460,7 @@ export default function RubricDetails({
               size="sm"
               onClick={() => setIsEditing(true)}
               disabled={isReadonly}
+              data-testid="btn-edit-rubric"
             >
               <Edit className="h-4 w-4 mr-2" />
               Edit

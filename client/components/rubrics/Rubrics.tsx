@@ -115,27 +115,18 @@ export default function Rubrics({
     }));
   }, [departmentMapping]);
 
-  const passPointsOptions = [
-    { value: "0-25", label: "0-25 points" },
-    { value: "26-50", label: "26-50 points" },
-    { value: "51-75", label: "51-75 points" },
-    { value: "76-100", label: "76-100 points" },
-    { value: "100+", label: "100+ points" },
-  ];
-
-  const totalPointsOptions = [
-    { value: "0-25", label: "0-25 points" },
-    { value: "26-50", label: "26-50 points" },
-    { value: "51-75", label: "51-75 points" },
-    { value: "76-100", label: "76-100 points" },
-    { value: "100+", label: "100+ points" },
-  ];
-
   const passPercentageOptions = [
     { value: "0-25", label: "0-25%" },
     { value: "26-50", label: "26-50%" },
     { value: "51-75", label: "51-75%" },
     { value: "76-100", label: "76-100%" },
+  ];
+
+  const simulationsOptions = [
+    { value: "0", label: "0 simulations" },
+    { value: "1-5", label: "1-5 simulations" },
+    { value: "6-10", label: "6-10 simulations" },
+    { value: "11+", label: "11+ simulations" },
   ];
 
   // Column definitions for TanStack Table
@@ -152,69 +143,16 @@ export default function Rubrics({
           return name.includes(query) || desc.includes(query);
         },
       },
-      // Hidden faceting column for Pass Points
-      {
-        id: "passPoints",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: (typeof rubrics)[number]) => row.passPoints,
-        filterFn: (row, _id, value: string[]) => {
-          const passPoints = Number(row.getValue("passPoints"));
-          return value.some((range) => {
-            if (range === "100+") return passPoints >= 100;
-            const [min, max] = range.split("-").map(Number);
-            return (
-              min !== undefined &&
-              max !== undefined &&
-              passPoints >= min &&
-              passPoints <= max
-            );
-          });
-        },
-      },
-      // Hidden faceting column for Total Points
-      {
-        id: "points",
-        header: () => null,
-        cell: () => null,
-        enableHiding: true,
-        enableSorting: false,
-        accessorFn: (row: (typeof rubrics)[number]) => row.points,
-        filterFn: (row, _id, value: string[]) => {
-          const points = Number(row.getValue("points"));
-          return value.some((range) => {
-            if (range === "100+") return points >= 100;
-            const [min, max] = range.split("-").map(Number);
-            return (
-              min !== undefined &&
-              max !== undefined &&
-              points >= min &&
-              points <= max
-            );
-          });
-        },
-      },
-      // Hidden faceting column for Pass Percentage (computed)
+      // Hidden faceting column for Pass Percentage (server-provided)
       {
         id: "passPercentage",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof rubrics)[number]) => {
-          const points = row.points;
-          if (!points || points === 0) return 0;
-          return Math.round((row.passPoints / points) * 100);
-        },
+        accessorFn: (row: (typeof rubrics)[number]) => row.passPercentage,
         filterFn: (row, _id, value: string[]) => {
-          const percentage =
-            row.original.points > 0
-              ? Math.round(
-                  (row.original.passPoints / row.original.points) * 100,
-                )
-              : 0;
+          const percentage = row.original.passPercentage;
           return value.some((range) => {
             const [min, max] = range.split("-").map(Number);
             return (
@@ -223,6 +161,28 @@ export default function Rubrics({
               percentage >= min &&
               percentage <= max
             );
+          });
+        },
+      },
+      // Hidden faceting column for Simulations
+      {
+        id: "simulations",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof rubrics)[number]) =>
+          row.active_simulation_count,
+        filterFn: (row, _id, value: string[]) => {
+          const count = Number(row.getValue("simulations"));
+          return value.some((range) => {
+            if (range === "0") return count === 0;
+            if (range === "1-5")
+              return count >= 1 && count <= 5;
+            if (range === "6-10")
+              return count >= 6 && count <= 10;
+            if (range === "11+") return count >= 11;
+            return false;
           });
         },
       },
@@ -317,16 +277,17 @@ export default function Rubrics({
     router.push(`/management/rubrics/r/${id}`);
   };
 
-  const getPassPercentage = (rubric: (typeof rubrics)[number]) => {
-    if (!rubric.points || rubric.points === 0) return 0;
-    return Math.round((rubric.passPoints / rubric.points) * 100);
-  };
 
   const renderRubricCard = (rubric: (typeof rubrics)[number]) => {
-    const passPercentage = getPassPercentage(rubric);
+    const passPercentage = rubric.passPercentage;
 
     return (
-      <Card key={rubric.rubric_id} className="w-full">
+      <Card
+        key={rubric.rubric_id}
+        className="w-full"
+        data-testid="rubric-card"
+        data-rubric-id={rubric.rubric_id}
+      >
         {/* Header */}
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
@@ -355,6 +316,7 @@ export default function Rubrics({
                 <Button
                   variant="outline"
                   onClick={() => handleEdit(rubric.rubric_id)}
+                  data-testid="btn-edit-rubric"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -365,6 +327,7 @@ export default function Rubrics({
                   size="sm"
                   onClick={() => handleEdit(rubric.rubric_id)}
                   aria-label={`View ${rubric.name}`}
+                  data-testid="btn-view-rubric"
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -374,6 +337,7 @@ export default function Rubrics({
                   variant="outline"
                   onClick={() => handleDuplicate(rubric)}
                   disabled={isDuplicating === rubric.rubric_id}
+                  data-testid="btn-duplicate-rubric"
                 >
                   {isDuplicating === rubric.rubric_id ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
@@ -389,6 +353,7 @@ export default function Rubrics({
                   onClick={() =>
                     handleDeleteClick(rubric.rubric_id, rubric.name)
                   }
+                  data-testid="btn-delete-rubric"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
@@ -412,17 +377,19 @@ export default function Rubrics({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const passPointsColumn = table.getColumn("passPoints");
-  const pointsColumn = table.getColumn("points");
   const passPercentageColumn = table.getColumn("passPercentage");
   const departmentsColumn = table.getColumn("departments");
+  const simulationsColumn = table.getColumn("simulations");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
     <div className="space-y-6">
       <div className="space-y-4" data-testid="rubrics-data-table">
         {/* Toolbar */}
-        <div className="flex items-center justify-between">
+        <div
+          className="flex items-center justify-between"
+          data-testid="rubrics-toolbar"
+        >
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
             <div className="mb-2">
               <Input
@@ -432,26 +399,11 @@ export default function Rubrics({
                   nameColumn?.setFilterValue(event.target.value)
                 }
                 className="h-8 w-[150px] lg:w-[250px]"
+                data-testid="rubrics-search"
               />
             </div>
 
             <div className="flex items-center space-x-2 flex-wrap mb-2">
-              {passPointsColumn && passPointsOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={passPointsColumn}
-                  title="Pass Points"
-                  options={passPointsOptions}
-                />
-              )}
-
-              {pointsColumn && totalPointsOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={pointsColumn}
-                  title="Total Points"
-                  options={totalPointsOptions}
-                />
-              )}
-
               {passPercentageColumn && passPercentageOptions.length > 0 && (
                 <DataTableFacetedFilter
                   column={passPercentageColumn}
@@ -465,6 +417,14 @@ export default function Rubrics({
                   column={departmentsColumn}
                   title="Department"
                   options={departmentOptions}
+                />
+              )}
+
+              {simulationsColumn && simulationsOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={simulationsColumn}
+                  title="Simulations"
+                  options={simulationsOptions}
                 />
               )}
 
@@ -483,7 +443,7 @@ export default function Rubrics({
         </div>
 
         {/* Rubrics cards */}
-        <div className="space-y-4">
+        <div className="space-y-4" data-testid="rubrics-grid">
           {table.getRowModel().rows.length ? (
             table
               .getRowModel()
@@ -501,7 +461,7 @@ export default function Rubrics({
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="dialog-delete-rubric">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Rubric</AlertDialogTitle>
             <AlertDialogDescription>
@@ -512,11 +472,17 @@ export default function Rubrics({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              data-testid="btn-cancel-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

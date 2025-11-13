@@ -10,8 +10,7 @@ import Parameters from "@/components/parameters/Parameters";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ParametersListIn = InputOf<"/api/v3/parameters/list", "post">;
@@ -26,11 +25,16 @@ type CreateParameterItemOut = OutputOf<
   "post"
 >;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getParametersList = cache(
-  async (input: ParametersListIn): Promise<ParametersListOut> => {
-    return api.post("/parameters/list", input);
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes profileId so entries are per-user.
+ * Tags allow revalidateTag("parameters") to invalidate.
+ */
+const getParametersList = unstable_cache(
+  async (profileId: string): Promise<ParametersListOut> => {
+    return api.post("/parameters/list", { body: { profileId } });
   },
+  ["parameters:list"],
+  { tags: ["parameters"] }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -40,6 +44,10 @@ export async function duplicateParameter(
   "use server";
   const out = await api.post("/parameters/duplicate", input);
   revalidateTag("parameters");
+  const parameterId = input.body?.parameterId;
+  if (parameterId) {
+    revalidateTag(`parameter:${parameterId}`);
+  }
   return out;
 }
 
@@ -49,6 +57,10 @@ export async function deleteParameter(
   "use server";
   const out = await api.post("/parameters/delete", input);
   revalidateTag("parameters");
+  const parameterId = input.body?.parameterId;
+  if (parameterId) {
+    revalidateTag(`parameter:${parameterId}`);
+  }
   return out;
 }
 
@@ -71,12 +83,10 @@ export default async function ContextPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side
-  const listData = await getParametersList({
-    body: { profileId },
-  });
+  const listData = await getParametersList(profileId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="parameters-index">
       <Parameters
         listData={listData}
         duplicateParameterAction={duplicateParameter}

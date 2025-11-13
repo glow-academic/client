@@ -760,6 +760,7 @@ export default function Cohort({
               placeholder="Enter cohort title"
               className={errors.title ? "border-destructive" : ""}
               disabled={isReadonly}
+              data-testid="input-cohort-title"
             />
           ) : null}
           {errors.title && (
@@ -777,6 +778,7 @@ export default function Cohort({
               placeholder="Enter cohort description (optional)"
               rows={3}
               disabled={isReadonly}
+              data-testid="input-cohort-description"
             />
           ) : null}
         </div>
@@ -793,6 +795,7 @@ export default function Cohort({
               placeholder="All Departments"
               disabled={isReadonly}
               multiSelect={true}
+              triggerProps={{ "data-testid": "picker-department" }}
             />
           ) : null}
         </div>
@@ -816,6 +819,7 @@ export default function Cohort({
                     handleInputChange("active", checked)
                   }
                   disabled={isReadonly}
+                  data-testid="switch-cohort-active"
                 />
               ) : null}
             </div>
@@ -841,6 +845,7 @@ export default function Cohort({
                   placeholder="Add simulation"
                   showLabel={false}
                   buttonClassName="w-48"
+                  triggerProps={{ "data-testid": "picker-simulation" }}
                 />
               </div>
             )}
@@ -902,6 +907,8 @@ export default function Cohort({
                     }
                     onDragOver={handleDragOver}
                     onDrop={(e) => !isReadonly && handleDrop(e, simulationId)}
+                    data-testid="simulation-card"
+                    data-simulation-id={simulationId}
                   >
                     {/* Header: Title, Description, and Active Switch */}
                     <div className="flex items-start justify-between gap-2">
@@ -959,6 +966,7 @@ export default function Cohort({
                             variant="outline"
                             size="sm"
                             onClick={() => editSimulation(simulationId)}
+                            data-testid="btn-view-simulation-details"
                           >
                             View Details
                           </Button>
@@ -969,6 +977,7 @@ export default function Cohort({
                               variant="destructive"
                               size="sm"
                               onClick={() => removeSimulation(simulationId)}
+                              data-testid="btn-remove-simulation"
                             >
                               Remove
                             </Button>
@@ -1296,9 +1305,12 @@ export default function Cohort({
             open={showSingleRemoveDialog}
             onOpenChange={setShowSingleRemoveDialog}
           >
-            <AlertDialogContent>
+            <AlertDialogContent
+              aria-labelledby="remove-staff-title"
+              data-testid="dialog-remove-staff"
+            >
               <AlertDialogHeader>
-                <AlertDialogTitle>
+                <AlertDialogTitle id="remove-staff-title">
                   Remove {removeStaffMember?.first_name}{" "}
                   {removeStaffMember?.last_name}?
                 </AlertDialogTitle>
@@ -1308,7 +1320,7 @@ export default function Cohort({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel data-testid="btn-cancel-remove-staff">Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={() => {
@@ -1327,6 +1339,7 @@ export default function Cohort({
                     setShowSingleRemoveDialog(false);
                     setRemoveStaffMember(null);
                   }}
+                  data-testid="btn-confirm-remove-staff"
                 >
                   Stage Removal
                 </AlertDialogAction>
@@ -1341,9 +1354,12 @@ export default function Cohort({
             open={showBulkRemoveDialog}
             onOpenChange={setShowBulkRemoveDialog}
           >
-            <AlertDialogContent>
+            <AlertDialogContent
+              aria-labelledby="bulk-remove-staff-title"
+              data-testid="dialog-bulk-remove-staff"
+            >
               <AlertDialogHeader>
-                <AlertDialogTitle>
+                <AlertDialogTitle id="bulk-remove-staff-title">
                   Remove {selectedStaffIds.length} staff member
                   {selectedStaffIds.length !== 1 ? "s" : ""}?
                 </AlertDialogTitle>
@@ -1353,9 +1369,10 @@ export default function Cohort({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel data-testid="btn-cancel-bulk-remove-staff">Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-red-600 hover:bg-red-700 text-white"
+                  data-testid="btn-confirm-bulk-remove-staff"
                   onClick={() => {
                     if (selectedStaffIds.length === 0 || !cohortId) return;
 
@@ -1475,6 +1492,7 @@ export default function Cohort({
               variant="outline"
               type="button"
               onClick={() => router.push("/cohorts")}
+              data-testid="btn-cancel-cohort"
             >
               Back
             </Button>
@@ -1484,6 +1502,7 @@ export default function Cohort({
                 isSubmitting || isReadonly || (isEditMode && !hasChanges)
               }
               className="min-w-[120px]"
+              data-testid="btn-submit-cohort"
             >
               {isSubmitting ? (
                 <>
@@ -1502,9 +1521,12 @@ export default function Cohort({
 
       {/* Update Confirmation Dialog */}
       <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          aria-labelledby="update-cohort-title"
+          data-testid="dialog-update-cohort"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Update Cohort</AlertDialogTitle>
+            <AlertDialogTitle id="update-cohort-title">Update Cohort</AlertDialogTitle>
             <AlertDialogDescription>
               This cohort is currently used by{" "}
               {currentSimulationIds.length || 0} simulation
@@ -1528,13 +1550,14 @@ export default function Cohort({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
+            <AlertDialogCancel disabled={isSubmitting} data-testid="btn-cancel-update">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmUpdate}
               disabled={isSubmitting}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
+              data-testid="btn-confirm-update"
             >
               {isSubmitting ? "Updating..." : "Update"}
             </AlertDialogAction>

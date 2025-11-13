@@ -11,8 +11,7 @@ import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type RubricDetailIn = InputOf<"/api/v3/rubrics/detail", "post">;
@@ -27,16 +26,25 @@ type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
 type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getRubric = cache(
-  async (input: RubricDetailIn): Promise<RubricDetailOut> => {
-    return api.post("/rubrics/detail", input);
-  },
-);
+const getRubric = (rubricId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<RubricDetailOut> => {
+      return api.post("/rubrics/detail", {
+        body: { rubricId, profileId },
+      });
+    },
+    ["rubrics:detail", rubricId],
+    { tags: ["rubrics", `rubric:${rubricId}`] }
+  );
 
-const getRubricDefault = cache(
-  async (input: RubricDetailDefaultIn): Promise<RubricDetailDefaultOut> => {
-    return api.post("/rubrics/detail-default", input);
+const getRubricDefault = unstable_cache(
+  async (profileId: string): Promise<RubricDetailDefaultOut> => {
+    return api.post("/rubrics/detail-default", {
+      body: { profileId },
+    });
   },
+  ["rubrics:detail-default"],
+  { tags: ["rubrics"] }
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -49,7 +57,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const rubric = await getRubric({ body: { rubricId, profileId } });
+    const rubric = await getRubric(rubricId)(profileId);
     return {
       title: `${rubric?.name || "Rubric"}`,
       description: `${rubric ? `${rubric.name} ${rubric.description || ""}` : "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -75,15 +83,19 @@ export default async function EditRubricPage({
   // Fetch data based on mode (edit vs create)
   const [rubricDetail, rubricDetailDefault] = await Promise.all([
     rubricId
-      ? getRubric({ body: { rubricId, profileId } }).catch(() => null)
+      ? getRubric(rubricId)(profileId).catch(() => null)
       : Promise.resolve(null),
     !rubricId
-      ? getRubricDefault({ body: { profileId } }).catch(() => null)
+      ? getRubricDefault(profileId).catch(() => null)
       : Promise.resolve(null),
   ]);
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="rubric-edit"
+      data-rubric-id={rubricId}
+    >
       <Rubric
         rubricId={rubricId}
         {...(rubricDetail && { rubricDetail })}
@@ -101,6 +113,10 @@ export async function updateRubric(
   "use server";
   const out = await api.post("/rubrics/update", input);
   revalidateTag("rubrics");
+  const rubricId = input.body?.rubricId;
+  if (rubricId) {
+    revalidateTag(`rubric:${rubricId}`);
+  }
   return out;
 }
 

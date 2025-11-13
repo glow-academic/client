@@ -11,8 +11,7 @@ import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ParameterDetailIn = InputOf<"/api/v3/parameters/detail", "post">;
@@ -34,18 +33,25 @@ type UpdateParameterIn = InputOf<"/api/v3/parameters/update", "post">;
 type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getParameter = cache(
-  async (input: ParameterDetailIn): Promise<ParameterDetailOut> => {
-    return api.post("/parameters/detail", input);
-  },
-);
+const getParameter = (parameterId: string) =>
+  unstable_cache(
+    async (profileId: string): Promise<ParameterDetailOut> => {
+      return api.post("/parameters/detail", {
+        body: { parameterId, profileId },
+      });
+    },
+    ["parameters:detail", parameterId],
+    { tags: ["parameters", `parameter:${parameterId}`] }
+  );
 
-const getParameterDefault = cache(
-  async (
-    input: ParameterDetailDefaultIn,
-  ): Promise<ParameterDetailDefaultOut> => {
-    return api.post("/parameters/detail-default", input);
+const getParameterDefault = unstable_cache(
+  async (profileId: string): Promise<ParameterDetailDefaultOut> => {
+    return api.post("/parameters/detail-default", {
+      body: { profileId },
+    });
   },
+  ["parameters:detail-default"],
+  { tags: ["parameters"] }
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -58,7 +64,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const parameter = await getParameter({ body: { parameterId, profileId } });
+    const parameter = await getParameter(parameterId)(profileId);
     return {
       title: `${parameter?.name || "Parameter"} Parameter`,
       description: `${parameter ? `${parameter.name} ${parameter.description || ""}` : "Parameter"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -78,6 +84,10 @@ export async function createParameter(
   "use server";
   const out = await api.post("/parameters/create", input);
   revalidateTag("parameters");
+  const parameterId = out.body?.parameterId;
+  if (parameterId) {
+    revalidateTag(`parameter:${parameterId}`);
+  }
   return out;
 }
 
@@ -87,6 +97,10 @@ export async function updateParameter(
   "use server";
   const out = await api.post("/parameters/update", input);
   revalidateTag("parameters");
+  const parameterId = input.body?.parameterId;
+  if (parameterId) {
+    revalidateTag(`parameter:${parameterId}`);
+  }
   return out;
 }
 
@@ -100,23 +114,19 @@ export default async function ParameterEditPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch data based on mode (edit vs create)
-  const [parameterDetail, parameterDetailDefault] = await Promise.all([
-    parameterId
-      ? getParameter({ body: { parameterId, profileId } }).catch(() => null)
-      : Promise.resolve(null),
-    !parameterId
-      ? getParameterDefault({ body: { profileId } }).catch(() => null)
-      : Promise.resolve(null),
-  ]);
+  // Fetch parameter detail (cached, won't duplicate with metadata)
+  const parameterDetail = await getParameter(parameterId)(profileId);
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      data-page="parameter-edit"
+      data-parameter-id={parameterId}
+    >
       <Parameter
         parameterId={parameterId}
         mode="edit"
-        {...(parameterDetail && { parameterDetail })}
-        {...(parameterDetailDefault && { parameterDetailDefault })}
+        parameterDetail={parameterDetail}
         createParameterAction={createParameter}
         updateParameterAction={updateParameter}
       />
