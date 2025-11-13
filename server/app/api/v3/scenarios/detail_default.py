@@ -110,7 +110,7 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     """Parse JSONB data with type safety."""
     if isinstance(data, str):
         try:
-            return json.loads(data)
+            return json.loads(data)  # type: ignore
         except json.JSONDecodeError:
             return {}
     return data or {}

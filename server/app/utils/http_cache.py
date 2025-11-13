@@ -19,7 +19,7 @@ def stable_dumps(obj: Any) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"))
 
 
-def cache_key(path: str, body: dict | None, user_ctx: str | None = None) -> str:
+def cache_key(path: str, body: dict[str, Any] | None = None, user_ctx: str | None = None) -> str:
     """Generate stable cache key from path, body, and user context."""
     payload = stable_dumps({"p": path, "b": body or {}, "u": user_ctx or ""})
     hash_digest = hashlib.sha1(payload.encode()).hexdigest()
@@ -41,7 +41,7 @@ async def get_cached(key: str) -> dict[str, Any] | None:
         if raw:
             if isinstance(raw, bytes):
                 raw = raw.decode("utf-8")
-            return json.loads(raw)
+            return json.loads(raw)  # type: ignore
     except Exception as e:
         logger.error(f"Error reading cache: {e}")
     return None
@@ -108,7 +108,7 @@ async def get_cached_response(
     Returns:
         Cached response data or None
     """
-    body_dict = None
+    body_dict: dict[str, Any] | None = None
     if request.method == "POST":
         # Request body is already consumed by FastAPI, need to get from parsed model
         # For now, use empty dict - will be handled by route handler
@@ -134,7 +134,7 @@ async def set_cached_response(
         ttl: Time to live in seconds (default: 60)
         user_ctx: Optional user context for per-user caching
     """
-    body_dict = None
+    body_dict: dict[str, Any] | None = None
     if request.method == "POST":
         # Request body is already consumed by FastAPI, need to get from parsed model
         # For now, use empty dict - will be handled by route handler

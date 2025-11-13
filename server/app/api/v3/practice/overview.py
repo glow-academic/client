@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/practice", tags=["practice"])
 
-# Inline schemas (moved from app.schemas.practice and app.schemas.home)
+# Inline schemas
 class AttemptHistoryRow(BaseModel):
     """Attempt history row."""
 

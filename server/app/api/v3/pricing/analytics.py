@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/pricing", tags=["pricing"])
 
-# Inline schemas (moved from app.schemas.pricing)
+# Inline schemas
 class DebugInfoItem(BaseModel):
     """Debug information item."""
 

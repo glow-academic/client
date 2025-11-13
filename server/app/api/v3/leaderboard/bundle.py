@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
-# Inline schemas (moved from app.schemas.leaderboard)
+# Inline schemas
 class LeaderboardMetric(BaseModel):
     """Leaderboard metric."""
 

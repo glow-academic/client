@@ -6,7 +6,7 @@ import os
 import subprocess
 import tempfile
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
@@ -22,7 +22,7 @@ class GenerateCertificateRequest(BaseModel):
     """Request to generate certificate."""
 
     profileName: str
-    cohortData: list[dict]
+    cohortData: list[dict[str, Any]]
 
 
 router = APIRouter()
@@ -44,7 +44,8 @@ async def generate_certificate(
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
             from reportlab.lib.styles import ParagraphStyle  # type: ignore
-            from reportlab.lib.styles import getSampleStyleSheet  # type: ignore
+            from reportlab.lib.styles import \
+                getSampleStyleSheet  # type: ignore
             from reportlab.lib.units import inch  # type: ignore
             from reportlab.platypus import Frame  # type: ignore
             from reportlab.platypus import PageTemplate  # type: ignore

@@ -4,19 +4,14 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.db import get_db
+from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+                              ModelMapping, ModelMappingItem, ReasoningMapping,
+                              ReasoningMappingItem)
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ModelMapping,
-    ModelMappingItem,
-    ReasoningMapping,
-    ReasoningMappingItem,
-)
-from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
 class PersonaDetailDefaultRequest(BaseModel):
@@ -95,7 +90,7 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     """Parse JSONB data with type safety."""
     if isinstance(data, str):
         try:
-            return json.loads(data)
+            return json.loads(data)  # type: ignore
         except json.JSONDecodeError:
             return {}
     return data or {}

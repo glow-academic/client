@@ -6,7 +6,7 @@ import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
 from app.db import get_db, get_pool
@@ -14,7 +14,8 @@ from app.extensions import UPLOAD_FOLDER, redis_client
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 
-# Inline Pydantic schemas (moved from app.schemas.health)
+
+# Inline Pydantic schemas
 class HealthCheckItem:
     """Individual health check result."""
 
@@ -38,7 +39,7 @@ class HealthCheckItem:
         self.message = message
         self.error = error
 
-    def model_dump(self) -> dict:
+    def model_dump(self) -> dict[str, Any]:
         """Convert to dict for JSON serialization."""
         return {
             "id": self.id,
@@ -67,7 +68,7 @@ class HealthResponse:
         self.timestamp = timestamp or datetime.now(UTC).isoformat()
         self.overall_response_time = overall_response_time
 
-    def model_dump(self) -> dict:
+    def model_dump(self) -> dict[str, Any]:
         """Convert to dict for JSON serialization."""
         return {
             "status": self.status,
@@ -394,7 +395,7 @@ async def check_document_upload() -> HealthCheckItem:
         stat = os.statvfs(str(UPLOAD_FOLDER))
         free_gb = (stat.f_bavail * stat.f_frsize) / (1024**3)
 
-        status = "warning" if free_gb < 1 else "healthy"
+        status: Literal["healthy", "unhealthy", "warning", "n/a"] = "warning" if free_gb < 1 else "healthy"
         message = f"Upload folder OK, {free_gb:.1f}GB free"
 
         return HealthCheckItem(
@@ -547,7 +548,7 @@ async def check_route_scan(origin: str) -> HealthCheckItem:
 @router.get("/health")
 async def get_system_health(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> dict:
+) -> dict[str, Any]:
     """
     Comprehensive system health check endpoint.
     Tests all 9 system components with real functionality checks.
@@ -591,7 +592,7 @@ async def get_system_health(
             )
 
     # Calculate overall system status
-    statuses = [check.status for check in checks]
+    statuses: list[str] = [check.status for check in checks]
     overall_status: Literal["healthy", "degraded", "unhealthy"]
     if "unhealthy" in statuses:
         overall_status = "unhealthy"

@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
-# Inline schemas (moved from app.schemas.reports)
+# Inline schemas
 class ProfileMetrics(BaseModel):
     """Profile metrics - each metric is a full MetricResponse object."""
 

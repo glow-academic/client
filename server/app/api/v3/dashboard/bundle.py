@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
-# AttemptHistoryRow schema (moved from app.schemas.home for dashboard use)
+# AttemptHistoryRow schema
 class AttemptHistoryRow(BaseModel):
     """Attempt history row."""
     
@@ -66,7 +66,7 @@ class AttemptHistoryRow(BaseModel):
 
 AttemptHistoryResponse = list[AttemptHistoryRow]
 
-# Inline schemas (moved from app.schemas.dashboard)
+# Inline schemas
 class RubricHeatmapCell(BaseModel):
     """Heatmap cell data."""
 

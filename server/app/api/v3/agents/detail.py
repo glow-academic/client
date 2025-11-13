@@ -20,7 +20,7 @@ class AgentDetailRequest(BaseModel):
     profileId: str
 
 
-# Inline schemas (moved from app.schemas.agents)
+# Inline schemas
 class DebugInfoItem(BaseModel):
     """Debug information item."""
 

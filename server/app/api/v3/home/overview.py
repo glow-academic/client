@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/home", tags=["home"])
 
-# Inline schemas (moved from app.schemas.home)
+# Inline schemas
 class HomeSimulationItem(BaseModel):
     """Home simulation item."""
 

@@ -3,12 +3,12 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
+
 
 # Inline request/response schemas
 class ParameterItemCreate(BaseModel):
@@ -66,7 +66,7 @@ async def create_parameter(
                 }
                 # Only include department_ids if it's not None
                 if item.department_ids is not None:
-                    item_dict["department_ids"] = item.department_ids
+                    item_dict["department_ids"] = item.department_ids  # type: ignore
                 items_data.append(item_dict)
             
             items_json = json.dumps(items_data)

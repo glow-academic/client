@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
-# Inline schemas (moved from app.schemas.simulations)
+# Inline schemas
 class ScenarioInSimulation(BaseModel):
     """Scenario with position in simulation."""
 
@@ -119,7 +119,7 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     if isinstance(data, dict):
         return cast(dict[str, Any], data)
     if isinstance(data, list):
-        return cast(list[Any], data)
+        return data
     return None
 
 

@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
-# Inline schemas (moved from app.schemas.simulations)
+# Inline schemas
 class ScenarioInSimulation(BaseModel):
     """Scenario with position in simulation."""
 

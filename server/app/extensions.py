@@ -28,9 +28,6 @@ UPLOAD_FOLDER.mkdir(
 # Redis client for socket ownership management
 redis_client: Any | None = None  # type: ignore
 
-# Query cache client
-query_client: Any | None = None  # type: ignore
-
 # Fallback in-memory storage for when Redis is unavailable
 socket_owner: dict[str, str] = {}  # profile_id -> socket_id
 
@@ -54,31 +51,6 @@ async def init_redis_client() -> None:
     except Exception as e:
         logger.error(f"Failed to initialize Redis client: {e}")
         redis_client = None
-
-
-async def init_query_client() -> None:
-    """Initialize query cache client."""
-    global query_client
-
-    if not redis_client:
-        logger.warning("Query cache disabled (Redis not available)")
-        query_client = None
-        return
-
-    try:
-        from app.cache.query_client import QueryClient
-
-        query_client = QueryClient(redis_client)
-        await query_client.start()
-        logger.info("Query cache client initialized")
-    except Exception as e:
-        logger.error(f"Failed to initialize query cache client: {e}")
-        query_client = None
-
-
-def get_query_client() -> Any | None:
-    """Get the global query cache client."""
-    return query_client
 
 
 async def get_socket_owner(profile_id: str) -> str | None:
@@ -155,15 +127,9 @@ async def find_profile_by_socket(socket_id: str) -> str | None:
 
 async def cleanup_redis_client() -> None:
     """Clean up Redis client on shutdown."""
-    global redis_client, query_client
+    global redis_client
 
-    # Stop query cache client first
-    if query_client:
-        await query_client.stop()
-        query_client = None
-        logger.info("Query cache client stopped")
-
-    # Then close Redis connection
+    # Close Redis connection
     if redis_client:
         await redis_client.close()
         redis_client = None

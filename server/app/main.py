@@ -55,10 +55,9 @@ allowed_origins = [origin]
 from app.extensions import (  # New Redis functions for active connections and runs; Guest management functions
     add_guest_socket, cleanup_redis_client, decrement_guest_count,
     find_chats_by_socket, find_profile_by_socket, get_socket_owner,
-    increment_guest_count, init_query_client, init_redis_client,
-    is_guest_socket, remove_active_connection, remove_guest_socket,
-    remove_socket_owner, set_active_connection, set_active_run,
-    set_socket_owner)
+    increment_guest_count, init_redis_client, is_guest_socket,
+    remove_active_connection, remove_guest_socket, remove_socket_owner,
+    set_active_connection, set_active_run, set_socket_owner)
 
 # Store active chat connections - now using Redis
 # active_connections: dict[str, str] = {}  # REMOVED - using Redis instead
@@ -566,9 +565,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         # Initialize Redis client for socket ownership management
         await init_redis_client()
 
-        # Initialize query cache client (depends on Redis)
-        await init_query_client()
-
         # Initialize asyncpg database pool
         await init_db_pool()
 
@@ -618,12 +614,7 @@ fastapi_app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers (legacy routes removed, all in v2)
-
-# Include API v2 router (analytics)
-from app.api.v2.router import router as api_v2_router  # noqa: E402
-
-fastapi_app.include_router(api_v2_router)
+# Include routers
 
 # Include API v3 router (DHH-style)
 from app.api.v3.router import router as api_v3_router  # noqa: E402

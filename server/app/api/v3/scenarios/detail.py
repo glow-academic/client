@@ -171,14 +171,14 @@ async def get_scenario_detail(
                     if isinstance(parsed, dict):
                         return cast(dict[str, Any], parsed)
                     if isinstance(parsed, list):
-                        return cast(list[Any], parsed)
+                        return parsed
                     return {}
                 except json.JSONDecodeError:
                     return {}
             if isinstance(data, dict):
                 return cast(dict[str, Any], data)
             if isinstance(data, list):
-                return cast(list[Any], data)
+                return data
             return None
 
         # Parse parameters

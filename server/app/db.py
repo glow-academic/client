@@ -16,8 +16,7 @@ load_dotenv()
 # Global connection pool
 _pool: asyncpg.Pool | None = None
 if TYPE_CHECKING:  # pragma: no cover - runtime import happens lazily
-    from testcontainers.postgres import \
-        PostgresContainer  # type: ignore[import]
+    from testcontainers.postgres import PostgresContainer  # type: ignore
 
 _test_container: PostgresContainer | None = None
 

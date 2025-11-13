@@ -16,7 +16,7 @@ class LogsListRequest(BaseModel):
     profileId: str
 
 
-# Inline schemas (moved from app.schemas.logs)
+# Inline schemas
 class ActorData(BaseModel):
     """Actor JSONB data."""
 
