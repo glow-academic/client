@@ -57,7 +57,7 @@ export interface RubricsProps {
   listData: RubricsListOut;
   // Server actions (replaces useMutation)
   duplicateRubricAction?: (
-    input: DuplicateRubricIn,
+    input: DuplicateRubricIn
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
   createRubricAction?: (input: CreateRubricIn) => Promise<CreateRubricOut>;
@@ -92,11 +92,11 @@ export default function Rubrics({
   const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
   const standardGroupsMapping = useMemo(
     () => rubricsData?.standard_groups_mapping || {},
-    [rubricsData],
+    [rubricsData]
   );
   const standardsMapping = useMemo(
     () => rubricsData?.standards_mapping || {},
-    [rubricsData],
+    [rubricsData]
   );
   const departmentMapping = useMemo(
     () =>
@@ -104,7 +104,7 @@ export default function Rubrics({
         string,
         { name: string; description: string }
       >) || {},
-    [rubricsData],
+    [rubricsData]
   );
 
   // Build filter options
@@ -177,10 +177,8 @@ export default function Rubrics({
           const count = Number(row.getValue("simulations"));
           return value.some((range) => {
             if (range === "0") return count === 0;
-            if (range === "1-5")
-              return count >= 1 && count <= 5;
-            if (range === "6-10")
-              return count >= 6 && count <= 10;
+            if (range === "1-5") return count >= 1 && count <= 5;
+            if (range === "6-10") return count >= 6 && count <= 10;
             if (range === "11+") return count >= 11;
             return false;
           });
@@ -202,7 +200,7 @@ export default function Rubrics({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -277,7 +275,6 @@ export default function Rubrics({
     router.push(`/management/rubrics/r/${id}`);
   };
 
-
   const renderRubricCard = (rubric: (typeof rubrics)[number]) => {
     const passPercentage = rubric.passPercentage;
 
@@ -324,12 +321,12 @@ export default function Rubrics({
               ) : (
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => handleEdit(rubric.rubric_id)}
                   aria-label={`View ${rubric.name}`}
                   data-testid="btn-view-rubric"
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 mr-2" />
+                  View
                 </Button>
               )}
               {rubric.can_duplicate && (

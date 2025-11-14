@@ -6,7 +6,7 @@ import re
 import sys
 from typing import Optional, Tuple
 
-from playwright.sync_api import Page, expect, has_text
+from playwright.sync_api import Page, expect
 
 from server.tests.e2e.rubrics.helpers import generate_unique_rubric_name
 
@@ -46,6 +46,8 @@ def create_rubric_via_ui(
             if department_option.count():
                 department_option.click()
             page.keyboard.press("Escape")
+            # Wait for picker to close
+            page.wait_for_timeout(200)
 
     # Toggle active switch if needed
     if not active:
@@ -53,44 +55,28 @@ def create_rubric_via_ui(
         if active_switch.count():
             active_switch.click()
 
+    # Ensure any open dropdowns/pickers are closed before submitting
+    # Press Escape a few times to close any open menus
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(200)
+
     # Submit form
     submit_button = page.get_by_test_id("btn-save-rubric")
     submit_button.wait_for(state="visible", timeout=10000)
     submit_button.click()
 
-    # Wait for redirect to edit page or list page
+    # Wait for redirect to edit page (rubrics redirect to edit page after creation)
     page.wait_for_url(
-        re.compile(r".*/management/rubrics.*"), timeout=20000
+        re.compile(r".*/management/rubrics/r/[a-f0-9-]+"), timeout=20000
     )
     page.wait_for_load_state("networkidle")
     print(f"[E2E] Landed on URL after rubric create: {page.url}", file=sys.stdout)
 
-    # Extract rubric ID from URL if on edit page
-    rubric_id = ""
-    if "/r/" in page.url:
-        match = re.search(r"/r/([a-f0-9-]+)", page.url)
-        if match:
-            rubric_id = match.group(1)
-    else:
-        # If redirected to list, search for the rubric card
-        page.wait_for_selector("[data-testid='rubrics-grid']", timeout=10000)
-        search_input = page.get_by_test_id("rubrics-search")
-        search_input.fill(rubric_name)
-        page.wait_for_timeout(500)
-
-        rubric_card = (
-            page.get_by_test_id("rubric-card")
-            .filter(has_text=rubric_name)
-            .first
-        )
-        expect(rubric_card).to_be_visible()
-
-        rubric_id = rubric_card.get_attribute("data-rubric-id") or ""
-        if not rubric_id:
-            raise AssertionError("Created rubric card missing data-rubric-id attribute")
-
-    if not rubric_id:
-        raise AssertionError("Could not determine rubric ID after creation")
+    # Extract rubric ID from URL
+    match = re.search(r"/r/([a-f0-9-]+)", page.url)
+    if not match:
+        raise AssertionError(f"Could not extract rubric ID from URL: {page.url}")
+    rubric_id = match.group(1)
 
     return rubric_name, rubric_id
 

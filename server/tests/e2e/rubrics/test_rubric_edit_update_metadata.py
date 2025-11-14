@@ -60,15 +60,18 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
         # Verify page attributes
         expect(container).to_have_attribute("data-rubric-id", rubric_id)
 
-        # Verify form is in view mode initially
+        # Click edit button to enter edit mode (form starts in view mode)
+        edit_button = page.get_by_test_id("btn-edit-rubric")
+        edit_button.wait_for(state="visible", timeout=10000)
+        edit_button.click()
+        
+        # Wait for edit mode to activate - save button appears when in edit mode
+        save_button = page.get_by_test_id("btn-save-rubric")
+        save_button.wait_for(state="visible", timeout=10000)
+
+        # Now inputs should be visible in edit mode
         name_input = page.get_by_test_id("input-rubric-name")
         name_input.wait_for(state="visible", timeout=10000)
-
-        # Click edit button to enter edit mode
-        edit_button = page.get_by_test_id("btn-edit-rubric")
-        if edit_button.count():
-            edit_button.click()
-            page.wait_for_timeout(500)
 
         # Verify form fields are populated
         expect(name_input).to_have_value(rubric_name)
@@ -103,9 +106,19 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
             current_state = active_switch.is_checked()
             active_switch.click()
             page.wait_for_timeout(200)
-            expect(active_switch).to_have_property("checked", not current_state)
+            # Verify state changed
+            if current_state:
+                expect(active_switch).not_to_be_checked()
+            else:
+                expect(active_switch).to_be_checked()
             # Toggle back
             active_switch.click()
+            page.wait_for_timeout(200)
+            # Verify back to original state
+            if current_state:
+                expect(active_switch).to_be_checked()
+            else:
+                expect(active_switch).not_to_be_checked()
 
         # Save changes
         submit_button = page.get_by_test_id("btn-save-rubric")
@@ -124,6 +137,12 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
         # Reload page to verify persistence
         page.reload()
         page.wait_for_load_state("networkidle")
+
+        # After reload, form is back in view mode, so click edit again
+        edit_button = page.get_by_test_id("btn-edit-rubric")
+        if edit_button.count():
+            edit_button.click()
+            page.wait_for_timeout(500)
 
         name_input = page.get_by_test_id("input-rubric-name")
         name_input.wait_for(state="visible", timeout=10000)

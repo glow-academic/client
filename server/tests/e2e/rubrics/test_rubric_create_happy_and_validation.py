@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -51,6 +53,8 @@ def test_rubric_create_validation_and_success(page: Page, base_url: str) -> None
                 department_option.wait_for(state="visible", timeout=10000)
                 department_option.click()
                 page.keyboard.press("Escape")
+                # Wait for picker to close
+                page.wait_for_timeout(200)
 
         # Toggle active switch (should be on by default)
         active_switch = page.get_by_test_id("switch-rubric-active")
@@ -58,31 +62,24 @@ def test_rubric_create_validation_and_success(page: Page, base_url: str) -> None
             # Verify it's checked by default
             expect(active_switch).to_be_checked()
 
+        # Ensure any open dropdowns/pickers are closed before submitting
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(200)
+
         # Submit form
         submit_button.click()
 
-        # Wait for redirect
+        # Wait for redirect to edit page (rubrics redirect to edit page after creation)
         page.wait_for_url(
-            lambda url: "/management/rubrics" in url, timeout=20000
+            re.compile(r".*/management/rubrics/r/[a-f0-9-]+"), timeout=20000
         )
         page.wait_for_load_state("networkidle")
 
-        # Verify rubric appears in list
-        search_input = page.get_by_test_id("rubrics-search")
-        search_input.wait_for(state="visible", timeout=10000)
-        search_input.fill(rubric_name)
-        page.wait_for_timeout(500)
-
-        rubric_card = (
-            page.get_by_test_id("rubric-card")
-            .filter(has_text=rubric_name)
-            .first
-        )
-        expect(rubric_card).to_be_visible()
-
-        rubric_id = rubric_card.get_attribute("data-rubric-id")
-        if not rubric_id:
-            raise AssertionError("Created rubric card missing data-rubric-id attribute")
+        # Extract rubric ID from URL
+        match = re.search(r"/r/([a-f0-9-]+)", page.url)
+        if not match:
+            raise AssertionError(f"Could not extract rubric ID from URL: {page.url}")
+        rubric_id = match.group(1)
 
         # Verify toast notification
         toast = page.get_by_role("alert").filter(has_text="successfully")

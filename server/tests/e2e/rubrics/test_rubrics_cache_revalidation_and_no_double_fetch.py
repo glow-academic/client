@@ -133,6 +133,14 @@ def test_rubrics_cache_revalidation_and_no_double_fetch(
         page.wait_for_url(f"{base_url}/management/rubrics/r/{rubric_id}")
         page.wait_for_load_state("networkidle")
 
+        # Click edit button to enter edit mode (form starts in view mode)
+        edit_button_on_page = page.get_by_test_id("btn-edit-rubric")
+        edit_button_on_page.wait_for(state="visible", timeout=10000)
+        edit_button_on_page.click()
+        # Wait for edit mode to activate - save button appears when in edit mode
+        save_button = page.get_by_test_id("btn-save-rubric")
+        save_button.wait_for(state="visible", timeout=10000)
+
         updated_name = f"{rubric_name} Updated"
         name_input = page.get_by_test_id("input-rubric-name")
         name_input.wait_for(state="visible", timeout=10000)
