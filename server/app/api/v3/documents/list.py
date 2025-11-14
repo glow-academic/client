@@ -1,6 +1,7 @@
 """Document list endpoint - v3 API."""
 
 import json
+from collections import Counter
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -48,9 +49,26 @@ class DocumentsListResponse(BaseModel):
     parameter_item_mapping: dict[str, ParameterItemMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
     parameter_mapping: dict[str, ParameterMappingItem]
+    # UI-ready facet options (precomputed on server)
+    type_options: list[dict[str, str]]  # Array of {value, label}
+    scenario_options: list[dict[str, str]]  # Array of {value, label}
+    department_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
+
+
+def disambiguate_scenarios(smap: dict[str, ScenarioMappingItem]) -> list[dict[str, str]]:
+    """Build scenario options with disambiguation for duplicate names."""
+    names = Counter([v.name for v in smap.values()])
+    out = []
+    for sid, v in smap.items():
+        label = v.name
+        if names[v.name] > 1:
+            # Use last 8 characters of UUID for disambiguation
+            label = f"{v.name} ({sid[-8:]})"
+        out.append({"value": sid, "label": label})
+    return out
 
 
 @router.post("/list", response_model=DocumentsListResponse)
@@ -196,12 +214,30 @@ async def get_documents_list(
                 )
             )
 
+        # Build facet options
+        type_options = [
+            {"value": "homework", "label": "📚 Homework"},
+            {"value": "project", "label": "🎯 Project"},
+            {"value": "quiz", "label": "❓ Quiz"},
+            {"value": "midterm", "label": "📝 Midterm"},
+            {"value": "lab", "label": "🧪 Lab"},
+            {"value": "lecture", "label": "📖 Lecture"},
+            {"value": "syllabus", "label": "📋 Syllabus"},
+        ]
+        scenario_options = disambiguate_scenarios(scenario_mapping)
+        department_options = [
+            {"value": did, "label": d.name or did} for (did, d) in department_mapping.items()
+        ]
+
         response_data = DocumentsListResponse(
             documents=documents,
             scenario_mapping=scenario_mapping,
             parameter_item_mapping=parameter_item_mapping,
             department_mapping=department_mapping,
             parameter_mapping=parameter_mapping,
+            type_options=type_options,
+            scenario_options=scenario_options,
+            department_options=department_options,
         )
         
         # Cache response

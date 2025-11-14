@@ -126,7 +126,6 @@ export interface StaffDataTableProps {
   >;
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
-  activityOptions: { value: string; label: string }[];
   lastActiveOptions: { value: string; label: string }[];
   isRefreshing: boolean;
   onRefresh: () => void;
@@ -172,7 +171,6 @@ export function StaffDataTable({
   departmentMapping,
   roleOptions,
   cohortOptions,
-  activityOptions,
   lastActiveOptions,
   isRefreshing,
   onRefresh,
@@ -521,6 +519,7 @@ export function StaffDataTable({
             }}
             aria-label="Select all"
             className="translate-y-[2px]"
+            data-testid="checkbox-select-all"
           />
         </div>
       ),
@@ -533,6 +532,7 @@ export function StaffDataTable({
             }
             aria-label="Select row"
             className="translate-y-[2px]"
+            data-testid="checkbox-select-staff"
           />
         </div>
       ),
@@ -555,6 +555,7 @@ export function StaffDataTable({
                   size="sm"
                   className="h-7 w-7 p-0"
                   onClick={() => onPreview(staff)}
+                  data-testid="btn-preview-staff"
                 >
                   <FileText className="h-3 w-3" />
                 </Button>
@@ -572,6 +573,7 @@ export function StaffDataTable({
                     size="sm"
                     className="h-7 w-7 p-0"
                     onClick={() => onEdit(staff)}
+                    data-testid="btn-edit-staff"
                   >
                     <Edit className="h-3 w-3" />
                   </Button>
@@ -610,6 +612,7 @@ export function StaffDataTable({
                     size="sm"
                     className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                     onClick={() => onDelete(staff)}
+                    data-testid="btn-delete-staff"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -679,7 +682,6 @@ export function StaffDataTable({
           table={table}
           roleOptions={roleOptions}
           cohortOptions={cohortOptions}
-          activityOptions={activityOptions}
           lastActiveOptions={lastActiveOptions}
           isRefreshing={isRefreshing}
           onRefresh={onRefresh}
@@ -701,7 +703,7 @@ export function StaffDataTable({
           {...(cohortIds && cohortIds.length > 0 && { cohortIds })}
           {...(departmentIds && departmentIds.length > 0 && { departmentIds })}
         />
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border overflow-x-auto" data-testid="staff-table">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -741,6 +743,8 @@ export function StaffDataTable({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className="hover:bg-muted/30 transition-colors"
+                    data-testid="staff-row"
+                    data-profile-id={row.original.profile_id}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell

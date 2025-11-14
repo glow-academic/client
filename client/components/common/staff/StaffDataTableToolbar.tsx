@@ -23,7 +23,6 @@ export interface StaffDataTableToolbarProps {
   table: Table<ProfileListItem>;
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
-  activityOptions: { value: string; label: string }[];
   lastActiveOptions: { value: string; label: string }[];
   isRefreshing: boolean;
   onRefresh: () => void;
@@ -50,7 +49,6 @@ export function StaffDataTableToolbar({
   table,
   roleOptions,
   cohortOptions,
-  activityOptions,
   lastActiveOptions,
   isRefreshing,
   onRefresh,
@@ -75,12 +73,11 @@ export function StaffDataTableToolbar({
 
   const nameColumn = table.getColumn("name");
   const roleColumn = table.getColumn("role");
-  const activeColumn = table.getColumn("active");
   const lastActiveColumn = table.getColumn("lastActive");
   const cohortIdsColumn = table.getColumn("cohort_ids");
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between" data-testid="staff-toolbar">
       <div className="flex flex-1 items-center space-x-2 flex-wrap">
         <div className="mb-2">
           <Input
@@ -88,6 +85,7 @@ export function StaffDataTableToolbar({
             value={(nameColumn?.getFilterValue() as string) ?? ""}
             onChange={(event) => nameColumn?.setFilterValue(event.target.value)}
             className="h-8 w-[150px] lg:w-[250px]"
+            data-testid="staff-search"
           />
         </div>
 
@@ -98,15 +96,6 @@ export function StaffDataTableToolbar({
               column={roleColumn}
               title="Role"
               options={roleOptions}
-            />
-          )}
-
-          {/* Activity Filter */}
-          {activeColumn && activityOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={activeColumn}
-              title="Status"
-              options={activityOptions}
             />
           )}
 
@@ -169,6 +158,7 @@ export function StaffDataTableToolbar({
               size="sm"
               onClick={onBulkEdit}
               className="h-8"
+              data-testid="btn-bulk-edit-staff"
             >
               Bulk Edit {editableCount} of {selectedCount}
             </Button>
@@ -178,6 +168,7 @@ export function StaffDataTableToolbar({
               size="sm"
               onClick={onBulkDelete}
               className="h-8"
+              data-testid="btn-bulk-delete-staff"
             >
               {cohortId
                 ? `Remove ${deletableCount} of ${selectedCount}`

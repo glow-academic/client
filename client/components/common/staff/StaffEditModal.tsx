@@ -181,7 +181,7 @@ export default function StaffEditModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" data-testid="dialog-edit-staff">
           <DialogHeader>
             <DialogTitle>Edit Staff</DialogTitle>
           </DialogHeader>
@@ -200,6 +200,7 @@ export default function StaffEditModal({
                     placeholder="Jane"
                     required
                     disabled={isSubmitting}
+                    data-testid="input-staff-first-name"
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />
@@ -217,6 +218,7 @@ export default function StaffEditModal({
                     placeholder="Smith"
                     required
                     disabled={isSubmitting}
+                    data-testid="input-staff-last-name"
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />
@@ -232,6 +234,7 @@ export default function StaffEditModal({
                     disabled={true}
                     className="bg-muted"
                     title="Alias cannot be edited via this form"
+                    data-testid="input-staff-alias"
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />
@@ -240,13 +243,15 @@ export default function StaffEditModal({
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 {!isLoading ? (
-                  <StaffRolePicker
-                    selectedRole={formData.role}
-                    onSelect={(value) => handleInputChange("role", value)}
-                    placeholder="Select role"
-                    disabled={isSubmitting}
-                    buttonClassName="h-10"
-                  />
+                  <div data-testid="input-staff-role">
+                    <StaffRolePicker
+                      selectedRole={formData.role}
+                      onSelect={(value) => handleInputChange("role", value)}
+                      placeholder="Select role"
+                      disabled={isSubmitting}
+                      buttonClassName="h-10"
+                    />
+                  </div>
                 ) : (
                   <Skeleton className="h-10 w-full" />
                 )}
@@ -284,6 +289,7 @@ export default function StaffEditModal({
                       min={1}
                       step={1}
                       disabled={isSubmitting || unlimited}
+                      data-testid="input-staff-requests-per-day"
                     />
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -331,10 +337,15 @@ export default function StaffEditModal({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
+                data-testid="btn-cancel-staff-edit"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                data-testid="btn-submit-staff-edit"
+              >
                 {isSubmitting ? "Updating..." : "Update Staff"}
               </Button>
             </div>
@@ -344,7 +355,7 @@ export default function StaffEditModal({
 
       {/* Confirmation Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="dialog-confirm-staff-edit">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>

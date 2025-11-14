@@ -257,6 +257,38 @@ export default function Documents({
     [documentsData],
   );
 
+  // Use server-provided filter options directly (no client-side computation)
+  const typeOptions = useMemo(
+    () =>
+      (documentsData?.type_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [documentsData?.type_options]
+  );
+  const scenarioOptions = useMemo(
+    () =>
+      (documentsData?.scenario_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [documentsData?.scenario_options]
+  );
+  const departmentOptions = useMemo(
+    () =>
+      (documentsData?.department_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [documentsData?.department_options]
+  );
+
   // Compute valid department IDs for upload dialog
   const validDepartmentIds = useMemo(
     () => effectiveDepartmentIds,
@@ -522,54 +554,6 @@ export default function Documents({
     }
   }, [bulkParameterItemIds, validParameterItemIdsForBulk]);
 
-  // Filter options
-  const typeOptions = useMemo(
-    () => [
-      { value: "homework", label: "📚 Homework" },
-      { value: "project", label: "🎯 Project" },
-      { value: "quiz", label: "❓ Quiz" },
-      { value: "midterm", label: "📝 Midterm" },
-      { value: "lab", label: "🧪 Lab" },
-      { value: "lecture", label: "📖 Lecture" },
-      { value: "syllabus", label: "📋 Syllabus" },
-    ],
-    [],
-  );
-
-  const scenarioOptions = useMemo(
-    () =>
-      Object.entries(scenarioMapping).map(([id, item]) => ({
-        value: id,
-        label: item["name"] as string,
-      })),
-    [scenarioMapping],
-  );
-
-  // Build department options from mapping
-  const documentsDepartmentMapping = useMemo(
-    () =>
-      (documentsData?.department_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [documentsData?.department_mapping],
-  );
-
-  const departmentOptions = useMemo(() => {
-    return Object.entries(documentsDepartmentMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
-    }));
-  }, [documentsDepartmentMapping]);
-
-  const extensionOptions = useMemo(() => {
-    const extensions = new Set(documents.map((d) => d.extension));
-    return Array.from(extensions).map((ext) => ({
-      value: ext,
-      label: (ext?.toUpperCase() as string) || "",
-    })) as { value: string; label: string }[];
-  }, [documents]) as { value: string; label: string }[];
-
   // Handle document preview (for table view)
   const handlePreview = useCallback((document: (typeof documents)[number]) => {
     setPreviewDocument(document);
@@ -757,25 +741,6 @@ export default function Documents({
         },
       },
       {
-        accessorKey: "extension",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Extension" />
-        ),
-        cell: ({ row }) => {
-          const extension = row.getValue("extension") as string;
-          return (
-            <Badge variant="secondary" className="text-xs">
-              {extension.toUpperCase()}
-            </Badge>
-          );
-        },
-        filterFn: (row, _id, value) => {
-          return (
-            value.length === 0 || value.includes(row.getValue("extension"))
-          );
-        },
-      },
-      {
         accessorKey: "updated_at",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Updated" />
@@ -797,7 +762,7 @@ export default function Documents({
         sortingFn: "datetime",
       },
     ],
-    [scenarioMapping, parameterItemMapping, typeOptions, handlePreview],
+    [scenarioMapping, parameterItemMapping, handlePreview],
   );
 
   // Permission checking using server-provided flags
@@ -923,6 +888,8 @@ export default function Documents({
               size="sm"
               className="h-7 w-7 p-0"
               onClick={() => handlePreview(document)}
+              aria-label={`Preview document ${document.name}`}
+              data-testid="btn-preview-document"
             >
               <Eye className="h-3 w-3" />
             </Button>
@@ -932,6 +899,8 @@ export default function Documents({
               size="sm"
               className="h-7 w-7 p-0"
               onClick={() => handleEdit(document)}
+              aria-label={`Edit document ${document.name}`}
+              data-testid="btn-edit-document"
             >
               <Edit className="h-3 w-3" />
             </Button>
@@ -942,6 +911,8 @@ export default function Documents({
                 size="sm"
                 className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                 onClick={() => handleSingleDelete(document)}
+                aria-label={`Delete document ${document.name}`}
+                data-testid="btn-delete-document"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
@@ -1136,17 +1107,12 @@ export default function Documents({
     setIsUpdating(true);
     try {
       if (!updateDocumentAction) return;
-      const departmentId: string | null =
-        documentDetail.department_ids &&
-        documentDetail.department_ids.length > 0
-          ? (documentDetail.department_ids[0] ?? null)
-          : null;
       await updateDocumentAction({
         body: {
           documentId: editingDocument.document_id,
-          type: documentDetail.type,
-          department_id: departmentId,
-          parameter_item_ids: documentDetail.parameter_item_ids,
+          type: editingDocument.type,
+          department_id: editingDocument.department_ids?.[0] ?? null,
+          parameter_item_ids: editingDocument.parameter_item_ids || [],
         },
       });
       router.refresh();
@@ -1271,9 +1237,13 @@ export default function Documents({
       ) : (
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="flex items-center justify-between">
+          <div
+            className="flex items-center justify-between"
+            data-testid="documents-toolbar"
+          >
             <div className="flex flex-1 items-center space-x-2">
               <Input
+                data-testid="documents-search"
                 placeholder="Filter documents..."
                 value={
                   (table.getColumn("name")?.getFilterValue() as string) ?? ""
@@ -1282,6 +1252,8 @@ export default function Documents({
                   table.getColumn("name")?.setFilterValue(event.target.value)
                 }
                 className="h-8 w-[150px] lg:w-[250px]"
+                aria-label="Search documents by name"
+                aria-controls="documents-list"
               />
               {table.getColumn("type") && (
                 <DataTableFacetedFilter
@@ -1295,13 +1267,6 @@ export default function Documents({
                   column={table.getColumn("scenario_ids")!}
                   title="Scenarios"
                   options={scenarioOptions}
-                />
-              )}
-              {table.getColumn("extension") && (
-                <DataTableFacetedFilter
-                  column={table.getColumn("extension")!}
-                  title="Extension"
-                  options={extensionOptions}
                 />
               )}
               {table.getColumn("departments") &&
@@ -1332,6 +1297,8 @@ export default function Documents({
                     size="sm"
                     onClick={handleBulkEdit}
                     className="h-8"
+                    data-testid="btn-bulk-edit"
+                    aria-label={`Edit ${selectedDocuments.length} documents`}
                   >
                     <Grid3X3 className="mr-2 h-4 w-4" />
                     Edit {selectedDocuments.length}
@@ -1363,6 +1330,10 @@ export default function Documents({
                       size="sm"
                       onClick={handleBulkDelete}
                       className="h-8"
+                      data-testid="btn-bulk-delete"
+                      aria-label={`Delete ${selectedDocuments.filter((documentId) =>
+                        canDeleteDocument(documentId),
+                      ).length} of ${selectedDocuments.length} documents`}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete{" "}
@@ -1404,7 +1375,7 @@ export default function Documents({
           {/* Content based on view mode */}
           {viewMode === "list" ? (
             <div className="space-y-4">
-              <div className="rounded-md border">
+              <div className="rounded-md border" data-testid="documents-list">
                 <Table>
                   <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -1458,7 +1429,12 @@ export default function Documents({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                role="grid"
+                aria-label="documents grid"
+                data-testid="documents-grid"
+              >
                 {table.getRowModel().rows.length > 0 ? (
                   table
                     .getRowModel()
@@ -1477,9 +1453,13 @@ export default function Documents({
 
       {/* Edit Document Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md"
+          data-testid="dialog-edit-document"
+          aria-labelledby="edit-document-title"
+        >
           <DialogHeader>
-            <DialogTitle>Edit Document</DialogTitle>
+            <DialogTitle id="edit-document-title">Edit Document</DialogTitle>
             <DialogDescription>
               Update document properties. Changes will be saved immediately.
             </DialogDescription>
@@ -1523,7 +1503,7 @@ export default function Documents({
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="type">Type</Label>
                   <Select
-                    defaultValue={documentDetail.type}
+                    value={editingDocument.type}
                     onValueChange={(value) => {
                       // Update in temporary state for submission
                       setEditingDocument(
@@ -1554,7 +1534,7 @@ export default function Documents({
                   <DepartmentPicker
                     mapping={documentDetail.department_mapping}
                     validIds={documentDetail.valid_department_ids}
-                    selectedIds={documentDetail.department_ids || []}
+                    selectedIds={editingDocument.department_ids || []}
                     onSelect={(ids) =>
                       setEditingDocument(
                         (prev: (typeof documents)[number] | null) =>
@@ -1569,7 +1549,7 @@ export default function Documents({
                   <Label>Parameter Items</Label>
                   <ParameterItemPicker
                     mapping={documentDetail["parameter_item_mapping"]}
-                    selectedIds={documentDetail.parameter_item_ids}
+                    selectedIds={editingDocument?.parameter_item_ids || []}
                     onSelect={(ids) =>
                       setEditingDocument(
                         (prev: (typeof documents)[number] | null) =>
@@ -1605,9 +1585,13 @@ export default function Documents({
 
       {/* Bulk Edit Dialog */}
       <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent
+          className="sm:max-w-md"
+          data-testid="dialog-bulk-edit-document"
+          aria-labelledby="bulk-edit-document-title"
+        >
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle id="bulk-edit-document-title">
               Edit {selectedDocuments.length} document
               {selectedDocuments.length > 1 ? "s" : ""}
             </DialogTitle>
@@ -1699,9 +1683,12 @@ export default function Documents({
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          data-testid="dialog-delete-document"
+          aria-labelledby="delete-document-title"
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle id="delete-document-title">
               {editingDocument && !selectedDocuments.length
                 ? "Delete Document"
                 : `Delete Document${selectedDocuments.length > 1 ? "s" : ""}`}
@@ -1807,7 +1794,12 @@ export default function Documents({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              data-testid="btn-cancel-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={
@@ -1819,6 +1811,7 @@ export default function Documents({
                     ).length === 0)
               }
               className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
             >
               {isDeleting
                 ? "Deleting..."

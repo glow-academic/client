@@ -12648,6 +12648,36 @@
             },
             "type": "object",
             "title": "Parameter Mapping"
+          },
+          "type_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Type Options"
+          },
+          "scenario_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenario Options"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
           }
         },
         "type": "object",
@@ -12656,7 +12686,10 @@
           "scenario_mapping",
           "parameter_item_mapping",
           "department_mapping",
-          "parameter_mapping"
+          "parameter_mapping",
+          "type_options",
+          "scenario_options",
+          "department_options"
         ],
         "title": "DocumentsListResponse",
         "description": "Response for documents list."
@@ -19950,6 +19983,36 @@
             },
             "type": "object",
             "title": "Trend Data"
+          },
+          "role_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Role Options"
+          },
+          "cohort_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Cohort Options"
+          },
+          "last_active_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Last Active Options"
           }
         },
         "type": "object",
@@ -19957,7 +20020,10 @@
           "staff",
           "cohort_mapping",
           "department_mapping",
-          "trend_data"
+          "trend_data",
+          "role_options",
+          "cohort_options",
+          "last_active_options"
         ],
         "title": "StaffListResponse",
         "description": "Response for staff list endpoint."

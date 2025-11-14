@@ -12,8 +12,7 @@ import Documents from "@/components/documents/Documents";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type DocumentsListIn = InputOf<"/api/v3/documents/list", "post">;
@@ -39,11 +38,16 @@ type FinalizeDocumentUploadOut = OutputOf<
   "post"
 >;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getDocumentsList = cache(
-  async (input: DocumentsListIn): Promise<DocumentsListOut> => {
-    return api.post("/documents/list", input);
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes profileId so entries are per-user.
+ * Tags allow revalidateTag("documents") to invalidate.
+ */
+const getDocumentsList = unstable_cache(
+  async (profileId: string): Promise<DocumentsListOut> => {
+    return api.post("/documents/list", { body: { profileId } });
   },
+  ["documents:list"],
+  { tags: ["documents"] }
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -116,12 +120,10 @@ export default async function DocumentsPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch list data server-side
-  const listData = await getDocumentsList({
-    body: { profileId },
-  });
+  const listData = await getDocumentsList(profileId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="documents-index">
       <Documents
         listData={listData}
         deleteDocumentAction={deleteDocument}

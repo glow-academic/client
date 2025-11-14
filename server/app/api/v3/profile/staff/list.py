@@ -53,6 +53,10 @@ class StaffListResponse(BaseModel):
     cohort_mapping: dict[str, CohortMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
     trend_data: dict[str, list[TrendData]]  # Keys: active, admin, instructional, ta, total_requests
+    # UI-ready facet options (precomputed on server)
+    role_options: list[dict[str, str]]  # Array of {value, label}
+    cohort_options: list[dict[str, str]]  # Array of {value, label}
+    last_active_options: list[dict[str, str]]  # Array of {value, label}
 
 
 @router.post("/list", response_model=StaffListResponse)
@@ -82,6 +86,11 @@ async def get_profile_list(
     try:
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
+
+        # Get current user's role for role_options computation
+        role_sql = load_sql("sql/v3/profile/staff/get_profile_role.sql")
+        current_user = await conn.fetchrow(role_sql, filters.profileId)
+        current_user_role = current_user["role"] if current_user else "guest"
 
         # Load SQL string
         sql_query = load_sql("sql/v3/profile/staff/list_staff.sql")
@@ -177,11 +186,52 @@ async def get_profile_list(
                             if isinstance(item, dict)
                         ]
 
+        # Build filter options
+        # Role options based on current user's role
+        role_options = []
+        if current_user_role == "superadmin":
+            role_options = [
+                {"value": "superadmin", "label": "Super Administrator"},
+                {"value": "admin", "label": "Administrator"},
+                {"value": "instructional", "label": "Instructional Staff"},
+                {"value": "ta", "label": "Teaching Assistant"},
+                {"value": "guest", "label": "Guest"},
+            ]
+        elif current_user_role == "admin":
+            role_options = [
+                {"value": "admin", "label": "Administrator"},
+                {"value": "instructional", "label": "Instructional Staff"},
+                {"value": "ta", "label": "Teaching Assistant"},
+                {"value": "guest", "label": "Guest"},
+            ]
+        else:
+            role_options = [
+                {"value": "instructional", "label": "Instructional Staff"},
+                {"value": "ta", "label": "Teaching Assistant"},
+                {"value": "guest", "label": "Guest"},
+            ]
+
+        # Cohort options from cohort_mapping
+        cohort_options = [
+            {"value": cid, "label": item.name} for cid, item in cohort_mapping.items()
+        ]
+
+        # Last active options (static)
+        last_active_options = [
+            {"value": "recent", "label": "Recently Active (< 7 days)"},
+            {"value": "moderate", "label": "Moderately Active (7-30 days)"},
+            {"value": "old", "label": "Inactive (> 30 days)"},
+            {"value": "never", "label": "Never Active"},
+        ]
+
         response_data = StaffListResponse(
             staff=staff,
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
             trend_data=trend_data,
+            role_options=role_options,
+            cohort_options=cohort_options,
+            last_active_options=last_active_options,
         )
         
         # Cache response

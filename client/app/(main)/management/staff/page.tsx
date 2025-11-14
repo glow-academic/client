@@ -11,7 +11,7 @@ import Staff from "@/components/staff/Staff";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -56,11 +56,16 @@ type SearchStaffItem = SearchStaffOut["staff"][number];
 type ProcessedCSVRow = ProcessCSVOut["rows"][number];
 type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getStaffList = cache(
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes profileId so entries are per-user.
+ * Tags allow revalidateTag("staff") to invalidate.
+ */
+const getStaffList = unstable_cache(
   async (input: StaffListIn): Promise<StaffListOut> => {
     return api.post("/profile/staff/list", input);
   },
+  ["staff:list"],
+  { tags: ["staff"] }
 );
 
 const getInitialSearchData = cache(
@@ -75,7 +80,7 @@ export async function deleteStaff(
 ): Promise<DeleteStaffOut> {
   "use server";
   const out = await api.post("/profile/staff/delete", input);
-  revalidateTag("profile");
+  revalidateTag("staff");
   return out;
 }
 
@@ -84,7 +89,7 @@ export async function bulkDeleteStaff(
 ): Promise<BulkDeleteStaffOut> {
   "use server";
   const out = await api.post("/profile/staff/bulk-delete", input);
-  revalidateTag("profile");
+  revalidateTag("staff");
   return out;
 }
 
@@ -93,7 +98,7 @@ export async function updateStaff(
 ): Promise<UpdateStaffOut> {
   "use server";
   const out = await api.post("/profile/staff/update", input);
-  revalidateTag("profile");
+  revalidateTag("staff");
   return out;
 }
 
@@ -102,7 +107,7 @@ export async function bulkUpdateStaff(
 ): Promise<BulkUpdateStaffOut> {
   "use server";
   const out = await api.post("/profile/staff/bulk-update", input);
-  revalidateTag("profile");
+  revalidateTag("staff");
   return out;
 }
 
@@ -147,7 +152,7 @@ export async function bulkCreateOrUpdateStaff(
     "/profile/staff/bulk-create-or-update-staff",
     input,
   );
-  revalidateTag("profile");
+  revalidateTag("staff");
   return out;
 }
 

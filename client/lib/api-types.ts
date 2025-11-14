@@ -5517,6 +5517,18 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["ParameterMappingItem"];
             };
+            /** Type Options */
+            type_options: {
+                [key: string]: string;
+            }[];
+            /** Scenario Options */
+            scenario_options: {
+                [key: string]: string;
+            }[];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
         };
         /** DuplicateAgentRequest */
         DuplicateAgentRequest: {
@@ -8423,6 +8435,18 @@ export interface components {
             trend_data: {
                 [key: string]: components["schemas"]["TrendData"][];
             };
+            /** Role Options */
+            role_options: {
+                [key: string]: string;
+            }[];
+            /** Cohort Options */
+            cohort_options: {
+                [key: string]: string;
+            }[];
+            /** Last Active Options */
+            last_active_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * StandardGroup

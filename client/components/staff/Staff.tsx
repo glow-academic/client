@@ -197,52 +197,42 @@ export default function Staff({
     }
   };
 
-  // Filter options (inline)
-  const roleOptions = React.useMemo(() => {
-    const baseOptions = [
-      { value: "instructional", label: "Instructional Staff" },
-      { value: "ta", label: "Teaching Assistant" },
-      { value: "guest", label: "Guest" },
-    ];
+  // Use server-provided filter options directly (no client-side computation)
+  const roleOptions = React.useMemo(
+    () =>
+      (staffData?.role_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [staffData?.role_options]
+  );
 
-    if (
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin"
-    ) {
-      baseOptions.unshift({ value: "admin", label: "Administrator" });
-    }
+  const cohortOptions = React.useMemo(
+    () =>
+      (staffData?.cohort_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [staffData?.cohort_options]
+  );
 
-    if (effectiveProfile?.role === "superadmin") {
-      baseOptions.unshift({
-        value: "superadmin",
-        label: "Super Administrator",
-      });
-    }
-
-    return baseOptions;
-  }, [effectiveProfile?.role]);
-
-  const cohortOptions = React.useMemo(() => {
-    return Object.entries(cohortMapping).map(([id, item]) => ({
-      value: id,
-      label: item.name,
-    }));
-  }, [cohortMapping]);
-
-  const activityOptions = [
-    { value: "true", label: "Active" },
-    { value: "false", label: "Inactive" },
-  ];
-
-  const lastActiveOptions = [
-    { value: "recent", label: "Recently Active (< 7 days)" },
-    { value: "moderate", label: "Moderately Active (7-30 days)" },
-    { value: "old", label: "Inactive (> 30 days)" },
-    { value: "never", label: "Never Active" },
-  ];
+  const lastActiveOptions = React.useMemo(
+    () =>
+      (staffData?.last_active_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [staffData?.last_active_options]
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="staff-index">
       {/* Header with summary stats - 5 KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <ActiveUsersKPI
@@ -278,7 +268,6 @@ export default function Staff({
         departmentMapping={departmentMapping}
         roleOptions={roleOptions}
         cohortOptions={cohortOptions}
-        activityOptions={activityOptions}
         lastActiveOptions={lastActiveOptions}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
@@ -438,7 +427,7 @@ export default function Staff({
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
       >
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="dialog-bulk-delete-staff">
           <AlertDialogHeader>
             <AlertDialogTitle>
               Delete {selectedStaffIds.length} staff member
@@ -521,9 +510,12 @@ export default function Staff({
             );
           })()}
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="btn-cancel-delete">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
               onClick={async () => {
                 try {
                   const deletableIds = staff
@@ -560,7 +552,7 @@ export default function Staff({
         open={showSingleDeleteDialog}
         onOpenChange={setShowSingleDeleteDialog}
       >
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="dialog-delete-staff">
           <AlertDialogHeader>
             <AlertDialogTitle>
               Delete {deleteStaffMember?.first_name}{" "}
@@ -630,9 +622,12 @@ export default function Staff({
               );
             })()}
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="btn-cancel-delete">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 text-white"
+              data-testid="btn-confirm-delete"
               onClick={async () => {
                 if (!deleteStaffMember) return;
 

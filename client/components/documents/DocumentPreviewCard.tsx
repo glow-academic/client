@@ -112,6 +112,10 @@ export function DocumentPreviewCard({
     <>
       <div
         className={`group relative border rounded-lg hover:shadow-md transition-all bg-white ${className}`}
+        data-testid="document-card"
+        data-document-id={documentItem.document_id}
+        role="gridcell"
+        aria-label={`document card ${documentItem.name}`}
       >
         {/* Action buttons - moved to top right */}
         {showActions && (
@@ -122,6 +126,8 @@ export function DocumentPreviewCard({
               size="sm"
               className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
               onClick={handlePreview}
+              aria-label={`Preview document ${documentItem.name}`}
+              data-testid="btn-preview-document"
             >
               <Eye className="h-3 w-3" />
             </Button>
@@ -132,6 +138,8 @@ export function DocumentPreviewCard({
                 size="sm"
                 className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
                 onClick={() => onEdit(documentItem)}
+                aria-label={`Edit document ${documentItem.name}`}
+                data-testid="btn-edit-document"
               >
                 <Edit className="h-3 w-3" />
               </Button>
@@ -143,6 +151,8 @@ export function DocumentPreviewCard({
                 size="sm"
                 className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
                 onClick={() => onDelete(documentItem)}
+                aria-label={`Delete document ${documentItem.name}`}
+                data-testid="btn-delete-document"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>

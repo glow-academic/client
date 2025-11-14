@@ -185,7 +185,7 @@ export default function StaffBulkEditModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" data-testid="dialog-bulk-edit-staff">
           <DialogHeader>
             <DialogTitle>Bulk Edit Staff</DialogTitle>
           </DialogHeader>
@@ -208,7 +208,7 @@ export default function StaffBulkEditModal({
                 >
                   Keep Current
                 </Button>
-                <div className="flex-1">
+                <div className="flex-1" data-testid="input-bulk-staff-role">
                   <StaffRolePicker
                     selectedRole={bulkRole === "__keep__" ? "" : bulkRole}
                     onSelect={(value) => {
@@ -235,6 +235,7 @@ export default function StaffBulkEditModal({
                 min={1}
                 step={1}
                 disabled={isSubmitting || bulkUnlimited}
+                data-testid="input-bulk-staff-requests-per-day"
               />
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -275,10 +276,15 @@ export default function StaffBulkEditModal({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
+                data-testid="btn-cancel-bulk-staff-edit"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                data-testid="btn-submit-bulk-staff-edit"
+              >
                 {isSubmitting ? "Updating..." : "Update Staff"}
               </Button>
             </div>
@@ -288,7 +294,7 @@ export default function StaffBulkEditModal({
 
       {/* Confirmation Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="dialog-confirm-bulk-staff-edit">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
