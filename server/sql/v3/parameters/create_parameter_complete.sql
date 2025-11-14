@@ -26,9 +26,17 @@ items_expanded AS (
                  AND item->'department_ids' != 'null'::jsonb
                  AND jsonb_typeof(item->'department_ids') = 'array'
                  AND jsonb_array_length(item->'department_ids') > 0
-            THEN ARRAY(SELECT jsonb_array_elements_text(item->'department_ids'))
+            THEN (
+                SELECT COALESCE(array_agg(elem), ARRAY[]::text[])
+                FROM jsonb_array_elements_text(item->'department_ids') AS elem
+                WHERE elem != 'None' AND elem IS NOT NULL
+            )
             WHEN $7::text[] IS NOT NULL AND array_length($7::text[], 1) > 0
-            THEN $7::text[]
+            THEN (
+                SELECT COALESCE(array_agg(elem), ARRAY[]::text[])
+                FROM unnest($7::text[]) AS elem
+                WHERE elem != 'None' AND elem IS NOT NULL
+            )
             ELSE NULL::text[]
         END as department_ids,
         ordinality as item_order

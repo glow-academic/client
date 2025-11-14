@@ -1,18 +1,20 @@
 WITH resolve_profile_id AS (
     -- Resolve "guest-profile-id" to actual default guest profile ID
     SELECT 
-        CASE 
-            WHEN $2::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
-            ELSE $2::uuid
-        END as resolved_profile_id
+        (
+            CASE 
+                WHEN $2::text = 'guest-profile-id' THEN
+                    (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+                ELSE $2::uuid
+            END
+        )::uuid as resolved_profile_id
 ),
 user_profile AS (
     SELECT 
         up.id,
         up.role
     FROM resolve_profile_id rpi
-    JOIN user_profiles up ON up.id = rpi.resolved_profile_id
+    JOIN profiles up ON up.id = rpi.resolved_profile_id
 ),
 parameter_active_scenario_links AS (
     SELECT 
