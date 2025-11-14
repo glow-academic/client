@@ -17652,10 +17652,7 @@
           },
           "standards_mapping": {
             "additionalProperties": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
+              "$ref": "#/components/schemas/StandardMappingItem"
             },
             "type": "object",
             "title": "Standards Mapping"

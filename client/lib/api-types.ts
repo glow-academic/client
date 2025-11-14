@@ -7477,9 +7477,7 @@ export interface components {
             };
             /** Standards Mapping */
             standards_mapping: {
-                [key: string]: {
-                    [key: string]: string;
-                };
+                [key: string]: components["schemas"]["StandardMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
