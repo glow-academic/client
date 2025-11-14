@@ -512,7 +512,7 @@ export default function Leaderboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="leaderboard-container">
       {/* Dashboard Content */}
       <div className="space-y-8">
         {/* Accolades Section */}
@@ -529,6 +529,7 @@ export default function Leaderboard({
                     key={key}
                     icon={icon}
                     title={title}
+                    data-testid={`accolade-${key}`}
                     user={
                       accolade?.holder
                         ? {
@@ -632,6 +633,7 @@ export default function Leaderboard({
                       <Link
                         href={`/analytics/reports/p/${selected.accolade.holder.profileId}`}
                         className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
+                        data-testid={`btn-view-report-${selected.accolade.holder.profileId}`}
                       >
                         View report
                       </Link>
@@ -699,6 +701,7 @@ export default function Leaderboard({
                             <Link
                               href={`/analytics/reports/p/${challenger.row.profileId}`}
                               className="text-xs px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                              data-testid={`btn-view-report-${challenger.row.profileId}`}
                             >
                               View
                             </Link>

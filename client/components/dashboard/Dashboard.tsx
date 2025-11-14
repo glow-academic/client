@@ -579,7 +579,7 @@ export default function Dashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="dashboard-container">
       {/* Header Metrics with Dynamic Pagination */}
       {headerComponents.length > 0 && (
         <div className="space-y-4">
@@ -615,6 +615,7 @@ export default function Dashboard({
                     isHeaderHovered ? "opacity-100" : "opacity-0"
                   } hover:opacity-100`}
                   onClick={() => navigateHeader("prev")}
+                  data-testid="dashboard-header-carousel-prev"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -625,6 +626,7 @@ export default function Dashboard({
                     isHeaderHovered ? "opacity-100" : "opacity-0"
                   } hover:opacity-100`}
                   onClick={() => navigateHeader("next")}
+                  data-testid="dashboard-header-carousel-next"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -682,6 +684,7 @@ export default function Dashboard({
                         isPrimaryHovered ? "opacity-100" : "opacity-0"
                       } hover:opacity-100`}
                       onClick={() => navigatePrimary("prev")}
+                      data-testid="dashboard-primary-carousel-prev"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -692,6 +695,7 @@ export default function Dashboard({
                         isPrimaryHovered ? "opacity-100" : "opacity-0"
                       } hover:opacity-100`}
                       onClick={() => navigatePrimary("next")}
+                      data-testid="dashboard-primary-carousel-next"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -745,6 +749,7 @@ export default function Dashboard({
                         isSecondaryHovered ? "opacity-100" : "opacity-0"
                       } hover:opacity-100`}
                       onClick={() => navigateSecondary("prev")}
+                      data-testid="dashboard-secondary-carousel-prev"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -755,6 +760,7 @@ export default function Dashboard({
                         isSecondaryHovered ? "opacity-100" : "opacity-0"
                       } hover:opacity-100`}
                       onClick={() => navigateSecondary("next")}
+                      data-testid="dashboard-secondary-carousel-next"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -815,6 +821,7 @@ export default function Dashboard({
                           isLeftFooterHovered ? "opacity-100" : "opacity-0"
                         } hover:opacity-100`}
                         onClick={() => navigateLeftFooter("prev")}
+                        data-testid="dashboard-left-footer-carousel-prev"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
@@ -825,6 +832,7 @@ export default function Dashboard({
                           isLeftFooterHovered ? "opacity-100" : "opacity-0"
                         } hover:opacity-100`}
                         onClick={() => navigateLeftFooter("next")}
+                        data-testid="dashboard-left-footer-carousel-next"
                       >
                         <ChevronRight className="h-4 w-4" />
                       </Button>
@@ -879,6 +887,7 @@ export default function Dashboard({
                           isRightFooterHovered ? "opacity-100" : "opacity-0"
                         } hover:opacity-100`}
                         onClick={() => navigateRightFooter("prev")}
+                        data-testid="dashboard-right-footer-carousel-prev"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
@@ -889,6 +898,7 @@ export default function Dashboard({
                           isRightFooterHovered ? "opacity-100" : "opacity-0"
                         } hover:opacity-100`}
                         onClick={() => navigateRightFooter("next")}
+                        data-testid="dashboard-right-footer-carousel-next"
                       >
                         <ChevronRight className="h-4 w-4" />
                       </Button>

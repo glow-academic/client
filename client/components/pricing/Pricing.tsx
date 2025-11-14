@@ -250,10 +250,10 @@ export default function Pricing({ pricingData }: PricingProps) {
   ]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-testid="pricing-container">
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card>
+        <Card data-testid="pricing-card-total-spend">
           <CardHeader className="py-3">
             <CardTitle className="text-sm font-medium">Total spend</CardTitle>
           </CardHeader>
@@ -263,7 +263,7 @@ export default function Pricing({ pricingData }: PricingProps) {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-testid="pricing-card-run-count">
           <CardHeader className="py-3">
             <CardTitle className="text-sm font-medium">
               Number of runs
@@ -273,7 +273,7 @@ export default function Pricing({ pricingData }: PricingProps) {
             <div className="text-2xl font-semibold">{totals.runCount}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card data-testid="pricing-card-avg-cost">
           <CardHeader className="py-3">
             <CardTitle className="text-sm font-medium">
               Avg cost / run
@@ -288,7 +288,7 @@ export default function Pricing({ pricingData }: PricingProps) {
       </div>
 
       {/* Chart */}
-      <Card className="w-full">
+      <Card className="w-full" data-testid="pricing-chart">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Spend over time</CardTitle>
         </CardHeader>
@@ -388,7 +388,7 @@ export default function Pricing({ pricingData }: PricingProps) {
       </Card>
 
       {/* Runs table */}
-      <div className="mt-6">
+      <div className="mt-6" data-testid="pricing-runs-table">
         <RunsDataTable
           rows={runRows}
           modelMapping={modelMapping}

@@ -36,6 +36,7 @@ export interface AccoladeCardProps {
   onClick?: (() => void) | undefined;
   layoutId?: string;
   disabled?: boolean;
+  "data-testid"?: string;
 }
 
 const getInitials = (name: string) =>
@@ -53,6 +54,7 @@ export default function AccoladeCard({
   onClick,
   layoutId,
   disabled,
+  "data-testid": dataTestId,
 }: AccoladeCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [hovering, setHovering] = useState(false);
@@ -71,7 +73,7 @@ export default function AccoladeCard({
   const asButton = !!onClick && !disabled;
 
   return (
-    <div className="animated-gradient-border rounded-2xl p-[1px] h-full">
+    <div className="animated-gradient-border rounded-2xl p-[1px] h-full" data-testid={dataTestId}>
       <motion.div
         ref={ref}
         {...(layoutId && { layoutId })}

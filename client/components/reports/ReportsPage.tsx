@@ -154,10 +154,12 @@ export default function ReportsPage({ reportsData }: ReportsPageProps) {
   }, [bundle]);
 
   return (
-    <Reports
-      data={transformedData}
-      scenarioMapping={bundle?.scenario_mapping ?? {}}
-      simulationMapping={bundle?.simulation_mapping ?? {}}
-    />
+    <div data-testid="reports-container">
+      <Reports
+        data={transformedData}
+        scenarioMapping={bundle?.scenario_mapping ?? {}}
+        simulationMapping={bundle?.simulation_mapping ?? {}}
+      />
+    </div>
   );
 }

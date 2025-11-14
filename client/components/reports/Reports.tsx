@@ -243,6 +243,7 @@ export default function Reports({
             className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0"
             onClick={() => handleViewReport(item.profile_id)}
             title="Click to view detailed report"
+            data-testid={`reports-profile-row-${item.profile_id}`}
           >
             <div className="flex flex-col items-start">
               <span className="text-xs font-medium">{item.profileName}</span>
@@ -560,7 +561,7 @@ export default function Reports({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="reports-table-container">
       <ReportsDataTable
         columns={columns}
         data={data}

@@ -12,19 +12,26 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/api/v3/reports", "post">;
 type ReportsOut = OutputOf<"/api/v3/reports", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getReports = cache(async (input: ReportsIn): Promise<ReportsOut> => {
-  return api.post("/reports", input);
-});
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes filters so entries are per-filter combination.
+ * Tags allow revalidateTag("reports") to invalidate.
+ */
+const getReports = unstable_cache(
+  async (input: ReportsIn): Promise<ReportsOut> => {
+    return api.post("/reports", input);
+  },
+  ["reports:list"],
+  { tags: ["reports"] }
+);
 
 /** ---- Inline filters function for reports page ---- */
-const getReportsFilters = cache(async (searchParams?: URLSearchParams) => {
+const getReportsFilters = unstable_cache(async (searchParams?: URLSearchParams) => {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
@@ -66,7 +73,7 @@ const getReportsFilters = cache(async (searchParams?: URLSearchParams) => {
   }
 
   return defaults;
-});
+}, ["reports:filters"], { tags: ["reports"] });
 
 export const metadata: Metadata = {
   title: "Reports",
@@ -104,7 +111,7 @@ export default async function ReportsFullPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="reports-index">
       <ReportsPage reportsData={reportsData} />
     </div>
   );

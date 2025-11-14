@@ -276,7 +276,7 @@ export default function LeaderboardTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="leaderboard-table">
       {/* Toolbar with filters */}
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2 flex-wrap">
@@ -344,6 +344,7 @@ export default function LeaderboardTable({
                       row.original.id === currentUserId ? "bg-muted/50" : ""
                     } ${onViewReport ? "hover:bg-muted/30 transition-colors cursor-pointer" : ""}`}
                     onClick={() => onViewReport?.(row.original.id)}
+                    data-testid={`leaderboard-row-${row.original.id}`}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

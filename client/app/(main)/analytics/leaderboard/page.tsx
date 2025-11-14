@@ -12,21 +12,26 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type LeaderboardIn = InputOf<"/api/v3/leaderboard", "post">;
 type LeaderboardOut = OutputOf<"/api/v3/leaderboard", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getLeaderboard = cache(
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes filters so entries are per-filter combination.
+ * Tags allow revalidateTag("leaderboard") to invalidate.
+ */
+const getLeaderboard = unstable_cache(
   async (input: LeaderboardIn): Promise<LeaderboardOut> => {
     return api.post("/leaderboard", input);
-  }
+  },
+  ["leaderboard:list"],
+  { tags: ["leaderboard"] }
 );
 
 /** ---- Inline filters function for leaderboard page ---- */
-const getLeaderboardFilters = cache(async (searchParams?: URLSearchParams) => {
+const getLeaderboardFilters = unstable_cache(async (searchParams?: URLSearchParams) => {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
@@ -68,7 +73,7 @@ const getLeaderboardFilters = cache(async (searchParams?: URLSearchParams) => {
   }
 
   return defaults;
-});
+}, ["leaderboard:filters"], { tags: ["leaderboard"] });
 
 export const metadata: Metadata = {
   title: "Leaderboard",
@@ -106,7 +111,7 @@ export default async function LeaderboardPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-page="leaderboard-index">
       <Leaderboard leaderboardData={leaderboardData} />
     </div>
   );
