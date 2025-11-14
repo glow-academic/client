@@ -38,27 +38,27 @@ async def bulk_delete_profile(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Check for default profiles
-        check_sql = load_sql("sql/v3/profile/staff/bulk_check_default_profiles.sql")
-        sql_query = check_sql  # Track primary query
+        # Single consolidated query: checks defaults and deletes non-default profiles
+        sql_query = load_sql("sql/v3/profile/staff/bulk_delete_profiles_complete.sql")
         sql_params = (request.profileIds,)
-        default_profiles = await conn.fetch(check_sql, request.profileIds)
-        default_ids = [str(row["id"]) for row in default_profiles]
+        
+        result = await conn.fetchrow(sql_query, request.profileIds)
 
-        # Filter out default profiles
-        deletable_ids = [pid for pid in request.profileIds if pid not in default_ids]
+        if not result:
+            raise HTTPException(
+                status_code=500, detail="Failed to delete profiles"
+            )
 
-        if not deletable_ids:
+        deleted_count = result.get("deleted_count", 0)
+        default_ids = result.get("default_profile_ids", [])
+
+        if deleted_count == 0 and default_ids:
             raise HTTPException(
                 status_code=400,
                 detail="No profiles can be deleted (all are default profiles)",
             )
 
-        # Delete profiles
-        delete_sql = load_sql("sql/v3/profile/staff/bulk_delete_profiles.sql")
-        await conn.execute(delete_sql, deletable_ids)
-
-        message = f"{len(deletable_ids)} staff members deleted successfully"
+        message = f"{deleted_count} staff members deleted successfully"
         if default_ids:
             message += f" ({len(default_ids)} default profiles skipped)"
 

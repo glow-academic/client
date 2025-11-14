@@ -48,21 +48,24 @@ async def update_cohort(
     sql_params: tuple[Any, ...] | None = None
     
     try:
+        # Handle None description (cohorts.description is NOT NULL, so use empty string)
+        description = request.description if request.description is not None else ""
+        
+        # Single consolidated query: updates cohort and department relationships
+        sql_query = load_sql("sql/v3/cohorts/update_cohort_complete.sql")
+        sql_params = (
+            uuid.UUID(request.cohortId),
+            request.title,
+            description,
+            request.active,
+            request.department_ids if request.department_ids else [],
+        )
+
         async with transaction(conn):
-            # Update cohort
-            # Handle None description (cohorts.description is NOT NULL, so use empty string)
-            description = request.description if request.description is not None else ""
-            sql_query = load_sql("sql/v3/cohorts/update_cohort.sql")
-            sql_params = (uuid.UUID(request.cohortId), request.title, description, request.active)
-            await conn.execute(sql_query, uuid.UUID(request.cohortId), request.title, description, request.active)
+            result = await conn.fetchrow(sql_query, *sql_params)
 
-            # Update departments (delete old, create new)
-            delete_dept_sql = load_sql("sql/v3/cohorts/delete_cohort_departments.sql")
-            await conn.execute(delete_dept_sql, uuid.UUID(request.cohortId))
-
-            if request.department_ids:
-                dept_sql = load_sql("sql/v3/cohorts/create_cohort_departments.sql")
-                await conn.execute(dept_sql, uuid.UUID(request.cohortId), request.department_ids)
+            if not result:
+                raise HTTPException(status_code=404, detail="Cohort not found")
 
             # Note: Profile and simulation associations are not updated in this endpoint.
             # Use dedicated endpoints (add-profiles, remove-profiles) for managing these relationships.

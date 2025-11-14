@@ -41,39 +41,22 @@ async def duplicate_cohort(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        async with transaction(conn):
-            # Get original cohort data
-            get_sql = load_sql("sql/v3/cohorts/get_cohort_for_duplicate.sql")
-            result = await conn.fetchrow(get_sql, uuid.UUID(request.cohortId))
+        # Single consolidated query: gets original, creates duplicate, and copies relationships
+        sql_query = load_sql("sql/v3/cohorts/duplicate_cohort_complete.sql")
+        sql_params = (request.cohortId,)
 
-            if not result:
+        async with transaction(conn):
+            result = await conn.fetchrow(sql_query, uuid.UUID(request.cohortId))
+
+            if not result or not result["id"]:
                 raise HTTPException(status_code=404, detail="Cohort not found")
 
-            # Insert duplicate cohort (track primary operation)
-            sql_query = load_sql("sql/v3/cohorts/duplicate_cohort.sql")
-            sql_params = (result["title"], result["description"])
-            new_cohort = await conn.fetchrow(sql_query, result["title"], result["description"])
-
-            if not new_cohort:
-                raise HTTPException(status_code=500, detail="Failed to create duplicate cohort")
-
-            new_cohort_id = str(new_cohort["id"])
-
-            # Copy relationships
-            copy_profiles_sql = load_sql("sql/v3/cohorts/copy_cohort_profiles.sql")
-            await conn.execute(
-                copy_profiles_sql, uuid.UUID(new_cohort_id), uuid.UUID(request.cohortId)
-            )
-
-            copy_simulations_sql = load_sql("sql/v3/cohorts/copy_cohort_simulations.sql")
-            await conn.execute(
-                copy_simulations_sql, uuid.UUID(new_cohort_id), uuid.UUID(request.cohortId)
-            )
+            new_cohort_id = str(result["id"])
 
         result_response = DuplicateCohortResponse(
             success=True,
             cohortId=new_cohort_id,
-            message=f"Cohort '{result['title']}' duplicated successfully",
+            message=f"Cohort '{result['original_title']}' duplicated successfully",
         )
         
         # Invalidate cache after mutation

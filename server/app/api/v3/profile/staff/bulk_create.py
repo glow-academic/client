@@ -41,47 +41,50 @@ async def bulk_create_profile(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Check for duplicate aliases
+        # Prepare arrays for bulk operation (maintain parallel structure)
+        profile_ids = [str(uuid.uuid4()) for _ in request.profiles]
+        first_names = [p.firstName for p in request.profiles]
+        last_names = [p.lastName for p in request.profiles]
         aliases = [p.alias for p in request.profiles]
-        check_sql = load_sql("sql/v3/profile/staff/check_aliases_exist.sql")
-        existing = await conn.fetch(check_sql, aliases)
+        roles = [p.role for p in request.profiles]
+        # Department IDs must be parallel array (use None/null for profiles without departments)
+        department_ids = [p.department_id if p.department_id else None for p in request.profiles]
 
-        if existing:
-            existing_aliases = [row["alias"] for row in existing]
-            raise HTTPException(
-                status_code=400,
-                detail=f"Aliases already exist: {', '.join(existing_aliases)}",
-            )
-
-        # Create all profiles
-        profile_ids: list[str] = []
-        create_sql = load_sql("sql/v3/profile/staff/create_profile.sql")
-        dept_sql = load_sql("sql/v3/profile/staff/insert_profile_department.sql")
-        sql_query = create_sql  # Track primary query
-        sql_params = ()  # Multiple queries with different params
+        # Single consolidated query: validates aliases, creates all profiles, and inserts departments
+        sql_query = load_sql("sql/v3/profile/staff/bulk_create_profile_complete.sql")
+        sql_params = (
+            profile_ids,
+            first_names,
+            last_names,
+            aliases,
+            roles,
+            department_ids if department_ids else [],
+        )
 
         async with transaction(conn):
-            for profile_req in request.profiles:
-                profile_id = str(uuid.uuid4())
-                profile_ids.append(profile_id)
+            result = await conn.fetchrow(sql_query, *sql_params)
 
-                # Insert profile
-                await conn.execute(
-                    create_sql,
-                    profile_id,
-                    profile_req.firstName,
-                    profile_req.lastName,
-                    profile_req.alias,
-                    profile_req.role,
-                    True,  # active
-                    False,  # default_profile
-                    False,  # viewed_intro
-                    False,  # viewed_chat
+            if not result:
+                raise HTTPException(
+                    status_code=500, detail="Failed to create profiles"
                 )
 
-                # If department_id is provided, insert profile_departments relationship
-                if profile_req.department_id:
-                    await conn.execute(dept_sql, profile_id, profile_req.department_id)
+            # Check if any aliases already exist
+            existing_aliases = result.get("existing_aliases", [])
+            if existing_aliases:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Aliases already exist: {', '.join(existing_aliases)}",
+                )
+
+            # Get created profile IDs
+            created_ids = result.get("profile_ids", [])
+            if not created_ids:
+                raise HTTPException(
+                    status_code=500, detail="Failed to create profiles"
+                )
+
+            profile_ids = [str(pid) for pid in created_ids]
 
         result_data = BulkCreateStaffResponse(
             success=True,

@@ -42,37 +42,26 @@ async def update_profile(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Check if profile exists
-        name_sql = load_sql("sql/v3/profile/staff/get_profile_name.sql")
-        sql_query = name_sql  # Track primary query
-        sql_params = (request.profileId,)
-        existing = await conn.fetchrow(name_sql, request.profileId)
-
-        if not existing:
-            raise HTTPException(
-                status_code=404, detail=f"Profile not found: {request.profileId}"
-            )
+        # Single consolidated query: checks existence, updates profile, department, and request limit
+        sql_query = load_sql("sql/v3/profile/staff/update_profile_complete.sql")
+        sql_params = (
+            request.profileId,
+            request.role,
+            request.active,
+            request.department_id,
+            request.requests_per_day,
+        )
 
         async with transaction(conn):
-            # Update profile
-            update_sql = load_sql("sql/v3/profile/staff/update_profile.sql")
-            await conn.execute(update_sql, request.profileId, request.role, request.active)
+            result = await conn.fetchrow(sql_query, *sql_params)
 
-            # Update department
-            dept_sql = load_sql("sql/v3/profile/staff/update_profile_department.sql")
-            await conn.execute(dept_sql, request.profileId, request.department_id)
-
-            # Update or insert profile request limit if provided
-            if request.requests_per_day is not None:
-                limit_sql = load_sql(
-                    "sql/v3/profile/staff/upsert_profile_request_limit.sql"
-                )
-                await conn.execute(
-                    limit_sql, request.profileId, request.requests_per_day
+            if not result or not result["id"]:
+                raise HTTPException(
+                    status_code=404, detail=f"Profile not found: {request.profileId}"
                 )
 
         result_data = UpdateStaffResponse(
-            success=True, message=f"Staff '{existing['name']}' updated successfully"
+            success=True, message=f"Staff '{result['name']}' updated successfully"
         )
         
         # Invalidate cache after mutation

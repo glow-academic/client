@@ -39,43 +39,51 @@ async def create_profile(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateStaffResponse:
     """Create a new profile."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        # Check if alias already exists
-        check_sql = load_sql("sql/v3/profile/staff/check_alias_exists.sql")
-        existing = await conn.fetchrow(check_sql, request.alias)
-
-        if existing:
-            raise HTTPException(
-                status_code=400, detail=f"Alias '{request.alias}' already exists"
-            )
-
         # Generate new profile ID
         profile_id = str(uuid.uuid4())
 
+        # Single consolidated query: validates alias, creates profile, and inserts department
+        sql_query = load_sql("sql/v3/profile/staff/create_profile_complete.sql")
+        sql_params = (
+            profile_id,
+            request.firstName,
+            request.lastName,
+            request.alias,
+            request.role,
+            True,  # active
+            False,  # default_profile
+            False,  # viewed_intro
+            False,  # viewed_chat
+            request.department_id,
+        )
+        
         async with transaction(conn):
-            # Insert profile
-            create_sql = load_sql("sql/v3/profile/staff/create_profile.sql")
-            await conn.execute(
-                create_sql,
-                profile_id,
-                request.firstName,
-                request.lastName,
-                request.alias,
-                request.role,
-                True,  # active
-                False,  # default_profile
-                False,  # viewed_intro
-                False,  # viewed_chat
-            )
+            result = await conn.fetchrow(sql_query, *sql_params)
 
-            # If department_id is provided, insert profile_departments relationship
-            if request.department_id:
-                dept_sql = load_sql("sql/v3/profile/staff/insert_profile_department.sql")
-                await conn.execute(dept_sql, profile_id, request.department_id)
+            if not result:
+                raise HTTPException(
+                    status_code=500, detail="Failed to create profile"
+                )
+
+            # Check if alias already exists (returned from query)
+            if result["alias_exists"]:
+                raise HTTPException(
+                    status_code=400, detail=f"Alias '{request.alias}' already exists"
+                )
+
+            # Verify profile was created
+            if not result["id"]:
+                raise HTTPException(
+                    status_code=500, detail="Failed to create profile"
+                )
 
         result_data = CreateStaffResponse(
             success=True,
-            profileId=profile_id,
+            profileId=str(result["id"]),
             message=f"Staff '{request.firstName} {request.lastName}' created successfully",
         )
         
@@ -92,8 +100,8 @@ async def create_profile(
             error=e,
             route_path="/api/v3/profile/staff/create",  # Constructed path since no Request
             operation="create_profile",
-            sql_query=None,  # Multiple queries, track primary
-            sql_params=None,
+            sql_query=sql_query,
+            sql_params=sql_params,
             request=None,
         )
 

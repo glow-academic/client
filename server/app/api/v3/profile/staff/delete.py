@@ -38,13 +38,13 @@ async def delete_profile(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Check if profile is default
-        check_sql = load_sql("sql/v3/profile/staff/check_default_profile.sql")
-        sql_query = check_sql  # Track primary query
+        # Single consolidated query: checks existence/default, gets name, and deletes
+        sql_query = load_sql("sql/v3/profile/staff/delete_profile_complete.sql")
         sql_params = (request.profileId,)
-        result = await conn.fetchrow(check_sql, request.profileId)
+        
+        result = await conn.fetchrow(sql_query, request.profileId)
 
-        if not result:
+        if not result or not result["id"]:
             raise HTTPException(
                 status_code=404, detail=f"Profile not found: {request.profileId}"
             )
@@ -52,21 +52,14 @@ async def delete_profile(
         if result["default_profile"]:
             raise HTTPException(status_code=400, detail="Cannot delete default profile")
 
-        # Get profile name
-        name_sql = load_sql("sql/v3/profile/staff/get_profile_name.sql")
-        profile = await conn.fetchrow(name_sql, request.profileId)
-
-        if not profile:
+        # Verify deletion occurred (query performs the delete)
+        if not result.get("deleted", False):
             raise HTTPException(
-                status_code=404, detail=f"Profile not found: {request.profileId}"
+                status_code=500, detail="Failed to delete profile"
             )
 
-        # Delete profile
-        delete_sql = load_sql("sql/v3/profile/staff/delete_profile.sql")
-        await conn.execute(delete_sql, request.profileId)
-
         result_data = DeleteStaffResponse(
-            success=True, message=f"Staff '{profile['name']}' deleted successfully"
+            success=True, message=f"Staff '{result['name']}' deleted successfully"
         )
         
         # Invalidate cache after mutation

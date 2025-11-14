@@ -1,0 +1,71 @@
+-- Bulk create staff profiles with validation and department inserts in single query (DHH style)
+-- Parameters: $1=profile_ids (uuid[]), $2=first_names (text[]), $3=last_names (text[]), 
+--             $4=aliases (text[]), $5=roles (text[]), $6=department_ids (uuid[], nullable, parallel array)
+-- Returns: profile_ids (uuid[]), existing_aliases (text[])
+
+WITH alias_check AS (
+    -- Check if any aliases already exist
+    SELECT array_agg(alias) as existing_aliases
+    FROM profiles 
+    WHERE alias = ANY($4::text[])
+),
+profiles_data AS (
+    -- Prepare profile data using unnest (maintains parallel array relationship)
+    -- Note: department_ids array must match profiles array (use NULL for profiles without departments)
+    SELECT 
+        t.profile_id,
+        t.first_name,
+        t.last_name,
+        t.alias,
+        t.role,
+        t.dept_id
+    FROM UNNEST(
+        $1::uuid[], 
+        $2::text[], 
+        $3::text[], 
+        $4::text[], 
+        $5::text[],
+        COALESCE($6::uuid[], ARRAY[]::uuid[])
+    ) AS t(profile_id, first_name, last_name, alias, role, dept_id)
+),
+profile_insert AS (
+    -- Insert all profiles (only if no aliases exist)
+    INSERT INTO profiles (
+        id, first_name, last_name, alias, role, active, 
+        default_profile, viewed_intro, viewed_chat
+    )
+    SELECT 
+        pd.profile_id,
+        pd.first_name,
+        pd.last_name,
+        pd.alias,
+        pd.role,
+        true,  -- active
+        false,  -- default_profile
+        false,  -- viewed_intro
+        false   -- viewed_chat
+    FROM profiles_data pd
+    WHERE NOT EXISTS (SELECT 1 FROM alias_check WHERE existing_aliases IS NOT NULL)
+    RETURNING id
+),
+department_insert AS (
+    -- Insert all department relationships
+    INSERT INTO profile_departments (profile_id, department_id, is_primary, active)
+    SELECT 
+        pd.profile_id,
+        pd.dept_id,
+        true,  -- is_primary
+        true  -- active
+    FROM profiles_data pd
+    WHERE pd.dept_id IS NOT NULL
+        AND EXISTS (SELECT 1 FROM profile_insert pi WHERE pi.id = pd.profile_id)
+    ON CONFLICT (profile_id, department_id) DO NOTHING
+)
+-- Return created profile IDs and existing aliases
+SELECT 
+    COALESCE(array_agg(pi.id ORDER BY pi.id), ARRAY[]::uuid[]) as profile_ids,
+    COALESCE(ac.existing_aliases, ARRAY[]::text[]) as existing_aliases
+FROM profile_insert pi
+CROSS JOIN alias_check ac
+GROUP BY ac.existing_aliases
+
