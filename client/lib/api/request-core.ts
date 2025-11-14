@@ -1,10 +1,10 @@
 // lib/api/request-core.ts
 function encodePath(
   path: string,
-  params: Record<string, string | number | boolean> = {},
+  params: Record<string, string | number | boolean> = {}
 ) {
   return path.replace(/\{(\w+)\}/g, (_, k) =>
-    encodeURIComponent(String(params[k])),
+    encodeURIComponent(String(params[k]))
   );
 }
 
@@ -20,7 +20,7 @@ export async function doRequest<T>(
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   args?: unknown,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<T> {
   const bag = (args ?? {}) as ArgBag;
 
@@ -50,7 +50,7 @@ export async function doRequest<T>(
   } else if (bag.formData && typeof bag.formData === "object") {
     const fd = new FormData();
     for (const [k, v] of Object.entries(
-      bag.formData as Record<string, unknown>,
+      bag.formData as Record<string, unknown>
     )) {
       if (v == null) continue;
       // @ts-expect-error: FormData accepts various runtime types
@@ -68,7 +68,46 @@ export async function doRequest<T>(
     headers,
     body,
   });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+
+  if (!res.ok) {
+    // Try to extract error details from FastAPI error response
+    const contentType = res.headers.get("content-type") || "";
+    let errorMessage = `${res.status} ${res.statusText}`;
+
+    if (contentType.includes("application/json")) {
+      try {
+        const errorData = await res.json().catch(() => null);
+        if (errorData && typeof errorData === "object") {
+          // FastAPI returns {"detail": "..."} for errors
+          if ("detail" in errorData && typeof errorData.detail === "string") {
+            errorMessage = `${res.status} ${errorData.detail}`;
+          } else if (
+            "message" in errorData &&
+            typeof errorData.message === "string"
+          ) {
+            errorMessage = `${res.status} ${errorData.message}`;
+          } else if (
+            "error" in errorData &&
+            typeof errorData.error === "string"
+          ) {
+            errorMessage = `${res.status} ${errorData.error}`;
+          }
+        }
+      } catch {
+        // If JSON parsing fails, fall back to status text
+      }
+    }
+
+    const error = new Error(errorMessage) as Error & {
+      status: number;
+      statusText: string;
+    };
+    // Attach status code and original response for debugging
+    error.status = res.status;
+    error.statusText = res.statusText;
+    throw error;
+  }
+
   if (res.status === 204) return undefined as T;
 
   const ct = res.headers.get("content-type") || "";

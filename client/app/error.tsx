@@ -2,9 +2,10 @@
 import { createFeedback } from "@/app/(main)/layout-server";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
-import { useProfile } from "@/contexts/profile-context";
+import { ProfileContext } from "@/contexts/profile-context";
 import { Bug } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useContext } from "react";
 
 export default function Error({
   error,
@@ -14,11 +15,13 @@ export default function Error({
   reset: () => void;
 }) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  // Use useContext directly instead of useProfile() to avoid throwing and masking real errors
+  const profileContext = useContext(ProfileContext);
+  const effectiveProfile = profileContext?.effectiveProfile ?? null;
 
   const handleBackToGlow = () => {
-    // Navigate based on effective role
-    if (effectiveProfile?.role !== "ta" && effectiveProfile?.role !== "guest") {
+    // Navigate based on effective role if available, otherwise default to home
+    if (effectiveProfile?.role && effectiveProfile.role !== "ta" && effectiveProfile.role !== "guest") {
       router.push("/analytics");
     } else {
       router.push("/home");
@@ -37,7 +40,17 @@ export default function Error({
             <h3 className="text-xl font-semibold text-foreground">
               An error occurred
             </h3>
-            <p className="text-muted-foreground text-sm">{error.message}</p>
+            <p className="text-muted-foreground text-sm break-words">{error.message}</p>
+            {error.stack && (
+              <details className="mt-4 text-left">
+                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                  Stack Trace
+                </summary>
+                <pre className="mt-2 text-xs text-muted-foreground overflow-auto max-h-48 p-2 bg-muted rounded">
+                  {error.stack}
+                </pre>
+              </details>
+            )}
           </div>
         </div>
 

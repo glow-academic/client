@@ -2,16 +2,16 @@
 
 import json
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem, StandardMappingItem
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class RubricDetailRequest(BaseModel):
@@ -71,9 +71,13 @@ async def get_rubric_detail(
         response.headers["X-Cache-Hit"] = "1"
         return RubricDetailResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/rubrics/get_rubric_detail_complete.sql")
-        row = await conn.fetchrow(sql, uuid.UUID(request_body.rubricId), uuid.UUID(request_body.profileId))
+        sql_query = load_sql("sql/v3/rubrics/get_rubric_detail_complete.sql")
+        sql_params = (uuid.UUID(request_body.rubricId), uuid.UUID(request_body.profileId))
+        row = await conn.fetchrow(sql_query, uuid.UUID(request_body.rubricId), uuid.UUID(request_body.profileId))
 
         if not row:
             raise HTTPException(status_code=404, detail="Rubric not found")
@@ -81,7 +85,7 @@ async def get_rubric_detail(
         # Parse standard groups from JSONB
         standard_groups_detail: dict[str, StandardGroupDetail] = {}
         standard_groups_mapping: dict[str, dict[str, str]] = {}
-        standards_mapping: dict[str, dict[str, str]] = {}
+        standards_mapping: dict[str, StandardMappingItem] = {}
         standard_group_ids: list[str] = []
 
         if row.get("standard_groups_complete"):
@@ -168,5 +172,12 @@ async def get_rubric_detail(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_rubric_detail",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

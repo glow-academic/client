@@ -3,10 +3,11 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -29,6 +30,7 @@ router = APIRouter()
 @router.post("/create", response_model=CreateFeedbackResponse)
 async def create_feedback(
     request: CreateFeedbackRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateFeedbackResponse:
@@ -49,8 +51,9 @@ async def create_feedback(
             raise HTTPException(status_code=400, detail="Message must be less than 1000 characters")
 
         # Execute insert query
-        sql = load_sql("sql/v3/feedback/create_feedback.sql")
-        result = await conn.fetchrow(sql, request.type, request.message, request.profileId)
+        sql_query = load_sql("sql/v3/feedback/create_feedback.sql")
+        sql_params = (request.type, request.message, request.profileId)
+        result = await conn.fetchrow(sql_query, request.type, request.message, request.profileId)
 
         if not result:
             raise HTTPException(status_code=500, detail="Failed to create feedback")
@@ -69,5 +72,12 @@ async def create_feedback(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="create_feedback",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

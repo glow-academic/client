@@ -1,13 +1,14 @@
 """Agent create endpoint."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -37,6 +38,7 @@ router = APIRouter()
 @router.post("/create", response_model=CreateAgentResponse)
 async def create_agent(
     request: CreateAgentRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateAgentResponse:
@@ -58,15 +60,17 @@ async def create_agent(
             detail=f"model_id must be a valid UUID, got: {request.model_id!r}",
         )
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with conn.transaction():
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
 
             # Create agent with prompt and departments in single SQL (DHH style)
-            create_sql = load_sql("sql/v3/agents/create_agent_complete.sql")
-            agent_row = await conn.fetchrow(
-                create_sql,
+            sql_query = load_sql("sql/v3/agents/create_agent_complete.sql")
+            sql_params = (
                 request.name,
                 request.description,
                 request.temperature,
@@ -78,6 +82,7 @@ async def create_agent(
                 request.system_prompt if not request.prompt_id else None,
                 dept_ids,  # Always pass array (empty array if no departments)
             )
+            agent_row = await conn.fetchrow(sql_query, *sql_params)
 
             if not agent_row:
                 raise HTTPException(status_code=500, detail="Failed to create agent")
@@ -98,5 +103,12 @@ async def create_agent(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="create_agent",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 
