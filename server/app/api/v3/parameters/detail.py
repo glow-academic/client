@@ -37,6 +37,7 @@ class ParameterDetailResponse(BaseModel):
     parameter_items: list[ParameterItemDetail]
     department_mapping: dict[str, dict[str, Any]]
     valid_department_ids: list[str]
+    can_edit: bool
 
 
 router = APIRouter()
@@ -61,7 +62,11 @@ async def get_parameter_detail(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return ParameterDetailResponse.model_validate(cached["data"])
+        # Ensure can_edit is present in cached data (for backward compatibility)
+        cached_data = cached["data"]
+        if "can_edit" not in cached_data:
+            cached_data["can_edit"] = False  # Default to False, will be overridden by SQL query
+        return ParameterDetailResponse.model_validate(cached_data)
     
     try:
         sql = load_sql("sql/v3/parameters/get_parameter_detail_complete.sql")
@@ -125,6 +130,7 @@ async def get_parameter_detail(
             parameter_items=parameter_items,
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,
+            can_edit=result.get("can_edit", False),
         )
         
         # Cache response

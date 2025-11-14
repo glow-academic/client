@@ -482,7 +482,7 @@ export default function Parameters({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="space-y-8" data-page="parameters-index">
+    <div className="space-y-8">
       {parameters.length === 0 ? (
         renderEmptyState()
       ) : (

@@ -1,4 +1,29 @@
-WITH parameter_item_departments_data AS (
+WITH resolve_profile_id AS (
+    -- Resolve "guest-profile-id" to actual default guest profile ID
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+user_profile AS (
+    SELECT 
+        up.id,
+        up.role
+    FROM resolve_profile_id rpi
+    JOIN user_profiles up ON up.id = rpi.resolved_profile_id
+),
+parameter_active_scenario_links AS (
+    SELECT 
+        pi.parameter_id,
+        COUNT(DISTINCT spi.scenario_id) as active_scenario_count
+    FROM parameter_items pi
+    JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+    WHERE spi.active = true AND pi.parameter_id = $1
+    GROUP BY pi.parameter_id
+),
+parameter_item_departments_data AS (
     SELECT 
         pi.id as parameter_item_id,
         ARRAY_AGG(pid.department_id::text ORDER BY pid.created_at) as department_ids
@@ -22,9 +47,16 @@ parameter_data AS (
         p.active,
         p.document_parameter,
         p.practice_parameter,
-        COALESCE(pda.department_ids, NULL) as department_ids
+        COALESCE(pda.department_ids, NULL) as department_ids,
+        CASE 
+            WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
+            WHEN up.role IN ('admin', 'superadmin') THEN true
+            ELSE false
+        END as can_edit
     FROM parameters p
     LEFT JOIN parameter_departments_aggregated pda ON true
+    LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
+    CROSS JOIN user_profile up
     WHERE p.id = $1
 ),
 parameter_items_with_usage AS (

@@ -164,6 +164,8 @@ def create_parameter_api(
     active: bool = True,
     document_parameter: bool = False,
     practice_parameter: bool = False,
+    department_ids: Optional[list[str]] = None,
+    parameter_items: Optional[list[Dict[str, Any]]] = None,
     profile_id: str = PROFILE_ID,
     effective_profile_id: Optional[str] = None,
 ) -> str:
@@ -173,6 +175,15 @@ def create_parameter_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
+    # Default to empty list if not provided
+    if parameter_items is None:
+        parameter_items = [
+            {
+                "name": "Default Item",
+                "description": "Default parameter item",
+                "value": "default",
+            }
+        ]
     payload = {
         "name": name,
         "description": description,
@@ -180,6 +191,8 @@ def create_parameter_api(
         "active": active,
         "document_parameter": document_parameter,
         "practice_parameter": practice_parameter,
+        "department_ids": department_ids,
+        "parameter_items": parameter_items,
     }
     data: Dict[str, Any] = _post_json(
         request,

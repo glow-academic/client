@@ -15171,6 +15171,10 @@
             },
             "type": "array",
             "title": "Valid Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
           }
         },
         "type": "object",
@@ -15184,7 +15188,8 @@
           "department_ids",
           "parameter_items",
           "department_mapping",
-          "valid_department_ids"
+          "valid_department_ids",
+          "can_edit"
         ],
         "title": "ParameterDetailResponse"
       },

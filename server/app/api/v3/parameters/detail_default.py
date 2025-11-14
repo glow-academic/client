@@ -4,12 +4,12 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.db import get_db
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 
 # Inline request/response schemas
 class ParameterDetailDefaultRequest(BaseModel):
@@ -17,10 +17,8 @@ class ParameterDetailDefaultRequest(BaseModel):
 
 
 # Reuse models from detail.py (import after defining request to avoid circular import)
-from app.api.v3.parameters.detail import (
-    ParameterItemDetail,
-    ParameterDetailResponse,
-)
+from app.api.v3.parameters.detail import (ParameterDetailResponse,
+                                          ParameterItemDetail)
 
 router = APIRouter()
 
@@ -42,9 +40,13 @@ async def get_parameter_detail_default(
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
+        # Ensure can_edit is present in cached data (for backward compatibility)
+        cached_data = cached["data"]
+        if "can_edit" not in cached_data:
+            cached_data["can_edit"] = True  # Default to True for new parameters
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return ParameterDetailResponse.model_validate(cached["data"])
+        return ParameterDetailResponse.model_validate(cached_data)
     
     try:
         sql = load_sql("sql/v3/parameters/get_parameter_detail_default_complete.sql")
@@ -108,6 +110,7 @@ async def get_parameter_detail_default(
             parameter_items=parameter_items,
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,
+            can_edit=result.get("can_edit", True),  # Default to True for new parameters
         )
         
         # Cache response

@@ -157,11 +157,7 @@ def test_parameters_pagination_persists_filters(page: Page, base_url: str) -> No
             pytest.skip("Pagination controls unavailable after seeding parameters")
         next_button.click()
         page.wait_for_timeout(250)
-
-        page.reload()
-        page.wait_for_load_state("networkidle")
-        pagination_label = page.get_by_text("Page 2 of")
-        expect(pagination_label).to_be_visible()
+        expect(page.get_by_text("Page 2 of")).to_be_visible()
 
         prev_button = page.get_by_role("button", name="Go to previous page")
         prev_button.click()

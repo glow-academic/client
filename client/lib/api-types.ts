@@ -6507,6 +6507,8 @@ export interface components {
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
         };
         /**
          * ParameterItemCreate

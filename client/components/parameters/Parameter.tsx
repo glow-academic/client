@@ -410,10 +410,7 @@ export default function Parameter({
   // (deprecated) visible items helper removed; we filter inline in the render
 
   return (
-    <div
-      className="space-y-6 py-4 px-4"
-      data-page={`parameter-${isEditMode ? "edit" : "new"}`}
-    >
+    <div className="space-y-6 py-4 px-4">
       <div className="w-full">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Parameter Basic Information */}
@@ -430,6 +427,7 @@ export default function Parameter({
                   }
                   placeholder="e.g., Difficulty Level"
                   required
+                  disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
                 />
               ) : null}
             </div>
@@ -450,6 +448,7 @@ export default function Parameter({
                   placeholder="Detailed description of the parameter"
                   rows={4}
                   required
+                  disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
                 />
               ) : null}
             </div>
@@ -473,6 +472,7 @@ export default function Parameter({
                       onCheckedChange={(checked) =>
                         setFormData((prev) => ({ ...prev, active: checked }))
                       }
+                      disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
                     />
                   ) : null}
                 </div>
@@ -501,6 +501,7 @@ export default function Parameter({
                       onCheckedChange={(checked) =>
                         setFormData((prev) => ({ ...prev, numerical: checked }))
                       }
+                      disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
                     />
                   ) : null}
                 </div>
@@ -532,6 +533,7 @@ export default function Parameter({
                           document_parameter: checked,
                         }))
                       }
+                      disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
                     />
                   ) : null}
                 </div>
@@ -563,6 +565,7 @@ export default function Parameter({
                           practice_parameter: checked,
                         }))
                       }
+                      disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
                     />
                   ) : null}
                 </div>
