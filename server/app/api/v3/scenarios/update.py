@@ -1,12 +1,13 @@
 """Scenario update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -44,11 +45,16 @@ router = APIRouter()
 @router.post("/update", response_model=UpdateScenarioResponse)
 async def update_scenario(
     request: UpdateScenarioRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateScenarioResponse:
     """Update an existing scenario."""
     tags = ["scenarios"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Prepare data for consolidated SQL
         # Filter out composite objective IDs (references to existing objectives)
@@ -72,9 +78,8 @@ async def update_scenario(
         parameter_item_ids = parameter_item_ids or []
         
         # Update scenario with all relationships in a single SQL file
-        sql = load_sql("sql/v3/scenarios/update_scenario_complete.sql")
-        result = await conn.fetchrow(
-            sql,
+        sql_query = load_sql("sql/v3/scenarios/update_scenario_complete.sql")
+        sql_params = (
             request.scenarioId,
             request.name,
             request.active,
@@ -91,6 +96,7 @@ async def update_scenario(
             objective_ids,
             parameter_item_ids,
         )
+        result = await conn.fetchrow(sql_query, *sql_params)
 
         if not result:
             raise HTTPException(
@@ -112,5 +118,12 @@ async def update_scenario(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_scenario",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

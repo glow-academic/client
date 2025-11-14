@@ -1,13 +1,14 @@
 """Cohort create endpoint - v3 API."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -36,19 +37,24 @@ router = APIRouter()
 @router.post("/create", response_model=CreateCohortResponse)
 async def create_cohort(
     request: CreateCohortRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateCohortResponse:
     """Create a new cohort."""
     tags = ["cohorts"]  # From router tags
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
             # Create cohort
             # Handle None description (cohorts.description is NOT NULL, so use empty string)
             description = request.description if request.description is not None else ""
-            sql = load_sql("sql/v3/cohorts/create_cohort.sql")
-            row = await conn.fetchrow(sql, request.title, description, request.active)
+            sql_query = load_sql("sql/v3/cohorts/create_cohort.sql")
+            sql_params = (request.title, description, request.active)
+            row = await conn.fetchrow(sql_query, request.title, description, request.active)
 
             if not row:
                 raise HTTPException(status_code=500, detail="Failed to create cohort")
@@ -86,5 +92,12 @@ async def create_cohort(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="create_cohort",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

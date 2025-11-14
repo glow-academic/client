@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (SimulationMapping, SimulationMappingItem,
                               StandardGroupsMapping, StandardsMapping)
@@ -134,6 +135,9 @@ async def get_home_overview(
         response.headers["X-Cache-Hit"] = "1"
         return HomeOverviewResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Resolve "guest-profile-id" to actual default guest profile
         profile_id = filters.profileId
@@ -157,7 +161,7 @@ async def get_home_overview(
         sql_template = load_sql("sql/v3/home/home_overview.sql")
 
         # Replace WHERE clause placeholder
-        query = sql_template.replace("{WHERE_CLAUSE_PLACEHOLDER}", where_clause)
+        sql_query = sql_template.replace("{WHERE_CLAUSE_PLACEHOLDER}", where_clause)
 
         # Build parameter list matching SQL file expectations:
         # $1, $2: dates (for WHERE clause)
@@ -181,8 +185,9 @@ async def get_home_overview(
             filters.cohortIds if filters.cohortIds else [],  # $10
             filters.departmentIds if filters.departmentIds else [],  # $11
         ]
+        sql_params = tuple(params)
 
-        result = await conn.fetchval(query, *params)
+        result = await conn.fetchval(sql_query, *params)
 
         # Parse JSON result recursively
         parsed_result = _parse_json_strings_recursive(result or {})
@@ -239,8 +244,17 @@ async def get_home_overview(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_home_overview",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

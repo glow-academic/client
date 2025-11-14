@@ -5,10 +5,11 @@ from datetime import UTC, datetime
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -73,11 +74,15 @@ def ensure_json(value: Any, default: dict[str, Any]) -> dict[str, Any]:
 @router.post("/create", response_model=CreateLogResponse)
 async def create_log(
     request: CreateLogRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateLogResponse:
     """Create a new log entry."""
     tags = ["logs"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         # Extract correlation_id from correlation object
@@ -98,9 +103,20 @@ async def create_log(
         )
 
         # Insert log entry
-        sql = load_sql("sql/v3/logs/insert_log.sql")
+        sql_query = load_sql("sql/v3/logs/insert_log.sql")
+        sql_params = (
+            request.event,
+            request.level,
+            request.message,
+            correlation_id,
+            json.dumps(actor_json),
+            json.dumps(subject_json),
+            json.dumps(context_json),
+            json.dumps(error_json),
+            datetime.now(UTC),
+        )
         result = await conn.fetchrow(
-            sql,
+            sql_query,
             request.event,
             request.level,
             request.message,
@@ -121,6 +137,15 @@ async def create_log(
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
         
         return result_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="create_log",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

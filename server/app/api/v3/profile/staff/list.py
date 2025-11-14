@@ -2,10 +2,11 @@
 
 import json
 import os
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (CohortMappingItem, DepartmentMappingItem,
                               TrendData)
@@ -75,15 +76,19 @@ async def get_profile_list(
         response.headers["X-Cache-Hit"] = "1"
         return StaffListResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
 
         # Load SQL string
-        sql = load_sql("sql/v3/profile/staff/list_staff.sql")
+        sql_query = load_sql("sql/v3/profile/staff/list_staff.sql")
+        sql_params = (filters.profileId, campus_domain)
 
         # Execute query
-        result = await conn.fetch(sql, filters.profileId, campus_domain)
+        result = await conn.fetch(sql_query, filters.profileId, campus_domain)
 
         # Build response
         staff = []
@@ -190,6 +195,15 @@ async def get_profile_list(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_staff_list",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

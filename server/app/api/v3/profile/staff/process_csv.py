@@ -2,10 +2,11 @@
 
 import csv
 from io import StringIO
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -179,8 +180,17 @@ async def process_csv(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="process_csv",
+            sql_query=None,  # No SQL query - CSV processing only
+            sql_params=None,
+            request=http_request,
+        )
 

@@ -1,12 +1,13 @@
 """Department duplicate endpoint - v3 API."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -30,11 +31,15 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateDepartmentResponse)
 async def duplicate_department(
     request: DuplicateDepartmentRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateDepartmentResponse:
     """Duplicate a department."""
     tags = ["departments"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         # Get original department title
@@ -47,8 +52,9 @@ async def duplicate_department(
         new_title = f"{dept_row['title']} Copy"
 
         async with transaction(conn):
-            sql = load_sql("sql/v3/departments/duplicate_department.sql")
-            new_dept_row = await conn.fetchrow(sql, request.departmentId, new_title)
+            sql_query = load_sql("sql/v3/departments/duplicate_department.sql")
+            sql_params = (request.departmentId, new_title)
+            new_dept_row = await conn.fetchrow(sql_query, request.departmentId, new_title)
 
             if not new_dept_row:
                 raise HTTPException(status_code=500, detail="Failed to duplicate department")
@@ -69,5 +75,12 @@ async def duplicate_department(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="duplicate_department",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

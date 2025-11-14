@@ -3,13 +3,14 @@
 import json
 import os
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.extensions import UPLOAD_FOLDER
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 # Directory for storing tus uploads in progress
@@ -41,11 +42,15 @@ router = APIRouter()
 @router.post("/upload/init", response_model=UploadInitResponse)
 async def upload_init(
     request: UploadInitRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UploadInitResponse:
     """Initialize a document upload."""
     tags = ["documents"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         # Generate upload ID
@@ -95,5 +100,12 @@ async def upload_init(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="upload_init",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

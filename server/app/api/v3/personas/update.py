@@ -1,12 +1,13 @@
 """Persona update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -42,11 +43,15 @@ router = APIRouter()
 @router.post("/update", response_model=UpdatePersonaResponse)
 async def update_persona(
     request: UpdatePersonaRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdatePersonaResponse:
     """Update an existing persona."""
     tags = ["personas"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         async with transaction(conn):
@@ -57,9 +62,8 @@ async def update_persona(
             description = request.description if request.description is not None else ""
 
             # Update persona with prompt and departments in single SQL (DHH style)
-            update_sql = load_sql("sql/v3/personas/update_persona_complete.sql")
-            result = await conn.fetchrow(
-                update_sql,
+            sql_query = load_sql("sql/v3/personas/update_persona_complete.sql")
+            sql_params = (
                 request.personaId,
                 request.name,
                 description,
@@ -74,6 +78,7 @@ async def update_persona(
                 dept_ids,  # Always pass array (empty array if no departments)
                 request.department_id,
             )
+            result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
                 raise ValueError(f"Persona not found: {request.personaId}")
@@ -93,5 +98,12 @@ async def update_persona(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_persona",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

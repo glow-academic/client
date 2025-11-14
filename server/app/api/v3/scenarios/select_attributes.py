@@ -11,10 +11,11 @@ import uuid
 from typing import Annotated, Any, Union
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
 
 logger = logging.getLogger(__name__)
@@ -269,9 +270,13 @@ async def select_scenario_attributes(
 @router.post("/select-attributes", response_model=SelectAttributesResponse)
 async def select_scenario_attributes_endpoint(
     request: SelectAttributesRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SelectAttributesResponse:
     """API endpoint for selecting scenario attributes."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         result = await select_scenario_attributes(
             conn=conn,
@@ -291,6 +296,12 @@ async def select_scenario_attributes_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Error selecting scenario attributes: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="select_scenario_attributes_endpoint",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

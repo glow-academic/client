@@ -1,10 +1,11 @@
 """Rubric list endpoint - v3 API."""
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMappingItem, StandardGroupMappingItem,
                               StandardMappingItem)
@@ -70,9 +71,13 @@ async def get_rubrics_list(
         response.headers["X-Cache-Hit"] = "1"
         return RubricsListResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/rubrics/list_rubrics.sql")
-        rows = await conn.fetch(sql, filters.profileId)
+        sql_query = load_sql("sql/v3/rubrics/list_rubrics.sql")
+        sql_params = (filters.profileId,)
+        rows = await conn.fetch(sql_query, filters.profileId)
 
         rubrics: list[RubricItem] = []
         standard_groups_mapping: dict[str, StandardGroupMappingItem] = {}
@@ -182,6 +187,15 @@ async def get_rubrics_list(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_rubrics_list",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

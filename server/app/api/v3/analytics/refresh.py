@@ -1,12 +1,13 @@
 """Analytics refresh v3 API endpoint."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -28,15 +29,20 @@ class RefreshResponse(BaseModel):
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh_analytics(
     request: RefreshRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
     """Refresh the analytics materialized view."""
     tags = ["analytics"]  # From router tags
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/analytics/refresh_materialized_view.sql")
-        await conn.execute(sql)
+        sql_query = load_sql("sql/v3/analytics/refresh_materialized_view.sql")
+        sql_params = ()  # No parameters for this query
+        await conn.execute(sql_query)
         
         result_data = RefreshResponse(
             success=True,
@@ -49,5 +55,14 @@ async def refresh_analytics(
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
         
         return result_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="refresh_analytics",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )

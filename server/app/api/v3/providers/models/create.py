@@ -1,12 +1,13 @@
 """Model create endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -38,17 +39,31 @@ router = APIRouter()
 @router.post("/create", response_model=CreateModelResponse)
 async def create_model(
     request: CreateModelRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateModelResponse:
     """Create a new model."""
     tags = ["providers"]  # From router tags
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
-            create_sql = load_sql("sql/v3/providers/create_model.sql")
+            sql_query = load_sql("sql/v3/providers/create_model.sql")
+            sql_params = (
+                request.provider_id,
+                request.name,
+                request.description,
+                request.active,
+                request.custom_model,
+                request.image_model,
+                request.input_ppm,
+                request.output_ppm,
+            )
             result = await conn.fetchrow(
-                create_sql,
+                sql_query,
                 request.provider_id,
                 request.name,
                 request.description,
@@ -80,5 +95,12 @@ async def create_model(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="create_model",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

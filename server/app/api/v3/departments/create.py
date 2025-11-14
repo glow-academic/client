@@ -1,12 +1,13 @@
 """Department create endpoint - v3 API."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -33,16 +34,21 @@ router = APIRouter()
 @router.post("/create", response_model=CreateDepartmentResponse)
 async def create_department(
     request: CreateDepartmentRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateDepartmentResponse:
     """Create a new department."""
     tags = ["departments"]  # From router tags
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
-            sql = load_sql("sql/v3/departments/create_department.sql")
-            dept_row = await conn.fetchrow(sql, request.title, request.description, request.active)
+            sql_query = load_sql("sql/v3/departments/create_department.sql")
+            sql_params = (request.title, request.description, request.active)
+            dept_row = await conn.fetchrow(sql_query, request.title, request.description, request.active)
 
             if not dept_row:
                 raise HTTPException(status_code=500, detail="Failed to create department")
@@ -78,5 +84,12 @@ async def create_department(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="create_department",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

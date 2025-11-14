@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import AnalyticsFilters
 from app.utils.sql_helper import load_sql
@@ -92,6 +93,9 @@ async def get_pricing(
         response.headers["X-Cache-Hit"] = "1"
         return PricingAnalyticsResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Determine effective profile ID based on role (replicate v2 logic)
         effective_profile_id = None
@@ -126,16 +130,9 @@ async def get_pricing(
         roles = filters.roles or None
 
         # Execute consolidated SQL query with all filter logic
-        sql = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
-        result = await conn.fetchval(
-            sql,
-            start_dt,
-            end_dt,
-            department_ids,
-            effective_profile_uuid,
-            roles,
-            cohort_ids,
-        )
+        sql_query = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
+        sql_params = (start_dt, end_dt, department_ids, effective_profile_uuid, roles, cohort_ids)
+        result = await conn.fetchval(sql_query, *sql_params)
 
         # Parse JSONB result
         parsed_result = _parse_json_strings_recursive(result or {})
@@ -224,8 +221,12 @@ async def get_pricing(
     except HTTPException:
         raise
     except Exception as e:
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Pricing analytics error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_pricing",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

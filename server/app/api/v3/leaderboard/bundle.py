@@ -6,6 +6,7 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.utils.analytics_query_builder import build_base_filter
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import AnalyticsFilters
 from app.utils.sql_helper import load_sql
@@ -76,6 +77,9 @@ async def get_leaderboard(
         response.headers["X-Cache-Hit"] = "1"
         return LeaderboardBundleResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Build WHERE clause using analytics query builder utility
         where_clause, params = build_base_filter(
@@ -94,10 +98,11 @@ async def get_leaderboard(
         sql_template = load_sql("sql/v3/leaderboard/leaderboard_bundle.sql")
         
         # Replace WHERE clause placeholder
-        query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
+        sql_query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
+        sql_params = tuple(params)
 
         # Execute query and get JSON result
-        result = await conn.fetchval(query, *params)
+        result = await conn.fetchval(sql_query, *sql_params)
 
         # Parse any JSON strings in nested structures
         parsed_result = result or {}
@@ -135,5 +140,14 @@ async def get_leaderboard(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_leaderboard",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )

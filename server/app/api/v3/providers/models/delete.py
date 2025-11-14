@@ -1,12 +1,13 @@
 """Model delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -30,11 +31,15 @@ router = APIRouter()
 @router.post("/delete", response_model=DeleteModelResponse)
 async def delete_model(
     request: DeleteModelRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteModelResponse:
     """Delete a model if not in use."""
     tags = ["providers"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         async with transaction(conn):
@@ -59,9 +64,10 @@ async def delete_model(
             if not model:
                 raise ValueError(f"Model not found: {request.modelId}")
 
-            # Delete model
-            delete_sql = load_sql("sql/v3/providers/delete_model.sql")
-            await conn.execute(delete_sql, request.modelId)
+            # Delete model (track primary operation)
+            sql_query = load_sql("sql/v3/providers/delete_model.sql")
+            sql_params = (request.modelId,)
+            await conn.execute(sql_query, request.modelId)
 
             result_data = DeleteModelResponse(
                 success=True,
@@ -78,5 +84,12 @@ async def delete_model(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="delete_model",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

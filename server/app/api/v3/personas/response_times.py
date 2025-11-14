@@ -8,6 +8,7 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from app.db import get_pool
 from app.main import server
+from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -63,11 +64,15 @@ async def persona_response_times(
     if not pool:
         raise HTTPException(status_code=500, detail="Database connection pool not available")
 
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+
     try:
         async with pool.acquire() as conn:
             cutoff_date = datetime.now() - timedelta(days=request.window_days)
-            sql = load_sql("sql/v3/personas/response_times.sql")
-            result = await conn.fetchrow(sql, persona_uuid, cutoff_date)
+            sql_query = load_sql("sql/v3/personas/response_times.sql")
+            sql_params = (persona_uuid, cutoff_date)
+            result = await conn.fetchrow(sql_query, persona_uuid, cutoff_date)
 
             if not result:
                 raise HTTPException(
@@ -123,5 +128,12 @@ async def persona_response_times(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        handle_route_error(
+            error=e,
+            route_path="/api/v3/personas/response-times",  # Constructed path for tool endpoint
+            operation="persona_response_times",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=None,  # Tool endpoints don't have Request
+        )
 

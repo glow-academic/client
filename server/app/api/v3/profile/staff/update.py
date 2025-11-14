@@ -1,12 +1,13 @@
 """Staff update endpoint - update a staff member."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -32,13 +33,19 @@ class UpdateStaffResponse(BaseModel):
 @router.post("/update", response_model=UpdateStaffResponse)
 async def update_profile(
     request: UpdateStaffRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateStaffResponse:
     """Update a profile."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Check if profile exists
         name_sql = load_sql("sql/v3/profile/staff/get_profile_name.sql")
+        sql_query = name_sql  # Track primary query
+        sql_params = (request.profileId,)
         existing = await conn.fetchrow(name_sql, request.profileId)
 
         if not existing:
@@ -77,5 +84,12 @@ async def update_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_profile",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

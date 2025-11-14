@@ -7,8 +7,9 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 
@@ -51,9 +52,13 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
 @router.post("/randomize", response_model=RandomizeScenarioResponse)
 async def randomize_scenario_sections(
     request: RandomizeScenarioRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RandomizeScenarioResponse:
     """Suggest randomized persona/documents/parameters based on current inputs."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Convert string IDs to UUIDs
         persona_ids = (
@@ -84,8 +89,9 @@ async def randomize_scenario_sections(
 
         # Get randomization data (single SQL file with conditional logic)
         dept_uuids = [uuid.UUID(d) for d in department_ids] if department_ids and len(department_ids) > 0 else None
-        sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
-        result = await conn.fetchrow(sql, dept_uuids)
+        sql_query = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
+        sql_params = (dept_uuids,)
+        result = await conn.fetchrow(sql_query, dept_uuids)
 
         if not result:
             raise ValueError("Failed to fetch randomization data")
@@ -189,5 +195,12 @@ async def randomize_scenario_sections(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="randomize_scenario_sections",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

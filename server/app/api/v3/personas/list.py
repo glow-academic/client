@@ -2,10 +2,11 @@
 
 import json
 from collections import Counter
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               ModelMapping, ModelMappingItem, ScenarioMapping,
@@ -99,12 +100,16 @@ async def get_personas_list(
             response.headers["X-Cache-Hit"] = "1"
             return PersonasListResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Load SQL string
-        sql = load_sql("sql/v3/personas/list_personas.sql")
+        sql_query = load_sql("sql/v3/personas/list_personas.sql")
+        sql_params = (filters.profileId,)
 
         # Execute query
-        result = await conn.fetch(sql, filters.profileId)
+        result = await conn.fetch(sql_query, filters.profileId)
 
         # Build response - transform database rows
         personas = []
@@ -218,6 +223,15 @@ async def get_personas_list(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_personas_list",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

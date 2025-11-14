@@ -1,13 +1,14 @@
 """Staff create endpoint - create a new staff member."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -87,5 +88,12 @@ async def create_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path="/api/v3/profile/staff/create",  # Constructed path since no Request
+            operation="create_profile",
+            sql_query=None,  # Multiple queries, track primary
+            sql_params=None,
+            request=None,
+        )
 

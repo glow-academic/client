@@ -1,12 +1,13 @@
 """Profile detail endpoint - get profile by ID."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
 
 router = APIRouter()
@@ -47,13 +48,18 @@ class ProfileDetailResponse(BaseModel):
 @router.post("/detail", response_model=ProfileDetailResponse)
 async def get_profile_detail(
     request: ProfileDetailRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProfileDetailResponse:
     """Get profile by ID (simple auth version without permissions)."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Get profile with guest-profile-id resolution in a single SQL file
-        sql = load_sql("sql/v3/profile/get_profile.sql")
-        row = await conn.fetchrow(sql, request.profileId)
+        sql_query = load_sql("sql/v3/profile/get_profile.sql")
+        sql_params = (request.profileId,)
+        row = await conn.fetchrow(sql_query, request.profileId)
         if not row:
             raise HTTPException(status_code=404, detail="Profile not found")
 
@@ -82,5 +88,12 @@ async def get_profile_detail(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_profile_detail",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

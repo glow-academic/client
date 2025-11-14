@@ -1,12 +1,13 @@
 """Persona delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
 
 # Inline request/response schemas
@@ -29,9 +30,13 @@ router = APIRouter()
 @router.post("/delete", response_model=DeletePersonaResponse)
 async def delete_persona(
     request: DeletePersonaRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeletePersonaResponse:
     """Delete a persona."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
             # Check if persona is in use
@@ -52,9 +57,10 @@ async def delete_persona(
             if not persona:
                 raise ValueError(f"Persona not found: {request.personaId}")
 
-            # Delete persona
-            delete_sql = load_sql("sql/v3/personas/delete_persona.sql")
-            await conn.execute(delete_sql, request.personaId)
+            # Delete persona (track primary operation)
+            sql_query = load_sql("sql/v3/personas/delete_persona.sql")
+            sql_params = (request.personaId,)
+            await conn.execute(sql_query, request.personaId)
 
             return DeletePersonaResponse(
                 success=True,
@@ -65,5 +71,12 @@ async def delete_persona(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="delete_persona",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

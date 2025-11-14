@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               DocumentMapping, DocumentMappingItem,
@@ -137,12 +138,16 @@ async def get_scenario_detail_default(
         response.headers["X-Cache-Hit"] = "1"
         return ScenarioDetailResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Load SQL query
-        sql = load_sql("sql/v3/scenarios/get_scenario_detail_default_complete.sql")
+        sql_query = load_sql("sql/v3/scenarios/get_scenario_detail_default_complete.sql")
+        sql_params = (request_data.profileId,)
 
         # Execute query
-        result = await conn.fetchrow(sql, request_data.profileId)
+        result = await conn.fetchrow(sql_query, request_data.profileId)
 
         if not result:
             raise ValueError("Failed to fetch default scenario data")
@@ -374,5 +379,12 @@ async def get_scenario_detail_default(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_scenario_detail_default",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

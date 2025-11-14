@@ -1,12 +1,13 @@
 """Model update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -37,11 +38,15 @@ router = APIRouter()
 @router.post("/update", response_model=UpdateModelResponse)
 async def update_model(
     request: UpdateModelRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateModelResponse:
     """Update an existing model."""
     tags = ["providers"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         async with transaction(conn):
@@ -52,10 +57,20 @@ async def update_model(
             if not existing:
                 raise ValueError(f"Model not found: {request.modelId}")
 
-            # Update model
-            update_sql = load_sql("sql/v3/providers/update_model.sql")
+            # Update model (track primary operation)
+            sql_query = load_sql("sql/v3/providers/update_model.sql")
+            sql_params = (
+                request.modelId,
+                request.name,
+                request.description,
+                request.active,
+                request.custom_model,
+                request.image_model,
+                request.input_ppm,
+                request.output_ppm,
+            )
             await conn.execute(
-                update_sql,
+                sql_query,
                 request.modelId,
                 request.name,
                 request.description,
@@ -81,5 +96,12 @@ async def update_model(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_model",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

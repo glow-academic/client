@@ -1,12 +1,13 @@
 """Agent delete endpoint."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -26,11 +27,15 @@ router = APIRouter()
 @router.post("/delete", response_model=DeleteAgentResponse)
 async def delete_agent(
     request: DeleteAgentRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteAgentResponse:
     """Delete an agent."""
     tags = ["agents"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         # Check usage first
@@ -41,9 +46,10 @@ async def delete_agent(
                 status_code=400, detail="Cannot delete agent: agent is in use"
             )
 
-        # Delete agent
-        delete_sql = load_sql("sql/v3/agents/delete_agent.sql")
-        await conn.execute(delete_sql, request.agentId)
+        # Delete agent (track primary operation)
+        sql_query = load_sql("sql/v3/agents/delete_agent.sql")
+        sql_params = (request.agentId,)
+        await conn.execute(sql_query, request.agentId)
 
         result_data = DeleteAgentResponse(success=True, message="Agent deleted successfully")
         
@@ -55,5 +61,12 @@ async def delete_agent(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="delete_agent",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

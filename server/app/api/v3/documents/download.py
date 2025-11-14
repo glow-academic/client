@@ -2,14 +2,15 @@
 
 import os
 import urllib.parse
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.extensions import UPLOAD_FOLDER
+from app.utils.error_handler import handle_route_error
 from app.utils.mime_utils import get_content_type
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 
 router = APIRouter()
@@ -18,12 +19,17 @@ router = APIRouter()
 @router.get("/download/{document_id}")
 async def download_document(
     document_id: str,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FileResponse:
     """Download a document by ID."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/documents/get_document_file_info.sql")
-        result = await conn.fetchrow(sql, document_id)
+        sql_query = load_sql("sql/v3/documents/get_document_file_info.sql")
+        sql_params = (document_id,)
+        result = await conn.fetchrow(sql_query, document_id)
 
         if not result:
             raise HTTPException(status_code=404, detail="Document not found")
@@ -52,5 +58,12 @@ async def download_document(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="download_document",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

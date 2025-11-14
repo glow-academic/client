@@ -2,13 +2,14 @@
 
 import json
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem, ParameterItemMappingItem
 from app.utils.sql_helper import load_sql
@@ -58,10 +59,17 @@ async def get_document_detail_bulk(
         response.headers["X-Cache-Hit"] = "1"
         return DocumentDetailBulkResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/documents/get_document_detail_bulk_complete.sql")
+        sql_query = load_sql("sql/v3/documents/get_document_detail_bulk_complete.sql")
+        sql_params = (
+            [uuid.UUID(did) for did in request_body.documentIds],
+            uuid.UUID(request_body.profileId),
+        )
         row = await conn.fetchrow(
-            sql,
+            sql_query,
             [uuid.UUID(did) for did in request_body.documentIds],
             uuid.UUID(request_body.profileId),
         )
@@ -146,5 +154,12 @@ async def get_document_detail_bulk(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_document_detail_bulk",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

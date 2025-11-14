@@ -1,12 +1,13 @@
 """Parameter delete endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -30,17 +31,22 @@ router = APIRouter()
 @router.post("/delete", response_model=DeleteParameterResponse)
 async def delete_parameter(
     request: DeleteParameterRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteParameterResponse:
     """Delete a parameter if items not in use."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
             # Delete parameter with usage check in single SQL (DHH style)
-            delete_sql = load_sql("sql/v3/parameters/delete_parameter_complete.sql")
-            result = await conn.fetchrow(delete_sql, request.parameterId)
+            sql_query = load_sql("sql/v3/parameters/delete_parameter_complete.sql")
+            sql_params = (request.parameterId,)
+            result = await conn.fetchrow(sql_query, request.parameterId)
 
             if not result:
                 raise ValueError(f"Parameter not found: {request.parameterId}")
@@ -70,5 +76,12 @@ async def delete_parameter(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="delete_parameter",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

@@ -7,6 +7,7 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from app.db import get_pool
 from app.main import server
+from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -62,10 +63,14 @@ async def scenario_overview(
     if not pool:
         raise HTTPException(status_code=500, detail="Database connection pool not available")
 
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+
     try:
         async with pool.acquire() as conn:
-            sql = load_sql("sql/v3/scenarios/overview.sql")
-            result = await conn.fetchrow(sql, scenario_uuid)
+            sql_query = load_sql("sql/v3/scenarios/overview.sql")
+            sql_params = (scenario_uuid,)
+            result = await conn.fetchrow(sql_query, scenario_uuid)
 
             if not result:
                 raise HTTPException(
@@ -102,5 +107,12 @@ async def scenario_overview(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        handle_route_error(
+            error=e,
+            route_path="/api/v3/scenarios/overview",  # Constructed path for tool endpoint
+            operation="scenario_overview",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=None,  # Tool endpoints don't have Request
+        )
 

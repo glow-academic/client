@@ -5,6 +5,7 @@ from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               DocumentMapping, DocumentMappingItem,
@@ -147,12 +148,16 @@ async def get_scenario_detail(
         response.headers["X-Cache-Hit"] = "1"
         return ScenarioDetailResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Load SQL string (persona query is now merged into main query)
-        sql = load_sql("sql/v3/scenarios/get_scenario_detail_complete.sql")
+        sql_query = load_sql("sql/v3/scenarios/get_scenario_detail_complete.sql")
+        sql_params = (request_data.scenarioId, request_data.profileId)
 
         # Execute query
-        scenario = await conn.fetchrow(sql, request_data.scenarioId, request_data.profileId)
+        scenario = await conn.fetchrow(sql_query, request_data.scenarioId, request_data.profileId)
         if not scenario:
             raise HTTPException(status_code=404, detail=f"Scenario not found: {request_data.scenarioId}")
 
@@ -428,5 +433,12 @@ async def get_scenario_detail(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_scenario_detail",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

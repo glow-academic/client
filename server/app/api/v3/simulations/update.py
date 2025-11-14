@@ -1,12 +1,13 @@
 """Simulation update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -45,11 +46,15 @@ router = APIRouter()
 @router.post("/update", response_model=UpdateSimulationResponse)
 async def update_simulation(
     request: UpdateSimulationRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateSimulationResponse:
     """Update an existing simulation."""
     tags = ["simulations"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         async with transaction(conn):
@@ -71,9 +76,8 @@ async def update_simulation(
             scenario_flags_array = scenario_active_flags if scenario_active_flags else []
 
             # Update simulation with departments, time limit, and scenarios in single SQL (DHH style)
-            update_sql = load_sql("sql/v3/simulations/update_simulation_complete.sql")
-            result = await conn.fetchrow(
-                update_sql,
+            sql_query = load_sql("sql/v3/simulations/update_simulation_complete.sql")
+            sql_params = (
                 request.simulationId,
                 request.title,
                 request.description,
@@ -85,6 +89,7 @@ async def update_simulation(
                 scenario_ids_array,
                 scenario_flags_array,
             )
+            result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
                 raise ValueError(f"Simulation not found: {request.simulationId}")
@@ -104,5 +109,12 @@ async def update_simulation(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_simulation",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

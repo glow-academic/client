@@ -1,12 +1,13 @@
 """Staff bulk delete endpoint - bulk delete staff members."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -28,13 +29,19 @@ class BulkDeleteStaffResponse(BaseModel):
 @router.post("/bulk-delete", response_model=BulkDeleteStaffResponse)
 async def bulk_delete_profile(
     request: BulkDeleteStaffRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkDeleteStaffResponse:
     """Bulk delete profiles."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Check for default profiles
         check_sql = load_sql("sql/v3/profile/staff/bulk_check_default_profiles.sql")
+        sql_query = check_sql  # Track primary query
+        sql_params = (request.profileIds,)
         default_profiles = await conn.fetch(check_sql, request.profileIds)
         default_ids = [str(row["id"]) for row in default_profiles]
 
@@ -66,5 +73,12 @@ async def bulk_delete_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="bulk_delete_profile",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

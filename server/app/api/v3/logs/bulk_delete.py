@@ -1,12 +1,13 @@
 """Logs bulk delete endpoint."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -28,11 +29,15 @@ router = APIRouter()
 @router.post("/bulk-delete", response_model=BulkDeleteLogsResponse)
 async def bulk_delete_logs(
     request: BulkDeleteLogsRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkDeleteLogsResponse:
     """Bulk delete logs. Only superadmin can delete logs."""
     tags = ["logs"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         if not request.ids:
@@ -41,8 +46,9 @@ async def bulk_delete_logs(
             )
 
         # Bulk delete logs with role check in a single SQL file
-        sql = load_sql("sql/v3/logs/bulk_delete_logs_complete.sql")
-        result = await conn.fetchrow(sql, request.profileId, request.ids)
+        sql_query = load_sql("sql/v3/logs/bulk_delete_logs_complete.sql")
+        sql_params = (request.profileId, request.ids)
+        result = await conn.fetchrow(sql_query, request.profileId, request.ids)
 
         if not result:
             # Profile doesn't exist
@@ -72,5 +78,12 @@ async def bulk_delete_logs(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="bulk_delete_logs",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

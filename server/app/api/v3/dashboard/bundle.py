@@ -6,6 +6,7 @@ from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (AnalyticsFilters, DataPoint, Method,
                               MetricResponse, ParameterItemMapping,
@@ -1341,8 +1342,11 @@ async def get_dashboard(
         response.headers["X-Cache-Hit"] = "1"
         return DashboardBundleResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
+        sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
 
         # Build parameters in the same order as the query expects ($1-$7)
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
@@ -1357,10 +1361,10 @@ async def get_dashboard(
         profile_id = filters.profileId
         department_ids = filters.departmentIds or []
 
-        params = [start_dt, end_dt, cohort_ids, roles, sim_filters, profile_id, department_ids]
+        sql_params = (start_dt, end_dt, cohort_ids, roles, sim_filters, profile_id, department_ids)
 
         # Execute query
-        result = await conn.fetchrow(sql, *params)
+        result = await conn.fetchrow(sql_query, *sql_params)
 
         # Handle empty results gracefully - return empty structure instead of error
         # The SQL should always return a row, but handle edge case where it doesn't
@@ -1392,5 +1396,14 @@ async def get_dashboard(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_dashboard",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )

@@ -1,10 +1,11 @@
 """Agent list endpoint."""
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               ModelMapping, ModelMappingItem)
@@ -63,12 +64,16 @@ async def list_agents(
         response.headers["X-Cache-Hit"] = "1"
         return AgentsListResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Load SQL string
-        sql = load_sql("sql/v3/agents/get_agents_list_complete.sql")
+        sql_query = load_sql("sql/v3/agents/get_agents_list_complete.sql")
+        sql_params = (request.profileId,)
         
         # Execute query
-        rows = await conn.fetch(sql, request.profileId)
+        rows = await conn.fetch(sql_query, request.profileId)
         
         # Build model mapping and department mapping from the single result set
         model_mapping: ModelMapping = {}
@@ -142,6 +147,15 @@ async def list_agents(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="list_agents",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

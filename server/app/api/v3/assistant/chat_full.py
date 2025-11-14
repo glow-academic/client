@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -50,13 +51,17 @@ async def get_assistant_chat_full(
         response.headers["X-Cache-Hit"] = "1"
         return AssistantChatFullResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         chat_id_str = request_body.chatId
         profile_id_str = request_body.profileId
 
         # Get complete chat data in a single SQL query
-        sql = load_sql("sql/v3/assistant/get_chat_full_complete.sql")
-        result_row = await conn.fetchrow(sql, chat_id_str, profile_id_str)
+        sql_query = load_sql("sql/v3/assistant/get_chat_full_complete.sql")
+        sql_params = (chat_id_str, profile_id_str)
+        result_row = await conn.fetchrow(sql_query, chat_id_str, profile_id_str)
 
         if not result_row or not result_row["chat"]:
             raise HTTPException(status_code=404, detail=f"Assistant chat {chat_id_str} not found")
@@ -140,5 +145,12 @@ async def get_assistant_chat_full(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_assistant_chat_full",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

@@ -1,15 +1,15 @@
 """Cohort duplicate endpoint - v3 API."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
-
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class DuplicateCohortRequest(BaseModel):
@@ -32,10 +32,14 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateCohortResponse)
 async def duplicate_cohort(
     request: DuplicateCohortRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateCohortResponse:
     """Duplicate a cohort with relationships."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
             # Get original cohort data
@@ -45,11 +49,10 @@ async def duplicate_cohort(
             if not result:
                 raise HTTPException(status_code=404, detail="Cohort not found")
 
-            # Insert duplicate cohort
-            duplicate_sql = load_sql("sql/v3/cohorts/duplicate_cohort.sql")
-            new_cohort = await conn.fetchrow(
-                duplicate_sql, result["title"], result["description"]
-            )
+            # Insert duplicate cohort (track primary operation)
+            sql_query = load_sql("sql/v3/cohorts/duplicate_cohort.sql")
+            sql_params = (result["title"], result["description"])
+            new_cohort = await conn.fetchrow(sql_query, result["title"], result["description"])
 
             if not new_cohort:
                 raise HTTPException(status_code=500, detail="Failed to create duplicate cohort")
@@ -82,5 +85,12 @@ async def duplicate_cohort(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="duplicate_cohort",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

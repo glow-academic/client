@@ -1,14 +1,15 @@
 """Profile update endpoint - update profile fields."""
 
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.api.v3.profile.detail import ProfileDetailResponse, ProfileItem
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -32,11 +33,15 @@ class UpdateProfileRequest(BaseModel):
 @router.post("/update", response_model=ProfileDetailResponse)
 async def update_profile(
     request: UpdateProfileRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProfileDetailResponse:
     """Update profile fields (simple auth version)."""
     tags = ["profile"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         # Process lastLogin ISO string to datetime if present
@@ -62,9 +67,21 @@ async def update_profile(
         # Update profile with all fields in a single SQL file
         # Pass None for fields that aren't being updated (SQL uses COALESCE to keep existing values)
         # Note: req_per_day is stored in profile_request_limits table, not updated here
-        sql = load_sql("sql/v3/profile/update_profile_complete.sql")
+        sql_query = load_sql("sql/v3/profile/update_profile_complete.sql")
+        sql_params = (
+            request.profileId,  # $1
+            request.firstName,  # $2
+            request.lastName,  # $3
+            last_login_dt,  # $4
+            request.role,  # $5
+            request.active,  # $6
+            request.viewedIntro,  # $7
+            request.viewedChat,  # $8
+            None,  # $9 - req_per_day (not used, stored in separate table)
+            last_active_dt,  # $10
+        )
         row = await conn.fetchrow(
-            sql,
+            sql_query,
             request.profileId,  # $1
             request.firstName,  # $2
             request.lastName,  # $3
@@ -111,5 +128,12 @@ async def update_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_profile",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

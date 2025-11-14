@@ -1,12 +1,13 @@
 """Department remove-profiles endpoint - v3 API."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -30,11 +31,15 @@ router = APIRouter()
 @router.post("/remove-profiles", response_model=RemoveProfilesFromDepartmentResponse)
 async def remove_profiles_from_department(
     request: RemoveProfilesFromDepartmentRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RemoveProfilesFromDepartmentResponse:
     """Remove profiles from department (set active = false in junction table)."""
     tags = ["departments"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         # Get department title for message
@@ -45,8 +50,9 @@ async def remove_profiles_from_department(
             raise HTTPException(status_code=404, detail=f"Department {request.departmentId} not found")
 
         async with transaction(conn):
-            sql = load_sql("sql/v3/departments/remove_department_profiles.sql")
-            await conn.execute(sql, request.departmentId, request.profileIds)
+            sql_query = load_sql("sql/v3/departments/remove_department_profiles.sql")
+            sql_params = (request.departmentId, request.profileIds)
+            await conn.execute(sql_query, request.departmentId, request.profileIds)
 
         result = RemoveProfilesFromDepartmentResponse(
             success=True,
@@ -61,5 +67,12 @@ async def remove_profiles_from_department(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="remove_profiles_from_department",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

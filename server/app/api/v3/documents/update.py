@@ -1,13 +1,14 @@
 """Document update endpoint - v3 API."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -34,20 +35,30 @@ router = APIRouter()
 @router.post("/update", response_model=UpdateDocumentResponse)
 async def update_document(
     request: UpdateDocumentRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateDocumentResponse:
     """Update a document."""
     tags = ["documents"]  # From router tags
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
             # Update document with department links and parameter items in a single transaction
-            sql = load_sql("sql/v3/documents/update_document_complete.sql")
+            sql_query = load_sql("sql/v3/documents/update_document_complete.sql")
             # Ensure parameter_item_ids is always an array (empty if None)
             param_item_ids = request.parameter_item_ids or []
+            sql_params = (
+                uuid.UUID(request.documentId),
+                request.type,
+                uuid.UUID(request.department_id) if request.department_id else None,
+                param_item_ids,
+            )
             await conn.execute(
-                sql,
+                sql_query,
                 uuid.UUID(request.documentId),
                 request.type,
                 uuid.UUID(request.department_id) if request.department_id else None,
@@ -64,6 +75,15 @@ async def update_document(
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
         
         return result
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_document",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

@@ -1,12 +1,13 @@
 """Parameter item create endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -34,11 +35,15 @@ router = APIRouter()
 @router.post("/create", response_model=CreateParameterItemResponse)
 async def create_parameter_item(
     request: CreateParameterItemRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateParameterItemResponse:
     """Create a single parameter item (for inline creation from pickers)."""
     tags = ["parameters", "agents"]  # Parameter items used in scenario context
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         async with transaction(conn):
@@ -49,15 +54,15 @@ async def create_parameter_item(
             if not existing:
                 raise ValueError(f"Parameter not found: {request.parameterId}")
 
-            # Create parameter item
-            item_sql = load_sql("sql/v3/parameters/create_parameter_item.sql")
-            item_result = await conn.fetchrow(
-                item_sql,
+            # Create parameter item (track primary operation)
+            sql_query = load_sql("sql/v3/parameters/create_parameter_item.sql")
+            sql_params = (
                 request.parameterId,
                 request.name,
                 request.description,
                 request.value,
             )
+            item_result = await conn.fetchrow(sql_query, *sql_params)
 
             if not item_result:
                 raise ValueError("Failed to create parameter item")
@@ -78,5 +83,12 @@ async def create_parameter_item(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="create_parameter_item",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

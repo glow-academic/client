@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (ParameterItemMapping, ParameterItemMappingItem,
                               ParameterMapping, ParameterMappingItem,
@@ -142,6 +143,9 @@ async def get_practice_overview(
         response.headers["X-Cache-Hit"] = "1"
         return PracticeOverviewResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Validate that profile_id is provided (required for practice)
         if not filters.profileId:
@@ -161,13 +165,13 @@ async def get_practice_overview(
                 )
 
         # Load SQL file
-        query = load_sql("sql/v3/practice/practice_overview.sql")
-        params = [
+        sql_query = load_sql("sql/v3/practice/practice_overview.sql")
+        sql_params = (
             profile_id_final,
             filters.departmentIds if filters.departmentIds else [],
-        ]
+        )
 
-        result = await conn.fetchval(query, *params)
+        result = await conn.fetchval(sql_query, *sql_params)
 
         # Handle empty results gracefully - return empty structure instead of error
         # The SQL should always return a row, but handle edge case where it doesn't
@@ -296,8 +300,17 @@ async def get_practice_overview(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_practice_overview",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

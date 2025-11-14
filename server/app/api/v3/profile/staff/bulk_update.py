@@ -4,9 +4,10 @@ from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -33,13 +34,19 @@ class BulkUpdateStaffResponse(BaseModel):
 @router.post("/bulk-update", response_model=BulkUpdateStaffResponse)
 async def bulk_update_profile(
     request: BulkUpdateStaffRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkUpdateStaffResponse:
     """Bulk update profiles."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Get current user's role for validation
         role_sql = load_sql("sql/v3/profile/staff/get_profile_role.sql")
+        sql_query = role_sql  # Track primary query
+        sql_params = (request.currentProfileId,)
         current_user = await conn.fetchrow(role_sql, request.currentProfileId)
         
         if not current_user:
@@ -193,5 +200,12 @@ async def bulk_update_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="bulk_update_profile",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

@@ -4,6 +4,7 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -45,12 +46,16 @@ async def get_assistant_chats_list(
         response.headers["X-Cache-Hit"] = "1"
         return AssistantChatListResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         profile_id_str = request_body.profileId
 
         # Get all chats for this profile
-        all_chats_sql = load_sql("sql/v3/assistant/get_all_chats.sql")
-        all_chats_result = await conn.fetch(all_chats_sql, profile_id_str)
+        sql_query = load_sql("sql/v3/assistant/get_all_chats.sql")
+        sql_params = (profile_id_str,)
+        all_chats_result = await conn.fetch(sql_query, profile_id_str)
         all_chats = [
             {
                 "id": str(row["id"]),
@@ -76,6 +81,15 @@ async def get_assistant_chats_list(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_assistant_chats_list",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

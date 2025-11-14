@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMappingItem, ParameterItemMappingItem,
                               ParameterMappingItem, ScenarioMappingItem)
@@ -73,9 +74,13 @@ async def get_documents_list(
         response.headers["X-Cache-Hit"] = "1"
         return DocumentsListResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/documents/list_documents.sql")
-        rows = await conn.fetch(sql, filters.profileId)
+        sql_query = load_sql("sql/v3/documents/list_documents.sql")
+        sql_params = (filters.profileId,)
+        rows = await conn.fetch(sql_query, filters.profileId)
 
         documents: list[DocumentItem] = []
         scenario_mapping: dict[str, ScenarioMappingItem] = {}
@@ -210,6 +215,15 @@ async def get_documents_list(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_documents_list",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

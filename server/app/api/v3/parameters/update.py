@@ -1,12 +1,13 @@
 """Parameter update endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -47,11 +48,15 @@ router = APIRouter()
 @router.post("/update", response_model=UpdateParameterResponse)
 async def update_parameter(
     request: UpdateParameterRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateParameterResponse:
     """Update an existing parameter (replace all items)."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         async with transaction(conn):
@@ -79,9 +84,8 @@ async def update_parameter(
             items_json = json.dumps(items_data)
 
             # Update parameter with items and department links in single SQL (DHH style)
-            update_sql = load_sql("sql/v3/parameters/update_parameter_complete.sql")
-            result = await conn.fetchrow(
-                update_sql,
+            sql_query = load_sql("sql/v3/parameters/update_parameter_complete.sql")
+            sql_params = (
                 request.parameterId,
                 request.name,
                 request.description,
@@ -92,6 +96,7 @@ async def update_parameter(
                 request.department_ids,  # Parameter-level department_ids (fallback)
                 items_json,  # JSONB array of items
             )
+            result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
                 raise ValueError("Failed to update parameter")
@@ -108,5 +113,12 @@ async def update_parameter(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_parameter",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

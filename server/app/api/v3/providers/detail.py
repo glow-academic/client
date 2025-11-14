@@ -1,9 +1,10 @@
 """Provider detail endpoint."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -47,9 +48,13 @@ async def get_provider_detail(
         response.headers["X-Cache-Hit"] = "1"
         return ProviderDetailResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/providers/get_provider_detail_complete.sql")
-        provider = await conn.fetchrow(sql, request.providerId)
+        sql_query = load_sql("sql/v3/providers/get_provider_detail_complete.sql")
+        sql_params = (request.providerId,)
+        provider = await conn.fetchrow(sql_query, request.providerId)
 
         if not provider:
             raise HTTPException(status_code=404, detail=f"Provider not found: {request.providerId}")
@@ -75,5 +80,12 @@ async def get_provider_detail(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_provider_detail",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

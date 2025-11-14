@@ -1,12 +1,13 @@
 """Persona duplicate endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -31,11 +32,15 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicatePersonaResponse)
 async def duplicate_persona(
     request: DuplicatePersonaRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicatePersonaResponse:
     """Duplicate a persona."""
     tags = ["personas"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         async with transaction(conn):
@@ -48,9 +53,8 @@ async def duplicate_persona(
 
             # Duplicate persona with prompt and departments in single SQL (DHH style)
             # The SQL will automatically copy department links from the original persona
-            duplicate_sql = load_sql("sql/v3/personas/duplicate_persona_complete.sql")
-            new_persona = await conn.fetchrow(
-                duplicate_sql,
+            sql_query = load_sql("sql/v3/personas/duplicate_persona_complete.sql")
+            sql_params = (
                 request.personaId,  # Original persona ID for copying departments
                 result["name"],
                 result["description"],
@@ -61,6 +65,7 @@ async def duplicate_persona(
                 result["icon"],
                 result["system_prompt"] or None,
             )
+            new_persona = await conn.fetchrow(sql_query, *sql_params)
 
             if not new_persona:
                 raise ValueError("Failed to create duplicate persona")
@@ -83,5 +88,12 @@ async def duplicate_persona(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="duplicate_persona",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

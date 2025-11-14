@@ -1,13 +1,14 @@
 """Staff create or update endpoint - create or update a staff member based on alias."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -36,13 +37,19 @@ class CreateOrUpdateStaffResponse(BaseModel):
 @router.post("/create-or-update-staff", response_model=CreateOrUpdateStaffResponse)
 async def create_or_update_staff(
     request: CreateOrUpdateStaffRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateOrUpdateStaffResponse:
     """Create or update a staff member based on alias."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Check if alias exists
         check_sql = load_sql("sql/v3/profile/staff/check_alias_exists.sql")
+        sql_query = check_sql  # Track primary query
+        sql_params = (request.alias,)
         existing = await conn.fetchrow(check_sql, request.alias)
 
         async with transaction(conn):
@@ -163,5 +170,12 @@ async def create_or_update_staff(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="create_or_update_staff",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

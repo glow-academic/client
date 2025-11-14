@@ -1,12 +1,13 @@
 """Model duplicate endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -31,11 +32,15 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateModelResponse)
 async def duplicate_model(
     request: DuplicateModelRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateModelResponse:
     """Duplicate a model."""
     tags = ["providers"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         async with transaction(conn):
@@ -58,9 +63,10 @@ async def duplicate_model(
             if not model:
                 raise ValueError(f"Model not found: {request.modelId}")
 
-            # Duplicate model (SQL adds ' Copy' to description)
-            duplicate_sql = load_sql("sql/v3/providers/duplicate_model.sql")
-            new_model = await conn.fetchrow(duplicate_sql, request.modelId)
+            # Duplicate model (SQL adds ' Copy' to description) - track primary operation
+            sql_query = load_sql("sql/v3/providers/duplicate_model.sql")
+            sql_params = (request.modelId,)
+            new_model = await conn.fetchrow(sql_query, request.modelId)
 
             if not new_model:
                 raise ValueError("Failed to create duplicate model")
@@ -83,5 +89,12 @@ async def duplicate_model(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="duplicate_model",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

@@ -1,12 +1,13 @@
 """Provider duplicate endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -31,18 +32,23 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateProviderResponse)
 async def duplicate_provider(
     request: DuplicateProviderRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateProviderResponse:
     """Duplicate a provider with all its models."""
     tags = ["providers"]  # From router tags
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
             # Use the duplicate_provider.sql which handles everything in one query
-            duplicate_sql = load_sql("sql/v3/providers/duplicate_provider.sql")
+            sql_query = load_sql("sql/v3/providers/duplicate_provider.sql")
+            sql_params = (request.providerId,)
             try:
-                result = await conn.fetchrow(duplicate_sql, request.providerId)
+                result = await conn.fetchrow(sql_query, request.providerId)
             except Exception as sql_error:
                 # If SQL fails (e.g., provider doesn't exist), return 400
                 raise ValueError(f"Provider not found: {request.providerId}") from sql_error
@@ -68,8 +74,12 @@ async def duplicate_provider(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Provider duplicate error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="duplicate_provider",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

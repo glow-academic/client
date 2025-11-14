@@ -1,12 +1,13 @@
 """Scenario duplicate endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -31,17 +32,22 @@ router = APIRouter()
 @router.post("/duplicate", response_model=DuplicateScenarioResponse)
 async def duplicate_scenario(
     request: DuplicateScenarioRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateScenarioResponse:
     """Duplicate a scenario."""
     tags = ["scenarios"]  # From router tags
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         async with transaction(conn):
             # Use single comprehensive SQL file (DHH style)
-            duplicate_sql = load_sql("sql/v3/scenarios/duplicate_scenario.sql")
-            new_scenario_row = await conn.fetchrow(duplicate_sql, request.scenarioId)
+            sql_query = load_sql("sql/v3/scenarios/duplicate_scenario.sql")
+            sql_params = (request.scenarioId,)
+            new_scenario_row = await conn.fetchrow(sql_query, request.scenarioId)
 
             if not new_scenario_row:
                 raise ValueError(f"Scenario not found: {request.scenarioId}")
@@ -69,5 +75,12 @@ async def duplicate_scenario(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="duplicate_scenario",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

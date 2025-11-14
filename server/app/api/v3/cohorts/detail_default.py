@@ -3,13 +3,14 @@
 import json
 import os
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (
     CohortMappingItem,
@@ -57,10 +58,14 @@ async def get_cohort_detail_default(
         response.headers["X-Cache-Hit"] = "1"
         return CohortDetailResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
-        sql = load_sql("sql/v3/cohorts/get_cohort_detail_default_complete.sql")
-        row = await conn.fetchrow(sql, request_body.profileId, campus_domain)
+        sql_query = load_sql("sql/v3/cohorts/get_cohort_detail_default_complete.sql")
+        sql_params = (request_body.profileId, campus_domain)
+        row = await conn.fetchrow(sql_query, request_body.profileId, campus_domain)
 
         if not row:
             raise HTTPException(status_code=404, detail="No cohort found for user's departments")
@@ -240,5 +245,12 @@ async def get_cohort_detail_default(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_cohort_detail_default",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 

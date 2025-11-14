@@ -1,13 +1,14 @@
 """Profile by alias endpoint - get profile by alias."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.api.v3.profile.detail import ProfileItem, ProfileDetailResponse
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
 
 router = APIRouter()
@@ -22,15 +23,20 @@ class ProfileByAliasRequest(BaseModel):
 @router.post("/by-alias", response_model=ProfileDetailResponse)
 async def get_profile_by_alias(
     request: ProfileByAliasRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProfileDetailResponse:
     """Get profile by alias (for auth operations)."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Load SQL string
-        sql = load_sql("sql/v3/profile/get_profile_by_alias.sql")
+        sql_query = load_sql("sql/v3/profile/get_profile_by_alias.sql")
+        sql_params = (request.alias,)
 
         # Execute
-        row = await conn.fetchrow(sql, request.alias)
+        row = await conn.fetchrow(sql_query, request.alias)
         if not row:
             raise HTTPException(status_code=404, detail="Profile not found")
 
@@ -59,5 +65,12 @@ async def get_profile_by_alias(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_profile_by_alias",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

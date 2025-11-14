@@ -1,14 +1,15 @@
 """Staff bulk create endpoint - bulk create staff members."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.api.v3.profile.staff.create import CreateStaffRequest
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -31,10 +32,14 @@ class BulkCreateStaffResponse(BaseModel):
 @router.post("/bulk-create", response_model=BulkCreateStaffResponse)
 async def bulk_create_profile(
     request: BulkCreateStaffRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkCreateStaffResponse:
     """Bulk create profiles."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Check for duplicate aliases
         aliases = [p.alias for p in request.profiles]
@@ -52,6 +57,8 @@ async def bulk_create_profile(
         profile_ids: list[str] = []
         create_sql = load_sql("sql/v3/profile/staff/create_profile.sql")
         dept_sql = load_sql("sql/v3/profile/staff/insert_profile_department.sql")
+        sql_query = create_sql  # Track primary query
+        sql_params = ()  # Multiple queries with different params
 
         async with transaction(conn):
             for profile_req in request.profiles:
@@ -91,5 +98,12 @@ async def bulk_create_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="bulk_create_profile",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

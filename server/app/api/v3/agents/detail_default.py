@@ -5,6 +5,7 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               ModelMapping, ModelMappingItem, ReasoningMapping,
@@ -67,9 +68,13 @@ async def get_agent_detail_default(
         response.headers["X-Cache-Hit"] = "1"
         return AgentDetailResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/agents/get_agent_detail_default_complete.sql")
-        result = await conn.fetchrow(sql, request.profileId)
+        sql_query = load_sql("sql/v3/agents/get_agent_detail_default_complete.sql")
+        sql_params = (request.profileId,)
+        result = await conn.fetchrow(sql_query, request.profileId)
 
         # Initialize defaults
         model_mapping: ModelMapping = {}
@@ -166,6 +171,15 @@ async def get_agent_detail_default(
         response.headers["X-Cache-Hit"] = "0"
         
         return response_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_agent_detail_default",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

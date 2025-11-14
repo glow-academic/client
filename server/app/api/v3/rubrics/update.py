@@ -1,13 +1,14 @@
 """Rubric update endpoint - v3 API."""
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
@@ -57,11 +58,15 @@ router = APIRouter()
 @router.post("/update", response_model=UpdateRubricResponse)
 async def update_rubric(
     request: UpdateRubricRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateRubricResponse:
     """Update an existing rubric (replaces entire hierarchy)."""
     tags = ["rubrics"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         # Convert standard groups to JSONB array for SQL
@@ -88,9 +93,8 @@ async def update_rubric(
         department_ids = request.department_ids if request.department_ids else []
 
         # Update rubric with departments, standard groups, and standards in a single SQL file
-        sql = load_sql("sql/v3/rubrics/update_rubric_complete.sql")
-        row = await conn.fetchrow(
-            sql,
+        sql_query = load_sql("sql/v3/rubrics/update_rubric_complete.sql")
+        sql_params = (
             request.rubricId,
             request.name,
             request.description,
@@ -100,6 +104,7 @@ async def update_rubric(
             department_ids,
             standard_groups_json,
         )
+        row = await conn.fetchrow(sql_query, *sql_params)
 
         if not row:
             raise HTTPException(status_code=404, detail="Rubric not found")
@@ -118,5 +123,12 @@ async def update_rubric(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_rubric",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

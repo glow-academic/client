@@ -1,12 +1,13 @@
 """Profile mark chat complete endpoint - mark viewedChat as complete."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -28,16 +29,21 @@ class MarkTourStepResponse(BaseModel):
 @router.post("/mark-chat-complete", response_model=MarkTourStepResponse)
 async def mark_chat_complete(
     request: MarkChatCompleteRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MarkTourStepResponse:
     """Mark chat tour step as complete."""
     tags = ["profile"]  # From router tags
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Mark chat complete with existence check in a single SQL file
-        sql = load_sql("sql/v3/profile/mark_chat_complete.sql")
-        result = await conn.fetchrow(sql, request.profileId)
+        sql_query = load_sql("sql/v3/profile/mark_chat_complete.sql")
+        sql_params = (request.profileId,)
+        result = await conn.fetchrow(sql_query, request.profileId)
 
         if not result:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -56,5 +62,12 @@ async def mark_chat_complete(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="mark_chat_complete",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

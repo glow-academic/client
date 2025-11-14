@@ -1,12 +1,13 @@
 """Provider decrypt key endpoint - v3 API following DHH principles."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.utils.auth import decrypt_api_key
+from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 
@@ -30,13 +31,18 @@ router = APIRouter()
 @router.post("/decrypt-key", response_model=DecryptProviderKeyResponse)
 async def decrypt_provider_key(
     request: DecryptProviderKeyRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DecryptProviderKeyResponse:
     """Decrypt provider API key for authorized users."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Get provider detail to verify access and get encrypted key
-        get_detail_sql = load_sql("sql/v3/providers/get_provider_detail_complete.sql")
-        provider = await conn.fetchrow(get_detail_sql, request.providerId)
+        sql_query = load_sql("sql/v3/providers/get_provider_detail_complete.sql")
+        sql_params = (request.providerId,)
+        provider = await conn.fetchrow(sql_query, request.providerId)
 
         if not provider:
             raise ValueError(f"Provider not found: {request.providerId}")
@@ -54,5 +60,12 @@ async def decrypt_provider_key(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="decrypt_provider_key",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

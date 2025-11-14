@@ -2,13 +2,14 @@
 
 import base64
 import os
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.extensions import UPLOAD_FOLDER
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 # Directory for storing tus uploads in progress
@@ -38,11 +39,15 @@ router = APIRouter()
 @router.post("/upload/chunk", response_model=UploadChunkResponse)
 async def upload_chunk(
     request: UploadChunkRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UploadChunkResponse:
     """Upload a chunk of data."""
     tags = ["documents"]  # From router tags
+    
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
     
     try:
         upload_dir = os.path.join(TUS_UPLOADS_DIR, request.uploadId)
@@ -90,5 +95,12 @@ async def upload_chunk(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="upload_chunk",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

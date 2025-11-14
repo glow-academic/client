@@ -5,11 +5,12 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               ModelMapping, ModelMappingItem, ReasoningMapping,
                               ReasoningMappingItem)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 
@@ -99,15 +100,20 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
 @router.post("/detail-default", response_model=PersonaDetailResponse)
 async def get_persona_detail_default(
     request: PersonaDetailDefaultRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PersonaDetailResponse:
     """Get default persona structure for creation mode."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Load SQL query
-        sql = load_sql("sql/v3/personas/get_persona_detail_default_complete.sql")
+        sql_query = load_sql("sql/v3/personas/get_persona_detail_default_complete.sql")
+        sql_params = (request.profileId,)
 
         # Execute query
-        result = await conn.fetchrow(sql, request.profileId)
+        result = await conn.fetchrow(sql_query, request.profileId)
 
         if not result:
             raise HTTPException(
@@ -260,5 +266,12 @@ async def get_persona_detail_default(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="get_persona_detail_default",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

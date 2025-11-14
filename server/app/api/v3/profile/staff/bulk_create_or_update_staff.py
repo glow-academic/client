@@ -1,15 +1,16 @@
 """Staff bulk create or update endpoint - bulk create or update staff members."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg
 from app.api.v3.profile.staff.create_or_update_staff import \
     CreateOrUpdateStaffRequest
 from app.db import get_db, transaction
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -35,10 +36,14 @@ class BulkCreateOrUpdateStaffResponse(BaseModel):
 @router.post("/bulk-create-or-update-staff", response_model=BulkCreateOrUpdateStaffResponse)
 async def bulk_create_or_update_staff(
     request: BulkCreateOrUpdateStaffRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkCreateOrUpdateStaffResponse:
     """Bulk create or update staff members."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         profile_ids: list[str] = []
         created_count = 0
@@ -46,6 +51,8 @@ async def bulk_create_or_update_staff(
 
         # Get current user's role for validation
         role_sql = load_sql("sql/v3/profile/staff/get_profile_role.sql")
+        sql_query = role_sql  # Track primary query
+        sql_params = (request.currentProfileId,)
         current_user = await conn.fetchrow(role_sql, request.currentProfileId)
         
         if not current_user:
@@ -201,5 +208,12 @@ async def bulk_create_or_update_staff(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="bulk_create_or_update_staff",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

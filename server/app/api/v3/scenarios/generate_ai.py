@@ -1,14 +1,15 @@
 """Scenario generate AI endpoint - v3 API following DHH principles."""
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.agents.collection.scenario import run_scenario_agent
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 
 # Inline request/response schemas
 class GenerateScenarioAIRequest(BaseModel):
@@ -39,9 +40,13 @@ router = APIRouter()
 @router.post("/generate-ai", response_model=GenerateScenarioAIResponse)
 async def generate_scenario_ai(
     request: GenerateScenarioAIRequest,
+    http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GenerateScenarioAIResponse:
     """Generate AI scenario content (title, description, objectives)."""
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(request.departmentId)
@@ -92,5 +97,12 @@ async def generate_scenario_ai(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="generate_scenario_ai",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
 

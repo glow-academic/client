@@ -2,13 +2,14 @@
 
 import json
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.db import get_db
+from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem
 from app.utils.sql_helper import load_sql
@@ -50,9 +51,13 @@ async def get_rubric_detail_default(
         response.headers["X-Cache-Hit"] = "1"
         return RubricDetailResponse.model_validate(cached["data"])
     
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+    
     try:
-        sql = load_sql("sql/v3/rubrics/get_rubric_detail_default_complete.sql")
-        row = await conn.fetchrow(sql, uuid.UUID(request_body.profileId))
+        sql_query = load_sql("sql/v3/rubrics/get_rubric_detail_default_complete.sql")
+        sql_params = (uuid.UUID(request_body.profileId),)
+        row = await conn.fetchrow(sql_query, uuid.UUID(request_body.profileId))
 
         if not row:
             raise HTTPException(status_code=404, detail="No rubrics found for user's departments")
@@ -147,5 +152,12 @@ async def get_rubric_detail_default(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_rubric_detail_default",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
 
