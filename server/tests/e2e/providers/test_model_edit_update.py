@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -44,9 +46,20 @@ def test_model_edit_navigation(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        # Navigate to providers list
+        # Navigate to providers list and refresh to get newly created model
         page.goto(f"{base_url}/system/providers")
         page.wait_for_load_state("networkidle")
+        page.reload()  # Refresh to get newly created model from server
+        page.wait_for_load_state("networkidle")
+
+        grid = page.get_by_test_id("providers-grid")
+        grid.wait_for(state="visible", timeout=15000)
+
+        # Search for the model to ensure it's visible (search filters models, not providers)
+        search_input = page.get_by_test_id("providers-search")
+        search_input.wait_for(state="visible", timeout=10000)
+        search_input.fill("Editable Model")
+        page.wait_for_timeout(500)
 
         model_card = page.locator(
             f"[data-testid='model-card'][data-model-id='{model_id}']"

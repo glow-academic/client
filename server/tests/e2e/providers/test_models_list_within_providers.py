@@ -5,12 +5,10 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import Page, expect
 
-from server.tests.e2e.providers.helpers import (
-    create_model_api,
-    create_provider_api,
-    delete_model_api,
-    delete_provider_api,
-)
+from server.tests.e2e.providers.helpers import (create_model_api,
+                                                create_provider_api,
+                                                delete_model_api,
+                                                delete_provider_api)
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
@@ -42,23 +40,33 @@ def test_models_display_in_provider_groups(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        # Navigate to providers list
+        # Navigate to providers list and refresh to get newly created items
         page.goto(f"{base_url}/system/providers")
+        page.wait_for_load_state("networkidle")
+        page.reload()  # Refresh to get newly created provider and model from server
         page.wait_for_load_state("networkidle")
 
         grid = page.get_by_test_id("providers-grid")
         grid.wait_for(state="visible", timeout=15000)
 
+        # Clear any active filters to ensure items are visible
+        reset_button = page.get_by_role("button", name="Reset")
+        if reset_button.count() > 0:
+            reset_button.click()
+            page.wait_for_timeout(500)
+
         # Verify provider card exists
         provider_card = page.locator(
             f"[data-testid='provider-card'][data-provider-id='{provider_id}']"
         )
+        provider_card.wait_for(state="visible", timeout=10000)
         expect(provider_card).to_be_visible()
 
         # Verify model card exists within provider group
         model_card = page.locator(
             f"[data-testid='model-card'][data-model-id='{model_id}']"
         )
+        model_card.wait_for(state="visible", timeout=10000)
         expect(model_card).to_be_visible()
 
         # Verify model has correct provider_id attribute
@@ -139,16 +147,27 @@ def test_create_model_card_navigation(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        # Navigate to providers list
+        # Navigate to providers list and refresh to get newly created provider
         page.goto(f"{base_url}/system/providers")
+        page.wait_for_load_state("networkidle")
+        page.reload()  # Refresh to get newly created provider from server
         page.wait_for_load_state("networkidle")
 
         grid = page.get_by_test_id("providers-grid")
         grid.wait_for(state="visible", timeout=15000)
 
+        # Clear any active filters to ensure provider without models is visible
+        # (Providers without models are hidden when filters are active)
+        reset_button = page.get_by_role("button", name="Reset")
+        if reset_button.count() > 0:
+            reset_button.click()
+            page.wait_for_timeout(500)
+
         provider_card = page.locator(
             f"[data-testid='provider-card'][data-provider-id='{provider_id}']"
         )
+        # Wait longer for provider card - it may take time to render
+        provider_card.wait_for(state="visible", timeout=10000)
         expect(provider_card).to_be_visible()
 
         # Find the "Create New Model" card within this provider group
