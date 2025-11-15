@@ -119,11 +119,6 @@ from app.web.simulations import start_simulation  # type: ignore
 from app.web.simulations import stop_simulation  # type: ignore
 
 
-def get_socketio_instance() -> socketio.AsyncServer:
-    """Get the global Socket.IO server instance"""
-    return sio
-
-
 # Create a combined lifespan to manage both session managers
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:

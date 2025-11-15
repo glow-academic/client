@@ -160,9 +160,7 @@ async def check_websocket() -> HealthCheckItem:
     """Check WebSocket server initialization."""
     start = time.time()
     try:
-        from app.main import get_socketio_instance
-
-        sio = get_socketio_instance()
+        from app.main import sio
 
         if sio is None:
             return HealthCheckItem(
