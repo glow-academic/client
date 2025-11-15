@@ -40,29 +40,33 @@ async def bulk_delete_feedback(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Check if user is superadmin
-        check_sql = load_sql("sql/v3/feedback/check_profile_role.sql")
-        sql_query = check_sql  # Track primary query
-        sql_params = (request.profileId,)
-        result = await conn.fetchrow(check_sql, request.profileId)
-
-        if not result:
-            raise HTTPException(status_code=404, detail=f"Profile not found: {request.profileId}")
-
-        if result["role"] != "superadmin":
-            raise HTTPException(
-                status_code=403, detail="Only superadmin users can delete feedback"
-            )
-
         if not request.ids:
             return BulkDeleteFeedbackResponse(
                 success=True, deleted_count=0, message="No feedback to delete"
             )
 
-        # Delete feedback
-        delete_sql = load_sql("sql/v3/feedback/delete_feedback_bulk.sql")
-        deleted_rows = await conn.fetch(delete_sql, request.ids)
-        deleted_count = len(deleted_rows)
+        # Single consolidated query: role check + delete
+        sql_query = load_sql("sql/v3/feedback/delete_feedback_bulk_with_validation.sql")
+        sql_params = (request.profileId, request.ids)
+        result = await conn.fetchrow(sql_query, request.profileId, request.ids)
+
+        if not result:
+            raise HTTPException(
+                status_code=500, detail="Failed to delete feedback"
+            )
+        
+        deleted_count = result["deleted_count"]
+        
+        # Check if deletion was authorized (superadmin check)
+        if deleted_count == 0 and len(request.ids) > 0:
+            # Check if it's because user is not superadmin
+            check_role_sql = load_sql("sql/v3/feedback/check_profile_role.sql")
+            role_result = await conn.fetchrow(check_role_sql, request.profileId)
+            if role_result and role_result["role"] != "superadmin":
+                raise HTTPException(
+                    status_code=403, detail="Only superadmin users can delete feedback"
+                )
+            # Otherwise, feedback IDs might not exist
 
         result_data = BulkDeleteFeedbackResponse(
             success=True,

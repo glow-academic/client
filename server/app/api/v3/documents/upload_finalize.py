@@ -130,9 +130,8 @@ async def upload_finalize(
             users_created = []
             users_skipped = []
 
-            # Load SQL queries
-            check_profile_sql = load_sql("sql/v3/profile/check_profile_exists_by_alias.sql")
-            insert_profile_sql = load_sql("sql/v3/profile/insert_profile.sql")
+            # Load consolidated SQL query (check + insert in one query)
+            insert_profile_sql = load_sql("sql/v3/profile/insert_profile_if_not_exists.sql")
 
             # Process each user within a transaction
             try:
@@ -143,21 +142,9 @@ async def upload_finalize(
                             username = user["username"]
                             row_num = user["row_num"]
 
-                            # Check if user already exists
-                            existing_user = await conn.fetchrow(
-                                check_profile_sql,
-                                username,
-                            )
-
-                            if existing_user:
-                                users_skipped.append(
-                                    {"username": username, "reason": "User already exists"}
-                                )
-                                continue
-
-                            # Create new user with 'ta' role
+                            # Insert profile if not exists (single query with ON CONFLICT)
                             user_id = str(uuid.uuid4())
-                            await conn.execute(
+                            result = await conn.fetchrow(
                                 insert_profile_sql,
                                 user_id,
                                 name,  # first_name (using full name as first_name)
@@ -166,7 +153,14 @@ async def upload_finalize(
                                 False,  # viewed_intro
                             )
 
-                            users_created.append({"name": name, "username": username})
+                            if result:
+                                # Profile was inserted
+                                users_created.append({"name": name, "username": username})
+                            else:
+                                # Profile already exists (ON CONFLICT DO NOTHING)
+                                users_skipped.append(
+                                    {"username": username, "reason": "User already exists"}
+                                )
 
                         except Exception as e:
                             errors.append(f"Row {row_num}: {str(e)}")
@@ -251,24 +245,18 @@ async def upload_finalize(
 
                         content_type = get_content_type(filename)
 
-                        # Insert document into database
-                        sql = load_sql("sql/v3/documents/insert_document.sql")
+                        # Insert document with department links in single query
+                        dept_uuids = [uuid.UUID(d) for d in department_ids] if department_ids else []
+                        sql = load_sql("sql/v3/documents/insert_document_complete.sql")
                         await conn.execute(
                             sql,
                             document_id,
                             filename,
                             final_file_path,
                             content_type,
+                            dept_uuids,
+                            [],  # parameter_item_ids (empty for ZIP uploads)
                         )
-
-                        # Insert document-department relationships
-                        if department_ids:
-                            dept_sql = load_sql("sql/v3/documents/insert_document_department.sql")
-                            await conn.execute(
-                                dept_sql,
-                                document_id,
-                                department_ids,
-                            )
 
                         extracted_documents.append(
                             {

@@ -1,6 +1,6 @@
--- Get profile context with guest-profile-id resolution in a single transaction
+-- Get profile context with guest-profile-id resolution and emulation validation in a single transaction
 -- Parameters: $1=actualProfileId (may be "guest-profile-id"), $2=effectiveProfileId (may be "guest-profile-id")
--- Returns: Complete profile context data
+-- Returns: Complete profile context data, or NULL if emulation is unauthorized
 WITH resolve_profile_ids AS (
     -- Resolve "guest-profile-id" to actual default guest profile ID for both actual and effective
     SELECT 
@@ -14,6 +14,33 @@ WITH resolve_profile_ids AS (
                 (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
             ELSE $2::uuid
         END as resolved_effective_profile_id
+),
+emulation_validation AS (
+    -- Validate emulation is authorized when profiles differ
+    SELECT 
+        rpi.resolved_actual_profile_id,
+        rpi.resolved_effective_profile_id,
+        CASE 
+            WHEN rpi.resolved_actual_profile_id = rpi.resolved_effective_profile_id THEN true  -- Same profile, always allowed
+            ELSE (
+                -- Check if effective profile is in simulatable list based on actual user's role
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM profiles p_actual
+                    CROSS JOIN profiles p_effective
+                    WHERE p_actual.id = rpi.resolved_actual_profile_id
+                      AND p_effective.id = rpi.resolved_effective_profile_id
+                      AND p_effective.id != rpi.resolved_actual_profile_id
+                      AND CASE 
+                        WHEN p_actual.role = 'superadmin' THEN true
+                        WHEN p_actual.role = 'admin' THEN p_effective.role IN ('instructional', 'ta', 'guest')
+                        WHEN p_actual.role = 'instructional' THEN p_effective.role IN ('ta', 'guest')
+                        ELSE false
+                      END
+                )
+            )
+        END as is_authorized
+    FROM resolve_profile_ids rpi
 ),
 actual_profile_role AS (
     -- Use actual (logged-in) user's role for emulation permissions
@@ -188,6 +215,8 @@ earliest_attempt AS (
     WHERE ap.profile_id = rpi.resolved_effective_profile_id
 )
 SELECT 
+    -- Emulation authorization flag
+    ev.is_authorized,
     -- Actual profile fields (prefixed with actual_)
     apd.id as actual_id,
     apd.first_name as actual_first_name,
@@ -278,6 +307,8 @@ SELECT
         '[]'::jsonb
     ) as simulatable_profiles,
     (SELECT earliest FROM earliest_attempt) as earliest_attempt_date
-FROM actual_profile_data apd
+FROM emulation_validation ev
+CROSS JOIN actual_profile_data apd
 CROSS JOIN effective_profile_data epd
+WHERE ev.is_authorized = true  -- Only return data if emulation is authorized
 
