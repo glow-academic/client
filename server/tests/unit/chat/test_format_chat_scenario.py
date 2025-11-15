@@ -28,4 +28,3 @@ class TestFormat_Chat_Scenario:
 
         assert result["role"] == "user"
         assert "The following is the scenario for the chat:" in result["content"]
-

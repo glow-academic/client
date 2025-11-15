@@ -19,7 +19,9 @@ class TestStore_Active_Run:
         run_result = MagicMock()
 
         # Act
-        with patch("app.utils.websocket.store_active_run.set_active_run") as mock_set_active_run:
+        with patch(
+            "app.utils.websocket.store_active_run.set_active_run"
+        ) as mock_set_active_run:
             await store_active_run(chat_id, run_result)
 
         # Assert
@@ -28,4 +30,3 @@ class TestStore_Active_Run:
         call_args = mock_set_active_run.call_args
         assert call_args[0][0] == chat_id
         assert isinstance(call_args[0][1], str)  # Should be a UUID string
-

@@ -13,7 +13,6 @@ import type { Metadata } from "next";
 import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParametersListIn = InputOf<"/api/v3/parameters/list", "post">;
 type ParametersListOut = OutputOf<"/api/v3/parameters/list", "post">;
 type DuplicateParameterIn = InputOf<"/api/v3/parameters/duplicate", "post">;
 type DuplicateParameterOut = OutputOf<"/api/v3/parameters/duplicate", "post">;

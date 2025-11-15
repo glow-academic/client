@@ -19,7 +19,8 @@ class TestAdd_Guest_Socket:
         mock_redis.sadd = AsyncMock(return_value=1)
 
         with patch(
-            "app.utils.websocket.add_guest_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.add_guest_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             await add_guest_socket(socket_id)
 
@@ -44,8 +45,8 @@ class TestAdd_Guest_Socket:
         mock_redis.sadd = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.add_guest_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.add_guest_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             # Should not raise an error, just log it
             await add_guest_socket(socket_id)
-

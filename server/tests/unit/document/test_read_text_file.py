@@ -65,4 +65,3 @@ class TestRead_Text_File:
         # Should raise ValueError on file not found
         with pytest.raises(ValueError, match="Error reading file"):
             read_text_file(str(nonexistent_file))
-

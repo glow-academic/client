@@ -62,8 +62,6 @@ async def join_chat(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in join_chat for {sid}: {e}")
         await join_chat_error(
-            JoinChatErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            JoinChatErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )

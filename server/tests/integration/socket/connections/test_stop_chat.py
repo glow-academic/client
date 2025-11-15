@@ -75,4 +75,3 @@ async def test_stop_chat_missing_chat_id(
     # Verify no chat_stopped event was emitted
     stopped_events = mock_sio.get_events("chat_stopped")
     assert len(stopped_events) == 0
-

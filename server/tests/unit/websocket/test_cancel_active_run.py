@@ -21,8 +21,16 @@ class TestCancel_Active_Run:
         mock_redis.setex = AsyncMock()
 
         # Act
-        with patch("app.utils.websocket.cancel_active_run.get_redis_client", return_value=mock_redis), \
-             patch("app.utils.websocket.cancel_active_run.get_active_run", return_value=run_id):
+        with (
+            patch(
+                "app.utils.websocket.cancel_active_run.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.cancel_active_run.get_active_run",
+                return_value=run_id,
+            ),
+        ):
             result = await cancel_active_run(chat_id)
 
         # Assert
@@ -36,7 +44,9 @@ class TestCancel_Active_Run:
         chat_id = "chat-123"
 
         # Act
-        with patch("app.utils.websocket.cancel_active_run.get_redis_client", return_value=None):
+        with patch(
+            "app.utils.websocket.cancel_active_run.get_redis_client", return_value=None
+        ):
             result = await cancel_active_run(chat_id)
 
         # Assert
@@ -50,8 +60,16 @@ class TestCancel_Active_Run:
         mock_redis = AsyncMock()
 
         # Act
-        with patch("app.utils.websocket.cancel_active_run.get_redis_client", return_value=mock_redis), \
-             patch("app.utils.websocket.cancel_active_run.get_active_run", return_value=None):
+        with (
+            patch(
+                "app.utils.websocket.cancel_active_run.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.cancel_active_run.get_active_run",
+                return_value=None,
+            ),
+        ):
             result = await cancel_active_run(chat_id)
 
         # Assert
@@ -67,10 +85,17 @@ class TestCancel_Active_Run:
         mock_redis.setex = AsyncMock(side_effect=Exception("Redis error"))
 
         # Act
-        with patch("app.utils.websocket.cancel_active_run.get_redis_client", return_value=mock_redis), \
-             patch("app.utils.websocket.cancel_active_run.get_active_run", return_value=run_id):
+        with (
+            patch(
+                "app.utils.websocket.cancel_active_run.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.cancel_active_run.get_active_run",
+                return_value=run_id,
+            ),
+        ):
             result = await cancel_active_run(chat_id)
 
         # Assert
         assert result is False
-

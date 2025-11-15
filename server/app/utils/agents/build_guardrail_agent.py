@@ -48,4 +48,3 @@ def build_guardrail_agent(
         parallel_tool_calls=False,
         tool_use_behavior=tool_use_behavior,
     )
-

@@ -19,7 +19,10 @@ class TestRemove_Active_Result:
         mock_active_results = {chat_id: {"result": "some_result"}}
 
         # Act
-        with patch("app.utils.websocket.remove_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.remove_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             await remove_active_result(chat_id)
 
         # Assert
@@ -33,9 +36,11 @@ class TestRemove_Active_Result:
         mock_active_results = {}
 
         # Act
-        with patch("app.utils.websocket.remove_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.remove_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             await remove_active_result(chat_id)
 
         # Assert
         assert chat_id not in mock_active_results
-

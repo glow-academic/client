@@ -38,4 +38,3 @@ class TestGet_Content_Type:
         # Should infer from filename when stored mime is generic
         result = get_content_type("photo.png", "application/octet-stream")
         assert result == "image/png"
-

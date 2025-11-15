@@ -3,7 +3,9 @@ Tests for app.utils.agents.tools.create_classification_tools
 """
 
 import pytest
-from app.utils.agents.tools.create_classification_tools import create_classification_tools
+from app.utils.agents.tools.create_classification_tools import (
+    create_classification_tools,
+)
 
 
 class TestCreate_Classification_Tools:
@@ -13,4 +15,3 @@ class TestCreate_Classification_Tools:
         """Test that all classification tools are created."""
         tools = create_classification_tools()
         assert len(tools) == 7  # 7 categories
-

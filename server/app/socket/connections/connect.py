@@ -6,8 +6,7 @@ from urllib.parse import parse_qs
 
 from app.main import sio
 from app.utils.websocket.add_guest_socket import add_guest_socket
-from app.utils.websocket.cleanup_profile_connection import \
-    cleanup_profile_connection
+from app.utils.websocket.cleanup_profile_connection import cleanup_profile_connection
 from app.utils.websocket.get_socket_owner import get_socket_owner
 from app.utils.websocket.increment_guest_count import increment_guest_count
 from app.utils.websocket.set_socket_owner import set_socket_owner
@@ -30,7 +29,9 @@ async def connection_confirmed(payload: ConnectionConfirmedPayload, room: str) -
 
 
 @sio.event  # type: ignore
-async def connect(sid: str, environ: dict[str, str], auth: dict[str, str] | None) -> bool:
+async def connect(
+    sid: str, environ: dict[str, str], auth: dict[str, str] | None
+) -> bool:
     """Handle WebSocket connection with robust, profile-based socket management."""
     query_string = environ.get("QUERY_STRING", "")
     profile_id: str | None = None

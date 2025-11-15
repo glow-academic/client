@@ -18,4 +18,3 @@ async def set_active_run(chat_id: str, run_id: str) -> None:
         await redis_client.setex(f"active_run:{chat_id}", 7200, run_id)
     except Exception as e:
         logger.error(f"Redis error setting active run for chat {chat_id}: {e}")
-

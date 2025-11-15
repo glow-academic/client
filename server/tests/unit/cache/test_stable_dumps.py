@@ -32,4 +32,3 @@ class TestStable_Dumps:
         assert isinstance(result, str)
         parsed = json.loads(result)
         assert parsed == obj
-

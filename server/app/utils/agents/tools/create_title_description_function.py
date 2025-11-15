@@ -47,4 +47,3 @@ def create_title_description_function(group_id: uuid.UUID | None) -> Any:
         return "Set title and description successfully"
 
     return function_tool(set_title_and_description)
-

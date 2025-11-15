@@ -18,7 +18,8 @@ class TestIncrement_Guest_Count:
         mock_redis.incr = AsyncMock(return_value=6)
 
         with patch(
-            "app.utils.websocket.increment_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.increment_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await increment_guest_count()
 
@@ -32,7 +33,8 @@ class TestIncrement_Guest_Count:
         mock_redis.incr = AsyncMock(return_value=None)
 
         with patch(
-            "app.utils.websocket.increment_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.increment_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await increment_guest_count()
 
@@ -42,7 +44,8 @@ class TestIncrement_Guest_Count:
     async def test_increment_guest_count_no_redis(self) -> None:
         """Test increment_guest_count without Redis."""
         with patch(
-            "app.utils.websocket.increment_guest_count.get_redis_client", return_value=None
+            "app.utils.websocket.increment_guest_count.get_redis_client",
+            return_value=None,
         ):
             result = await increment_guest_count()
 
@@ -55,9 +58,9 @@ class TestIncrement_Guest_Count:
         mock_redis.incr = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.increment_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.increment_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await increment_guest_count()
 
             assert result == 0
-

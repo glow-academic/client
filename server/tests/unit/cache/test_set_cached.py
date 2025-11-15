@@ -61,4 +61,3 @@ class TestSet_Cached:
         with patch("app.utils.cache.set_cached.redis_client", mock_redis):
             # Should not raise an error, just log it
             await set_cached(key, data, ttl, tags)
-

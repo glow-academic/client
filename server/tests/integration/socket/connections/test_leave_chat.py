@@ -77,4 +77,3 @@ async def test_leave_chat_missing_chat_id(
     # Assert
     # Handler should return early without error
     # No specific assertions needed - just verify it doesn't raise
-

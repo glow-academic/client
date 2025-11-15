@@ -44,20 +44,10 @@ const getParameter = (parameterId: string) =>
     { tags: ["parameters", `parameter:${parameterId}`] }
   );
 
-const getParameterDefault = unstable_cache(
-  async (profileId: string): Promise<ParameterDetailDefaultOut> => {
-    return api.post("/parameters/detail-default", {
-      body: { profileId },
-    });
-  },
-  ["parameters:detail-default"],
-  { tags: ["parameters"] }
-);
-
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ parameterId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { parameterId } = await params;
   const session = await getSession();
@@ -79,12 +69,12 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function createParameter(
-  input: CreateParameterIn,
+  input: CreateParameterIn
 ): Promise<CreateParameterOut> {
   "use server";
   const out = await api.post("/parameters/create", input);
   revalidateTag("parameters");
-  const parameterId = out.body?.parameterId;
+  const parameterId = out.parameterId;
   if (parameterId) {
     revalidateTag(`parameter:${parameterId}`);
   }
@@ -92,7 +82,7 @@ export async function createParameter(
 }
 
 export async function updateParameter(
-  input: UpdateParameterIn,
+  input: UpdateParameterIn
 ): Promise<UpdateParameterOut> {
   "use server";
   const out = await api.post("/parameters/update", input);

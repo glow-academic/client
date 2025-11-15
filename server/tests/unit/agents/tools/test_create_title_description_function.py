@@ -23,4 +23,3 @@ class TestCreate_Title_Description_Function:
         group_id = uuid.uuid4()
         tool = create_title_description_function(group_id)
         assert tool is not None
-

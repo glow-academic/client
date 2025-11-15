@@ -48,4 +48,3 @@ class TestCreate_Grading_Tools:
 
         tools = create_grading_tools(standard_groups, standards, chat_id, mock_emit)
         assert len(tools) == 3  # 2 standard groups + 1 summary
-

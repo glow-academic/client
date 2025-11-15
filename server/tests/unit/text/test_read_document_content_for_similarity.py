@@ -24,7 +24,8 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path
+            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            tmp_path,
         )
 
         result = read_document_content_for_similarity("test.txt")
@@ -40,7 +41,8 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path
+            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            tmp_path,
         )
 
         result = read_document_content_for_similarity("nonexistent.txt")
@@ -60,7 +62,8 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path
+            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            tmp_path,
         )
 
         result = read_document_content_for_similarity("latin1.txt")
@@ -84,7 +87,8 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path
+            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            tmp_path,
         )
 
         # Mock pypdf.PdfReader
@@ -115,7 +119,8 @@ class TestRead_Document_Content_For_Similarity:
 
         # Mock UPLOAD_FOLDER to use tmp_path
         monkeypatch.setattr(
-            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path
+            "app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER",
+            tmp_path,
         )
 
         # Mock pypdf.PdfReader to raise an exception
@@ -126,4 +131,3 @@ class TestRead_Document_Content_For_Similarity:
 
             # Should return empty string on error
             assert result == ""
-

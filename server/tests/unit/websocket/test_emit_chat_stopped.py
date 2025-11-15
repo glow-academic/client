@@ -29,12 +29,19 @@ class TestEmit_Chat_Stopped:
         mock_sio = MockSIO()
 
         # Act
-        with patch("app.utils.websocket.emit_chat_stopped.get_sio_instance", return_value=mock_sio):
+        with patch(
+            "app.utils.websocket.emit_chat_stopped.get_sio_instance",
+            return_value=mock_sio,
+        ):
             await emit_chat_stopped(chat_id, chat_type, message)
 
         # Assert
         assert mock_sio.last_event == "chat_stopped"
-        assert mock_sio.last_data == {"chat_id": chat_id, "chat_type": chat_type, "message": message}
+        assert mock_sio.last_data == {
+            "chat_id": chat_id,
+            "chat_type": chat_type,
+            "message": message,
+        }
         assert mock_sio.last_room == f"{chat_type}_{chat_id}"
 
     @pytest.mark.asyncio
@@ -51,9 +58,11 @@ class TestEmit_Chat_Stopped:
         mock_sio = MockSIO()
 
         # Act
-        with patch("app.utils.websocket.emit_chat_stopped.get_sio_instance", return_value=mock_sio):
+        with patch(
+            "app.utils.websocket.emit_chat_stopped.get_sio_instance",
+            return_value=mock_sio,
+        ):
             await emit_chat_stopped(chat_id, chat_type)
 
         # Assert
         assert mock_sio.last_data["message"] == "Chat stopped successfully"
-

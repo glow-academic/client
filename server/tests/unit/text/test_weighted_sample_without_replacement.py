@@ -63,4 +63,3 @@ class TestWeighted_Sample_Without_Replacement:
         result = weighted_sample_without_replacement(items, scores, 0)
 
         assert result == []
-

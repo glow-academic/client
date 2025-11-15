@@ -30,9 +30,9 @@ class TestBuild_Hint_Agent:
         hint_tools = create_hint_tools()
         # Mock decrypt_api_key to avoid base64 decoding errors
         with patch(
-            "app.utils.agents.generic_agent.decrypt_api_key", return_value="decrypted-key"
+            "app.utils.agents.generic_agent.decrypt_api_key",
+            return_value="decrypted-key",
         ):
             agent = build_hint_agent(context, hint_tools)
             assert agent is not None
             assert agent.agent_name == "Test Agent"
-

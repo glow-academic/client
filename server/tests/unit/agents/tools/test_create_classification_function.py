@@ -32,4 +32,3 @@ class TestCreate_Classification_Function:
         # Call the tool function (it's async, but we can test the structure)
         # The actual function would be called by the agent
         assert "homeworks" not in classification_results
-

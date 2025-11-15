@@ -32,4 +32,3 @@ class TestValidate_Csv_Format:
 
         assert result["valid"] is False
         assert "Failed to validate CSV file" in result["error"]
-

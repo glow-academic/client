@@ -39,4 +39,3 @@ def create_evaluation_function() -> Any:
         return f"Evaluation recorded: {'Proper' if proper else 'Improper'}"
 
     return function_tool(evaluate_response)
-

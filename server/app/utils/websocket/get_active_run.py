@@ -19,4 +19,3 @@ async def get_active_run(chat_id: str) -> str | None:
     except Exception as e:
         logger.error(f"Redis error getting active run for chat {chat_id}: {e}")
         return None
-

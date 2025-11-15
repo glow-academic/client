@@ -14,4 +14,3 @@ def read_text_file(full_path: str) -> str:
             raise ValueError(f"Error reading text file {full_path}: {str(e)}")
     except Exception as e:  # pragma: no cover - surfaced to caller
         raise ValueError(f"Error reading file {full_path}: {str(e)}")
-

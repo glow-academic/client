@@ -17,4 +17,3 @@ async def remove_active_connection(chat_id: str) -> None:
         await redis_client.delete(f"active_connection:{chat_id}")
     except Exception as e:
         logger.error(f"Redis error removing active connection for chat {chat_id}: {e}")
-

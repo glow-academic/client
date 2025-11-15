@@ -19,17 +19,23 @@ class TestRemove_Socket_Owner:
         mock_redis.delete = AsyncMock()
         mock_socket_owner = {profile_id: "socket-123"}
 
-        with patch(
-            "app.utils.websocket.remove_socket_owner.get_redis_client", return_value=mock_redis
-        ), patch(
-            "app.utils.websocket.remove_socket_owner.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.remove_socket_owner.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.remove_socket_owner.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             await remove_socket_owner(profile_id)
 
             mock_redis.delete.assert_called_once_with(f"socket_owner:{profile_id}")
             # When Redis succeeds, it doesn't remove from in-memory dict (only on error/fallback)
-            assert profile_id in mock_socket_owner  # Still in dict because Redis succeeded
+            assert (
+                profile_id in mock_socket_owner
+            )  # Still in dict because Redis succeeded
 
     @pytest.mark.asyncio
     async def test_remove_socket_owner_no_redis(self) -> None:
@@ -37,11 +43,15 @@ class TestRemove_Socket_Owner:
         profile_id = "profile-123"
         mock_socket_owner = {profile_id: "socket-123"}
 
-        with patch(
-            "app.utils.websocket.remove_socket_owner.get_redis_client", return_value=None
-        ), patch(
-            "app.utils.websocket.remove_socket_owner.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.remove_socket_owner.get_redis_client",
+                return_value=None,
+            ),
+            patch(
+                "app.utils.websocket.remove_socket_owner.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             await remove_socket_owner(profile_id)
 
@@ -55,13 +65,16 @@ class TestRemove_Socket_Owner:
         mock_redis.delete = AsyncMock(side_effect=Exception("Redis error"))
         mock_socket_owner = {profile_id: "socket-123"}
 
-        with patch(
-            "app.utils.websocket.remove_socket_owner.get_redis_client", return_value=mock_redis
-        ), patch(
-            "app.utils.websocket.remove_socket_owner.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.remove_socket_owner.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.remove_socket_owner.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             await remove_socket_owner(profile_id)
 
             assert profile_id not in mock_socket_owner
-

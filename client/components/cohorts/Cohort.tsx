@@ -845,7 +845,6 @@ export default function Cohort({
                   placeholder="Add simulation"
                   showLabel={false}
                   buttonClassName="w-48"
-                  triggerProps={{ "data-testid": "picker-simulation" }}
                 />
               </div>
             )}
@@ -1080,10 +1079,6 @@ export default function Cohort({
                     value: id,
                     label: item.name,
                   }))}
-                  activityOptions={[
-                    { value: "true", label: "Active" },
-                    { value: "false", label: "Inactive" },
-                  ]}
                   lastActiveOptions={[
                     { value: "recent", label: "Recently Active (< 7 days)" },
                     {

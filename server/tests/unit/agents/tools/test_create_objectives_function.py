@@ -21,4 +21,3 @@ class TestCreate_Objectives_Function:
         group_id = uuid.uuid4()
         tool = create_objectives_function(group_id)
         assert tool is not None
-

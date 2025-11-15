@@ -32,4 +32,3 @@ async def invalidate_tags(tags: Iterable[str]) -> None:
         logger.info(f"Invalidated cache for tags: {list(tags)}")
     except Exception as e:
         logger.error(f"Error invalidating cache: {e}")
-

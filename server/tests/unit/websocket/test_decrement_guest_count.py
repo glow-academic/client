@@ -20,7 +20,8 @@ class TestDecrement_Guest_Count:
         mock_redis.set = AsyncMock()
 
         with patch(
-            "app.utils.websocket.decrement_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.decrement_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await decrement_guest_count()
 
@@ -35,7 +36,8 @@ class TestDecrement_Guest_Count:
         mock_redis.set = AsyncMock()
 
         with patch(
-            "app.utils.websocket.decrement_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.decrement_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await decrement_guest_count()
 
@@ -51,7 +53,8 @@ class TestDecrement_Guest_Count:
         mock_redis.set = AsyncMock()
 
         with patch(
-            "app.utils.websocket.decrement_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.decrement_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await decrement_guest_count()
 
@@ -66,7 +69,8 @@ class TestDecrement_Guest_Count:
         mock_redis.set = AsyncMock()
 
         with patch(
-            "app.utils.websocket.decrement_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.decrement_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await decrement_guest_count()
 
@@ -77,7 +81,8 @@ class TestDecrement_Guest_Count:
     async def test_decrement_guest_count_no_redis(self) -> None:
         """Test decrement_guest_count without Redis."""
         with patch(
-            "app.utils.websocket.decrement_guest_count.get_redis_client", return_value=None
+            "app.utils.websocket.decrement_guest_count.get_redis_client",
+            return_value=None,
         ):
             result = await decrement_guest_count()
 
@@ -90,9 +95,9 @@ class TestDecrement_Guest_Count:
         mock_redis.get = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.decrement_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.decrement_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await decrement_guest_count()
 
             assert result == 0
-

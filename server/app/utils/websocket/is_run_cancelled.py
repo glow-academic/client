@@ -19,4 +19,3 @@ async def is_run_cancelled(run_id: str) -> bool:
     except Exception as e:
         logger.error(f"Redis error checking run cancellation for {run_id}: {e}")
         return False
-

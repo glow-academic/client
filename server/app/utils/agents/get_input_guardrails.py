@@ -4,7 +4,13 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import Agent, GuardrailFunctionOutput, InputGuardrail, RunContextWrapper, TContext
+from agents import (
+    Agent,
+    GuardrailFunctionOutput,
+    InputGuardrail,
+    RunContextWrapper,
+    TContext,
+)
 from agents.items import TResponseInputItem
 
 from app.utils.agents.run_guardrail_evaluation import run_guardrail_evaluation
@@ -87,4 +93,3 @@ def get_input_guardrails(
 
     input_guard = InputGuardrail(_input_guard)
     return [input_guard]
-

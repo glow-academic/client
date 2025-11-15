@@ -27,4 +27,3 @@ def pdf_pages_to_image_data_urls(full_path: str) -> list[str]:
         return []
 
     return image_urls
-

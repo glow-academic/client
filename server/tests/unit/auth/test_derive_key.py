@@ -39,4 +39,3 @@ class TestDerive_Key:
         # Test with None password (should raise AttributeError)
         with pytest.raises(AttributeError):
             derive_key(None, salt)  # type: ignore[arg-type]
-

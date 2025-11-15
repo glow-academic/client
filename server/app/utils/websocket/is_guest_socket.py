@@ -19,4 +19,3 @@ async def is_guest_socket(socket_id: str) -> bool:
     except Exception as e:
         logger.error(f"Redis error checking guest socket {socket_id}: {e}")
         return False
-

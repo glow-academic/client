@@ -18,4 +18,3 @@ async def remove_guest_socket(socket_id: str) -> None:
         _ = result  # Use result to avoid unused variable warning
     except Exception as e:
         logger.error(f"Redis error removing guest socket {socket_id}: {e}")
-

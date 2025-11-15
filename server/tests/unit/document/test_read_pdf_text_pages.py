@@ -30,7 +30,8 @@ class TestRead_Pdf_Text_Pages:
         from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 
         with patch(
-            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader", return_value=mock_reader
+            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader",
+            return_value=mock_reader,
         ):
             result = read_pdf_text_pages(str(test_file))
 
@@ -51,7 +52,8 @@ class TestRead_Pdf_Text_Pages:
         from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 
         with patch(
-            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader", return_value=mock_reader
+            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader",
+            return_value=mock_reader,
         ):
             result = read_pdf_text_pages(str(test_file))
 
@@ -83,10 +85,10 @@ class TestRead_Pdf_Text_Pages:
         from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 
         with patch(
-            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader", return_value=mock_reader
+            "app.utils.document.read_pdf_text_pages.pypdf.PdfReader",
+            return_value=mock_reader,
         ):
             result = read_pdf_text_pages(str(test_file))
 
             assert len(result) == 1
             assert result[0] == ""  # Should strip empty string
-

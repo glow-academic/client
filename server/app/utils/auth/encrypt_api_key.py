@@ -39,4 +39,3 @@ def encrypt_api_key(api_key: str) -> str:
 
     # Return base64 encoded string
     return base64.b64encode(combined).decode("utf-8")
-

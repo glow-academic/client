@@ -107,4 +107,3 @@ async def test_join_chat_missing_chat_id(
 
     # Verify socket did not join any new rooms (only sid room if it exists)
     # Should not have joined any chat-specific rooms
-

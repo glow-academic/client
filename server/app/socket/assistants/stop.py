@@ -33,7 +33,9 @@ class StopAssistantPayload(BaseModel):
 
 # Emit helper functions
 async def stop_assistant_error(payload: StopAssistantErrorPayload, room: str) -> None:
-    await sio.emit("stop_assistant_error", payload.model_dump(exclude_none=True), room=room)
+    await sio.emit(
+        "stop_assistant_error", payload.model_dump(exclude_none=True), room=room
+    )
 
 
 async def assistant_stopped(payload: AssistantStoppedPayload, room: str) -> None:
@@ -60,7 +62,9 @@ async def _stop_assistant_impl(sid: str, data: StopAssistantPayload) -> None:
         pool = get_pool()
         if not pool:
             await stop_assistant_error(
-                StopAssistantErrorPayload(success=False, message="Database not available"),
+                StopAssistantErrorPayload(
+                    success=False, message="Database not available"
+                ),
                 room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Database not available")

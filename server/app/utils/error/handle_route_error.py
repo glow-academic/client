@@ -41,4 +41,3 @@ def handle_route_error(
         request=request,
     )
     raise AssertionError("handle_route_error should never return")  # pragma: no cover
-

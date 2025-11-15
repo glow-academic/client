@@ -38,4 +38,3 @@ class TestEncrypt_Api_Key:
                 ValueError, match="SECRET_KEY environment variable is not set"
             ):
                 encrypt_api_key("test-key")
-

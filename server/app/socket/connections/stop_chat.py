@@ -4,8 +4,7 @@ import logging
 from typing import Any
 
 from app.main import sio
-from app.utils.websocket.remove_active_connection import \
-    remove_active_connection
+from app.utils.websocket.remove_active_connection import remove_active_connection
 from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
@@ -59,8 +58,6 @@ async def stop_chat(sid: str, data: dict[str, Any]) -> None:
     except ValidationError as e:
         logger.error(f"Validation error in stop_chat for {sid}: {e}")
         await stop_chat_error(
-            StopChatErrorPayload(
-                success=False, message=f"Invalid payload: {str(e)}"
-            ),
+            StopChatErrorPayload(success=False, message=f"Invalid payload: {str(e)}"),
             room=sid,
         )

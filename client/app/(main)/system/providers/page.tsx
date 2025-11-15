@@ -13,7 +13,6 @@ import type { Metadata } from "next";
 import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProvidersListIn = InputOf<"/api/v3/providers/list", "post">;
 type ProvidersListOut = OutputOf<"/api/v3/providers/list", "post">;
 type DuplicateProviderIn = InputOf<"/api/v3/providers/duplicate", "post">;
 type DuplicateProviderOut = OutputOf<"/api/v3/providers/duplicate", "post">;

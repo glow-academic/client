@@ -23,4 +23,3 @@ def weighted_choice(weighted_items: list[tuple[Any, float]]) -> Any | None:
         if r <= cumsum:
             return item
     return weighted_items[-1][0]
-

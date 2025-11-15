@@ -20,10 +20,15 @@ class TestCancel_Active_Result:
         mock_result.cancel = MagicMock(return_value=None)
         mock_events_iter = AsyncMock()
         mock_events_iter.aclose = AsyncMock()
-        mock_active_results = {chat_id: {"result": mock_result, "events": mock_events_iter}}
+        mock_active_results = {
+            chat_id: {"result": mock_result, "events": mock_events_iter}
+        }
 
         # Act
-        with patch("app.utils.websocket.cancel_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             result = await cancel_active_result(chat_id)
 
         # Assert
@@ -41,10 +46,15 @@ class TestCancel_Active_Result:
         mock_result.cancel = MagicMock(return_value=mock_cancel_coro)
         mock_events_iter = AsyncMock()
         mock_events_iter.aclose = AsyncMock()
-        mock_active_results = {chat_id: {"result": mock_result, "events": mock_events_iter}}
+        mock_active_results = {
+            chat_id: {"result": mock_result, "events": mock_events_iter}
+        }
 
         # Act
-        with patch("app.utils.websocket.cancel_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             result = await cancel_active_result(chat_id)
 
         # Assert
@@ -58,7 +68,10 @@ class TestCancel_Active_Result:
         mock_active_results = {}
 
         # Act
-        with patch("app.utils.websocket.cancel_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             result = await cancel_active_result(chat_id)
 
         # Assert
@@ -74,7 +87,10 @@ class TestCancel_Active_Result:
         mock_active_results = {chat_id: {"events": mock_events_iter}}
 
         # Act
-        with patch("app.utils.websocket.cancel_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             result = await cancel_active_result(chat_id)
 
         # Assert
@@ -91,9 +107,11 @@ class TestCancel_Active_Result:
         mock_active_results = {chat_id: {"result": mock_result}}
 
         # Act
-        with patch("app.utils.websocket.cancel_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.cancel_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             result = await cancel_active_result(chat_id)
 
         # Assert
         assert result is False
-

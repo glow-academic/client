@@ -23,4 +23,3 @@ def create_guardrail_tools() -> list[Any]:
 
     logger.info(f"Created {len(tools)} guardrail tools")
     return tools
-

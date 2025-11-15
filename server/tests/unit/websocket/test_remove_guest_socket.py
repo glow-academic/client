@@ -19,7 +19,8 @@ class TestRemove_Guest_Socket:
         mock_redis.srem = AsyncMock(return_value=1)
 
         with patch(
-            "app.utils.websocket.remove_guest_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.remove_guest_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             await remove_guest_socket(socket_id)
 
@@ -31,7 +32,8 @@ class TestRemove_Guest_Socket:
         socket_id = "socket-123"
 
         with patch(
-            "app.utils.websocket.remove_guest_socket.get_redis_client", return_value=None
+            "app.utils.websocket.remove_guest_socket.get_redis_client",
+            return_value=None,
         ):
             # Should not raise an error
             await remove_guest_socket(socket_id)
@@ -44,8 +46,8 @@ class TestRemove_Guest_Socket:
         mock_redis.srem = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.remove_guest_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.remove_guest_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             # Should not raise an error, just log it
             await remove_guest_socket(socket_id)
-

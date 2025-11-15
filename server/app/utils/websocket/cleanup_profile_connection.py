@@ -32,4 +32,3 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
             logger.info(f"Updated profile {profile_id} to inactive in database")
     except Exception as e:
         logger.error(f"Error updating profile {profile_id} in database: {e}")
-

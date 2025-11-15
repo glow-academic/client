@@ -45,7 +45,9 @@ class StartSimulationPayload(BaseModel):
 
 
 # Emit helper functions
-async def start_simulation_error(payload: StartSimulationErrorPayload, room: str) -> None:
+async def start_simulation_error(
+    payload: StartSimulationErrorPayload, room: str
+) -> None:
     await sio.emit("start_simulation_error", payload.model_dump(), room=room)
 
 
@@ -70,7 +72,9 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")
             await start_simulation_error(
-                StartSimulationErrorPayload(success=False, message="Missing simulation_id"),
+                StartSimulationErrorPayload(
+                    success=False, message="Missing simulation_id"
+                ),
                 room=sid,
             )
             logger.error(f"Emitted error to {sid}: Missing simulation_id")
@@ -219,8 +223,9 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                         )
 
                     # Use shared helper function for selecting attributes
-                    from app.api.v3.scenarios.select_attributes import \
-                        select_scenario_attributes
+                    from app.api.v3.scenarios.select_attributes import (
+                        select_scenario_attributes,
+                    )
 
                     try:
                         selected_attributes = await select_scenario_attributes(
@@ -265,9 +270,13 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                     context_row = await conn.fetchrow(
                         sql,
                         department_id,  # Already a UUID object
-                        persona_id if persona_id else None,  # Already a UUID object or None
+                        persona_id
+                        if persona_id
+                        else None,  # Already a UUID object or None
                         doc_ids if doc_ids else [],  # Already a list of UUID objects
-                        param_ids if param_ids else [],  # Already a list of UUID objects
+                        param_ids
+                        if param_ids
+                        else [],  # Already a list of UUID objects
                     )
 
                     if not context_row:

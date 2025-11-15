@@ -122,4 +122,3 @@ async def run_guardrail_evaluation(
     return GuardrailFunctionOutput(
         output_info=output_info, tripwire_triggered=not proper
     )
-

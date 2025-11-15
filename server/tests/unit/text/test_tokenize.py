@@ -39,4 +39,3 @@ class TestTokenize:
         # Test whitespace only
         result = tokenize("   \n\t  ")
         assert result == []
-

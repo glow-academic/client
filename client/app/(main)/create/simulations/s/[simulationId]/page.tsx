@@ -44,14 +44,6 @@ const getSimulation = (simulationId: string) =>
     { tags: ["simulations", `simulation:${simulationId}`] }
   );
 
-const getSimulationDefault = unstable_cache(
-  async (profileId: string): Promise<SimulationDetailDefaultOut> => {
-    return api.post("/simulations/detail-default", { body: { profileId } });
-  },
-  ["simulations:detail-default"],
-  { tags: ["simulations"] }
-);
-
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ simulationId: string }> },

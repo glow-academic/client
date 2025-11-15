@@ -69,4 +69,3 @@ class TestInvalidate_Tags:
         with patch("app.utils.cache.invalidate_tags.redis_client", mock_redis):
             # Should not raise an error, just log it
             await invalidate_tags(tags)
-

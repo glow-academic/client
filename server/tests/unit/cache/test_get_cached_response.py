@@ -54,4 +54,3 @@ class TestGet_Cached_Response:
             result = await get_cached_response(mock_request, ["tag1"])
 
             assert result is None
-

@@ -20,4 +20,3 @@ def derive_key(password: str, salt: bytes) -> bytes:
         backend=default_backend(),
     )
     return kdf.derive(password.encode("utf-8"))
-

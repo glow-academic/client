@@ -37,4 +37,3 @@ def read_document_content_for_similarity(file_path: str) -> str:
             return ""
 
     return content.strip()
-

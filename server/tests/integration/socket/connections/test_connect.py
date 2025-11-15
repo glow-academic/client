@@ -42,11 +42,11 @@ async def test_connect_with_profile_id_success(
     )
     assert profile_row is not None
     assert profile_row["active"] is True
-    
+
     # Verify last_active was set in profile_activity table
     activity_row = await db.fetchrow(
         "SELECT last_active FROM profile_activity WHERE profile_id = $1 ORDER BY created_at DESC LIMIT 1",
-        profile_id
+        profile_id,
     )
     assert activity_row is not None
     assert activity_row["last_active"] is not None
@@ -138,7 +138,9 @@ async def test_connect_profile_takeover(
     # Verify connection_confirmed event was emitted for new socket
     confirmed_events = mock_sio.get_events("connection_confirmed")
     new_socket_events = [
-        e for e in confirmed_events if e["sid"] == new_sid and e["profile_id"] == profile_id
+        e
+        for e in confirmed_events
+        if e["sid"] == new_sid and e["profile_id"] == profile_id
     ]
     assert len(new_socket_events) == 1
 
@@ -152,7 +154,7 @@ async def test_connect_guest_profile_id_resolution(
     await db.execute(
         "UPDATE profiles SET default_profile = false WHERE role = 'guest' AND default_profile = true"
     )
-    
+
     # Create a new default guest profile
     guest_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, alias, role, default_profile) "
@@ -180,4 +182,3 @@ async def test_connect_guest_profile_id_resolution(
     # Verify socket joined profile room with resolved profile_id
     assert str(guest_id) in mock_sio.rooms
     assert sid in mock_sio.rooms[str(guest_id)]
-

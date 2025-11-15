@@ -20,4 +20,3 @@ class TestTag_Set_Name:
         """Test tag_set_name with empty tag."""
         result = tag_set_name("")
         assert result == "http:tag:"
-

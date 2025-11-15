@@ -33,4 +33,3 @@ class TestCreate_Safe_Field_Name:
         """Test that leading/trailing underscores are removed."""
         result = create_safe_field_name("_Test_Name_")
         assert result == "test_name"
-

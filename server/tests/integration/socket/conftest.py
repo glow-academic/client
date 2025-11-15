@@ -68,7 +68,7 @@ def mock_sio() -> MockSocketIO:
 @pytest.fixture(autouse=True)
 def patch_sio_instance(mock_sio: MockSocketIO, monkeypatch: pytest.MonkeyPatch) -> None:
     """Patch sio to return the mock server in all handler modules.
-    
+
     Handlers import sio at module import time, so we need to patch it
     in each handler module, not just in main.
     """
@@ -76,7 +76,7 @@ def patch_sio_instance(mock_sio: MockSocketIO, monkeypatch: pytest.MonkeyPatch) 
 
     # Patch sio in main module
     monkeypatch.setattr(main, "sio", mock_sio)
-    
+
     # Import and patch sio in all handler modules that import it
     # This ensures handlers use the mock instance instead of the real one
     handler_module_paths = [
@@ -93,18 +93,16 @@ def patch_sio_instance(mock_sio: MockSocketIO, monkeypatch: pytest.MonkeyPatch) 
         "app.socket.connections.leave_chat",
         "app.socket.connections.stop_chat",
     ]
-    
+
     for module_path in handler_module_paths:
         module = importlib.import_module(module_path)
         monkeypatch.setattr(module, "sio", mock_sio)
 
 
 @pytest.fixture(autouse=True)
-def patch_get_pool(
-    db: asyncpg.Connection, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def patch_get_pool(db: asyncpg.Connection, monkeypatch: pytest.MonkeyPatch) -> None:
     """Patch get_pool to return a pool that uses the test database connection.
-    
+
     This ensures handlers use the test database connection instead of the
     global pool, avoiding event loop issues.
     """
@@ -114,30 +112,30 @@ def patch_get_pool(
     # Create a mock pool that returns the test connection
     class ConnectionContext:
         """Async context manager that yields the test connection."""
-        
+
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         async def __aenter__(self) -> asyncpg.Connection:
             return self.conn
-        
+
         async def __aexit__(self, *args: Any) -> None:
             pass
-    
+
     class MockPool:
         def __init__(self, conn: asyncpg.Connection) -> None:
             self.conn = conn
-        
+
         def acquire(self) -> ConnectionContext:
             # Return a context manager that yields the test connection
             return ConnectionContext(self.conn)
-    
+
     # Patch get_pool to return a mock pool with the test connection
     def mock_get_pool() -> MockPool | None:
         return MockPool(db)
-    
+
     monkeypatch.setattr(main, "get_pool", mock_get_pool)
-    
+
     # Also patch in modules that import get_pool directly
     import_modules = [
         "app.socket.assistants.start",
@@ -151,7 +149,7 @@ def patch_get_pool(
         "app.socket.simulations.continue_chat",
         "app.utils.websocket.cleanup_profile_connection",
     ]
-    
+
     for module_path in import_modules:
         try:
             module = importlib.import_module(module_path)

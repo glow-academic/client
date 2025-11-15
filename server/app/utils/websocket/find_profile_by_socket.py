@@ -33,4 +33,3 @@ async def find_profile_by_socket(socket_id: str) -> str | None:
             if sid == socket_id:
                 return profile_id
         return None
-

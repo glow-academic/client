@@ -23,4 +23,3 @@ async def set_socket_owner(profile_id: str, socket_id: str) -> None:
         logger.error(f"Redis error setting socket owner for profile {profile_id}: {e}")
         # Fallback to in-memory storage
         socket_owner[profile_id] = socket_id
-

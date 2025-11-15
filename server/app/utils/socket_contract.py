@@ -59,7 +59,11 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
         # Map to simple type strings
         if annotation is str or "str" in str(annotation):
             schema[field_name] = "string"
-        elif annotation in (int, float) or "int" in str(annotation) or "float" in str(annotation):
+        elif (
+            annotation in (int, float)
+            or "int" in str(annotation)
+            or "float" in str(annotation)
+        ):
             schema[field_name] = "number"
         elif annotation is bool or "bool" in str(annotation):
             schema[field_name] = "boolean"
@@ -70,17 +74,17 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
 
 def _extract_return_type_schema(return_type: Any) -> dict[str, str] | None:
     """Extract return type schema from a return type annotation.
-    
+
     Returns None if the return type is None/void, otherwise returns a schema dict.
     For Pydantic models, extracts fields. For primitives, creates a simple schema.
     """
     if return_type is None or return_type is type(None):
         return None
-    
+
     # Handle Pydantic models
     if isinstance(return_type, type) and issubclass(return_type, BaseModel):
         return _extract_simple_payload_schema(return_type)
-    
+
     # Handle primitive types
     if return_type is bool:
         return {"value": "boolean"}
@@ -88,7 +92,7 @@ def _extract_return_type_schema(return_type: Any) -> dict[str, str] | None:
         return {"value": "number"}
     elif return_type is str:
         return {"value": "string"}
-    
+
     # Handle type hints as strings (e.g., "bool", "int", etc.)
     return_type_str = str(return_type)
     if "bool" in return_type_str.lower():
@@ -97,7 +101,7 @@ def _extract_return_type_schema(return_type: Any) -> dict[str, str] | None:
         return {"value": "number"}
     elif "str" in return_type_str.lower():
         return {"value": "string"}
-    
+
     # Default: unknown type, return as string
     return {"value": "string"}
 
@@ -133,12 +137,14 @@ def build_socket_contract(
 
         # Extract return type (can be Pydantic model or primitive)
         return_type = _get_return_type(fn)
-        return_schema = _extract_return_type_schema(return_type) if return_type else None
+        return_schema = (
+            _extract_return_type_schema(return_type) if return_type else None
+        )
 
         event_def: dict[str, Any] = {
             "payload": _extract_simple_payload_schema(payload_model),
         }
-        
+
         # Only include return field if there's a return type
         if return_schema is not None:
             event_def["return"] = return_schema
@@ -157,4 +163,3 @@ def build_socket_contract(
         }
 
     return contract
-

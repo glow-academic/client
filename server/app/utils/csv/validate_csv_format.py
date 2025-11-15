@@ -45,4 +45,3 @@ def validate_csv_format(file_path: str) -> dict[str, Any]:
 
     except Exception as e:
         return {"valid": False, "error": f"Failed to validate CSV file: {str(e)}"}
-

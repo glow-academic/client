@@ -39,4 +39,3 @@ class TestEmitGradingProgress:
 
         # Should not raise an error
         await emit_grading_progress(event_data, None, chat_id)
-

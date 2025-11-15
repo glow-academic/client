@@ -30,4 +30,3 @@ async def set_cached_response(
 
     cache_key_val = cache_key(request.url.path, body_dict, user_ctx)
     await set_cached(cache_key_val, {"data": data}, ttl, tags)
-

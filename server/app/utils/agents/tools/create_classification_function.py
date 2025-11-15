@@ -40,4 +40,3 @@ def create_classification_function(category: str, category_description: str) -> 
 
     classify_as_category.__name__ = f"classify_{category}"
     return function_tool(classify_as_category)
-

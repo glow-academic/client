@@ -19,4 +19,3 @@ def format_chat_scenario(problem_statement: str | None) -> TResponseInputItem:
         "role": "user",
         "content": f"The following is the scenario for the chat: {statement}",
     }
-

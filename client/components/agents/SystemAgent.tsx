@@ -79,7 +79,7 @@ export interface SystemAgentProps {
   createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
   updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
   deleteAgentPromptAction?: (
-    input: DeleteAgentPromptIn,
+    input: DeleteAgentPromptIn
   ) => Promise<DeleteAgentPromptOut>;
 }
 
@@ -106,7 +106,7 @@ export default function SystemAgent({
   const [formData, setFormData] = useState<SystemAgentFormData>();
   const [errors, setErrors] = useState<FormErrors>({});
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor",
+    "editor"
   );
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | null
@@ -169,7 +169,7 @@ export default function SystemAgent({
 
     const filtered: Record<string, PromptInfo> = {};
     for (const [promptId, promptInfo] of Object.entries(
-      agentDetail.prompt_mapping,
+      agentDetail.prompt_mapping
     )) {
       if (!selectedDepartmentId) {
         // "All Departments" selected - only show default prompts (null/empty department_ids)
@@ -221,7 +221,7 @@ export default function SystemAgent({
         ? [effectiveProfile.primaryDepartmentId]
         : [],
     }),
-    [effectiveProfile?.primaryDepartmentId],
+    [effectiveProfile?.primaryDepartmentId]
   );
 
   // Set breadcrumb context when agent data is loaded
@@ -247,18 +247,17 @@ export default function SystemAgent({
       // Ensure modelId is set - use agent's model_id or first valid model
       const defaultModelId =
         agentDetail.model_id ||
-        (agentDetail.valid_model_ids &&
-        agentDetail.valid_model_ids.length > 0
+        (agentDetail.valid_model_ids && agentDetail.valid_model_ids.length > 0
           ? agentDetail.valid_model_ids[0]
           : "");
-      
+
       setFormData({
         name: agentDetail.name,
         description: agentDetail.description,
         systemPrompt: agentDetail.system_prompt,
         promptId: agentDetail.prompt_id || null,
         temperature: agentDetail.temperature,
-        modelId: defaultModelId,
+        modelId: defaultModelId || "",
         reasoning:
           (agentDetail.reasoning as
             | "minimal"
@@ -279,12 +278,12 @@ export default function SystemAgent({
         agentDetailDefault.valid_model_ids.length > 0
           ? agentDetailDefault.valid_model_ids[0]
           : "");
-      
+
       setFormData({
         ...initialFormData,
         temperature:
           agentDetailDefault.temperature ?? initialFormData.temperature ?? 0.7,
-        modelId: defaultModelId,
+        modelId: defaultModelId || "",
         systemPrompt:
           agentDetailDefault.system_prompt ||
           initialFormData.systemPrompt ||
@@ -385,7 +384,7 @@ export default function SystemAgent({
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,
-    value: string | number | boolean | null | undefined,
+    value: string | number | boolean | null | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -455,10 +454,6 @@ export default function SystemAgent({
               ? formData.departmentIds
               : null,
           department_id: selectedDepartmentId || null,
-          department_prompt_id:
-            selectedDepartmentId && formData.promptId
-              ? formData.promptId
-              : null,
         });
         toast.success("Agent updated successfully!");
         resetFormAndState();
@@ -492,7 +487,7 @@ export default function SystemAgent({
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`,
+        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
       );
       setIsSubmitting(false);
     }
@@ -575,7 +570,6 @@ export default function SystemAgent({
                     selectedRole={formData.role || "assistant"}
                     onSelect={(role) => handleInputChange("role", role)}
                     placeholder="Select role"
-                    triggerProps={{ "data-testid": "picker-role" }}
                   />
                 ) : null}
               </div>
@@ -657,7 +651,7 @@ export default function SystemAgent({
                           | "minimal"
                           | "low"
                           | "medium"
-                          | "high",
+                          | "high"
                       )
                     }
                     placeholder="Select reasoning effort"
@@ -711,7 +705,7 @@ export default function SystemAgent({
                       }
                       onSelect={(ids) => {
                         setSelectedDepartmentId(
-                          ids.length > 0 ? ids[0]! : null,
+                          ids.length > 0 ? ids[0]! : null
                         );
                       }}
                       multiSelect={false}
@@ -808,7 +802,7 @@ export default function SystemAgent({
                             size="sm"
                             onClick={() =>
                               setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview",
+                                editorMode === "preview" ? "editor" : "preview"
                               )
                             }
                             className="h-8 w-8 p-0"
@@ -831,7 +825,7 @@ export default function SystemAgent({
                               size="sm"
                               onClick={() =>
                                 setEditorMode(
-                                  editorMode === "debug" ? "editor" : "debug",
+                                  editorMode === "debug" ? "editor" : "debug"
                                 )
                               }
                               className="h-8 w-8 p-0"
@@ -955,7 +949,10 @@ export default function SystemAgent({
                       </div>
                     </div>
                   ) : (
-                    <div className="h-[500px]" data-testid="editor-system-prompt">
+                    <div
+                      className="h-[500px]"
+                      data-testid="editor-system-prompt"
+                    >
                       <UnifiedPromptEditor
                         value={formData?.systemPrompt || ""}
                         onChange={(value) => {

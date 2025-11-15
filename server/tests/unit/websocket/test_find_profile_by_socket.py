@@ -26,11 +26,15 @@ class TestFind_Profile_By_Socket:
         mock_redis.get = AsyncMock(return_value=socket_id.encode("utf-8"))
         mock_socket_owner = {}
 
-        with patch(
-            "app.utils.websocket.find_profile_by_socket.get_redis_client", return_value=mock_redis
-        ), patch(
-            "app.utils.websocket.find_profile_by_socket.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.find_profile_by_socket.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.find_profile_by_socket.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             result = await find_profile_by_socket(socket_id)
 
@@ -50,11 +54,15 @@ class TestFind_Profile_By_Socket:
         mock_redis.scan_iter = mock_scan_iter
         mock_socket_owner = {}
 
-        with patch(
-            "app.utils.websocket.find_profile_by_socket.get_redis_client", return_value=mock_redis
-        ), patch(
-            "app.utils.websocket.find_profile_by_socket.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.find_profile_by_socket.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.find_profile_by_socket.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             result = await find_profile_by_socket(socket_id)
 
@@ -67,11 +75,15 @@ class TestFind_Profile_By_Socket:
         profile_id = "profile-123"
         mock_socket_owner = {profile_id: socket_id}
 
-        with patch(
-            "app.utils.websocket.find_profile_by_socket.get_redis_client", return_value=None
-        ), patch(
-            "app.utils.websocket.find_profile_by_socket.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.find_profile_by_socket.get_redis_client",
+                return_value=None,
+            ),
+            patch(
+                "app.utils.websocket.find_profile_by_socket.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             result = await find_profile_by_socket(socket_id)
 
@@ -86,13 +98,16 @@ class TestFind_Profile_By_Socket:
         mock_redis.scan_iter = AsyncMock(side_effect=Exception("Redis error"))
         mock_socket_owner = {profile_id: socket_id}
 
-        with patch(
-            "app.utils.websocket.find_profile_by_socket.get_redis_client", return_value=mock_redis
-        ), patch(
-            "app.utils.websocket.find_profile_by_socket.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.find_profile_by_socket.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.find_profile_by_socket.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             result = await find_profile_by_socket(socket_id)
 
             assert result == profile_id
-

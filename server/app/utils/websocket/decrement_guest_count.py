@@ -25,4 +25,3 @@ async def decrement_guest_count() -> int:
     except Exception as e:
         logger.error(f"Redis error decrementing guest count: {e}")
         return 0
-

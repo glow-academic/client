@@ -20,15 +20,21 @@ class TestSet_Socket_Owner:
         mock_redis.setex = AsyncMock()
         mock_socket_owner = {}
 
-        with patch(
-            "app.utils.websocket.set_socket_owner.get_redis_client", return_value=mock_redis
-        ), patch(
-            "app.utils.websocket.set_socket_owner.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.set_socket_owner.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.set_socket_owner.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             await set_socket_owner(profile_id, socket_id)
 
-            mock_redis.setex.assert_called_once_with(f"socket_owner:{profile_id}", 86400, socket_id)
+            mock_redis.setex.assert_called_once_with(
+                f"socket_owner:{profile_id}", 86400, socket_id
+            )
             assert profile_id not in mock_socket_owner  # Should not use fallback
 
     @pytest.mark.asyncio
@@ -38,11 +44,15 @@ class TestSet_Socket_Owner:
         socket_id = "socket-123"
         mock_socket_owner = {}
 
-        with patch(
-            "app.utils.websocket.set_socket_owner.get_redis_client", return_value=None
-        ), patch(
-            "app.utils.websocket.set_socket_owner.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.set_socket_owner.get_redis_client",
+                return_value=None,
+            ),
+            patch(
+                "app.utils.websocket.set_socket_owner.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             await set_socket_owner(profile_id, socket_id)
 
@@ -57,13 +67,16 @@ class TestSet_Socket_Owner:
         mock_redis.setex = AsyncMock(side_effect=Exception("Redis error"))
         mock_socket_owner = {}
 
-        with patch(
-            "app.utils.websocket.set_socket_owner.get_redis_client", return_value=mock_redis
-        ), patch(
-            "app.utils.websocket.set_socket_owner.get_socket_owner_dict",
-            return_value=mock_socket_owner,
+        with (
+            patch(
+                "app.utils.websocket.set_socket_owner.get_redis_client",
+                return_value=mock_redis,
+            ),
+            patch(
+                "app.utils.websocket.set_socket_owner.get_socket_owner_dict",
+                return_value=mock_socket_owner,
+            ),
         ):
             await set_socket_owner(profile_id, socket_id)
 
             assert mock_socket_owner[profile_id] == socket_id
-

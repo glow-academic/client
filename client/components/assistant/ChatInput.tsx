@@ -26,7 +26,6 @@ export default function ChatInput({
   currentChatId,
   isSendingMessage,
   isStoppingMessage,
-  isConnected,
   onSendMessage,
   onStopMessage,
   promptToSet,

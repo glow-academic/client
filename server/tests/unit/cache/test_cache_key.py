@@ -47,4 +47,3 @@ class TestCache_Key:
         result2 = cache_key(path, body, user_ctx)
 
         assert result1 == result2
-

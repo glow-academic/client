@@ -16,4 +16,3 @@ def create_safe_field_name(short_name: str) -> str:
     safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", short_name.lower())
     safe_name = re.sub(r"_+", "_", safe_name).strip("_")
     return safe_name
-

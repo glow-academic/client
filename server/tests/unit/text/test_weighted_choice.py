@@ -51,4 +51,3 @@ class TestWeighted_Choice:
         items = [("only", 1.0)]
         result = weighted_choice(items)
         assert result == "only"
-

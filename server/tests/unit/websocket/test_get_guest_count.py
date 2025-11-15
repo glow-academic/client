@@ -18,7 +18,8 @@ class TestGet_Guest_Count:
         mock_redis.get = AsyncMock(return_value=b"5")
 
         with patch(
-            "app.utils.websocket.get_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.get_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await get_guest_count()
 
@@ -32,7 +33,8 @@ class TestGet_Guest_Count:
         mock_redis.get = AsyncMock(return_value="10")
 
         with patch(
-            "app.utils.websocket.get_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.get_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await get_guest_count()
 
@@ -45,7 +47,8 @@ class TestGet_Guest_Count:
         mock_redis.get = AsyncMock(return_value=None)
 
         with patch(
-            "app.utils.websocket.get_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.get_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await get_guest_count()
 
@@ -68,9 +71,9 @@ class TestGet_Guest_Count:
         mock_redis.get = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.get_guest_count.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.get_guest_count.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await get_guest_count()
 
             assert result == 0
-

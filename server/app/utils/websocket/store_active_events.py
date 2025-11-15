@@ -11,4 +11,3 @@ async def store_active_events(chat_id: str, events_iter: Any) -> None:
     if chat_id not in active_results:
         active_results[chat_id] = {}
     active_results[chat_id]["events"] = events_iter
-

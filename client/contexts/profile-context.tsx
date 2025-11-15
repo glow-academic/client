@@ -260,15 +260,6 @@ export function ProfileProviderClient({
           }
         }
       );
-
-      socket.on(
-        "simulation_error",
-        (data: { success: boolean; message: string }) => {
-          setStartingSimulationId(null);
-          toast.error(data.message);
-          window.dispatchEvent(new CustomEvent("simulationError"));
-        }
-      );
     };
 
     connectWebSocket();

@@ -13,4 +13,3 @@ class TestCreate_Guardrail_Tools:
         """Test that guardrail tools are created."""
         tools = create_guardrail_tools()
         assert len(tools) == 2  # evaluation + debug_info
-

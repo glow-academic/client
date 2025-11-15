@@ -19,4 +19,3 @@ async def get_guest_count() -> int:
     except Exception as e:
         logger.error(f"Redis error getting guest count: {e}")
         return 0
-

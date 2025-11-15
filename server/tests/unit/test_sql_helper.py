@@ -27,4 +27,3 @@ class TestLoad_Sql:
         """Test load_sql error handling with non-existent file."""
         with pytest.raises(FileNotFoundError):
             load_sql("sql/v3/nonexistent/file.sql")
-

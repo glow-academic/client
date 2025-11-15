@@ -20,7 +20,10 @@ class TestRemove_Active_Run:
         mock_redis.delete = AsyncMock()
 
         # Act
-        with patch("app.utils.websocket.remove_active_run.get_redis_client", return_value=mock_redis):
+        with patch(
+            "app.utils.websocket.remove_active_run.get_redis_client",
+            return_value=mock_redis,
+        ):
             await remove_active_run(chat_id)
 
         # Assert
@@ -33,7 +36,9 @@ class TestRemove_Active_Run:
         chat_id = "chat-123"
 
         # Act
-        with patch("app.utils.websocket.remove_active_run.get_redis_client", return_value=None):
+        with patch(
+            "app.utils.websocket.remove_active_run.get_redis_client", return_value=None
+        ):
             await remove_active_run(chat_id)
 
         # Assert - should not raise an error
@@ -47,8 +52,10 @@ class TestRemove_Active_Run:
         mock_redis.delete = AsyncMock(side_effect=Exception("Redis error"))
 
         # Act
-        with patch("app.utils.websocket.remove_active_run.get_redis_client", return_value=mock_redis):
+        with patch(
+            "app.utils.websocket.remove_active_run.get_redis_client",
+            return_value=mock_redis,
+        ):
             await remove_active_run(chat_id)
 
         # Assert - should not raise an error, just log it
-

@@ -21,7 +21,10 @@ class TestSet_Active_Run:
         mock_redis.setex = AsyncMock()
 
         # Act
-        with patch("app.utils.websocket.set_active_run.get_redis_client", return_value=mock_redis):
+        with patch(
+            "app.utils.websocket.set_active_run.get_redis_client",
+            return_value=mock_redis,
+        ):
             await set_active_run(chat_id, run_id)
 
         # Assert
@@ -35,7 +38,9 @@ class TestSet_Active_Run:
         run_id = "run-123"
 
         # Act
-        with patch("app.utils.websocket.set_active_run.get_redis_client", return_value=None):
+        with patch(
+            "app.utils.websocket.set_active_run.get_redis_client", return_value=None
+        ):
             await set_active_run(chat_id, run_id)
 
         # Assert - should not raise an error
@@ -50,8 +55,10 @@ class TestSet_Active_Run:
         mock_redis.setex = AsyncMock(side_effect=Exception("Redis error"))
 
         # Act
-        with patch("app.utils.websocket.set_active_run.get_redis_client", return_value=mock_redis):
+        with patch(
+            "app.utils.websocket.set_active_run.get_redis_client",
+            return_value=mock_redis,
+        ):
             await set_active_run(chat_id, run_id)
 
         # Assert - should not raise an error, just log it
-

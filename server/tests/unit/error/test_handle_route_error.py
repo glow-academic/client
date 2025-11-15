@@ -34,9 +34,7 @@ class TestHandle_Route_Error:
         sql_params = ("param1", "param2")
 
         with pytest.raises(HTTPException) as exc_info:
-            handle_route_error(
-                error, route_path, operation, sql_query, sql_params
-            )
+            handle_route_error(error, route_path, operation, sql_query, sql_params)
 
         assert exc_info.value.status_code == 500
 
@@ -93,4 +91,3 @@ class TestHandle_Route_Error:
 
         # If we somehow catch the HTTPException and continue, we should never
         # reach a return statement (the function has NoReturn type hint)
-

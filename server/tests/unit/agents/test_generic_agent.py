@@ -15,4 +15,3 @@ class TestGeneric_Agent:
         assert GenericAgent is not None
         # Basic structure test - GenericAgent is a complex class
         # Full testing would require extensive mocking
-

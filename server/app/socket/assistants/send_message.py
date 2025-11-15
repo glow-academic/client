@@ -12,17 +12,23 @@ from zoneinfo import ZoneInfo
 
 import socketio  # type: ignore
 from agents import Runner, trace
-from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
-                          TResponseInputItem)
+from agents.items import (
+    ReasoningItem,
+    ToolCallItem,
+    ToolCallOutputItem,
+    TResponseInputItem,
+)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
 from dotenv import load_dotenv
-from openai.types.responses import (ResponseFunctionToolCall,
-                                    ResponseFunctionToolCallParam,
-                                    ResponseTextDeltaEvent)
+from openai.types.responses import (
+    ResponseFunctionToolCall,
+    ResponseFunctionToolCallParam,
+    ResponseTextDeltaEvent,
+)
 from pydantic import BaseModel, ValidationError
 
 load_dotenv()
@@ -97,8 +103,12 @@ class SendAssistantMessagePayload(BaseModel):
 
 
 # Emit helper functions
-async def send_assistant_message_error(payload: SendAssistantMessageErrorPayload, room: str) -> None:
-    await sio.emit("send_assistant_message_error", payload.model_dump(exclude_none=True), room=room)
+async def send_assistant_message_error(
+    payload: SendAssistantMessageErrorPayload, room: str
+) -> None:
+    await sio.emit(
+        "send_assistant_message_error", payload.model_dump(exclude_none=True), room=room
+    )
 
 
 async def assistant_new_message(payload: AssistantNewMessagePayload, room: str) -> None:
@@ -114,22 +124,32 @@ async def tool_call_created(payload: ToolCallCreatedPayload, room: str) -> None:
 
 
 async def tool_call_completed(payload: ToolCallCompletedPayload, room: str) -> None:
-    await sio.emit("tool_call_completed", payload.model_dump(exclude_none=True), room=room)
+    await sio.emit(
+        "tool_call_completed", payload.model_dump(exclude_none=True), room=room
+    )
 
 
-async def assistant_message_token(payload: AssistantMessageTokenPayload, room: str) -> None:
+async def assistant_message_token(
+    payload: AssistantMessageTokenPayload, room: str
+) -> None:
     await sio.emit("assistant_message_token", payload.model_dump(), room=room)
 
 
-async def assistant_message_complete(payload: AssistantMessageCompletePayload, room: str) -> None:
+async def assistant_message_complete(
+    payload: AssistantMessageCompletePayload, room: str
+) -> None:
     await sio.emit("assistant_message_complete", payload.model_dump(), room=room)
 
 
-async def assistant_message_cancelled(payload: AssistantMessageCancelledPayload, room: str) -> None:
+async def assistant_message_cancelled(
+    payload: AssistantMessageCancelledPayload, room: str
+) -> None:
     await sio.emit("assistant_message_cancelled", payload.model_dump(), room=room)
 
 
-async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePayload) -> None:
+async def _send_assistant_message_impl(
+    sid: str, data: SendAssistantMessagePayload
+) -> None:
     """Handle assistant message sending requests"""
     try:
         chat_id = data.chat_id
@@ -139,7 +159,9 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
             await send_assistant_message_error(
-                SendAssistantMessageErrorPayload(success=False, message="Missing department_id"),
+                SendAssistantMessageErrorPayload(
+                    success=False, message="Missing department_id"
+                ),
                 room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Missing department_id")
@@ -331,7 +353,9 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                                     "item": user_item,
                                 }
                             )
-                        elif message.get("role") == "assistant" and message.get("content"):
+                        elif message.get("role") == "assistant" and message.get(
+                            "content"
+                        ):
                             assistant_item: TResponseInputItem = {
                                 "role": "assistant",
                                 "content": message["content"],
@@ -347,7 +371,9 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                     # Add tool calls to the list
                     for tool_call in context.tool_calls:
                         # Add the tool call itself
-                        logger.info(f"Tool call arguments: {tool_call.get('tool_arguments')}")
+                        logger.info(
+                            f"Tool call arguments: {tool_call.get('tool_arguments')}"
+                        )
                         tool_call_item: ResponseFunctionToolCallParam = {
                             "arguments": str(tool_call.get("tool_arguments"))
                             if tool_call.get("tool_arguments")
@@ -386,7 +412,9 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                         )
 
                     # Sort all items by timestamp
-                    conversation_items.sort(key=lambda x: x["timestamp"] or datetime.min)
+                    conversation_items.sort(
+                        key=lambda x: x["timestamp"] or datetime.min
+                    )
 
                     # Extract the conversation history in chronological order
                     conversation_history: list[TResponseInputItem] = []
@@ -464,8 +492,7 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                         )
 
                     # Store the result in active runs for potential cancellation using unified tracking
-                    from app.utils.websocket.store_active_run import \
-                        store_active_run
+                    from app.utils.websocket.store_active_run import store_active_run
 
                     chat_id_str = context.chat_id
                     await store_active_run(chat_id_str, result)
@@ -509,7 +536,9 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                                             # Emit completion for current message
                                             await message_complete(
                                                 MessageCompletePayload(
-                                                    message_id=str(current_message["id"]),
+                                                    message_id=str(
+                                                        current_message["id"]
+                                                    ),
                                                     chat_id=str(chat_id_uuid),
                                                     final_content=accumulated_content,
                                                 ),
@@ -664,11 +693,15 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                                             # Emit tool call completed event (frontend will refetch tool calls)
                                             await tool_call_completed(
                                                 ToolCallCompletedPayload(
-                                                    tool_call_id=str(tool_call_record["id"])
+                                                    tool_call_id=str(
+                                                        tool_call_record["id"]
+                                                    )
                                                     if tool_call_record
                                                     else None,
                                                     chat_id=str(chat_id_uuid),
-                                                    tool_name=tool_result_data.get("name"),
+                                                    tool_name=tool_result_data.get(
+                                                        "name"
+                                                    ),
                                                 ),
                                                 room=f"assistant_{chat_id_uuid}",
                                             )
@@ -705,7 +738,9 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                                             # Emit new placeholder message
                                             await assistant_new_message(
                                                 AssistantNewMessagePayload(
-                                                    message_id=str(current_message["id"]),
+                                                    message_id=str(
+                                                        current_message["id"]
+                                                    ),
                                                     chat_id=str(chat_id_uuid),
                                                     role="assistant",
                                                     content="",
@@ -740,7 +775,11 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                     except BaseException as stream_error:
                         # Re-raise CancelledError and other BaseExceptions to outer handler
                         import asyncio
-                        if isinstance(stream_error, (asyncio.CancelledError, KeyboardInterrupt, SystemExit)):
+
+                        if isinstance(
+                            stream_error,
+                            (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
+                        ):
                             raise
                         # For other BaseExceptions, log and re-raise
                         logger.error(
@@ -754,8 +793,9 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                         raise
                     finally:
                         # Clean up active run
-                        from app.utils.websocket.remove_active_run import \
-                            remove_active_run
+                        from app.utils.websocket.remove_active_run import (
+                            remove_active_run,
+                        )
 
                         await remove_active_run(chat_id_str)
 
@@ -779,6 +819,7 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
             except BaseException as e:
                 # Handle cancellation gracefully - CancelledError is a BaseException
                 import asyncio
+
                 if isinstance(e, asyncio.CancelledError):
                     logger.info(f"Assistant run for chat {chat_id_uuid} was cancelled")
                 elif isinstance(e, (KeyboardInterrupt, SystemExit)):
@@ -815,7 +856,9 @@ async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePaylo
                         exc_info=True,
                     )
                     await send_assistant_message_error(
-                        SendAssistantMessageErrorPayload(chat_id=str(chat_id_uuid), error=str(e)),
+                        SendAssistantMessageErrorPayload(
+                            chat_id=str(chat_id_uuid), error=str(e)
+                        ),
                         room=f"assistant_{chat_id_uuid}",
                     )
 

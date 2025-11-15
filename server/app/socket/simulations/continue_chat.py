@@ -13,11 +13,11 @@ from agents.items import TResponseInputItem
 from app.main import get_pool, grading_progress, grading_results, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
-from app.utils.agents.tools.create_safe_field_name import \
-    create_safe_field_name
+from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
@@ -84,14 +84,18 @@ class ContinueSimulationPayload(BaseModel):
 
 
 # Emit helper functions
-async def continue_simulation_error(payload: ContinueSimulationErrorPayload, room: str) -> None:
+async def continue_simulation_error(
+    payload: ContinueSimulationErrorPayload, room: str
+) -> None:
     await sio.emit("continue_simulation_error", payload.model_dump(), room=room)
 
 
 async def simulation_grading_progress(
     payload: SimulationGradingProgressPayload, room: str
 ) -> None:
-    await sio.emit("simulation_grading_progress", payload.model_dump(exclude_none=True), room=room)
+    await sio.emit(
+        "simulation_grading_progress", payload.model_dump(exclude_none=True), room=room
+    )
 
 
 async def end_all_completed(payload: EndAllCompletedPayload, room: str) -> None:
@@ -961,7 +965,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
             chat = await conn.fetchrow(sql, chat_id)
             if not chat:
                 await continue_simulation_error(
-                    ContinueSimulationErrorPayload(success=False, message="Chat not found"),
+                    ContinueSimulationErrorPayload(
+                        success=False, message="Chat not found"
+                    ),
                     room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Chat not found")
@@ -972,7 +978,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
             attempt_with_profile = await conn.fetchrow(sql, attempt_id)
             if not attempt_with_profile:
                 await continue_simulation_error(
-                    ContinueSimulationErrorPayload(success=False, message="Attempt not found"),
+                    ContinueSimulationErrorPayload(
+                        success=False, message="Attempt not found"
+                    ),
                     room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Attempt not found")
@@ -1387,7 +1395,9 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 # Emit to requester
                 await simulation_continued(continued_payload, room=sid)
                 # Also broadcast to the simulation room so watchers stay in sync
-                await simulation_continued(continued_payload, room=f"simulation_{chat_id}")
+                await simulation_continued(
+                    continued_payload, room=f"simulation_{chat_id}"
+                )
 
                 logger.info(
                     f"Simulation continued successfully: completed_chat={result['completed_chat_id']}, next_chat={result['next_chat_id']}"

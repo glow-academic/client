@@ -91,7 +91,7 @@ export async function createProvider(
   "use server";
   const out = await api.post("/providers/create", input);
   revalidateTag("providers");
-  const providerId = input.body?.providerId;
+  const providerId = out.providerId;
   if (providerId) {
     revalidateTag(`provider:${providerId}`);
   }

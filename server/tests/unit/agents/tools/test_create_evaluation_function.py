@@ -18,4 +18,3 @@ class TestCreate_Evaluation_Function:
 
         tool = create_evaluation_function()
         assert tool is not None
-

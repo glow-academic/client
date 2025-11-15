@@ -20,7 +20,10 @@ class TestStore_Active_Result:
         mock_active_results = {}
 
         # Act
-        with patch("app.utils.websocket.store_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.store_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             await store_active_result(chat_id, result)
 
         # Assert
@@ -36,10 +39,12 @@ class TestStore_Active_Result:
         mock_active_results = {chat_id: {"events": AsyncMock()}}
 
         # Act
-        with patch("app.utils.websocket.store_active_result.get_active_results_dict", return_value=mock_active_results):
+        with patch(
+            "app.utils.websocket.store_active_result.get_active_results_dict",
+            return_value=mock_active_results,
+        ):
             await store_active_result(chat_id, result)
 
         # Assert
         assert mock_active_results[chat_id]["result"] == result
         assert "events" in mock_active_results[chat_id]
-

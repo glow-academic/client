@@ -20,11 +20,14 @@ class TestSet_Active_Connection:
         mock_redis.setex = AsyncMock()
 
         with patch(
-            "app.utils.websocket.set_active_connection.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.set_active_connection.get_redis_client",
+            return_value=mock_redis,
         ):
             await set_active_connection(chat_id, socket_id)
 
-            mock_redis.setex.assert_called_once_with(f"active_connection:{chat_id}", 3600, socket_id)
+            mock_redis.setex.assert_called_once_with(
+                f"active_connection:{chat_id}", 3600, socket_id
+            )
 
     @pytest.mark.asyncio
     async def test_set_active_connection_no_redis(self) -> None:
@@ -33,7 +36,8 @@ class TestSet_Active_Connection:
         socket_id = "socket-123"
 
         with patch(
-            "app.utils.websocket.set_active_connection.get_redis_client", return_value=None
+            "app.utils.websocket.set_active_connection.get_redis_client",
+            return_value=None,
         ):
             # Should not raise an error
             await set_active_connection(chat_id, socket_id)
@@ -47,8 +51,8 @@ class TestSet_Active_Connection:
         mock_redis.setex = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.set_active_connection.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.set_active_connection.get_redis_client",
+            return_value=mock_redis,
         ):
             # Should not raise an error, just log it
             await set_active_connection(chat_id, socket_id)
-

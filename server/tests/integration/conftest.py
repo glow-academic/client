@@ -13,6 +13,7 @@ import pytest_asyncio
 # Patch agents library BEFORE importing app.main to prevent actual API calls
 # This must happen at module import time, not in a fixture
 
+
 # Create mock classes first
 class MockUsage:
     """Mock Usage class with token counts."""
@@ -121,7 +122,9 @@ class MockLitellmModel:
 class MockGuardrailFunctionOutput:
     """Mock GuardrailFunctionOutput class."""
 
-    def __init__(self, output_info: Any = None, tripwire_triggered: bool = False) -> None:
+    def __init__(
+        self, output_info: Any = None, tripwire_triggered: bool = False
+    ) -> None:
         self.output_info = output_info
         self.tripwire_triggered = tripwire_triggered
 
@@ -204,6 +207,7 @@ def mock_gen_trace_id() -> str:
 
 class MockOutputGuardrailTripwireTriggered(Exception):
     """Mock OutputGuardrailTripwireTriggered exception."""
+
     pass
 
 

@@ -52,11 +52,13 @@ async def test_stop_simulation_success(
 ) -> None:
     """Test stop_simulation with valid chat_id (may not have active run)."""
     # Create test data: get a scenario_id
-    scenario_row = await db.fetchrow("SELECT id FROM scenarios WHERE active = true LIMIT 1")
+    scenario_row = await db.fetchrow(
+        "SELECT id FROM scenarios WHERE active = true LIMIT 1"
+    )
     if not scenario_row:
         pytest.skip("No active scenarios found in test database")
     scenario_id = scenario_row["id"]
-    
+
     # Create a simulation_chat
     chat_id = await db.fetchval(
         "INSERT INTO simulation_chats (title, scenario_id, completed, trace_id) "

@@ -26,4 +26,3 @@ class TestCreate_Summary_Function:
 
         tool = create_summary_function(chat_id, mock_emit)
         assert tool is not None
-

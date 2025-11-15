@@ -67,4 +67,3 @@ def get_simulation_conversation_history(
         conversation_history.append(current_assistant_message_item)
 
     return conversation_history
-

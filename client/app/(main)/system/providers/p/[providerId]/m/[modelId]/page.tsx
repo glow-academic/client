@@ -81,7 +81,7 @@ export async function createModel(
   "use server";
   const out = await api.post("/providers/models/create", input);
   revalidateTag("providers");
-  const modelId = input.body?.modelId;
+  const modelId = out.modelId;
   if (modelId) {
     revalidateTag(`model:${modelId}`);
   }

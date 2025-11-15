@@ -23,4 +23,3 @@ async def get_cached(key: str) -> dict[str, Any] | None:
     except Exception as e:
         logger.error(f"Error reading cache: {e}")
     return None
-

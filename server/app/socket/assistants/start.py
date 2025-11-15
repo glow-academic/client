@@ -43,7 +43,9 @@ class StartAssistantPayload(BaseModel):
 
 # Emit helper functions
 async def start_assistant_error(payload: StartAssistantErrorPayload, room: str) -> None:
-    await sio.emit("start_assistant_error", payload.model_dump(exclude_none=True), room=room)
+    await sio.emit(
+        "start_assistant_error", payload.model_dump(exclude_none=True), room=room
+    )
 
 
 async def title_updated(payload: TitleUpdatedPayload, room: str) -> None:
@@ -99,7 +101,9 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
         pool = get_pool()
         if not pool:
             await start_assistant_error(
-                StartAssistantErrorPayload(success=False, message="Database not available"),
+                StartAssistantErrorPayload(
+                    success=False, message="Database not available"
+                ),
                 room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Database not available")
@@ -111,7 +115,9 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
             profile_row = await conn.fetchrow(sql, uuid.UUID(profile_id))
             if not profile_row:
                 await start_assistant_error(
-                    StartAssistantErrorPayload(success=False, message="Profile not found"),
+                    StartAssistantErrorPayload(
+                        success=False, message="Profile not found"
+                    ),
                     room=sid,
                 )
                 logger.error(f"Emitted assistant error to {sid}: Profile not found")

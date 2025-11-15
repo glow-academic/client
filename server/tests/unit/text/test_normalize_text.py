@@ -39,4 +39,3 @@ class TestNormalize_Text:
         # Test None handling
         result = normalize_text(None)
         assert result == ""
-

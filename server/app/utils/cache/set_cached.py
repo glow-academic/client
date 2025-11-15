@@ -31,4 +31,3 @@ async def set_cached(
         await pipe.execute()
     except Exception as e:
         logger.error(f"Error writing cache: {e}")
-

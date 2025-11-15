@@ -59,9 +59,9 @@ export async function updateChatCreatedAt(
   "use server";
   const out = await api.post("/attempts/chats/update-created-at", input);
   revalidateTag("attempts");
-  const attemptId = input.body?.attemptId;
-  if (attemptId) {
-    revalidateTag(`attempt:${attemptId}`);
+  const chatId = input.body?.chatId;
+  if (chatId) {
+    revalidateTag(`chat:${chatId}`);
   }
   return out;
 }

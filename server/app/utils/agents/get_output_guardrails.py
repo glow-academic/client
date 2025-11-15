@@ -4,7 +4,13 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import Agent, GuardrailFunctionOutput, OutputGuardrail, RunContextWrapper, TContext
+from agents import (
+    Agent,
+    GuardrailFunctionOutput,
+    OutputGuardrail,
+    RunContextWrapper,
+    TContext,
+)
 from agents.items import TResponseInputItem
 from fastapi import Depends
 
@@ -89,4 +95,3 @@ def get_output_guardrails(
 
     output_guard = OutputGuardrail(_output_guard)
     return [output_guard]
-

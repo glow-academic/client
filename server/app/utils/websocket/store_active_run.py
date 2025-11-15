@@ -11,4 +11,3 @@ async def store_active_run(chat_id: str, run_result: Any) -> None:
     # Generate a unique run ID for cooperative cancellation
     run_id = str(uuid.uuid4())
     await set_active_run(chat_id, run_id)
-

@@ -25,4 +25,3 @@ async def find_chats_by_socket(socket_id: str) -> list[str]:
     except Exception as e:
         logger.error(f"Redis error finding chats by socket {socket_id}: {e}")
         return []
-

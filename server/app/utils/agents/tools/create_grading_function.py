@@ -88,4 +88,3 @@ def create_grading_function(
 
     grade_standard_group.__name__ = f"grade_{safe_name}"
     return function_tool(grade_standard_group)
-

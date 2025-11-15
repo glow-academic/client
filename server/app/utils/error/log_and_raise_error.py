@@ -113,4 +113,3 @@ def log_and_raise_error(
 
     # Raise HTTPException
     raise HTTPException(status_code=status_code, detail=detail)
-

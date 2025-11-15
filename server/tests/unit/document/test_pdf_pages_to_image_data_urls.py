@@ -10,7 +10,9 @@ import pytest
 class TestPdf_Pages_To_Image_Data_Urls:
     """Tests for pdf_pages_to_image_data_urls function."""
 
-    def test_pdf_pages_to_image_data_urls_fitz_unavailable(self, tmp_path: Path) -> None:
+    def test_pdf_pages_to_image_data_urls_fitz_unavailable(
+        self, tmp_path: Path
+    ) -> None:
         """Test pdf_pages_to_image_data_urls when fitz is unavailable."""
         test_file = tmp_path / "test.pdf"
         test_file.write_bytes(b"fake pdf content")
@@ -88,4 +90,3 @@ class TestPdf_Pages_To_Image_Data_Urls:
         # Should return empty list on error
         result = pdf_pages_to_image_data_urls(str(test_file))
         assert result == []
-

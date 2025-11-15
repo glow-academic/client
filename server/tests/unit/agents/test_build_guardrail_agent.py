@@ -30,9 +30,9 @@ class TestBuild_Guardrail_Agent:
         guardrail_tools = create_guardrail_tools()
         # Mock decrypt_api_key to avoid base64 decoding errors
         with patch(
-            "app.utils.agents.generic_agent.decrypt_api_key", return_value="decrypted-key"
+            "app.utils.agents.generic_agent.decrypt_api_key",
+            return_value="decrypted-key",
         ):
             agent = build_guardrail_agent(context, guardrail_tools)
             assert agent is not None
             assert agent.agent_name == "Guardrail Agent"
-

@@ -149,4 +149,3 @@ def format_document_info(
 
     result_msg: Message = {"role": "user", "content": content_items}
     return result_msg
-

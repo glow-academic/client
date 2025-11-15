@@ -4,10 +4,10 @@ import logging
 import uuid
 from typing import Any
 
-from app.utils.agents.tools.create_objectives_function import \
-    create_objectives_function
-from app.utils.agents.tools.create_title_description_function import \
-    create_title_description_function
+from app.utils.agents.tools.create_objectives_function import create_objectives_function
+from app.utils.agents.tools.create_title_description_function import (
+    create_title_description_function,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,4 +31,3 @@ def create_scenario_tools(
 
     logger.info(f"Total scenario tools created: {len(tools)}")
     return tools
-

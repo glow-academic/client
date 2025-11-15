@@ -16,8 +16,9 @@ from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.get_output_guardrails import get_output_guardrails
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import \
-    get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.sql_helper import load_sql
@@ -91,14 +92,18 @@ class SendSimulationMessagePayload(BaseModel):
 
 
 # Emit helper functions
-async def send_simulation_message_error(payload: SendSimulationMessageErrorPayload, room: str) -> None:
+async def send_simulation_message_error(
+    payload: SendSimulationMessageErrorPayload, room: str
+) -> None:
     await sio.emit("send_simulation_message_error", payload.model_dump(), room=room)
 
 
 async def hint_generation_progress(
     payload: HintGenerationProgressPayload, room: str
 ) -> None:
-    await sio.emit("hint_generation_progress", payload.model_dump(exclude_none=True), room=room)
+    await sio.emit(
+        "hint_generation_progress", payload.model_dump(exclude_none=True), room=room
+    )
 
 
 async def simulation_new_message(
@@ -445,7 +450,9 @@ async def _generate_hints_background_inline(
                 )
 
 
-async def _send_simulation_message_impl(sid: str, data: SendSimulationMessagePayload) -> None:
+async def _send_simulation_message_impl(
+    sid: str, data: SendSimulationMessagePayload
+) -> None:
     """Handle simulation message sending requests"""
     try:
         chat_id = data.chat_id
@@ -554,18 +561,18 @@ async def _send_simulation_message_impl(sid: str, data: SendSimulationMessagePay
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket.get_active_run import \
-                        get_active_run
-                    from app.utils.websocket.is_run_cancelled import \
-                        is_run_cancelled
-                    from app.utils.websocket.remove_active_result import \
-                        remove_active_result
-                    from app.utils.websocket.store_active_events import \
-                        store_active_events
-                    from app.utils.websocket.store_active_result import \
-                        store_active_result
-                    from app.utils.websocket.store_active_run import \
-                        store_active_run
+                    from app.utils.websocket.get_active_run import get_active_run
+                    from app.utils.websocket.is_run_cancelled import is_run_cancelled
+                    from app.utils.websocket.remove_active_result import (
+                        remove_active_result,
+                    )
+                    from app.utils.websocket.store_active_events import (
+                        store_active_events,
+                    )
+                    from app.utils.websocket.store_active_result import (
+                        store_active_result,
+                    )
+                    from app.utils.websocket.store_active_run import store_active_run
 
                     # Get all context data in a single optimized query using SQL file
                     sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
@@ -822,8 +829,9 @@ async def _send_simulation_message_impl(sid: str, data: SendSimulationMessagePay
                             raise e
                     finally:
                         # Clean up the active run using unified tracking
-                        from app.utils.websocket.remove_active_run import \
-                            remove_active_run
+                        from app.utils.websocket.remove_active_run import (
+                            remove_active_run,
+                        )
 
                         await remove_active_run(chat_id_str)
                         await remove_active_result(chat_id_str)

@@ -26,4 +26,3 @@ async def cancel_active_run(chat_id: str) -> bool:
     except Exception as e:
         logger.error(f"Error cancelling active run {chat_id}: {e}")
         return False
-

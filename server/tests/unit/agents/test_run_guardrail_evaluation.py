@@ -15,4 +15,3 @@ class TestRun_Guardrail_Evaluation:
         from app.utils.agents.run_guardrail_evaluation import run_guardrail_evaluation
 
         assert callable(run_guardrail_evaluation)
-

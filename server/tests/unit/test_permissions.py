@@ -91,4 +91,3 @@ class TestRoute_Permissions:
         assert "home" in sections
         assert "practice" in sections
         assert "analytics" in sections
-

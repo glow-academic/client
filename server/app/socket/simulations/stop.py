@@ -82,8 +82,7 @@ async def _stop_simulation_impl(sid: str, data: StopSimulationPayload) -> None:
 
         async with pool.acquire() as conn:
             # Attempt to cancel the simulation run and the in-process Runner immediately
-            from app.utils.websocket.cancel_active_result import \
-                cancel_active_result
+            from app.utils.websocket.cancel_active_result import cancel_active_result
 
             # Try immediate in-process cancel first
             immediate = await cancel_active_result(str(chat_id))
@@ -115,7 +114,9 @@ async def _stop_simulation_impl(sid: str, data: StopSimulationPayload) -> None:
                     SimulationMessageCancelledPayload(
                         message_id=str(result["cancelled_message_id"]),
                         chat_id=str(chat_id),
-                        final_content=str(result["final_content"]) if result["final_content"] else "",
+                        final_content=str(result["final_content"])
+                        if result["final_content"]
+                        else "",
                     ),
                     room=f"simulation_{chat_id}",
                 )
@@ -123,7 +124,9 @@ async def _stop_simulation_impl(sid: str, data: StopSimulationPayload) -> None:
                 # Emit stop signal
                 await simulation_stopped(
                     SimulationStoppedPayload(
-                        chat_id=chat_id, success=True, message=""  # Empty message, no toast
+                        chat_id=chat_id,
+                        success=True,
+                        message="",  # Empty message, no toast
                     ),
                     room=f"simulation_{chat_id}",
                 )

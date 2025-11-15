@@ -140,7 +140,6 @@ export default async function AgentEditPage({
 export type {
   AgentDetailDefaultIn,
   AgentDetailDefaultOut,
-  AgentDetailIn,
   AgentDetailOut,
   CreateAgentIn,
   CreateAgentOut,

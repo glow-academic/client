@@ -7,4 +7,3 @@ async def remove_active_result(chat_id: str) -> None:
     """Remove stored Runner result for a chat."""
     active_results = get_active_results_dict()
     active_results.pop(chat_id, None)
-

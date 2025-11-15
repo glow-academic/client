@@ -22,4 +22,3 @@ class TestCreate_Scenario_Tools:
         group_id = uuid.uuid4()
         tools = create_scenario_tools(group_id, objectives_enabled=False)
         assert len(tools) == 1  # title_description only
-

@@ -18,4 +18,3 @@ async def set_active_connection(chat_id: str, socket_id: str) -> None:
         await redis_client.setex(f"active_connection:{chat_id}", 3600, socket_id)
     except Exception as e:
         logger.error(f"Redis error setting active connection for chat {chat_id}: {e}")
-

@@ -18,4 +18,3 @@ class TestCreate_Hint_Function:
 
         tool = create_hint_function(1)
         assert tool is not None
-

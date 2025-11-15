@@ -21,7 +21,10 @@ class TestGet_Active_Run:
         mock_redis.get = AsyncMock(return_value=run_id.encode("utf-8"))
 
         # Act
-        with patch("app.utils.websocket.get_active_run.get_redis_client", return_value=mock_redis):
+        with patch(
+            "app.utils.websocket.get_active_run.get_redis_client",
+            return_value=mock_redis,
+        ):
             result = await get_active_run(chat_id)
 
         # Assert
@@ -37,7 +40,10 @@ class TestGet_Active_Run:
         mock_redis.get = AsyncMock(return_value=None)
 
         # Act
-        with patch("app.utils.websocket.get_active_run.get_redis_client", return_value=mock_redis):
+        with patch(
+            "app.utils.websocket.get_active_run.get_redis_client",
+            return_value=mock_redis,
+        ):
             result = await get_active_run(chat_id)
 
         # Assert
@@ -50,7 +56,9 @@ class TestGet_Active_Run:
         chat_id = "chat-123"
 
         # Act
-        with patch("app.utils.websocket.get_active_run.get_redis_client", return_value=None):
+        with patch(
+            "app.utils.websocket.get_active_run.get_redis_client", return_value=None
+        ):
             result = await get_active_run(chat_id)
 
         # Assert
@@ -65,9 +73,11 @@ class TestGet_Active_Run:
         mock_redis.get = AsyncMock(side_effect=Exception("Redis error"))
 
         # Act
-        with patch("app.utils.websocket.get_active_run.get_redis_client", return_value=mock_redis):
+        with patch(
+            "app.utils.websocket.get_active_run.get_redis_client",
+            return_value=mock_redis,
+        ):
             result = await get_active_run(chat_id)
 
         # Assert
         assert result is None
-

@@ -157,7 +157,9 @@ async def test_send_assistant_message_success(
 
     # Verify user message was emitted (this should happen before streaming)
     new_message_events = mock_sio.get_events("assistant_new_message")
-    assert len(new_message_events) >= 1, "User message should be emitted before streaming"
+    assert len(new_message_events) >= 1, (
+        "User message should be emitted before streaming"
+    )
     user_message = next(
         (msg for msg in new_message_events if msg["role"] == "user"), None
     )

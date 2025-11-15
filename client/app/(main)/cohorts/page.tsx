@@ -13,7 +13,6 @@ import type { Metadata } from "next";
 import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortsListIn = InputOf<"/api/v3/cohorts/list", "post">;
 type CohortsListOut = OutputOf<"/api/v3/cohorts/list", "post">;
 type DuplicateCohortIn = InputOf<"/api/v3/cohorts/duplicate", "post">;
 type DuplicateCohortOut = OutputOf<"/api/v3/cohorts/duplicate", "post">;

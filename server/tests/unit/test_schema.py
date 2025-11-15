@@ -90,7 +90,9 @@ class TestStandard_Mapping_Item:
 
     def test_standard_mapping_item_creation(self) -> None:
         """Test creating a StandardMappingItem."""
-        item = StandardMappingItem(name="Test", description="Test description", points=5)
+        item = StandardMappingItem(
+            name="Test", description="Test description", points=5
+        )
         assert item.name == "Test"
         assert item.points == 5
 
@@ -147,4 +149,3 @@ class TestData_Point:
         assert point.profileId == "123"
         assert point.value == 10.5
         assert point.date is None
-

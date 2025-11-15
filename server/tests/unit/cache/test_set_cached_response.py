@@ -43,4 +43,3 @@ class TestSet_Cached_Response:
             await set_cached_response(mock_request, data, tags, ttl, "user123")
 
             mock_set_cached.assert_called_once()
-

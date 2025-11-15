@@ -19,7 +19,8 @@ class TestRemove_Active_Connection:
         mock_redis.delete = AsyncMock()
 
         with patch(
-            "app.utils.websocket.remove_active_connection.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.remove_active_connection.get_redis_client",
+            return_value=mock_redis,
         ):
             await remove_active_connection(chat_id)
 
@@ -31,7 +32,8 @@ class TestRemove_Active_Connection:
         chat_id = "chat-123"
 
         with patch(
-            "app.utils.websocket.remove_active_connection.get_redis_client", return_value=None
+            "app.utils.websocket.remove_active_connection.get_redis_client",
+            return_value=None,
         ):
             # Should not raise an error
             await remove_active_connection(chat_id)
@@ -44,8 +46,8 @@ class TestRemove_Active_Connection:
         mock_redis.delete = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.remove_active_connection.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.remove_active_connection.get_redis_client",
+            return_value=mock_redis,
         ):
             # Should not raise an error, just log it
             await remove_active_connection(chat_id)
-

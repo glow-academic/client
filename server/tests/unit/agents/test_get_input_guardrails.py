@@ -27,4 +27,3 @@ class TestGet_Input_Guardrails:
         # This will fail at runtime without proper DB setup, but tests structure
         guardrails = get_input_guardrails(chat_id, department_id, input_items, conn)
         assert isinstance(guardrails, list)
-

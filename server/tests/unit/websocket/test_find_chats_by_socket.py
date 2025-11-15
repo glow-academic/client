@@ -27,7 +27,8 @@ class TestFind_Chats_By_Socket:
         mock_redis.get = AsyncMock(return_value=socket_id.encode("utf-8"))
 
         with patch(
-            "app.utils.websocket.find_chats_by_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.find_chats_by_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await find_chats_by_socket(socket_id)
 
@@ -49,7 +50,8 @@ class TestFind_Chats_By_Socket:
         mock_redis.scan_iter = mock_scan_iter
 
         with patch(
-            "app.utils.websocket.find_chats_by_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.find_chats_by_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await find_chats_by_socket(socket_id)
 
@@ -61,7 +63,8 @@ class TestFind_Chats_By_Socket:
         socket_id = "socket-123"
 
         with patch(
-            "app.utils.websocket.find_chats_by_socket.get_redis_client", return_value=None
+            "app.utils.websocket.find_chats_by_socket.get_redis_client",
+            return_value=None,
         ):
             result = await find_chats_by_socket(socket_id)
 
@@ -75,9 +78,9 @@ class TestFind_Chats_By_Socket:
         mock_redis.scan_iter = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.find_chats_by_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.find_chats_by_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await find_chats_by_socket(socket_id)
 
             assert result == []
-

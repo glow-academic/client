@@ -23,4 +23,3 @@ def create_hint_tools() -> list[Tool]:
 
     logger.info(f"Created {len(tools)} hint tools (3 hints + debug_info)")
     return tools
-

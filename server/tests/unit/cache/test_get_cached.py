@@ -77,4 +77,3 @@ class TestGet_Cached:
             result = await get_cached(key)
 
             assert result is None
-

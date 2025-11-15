@@ -44,4 +44,3 @@ def create_hint_function(hint_number: int) -> Tool:
     # Set unique function name
     provide_hint.__name__ = f"provide_hint_{hint_number}"
     return function_tool(provide_hint)
-

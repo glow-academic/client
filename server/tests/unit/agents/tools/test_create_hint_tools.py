@@ -13,4 +13,3 @@ class TestCreate_Hint_Tools:
         """Test that three hint tools are created."""
         tools = create_hint_tools()
         assert len(tools) == 4  # 3 hints + debug_info
-

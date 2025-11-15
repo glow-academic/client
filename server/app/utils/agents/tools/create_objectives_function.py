@@ -53,4 +53,3 @@ def create_objectives_function(group_id: uuid.UUID | None) -> Any:
         return f"Set {len(objectives)} learning objectives successfully"
 
     return function_tool(set_objectives)
-

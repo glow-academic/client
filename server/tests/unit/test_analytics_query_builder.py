@@ -96,7 +96,10 @@ class TestBuild_Base_Filter:
         )
 
         assert "a.is_general = TRUE" in where_clause
-        assert "(a.is_archived = TRUE OR (a.is_general = FALSE AND a.is_practice = FALSE))" in where_clause
+        assert (
+            "(a.is_archived = TRUE OR (a.is_general = FALSE AND a.is_practice = FALSE))"
+            in where_clause
+        )
 
     def test_build_base_filter_profile_id(self) -> None:
         """Test build_base_filter with profile_id filter."""
@@ -118,9 +121,7 @@ class TestBuild_Base_Filter:
         end_date = "2024-01-31T23:59:59Z"
         roles = ["student", "teacher"]
 
-        where_clause, params = build_base_filter(
-            start_date, end_date, roles=roles
-        )
+        where_clause, params = build_base_filter(start_date, end_date, roles=roles)
 
         assert "a.profile_role = ANY($3)" in where_clause
         assert params[2] == roles
@@ -257,4 +258,3 @@ class TestBuild_Base_Filter:
         assert len(params) == 2
         # Empty sim_filters should default to ["general"]
         assert "a.is_general = TRUE" in where_clause
-

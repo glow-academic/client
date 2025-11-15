@@ -74,4 +74,3 @@ class TestDecrypt_Api_Key:
         with patch.dict(os.environ, {"SECRET_KEY": "test_secret_key"}):
             with pytest.raises(Exception):  # Could be ValueError or other crypto errors
                 decrypt_api_key("invalid_base64_key")
-

@@ -35,9 +35,7 @@ class TestLog_And_Raise_Error:
         sql_params = ("param1", "param2")
 
         with pytest.raises(HTTPException) as exc_info:
-            log_and_raise_error(
-                error, route_path, operation, sql_query, sql_params
-            )
+            log_and_raise_error(error, route_path, operation, sql_query, sql_params)
 
         assert exc_info.value.status_code == 500
         assert "Database error" in exc_info.value.detail
@@ -82,7 +80,10 @@ class TestLog_And_Raise_Error:
 
         with pytest.raises(HTTPException) as exc_info:
             log_and_raise_error(
-                error, route_path, operation, user_friendly_message=user_friendly_message
+                error,
+                route_path,
+                operation,
+                user_friendly_message=user_friendly_message,
             )
 
         assert exc_info.value.status_code == 500
@@ -111,4 +112,3 @@ class TestLog_And_Raise_Error:
             mock_logger.error.assert_called_once()
             call_args = mock_logger.error.call_args
             assert "test_operation" in str(call_args)
-

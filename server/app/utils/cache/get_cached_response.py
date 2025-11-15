@@ -29,4 +29,3 @@ async def get_cached_response(
 
     cache_key_val = cache_key(request.url.path, body_dict, user_ctx)
     return await get_cached(cache_key_val)
-

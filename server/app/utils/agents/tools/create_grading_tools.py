@@ -33,4 +33,3 @@ def create_grading_tools(
 
     logger.info(f"Total grading tools created: {len(tools)}")
     return tools
-

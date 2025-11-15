@@ -35,4 +35,3 @@ async def cancel_active_result(chat_id: str) -> bool:
     except Exception as e:
         logger.error(f"Failed to cancel local result for chat {chat_id}: {e}")
         return False
-

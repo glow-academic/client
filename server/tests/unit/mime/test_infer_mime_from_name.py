@@ -62,4 +62,3 @@ class TestInfer_Mime_From_Name:
 
         result = infer_mime_from_name("DOCUMENT.PDF")
         assert result == "application/pdf"
-

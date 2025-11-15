@@ -34,7 +34,9 @@ class TestFormat_Document_Info:
         test_file.write_text("Test Content")
 
         # Mock UPLOAD_FOLDER
-        monkeypatch.setattr("app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr(
+            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+        )
 
         documents = [
             {
@@ -68,7 +70,9 @@ class TestFormat_Document_Info:
         test_file = tmp_path / "test.pdf"
         test_file.write_bytes(b"fake pdf content")
 
-        monkeypatch.setattr("app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr(
+            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+        )
 
         # Mock pypdf
         mock_page = MagicMock()
@@ -85,9 +89,12 @@ class TestFormat_Document_Info:
             }
         ]
 
-        with patch("pypdf.PdfReader", return_value=mock_reader), patch(
-            "app.utils.document.format_document_info.pdf_pages_to_image_data_urls",
-            return_value=[],
+        with (
+            patch("pypdf.PdfReader", return_value=mock_reader),
+            patch(
+                "app.utils.document.format_document_info.pdf_pages_to_image_data_urls",
+                return_value=[],
+            ),
         ):
             result = format_document_info(documents, show_images=False)
 
@@ -106,7 +113,9 @@ class TestFormat_Document_Info:
         test_file = tmp_path / "test.pdf"
         test_file.write_bytes(b"fake pdf content")
 
-        monkeypatch.setattr("app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr(
+            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+        )
 
         # Mock pypdf
         mock_page = MagicMock()
@@ -126,9 +135,12 @@ class TestFormat_Document_Info:
             }
         ]
 
-        with patch("pypdf.PdfReader", return_value=mock_reader), patch(
-            "app.utils.document.format_document_info.pdf_pages_to_image_data_urls",
-            return_value=image_urls,
+        with (
+            patch("pypdf.PdfReader", return_value=mock_reader),
+            patch(
+                "app.utils.document.format_document_info.pdf_pages_to_image_data_urls",
+                return_value=image_urls,
+            ),
         ):
             result = format_document_info(documents, show_images=True)
 
@@ -150,7 +162,9 @@ class TestFormat_Document_Info:
         png_header = b"\x89PNG\r\n\x1a\n"
         test_file.write_bytes(png_header + b"fake png content")
 
-        monkeypatch.setattr("app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr(
+            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+        )
 
         documents = [
             {
@@ -168,7 +182,9 @@ class TestFormat_Document_Info:
         assert len(result["content"]) > 0
         # Check if we got an image or if it failed and fell back
         if result["content"][0]["type"] == "input_image":
-            assert result["content"][0]["image_url"].startswith("data:image/png;base64,")
+            assert result["content"][0]["image_url"].startswith(
+                "data:image/png;base64,"
+            )
         else:
             # If reading failed, it would fall back to "No documents provided"
             assert "No documents provided" in result["content"][0]["text"]
@@ -182,7 +198,9 @@ class TestFormat_Document_Info:
         test_file = tmp_path / "test.png"
         test_file.write_bytes(b"fake png content")
 
-        monkeypatch.setattr("app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr(
+            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+        )
 
         documents = [
             {
@@ -208,7 +226,9 @@ class TestFormat_Document_Info:
         """Test format_document_info with missing document file."""
         from app.utils.document.format_document_info import format_document_info
 
-        monkeypatch.setattr("app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr(
+            "app.utils.document.format_document_info.UPLOAD_FOLDER", tmp_path
+        )
 
         documents = [
             {
@@ -222,4 +242,3 @@ class TestFormat_Document_Info:
         # Should handle missing file gracefully - read_text_file raises ValueError
         with pytest.raises(ValueError, match="Error reading file"):
             format_document_info(documents, show_images=False)
-

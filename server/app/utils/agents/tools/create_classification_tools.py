@@ -3,8 +3,9 @@
 import logging
 from typing import Any
 
-from app.utils.agents.tools.create_classification_function import \
-    create_classification_function
+from app.utils.agents.tools.create_classification_function import (
+    create_classification_function,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,4 +32,3 @@ def create_classification_tools() -> list[Any]:
 
     logger.info(f"Total classification tools created: {len(tools)}")
     return tools
-

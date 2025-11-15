@@ -47,4 +47,3 @@ def decrypt_api_key(encrypted_key: str) -> str:
     decrypted = unpadder.update(decrypted_padded) + unpadder.finalize()
 
     return decrypted.decode("utf-8")
-

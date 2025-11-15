@@ -86,4 +86,3 @@ def infer_mime_from_name(filename: str, fallback: str = DEFAULT_FALLBACK) -> str
 
     # 3) Final fallback
     return fallback
-

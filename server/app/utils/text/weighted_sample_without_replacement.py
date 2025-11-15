@@ -31,4 +31,3 @@ def weighted_sample_without_replacement(
         selected.append(pool_items.pop(choice_idx))
         pool_scores.pop(choice_idx)
     return selected
-

@@ -49,4 +49,3 @@ def create_summary_function(chat_id: uuid.UUID, emit_progress_func: Any) -> Any:
         return "Summary recorded successfully"
 
     return function_tool(record_summary)
-

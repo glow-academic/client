@@ -15,4 +15,3 @@ def cache_key(
     payload = stable_dumps({"p": path, "b": body or {}, "u": user_ctx or ""})
     hash_digest = hashlib.sha1(payload.encode()).hexdigest()
     return f"{CACHE_KEY_PREFIX}{hash_digest}"
-

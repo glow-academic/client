@@ -12,4 +12,3 @@ def get_content_type(filename: str, mime_type: str | None = None) -> str:
     if mime_type and mime_type.lower() != "application/octet-stream":
         return mime_type
     return infer_mime_from_name(filename, fallback=DEFAULT_FALLBACK)
-

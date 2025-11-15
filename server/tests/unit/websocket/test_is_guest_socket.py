@@ -19,7 +19,8 @@ class TestIs_Guest_Socket:
         mock_redis.sismember = AsyncMock(return_value=True)
 
         with patch(
-            "app.utils.websocket.is_guest_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.is_guest_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await is_guest_socket(socket_id)
 
@@ -34,7 +35,8 @@ class TestIs_Guest_Socket:
         mock_redis.sismember = AsyncMock(return_value=False)
 
         with patch(
-            "app.utils.websocket.is_guest_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.is_guest_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await is_guest_socket(socket_id)
 
@@ -60,9 +62,9 @@ class TestIs_Guest_Socket:
         mock_redis.sismember = AsyncMock(side_effect=Exception("Redis error"))
 
         with patch(
-            "app.utils.websocket.is_guest_socket.get_redis_client", return_value=mock_redis
+            "app.utils.websocket.is_guest_socket.get_redis_client",
+            return_value=mock_redis,
         ):
             result = await is_guest_socket(socket_id)
 
             assert result is False
-

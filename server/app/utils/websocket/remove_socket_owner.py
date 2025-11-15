@@ -22,4 +22,3 @@ async def remove_socket_owner(profile_id: str) -> None:
         logger.error(f"Redis error removing socket owner for profile {profile_id}: {e}")
         # Fallback to in-memory storage
         socket_owner.pop(profile_id, None)
-

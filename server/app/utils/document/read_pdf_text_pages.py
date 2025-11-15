@@ -14,4 +14,3 @@ def read_pdf_text_pages(full_path: str) -> list[str]:
     except Exception as e:  # pragma: no cover - surfaced to caller
         raise ValueError(f"Error reading PDF file {full_path}: {str(e)}")
     return texts
-

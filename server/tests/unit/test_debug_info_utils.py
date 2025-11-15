@@ -39,8 +39,10 @@ class TestDebug_Info:
             mock_ctx.context = debug_context
 
             # Mock load_sql and asyncio.create_task
-            with patch("app.utils.debug_info.load_sql", return_value="INSERT INTO ..."), \
-                 patch("asyncio.create_task") as mock_create_task:
+            with (
+                patch("app.utils.debug_info.load_sql", return_value="INSERT INTO ..."),
+                patch("asyncio.create_task") as mock_create_task,
+            ):
                 result = debug_info(mock_ctx, "Test debug message")
 
                 # Should return a confirmation string
@@ -68,8 +70,12 @@ class TestDebug_Info:
             mock_ctx.context = debug_context
 
             # Mock load_sql to raise an exception
-            with patch("app.utils.debug_info.load_sql", side_effect=Exception("SQL error")), \
-                 patch("builtins.print"):  # Suppress print output
+            with (
+                patch(
+                    "app.utils.debug_info.load_sql", side_effect=Exception("SQL error")
+                ),
+                patch("builtins.print"),
+            ):  # Suppress print output
                 result = debug_info(mock_ctx, "Test debug message")
 
                 # Should return an error message

@@ -5,7 +5,9 @@ Tests for app.utils.chat.get_simulation_conversation_history
 from datetime import datetime
 
 import pytest
-from app.utils.chat.get_simulation_conversation_history import get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import (
+    get_simulation_conversation_history,
+)
 
 
 class TestGet_Simulation_Conversation_History:
@@ -86,4 +88,3 @@ class TestGet_Simulation_Conversation_History:
         result = get_simulation_conversation_history([])
 
         assert result == []
-

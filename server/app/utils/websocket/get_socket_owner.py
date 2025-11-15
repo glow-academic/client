@@ -22,4 +22,3 @@ async def get_socket_owner(profile_id: str) -> str | None:
         logger.error(f"Redis error getting socket owner for profile {profile_id}: {e}")
         # Fallback to in-memory storage
         return socket_owner.get(profile_id)
-

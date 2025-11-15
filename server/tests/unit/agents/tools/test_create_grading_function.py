@@ -40,4 +40,3 @@ class TestCreate_Grading_Function:
 
         tool = create_grading_function(standard_group, standards, chat_id, 1, mock_emit)
         assert tool is not None
-

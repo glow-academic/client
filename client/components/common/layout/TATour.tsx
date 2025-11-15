@@ -710,12 +710,39 @@ export default function TATour({
       // Let WebSocket events handle step completion - don't auto-advance here
     };
 
-    const handleSimulationError = () => {
+    const handleSimulationError = (message?: string) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      toast.error("Failed to start simulation. Please try again.");
+      toast.error(message ?? "Something went wrong. Please try again.");
       setLoadingSimulation(null);
+      setNavigating(false);
+    };
+
+    const handleStartSimulationError = (payload?: { message?: string }) => {
+      handleSimulationError(
+        payload?.message ?? "Failed to start simulation. Please try again."
+      );
+    };
+
+    const handleStopSimulationError = (payload?: { message?: string }) => {
+      handleSimulationError(
+        payload?.message ?? "Failed to stop simulation. Please try again."
+      );
+    };
+
+    const handleSendSimulationMessageError = (payload?: {
+      message?: string;
+    }) => {
+      handleSimulationError(
+        payload?.message ?? "Failed to send message. Please try again."
+      );
+    };
+
+    const handleContinueSimulationError = (payload?: { message?: string }) => {
+      handleSimulationError(
+        payload?.message ?? "Failed to continue simulation. Please try again."
+      );
     };
 
     // Listen for simulation button press (before server call)

@@ -56,4 +56,3 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
         parallel_tool_calls=True,  # Enable parallel execution
         tool_use_behavior=tool_use_behavior,
     )
-

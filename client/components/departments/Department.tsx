@@ -420,10 +420,6 @@ export default function Department({
                 value: id,
                 label: item.name,
               }))}
-              activityOptions={[
-                { value: "true", label: "Active" },
-                { value: "false", label: "Inactive" },
-              ]}
               lastActiveOptions={[
                 { value: "recent", label: "Recently Active (< 7 days)" },
                 { value: "moderate", label: "Moderately Active (7-30 days)" },
