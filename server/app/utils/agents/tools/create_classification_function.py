@@ -20,13 +20,13 @@ def create_classification_function(category: str, category_description: str) -> 
         ),
     ) -> str:
         f"""Classify documents as {category}.
-        
+
         Use this tool to mark documents that belong to the {category} category.
         {category_description}
-        
+
         Args:
             document_numbers: List of document numbers (e.g., ["1", "3", "5"]) that are {category}
-            
+
         Returns:
             Confirmation message
         """

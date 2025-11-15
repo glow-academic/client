@@ -64,7 +64,7 @@ def test_assistant_chat_stop(page: Page, base_url: str) -> None:
         messages_container = page.get_by_test_id("assistant-messages-container")
         if messages_container.count() > 0:
             # Check for incomplete message indicator
-            incomplete_indicator = messages_container.get_by_text(
+            messages_container.get_by_text(
                 "Stopped", exact=False
             ).or_(messages_container.get_by_text("Incomplete", exact=False))
             # Note: The exact UI for stopped messages depends on implementation

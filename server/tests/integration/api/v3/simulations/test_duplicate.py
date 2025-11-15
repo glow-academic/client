@@ -15,7 +15,7 @@ async def test_duplicate_simulation_with_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a simulation with department links."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
 
     # Get or create a rubric
@@ -87,7 +87,7 @@ async def test_duplicate_simulation_without_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a simulation without department links (cross-department)."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Get or create a rubric
     rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")

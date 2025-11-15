@@ -62,7 +62,7 @@ async def create_department(
 
             # Automatically link all superadmins, default profiles, and the creator
             auto_link_query = """
-            SELECT id FROM profiles 
+            SELECT id FROM profiles
             WHERE role = 'superadmin' OR default_profile = true OR id = $1
             """
             profiles_to_link = await conn.fetch(auto_link_query, request.profile_id)

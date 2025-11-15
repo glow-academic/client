@@ -63,7 +63,7 @@ async def test_disconnect_with_guest_success(
     # Verify guest socket was removed (check via is_guest_socket)
     from app.utils.websocket.is_guest_socket import is_guest_socket
 
-    is_guest = await is_guest_socket(sid)
+    await is_guest_socket(sid)
     # Note: In test environment without Redis, this may return False
     # The important thing is disconnect completed without error
 
@@ -95,8 +95,8 @@ async def test_disconnect_removes_active_connections(
     # Verify active connections were removed
     from app.utils.websocket.get_active_connection import get_active_connection
 
-    connection_1 = await get_active_connection(chat_id_1)
-    connection_2 = await get_active_connection(chat_id_2)
+    await get_active_connection(chat_id_1)
+    await get_active_connection(chat_id_2)
     # In test environment without Redis, these may return None
     # The important thing is disconnect completed without error
 

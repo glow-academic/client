@@ -63,7 +63,7 @@ async def test_update_cohort_not_found(
     """Test updating a non-existent cohort."""
     fake_cohort_id = "00000000-0000-0000-0000-000000000000"
 
-    response = await client.post(
+    await client.post(
         "/api/v3/cohorts/update",
         json={
             "cohortId": fake_cohort_id,

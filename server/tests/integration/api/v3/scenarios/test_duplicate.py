@@ -12,7 +12,7 @@ async def test_duplicate_scenario_with_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a scenario with department links."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
 
     # Create a scenario with department link
@@ -66,7 +66,7 @@ async def test_duplicate_scenario_without_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a scenario without department links (cross-department)."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a scenario without department links
     scenario_id = await db.fetchval(

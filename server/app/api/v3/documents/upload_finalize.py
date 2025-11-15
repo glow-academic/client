@@ -233,7 +233,7 @@ async def upload_finalize(
                 os.makedirs(extract_dir, exist_ok=True)
                 zip_ref.extractall(extract_dir)
 
-                for root, dirs, files in os.walk(extract_dir):
+                for root, _dirs, files in os.walk(extract_dir):
                     for filename in files:
                         if filename.startswith(".") or filename.startswith("__MACOSX"):
                             continue

@@ -12,7 +12,7 @@ async def test_duplicate_agent(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating an agent."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent with prompt and department links
     agent_id = await db.fetchval(
@@ -87,7 +87,7 @@ async def test_duplicate_agent_without_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating an agent without department links (cross-department)."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent without department links
     agent_id = await db.fetchval(
@@ -129,7 +129,7 @@ async def test_duplicate_agent_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a non-existent agent."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_agent_id = "00000000-0000-0000-0000-000000000000"
 

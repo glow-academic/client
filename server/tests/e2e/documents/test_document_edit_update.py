@@ -91,7 +91,7 @@ def test_document_edit_update_fields(page: Page, base_url: str) -> None:
             page.locator('[role="switch"]')
         )
         if active_switch.count() > 0:
-            current_state = active_switch.is_checked()
+            active_switch.is_checked()
             active_switch.click()  # Toggle
 
         # Click Update button

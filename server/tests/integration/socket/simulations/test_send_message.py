@@ -22,7 +22,7 @@ async def test_send_simulation_message_missing_chat_id(
 
     # Should not emit any events (handler returns early)
     # Note: This test may need adjustment based on actual error handling
-    events = mock_sio.get_events()
+    mock_sio.get_events()
     # Handler returns early without emitting, so no events expected
 
 
@@ -41,7 +41,7 @@ async def test_send_simulation_message_missing_message(
 
     # Should not emit any events (handler returns early)
     # Note: This test may need adjustment based on actual error handling
-    events = mock_sio.get_events()
+    mock_sio.get_events()
     # Handler returns early without emitting, so no events expected
 
 
@@ -62,6 +62,6 @@ async def test_send_simulation_message_chat_not_found(
     await send_simulation_message(sid, data)
 
     # Should emit error event
-    error_events = mock_sio.get_events("simulation_error")
+    mock_sio.get_events("simulation_error")
     # May or may not emit depending on when error occurs
     # Note: This test may need adjustment based on actual error handling

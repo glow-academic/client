@@ -67,7 +67,6 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
         profile_id = data.profile_id
         scenario_id_override = data.scenario_id
         infinite = data.infinite
-        infinite_time_limit = data.infinite_time_limit
 
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")

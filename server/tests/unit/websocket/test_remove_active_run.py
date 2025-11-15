@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.utils.websocket.remove_active_run import remove_active_run
+from app.utils.websocket.remove_active_run import remove_active_run  # type: ignore
 
 
 class TestRemove_Active_Run:

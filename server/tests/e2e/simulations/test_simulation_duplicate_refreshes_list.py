@@ -44,7 +44,7 @@ def test_simulation_duplicate_refreshes_list(page: Page, base_url: str) -> None:
         pytest.skip("No duplicatable simulation available")
 
     simulation_id = duplicatable_sim["simulation_id"]
-    simulation_name = duplicatable_sim["name"]
+    duplicatable_sim["name"]
 
     simulation_card = page.locator(
         f"[data-testid='simulation-card'][data-simulation-id='{simulation_id}']"

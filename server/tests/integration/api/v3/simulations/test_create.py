@@ -15,7 +15,7 @@ async def test_create_simulation(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a new simulation with all fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Get required IDs
     rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")
@@ -89,7 +89,7 @@ async def test_create_simulation_without_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a simulation without department links (cross-department)."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")
     if not rubric_id:

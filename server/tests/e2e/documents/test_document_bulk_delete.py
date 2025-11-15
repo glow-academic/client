@@ -153,7 +153,7 @@ def test_document_bulk_delete_mixed_permissions(page: Page, base_url: str) -> No
 
                 # Verify dialog shows breakdown if mixed permissions
                 # (deletable vs non-deletable)
-                dialog_text = delete_dialog.inner_text()
+                delete_dialog.inner_text()
 
                 # Click Confirm
                 confirm_button = page.get_by_test_id("btn-confirm-delete")

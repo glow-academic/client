@@ -12,7 +12,7 @@ async def test_update_provider(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a provider."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a provider first
     provider_id = await db.fetchval(
@@ -50,7 +50,7 @@ async def test_update_provider_with_api_key(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a provider with new API key."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a provider first
     provider_id = await db.fetchval(
@@ -85,7 +85,7 @@ async def test_update_provider_with_base_url(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a provider with base_url."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a provider first
     provider_id = await db.fetchval(
@@ -121,7 +121,7 @@ async def test_update_provider_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a non-existent provider."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_provider_id = "00000000-0000-0000-0000-000000000000"
 

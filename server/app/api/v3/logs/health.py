@@ -28,7 +28,7 @@ class HealthCheckItem:
         last_checked: str | None = None,
         message: str | None = None,
         error: str | None = None,
-    ):
+    ) -> None:
         self.id = id
         self.name = name
         self.description = description
@@ -61,7 +61,7 @@ class HealthResponse:
         checks: list[HealthCheckItem],
         timestamp: str | None = None,
         overall_response_time: int | None = None,
-    ):
+    ) -> None:
         self.status = status
         self.checks = checks
         self.timestamp = timestamp or datetime.now(UTC).isoformat()
@@ -239,7 +239,7 @@ async def check_simulation_service(conn: asyncpg.Connection) -> HealthCheckItem:
             )
 
             # Create the agent instance - this validates provider connectivity
-            agent_instance = generic_agent.agent()
+            generic_agent.agent()
 
             return HealthCheckItem(
                 id="simulation-service",
@@ -310,7 +310,7 @@ async def check_assistant_service(conn: asyncpg.Connection) -> HealthCheckItem:
                     base_url=agent["base_url"],
                     reasoning=agent["reasoning"],
                 )
-                agent_instance = generic_agent.agent()
+                generic_agent.agent()
                 ai_healthy = True
             except Exception:
                 ai_healthy = False
@@ -366,7 +366,6 @@ async def check_assistant_service(conn: asyncpg.Connection) -> HealthCheckItem:
 async def check_document_upload() -> HealthCheckItem:
     """Check document upload with full TUS protocol pipeline test."""
     start = time.time()
-    upload_id = None
 
     try:
         # Check directories exist and are writable
@@ -516,7 +515,7 @@ async def check_route_scan(origin: str) -> HealthCheckItem:
             )
 
         failed_routes = []
-        for route, result in zip(routes, results):
+        for route, result in zip(routes, results, strict=False):
             if isinstance(result, (Exception, BaseException)):
                 failed_routes.append(f"{route} (error)")
             elif isinstance(result, httpx.Response) and result.status_code >= 400:

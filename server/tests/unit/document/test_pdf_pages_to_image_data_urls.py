@@ -41,7 +41,7 @@ class TestPdf_Pages_To_Image_Data_Urls:
         """Test pdf_pages_to_image_data_urls with fitz available."""
         # Check if fitz is available
         try:
-            import fitz  # type: ignore
+            import fitz  # type: ignore  # noqa: F401
         except ImportError:
             pytest.skip("fitz (PyMuPDF) not available")
 
@@ -75,7 +75,7 @@ class TestPdf_Pages_To_Image_Data_Urls:
         """Test pdf_pages_to_image_data_urls error handling."""
         # Check if fitz is available
         try:
-            import fitz  # type: ignore
+            import fitz  # type: ignore  # noqa: F401
         except ImportError:
             pytest.skip("fitz (PyMuPDF) not available")
 

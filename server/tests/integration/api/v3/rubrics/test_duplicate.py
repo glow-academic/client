@@ -12,7 +12,7 @@ async def test_duplicate_rubric(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a rubric."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a rubric with department links, standard groups, and standards
     rubric_id = await db.fetchval(
@@ -104,7 +104,7 @@ async def test_duplicate_rubric_without_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a rubric without department links."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a rubric without department links
     rubric_id = await db.fetchval(
@@ -135,7 +135,7 @@ async def test_duplicate_rubric_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a non-existent rubric."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_rubric_id = "00000000-0000-0000-0000-000000000000"
 

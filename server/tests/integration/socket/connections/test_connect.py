@@ -129,7 +129,7 @@ async def test_connect_profile_takeover(
     assert result is True
 
     # Verify old socket was disconnected
-    disconnect_calls = [
+    [
         call for call in mock_sio.emitted_events if call[0] == "disconnect"
     ]
     # Note: disconnect is called via sio.disconnect() which may not emit events

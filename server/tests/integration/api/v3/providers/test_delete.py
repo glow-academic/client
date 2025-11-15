@@ -12,7 +12,7 @@ async def test_delete_provider(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a provider that is not in use."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a provider with no models
     provider_id = await db.fetchval(
@@ -40,7 +40,7 @@ async def test_delete_provider_in_use_by_personas(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that deleting a provider with models in use by personas fails."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a provider with a model
     provider_id = await db.fetchval(
@@ -81,7 +81,7 @@ async def test_delete_provider_in_use_by_agents(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that deleting a provider with models in use by agents fails."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a provider with a model
     provider_id = await db.fetchval(
@@ -122,7 +122,7 @@ async def test_delete_provider_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a non-existent provider."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_provider_id = "00000000-0000-0000-0000-000000000000"
 

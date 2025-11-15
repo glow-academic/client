@@ -1,5 +1,6 @@
 """Build a structured list of per-document, per-page text and optional images."""
 
+import base64
 import os
 from typing import Any
 

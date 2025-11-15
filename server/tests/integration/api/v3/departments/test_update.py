@@ -47,7 +47,7 @@ async def test_update_department_not_found(
     """Test updating a non-existent department."""
     fake_dept_id = "00000000-0000-0000-0000-000000000000"
 
-    response = await client.post(
+    await client.post(
         "/api/v3/departments/update",
         json={
             "departmentId": fake_dept_id,

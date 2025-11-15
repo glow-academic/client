@@ -12,7 +12,7 @@ async def test_delete_agent_prompt_default(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a default agent prompt (when multiple prompts exist)."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent
     agent_id = await db.fetchval(
@@ -71,7 +71,7 @@ async def test_delete_agent_prompt_department_specific(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a department-specific agent prompt."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent
     agent_id = await db.fetchval(
@@ -127,7 +127,7 @@ async def test_delete_agent_prompt_last_default(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting the last default prompt (should succeed and deactivate it)."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent with only one prompt
     agent_id = await db.fetchval(

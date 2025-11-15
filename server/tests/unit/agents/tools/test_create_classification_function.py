@@ -26,7 +26,7 @@ class TestCreate_Classification_Function:
         classification_results.clear()
         classification_progress.clear()
 
-        tool = create_classification_function("homeworks", "Assignments")
+        create_classification_function("homeworks", "Assignments")
 
         # Call the tool function (it's async, but we can test the structure)
         # The actual function would be called by the agent

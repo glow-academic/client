@@ -12,7 +12,7 @@ async def test_delete_rubric(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a rubric that is not in use."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a rubric without any usage
     rubric_id = await db.fetchval(
@@ -40,7 +40,7 @@ async def test_delete_rubric_in_use(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that deleting a rubric linked to simulations fails."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a rubric
     rubric_id = await db.fetchval(
@@ -74,7 +74,7 @@ async def test_delete_rubric_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a non-existent rubric."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_rubric_id = "00000000-0000-0000-0000-000000000000"
 

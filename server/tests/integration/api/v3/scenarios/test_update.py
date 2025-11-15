@@ -12,7 +12,7 @@ async def test_update_scenario(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a scenario."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a scenario first
     scenario_id = await db.fetchval(

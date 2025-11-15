@@ -12,7 +12,7 @@ async def test_duplicate_provider(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a provider with models."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a provider with models
     provider_id = await db.fetchval(
@@ -21,13 +21,13 @@ async def test_duplicate_provider(
     )
 
     # Create models for the provider
-    model_id1 = await db.fetchval(
+    await db.fetchval(
         "INSERT INTO models(provider_id, name, description, active, custom_model, input_ppm, output_ppm) "
         "VALUES($1, 'Model 1', 'Test', true, false, 10.0, 20.0) RETURNING id",
         provider_id,
     )
 
-    model_id2 = await db.fetchval(
+    await db.fetchval(
         "INSERT INTO models(provider_id, name, description, active, custom_model, input_ppm, output_ppm) "
         "VALUES($1, 'Model 2', 'Test', true, false, 15.0, 25.0) RETURNING id",
         provider_id,
@@ -88,7 +88,7 @@ async def test_duplicate_provider_without_models(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a provider without models."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a provider without models
     provider_id = await db.fetchval(
@@ -124,7 +124,7 @@ async def test_duplicate_provider_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test duplicating a non-existent provider."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_provider_id = "00000000-0000-0000-0000-000000000000"
 

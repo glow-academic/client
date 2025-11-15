@@ -34,7 +34,7 @@ def test_practice_customization_dialog(page: Page, base_url: str) -> None:
     expect(customize_dialog).to_be_visible()
 
     # Get practice data to find available options
-    practice_data = fetch_practice_data(
+    fetch_practice_data(
         page.context.request,
         profile_id=ADMIN_PROFILE_ID,
         effective_profile_id=ADMIN_PROFILE_ID,

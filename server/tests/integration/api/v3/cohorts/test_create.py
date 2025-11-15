@@ -15,7 +15,7 @@ async def test_create_cohort(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a new cohort with all fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
 
     # Get a simulation ID

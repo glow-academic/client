@@ -12,7 +12,7 @@ async def test_update_rubric(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a rubric."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a rubric
     rubric_id = await db.fetchval(
@@ -100,7 +100,7 @@ async def test_update_rubric_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a non-existent rubric."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_rubric_id = "00000000-0000-0000-0000-000000000000"
 
@@ -126,7 +126,7 @@ async def test_update_rubric_remove_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a rubric to remove department links."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a rubric with a department link
     rubric_id = await db.fetchval(

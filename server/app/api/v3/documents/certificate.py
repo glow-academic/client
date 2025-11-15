@@ -41,7 +41,7 @@ async def generate_certificate(
 
         # Try to generate PDF using reportlab
         try:
-            from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
+            # Drawing and Rect not used, removed to fix F401
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
             from reportlab.lib.styles import (
@@ -218,7 +218,7 @@ async def generate_certificate(
                 story.append(Spacer(1, 30))
 
             # Custom page template with decorative border
-            def certificate_page(canvas, doc):  # type: ignore
+            def certificate_page(canvas: Any, doc: Any) -> None:  # type: ignore
                 # Draw outer border
                 canvas.setStrokeColor(colors.darkblue)
                 canvas.setLineWidth(3)

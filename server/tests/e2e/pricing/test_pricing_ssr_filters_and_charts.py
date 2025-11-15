@@ -59,7 +59,7 @@ def test_pricing_chart_renders(page: Page, base_url: str) -> None:
 
     # Verify chart has content (SVG or canvas elements)
     # Charts are rendered by recharts, so we verify the container exists
-    chart_content = chart.locator("svg, canvas")
+    chart.locator("svg, canvas")
     # Chart may be empty if no data, so we just verify container exists
 
 

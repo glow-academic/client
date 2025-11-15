@@ -85,7 +85,6 @@ async def tus_creation(
     else:
         location = f"/api/v3/documents/upload/{upload_id}"
 
-    offset = 0
 
     # Handle creation-with-upload if Content-Length > 0
     if request.headers.get("Content-Length", "0") != "0":

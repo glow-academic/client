@@ -125,7 +125,7 @@ def test_provider_delete_with_models_warning(page: Page, base_url: str) -> None:
         # Create a model for this provider via API
         from server.tests.e2e.providers.helpers import create_model_api
 
-        model_id = create_model_api(
+        create_model_api(
             page.context.request,
             provider_id=provider_id,
             name="Test Model for Delete",

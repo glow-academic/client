@@ -75,18 +75,18 @@ async def get_profile_detail_bulk(
             raise HTTPException(status_code=404, detail="No profiles found")
 
         # Check if roles are consistent
-        roles = list(set([p["role"] for p in profiles]))
+        roles = list({p["role"] for p in profiles})
         role = roles[0] if len(roles) == 1 else None
 
         # Check if requests_per_day are consistent
         req_per_days = list(
-            set(
-                [
+            {
+
                     p["requests_per_day"]
                     for p in profiles
                     if p["requests_per_day"] is not None
-                ]
-            )
+
+            }
         )
         requests_per_day = req_per_days[0] if len(req_per_days) == 1 else None
 

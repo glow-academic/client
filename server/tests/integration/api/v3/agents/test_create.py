@@ -12,7 +12,7 @@ async def test_create_agent(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a new agent with all fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Get a model ID for the agent
     model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
@@ -76,7 +76,7 @@ async def test_create_agent_with_existing_prompt(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating an agent with an existing prompt_id."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a prompt first
     prompt_id = await db.fetchval(
@@ -119,7 +119,7 @@ async def test_create_agent_without_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating an agent without department links (cross-department)."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
 
@@ -156,7 +156,7 @@ async def test_create_agent_invalid_model(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating an agent with invalid model_id."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_model_id = "00000000-0000-0000-0000-000000000000"
 

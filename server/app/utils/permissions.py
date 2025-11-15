@@ -432,7 +432,7 @@ def get_available_subsections_for_role(role: ProfileRole) -> list[str]:
                     # For paths like "/create/personas", add "personas"
                     subsections.add(path_parts[1])
 
-    return sorted(list(subsections))
+    return sorted(subsections)
 
 
 def get_redirect_path_for_role(role: ProfileRole) -> str:

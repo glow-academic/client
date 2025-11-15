@@ -65,7 +65,7 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
         if simulation_options.count() > 1:
             option = simulation_options.nth(1)
             option.wait_for(state="visible", timeout=5000)
-            option_text = option.inner_text()
+            option.inner_text()
             option.click()
             page.wait_for_timeout(250)
             # Verify filter is applied
@@ -79,7 +79,7 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
         if persona_options.count() > 1:
             option = persona_options.nth(1)
             option.wait_for(state="visible", timeout=5000)
-            option_text = option.inner_text()
+            option.inner_text()
             option.click()
             page.wait_for_timeout(250)
             # Verify filter is applied
@@ -95,7 +95,7 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
             option = department_options.nth(1)
             # Wait for option to be visible and stable
             expect(option).to_be_visible(timeout=5000)
-            option_text = option.inner_text()
+            option.inner_text()
             # Wait a bit more for option to be fully stable
             page.wait_for_timeout(300)
             # Use force click if element is stable but not clickable

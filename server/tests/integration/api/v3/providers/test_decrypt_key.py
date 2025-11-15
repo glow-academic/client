@@ -1,5 +1,7 @@
 """Route tests for POST /api/v3/providers/decrypt-key endpoint."""
 
+import base64
+
 import asyncpg  # type: ignore
 import httpx
 import pytest
@@ -67,7 +69,6 @@ async def test_decrypt_provider_key_missing_key(
 
     # Create a provider with empty encrypted key (simulating missing key scenario)
     # Use a minimal valid encrypted key format (base64 encoded)
-    import base64
 
     empty_encrypted = base64.b64encode(b"empty").decode("utf-8")
 

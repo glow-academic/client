@@ -113,7 +113,7 @@ async def run_guardrail_evaluation(
 
     # Create result object
     class GuardrailResult:
-        def __init__(self, proper: bool, reason: str):
+        def __init__(self, proper: bool, reason: str) -> None:
             self.proper = proper
             self.reason = reason
 

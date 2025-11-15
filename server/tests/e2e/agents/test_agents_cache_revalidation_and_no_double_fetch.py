@@ -39,7 +39,7 @@ def test_agents_cache_revalidation_and_no_double_fetch(
         grid.wait_for(state="visible", timeout=15000)
         expect(grid).to_be_visible()
 
-        initial_ids = _collect_agent_ids(page)
+        _collect_agent_ids(page)
 
         # Create agent via API and verify list refreshes
         agent_name = generate_unique_agent_name("Cache Test Agent")

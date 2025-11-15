@@ -15,7 +15,7 @@ async def test_update_simulation(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a simulation with all fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a simulation first
     rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")
@@ -89,7 +89,7 @@ async def test_update_simulation_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a non-existent simulation."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_simulation_id = "00000000-0000-0000-0000-000000000000"
     rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")

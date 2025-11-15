@@ -12,7 +12,7 @@ async def test_delete_agent(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting an agent that is not in use."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent without any usage
     agent_id = await db.fetchval(
@@ -41,7 +41,7 @@ async def test_delete_agent_in_use(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that deleting an agent linked to departments fails."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent
     agent_id = await db.fetchval(
@@ -77,7 +77,7 @@ async def test_delete_agent_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a non-existent agent."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_agent_id = "00000000-0000-0000-0000-000000000000"
 

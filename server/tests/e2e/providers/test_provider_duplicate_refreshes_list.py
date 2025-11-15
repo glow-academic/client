@@ -81,7 +81,7 @@ def test_provider_duplicate_refreshes_list_state(page: Page, base_url: str) -> N
     search_input.fill(first_provider_name)
     page.wait_for_timeout(250)
 
-    filtered_count_before = provider_cards.count()
+    provider_cards.count()
     existing_ids = _get_provider_ids(page)
 
     # Duplicate a provider
@@ -91,7 +91,7 @@ def test_provider_duplicate_refreshes_list_state(page: Page, base_url: str) -> N
     page.wait_for_timeout(500)
 
     # Verify list refreshed
-    new_provider_cards = page.get_by_test_id("provider-card")
+    page.get_by_test_id("provider-card")
     new_ids = _get_provider_ids(page)
     diff_ids = new_ids - existing_ids
     assert diff_ids, "Duplicate provider ID not found after refresh"

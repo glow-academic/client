@@ -59,7 +59,7 @@ async def test_list_providers_with_models(
     )
 
     # Create a persona using the model (to test usage count)
-    persona_id = await db.fetchval(
+    await db.fetchval(
         "INSERT INTO personas(name, description, model_id, active, temperature, reasoning, color, icon) "
         "VALUES('Test Persona', 'Test', $1, true, 0.7, 'none', '#000000', 'user') RETURNING id",
         model_id,

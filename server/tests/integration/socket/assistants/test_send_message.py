@@ -169,8 +169,8 @@ async def test_send_assistant_message_success(
 
     # Note: With mocked Runner.run_streamed, the streaming events may not work perfectly
     # due to anyio stream internals, but the user message creation is what we're testing
-    token_events = mock_sio.get_events("assistant_message_token")
-    complete_events = mock_sio.get_events("assistant_message_complete")
+    mock_sio.get_events("assistant_message_token")
+    mock_sio.get_events("assistant_message_complete")
     # These may be empty with mocks, which is acceptable for this test
 
 
@@ -211,6 +211,6 @@ async def test_send_assistant_message_tool_calls(
     await send_assistant_message(sid, data)
 
     # Verify tool call events were emitted (if tool calls are triggered)
-    tool_call_created = mock_sio.get_events("tool_call_created")
-    tool_call_completed = mock_sio.get_events("tool_call_completed")
+    mock_sio.get_events("tool_call_created")
+    mock_sio.get_events("tool_call_completed")
     # Note: With mocked Runner, tool calls may not be triggered, but the message should still be processed

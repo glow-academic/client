@@ -47,13 +47,13 @@ def create_grading_function(
         feedback: str = Field(default="", description=feedback_description),
     ) -> str:
         f"""Grade the conversation on: {standard_group["name"]}
-        
+
         {full_description}
-        
+
         Args:
             score: Integer score from 1-5 based on the rubric criteria above
             feedback: Brief feedback explaining the score with specific examples
-            
+
         Returns:
             Confirmation message
         """

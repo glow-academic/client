@@ -74,7 +74,7 @@ def test_assistant_chat_workflow(page: Page, base_url: str) -> None:
 
     # If tool call was triggered, verify tool call card appears
     # Tool calls might be displayed as separate cards
-    tool_call_cards = messages_container.locator("[data-testid^='tool-call-']")
+    messages_container.locator("[data-testid^='tool-call-']")
     # Tool calls are optional, so we don't fail if none appear
 
     # Get current chat ID from the chat selector or URL

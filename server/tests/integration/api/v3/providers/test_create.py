@@ -12,7 +12,7 @@ async def test_create_provider(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a new provider."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     response = await client.post(
         "/api/v3/providers/create",
@@ -47,7 +47,7 @@ async def test_create_provider_with_base_url(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a provider with base_url."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     response = await client.post(
         "/api/v3/providers/create",
@@ -76,7 +76,7 @@ async def test_create_provider_minimal(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a provider with minimal fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     response = await client.post(
         "/api/v3/providers/create",

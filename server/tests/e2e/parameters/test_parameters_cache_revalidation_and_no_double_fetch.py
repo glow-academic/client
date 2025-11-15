@@ -46,7 +46,7 @@ def test_parameters_cache_revalidation_and_no_double_fetch(
         page.goto(f"{base_url}/management/parameters")
         page.wait_for_load_state("networkidle")
 
-        initial_ids = _collect_parameter_ids(page)
+        _collect_parameter_ids(page)
 
         # Create parameter via API
         parameter_name = generate_unique_parameter_name("Cache Test")

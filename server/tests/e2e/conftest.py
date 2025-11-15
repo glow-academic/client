@@ -46,7 +46,7 @@ def base_url() -> str:
     return BASE_URL
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def context(
     browser: Browser, request: pytest.FixtureRequest
 ) -> Generator[BrowserContext, None, None]:
@@ -60,7 +60,7 @@ def context(
     ctx.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def test_profile_headers(request: pytest.FixtureRequest) -> dict[str, str]:
     """Return signed test headers, override via marker if needed."""
 
@@ -84,7 +84,7 @@ def test_profile_headers(request: pytest.FixtureRequest) -> dict[str, str]:
     return _build_test_headers(profile_id, effective_profile_id)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def page(context: BrowserContext, test_profile_headers: dict[str, str]) -> Page:
     """Provide a new page with sensible defaults."""
     p = context.new_page()

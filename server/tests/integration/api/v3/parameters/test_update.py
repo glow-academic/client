@@ -12,7 +12,7 @@ async def test_update_parameter(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a parameter with new items."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
 
     # Create a parameter first

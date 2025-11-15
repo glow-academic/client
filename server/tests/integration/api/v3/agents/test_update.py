@@ -12,7 +12,7 @@ async def test_update_agent(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating an agent with all fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent first
     model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
@@ -82,7 +82,7 @@ async def test_update_agent_with_existing_prompt(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating an agent with an existing prompt_id."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create agent and prompt
     agent_id = await db.fetchval(
@@ -129,7 +129,7 @@ async def test_update_agent_removes_department_links(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that updating an agent replaces department links."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create agent with department link
     agent_id = await db.fetchval(
@@ -194,7 +194,7 @@ async def test_update_agent_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating a non-existent agent."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_agent_id = "00000000-0000-0000-0000-000000000000"
     model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
@@ -226,10 +226,10 @@ async def test_update_agent_empty_model_id(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test updating an agent with empty model_id should return proper error."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create an agent first
-    model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
+    await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
     agent_id = await db.fetchval(
         "INSERT INTO agents(name, description, temperature, model_id, reasoning, active, role) "
         "SELECT 'Test Agent', 'Test', 0.5, id, 'low', true, 'assistant' "

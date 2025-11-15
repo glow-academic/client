@@ -181,11 +181,11 @@ def test_simulation_edit_scenario_management(page: Page, base_url: str) -> None:
         page.wait_for_load_state("networkidle")
 
         # Verify scenarios render in grid
-        scenario_cards = page.locator("[data-testid='simulation-card']").filter(
+        page.locator("[data-testid='simulation-card']").filter(
             has_text=valid_scenario_ids[0]
         )
         # Scenarios are displayed in cards, check if any scenario cards exist
-        scenario_grid = page.locator(".grid").filter(has_text="scenario")
+        page.locator(".grid").filter(has_text="scenario")
         # Actually, scenarios are shown in a grid of cards within the form
         # Let's check for scenario picker and add more scenarios
 

@@ -391,8 +391,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         )
 
         # Add x-cache-tags extension to each operation based on tags
-        for path, path_item in schema.get("paths", {}).items():
-            for method, operation in path_item.items():
+        for _path, path_item in schema.get("paths", {}).items():
+            for _method, operation in path_item.items():
                 if isinstance(operation, dict) and "tags" in operation:
                     # Use tags as cache tags (store all tags)
                     tags = operation.get("tags", [])

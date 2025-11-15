@@ -14,7 +14,7 @@ async def test_delete_simulation(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a simulation that is not in use."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a simulation without any usage
     rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")
@@ -52,7 +52,7 @@ async def test_delete_simulation_in_use(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test that deleting a simulation linked to cohorts fails."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a simulation
     rubric_id = await db.fetchval("SELECT id FROM rubrics LIMIT 1")
@@ -99,7 +99,7 @@ async def test_delete_simulation_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a non-existent simulation."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     fake_simulation_id = "00000000-0000-0000-0000-000000000000"
 

@@ -72,7 +72,7 @@ async def test_delete_parameter_in_use(
     )
 
     # Create problem statement for scenario
-    problem_statement_id = await db.fetchval(
+    await db.fetchval(
         "INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active) "
         "VALUES ($1, 'Test problem', true) RETURNING id",
         scenario_id,

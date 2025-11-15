@@ -12,7 +12,7 @@ async def test_create_parameter(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a new parameter with items."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
 
     response = await client.post(

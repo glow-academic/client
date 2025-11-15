@@ -74,7 +74,7 @@ def test_guest_access(page: Page, base_url: str) -> None:
     current_url = page.url
     if "/management/staff" in current_url:
         # If still on staff page, check for access denied
-        access_denied = page.get_by_text("access denied", exact=False).or_(
+        page.get_by_text("access denied", exact=False).or_(
             page.get_by_text("permission", exact=False)
         )
         # May or may not show explicit message, but should not show staff table
@@ -98,7 +98,7 @@ def test_guest_access(page: Page, base_url: str) -> None:
         pass
     else:
         # If still on page, verify no create functionality
-        create_button = page.get_by_role("button", name="Create").or_(
+        page.get_by_role("button", name="Create").or_(
             page.get_by_test_id("personas-grid")
         )
         # May or may not be visible, but guest shouldn't be able to create

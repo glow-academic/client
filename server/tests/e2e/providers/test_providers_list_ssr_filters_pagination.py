@@ -111,7 +111,7 @@ def test_providers_filters_work_correctly(page: Page, base_url: str) -> None:
         provider_options = page.get_by_role("option")
         if provider_options.count() > 1:
             option = provider_options.nth(1)
-            option_text = option.inner_text()
+            option.inner_text()
             option.click()
             page.wait_for_timeout(250)
             filtered_count = grid.get_by_test_id("model-card").count()

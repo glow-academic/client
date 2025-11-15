@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -35,7 +36,7 @@ def _set_request_counter(
 ) -> tuple[dict[str, int], Callable[[], None]]:
     counts = {"total": 0}
 
-    def _handle(request) -> None:
+    def _handle(request: Any) -> None:
         if pattern in request.url:
             counts["total"] += 1
 

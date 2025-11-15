@@ -123,7 +123,7 @@ async def search_staff(
             WHERE profile_id = $1 AND active = true
         ),
         profile_cohorts AS (
-            SELECT 
+            SELECT
                 cp.profile_id,
                 ARRAY_AGG(cp.cohort_id ORDER BY c.title) as cohort_ids
             FROM cohort_profiles cp
@@ -132,7 +132,7 @@ async def search_staff(
             GROUP BY cp.profile_id
         ),
         profile_departments_agg AS (
-            SELECT 
+            SELECT
                 pd.profile_id,
                 ARRAY_AGG(pd.department_id ORDER BY d.title) as department_ids
             FROM profile_departments pd
@@ -141,7 +141,7 @@ async def search_staff(
             GROUP BY pd.profile_id
         ),
         recent_runs AS (
-            SELECT 
+            SELECT
                 mrp.profile_id,
                 COUNT(*) as run_count
             FROM model_runs mr
@@ -150,7 +150,7 @@ async def search_staff(
             GROUP BY mrp.profile_id
         ),
         profile_total_runs AS (
-            SELECT 
+            SELECT
                 mrp.profile_id,
                 COUNT(*) as total_requests
             FROM model_run_profiles mrp
@@ -219,10 +219,10 @@ async def search_staff(
             LEFT JOIN recent_runs rr ON rr.profile_id = p.id
             LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
             LEFT JOIN LATERAL (
-                SELECT last_active 
-                FROM profile_activity 
-                WHERE profile_id = p.id 
-                ORDER BY created_at DESC 
+                SELECT last_active
+                FROM profile_activity
+                WHERE profile_id = p.id
+                ORDER BY created_at DESC
                 LIMIT 1
             ) pa ON true
             CROSS JOIN user_profile up
@@ -246,7 +246,7 @@ async def search_staff(
             ) as staff
             FROM staff_data sd
         )
-        SELECT 
+        SELECT
             sa.staff,
             cmd.cohort_mapping,
             dmd.department_mapping

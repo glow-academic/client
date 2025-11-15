@@ -249,7 +249,7 @@ async def test_get_practice_overview_filters_practice_parameters(
         parameter_item_ids = list(data["parameter_item_mapping"].keys())
         items_from_db = await db.fetch(
             """
-            SELECT pi.id, pi.name, p.practice_parameter 
+            SELECT pi.id, pi.name, p.practice_parameter
             FROM parameter_items pi
             JOIN parameters p ON pi.parameter_id = p.id
             WHERE pi.id = ANY($1::uuid[])

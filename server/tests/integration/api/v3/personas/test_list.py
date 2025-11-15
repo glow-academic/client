@@ -54,7 +54,7 @@ async def test_list_personas_empty(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test getting personas list when no personas exist."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a new profile with no department access
     new_profile_id = await db.fetchval(

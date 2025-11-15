@@ -149,7 +149,7 @@ def test_parameter_edit_add_remove_items(page: Page, base_url: str) -> None:
             delete_item_buttons.first.click()
             page.wait_for_timeout(250)
             # Verify item removed (count decreased)
-            remaining_delete_buttons = page.get_by_test_id("btn-delete-parameter-item")
+            page.get_by_test_id("btn-delete-parameter-item")
             # The count should be less than before
 
         # Submit changes

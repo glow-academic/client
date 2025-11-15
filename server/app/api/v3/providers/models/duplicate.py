@@ -47,7 +47,7 @@ async def duplicate_model(
         async with transaction(conn):
             # Get original model data
             get_model_sql = """
-                SELECT 
+                SELECT
                     name,
                     description,
                     active,

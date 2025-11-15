@@ -636,7 +636,7 @@ async def _run_grade_agent_inline(
 
         # Get chat timestamps from context
         chat_created_at = context["created_at"]
-        chat_completed = context["completed"]
+        context["completed"]
 
         # Convert timestamps to UTC if they have timezone info
         if chat_created_at.tzinfo is not None:
@@ -870,8 +870,8 @@ async def _run_grade_agent_inline(
 
         # 3. Mark chat as completed
         sql_mark_completed = """
-            UPDATE simulation_chats 
-            SET completed = true 
+            UPDATE simulation_chats
+            SET completed = true
             WHERE id = $1::uuid
         """
         await conn.execute(sql_mark_completed, str(simulation_chat_id))

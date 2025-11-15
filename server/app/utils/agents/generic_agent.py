@@ -30,12 +30,14 @@ class GenericAgent:
         custom_model: bool,
         base_url: str | None,
         reasoning: str | None,
-        tools: list[Tool] = [],
+        tools: list[Tool] = None,
         parallel_tool_calls: bool = False,
         tool_use_behavior: Any | None = None,
         mcp_servers: list[MCPServer] | None = None,
         output_guardrails: list[Any] | None = None,
     ) -> None:
+        if tools is None:
+            tools = []
         self.agent_name = agent_name
         self.system_prompt = system_prompt
         self.temperature = temperature

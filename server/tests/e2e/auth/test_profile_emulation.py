@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -28,7 +30,7 @@ def test_profile_emulation_authorization(page: Page, base_url: str) -> None:
     )
 
     assert admin_detail is not None
-    admin_role = admin_detail.get("profile", {}).get("role", "")
+    admin_detail.get("profile", {}).get("role", "")
 
     # Admin should be able to emulate other profiles
     # Find a TA profile to test emulation

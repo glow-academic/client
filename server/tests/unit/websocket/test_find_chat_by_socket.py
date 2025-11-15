@@ -2,6 +2,7 @@
 Tests for app.utils.websocket.find_chat_by_socket
 """
 
+from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -20,7 +21,7 @@ class TestFind_Chat_By_Socket:
         mock_redis = AsyncMock()
 
         # Mock scan_iter to return one key
-        async def mock_scan_iter(match: str):
+        async def mock_scan_iter(match: str) -> AsyncIterator[bytes]:
             yield f"active_connection:{chat_id}".encode()
 
         mock_redis.scan_iter = mock_scan_iter
@@ -41,9 +42,9 @@ class TestFind_Chat_By_Socket:
         mock_redis = AsyncMock()
 
         # Mock scan_iter to return empty
-        async def mock_scan_iter(match: str):
-            return
-            yield  # Make it an async generator
+        async def mock_scan_iter(match: str) -> AsyncIterator[bytes]:
+            if False:
+                yield b""  # pragma: no cover
 
         mock_redis.scan_iter = mock_scan_iter
 

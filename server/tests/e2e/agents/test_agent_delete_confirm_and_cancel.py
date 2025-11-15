@@ -70,7 +70,7 @@ def test_agent_delete_confirm_and_cancel(page: Page, base_url: str) -> None:
                 profile_id=ADMIN_PROFILE_ID,
                 effective_profile_id=ADMIN_PROFILE_ID,
             )
-            assert False, "Agent should not exist after deletion"
+            raise AssertionError("Agent should not exist after deletion")
         except Exception:
             # Expected - agent should not exist
             pass

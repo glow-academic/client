@@ -12,7 +12,7 @@ async def test_delete_scenario(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a scenario."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a scenario
     scenario_id = await db.fetchval(
@@ -51,7 +51,7 @@ async def test_delete_scenario_in_use(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test deleting a scenario that is in use by a simulation."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Create a scenario
     scenario_id = await db.fetchval(

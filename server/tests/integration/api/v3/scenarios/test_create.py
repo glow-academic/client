@@ -15,7 +15,7 @@ async def test_create_scenario_minimal(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a scenario with minimal fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     response = await client.post(
         "/api/v3/scenarios/create",
@@ -73,7 +73,7 @@ async def test_create_scenario_with_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a scenario with department links."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
     dept_id = await get_cs_dept_id(db)
 
     response = await client.post(

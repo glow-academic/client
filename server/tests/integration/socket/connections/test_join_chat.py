@@ -36,7 +36,7 @@ async def test_join_chat_success(
     # Verify active connection was set
     from app.utils.websocket.get_active_connection import get_active_connection
 
-    active_sid = await get_active_connection(chat_id)
+    await get_active_connection(chat_id)
     # In test environment without Redis, this may return None
     # The important thing is join_chat completed without error
 

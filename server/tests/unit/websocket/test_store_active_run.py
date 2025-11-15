@@ -5,6 +5,7 @@ Tests for app.utils.websocket.store_active_run
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from app.utils.websocket.store_active_run import store_active_run
 
 

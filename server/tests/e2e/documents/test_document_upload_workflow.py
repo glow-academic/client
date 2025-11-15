@@ -57,7 +57,7 @@ def test_document_upload_workflow(page: Page, base_url: str) -> None:
             page.wait_for_timeout(1000)
 
             # Look for upload progress indicator
-            progress_indicator = upload_dialog.locator(
+            upload_dialog.locator(
                 "[data-testid='upload-progress']"
             ).or_(upload_dialog.get_by_text("%", exact=False))
 

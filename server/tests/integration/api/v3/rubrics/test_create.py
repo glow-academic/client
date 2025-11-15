@@ -12,7 +12,7 @@ async def test_create_rubric(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a new rubric with all fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     # Get a department ID
     dept_id = await db.fetchval(
@@ -124,7 +124,7 @@ async def test_create_rubric_without_departments(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a rubric without department links."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     response = await client.post(
         "/api/v3/rubrics/create",
@@ -157,7 +157,7 @@ async def test_create_rubric_without_standard_groups(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a rubric without standard groups."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     response = await client.post(
         "/api/v3/rubrics/create",
@@ -190,7 +190,7 @@ async def test_create_rubric_minimal(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a rubric with minimal fields."""
-    profile_id = await get_superadmin_alias(db)
+    await get_superadmin_alias(db)
 
     response = await client.post(
         "/api/v3/rubrics/create",

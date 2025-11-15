@@ -85,9 +85,9 @@ async def _stop_simulation_impl(sid: str, data: StopSimulationPayload) -> None:
             from app.utils.websocket.cancel_active_result import cancel_active_result
 
             # Try immediate in-process cancel first
-            immediate = await cancel_active_result(str(chat_id))
+            await cancel_active_result(str(chat_id))
             # Then set cooperative cancel flag (Redis) - inlined cancel_simulation_run
-            success = await cancel_active_run(str(chat_id))
+            await cancel_active_run(str(chat_id))
 
             # Stop simulation and mark message complete using SQL
             sql = load_sql("sql/v3/simulations/stop_simulation_run_complete.sql")

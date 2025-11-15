@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -36,7 +37,7 @@ def _set_request_counter(
 ) -> tuple[dict[str, int], Callable[[], None]]:
     counts = {"total": 0}
 
-    def _handle(request) -> None:
+    def _handle(request: Any) -> None:
         if pattern in request.url:
             counts["total"] += 1
 
@@ -198,7 +199,7 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
         delete_button = staff_row.get_by_test_id("btn-delete-staff")
         delete_button.click()
 
-        dialog = page.get_by_test_id("dialog-delete-staff")
+        page.get_by_test_id("dialog-delete-staff")
         confirm_button = page.get_by_test_id("btn-confirm-delete")
         confirm_button.click()
 
@@ -303,7 +304,7 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
         page.wait_for_load_state("networkidle")
 
         initial_count = list_counter["total"]
-        initial_ids = _collect_staff_ids(page)
+        _collect_staff_ids(page)
 
         # New staff might not appear immediately if cache is used
         # Click refresh button

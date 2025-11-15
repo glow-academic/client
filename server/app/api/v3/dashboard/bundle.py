@@ -1302,12 +1302,9 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
         attempt_improvement=_compute_attempt_improvement_insight(
             attempt_improvement.chartData
         ),
-        cohort={
-            cohort_id: insights_dict
-            for cohort_id, insights_dict in _compute_cohort_insights(
+        cohort=dict(_compute_cohort_insights(
                 cohort_performance.cohortData
-            ).items()
-        },
+            ).items()),
         skill_performance=_compute_skill_performance_insight(
             skill_performance.packages[0].radarData
             if skill_performance.packages
