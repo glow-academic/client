@@ -49,52 +49,19 @@ async def bulk_create_or_update_staff(
         created_count = 0
         updated_count = 0
 
-        # Get current user's role for validation
-        role_sql = load_sql("sql/v3/profile/staff/get_profile_role.sql")
-        sql_query = role_sql  # Track primary query
-        sql_params = (request.currentProfileId,)
-        current_user = await conn.fetchrow(role_sql, request.currentProfileId)
-        
-        if not current_user:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Current user profile not found: {request.currentProfileId}",
-            )
-        
-        current_user_role = current_user["role"]
-
-        # Role hierarchy validation helper
-        def can_assign_role(creator_role: str, target_role: str) -> bool:
-            """Check if creator_role can assign target_role."""
-            role_hierarchy = {
-                "superadmin": ["superadmin", "admin", "instructional", "ta", "guest"],
-                "admin": ["instructional", "ta", "guest"],
-                "instructional": ["ta", "guest"],
-                "ta": ["guest"],
-                "guest": [],
-            }
-            return target_role in role_hierarchy.get(creator_role, [])
-
-        # Load consolidated SQL query (same as create_or_update_staff)
+        # Load consolidated SQL query with role validation built-in
         create_or_update_sql = load_sql("sql/v3/profile/staff/create_or_update_staff_complete.sql")
+        sql_query = create_or_update_sql  # Track primary query
 
         async with transaction(conn):
             for profile_req in request.profiles:
-                # Validate role assignment
-                if not can_assign_role(current_user_role, profile_req.role):
-                    raise HTTPException(
-                        status_code=403,
-                        detail=f"Cannot assign role '{profile_req.role}' with current role '{current_user_role}'.",
-                    )
-                
                 # Convert string UUIDs to UUID arrays
                 dept_uuids = [uuid.UUID(d) for d in profile_req.department_ids] if profile_req.department_ids else []
                 cohort_uuids = [uuid.UUID(c) for c in profile_req.cohort_ids] if profile_req.cohort_ids else []
                 
-                # Single consolidated query for create/update with departments and cohorts
+                # Single consolidated query for create/update with departments, cohorts, and role validation
                 profile_id_new = uuid.uuid4()
-                result = await conn.fetchrow(
-                    create_or_update_sql,
+                sql_params = (
                     profile_id_new,
                     profile_req.firstName,
                     profile_req.lastName,
@@ -103,12 +70,22 @@ async def bulk_create_or_update_staff(
                     True,  # active
                     dept_uuids,
                     cohort_uuids,
+                    uuid.UUID(request.currentProfileId),  # current_profile_id for role validation
                 )
+                result = await conn.fetchrow(create_or_update_sql, *sql_params)
                 
                 if not result:
                     raise HTTPException(
                         status_code=500,
                         detail=f"Failed to create or update staff profile: {profile_req.alias}"
+                    )
+                
+                # Check for role validation error
+                validation_error = result.get("validation_error")
+                if validation_error:
+                    raise HTTPException(
+                        status_code=403,
+                        detail=validation_error,
                     )
                 
                 profile_id = result["profile_id"]

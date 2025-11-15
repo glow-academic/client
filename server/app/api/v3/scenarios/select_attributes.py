@@ -91,10 +91,10 @@ async def select_scenario_attributes(
         # Handle asyncpg UUID objects or Python UUID objects
         department_id_uuid = uuid.UUID(str(department_id))
     
-    # Step 1: Get all randomization data in a single query
+    # Step 1: Get all randomization data and existing scenario links in a single query
     sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
     dept_uuids = [department_id_uuid]
-    result = await conn.fetchrow(sql, dept_uuids)
+    result = await conn.fetchrow(sql, dept_uuids, scenario_id_uuid)
     
     if not result:
         raise ValueError("Failed to fetch randomization data")
@@ -105,6 +105,11 @@ async def select_scenario_attributes(
     parameters_data = parse_jsonb(result.get("parameters", []))
     parameter_items_data = parse_jsonb(result.get("parameter_items", []))
     document_parameter_items_data = parse_jsonb(result.get("document_parameter_items", []))
+    
+    # Get existing scenario links from the same query result
+    existing_persona_ids = result.get("persona_ids", []) or []
+    existing_document_ids = result.get("document_ids", []) or []
+    existing_parameter_item_ids = result.get("parameter_item_ids", []) or []
     
     # Convert UUIDs and build lookup maps
     active_personas = []
@@ -160,17 +165,13 @@ async def select_scenario_attributes(
     for d in active_documents:
         documents_by_id[d["id"]] = d
     
-    # Step 2: Get all existing scenario links in single query
-    sql_links = load_sql("sql/v3/scenarios/get_scenario_links_complete.sql")
-    existing_links = await conn.fetchrow(sql_links, scenario_id_uuid)
-    
-    # Step 3: Select personas (priority: existing links, then random selection)
+    # Step 2: Select personas (priority: existing links, then random selection)
     scenario_persona_ids: list[uuid.UUID] = []
     
     # Priority 1: Check for existing persona links
-    if existing_links and existing_links.get("persona_ids"):
+    if existing_persona_ids:
         scenario_persona_ids = [
-            uuid.UUID(p) for p in existing_links["persona_ids"]
+            uuid.UUID(p) for p in existing_persona_ids
         ]
         logger.info(f"Found {len(scenario_persona_ids)} existing persona_ids: {scenario_persona_ids}")
     
@@ -188,11 +189,11 @@ async def select_scenario_attributes(
     persona_id = random.choice(scenario_persona_ids) if scenario_persona_ids else None
     logger.info(f"Using persona_id for scenario generation: {persona_id}")
     
-    # Step 4: Select parameter_items (priority: existing links, then random selection)
+    # Step 3: Select parameter_items (priority: existing links, then random selection)
     # Priority 1: Check for existing parameter item links
     existing_param_ids = []
-    if existing_links and existing_links.get("parameter_item_ids"):
-        existing_param_ids = [uuid.UUID(p) for p in existing_links["parameter_item_ids"]]
+    if existing_parameter_item_ids:
+        existing_param_ids = [uuid.UUID(p) for p in existing_parameter_item_ids]
     
     param_ids: list[uuid.UUID] = []
     if existing_param_ids:
@@ -212,11 +213,11 @@ async def select_scenario_attributes(
         else:
             logger.info("No active parameters found")
     
-    # Step 5: Select documents (priority: existing links, then parameter_item matching, then random)
+    # Step 4: Select documents (priority: existing links, then parameter_item matching, then random)
     # Priority 1: Check for existing document links
     existing_doc_ids = []
-    if existing_links and existing_links.get("document_ids"):
-        existing_doc_ids = [uuid.UUID(d) for d in existing_links["document_ids"]]
+    if existing_document_ids:
+        existing_doc_ids = [uuid.UUID(d) for d in existing_document_ids]
     
     doc_ids: list[uuid.UUID] = []
     if existing_doc_ids:

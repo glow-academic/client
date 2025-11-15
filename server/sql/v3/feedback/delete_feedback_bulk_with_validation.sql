@@ -2,7 +2,7 @@
 -- Parameters:
 --   $1 = profile_id (uuid) - profile ID to check role
 --   $2 = feedback_ids (int[]) - array of feedback IDs to delete
--- Returns: deleted_count (integer)
+-- Returns: deleted_count (integer), profile_role (text)
 
 WITH profile_role_check AS (
     -- Check if user is superadmin
@@ -17,6 +17,7 @@ authorized_delete AS (
       )
     RETURNING id
 )
-SELECT COUNT(*)::integer as deleted_count
-FROM authorized_delete
+SELECT 
+    COALESCE((SELECT COUNT(*)::integer FROM authorized_delete), 0) as deleted_count,
+    (SELECT role FROM profile_role_check) as profile_role
 

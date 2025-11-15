@@ -3,13 +3,13 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.db import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
 
 # Inline request/response schemas
 class BulkDeleteFeedbackRequest(BaseModel):
@@ -56,13 +56,12 @@ async def bulk_delete_feedback(
             )
         
         deleted_count = result["deleted_count"]
+        profile_role = result.get("profile_role")
         
         # Check if deletion was authorized (superadmin check)
         if deleted_count == 0 and len(request.ids) > 0:
             # Check if it's because user is not superadmin
-            check_role_sql = load_sql("sql/v3/feedback/check_profile_role.sql")
-            role_result = await conn.fetchrow(check_role_sql, request.profileId)
-            if role_result and role_result["role"] != "superadmin":
+            if profile_role and profile_role != "superadmin":
                 raise HTTPException(
                     status_code=403, detail="Only superadmin users can delete feedback"
                 )

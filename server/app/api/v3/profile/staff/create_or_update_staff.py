@@ -62,6 +62,7 @@ async def create_or_update_staff(
             True,  # active
             dept_uuids,
             cohort_uuids,
+            None,  # current_profile_id (no role validation for single create/update)
         )
         
         async with transaction(conn):

@@ -1,6 +1,8 @@
--- Get randomization data for scenarios (personas, documents, parameters)
--- Parameters: $1=department_ids (uuid array, nullable)
--- Returns: personas, documents, parameters, parameter_items, document_parameter_items as JSON
+-- Get randomization data for scenarios (personas, documents, parameters) and existing scenario links
+-- Parameters: 
+--   $1=department_ids (uuid array, nullable)
+--   $2=scenario_id (uuid, nullable) - if provided, also returns existing scenario links
+-- Returns: personas, documents, parameters, parameter_items, document_parameter_items, persona_ids, document_ids, parameter_item_ids as JSON
 WITH filtered_personas AS (
     SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description
     FROM personas p
@@ -58,6 +60,21 @@ document_parameter_items_junction AS (
     JOIN filtered_documents fd ON fd.id = dpi.document_id
     JOIN parameter_items_data pid ON pid.id = dpi.parameter_item_id
     WHERE dpi.active = true
+),
+scenario_persona_links AS (
+    SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id) as persona_ids
+    FROM scenario_personas
+    WHERE scenario_id = $2::uuid AND active = true
+),
+scenario_document_links AS (
+    SELECT ARRAY_AGG(document_id::text ORDER BY document_id) as document_ids
+    FROM scenario_documents
+    WHERE scenario_id = $2::uuid AND active = true
+),
+scenario_parameter_item_links AS (
+    SELECT ARRAY_AGG(parameter_item_id::text ORDER BY parameter_item_id) as parameter_item_ids
+    FROM scenario_parameter_items
+    WHERE scenario_id = $2::uuid AND active = true
 )
 SELECT 
     (SELECT COALESCE(
@@ -102,5 +119,8 @@ SELECT
             'parameter_item_id', dpi.parameter_item_id
         )),
         '[]'::json
-    ) FROM document_parameter_items_junction dpi) as document_parameter_items
+    ) FROM document_parameter_items_junction dpi) as document_parameter_items,
+    COALESCE((SELECT persona_ids FROM scenario_persona_links), ARRAY[]::text[]) as persona_ids,
+    COALESCE((SELECT document_ids FROM scenario_document_links), ARRAY[]::text[]) as document_ids,
+    COALESCE((SELECT parameter_item_ids FROM scenario_parameter_item_links), ARRAY[]::text[]) as parameter_item_ids
 
