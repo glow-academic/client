@@ -1372,11 +1372,24 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     f"End all completed for attempt {attempt_id}: created {result['created_chats_count']} new chats"
                 )
 
+                # Get all chat IDs for this attempt to help frontend with cache invalidation
+                sql = load_sql("sql/v3/attempts/get_existing_chats_for_attempt.sql")
+                all_chats = await conn.fetch(sql, attempt_id)
+                completed_chat_ids = [
+                    str(c["id"]) for c in all_chats if c.get("completed")
+                ]
+                next_chat_ids: list[str | None] = [
+                    str(c["id"]) for c in all_chats if not c.get("completed")
+                ]
+
                 # Emit end all completed event
                 payload_obj = EndAllCompletedPayload(
                     success=True,
                     message="Ended all chats for this attempt",
                     attempt_id=attempt_id,
+                    completed_chat_ids=completed_chat_ids if completed_chat_ids else None,
+                    next_chat_ids=next_chat_ids if next_chat_ids else None,
+                    all_completed=True,
                 )
                 # Emit to requester
                 await end_all_completed(payload_obj, room=sid)

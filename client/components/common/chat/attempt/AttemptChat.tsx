@@ -134,6 +134,21 @@ export default function AttemptChat({
   // Update state when initial prop changes (from router.refresh())
   useEffect(() => {
     setAttemptData(initialAttemptData);
+    // Clear optimistic states for chats that now have server data
+    // This ensures server data takes precedence after refresh
+    setOptimisticGradingStates((prev) => {
+      const updated: Record<string, OptimisticGradingState> = {};
+      Object.entries(prev).forEach(([chatId, optimisticState]) => {
+        // Keep optimistic state only if server doesn't have grading state for this chat
+        const chatData = initialAttemptData?.chats?.find(
+          (c) => c.chat.id === chatId
+        );
+        if (!chatData?.gradingState) {
+          updated[chatId] = optimisticState;
+        }
+      });
+      return updated;
+    });
   }, [initialAttemptData]);
 
   // Simulation state management
@@ -225,17 +240,59 @@ export default function AttemptChat({
   // Rubric structure
   const rubricStructure = attemptData?.rubricStructure ?? null;
 
-  // Grading states map - map chatId -> grading state
+  // Optimistic grading states - updated in realtime from WebSocket events
+  type OptimisticGradingState = NonNullable<ChatDataType["gradingState"]>;
+  const [optimisticGradingStates, setOptimisticGradingStates] = useState<
+    Record<string, OptimisticGradingState>
+  >({});
+
+  // Grading states map - map chatId -> grading state (merged from server + optimistic)
   const gradingStatesByChatId = useMemo(() => {
-    if (!attemptData?.chats) return {};
     const map: Record<string, NonNullable<ChatDataType["gradingState"]>> = {};
-    attemptData.chats.forEach((chatData) => {
-      if (chatData.gradingState) {
-        map[chatData.chat.id] = chatData.gradingState;
+
+    // First, add server data
+    if (attemptData?.chats) {
+      attemptData.chats.forEach((chatData) => {
+        if (chatData.gradingState) {
+          map[chatData.chat.id] = chatData.gradingState;
+        }
+      });
+    }
+
+    // Then, merge/override with optimistic updates (optimistic takes precedence for realtime display)
+    Object.entries(optimisticGradingStates).forEach(
+      ([chatId, optimisticState]) => {
+        // Merge with existing server state if present
+        const existingState = map[chatId];
+        if (existingState) {
+          // Merge: optimistic updates override server data
+          map[chatId] = {
+            achievedStandards: {
+              ...existingState.achievedStandards,
+              ...optimisticState.achievedStandards,
+            },
+            passedStandards: {
+              ...existingState.passedStandards,
+              ...optimisticState.passedStandards,
+            },
+            gradeDescription:
+              optimisticState.gradeDescription ??
+              existingState.gradeDescription ??
+              null,
+            feedbackByStandardId: {
+              ...(existingState.feedbackByStandardId || {}),
+              ...(optimisticState.feedbackByStandardId || {}),
+            },
+          };
+        } else {
+          // Use optimistic state if no server state exists yet
+          map[chatId] = optimisticState;
+        }
       }
-    });
+    );
+
     return map;
-  }, [attemptData]);
+  }, [attemptData, optimisticGradingStates]);
 
   // Messages - get messages for current chat
   const currentMessages = useMemo(() => {
@@ -608,14 +665,35 @@ export default function AttemptChat({
     }) => {
       if (data.completed_chat_id === currentChatIdRef.current) {
         freshlyCompletedChatsRef.current.add(data.completed_chat_id);
-        // Revalidate cache to ensure we get the latest chat state
+
+        // Revalidate cache first, then refresh
         if (revalidateAttemptAction) {
           await revalidateAttemptAction(attemptId);
         }
-        router.refresh();
 
-        if (data.next_chat_id) {
+        // Wait for router refresh to complete before checking for next chat
+        await router.refresh();
+
+        // Set pending next chat ID for navigation
+        if (data.next_chat_id && !data.is_attempt_finished) {
           pendingNextChatIdRef.current = data.next_chat_id;
+
+          // Try immediate navigation if chat already exists in current chats
+          const nextChatExists = chats?.some((c) => c.id === data.next_chat_id);
+          if (nextChatExists) {
+            const sortedChats = [...(chats || [])].sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+            );
+            const nextIndex = sortedChats.findIndex(
+              (c) => c.id === data.next_chat_id
+            );
+            if (nextIndex !== -1) {
+              setCurrentChatIndex(nextIndex);
+              pendingNextChatIdRef.current = null;
+            }
+          }
         }
       }
 
@@ -689,102 +767,205 @@ export default function AttemptChat({
       time_taken?: number;
       summary?: string;
     }) => {
-      if (data.chat_id !== currentChat?.id) {
+      // Determine if this event is for the current chat
+      const isCurrentChat = data.chat_id === currentChat?.id;
+
+      // Handle grading progress UI for current chat only
+      if (isCurrentChat) {
+        if (data.type === "start") {
+          isGradingRef.current = true;
+          setIsGrading(true);
+          const initialTotal =
+            data.total_count ?? (data.standards_graded as number | undefined);
+          if (initialTotal !== undefined) {
+            const initialProgress = {
+              completed: 0,
+              total: initialTotal,
+              displayedProgress: 0,
+              phase: "tools" as const,
+            };
+            gradingProgressRef.current = initialProgress;
+            setGradingProgress(initialProgress);
+          }
+        } else if (
+          data.type === "standard_graded" &&
+          data.completed_count !== undefined &&
+          data.total_count !== undefined
+        ) {
+          isGradingRef.current = true;
+          setIsGrading(true);
+          const completedCount = data.completed_count;
+          const totalCount = data.total_count;
+          setGradingProgress((prev) => {
+            const allToolsComplete = completedCount === totalCount;
+            const newPhase = allToolsComplete
+              ? "summary"
+              : prev?.phase || "tools";
+
+            let displayedProgress: number;
+            if (newPhase === "tools") {
+              displayedProgress = Math.min(
+                (completedCount / totalCount) * 90,
+                90
+              );
+            } else {
+              displayedProgress = 95;
+            }
+
+            if (!prev) {
+              const newProgress = {
+                completed: completedCount,
+                total: totalCount,
+                displayedProgress,
+                phase: newPhase,
+              };
+              gradingProgressRef.current = newProgress;
+              return newProgress;
+            }
+
+            const updatedProgress = {
+              ...prev,
+              completed: completedCount,
+              total: totalCount,
+              phase: newPhase,
+              displayedProgress,
+            };
+            gradingProgressRef.current = updatedProgress;
+            return updatedProgress;
+          });
+        } else if (data.type === "summary_recorded") {
+          setGradingProgress((prev) => {
+            if (!prev) return null;
+            const updatedProgress = {
+              ...prev,
+              phase: "summary" as const,
+              displayedProgress: 95,
+            };
+            gradingProgressRef.current = updatedProgress;
+            return updatedProgress;
+          });
+        } else if (data.type === "complete") {
+          setGradingProgress((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              displayedProgress: 100,
+            };
+          });
+          setTimeout(() => {
+            isGradingRef.current = false;
+            setIsGrading(false);
+            setGradingProgress(null);
+            gradingProgressRef.current = null;
+          }, 300);
+        }
+      } else {
+        // For other chats, just reset grading state if we were grading current chat
         if (isGrading && gradingProgress) {
           isGradingRef.current = false;
           setIsGrading(false);
           setGradingProgress(null);
           gradingProgressRef.current = null;
         }
-        return;
       }
 
-      if (data.type === "start") {
-        isGradingRef.current = true;
-        setIsGrading(true);
-        const initialTotal =
-          data.total_count ?? (data.standards_graded as number | undefined);
-        if (initialTotal !== undefined) {
-          const initialProgress = {
-            completed: 0,
-            total: initialTotal,
-            displayedProgress: 0,
-            phase: "tools" as const,
-          };
-          gradingProgressRef.current = initialProgress;
-          setGradingProgress(initialProgress);
-        }
-      } else if (
+      // Update optimistic grading state for realtime display (for any chat, not just current)
+      if (
         data.type === "standard_graded" &&
-        data.completed_count !== undefined &&
-        data.total_count !== undefined
+        data.standard_group_name &&
+        data.score !== undefined &&
+        rubricStructure
       ) {
-        isGradingRef.current = true;
-        setIsGrading(true);
-        const completedCount = data.completed_count;
-        const totalCount = data.total_count;
-        setGradingProgress((prev) => {
-          const allToolsComplete = completedCount === totalCount;
-          const newPhase = allToolsComplete
-            ? "summary"
-            : prev?.phase || "tools";
+        // Find the standard group by name (since shortName is not in the type)
+        const standardGroupEntry = Object.entries(
+          rubricStructure.standardGroupsMapping
+        ).find(([_, group]) => group.name === data.standard_group_name);
 
-          let displayedProgress: number;
-          if (newPhase === "tools") {
-            displayedProgress = Math.min(
-              (completedCount / totalCount) * 90,
-              90
-            );
-          } else {
-            displayedProgress = 95;
+        if (standardGroupEntry) {
+          const [groupId, groupInfo] = standardGroupEntry;
+          const standardIds = rubricStructure.standardGroups[groupId] || [];
+
+          // Find the standard with matching points (score)
+          const matchingStandard = standardIds.find((stdId) => {
+            const standard = rubricStructure.standardsMapping[stdId];
+            return standard && standard["points"] === data.score;
+          });
+
+          if (matchingStandard) {
+            const passPoints = groupInfo.passPoints || 0;
+            const isPassed = (data.score || 0) >= passPoints;
+
+            setOptimisticGradingStates((prev) => {
+              const currentState = prev[data.chat_id] || {
+                achievedStandards: {},
+                passedStandards: {},
+                feedbackByStandardId: {},
+              };
+
+              return {
+                ...prev,
+                [data.chat_id]: {
+                  achievedStandards: {
+                    ...currentState.achievedStandards,
+                    [matchingStandard]: true,
+                  },
+                  passedStandards: {
+                    ...currentState.passedStandards,
+                    [matchingStandard]: isPassed,
+                  },
+                  feedbackByStandardId: {
+                    ...currentState.feedbackByStandardId,
+                    [matchingStandard]: data.feedback_preview || "",
+                  },
+                  gradeDescription: currentState.gradeDescription ?? null,
+                },
+              };
+            });
           }
+        }
+      }
 
-          if (!prev) {
-            const newProgress = {
-              completed: completedCount,
-              total: totalCount,
-              displayedProgress,
-              phase: newPhase,
+      // Update grade description if summary is provided (for any chat)
+      // Note: summary_preview is not in the type but may be present in the event
+      if (data.type === "summary_recorded" && "summary_preview" in data) {
+        const summaryPreview = (data as { summary_preview?: string })
+          .summary_preview;
+        if (summaryPreview) {
+          setOptimisticGradingStates((prev) => {
+            const currentState = prev[data.chat_id] || {
+              achievedStandards: {},
+              passedStandards: {},
+              feedbackByStandardId: {},
             };
-            gradingProgressRef.current = newProgress;
-            return newProgress;
-          }
 
-          const updatedProgress = {
-            ...prev,
-            completed: completedCount,
-            total: totalCount,
-            phase: newPhase,
-            displayedProgress,
+            return {
+              ...prev,
+              [data.chat_id]: {
+                ...currentState,
+                gradeDescription: summaryPreview ?? null,
+              },
+            };
+          });
+        }
+      }
+
+      // Update final grade description if summary is provided (for any chat)
+      if (data.type === "complete" && data.summary) {
+        setOptimisticGradingStates((prev) => {
+          const currentState = prev[data.chat_id] || {
+            achievedStandards: {},
+            passedStandards: {},
+            feedbackByStandardId: {},
           };
-          gradingProgressRef.current = updatedProgress;
-          return updatedProgress;
-        });
-      } else if (data.type === "summary_recorded") {
-        setGradingProgress((prev) => {
-          if (!prev) return null;
-          const updatedProgress = {
-            ...prev,
-            phase: "summary" as const,
-            displayedProgress: 95,
-          };
-          gradingProgressRef.current = updatedProgress;
-          return updatedProgress;
-        });
-      } else if (data.type === "complete") {
-        setGradingProgress((prev) => {
-          if (!prev) return null;
+
           return {
             ...prev,
-            displayedProgress: 100,
+            [data.chat_id]: {
+              ...currentState,
+              gradeDescription: data.summary ?? null,
+            },
           };
         });
-        setTimeout(() => {
-          isGradingRef.current = false;
-          setIsGrading(false);
-          setGradingProgress(null);
-          gradingProgressRef.current = null;
-        }, 300);
       }
     };
 
@@ -838,6 +1019,8 @@ export default function AttemptChat({
     isGrading,
     gradingProgress,
     revalidateAttemptAction,
+    chats,
+    rubricStructure,
   ]);
 
   // Update ref when grading state changes
@@ -847,9 +1030,9 @@ export default function AttemptChat({
 
   // After chats refresh, jump to the next chat if one was provided by the server
   useEffect(() => {
-    if (!chats || chats.length === 0) return;
+    if (!chats || chats.length === 0) return undefined;
     const desiredNextId = pendingNextChatIdRef.current;
-    if (!desiredNextId) return;
+    if (!desiredNextId) return undefined;
 
     const sortedChats = [...chats].sort(
       (a, b) =>
@@ -859,8 +1042,21 @@ export default function AttemptChat({
     if (idx !== -1) {
       setCurrentChatIndex(idx);
       pendingNextChatIdRef.current = null;
+      return undefined;
     }
-  }, [chats]);
+
+    // Chat not found yet - might need another refresh, retry after a short delay
+    const retryTimeout = setTimeout(() => {
+      // Trigger a refresh to get the latest data
+      if (revalidateAttemptAction) {
+        revalidateAttemptAction(attemptId).then(() => {
+          router.refresh();
+        });
+      }
+    }, 500);
+
+    return () => clearTimeout(retryTimeout);
+  }, [chats, revalidateAttemptAction, attemptId, router]);
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null

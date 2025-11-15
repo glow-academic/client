@@ -70,8 +70,11 @@ export async function updateChatCreatedAt(
 /** ---- Server action to revalidate attempt cache when messages are sent ---- */
 export async function revalidateAttempt(attemptId: string): Promise<void> {
   "use server";
+  // Invalidate attempt-level cache
   revalidateTag("attempts");
   revalidateTag(`attempt:${attemptId}`);
+  // Note: Chat-specific tags can be added here if chat IDs are known
+  // For now, invalidating attempt-level cache ensures all chats refresh
 }
 
 /** ---- Page component ---- */
