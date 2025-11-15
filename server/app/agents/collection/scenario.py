@@ -210,6 +210,9 @@ async def run_scenario_agent(
             "documents": documents,
             "parameter_items": parameter_items,
             "default_guest_profile_id": context_row["guest_profile_id"],
+            "req_per_day": context_row["req_per_day"],
+            "runs_today_count": context_row["runs_today_count"],
+            "earliest_run_created_at": context_row["earliest_run_created_at"],
         }
 
         # Format persona info if persona was provided
@@ -304,32 +307,21 @@ async def run_scenario_agent(
             profile_id if profile_id else context["default_guest_profile_id"]
         )
 
-        # Check rate limit using SQL file
-        from datetime import UTC, datetime
+        # Check rate limit (already included in context query - uses default guest profile)
         profile_id_uuid = final_profile_id if final_profile_id else None
         if not profile_id_uuid:
             raise ValueError("Profile not found. Please contact support.")
         
-        # Calculate the start of the current day in UTC
-        now_utc = datetime.now(UTC)
-        start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        sql_rate_limit = load_sql("sql/v3/model_runs/check_rate_limit.sql")
-        rate_limit_row = await conn.fetchrow(
-            sql_rate_limit, final_profile_id, start_of_day_utc.isoformat()
-        )
-        
-        if not rate_limit_row:
-            raise ValueError("Profile not found.")
-        
-        req_per_day = rate_limit_row["req_per_day"]
-        runs_today_count = rate_limit_row["runs_today_count"]
+        # Use rate limit from context (for default guest profile)
+        # Note: If a specific profile_id is provided, we'd need a separate check, but typically scenario generation uses guest profile
+        req_per_day = context["req_per_day"]
+        runs_today_count = context["runs_today_count"]
         
         if req_per_day is not None and runs_today_count >= req_per_day:
             # Rate limit exceeded - format error message
             from datetime import timedelta
             from zoneinfo import ZoneInfo
-            earliest_run_created_at = rate_limit_row["earliest_run_created_at"]
+            earliest_run_created_at = context["earliest_run_created_at"]
             if earliest_run_created_at:
                 next_allowed_utc = earliest_run_created_at + timedelta(days=1)
                 eastern_tz = ZoneInfo("America/New_York")

@@ -17,6 +17,25 @@ WITH best_agent AS (
         -- Prioritize department-specific agents over cross-department agents
         CASE WHEN ad.department_id = $2::uuid THEN 0 ELSE 1 END
     LIMIT 1
+),
+profile_rate_limit AS (
+    -- Get rate limit for the profile (via assistant_chats)
+    SELECT 
+        prl.requests_per_day as req_per_day
+    FROM profiles p
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+    WHERE p.id = (SELECT profile_id FROM assistant_chats WHERE id = $1::uuid)
+),
+runs_today AS (
+    -- Count model runs for this profile since start of day
+    SELECT 
+        COUNT(*)::bigint as runs_today_count,
+        MIN(mr.created_at) as earliest_run_created_at
+    FROM model_runs mr
+    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    WHERE mrp.profile_id = (SELECT profile_id FROM assistant_chats WHERE id = $1::uuid)
+      AND mrp.active = true
+      AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 )
 SELECT 
     -- Agent data (via department_agents junction for 'title' role)
@@ -41,7 +60,12 @@ SELECT
     ac.id::text as chat_id,
     ac.profile_id::text as profile_id,
     ac.title as chat_title,
-    ac.trace_id as trace_id
+    ac.trace_id as trace_id,
+    
+    -- Rate limit data
+    prl.req_per_day,
+    COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
+    rt.earliest_run_created_at
 
 FROM best_agent ba
 INNER JOIN agents a ON a.id = ba.agent_id
@@ -56,4 +80,6 @@ INNER JOIN models m ON m.id = a.model_id
 INNER JOIN providers pr ON pr.id = m.provider_id
 LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
 INNER JOIN assistant_chats ac ON ac.id = $1::uuid
+CROSS JOIN profile_rate_limit prl
+CROSS JOIN runs_today rt
 

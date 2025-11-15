@@ -59,6 +59,25 @@ tool_calls_agg AS (
         ) as tool_calls
     FROM assistant_tool_calls
     WHERE chat_id = $1::uuid
+),
+profile_rate_limit AS (
+    -- Get rate limit for the profile
+    SELECT 
+        prl.requests_per_day as req_per_day
+    FROM profiles p
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+    WHERE p.id = (SELECT profile_id FROM assistant_chats WHERE id = $1::uuid)
+),
+runs_today AS (
+    -- Count model runs for this profile since start of day
+    SELECT 
+        COUNT(*)::bigint as runs_today_count,
+        MIN(mr.created_at) as earliest_run_created_at
+    FROM model_runs mr
+    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    WHERE mrp.profile_id = (SELECT profile_id FROM assistant_chats WHERE id = $1::uuid)
+      AND mrp.active = true
+      AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 )
 SELECT 
     -- Chat data
@@ -92,7 +111,12 @@ SELECT
     
     -- Aggregated messages and tool_calls
     COALESCE(ma.messages, '[]'::jsonb) as messages,
-    COALESCE(tca.tool_calls, '[]'::jsonb) as tool_calls
+    COALESCE(tca.tool_calls, '[]'::jsonb) as tool_calls,
+    
+    -- Rate limit data
+    prl.req_per_day,
+    COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
+    rt.earliest_run_created_at
 
 FROM assistant_chats ac
 INNER JOIN profiles p ON p.id = ac.profile_id
@@ -110,5 +134,7 @@ LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_
 LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
 CROSS JOIN messages_agg ma
 CROSS JOIN tool_calls_agg tca
+CROSS JOIN profile_rate_limit prl
+CROSS JOIN runs_today rt
 WHERE ac.id = $1::uuid
 

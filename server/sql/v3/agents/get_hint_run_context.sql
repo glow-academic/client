@@ -46,6 +46,25 @@ best_agent AS (
         -- Prioritize department-specific agents over cross-department agents
         CASE WHEN ad.department_id = $3::uuid THEN 0 ELSE 1 END
     LIMIT 1
+),
+profile_rate_limit AS (
+    -- Get rate limit for the profile (via attempt_profiles)
+    SELECT 
+        prl.requests_per_day as req_per_day
+    FROM profiles p
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+    WHERE p.id = (SELECT profile_id FROM profile_info)
+),
+runs_today AS (
+    -- Count model runs for this profile since start of day
+    SELECT 
+        COUNT(*)::bigint as runs_today_count,
+        MIN(mr.created_at) as earliest_run_created_at
+    FROM model_runs mr
+    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    WHERE mrp.profile_id = (SELECT profile_id FROM profile_info)
+      AND mrp.active = true
+      AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 )
 SELECT 
     -- Message data
@@ -87,6 +106,11 @@ SELECT
     -- Profile data
     pi.profile_id::text,
     
+    -- Rate limit data
+    prl.req_per_day,
+    COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
+    rt.earliest_run_created_at,
+    
     -- Documents data (aggregated as JSON array with full document info)
     COALESCE(
         (
@@ -112,6 +136,8 @@ CROSS JOIN attempt_info ai
 CROSS JOIN scenario_info si
 LEFT JOIN profile_info pi ON true
 CROSS JOIN best_agent ba
+CROSS JOIN profile_rate_limit prl
+CROSS JOIN runs_today rt
 INNER JOIN agents a ON a.id = ba.agent_id
 -- Try department-specific prompt first, fall back to default prompt
 LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = $3::uuid AND adp_prompt.active = true

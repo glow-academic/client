@@ -210,9 +210,11 @@ async def check_simulation_service(conn: asyncpg.Connection) -> HealthCheckItem:
             )
 
         async with pool.acquire() as check_conn:
-            # Use SQL file for query
-            sql = load_sql("sql/v3/logs/get_active_simulation_agent.sql")
-            agent = await check_conn.fetchrow(sql)
+            # Use consolidated SQL file for query (fetches both simulation and assistant agents)
+            sql = load_sql("sql/v3/logs/get_active_agents.sql")
+            agents = await check_conn.fetch(sql)
+            # Filter for simulation agent
+            agent = next((a for a in agents if a["agent_type"] == "simulation"), None)
 
             if not agent:
                 return HealthCheckItem(
@@ -278,9 +280,11 @@ async def check_assistant_service(conn: asyncpg.Connection) -> HealthCheckItem:
             )
 
         async with pool.acquire() as check_conn:
-            # Use SQL file for query
-            sql = load_sql("sql/v3/logs/get_active_assistant_agent.sql")
-            agent = await check_conn.fetchrow(sql)
+            # Use consolidated SQL file for query (fetches both simulation and assistant agents)
+            sql = load_sql("sql/v3/logs/get_active_agents.sql")
+            agents = await check_conn.fetch(sql)
+            # Filter for assistant agent
+            agent = next((a for a in agents if a["agent_type"] == "assistant"), None)
 
             if not agent:
                 return HealthCheckItem(
