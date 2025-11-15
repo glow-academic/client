@@ -12,7 +12,6 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/api/v3/dashboard", "post">;
@@ -20,20 +19,8 @@ type DashboardOut = OutputOf<"/api/v3/dashboard", "post">;
 type BulkArchiveAttemptsIn = InputOf<"/api/v3/attempts/bulk-archive", "post">;
 type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/bulk-archive", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes filters so entries are per-filter combination.
- * Tags allow revalidateTag("dashboard") to invalidate.
- */
-const getDashboard = unstable_cache(
-  async (input: DashboardIn): Promise<DashboardOut> => {
-    return api.post("/dashboard", input);
-  },
-  ["dashboard:list"],
-  { tags: ["dashboard"] }
-);
-
 /** ---- Inline filters function for dashboard page ---- */
-const getDashboardFilters = unstable_cache(async (searchParams?: URLSearchParams) => {
+async function getDashboardFilters(searchParams?: URLSearchParams) {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
@@ -75,7 +62,7 @@ const getDashboardFilters = unstable_cache(async (searchParams?: URLSearchParams
   }
 
   return defaults;
-}, ["dashboard:filters"], { tags: ["dashboard"] });
+}
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -108,7 +95,7 @@ export default async function DashboardPage({
   );
 
   // Fetch dashboard data server-side
-  const dashboardData = await getDashboard({
+  const dashboardData = await api.post("/dashboard", {
     body: filters,
   });
 

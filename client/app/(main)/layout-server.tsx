@@ -6,7 +6,6 @@ import { getSession, update } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { revalidateTag } from "next/cache";
-import { headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -60,8 +59,6 @@ export type SafeSessionSnapshot = {
 
 export async function getLayoutContextData() {
   const session = await getSession();
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "/";
 
   const snapshot: SafeSessionSnapshot = {
     effectiveProfileId: session?.effectiveProfileId ?? null,

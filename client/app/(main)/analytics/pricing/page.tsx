@@ -11,26 +11,13 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingIn = InputOf<"/api/v3/pricing", "post">;
 type PricingOut = OutputOf<"/api/v3/pricing", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes filters so entries are per-filter combination.
- * Tags allow revalidateTag("pricing") to invalidate.
- */
-const getPricing = unstable_cache(
-  async (input: PricingIn): Promise<PricingOut> => {
-    return api.post("/pricing", input);
-  },
-  ["pricing:list"],
-  { tags: ["pricing"] }
-);
-
 /** ---- Inline filters function for pricing page ---- */
-const getPricingFilters = unstable_cache(async (searchParams?: URLSearchParams) => {
+async function getPricingFilters(searchParams?: URLSearchParams) {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
@@ -72,7 +59,7 @@ const getPricingFilters = unstable_cache(async (searchParams?: URLSearchParams) 
   }
 
   return defaults;
-}, ["pricing:filters"], { tags: ["pricing"] });
+}
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -103,7 +90,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   );
 
   // Fetch pricing data server-side
-  const pricingData = await getPricing({
+  const pricingData = await api.post("/pricing", {
     body: filters,
   });
 

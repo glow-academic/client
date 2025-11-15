@@ -6,6 +6,7 @@
  */
 "use client";
 
+import type { AttemptFullOut } from "@/app/(main)/home/a/[attemptId]/page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,17 +22,55 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useProfile } from "@/contexts/profile-context";
-import { useSimulation } from "@/contexts/simulation-context";
 import { formatTime } from "@/utils/time";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
-export function SimulationControls() {
-  const simulationContext = useSimulation();
-  const { effectiveProfile, activeProfile } = useProfile();
+export interface SimulationControlsProps {
+  attemptId: string;
+  attemptData: AttemptFullOut;
+}
 
-  // Get data from context (v2 single source of truth)
-  const currentChatMessages = simulationContext?.currentMessages || [];
-  const attemptProfileId = simulationContext?.attemptProfileId;
+export function SimulationControls({
+  attemptId,
+  attemptData,
+}: SimulationControlsProps) {
+  const { effectiveProfile, activeProfile, socket, isConnected } = useProfile();
+
+  // Extract data from attemptData
+  const attemptProfileId = attemptData?.attempt?.profileId || null;
+  const simulation = attemptData?.simulation || null;
+  const attempt = attemptData?.attempt || null;
+  const chats = attemptData?.chats || [];
+  const currentChatIndex = attemptData?.currentChatIndex ?? 0;
+  const shouldShowControls = attemptData?.shouldShowControls ?? true;
+
+  // Find current chat from server data
+  const currentChat = useMemo(() => {
+    if (!attemptData?.chats || attemptData.chats.length === 0) return null;
+    const chatData = attemptData.chats[currentChatIndex];
+    return chatData?.chat || attemptData.chats[0]?.chat || null;
+  }, [attemptData, currentChatIndex]);
+
+  const currentChatId = currentChat?.id || null;
+
+  // Get current messages from server data
+  const currentMessages = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return [];
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    return chatData?.messages ?? [];
+  }, [attemptData, currentChat]);
+
+  // Grading state - listen to WebSocket events
+  const [isGrading, setIsGrading] = useState(false);
+  const [gradingProgress, setGradingProgress] = useState<{
+    completed: number;
+    total: number;
+    displayedProgress: number;
+    phase: "tools" | "summary" | null;
+  } | null>(null);
 
   // Check if current user is the owner of this attempt
   // Allow buttons to show even if profile IDs aren't loaded yet (they'll be disabled by isActive)
@@ -67,26 +106,189 @@ export function SimulationControls() {
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
-    null,
+    null
+  );
+  const [endChatLoading, setEndChatLoading] = useState(false);
+
+  // End chat function
+  const endChat = useCallback(
+    async (chatId?: string, previousChatId?: string) => {
+      const targetChatId = chatId || currentChatId;
+      if (
+        !targetChatId ||
+        !simulation?.departmentId ||
+        !socket ||
+        !isConnected
+      ) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      setEndChatLoading(true);
+      setEndingAction("endChat");
+
+      try {
+        const continueData: {
+          chat_id: string;
+          attempt_id: string;
+          end_all: boolean;
+          previous_chat_id?: string;
+          department_id: string;
+        } = {
+          chat_id: targetChatId,
+          attempt_id: attemptId,
+          end_all: false,
+          department_id: simulation.departmentId,
+        };
+        if (previousChatId) {
+          continueData.previous_chat_id = previousChatId;
+        }
+        socket.emit("continue_simulation", continueData);
+      } catch (error) {
+        toast.error(`Failed to end chat: ${error}`);
+        setEndChatLoading(false);
+        setEndingAction(null);
+      }
+    },
+    [currentChatId, socket, isConnected, attemptId, simulation?.departmentId]
   );
 
-  useEffect(() => {
-    if (!simulationContext?.endChatLoading) {
-      setEndingAction(null);
-    }
-  }, [simulationContext?.endChatLoading]);
+  // End all chats function
+  const endAllChats = useCallback(
+    async (previousChatMap?: Record<string, string | null>) => {
+      if (
+        !simulation ||
+        !attempt ||
+        !currentChatId ||
+        !socket ||
+        !isConnected
+      ) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
 
-  // Extract data from context (must be before early returns to maintain hook order)
-  const {
-    endChat,
-    endChatLoading,
-    currentChat,
-    attemptId,
-    endAllChats,
-    attemptData,
-    isLoadingChats,
-    shouldShowControls,
-  } = simulationContext || {};
+      setEndChatLoading(true);
+      setEndingAction("endAll");
+
+      try {
+        const continueData: {
+          chat_id: string;
+          attempt_id: string;
+          end_all: boolean;
+          previous_chat_map?: Record<string, string | null>;
+          department_id: string;
+        } = {
+          chat_id: currentChatId,
+          attempt_id: attemptId,
+          end_all: true,
+          department_id: simulation.departmentId,
+        };
+        if (previousChatMap) {
+          continueData.previous_chat_map = previousChatMap;
+        }
+        socket.emit("continue_simulation", continueData);
+      } catch (error) {
+        toast.error(`Failed to end all chats: ${error}`);
+        setEndChatLoading(false);
+        setEndingAction(null);
+      }
+    },
+    [simulation, attempt, currentChatId, attemptId, socket, isConnected]
+  );
+
+  // Listen for WebSocket events to reset loading state and handle grading
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleSimulationContinued = () => {
+      setEndChatLoading(false);
+      setEndingAction(null);
+    };
+
+    const handleSimulationError = () => {
+      setEndChatLoading(false);
+      setEndingAction(null);
+    };
+
+    const handleSimulationGradingProgress = (data: {
+      type: string;
+      chat_id: string;
+      completed_count: number;
+      total_count: number;
+    }) => {
+      if (data.chat_id !== currentChatId) return;
+
+      const progress = Math.round(
+        (data.completed_count / data.total_count) * 100
+      );
+      setGradingProgress({
+        completed: data.completed_count,
+        total: data.total_count,
+        displayedProgress: progress,
+        phase:
+          data.type === "tools"
+            ? "tools"
+            : data.type === "summary"
+              ? "summary"
+              : null,
+      });
+      setIsGrading(true);
+    };
+
+    const handleGradingComplete = () => {
+      setIsGrading(false);
+      setGradingProgress(null);
+    };
+
+    socket.on("simulation_continued", handleSimulationContinued);
+    socket.on("simulation_error", handleSimulationError);
+    socket.on("simulation_grading_progress", handleSimulationGradingProgress);
+
+    // Listen for custom events from AttemptChat
+    const handleGradingProgressEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { type, chat_id, completed_count, total_count } =
+        customEvent.detail;
+      if (chat_id !== currentChatId) return;
+      handleSimulationGradingProgress({
+        type,
+        chat_id,
+        completed_count,
+        total_count,
+      });
+    };
+
+    const handleGradingCompleteEvent = () => {
+      setIsGrading(false);
+      setGradingProgress(null);
+    };
+
+    window.addEventListener(
+      "simulationGradingProgress",
+      handleGradingProgressEvent
+    );
+    window.addEventListener(
+      "simulationGradingComplete",
+      handleGradingCompleteEvent
+    );
+
+    return () => {
+      socket.off("simulation_continued", handleSimulationContinued);
+      socket.off("simulation_error", handleSimulationError);
+      socket.off(
+        "simulation_grading_progress",
+        handleSimulationGradingProgress
+      );
+      window.removeEventListener(
+        "simulationGradingProgress",
+        handleGradingProgressEvent
+      );
+      window.removeEventListener(
+        "simulationGradingComplete",
+        handleGradingCompleteEvent
+      );
+    };
+  }, [socket, currentChatId]);
 
   // Generate permutations for End All dialog
   // Must be computed before early returns to maintain hook order
@@ -131,7 +333,7 @@ export function SimulationControls() {
 
       // Check if this scenario has at least one chat with a grade (completed and graded)
       const hasGradedChat = scenarioChats.some(
-        (c) => c.chat.completed && c.gradingState !== null,
+        (c) => c.chat.completed && c.gradingState !== null
       );
 
       // Get the first chat ID if any exist
@@ -152,7 +354,7 @@ export function SimulationControls() {
   // Filter to only include scenarios without completed chats for End All permutations
   const remainingScenarios = useMemo(() => {
     return allSimulationScenarios.filter(
-      (scenario) => !scenario.hasCompletedChat,
+      (scenario) => !scenario.hasCompletedChat
     );
   }, [allSimulationScenarios]);
 
@@ -164,7 +366,7 @@ export function SimulationControls() {
     const generatePermutations = (
       scenarios: typeof remainingScenarios,
       index: number = 0,
-      currentPermutation: PermutationOption[] = [],
+      currentPermutation: PermutationOption[] = []
     ): PermutationOption[][] => {
       if (index >= scenarios.length) {
         return [currentPermutation];
@@ -200,7 +402,7 @@ export function SimulationControls() {
       for (const option of options) {
         const newPermutation = [...currentPermutation, option];
         results.push(
-          ...generatePermutations(scenarios, index + 1, newPermutation),
+          ...generatePermutations(scenarios, index + 1, newPermutation)
         );
       }
 
@@ -215,7 +417,7 @@ export function SimulationControls() {
         const totalScore = perm.reduce((sum, opt) => sum + (opt.score || 0), 0);
         const totalTimeTaken = perm.reduce(
           (sum, opt) => sum + (opt.timeTaken || 0),
-          0,
+          0
         );
 
         // Calculate total percentage - include skipped sessions as 0 in the average
@@ -224,7 +426,7 @@ export function SimulationControls() {
           perm.length > 0
             ? Math.round(
                 perm.reduce((sum, opt) => sum + (opt.percentage || 0), 0) /
-                  perm.length,
+                  perm.length
               )
             : null;
 
@@ -235,7 +437,7 @@ export function SimulationControls() {
           totalPercentage,
           totalTimeTaken,
         };
-      },
+      }
     );
 
     // Sort by total score (descending), then by total percentage (descending)
@@ -281,16 +483,6 @@ export function SimulationControls() {
     });
   }, [hasPreviousChats, currentGrade, previousChats]);
 
-  // If no simulation context, don't render anything
-  if (!simulationContext) {
-    return null;
-  }
-
-  // Don't show buttons while data is still loading
-  if (isLoadingChats) {
-    return null;
-  }
-
   // Don't show buttons if attemptData is not available
   if (!attemptData) {
     return null;
@@ -301,12 +493,10 @@ export function SimulationControls() {
     return null;
   }
 
-  // After this point, simulationContext is guaranteed to exist
-  // TypeScript doesn't know this, so we need to assert or use the values directly
-  const safeEndChat = endChat!;
-  const safeEndAllChats = endAllChats!;
-  const safeAttemptId = attemptId!;
-  const safeCurrentChat = currentChat!;
+  // Don't show if no current chat
+  if (!currentChat) {
+    return null;
+  }
 
   // Don't show if user is not the owner
   if (!isAttemptOwner) {
@@ -318,7 +508,7 @@ export function SimulationControls() {
 
   // Handle Next Chat button click (moves to next chat)
   const handleNextChat = () => {
-    const totalMessages = currentChatMessages.length;
+    const totalMessages = currentMessages.length;
 
     // If there are previous chats available, bypass the "no messages" warning
     // and go directly to the previous chats selection dialog
@@ -339,13 +529,12 @@ export function SimulationControls() {
     window.dispatchEvent(
       new CustomEvent("endChatButtonPressed", {
         detail: {
-          chatId: safeCurrentChat?.id,
-          attemptId: safeAttemptId,
+          chatId: currentChat.id,
+          attemptId: attemptId,
         },
-      }),
+      })
     );
-    setEndingAction("endChat");
-    safeEndChat();
+    endChat();
   };
 
   // Handle End Session button click (ends whole session)
@@ -384,18 +573,14 @@ export function SimulationControls() {
             )}
 
             {/* Grading progress overlay - fills from left to right */}
-            {(() => {
-              const isGrading = simulationContext?.isGrading;
-              const progress = simulationContext?.gradingProgress;
-              return isGrading && progress ? (
-                <span
-                  className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
-                  style={{
-                    width: `${progress.displayedProgress}%`,
-                  }}
-                />
-              ) : null;
-            })()}
+            {isGrading && gradingProgress ? (
+              <span
+                className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
+                style={{
+                  width: `${gradingProgress.displayedProgress}%`,
+                }}
+              />
+            ) : null}
 
             {/* Button text - "End Session" but functionally it's Next Chat */}
             <span className="relative z-10">
@@ -422,18 +607,14 @@ export function SimulationControls() {
                 )}
 
                 {/* Grading progress overlay - fills from left to right */}
-                {(() => {
-                  const isGrading = simulationContext?.isGrading;
-                  const progress = simulationContext?.gradingProgress;
-                  return isGrading && progress ? (
-                    <span
-                      className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
-                      style={{
-                        width: `${progress.displayedProgress}%`,
-                      }}
-                    />
-                  ) : null;
-                })()}
+                {isGrading && gradingProgress ? (
+                  <span
+                    className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
+                    style={{
+                      width: `${gradingProgress.displayedProgress}%`,
+                    }}
+                  />
+                ) : null}
 
                 {/* Button text */}
                 <span className="relative z-10">
@@ -563,17 +744,17 @@ export function SimulationControls() {
                 window.dispatchEvent(
                   new CustomEvent("endAllChatsButtonPressed", {
                     detail: {
-                      attemptId: safeAttemptId,
+                      attemptId: attemptId,
                       remainingSessions: endAllRemainingSessions,
                     },
-                  }),
+                  })
                 );
 
                 // Extract permutation map if one is selected
                 let previousChatMap: Record<string, string | null> | undefined;
                 if (selectedPermutation && permutations.length > 0) {
                   const selectedPerm = permutations.find(
-                    (p) => p.id === selectedPermutation,
+                    (p) => p.id === selectedPermutation
                   );
                   if (selectedPerm) {
                     previousChatMap = {};
@@ -586,8 +767,7 @@ export function SimulationControls() {
                 }
 
                 setConfirmEndAllOpen(false);
-                setEndingAction("endAll");
-                safeEndAllChats(previousChatMap);
+                endAllChats(previousChatMap);
               }}
             >
               End All
@@ -617,14 +797,13 @@ export function SimulationControls() {
                 window.dispatchEvent(
                   new CustomEvent("endChatButtonPressed", {
                     detail: {
-                      chatId: safeCurrentChat?.id,
-                      attemptId: safeAttemptId,
+                      chatId: currentChat.id,
+                      attemptId: attemptId,
                     },
-                  }),
+                  })
                 );
                 setConfirmEndChatOpen(false);
-                setEndingAction("endChat");
-                safeEndChat();
+                endChat();
               }}
             >
               End Chat
@@ -651,8 +830,8 @@ export function SimulationControls() {
           </AlertDialogHeader>
           <div className="py-4">
             {(() => {
-              const currentChatData = attemptData?.chats.find(
-                (c) => c.chat.id === safeCurrentChat?.id,
+              const currentChatData = chats.find(
+                (c) => c.chat.id === currentChat?.id
               );
               const previousChats = currentChatData?.previousChats || [];
 
@@ -722,18 +901,17 @@ export function SimulationControls() {
                 window.dispatchEvent(
                   new CustomEvent("endChatButtonPressed", {
                     detail: {
-                      chatId: safeCurrentChat?.id,
-                      attemptId: safeAttemptId,
+                      chatId: currentChat.id,
+                      attemptId: attemptId,
                     },
-                  }),
+                  })
                 );
                 setShowPreviousChatsDialog(false);
-                setEndingAction("endChat");
-                safeEndChat(
+                endChat(
                   undefined,
                   selectedPreviousChatId && selectedPreviousChatId !== ""
                     ? selectedPreviousChatId
-                    : undefined,
+                    : undefined
                 );
                 setSelectedPreviousChatId(null);
               }}
