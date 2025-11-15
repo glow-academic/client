@@ -5,7 +5,7 @@ from typing import Any
 
 from agents import ToolsToFinalOutputResult
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.agents.tools.globals import hint_progress
+from app.main import hint_progress
 
 logger = logging.getLogger(__name__)
 

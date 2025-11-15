@@ -10,7 +10,7 @@ from agents.items import TResponseInputItem
 
 from app.utils.agents.build_guardrail_agent import build_guardrail_agent
 from app.utils.agents.tools.create_guardrail_tools import create_guardrail_tools
-from app.utils.agents.tools.globals import guardrail_progress, guardrail_results
+from app.main import guardrail_progress, guardrail_results
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
 

@@ -84,6 +84,38 @@ socket_owner: dict[str, str] = {}  # profile_id -> socket_id
 _db_pool: asyncpg.Pool | None = None
 _test_container: Any | None = None
 
+# Global state dictionaries for agent tool results and progress (moved from utils/agents/tools/globals.py)
+# Global storage for classification results
+classification_results: dict[str, list[str]] = {}
+classification_progress: dict[str, bool] = {}
+
+# Default all categories to empty lists
+DEFAULT_CATEGORIES = [
+    "homeworks",
+    "projects",
+    "quizzes",
+    "midterms",
+    "labs",
+    "lectures",
+    "syllabi",
+]
+
+# Global storage for scenario generation results
+scenario_results: dict[str, Any] = {}
+scenario_progress: dict[str, bool] = {}
+
+# Global storage for grading results
+grading_results: dict[str, Any] = {}
+grading_progress: dict[str, bool] = {}
+
+# Global storage for hint results
+hint_results: dict[str, Any] = {}
+hint_progress: dict[str, bool] = {}
+
+# Global storage for guardrail results
+guardrail_results: dict[str, Any] = {}
+guardrail_progress: dict[str, bool] = {}
+
 
 # ----------  Socket.IO with Redis message queue  ----------
 redis_url = os.getenv("REDIS_URL")  # don't default when unset

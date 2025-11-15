@@ -4,8 +4,7 @@ import logging
 from typing import Any
 
 from agents import function_tool
-from app.utils.agents.tools.globals import (classification_progress,
-                                            classification_results)
+from app.main import classification_progress, classification_results
 from pydantic import Field
 
 logger = logging.getLogger(__name__)

@@ -14,7 +14,7 @@ from app.main import get_pool
 from app.main import sio
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
-from app.utils.agents.tools.globals import grading_progress, grading_results
+from app.main import grading_progress, grading_results
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.chat.format_chat_scenario import format_chat_scenario
 from app.utils.chat.get_simulation_conversation_history import get_simulation_conversation_history

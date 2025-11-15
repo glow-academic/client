@@ -15,7 +15,7 @@ from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.get_output_guardrails import get_output_guardrails
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.utils.agents.tools.globals import hint_progress, hint_results
+from app.main import hint_progress, hint_results
 from app.utils.chat.format_chat_scenario import format_chat_scenario
 from app.utils.chat.get_simulation_conversation_history import \
     get_simulation_conversation_history

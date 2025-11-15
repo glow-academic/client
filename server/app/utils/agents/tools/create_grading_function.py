@@ -8,7 +8,7 @@ from agents import function_tool
 from pydantic import Field
 
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
-from app.utils.agents.tools.globals import grading_progress, grading_results
+from app.main import grading_progress, grading_results
 
 logger = logging.getLogger(__name__)
 

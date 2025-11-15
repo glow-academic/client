@@ -6,7 +6,7 @@ from typing import Any
 from agents import function_tool
 from pydantic import Field
 
-from app.utils.agents.tools.globals import guardrail_progress, guardrail_results
+from app.main import guardrail_progress, guardrail_results
 
 logger = logging.getLogger(__name__)
 

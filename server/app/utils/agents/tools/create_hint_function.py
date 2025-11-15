@@ -5,7 +5,7 @@ import logging
 from agents import Tool, function_tool
 from pydantic import Field
 
-from app.utils.agents.tools.globals import hint_progress, hint_results
+from app.main import hint_progress, hint_results
 
 logger = logging.getLogger(__name__)
 
