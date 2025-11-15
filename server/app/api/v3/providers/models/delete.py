@@ -43,35 +43,31 @@ async def delete_model(
     
     try:
         async with transaction(conn):
-            # Check if model is in use by personas
-            personas_usage_sql = load_sql("sql/v3/providers/check_model_usage_in_personas.sql")
-            personas_usage = await conn.fetchrow(personas_usage_sql, request.modelId)
+            # Delete model with usage checks and name fetch (single query)
+            sql_query = load_sql("sql/v3/providers/delete_model_complete.sql")
+            sql_params = (request.modelId,)
+            result = await conn.fetchrow(sql_query, request.modelId)
 
-            if personas_usage and personas_usage.get("usage_count", 0) > 0:
+            if not result:
+                raise ValueError("Failed to check model usage")
+
+            personas_usage_count = result.get("personas_usage_count", 0)
+            agents_usage_count = result.get("agents_usage_count", 0)
+
+            if personas_usage_count > 0:
                 raise ValueError("Cannot delete model: It is in use by personas")
 
-            # Check if model is in use by agents
-            agents_usage_sql = load_sql("sql/v3/providers/check_model_usage_in_agents.sql")
-            agents_usage = await conn.fetchrow(agents_usage_sql, request.modelId)
-
-            if agents_usage and agents_usage.get("usage_count", 0) > 0:
+            if agents_usage_count > 0:
                 raise ValueError("Cannot delete model: It is in use by agents")
 
-            # Get model name
-            get_name_sql = "SELECT name FROM models WHERE id = $1"
-            model = await conn.fetchrow(get_name_sql, request.modelId)
-
-            if not model:
+            if not result.get("deleted"):
                 raise ValueError(f"Model not found: {request.modelId}")
 
-            # Delete model (track primary operation)
-            sql_query = load_sql("sql/v3/providers/delete_model.sql")
-            sql_params = (request.modelId,)
-            await conn.execute(sql_query, request.modelId)
+            model_name = result.get("name", "Unknown")
 
             result_data = DeleteModelResponse(
                 success=True,
-                message=f"Model '{model['name']}' deleted successfully",
+                message=f"Model '{model_name}' deleted successfully",
             )
             
             # Invalidate cache after mutation

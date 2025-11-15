@@ -38,18 +38,17 @@ async def delete_agent(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Check usage first
-        usage_sql = load_sql("sql/v3/agents/check_agent_usage.sql")
-        usage_result = await conn.fetchrow(usage_sql, request.agentId)
-        if usage_result and usage_result["usage_count"] > 0:
+        # Delete agent with usage check (single query)
+        sql_query = load_sql("sql/v3/agents/delete_agent_complete.sql")
+        sql_params = (request.agentId,)
+        result = await conn.fetchrow(sql_query, request.agentId)
+        
+        if result and result["usage_count"] > 0:
             raise HTTPException(
                 status_code=400, detail="Cannot delete agent: agent is in use"
             )
-
-        # Delete agent (track primary operation)
-        sql_query = load_sql("sql/v3/agents/delete_agent.sql")
-        sql_params = (request.agentId,)
-        await conn.execute(sql_query, request.agentId)
+        
+        # Note: DELETE is idempotent - deleting non-existent entity is considered success
 
         result_data = DeleteAgentResponse(success=True, message="Agent deleted successfully")
         

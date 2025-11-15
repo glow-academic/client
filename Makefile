@@ -93,13 +93,23 @@ generate-test-schema:
 
 # Run unit tests
 test-unit: check-venv
-	@echo "Running unit tests..."
-	@$(VENV_PYTHON) -m pytest server/tests/unit -v
+	@if [ -n "$(ARGS)" ]; then \
+		echo "Running unit tests on: $(ARGS)"; \
+		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
+	else \
+		echo "Running unit tests..."; \
+		$(VENV_PYTHON) -m pytest server/tests/unit -v; \
+	fi
 
 # Run integration tests
 test-integration: check-venv
-	@echo "Running integration tests..."
-	@$(VENV_PYTHON) -m pytest server/tests/integration -v
+	@if [ -n "$(ARGS)" ]; then \
+		echo "Running integration tests on: $(ARGS)"; \
+		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
+	else \
+		echo "Running integration tests..."; \
+		$(VENV_PYTHON) -m pytest server/tests/integration -v; \
+	fi
 
 # Run all tests (unit + integration)
 test: check-venv
@@ -113,8 +123,13 @@ test: check-venv
 
 # Run tests with coverage
 test-cov: check-venv
-	@echo "Running pytest tests with coverage..."
-	@$(VENV_PYTHON) -m pytest server/tests/ --cov=server/app --cov-report=term-missing --cov-report=html
+	@if [ -n "$(ARGS)" ]; then \
+		echo "Running pytest with coverage on: $(ARGS)"; \
+		$(VENV_PYTHON) -m pytest $(ARGS) --cov=server/app --cov-report=term-missing --cov-report=html; \
+	else \
+		echo "Running pytest tests with coverage..."; \
+		$(VENV_PYTHON) -m pytest server/tests/ --cov=server/app --cov-report=term-missing --cov-report=html; \
+	fi
 	@echo "✅ Coverage report generated"
 
 test-e2e: check-venv

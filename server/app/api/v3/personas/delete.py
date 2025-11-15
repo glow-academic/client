@@ -39,32 +39,25 @@ async def delete_persona(
     
     try:
         async with transaction(conn):
-            # Check if persona is in use
-            check_usage_sql = load_sql("sql/v3/personas/check_persona_usage.sql")
-            usage = await conn.fetchrow(check_usage_sql, request.personaId)
+            # Delete persona with usage check and name fetch (single query)
+            sql_query = load_sql("sql/v3/personas/delete_persona_complete.sql")
+            sql_params = (request.personaId,)
+            result = await conn.fetchrow(sql_query, request.personaId)
 
-            if not usage:
+            if not result:
                 raise ValueError("Failed to check persona usage")
 
-            usage_count = usage.get("usage_count", 0)
+            usage_count = result.get("usage_count", 0)
             if usage_count > 0:
                 raise ValueError("Cannot delete persona that is in use by scenarios")
 
-            # Get persona name
-            get_name_sql = load_sql("sql/v3/personas/get_persona_name.sql")
-            persona = await conn.fetchrow(get_name_sql, request.personaId)
-
-            if not persona:
+            if not result.get("deleted"):
                 raise ValueError(f"Persona not found: {request.personaId}")
 
-            # Delete persona (track primary operation)
-            sql_query = load_sql("sql/v3/personas/delete_persona.sql")
-            sql_params = (request.personaId,)
-            await conn.execute(sql_query, request.personaId)
-
+            persona_name = result.get("name", "Unknown")
             return DeletePersonaResponse(
                 success=True,
-                message=f"Persona '{persona['name']}' deleted successfully",
+                message=f"Persona '{persona_name}' deleted successfully",
             )
     except HTTPException:
         raise

@@ -3,12 +3,22 @@
 --   $1 = start_date (timestamp)
 --   $2 = end_date (timestamp)
 --   $3 = department_ids (uuid[] | NULL)
---   $4 = effective_profile_id (uuid | NULL) - profile ID after role check
---   $5 = roles (text[] | NULL) - only used if effective_profile_id is NULL
+--   $4 = profile_id (uuid | NULL) - raw profile ID (role check happens in SQL)
+--   $5 = roles (text[] | NULL) - only used if profile_id is NULL or role is admin/superadmin/instructional
 --   $6 = cohort_ids (uuid[] | NULL)
 -- Returns: JSONB object with model_runs, model_mapping, profile_mapping, agent_mapping, persona_mapping
 
-WITH model_runs_base AS (
+WITH profile_role_check AS (
+    -- Resolve profile_id and check role to determine effective filtering
+    SELECT 
+        $4::uuid as raw_profile_id,
+        CASE 
+            WHEN $4::uuid IS NULL THEN NULL::uuid
+            WHEN (SELECT role FROM profiles WHERE id = $4::uuid) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
+            ELSE $4::uuid
+        END as effective_profile_id
+),
+model_runs_base AS (
     SELECT
         mr.id as model_run_id,
         mr.created_at,
@@ -39,14 +49,14 @@ WITH model_runs_base AS (
                   AND pd.department_id = ANY($3::uuid[])
             )
         )
-        -- Profile filter (specific user)
+        -- Profile filter (specific user) - only if role is not admin/superadmin/instructional
         AND (
-            $4::uuid IS NULL
-            OR mrp.profile_id = $4::uuid
+            (SELECT effective_profile_id FROM profile_role_check) IS NULL
+            OR mrp.profile_id = (SELECT effective_profile_id FROM profile_role_check)
         )
-        -- Role filter (only if no profile_id specified)
+        -- Role filter (only if no effective profile_id)
         AND (
-            $4::uuid IS NOT NULL
+            (SELECT effective_profile_id FROM profile_role_check) IS NOT NULL
             OR $5::text[] IS NULL
             OR COALESCE(array_length($5::text[], 1), 0) = 0
             OR mrp.profile_id IN (

@@ -44,38 +44,21 @@ async def duplicate_persona(
     
     try:
         async with transaction(conn):
-            # Get original persona data
-            get_sql = load_sql("sql/v3/personas/get_persona_for_duplicate.sql")
-            result = await conn.fetchrow(get_sql, request.personaId)
+            # Duplicate persona (fetch and duplicate in single query)
+            sql_query = load_sql("sql/v3/personas/duplicate_persona_complete_v2.sql")
+            sql_params = (request.personaId,)
+            result = await conn.fetchrow(sql_query, request.personaId)
 
-            if not result:
+            if not result or not result.get("new_persona_id"):
                 raise ValueError(f"Persona not found: {request.personaId}")
 
-            # Duplicate persona with prompt and departments in single SQL (DHH style)
-            # The SQL will automatically copy department links from the original persona
-            sql_query = load_sql("sql/v3/personas/duplicate_persona_complete.sql")
-            sql_params = (
-                request.personaId,  # Original persona ID for copying departments
-                result["name"],
-                result["description"],
-                result["temperature"],
-                result["reasoning"] or "none",
-                result["model_id"],
-                result["color"],
-                result["icon"],
-                result["system_prompt"] or None,
-            )
-            new_persona = await conn.fetchrow(sql_query, *sql_params)
-
-            if not new_persona:
-                raise ValueError("Failed to create duplicate persona")
-
-            persona_id = new_persona["persona_id"]
+            persona_id = result["new_persona_id"]
+            original_name = result.get("original_name", "Unknown")
 
             result_data = DuplicatePersonaResponse(
                 success=True,
                 personaId=persona_id,
-                message=f"Persona '{result['name']}' duplicated successfully",
+                message=f"Persona '{original_name}' duplicated successfully",
             )
             
             # Invalidate cache after mutation

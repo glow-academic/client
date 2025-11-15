@@ -105,25 +105,16 @@ async def get_profile_context(
         logger = logging.getLogger(__name__)
         logger.info(f"Request: {request}")
         # Validate emulation is authorized when profiles differ (before fetching context)
+        # Profile IDs are passed as-is (including "guest-profile-id" string) - SQL handles resolution
         if request.actualProfileId != request.effectiveProfileId:
             # Check if emulation is authorized using a separate SQL file
             # (This is a validation step, not core data retrieval)
             simulatable_sql = load_sql("sql/v3/profile/get_simulatable_profiles_combined.sql")
-            # Resolve actual profile ID for authorization check
-            actual_id = request.actualProfileId
-            if actual_id == "guest-profile-id":
-                guest_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-                guest_row = await conn.fetchrow(guest_sql)
-                if guest_row:
-                    actual_id = str(guest_row["id"])
-                else:
-                    raise HTTPException(
-                        status_code=404, detail="No default guest profile found in database"
-                    )
-            simulatable_rows = await conn.fetch(simulatable_sql, actual_id)
+            simulatable_rows = await conn.fetch(simulatable_sql, request.actualProfileId)
             target_ids = {str(row["id"]) for row in simulatable_rows}
             
-            # Resolve effective profile ID for comparison
+            # Resolve effective profile ID for comparison (SQL handles "guest-profile-id" resolution)
+            # We need to resolve it here to compare with target_ids
             effective_id = request.effectiveProfileId
             if effective_id == "guest-profile-id":
                 guest_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")

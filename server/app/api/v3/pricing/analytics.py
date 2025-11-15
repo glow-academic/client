@@ -97,19 +97,7 @@ async def get_pricing(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Determine effective profile ID based on role (replicate v2 logic)
-        effective_profile_id = None
-        if filters.profileId:
-            # Fetch profile role to determine if we should use profileId
-            role_query = load_sql("sql/v3/profile/get_profile_role.sql")
-            role_row = await conn.fetchrow(role_query, filters.profileId)
-            if role_row:
-                role = role_row["role"]
-                # Only use profileId for non-admin roles (ta, guest, etc.)
-                if role not in ("admin", "superadmin", "instructional"):
-                    effective_profile_id = filters.profileId
-
-        # Build parameters for consolidated SQL file
+        # Build parameters for consolidated SQL file (role check happens in SQL)
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
         
@@ -123,15 +111,15 @@ async def get_pricing(
         if filters.cohortIds:
             cohort_ids = [uuid.UUID(c) for c in filters.cohortIds]
         
-        effective_profile_uuid = None
-        if effective_profile_id:
-            effective_profile_uuid = uuid.UUID(effective_profile_id)
+        profile_uuid = None
+        if filters.profileId:
+            profile_uuid = uuid.UUID(filters.profileId)
         
         roles = filters.roles or None
 
-        # Execute consolidated SQL query with all filter logic
+        # Execute consolidated SQL query with all filter logic (including role check)
         sql_query = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
-        sql_params = (start_dt, end_dt, department_ids, effective_profile_uuid, roles, cohort_ids)
+        sql_params = (start_dt, end_dt, department_ids, profile_uuid, roles, cohort_ids)
         result = await conn.fetchval(sql_query, *sql_params)
 
         # Parse JSONB result

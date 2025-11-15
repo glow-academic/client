@@ -139,16 +139,8 @@ async def get_home_overview(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Resolve "guest-profile-id" to actual default guest profile
+        # Profile ID is passed as-is (including "guest-profile-id" string) - SQL handles resolution
         profile_id = filters.profileId
-        if profile_id == "guest-profile-id":
-            # Get default guest profile
-            guest_query = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-            guest_row = await conn.fetchrow(guest_query)
-            if guest_row:
-                profile_id = str(guest_row["id"])
-            else:
-                raise ValueError("No default guest profile found in database")
 
         # Build WHERE clause for home overview
         # Note: Home always shows general simulations only (hardcoded)

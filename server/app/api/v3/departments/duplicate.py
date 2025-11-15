@@ -42,24 +42,16 @@ async def duplicate_department(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Get original department title
-        basic_sql = load_sql("sql/v3/departments/get_department_basic.sql")
-        dept_row = await conn.fetchrow(basic_sql, request.departmentId)
-
-        if not dept_row:
-            raise HTTPException(status_code=404, detail=f"Department {request.departmentId} not found")
-
-        new_title = f"{dept_row['title']} Copy"
-
         async with transaction(conn):
-            sql_query = load_sql("sql/v3/departments/duplicate_department.sql")
-            sql_params = (request.departmentId, new_title)
-            new_dept_row = await conn.fetchrow(sql_query, request.departmentId, new_title)
+            # Duplicate department (fetch and duplicate in single query)
+            sql_query = load_sql("sql/v3/departments/duplicate_department_complete.sql")
+            sql_params = (request.departmentId,)
+            result = await conn.fetchrow(sql_query, request.departmentId)
 
-            if not new_dept_row:
-                raise HTTPException(status_code=500, detail="Failed to duplicate department")
+            if not result or not result.get("new_department_id"):
+                raise HTTPException(status_code=404, detail=f"Department {request.departmentId} not found")
 
-            new_department_id = new_dept_row["department_id"]
+            new_department_id = result["new_department_id"]
 
         result = DuplicateDepartmentResponse(
             success=True,

@@ -316,34 +316,21 @@ async def upload_finalize(
 
         content_type = metadata.get("filetype") or get_content_type(filename)
 
-        # Insert document into database
-        sql = load_sql("sql/v3/documents/insert_document.sql")
+        # Insert document with department and parameter item links (single query)
+        import uuid as uuid_lib
+        param_item_uuids = [uuid_lib.UUID(p) for p in (request.parameterItemIds or [])]
+        dept_uuids = [uuid_lib.UUID(d) for d in department_ids] if department_ids else []
+        
+        sql = load_sql("sql/v3/documents/insert_document_complete.sql")
         await conn.execute(
             sql,
             document_id,
             filename,
             final_file_path,
             content_type,
+            dept_uuids,
+            param_item_uuids,
         )
-
-        # Insert document-department relationships
-        if department_ids:
-            dept_sql = load_sql("sql/v3/documents/insert_document_department.sql")
-            await conn.execute(
-                dept_sql,
-                document_id,
-                department_ids,
-            )
-
-        # Insert parameter item relationships if provided
-        if request.parameterItemIds:
-            param_sql = load_sql("sql/v3/documents/insert_document_parameter_item.sql")
-            for param_item_id in request.parameterItemIds:
-                await conn.execute(
-                    param_sql,
-                    document_id,
-                    uuid.UUID(param_item_id),
-                )
 
         # Clean up
         try:

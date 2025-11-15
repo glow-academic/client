@@ -87,17 +87,15 @@ async def get_profile_list(
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
 
-        # Get current user's role for role_options computation
-        role_sql = load_sql("sql/v3/profile/staff/get_profile_role.sql")
-        current_user = await conn.fetchrow(role_sql, filters.profileId)
-        current_user_role = current_user["role"] if current_user else "guest"
-
-        # Load SQL string
+        # Load SQL string (includes current user role in result)
         sql_query = load_sql("sql/v3/profile/staff/list_staff.sql")
         sql_params = (filters.profileId, campus_domain)
 
         # Execute query
         result = await conn.fetch(sql_query, filters.profileId, campus_domain)
+        
+        # Get current user's role from first row (same for all rows)
+        current_user_role = result[0]["current_user_role"] if result and len(result) > 0 else "guest"
 
         # Build response
         staff = []

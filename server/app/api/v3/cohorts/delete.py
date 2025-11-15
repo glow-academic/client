@@ -43,20 +43,18 @@ async def delete_cohort(
     sql_params: tuple[Any, ...] | None = None
     
     try:
-        # Check usage
-        usage_sql = load_sql("sql/v3/cohorts/check_cohort_usage.sql")
-        usage_row = await conn.fetchrow(usage_sql, uuid.UUID(request.cohortId))
+        # Delete cohort with usage check (single query)
+        sql_query = load_sql("sql/v3/cohorts/delete_cohort_complete.sql")
+        sql_params = (uuid.UUID(request.cohortId),)
+        result = await conn.fetchrow(sql_query, uuid.UUID(request.cohortId))
 
-        if usage_row and usage_row["usage_count"] > 0:
+        if result and result["usage_count"] > 0:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot delete cohort: in use by {usage_row['usage_count']} attempt(s)",
+                detail=f"Cannot delete cohort: in use by {result['usage_count']} attempt(s)",
             )
-
-        # Delete cohort (track primary operation)
-        sql_query = load_sql("sql/v3/cohorts/delete_cohort.sql")
-        sql_params = (uuid.UUID(request.cohortId),)
-        await conn.execute(sql_query, uuid.UUID(request.cohortId))
+        
+        # Note: DELETE is idempotent - deleting non-existent entity is considered success
 
         result = DeleteCohortResponse(
             success=True,

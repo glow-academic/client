@@ -2,6 +2,16 @@
 -- Parameters: $1 = profile_id (uuid), $2 = department_ids (uuid[])
 
 WITH
+-- Resolve guest-profile-id to actual profile ID
+resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $1::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
 -- 1) Simulation meta (practice only)
 sim_meta AS (
     SELECT
@@ -53,8 +63,8 @@ sim_persona_meta AS (
 -- 3) All-time analytics slice (lifetime data for this user)
 filt_all AS (
     SELECT a.*
-    FROM analytics a
-    WHERE a.profile_id = $1::uuid
+    FROM analytics a, resolve_profile_id rpi
+    WHERE a.profile_id = rpi.resolved_profile_id
       AND a.is_practice = TRUE
       AND (cardinality($2::uuid[]) = 0 OR a.department_id = ANY($2::uuid[]))
 ),
@@ -152,8 +162,8 @@ rows AS (
             'numSessions', sm.num_scenarios,
             'highestScore', (
                 SELECT ROUND(MAX(ap.avg_score_completed))::int
-                FROM attempt_progress ap
-                WHERE ap.profile_id = $1::uuid
+                FROM attempt_progress ap, resolve_profile_id rpi
+                WHERE ap.profile_id = rpi.resolved_profile_id
                   AND ap.simulation_id = sm.simulation_id
             ),
             'rubric_id', sm.rubric_id::text,
@@ -163,8 +173,8 @@ rows AS (
                 SELECT MAX(ap.avg_score_completed) >= (
                     SELECT pass_pct FROM sim_pass_pct WHERE simulation_id = sm.simulation_id LIMIT 1
                 )
-                FROM attempt_progress ap
-                WHERE ap.profile_id = $1::uuid
+                FROM attempt_progress ap, resolve_profile_id rpi
+                WHERE ap.profile_id = rpi.resolved_profile_id
                   AND ap.simulation_id = sm.simulation_id
             ), false),
             'passRate', CASE
@@ -177,8 +187,8 @@ rows AS (
                                 SELECT MAX(ap.avg_score_completed) >= (
                                     SELECT pass_pct FROM sim_pass_pct WHERE simulation_id = sm.simulation_id LIMIT 1
                                 )
-                                FROM attempt_progress ap
-                                WHERE ap.profile_id = $1::uuid
+                                FROM attempt_progress ap, resolve_profile_id rpi
+                                WHERE ap.profile_id = rpi.resolved_profile_id
                                   AND ap.simulation_id = sm.simulation_id
                               ), false) THEN 'passed'
                          WHEN COALESCE(aps.chats, 0) > 0 THEN 'in-progress'
@@ -186,8 +196,8 @@ rows AS (
                        END,
             'completionPct', COALESCE((
                 SELECT ROUND(100.0 * lap.completed_root_scenarios::numeric / GREATEST(sm.num_scenarios, 1))::int
-                FROM latest_attempt_per_profile_sim lap
-                WHERE lap.profile_id = $1::uuid
+                FROM latest_attempt_per_profile_sim lap, resolve_profile_id rpi
+                WHERE lap.profile_id = rpi.resolved_profile_id
                   AND lap.simulation_id = sm.simulation_id
                 LIMIT 1
             ), 0),
@@ -199,8 +209,8 @@ rows AS (
             'updatedAt', sm.updated_at,
             'lastActivityTs', (
                 SELECT MAX(ap.last_time)
-                FROM attempt_progress ap
-                WHERE ap.profile_id = $1::uuid
+                FROM attempt_progress ap, resolve_profile_id rpi
+                WHERE ap.profile_id = rpi.resolved_profile_id
                   AND ap.simulation_id = sm.simulation_id
             ),
             'hasActivity', (COALESCE(aps.chats, 0) > 0),
@@ -220,14 +230,14 @@ rows AS (
         sm.simulation_title AS sort_title,
         (
             SELECT MAX(ap.last_time)
-            FROM attempt_progress ap
-            WHERE ap.profile_id = $1::uuid
+            FROM attempt_progress ap, resolve_profile_id rpi
+            WHERE ap.profile_id = rpi.resolved_profile_id
               AND ap.simulation_id = sm.simulation_id
         ) AS sort_last_activity
     FROM sim_meta sm
     LEFT JOIN sim_persona_meta spm ON spm.simulation_id = sm.simulation_id
     LEFT JOIN activity_by_profile_sim aps
-           ON aps.profile_id = $1::uuid
+           ON aps.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
           AND aps.simulation_id = sm.simulation_id
 ),
 -- FRESH HISTORY DATA: Query base tables directly, not analytics MV
@@ -255,7 +265,7 @@ practice_history_attempts AS (
         GROUP BY sd.simulation_id
     ) sdd ON sdd.simulation_id = sim.id
     WHERE sim.practice_simulation = TRUE
-      AND ap.profile_id = $1::uuid
+      AND ap.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
       AND (cardinality($2::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $2::text[])
 ),
 -- Aggregate chats per attempt

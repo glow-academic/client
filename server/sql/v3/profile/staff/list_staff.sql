@@ -286,7 +286,8 @@ SELECT DISTINCT ON (p.id)
     END as can_delete,
     cmd.cohort_mapping,
     dmd.department_mapping,
-    tdc.trend_data
+    tdc.trend_data,
+    up.role as current_user_role
 FROM profiles p
 JOIN profile_departments pd ON pd.profile_id = p.id
 LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id

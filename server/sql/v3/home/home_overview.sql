@@ -15,26 +15,37 @@
 -- The WHERE clause for 'filt' CTE is inserted at the marked location below
 
 WITH 
+-- Resolve guest-profile-id to actual profile ID
+resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $3::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $3::text IS NULL OR $3::text = '' THEN NULL::uuid
+            ELSE $3::uuid
+        END as resolved_profile_id
+),
 -- Look up profile role if profileId provided
 profile_role_lookup AS (
     SELECT 
         CASE 
-            WHEN $3::uuid IS NULL THEN 'instructional'
-            WHEN (SELECT role FROM profiles WHERE id = $3::uuid) = 'ta' THEN 'ta'
+            WHEN rpi.resolved_profile_id IS NULL THEN 'instructional'
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'ta' THEN 'ta'
             ELSE 'instructional'
         END AS mode,
         CASE
-            WHEN $3::uuid IS NULL THEN false
-            ELSE COALESCE((SELECT role = 'ta' FROM profiles WHERE id = $3::uuid), false)
+            WHEN rpi.resolved_profile_id IS NULL THEN false
+            ELSE COALESCE((SELECT role = 'ta' FROM profiles WHERE id = rpi.resolved_profile_id), false)
         END AS is_ta_mode
+    FROM resolve_profile_id rpi
 ),
 -- Filter analytics for items: for TA mode include profileId filter
 -- NOTE: WHERE clause here is built dynamically - see route implementation
 filt AS (
     SELECT a.* 
-    FROM analytics a, profile_role_lookup prl
+    FROM analytics a, profile_role_lookup prl, resolve_profile_id rpi
     WHERE {WHERE_CLAUSE_PLACEHOLDER}
-      AND (NOT prl.is_ta_mode OR a.profile_id = $3::uuid)
+      AND (NOT prl.is_ta_mode OR a.profile_id = rpi.resolved_profile_id)
 ),
 -- Get cohort-simulation pairs (includes empty cohorts)
 cohort_sim AS (
@@ -160,7 +171,7 @@ ta_primary_cohort AS (
     FROM cohorts c
     JOIN cohort_simulations cs ON cs.cohort_id = c.id
     JOIN cohort_profiles cp ON cp.cohort_id = c.id
-        AND cp.profile_id = $3::uuid
+        AND cp.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     WHERE (cardinality($4::uuid[]) = 0 OR c.id = ANY($4::uuid[]))
     GROUP BY c.id, c.title, cs.simulation_id
@@ -183,8 +194,8 @@ ta_rows AS (
             'numSessions', s.num_scenarios,
             'highestScore', (
                 SELECT ROUND(GREATEST(0, LEAST(100, uss.avg_pct_over_expected)))::int
-                FROM user_sim_status uss
-                WHERE uss.profile_id = $3::uuid
+                FROM user_sim_status uss, resolve_profile_id rpi
+                WHERE uss.profile_id = rpi.resolved_profile_id
                   AND uss.simulation_id = s.simulation_id
             ),
             'rubric_id', s.rubric_id::text,
@@ -192,8 +203,8 @@ ta_rows AS (
             'icon', spm.icon,
             'hasPassed', (
                 SELECT COALESCE(uss.passed, false)
-                FROM user_sim_status uss
-                WHERE uss.profile_id = $3::uuid
+                FROM user_sim_status uss, resolve_profile_id rpi
+                WHERE uss.profile_id = rpi.resolved_profile_id
                   AND uss.simulation_id = s.simulation_id
             ),
             'passRate', CASE WHEN s.rubric_points > 0
@@ -205,14 +216,14 @@ ta_rows AS (
                           WHEN COALESCE(uss.chats_completed, 0) > 0 THEN 'in-progress'
                           ELSE 'not-started'
                         END
-                FROM user_sim_status uss
-                WHERE uss.profile_id = $3::uuid
+                FROM user_sim_status uss, resolve_profile_id rpi
+                WHERE uss.profile_id = rpi.resolved_profile_id
                   AND uss.simulation_id = s.simulation_id
             ), 'not-started'),
             'completionPct', COALESCE((
                 SELECT ROUND(GREATEST(0, LEAST(100, uss.avg_pct_over_expected)))::int
-                FROM user_sim_status uss
-                WHERE uss.profile_id = $3::uuid
+                FROM user_sim_status uss, resolve_profile_id rpi
+                WHERE uss.profile_id = rpi.resolved_profile_id
                   AND uss.simulation_id = s.simulation_id
             ), 0),
             'passedCount', NULL,
@@ -236,9 +247,9 @@ ta_rows AS (
                         END
                 FROM (
                     SELECT ARRAY_AGG(DISTINCT c.cohort_title ORDER BY c.cohort_title) AS titles
-                    FROM cohort_membership c
+                    FROM cohort_membership c, resolve_profile_id rpi
                     WHERE c.simulation_id = s.simulation_id
-                      AND c.profile_id = $3::uuid
+                      AND c.profile_id = rpi.resolved_profile_id
                 ) x
             ),
             'orderIndex', (
@@ -418,7 +429,7 @@ history_attempts AS (
     WHERE sa.created_at >= $7
       AND sa.created_at <= $8
       AND sim.practice_simulation = FALSE
-      AND ($9::uuid IS NULL OR ap.profile_id = $9::uuid)
+      AND (($9::text IS NULL OR $9::text = '' OR $9::text = 'guest-profile-id') OR ap.profile_id = CASE WHEN $9::text = 'guest-profile-id' THEN (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1) ELSE $9::uuid END)
       AND (cardinality($11::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $11::uuid[]::text[])
 ),
 -- Get cohorts for each attempt's profile

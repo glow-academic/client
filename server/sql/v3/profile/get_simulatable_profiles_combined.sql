@@ -1,7 +1,15 @@
-WITH requester_role AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $1::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+requester_role AS (
     SELECT role
-    FROM profiles
-    WHERE id = $1
+    FROM profiles p, resolve_profile_id rpi
+    WHERE p.id = rpi.resolved_profile_id
 )
 SELECT 
     p.id,
@@ -30,7 +38,7 @@ LEFT JOIN LATERAL (
     ORDER BY created_at DESC 
     LIMIT 1
 ) pa ON true
-WHERE p.id != $1
+WHERE p.id != (SELECT resolved_profile_id FROM resolve_profile_id)
   AND CASE 
     WHEN rr.role = 'superadmin' THEN true
     WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
