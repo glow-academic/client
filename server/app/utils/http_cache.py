@@ -5,7 +5,7 @@ import json
 import logging
 from typing import Any, Iterable
 
-from app.extensions import redis_client
+from app.main import redis_client
 
 logger = logging.getLogger(__name__)
 

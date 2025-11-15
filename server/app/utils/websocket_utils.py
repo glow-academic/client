@@ -1,25 +1,42 @@
-"""Shared utilities for connection WebSocket handlers."""
+"""Shared utilities for WebSocket connection handlers."""
 
 import asyncio
 import logging
 import uuid
 from typing import Any
 
-from app.extensions import redis_client
-from app.main import sio
-
 logger = logging.getLogger(__name__)
 
-# Global in-process store for active Runner results to support immediate cancel
-active_results: dict[str, dict[str, Any]] = {}
 
-# Fallback in-memory storage for when Redis is unavailable
-socket_owner: dict[str, str] = {}  # profile_id -> socket_id
+def _get_redis_client() -> Any:
+    """Lazy import to avoid circular dependency."""
+    from app.main import redis_client
+    return redis_client
+
+
+def _get_socket_owner() -> dict[str, str]:
+    """Lazy import to avoid circular dependency."""
+    from app.main import socket_owner
+    return socket_owner
+
+
+def _get_active_results() -> dict[str, dict[str, Any]]:
+    """Lazy import to avoid circular dependency."""
+    from app.main import active_results
+    return active_results
+
+
+def _get_sio() -> Any:
+    """Lazy import to avoid circular dependency."""
+    from app.main import sio
+    return sio
 
 
 # Socket ownership management
 async def get_socket_owner(profile_id: str) -> str | None:
     """Get the socket ID that owns a profile from Redis."""
+    redis_client = _get_redis_client()
+    socket_owner = _get_socket_owner()
     if not redis_client:
         # Fallback to in-memory storage
         return socket_owner.get(profile_id)
@@ -35,6 +52,8 @@ async def get_socket_owner(profile_id: str) -> str | None:
 
 async def set_socket_owner(profile_id: str, socket_id: str) -> None:
     """Set the socket ID that owns a profile in Redis."""
+    redis_client = _get_redis_client()
+    socket_owner = _get_socket_owner()
     if not redis_client:
         # Fallback to in-memory storage
         socket_owner[profile_id] = socket_id
@@ -51,6 +70,8 @@ async def set_socket_owner(profile_id: str, socket_id: str) -> None:
 
 async def remove_socket_owner(profile_id: str) -> None:
     """Remove the socket ownership for a profile from Redis."""
+    redis_client = _get_redis_client()
+    socket_owner = _get_socket_owner()
     if not redis_client:
         # Fallback to in-memory storage
         socket_owner.pop(profile_id, None)
@@ -66,6 +87,8 @@ async def remove_socket_owner(profile_id: str) -> None:
 
 async def find_profile_by_socket(socket_id: str) -> str | None:
     """Find the profile ID owned by a socket ID."""
+    redis_client = _get_redis_client()
+    socket_owner = _get_socket_owner()
     if not redis_client:
         # Fallback to in-memory storage
         for profile_id, sid in socket_owner.items():
@@ -93,6 +116,7 @@ async def find_profile_by_socket(socket_id: str) -> str | None:
 # Active connections management (chat_id -> socket_id)
 async def get_active_connection(chat_id: str) -> str | None:
     """Get the socket ID for an active chat connection from Redis."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return None
 
@@ -106,6 +130,7 @@ async def get_active_connection(chat_id: str) -> str | None:
 
 async def set_active_connection(chat_id: str, socket_id: str) -> None:
     """Set the socket ID for an active chat connection in Redis."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return
 
@@ -118,6 +143,7 @@ async def set_active_connection(chat_id: str, socket_id: str) -> None:
 
 async def remove_active_connection(chat_id: str) -> None:
     """Remove an active chat connection from Redis."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return
 
@@ -129,6 +155,7 @@ async def remove_active_connection(chat_id: str) -> None:
 
 async def find_chat_by_socket(socket_id: str) -> str | None:
     """Find the chat ID for a socket ID."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return None
 
@@ -147,6 +174,7 @@ async def find_chat_by_socket(socket_id: str) -> str | None:
 
 async def find_chats_by_socket(socket_id: str) -> list[str]:
     """Find all chat IDs for a socket ID."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return []
 
@@ -167,6 +195,7 @@ async def find_chats_by_socket(socket_id: str) -> list[str]:
 # Guest management functions
 async def add_guest_socket(socket_id: str) -> None:
     """Add a guest socket to Redis."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return
 
@@ -179,6 +208,7 @@ async def add_guest_socket(socket_id: str) -> None:
 
 async def remove_guest_socket(socket_id: str) -> None:
     """Remove a guest socket from Redis."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return
 
@@ -191,6 +221,7 @@ async def remove_guest_socket(socket_id: str) -> None:
 
 async def is_guest_socket(socket_id: str) -> bool:
     """Check if a socket is a guest socket."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return False
 
@@ -204,6 +235,7 @@ async def is_guest_socket(socket_id: str) -> bool:
 
 async def increment_guest_count() -> int:
     """Increment guest connection count and return new total."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return 0
 
@@ -217,6 +249,7 @@ async def increment_guest_count() -> int:
 
 async def decrement_guest_count() -> int:
     """Decrement guest connection count and return new total (floor at 0)."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return 0
 
@@ -236,6 +269,7 @@ async def decrement_guest_count() -> int:
 
 async def get_guest_count() -> int:
     """Get current guest connection count."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return 0
 
@@ -277,6 +311,7 @@ async def emit_chat_stopped(
     chat_id: str, chat_type: str, message: str = "Chat stopped successfully"
 ) -> None:
     """Emit chat_stopped event to the appropriate room"""
+    sio = _get_sio()
     await sio.emit(
         "chat_stopped",
         {"chat_id": chat_id, "chat_type": chat_type, "message": message},
@@ -293,6 +328,7 @@ async def store_active_run(chat_id: str, run_result: Any) -> None:
 
 async def store_active_result(chat_id: str, result: Any) -> None:
     """Store the Runner result object locally for immediate cancel."""
+    active_results = _get_active_results()
     if chat_id not in active_results:
         active_results[chat_id] = {}
     active_results[chat_id]["result"] = result
@@ -300,6 +336,7 @@ async def store_active_result(chat_id: str, result: Any) -> None:
 
 async def store_active_events(chat_id: str, events_iter: Any) -> None:
     """Store the events iterator (async generator) to allow aclose() on cancel."""
+    active_results = _get_active_results()
     if chat_id not in active_results:
         active_results[chat_id] = {}
     active_results[chat_id]["events"] = events_iter
@@ -307,6 +344,7 @@ async def store_active_events(chat_id: str, events_iter: Any) -> None:
 
 async def cancel_active_result(chat_id: str) -> bool:
     """Call cancel() on the local Runner result if present."""
+    active_results = _get_active_results()
     entry = active_results.get(chat_id)
     if not entry:
         return False
@@ -334,12 +372,14 @@ async def cancel_active_result(chat_id: str) -> bool:
 
 async def remove_active_result(chat_id: str) -> None:
     """Remove stored Runner result for a chat."""
+    active_results = _get_active_results()
     active_results.pop(chat_id, None)
 
 
 # Active run management (chat_id -> run_id)
 async def get_active_run(chat_id: str) -> str | None:
     """Get the active run ID for a chat from Redis."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return None
 
@@ -353,6 +393,7 @@ async def get_active_run(chat_id: str) -> str | None:
 
 async def set_active_run(chat_id: str, run_id: str) -> None:
     """Set the active run ID for a chat in Redis."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return
 
@@ -365,6 +406,7 @@ async def set_active_run(chat_id: str, run_id: str) -> None:
 
 async def remove_active_run(chat_id: str) -> None:
     """Remove an active run from Redis."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return
 
@@ -376,6 +418,7 @@ async def remove_active_run(chat_id: str) -> None:
 
 async def cancel_active_run(chat_id: str) -> bool:
     """Cancel an active run using cooperative cancellation."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return False
 
@@ -395,6 +438,7 @@ async def cancel_active_run(chat_id: str) -> bool:
 
 async def is_run_cancelled(run_id: str) -> bool:
     """Check if a run has been cancelled."""
+    redis_client = _get_redis_client()
     if not redis_client:
         return False
 

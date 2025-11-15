@@ -270,7 +270,7 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         )
 
                     # Store the result in active runs for potential cancellation using unified tracking
-                    from app.socket.connections.utils import store_active_run
+                    from app.utils.websocket_utils import store_active_run
 
                     chat_id_str = context.chat_id
                     await store_active_run(chat_id_str, result)
@@ -486,8 +486,7 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         raise
                     finally:
                         # Clean up active run
-                        from app.socket.connections.utils import \
-                            remove_active_run
+                        from app.utils.websocket_utils import remove_active_run
                         await remove_active_run(chat_id_str)
 
                 # 4. Mark current message as completed (if we have one)

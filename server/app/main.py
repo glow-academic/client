@@ -25,6 +25,12 @@ try:
 except ImportError:  # pip install redis-py not present
     AsyncRedisManager = None  # type: ignore
 
+# Guarded Redis import to prevent crashes when redis is not installed
+try:
+    import redis.asyncio as redis  # type: ignore
+except ImportError:
+    redis = None  # type: ignore # graceful fallback
+
 load_dotenv()
 
 # MCP server instance for tool registration
@@ -51,18 +57,14 @@ socket_path = f"{app_prefix}/socket.io" if app_prefix else "socket.io"
 # Allow all origins
 allowed_origins = [origin]
 
-# Import Redis client initialization from extensions
-from app.extensions import cleanup_redis_client, init_redis_client
+# Redis client for shared infrastructure (HTTP caching, health checks, etc.)
+redis_client: Any | None = None  # type: ignore
 
-# Store active chat connections - now using Redis
-# active_connections: dict[str, str] = {}  # REMOVED - using Redis instead
+# Global in-process store for active Runner results to support immediate cancel
+active_results: dict[str, dict[str, Any]] = {}
 
-# Profile-based connection management (simplified) - now using Redis
-# socket_owner: Dict[str, str] = {}  # profile_id -> socket_id - REMOVED, using Redis
-
-# Track guest connections without restricting concurrency - now using Redis
-# guest_connection_count: int = 0 - REMOVED, using Redis
-# guest_sids: set[str] = set() - REMOVED, using Redis
+# Fallback in-memory storage for when Redis is unavailable
+socket_owner: dict[str, str] = {}  # profile_id -> socket_id
 
 
 # ----------  Socket.IO with Redis message queue  ----------
@@ -138,7 +140,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 uvicorn_logger.addHandler(handler)
         
         # Initialize Redis client for socket ownership management
-        await init_redis_client()
+        global redis_client
+        redis_url = os.getenv("REDIS_URL")
+        if not redis or not redis_url:
+            logger.warning(
+                "Redis disabled (no lib or no REDIS_URL); using in-memory fallbacks"
+            )
+            redis_client = None
+        else:
+            try:
+                client = redis.from_url(redis_url)  # type: ignore
+                await client.ping()
+                redis_client = client
+                logger.info(f"Redis client initialized: {redis_url}")
+            except Exception as e:
+                logger.error(f"Failed to initialize Redis client: {e}")
+                redis_client = None
 
         # Initialize asyncpg database pool
         await init_db_pool()
@@ -172,7 +189,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         await close_db_pool()
 
         # Clean up Redis client on shutdown
-        await cleanup_redis_client()
+        if redis_client:
+            await redis_client.close()
+            redis_client = None
+            logger.info("Redis client closed")
 
 
 # Create FastAPI app
