@@ -13,9 +13,7 @@ import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo } from "react";
 
-import ChatDialog from "@/components/assistant/ChatDialog";
-import ChatFab from "@/components/assistant/ChatFab";
-import ChatWidget from "@/components/assistant/ChatWidget";
+import AssistantChat from "@/components/assistant/AssistantChat";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -24,7 +22,6 @@ import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { DocumentUploadButton } from "@/components/documents/DocumentUploadButton";
 import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
-import { AssistantProvider } from "@/contexts/assistant-context";
 import {
   BreadcrumbProvider,
   useBreadcrumbContext,
@@ -71,25 +68,23 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
   markIntroCompleteAction: (
-    input: MarkIntroCompleteIn,
+    input: MarkIntroCompleteIn
   ) => Promise<MarkIntroCompleteOut>;
   markChatCompleteAction: (
-    input: MarkChatCompleteIn,
+    input: MarkChatCompleteIn
   ) => Promise<MarkChatCompleteOut>;
   getAssistantChatListAction: (
-    input: AssistantChatListIn,
+    input: AssistantChatListIn
   ) => Promise<AssistantChatListOut>;
   getAssistantChatFullAction: (
-    input: AssistantChatFullIn,
+    input: AssistantChatFullIn
   ) => Promise<AssistantChatFullOut>;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
-  createFeedbackAction: (
-    input: CreateFeedbackIn,
-  ) => Promise<CreateFeedbackOut>;
+  createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn,
+    input: RefreshAnalyticsIn
   ) => Promise<RefreshAnalyticsOut>;
 }) {
   const pathname = usePathname() || "/";
@@ -275,26 +270,18 @@ function MainLayoutContent({
       return <PracticeCustomizeButton />;
     }
 
-    if (!shouldShowChatComponents && canShowChatComponents) {
-      return (
-        <>
-          <ChatFab up={true} />
-          <ChatWidget up={true} />
-          <ChatDialog />
-        </>
-      );
-    }
-
+    // Chat components are now handled by AssistantChat
     return null;
   };
 
   const actionButton = getActionButton();
 
   return (
-    <AssistantProvider
-      getAssistantChatList={getAssistantChatListAction}
-      getAssistantChatFull={getAssistantChatFullAction}
-    >
+    <>
+      <AssistantChat
+        getAssistantChatList={getAssistantChatListAction}
+        getAssistantChatFull={getAssistantChatFullAction}
+      />
       <SidebarProvider>
         <UnifiedSidebar
           activeSection={activeSection}
@@ -335,15 +322,6 @@ function MainLayoutContent({
         </SidebarInset>
       </SidebarProvider>
 
-      {/* Chat Components - Only show on main screens defined in the sidebar for allowed roles */}
-      {shouldShowChatComponents && canShowChatComponents && (
-        <>
-          <ChatFab up={false} />
-          <ChatWidget up={false} />
-          <ChatDialog />
-        </>
-      )}
-
       {/* Tour Component - Available globally for TA users; hide when acting on behalf of another */}
       {effectiveProfile?.role === "ta" &&
         activeProfile?.id === effectiveProfile?.id && (
@@ -352,7 +330,7 @@ function MainLayoutContent({
             markChatCompleteAction={markChatCompleteAction}
           />
         )}
-    </AssistantProvider>
+    </>
   );
 }
 
@@ -372,25 +350,23 @@ export function MainLayoutClient({
   initial: LayoutContextResponse;
   sessionSnapshot: SafeSessionSnapshot;
   markIntroCompleteAction: (
-    input: MarkIntroCompleteIn,
+    input: MarkIntroCompleteIn
   ) => Promise<MarkIntroCompleteOut>;
   markChatCompleteAction: (
-    input: MarkChatCompleteIn,
+    input: MarkChatCompleteIn
   ) => Promise<MarkChatCompleteOut>;
   getAssistantChatListAction: (
-    input: AssistantChatListIn,
+    input: AssistantChatListIn
   ) => Promise<AssistantChatListOut>;
   getAssistantChatFullAction: (
-    input: AssistantChatFullIn,
+    input: AssistantChatFullIn
   ) => Promise<AssistantChatFullOut>;
   switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
-  createFeedbackAction: (
-    input: CreateFeedbackIn,
-  ) => Promise<CreateFeedbackOut>;
+  createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   refreshAnalyticsAction: (
-    input: RefreshAnalyticsIn,
+    input: RefreshAnalyticsIn
   ) => Promise<RefreshAnalyticsOut>;
 }) {
   return (

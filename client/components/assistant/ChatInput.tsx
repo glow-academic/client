@@ -7,30 +7,34 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useAssistant } from "@/contexts/assistant-context";
 import { Send, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 export interface ChatInputProps {
+  currentChatId: string | undefined;
+  isSendingMessage: boolean;
+  isStoppingMessage: boolean;
+  isConnected: boolean;
+  onSendMessage: (message: string) => void;
+  onStopMessage: () => void;
   promptToSet?: string;
   onPromptSet?: () => void;
   togglePrompt?: (value: boolean) => void;
 }
 
 export default function ChatInput({
+  currentChatId,
+  isSendingMessage,
+  isStoppingMessage,
+  isConnected,
+  onSendMessage,
+  onStopMessage,
   promptToSet,
   onPromptSet,
   togglePrompt,
-}: ChatInputProps = {}) {
+}: ChatInputProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const {
-    sendMessage,
-    stopMessage,
-    isSendingMessage,
-    isStoppingMessage,
-    currentChatId,
-  } = useAssistant();
 
   // NEW: Global key listener to auto-focus the input
   useEffect(() => {
@@ -97,12 +101,12 @@ export default function ChatInput({
 
     const messageToSend = message.trim();
     setMessage("");
-    await sendMessage(messageToSend);
+    await onSendMessage(messageToSend);
   };
 
   const handleStop = async (e: React.FormEvent) => {
     e.preventDefault();
-    await stopMessage();
+    await onStopMessage();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

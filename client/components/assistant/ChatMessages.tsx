@@ -10,12 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useAssistant,
-  type AssistantChatFullResponse,
-} from "@/contexts/assistant-context";
 import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { AssistantChatFullResponse } from "./AssistantChat";
 import ChatStarterPrompts from "./ChatStarterPrompts";
 import GlowHeader from "./GlowHeader";
 
@@ -222,17 +219,24 @@ type TimelineItem = {
 };
 
 export interface ChatMessagesProps {
+  messages: AssistantChatFullResponse["messages"];
+  toolCalls: AssistantChatFullResponse["toolCalls"];
+  currentChatId: string | undefined;
+  isLoadingChats: boolean;
   onPromptClick?: (prompt: string) => void;
   showPrompts?: boolean;
   variant?: "expanded" | "minimized";
 }
 
 export default function ChatMessages({
+  messages,
+  toolCalls,
+  currentChatId,
+  isLoadingChats,
   onPromptClick,
   showPrompts,
   variant = "expanded",
-}: ChatMessagesProps = {}) {
-  const { currentChatId, messages, toolCalls, isLoadingChats } = useAssistant();
+}: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   // Track if user is scrolled to bottom

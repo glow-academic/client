@@ -1,27 +1,28 @@
 /**
- * Chat Context for managing assistant chat state and WebSocket interactions
- * Provides functionality for creating chats, sending messages, and real-time updates
- * Uses SSR + Server Actions pattern (no React Query)
+ * AssistantChat.tsx
+ * Main component for managing assistant chat state and WebSocket interactions
+ * Similar to AttemptChat, this component manages all assistant-related state
+ * and passes props down to child components
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import ChatDialog from "./ChatDialog";
+import ChatFab from "./ChatFab";
+import ChatWidget from "./ChatWidget";
 
 /** ---- Server Actions Types ---- */
 type AssistantChatListOut = OutputOf<"/api/v3/assistant/chats/list", "post">;
 type AssistantChatFullOut = OutputOf<"/api/v3/assistant/chats/full", "post">;
 
-type ChatUIState = "closed" | "open" | "minimized" | "widget" | "expanded";
+export type ChatUIState =
+  | "closed"
+  | "open"
+  | "minimized"
+  | "widget"
+  | "expanded";
 
 // Type matching the API response structure
 export type AssistantChatFullResponse = {
@@ -65,53 +66,7 @@ export type AssistantChatFullResponse = {
   }>;
 };
 
-export interface AssistantContextType {
-  // UI State
-  uiState: ChatUIState;
-  setUiState: (state: ChatUIState) => void;
-  openWidget: () => void;
-  expand: () => void;
-  close: () => void;
-
-  // Chat Management
-  currentChatId: string | undefined;
-  setCurrentChatId: (chatId: string | undefined) => void;
-  chats: NonNullable<AssistantChatFullResponse["chat"]>[];
-  pastChats: NonNullable<AssistantChatFullResponse["chat"]>[];
-  isLoadingChats: boolean;
-  selectChat: (chatId: string) => void;
-  startBlankChat: () => void;
-
-  // Chat Data (from API)
-  chat: AssistantChatFullResponse["chat"];
-  messages: AssistantChatFullResponse["messages"];
-  toolCalls: AssistantChatFullResponse["toolCalls"];
-
-  // Connection State
-  isConnected: boolean;
-
-  // Chat Operations
-  createNewChat: () => Promise<string | null>;
-  sendMessage: (message: string) => void;
-  stopMessage: () => void;
-
-  // UI State
-  isSendingMessage: boolean;
-  isStoppingMessage: boolean;
-}
-
-const AssistantContext = createContext<AssistantContextType | null>(null);
-
-export const useAssistant = () => {
-  const context = useContext(AssistantContext);
-  if (!context) {
-    throw new Error("useAssistant must be used within AssistantProvider");
-  }
-  return context;
-};
-
-interface AssistantProviderProps {
-  children: React.ReactNode;
+interface AssistantChatProps {
   getAssistantChatList: (
     input: InputOf<"/api/v3/assistant/chats/list", "post">
   ) => Promise<OutputOf<"/api/v3/assistant/chats/list", "post">>;
@@ -120,13 +75,30 @@ interface AssistantProviderProps {
   ) => Promise<OutputOf<"/api/v3/assistant/chats/full", "post">>;
 }
 
-export function AssistantProvider({
-  children,
+export default function AssistantChat({
   getAssistantChatList,
   getAssistantChatFull,
-}: AssistantProviderProps) {
+}: AssistantChatProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
-  const { departmentIds } = useProfile();
+  const {
+    departmentIds,
+    activeProfile,
+    effectiveProfile,
+    isConnected,
+    joinRoom,
+    leaveRoom,
+    emitStartAssistant,
+    emitSendAssistantMessage,
+    emitStopAssistant,
+  } = useProfile();
+
+  // Check if user has permission to see chat components (instructional, admin, superadmin only)
+  const canShowChatComponents = useMemo(() => {
+    const allowedRoles = ["instructional", "admin", "superadmin"];
+    return (
+      effectiveProfile?.role && allowedRoles.includes(effectiveProfile.role)
+    );
+  }, [effectiveProfile?.role]);
   const [currentChatId, setCurrentChatId] = useState<string>();
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
@@ -138,16 +110,6 @@ export function AssistantProvider({
     AssistantChatFullOut | AssistantChatListOut | null
   >(null);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
-
-  const {
-    activeProfile,
-    isConnected,
-    joinRoom,
-    leaveRoom,
-    emitStartAssistant,
-    emitSendAssistantMessage,
-    emitStopAssistant,
-  } = useProfile();
 
   // V3 API: Fetch assistant chat data
   // Only fetch when user has interacted with chat (lazy loading)
@@ -176,8 +138,6 @@ export function AssistantProvider({
   }, [profileId, currentChatId, getAssistantChatFull, getAssistantChatList]);
 
   // Extract data from API response
-  // AssistantChatFullOut has: chat, messages, toolCalls, allChats
-  // AssistantChatListOut has: allChats
   const chats = useMemo(() => {
     if (!assistantData) return [];
     if ("allChats" in assistantData) {
@@ -470,19 +430,6 @@ export function AssistantProvider({
     [profileId, getAssistantChatFull]
   );
 
-  // Removed startBlankChat and createNewChat - all chat creation now happens
-  // server-side when user sends their first message via emitStartAssistant
-  const startBlankChat = useCallback(() => {
-    // Clear current chat to prepare for new chat (will be created on first message)
-    setCurrentChatId(undefined);
-  }, []);
-
-  const createNewChat = useCallback(async (): Promise<string | null> => {
-    // Clear current chat to prepare for new chat (will be created on first message)
-    setCurrentChatId(undefined);
-    return null;
-  }, []);
-
   const sendMessage = useCallback(
     async (message: string) => {
       if (!isConnected) {
@@ -539,10 +486,6 @@ export function AssistantProvider({
           // For subsequent messages, send via WebSocket
           emitSendAssistantMessage({ chat_id: chatId, message });
         }
-
-        if (chatId) {
-        } else {
-        }
       } catch {
         toast.error("Failed to send message");
         setIsSendingMessage(false);
@@ -584,33 +527,51 @@ export function AssistantProvider({
     }
   }, [currentChatId, isConnected, emitStopAssistant]);
 
-  const value: AssistantContextType = {
-    uiState,
-    setUiState,
-    openWidget,
-    expand,
-    close,
-    currentChatId,
-    setCurrentChatId,
-    chats: chats,
-    pastChats: chats, // Use the same chats array for pastChats
-    isLoadingChats,
-    selectChat,
-    startBlankChat,
-    chat: chat,
-    messages: messages,
-    toolCalls: toolCalls,
-    isConnected,
-    createNewChat,
-    sendMessage,
-    stopMessage,
-    isSendingMessage,
-    isStoppingMessage,
-  };
+  // Only render chat components if user has permission
+  if (!canShowChatComponents) {
+    return null;
+  }
 
   return (
-    <AssistantContext.Provider value={value}>
-      {children}
-    </AssistantContext.Provider>
+    <>
+      <ChatFab up={false} onOpenWidget={openWidget} uiState={uiState} />
+      <ChatWidget
+        up={false}
+        uiState={uiState}
+        currentChatId={currentChatId}
+        chats={chats}
+        isLoadingChats={isLoadingChats}
+        chat={chat}
+        messages={messages}
+        toolCalls={toolCalls}
+        isSendingMessage={isSendingMessage}
+        isStoppingMessage={isStoppingMessage}
+        isConnected={isConnected}
+        onSelectChat={selectChat}
+        onSetCurrentChatId={setCurrentChatId}
+        onExpand={expand}
+        onClose={close}
+        onSendMessage={sendMessage}
+        onStopMessage={stopMessage}
+      />
+      <ChatDialog
+        uiState={uiState}
+        currentChatId={currentChatId}
+        chats={chats}
+        isLoadingChats={isLoadingChats}
+        chat={chat}
+        messages={messages}
+        toolCalls={toolCalls}
+        isSendingMessage={isSendingMessage}
+        isStoppingMessage={isStoppingMessage}
+        isConnected={isConnected}
+        onSelectChat={selectChat}
+        onSetCurrentChatId={setCurrentChatId}
+        onOpenWidget={openWidget}
+        onClose={close}
+        onSendMessage={sendMessage}
+        onStopMessage={stopMessage}
+      />
+    </>
   );
 }

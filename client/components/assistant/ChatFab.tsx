@@ -6,16 +6,17 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
-import { useAssistant } from "@/contexts/assistant-context";
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
+import type { ChatUIState } from "./AssistantChat";
 
 export interface ChatFabProps {
   up: boolean;
+  uiState: ChatUIState;
+  onOpenWidget: () => void;
 }
 
-export default function ChatFab({ up = false }: ChatFabProps) {
-  const { openWidget, uiState } = useAssistant();
+export default function ChatFab({ up = false, uiState, onOpenWidget }: ChatFabProps) {
 
   // or if the currrent route is home/a/...
   const pathname = usePathname() || "/";
@@ -26,7 +27,7 @@ export default function ChatFab({ up = false }: ChatFabProps) {
   }
 
   const handleClick = () => {
-    openWidget();
+    onOpenWidget();
   };
 
   // show normal fixed button if up is true
