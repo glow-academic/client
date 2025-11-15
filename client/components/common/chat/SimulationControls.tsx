@@ -35,10 +35,9 @@ export function SimulationControls({
   attemptId,
   attemptData,
 }: SimulationControlsProps) {
-  const { socket, isConnected } = useProfile();
+  const { socket } = useProfile();
 
   // Extract data from attemptData
-  const simulation = attemptData?.simulation || null;
   const attempt = attemptData?.attempt || null;
   const chats = attemptData?.chats || [];
   const currentChatIndex = attemptData?.currentChatIndex ?? 0;
@@ -91,12 +90,7 @@ export function SimulationControls({
   const endChat = useCallback(
     async (chatId?: string, previousChatId?: string) => {
       const targetChatId = chatId || currentChatId;
-      if (
-        !targetChatId ||
-        !simulation?.departmentId ||
-        !socket ||
-        !isConnected
-      ) {
+      if (!targetChatId || !socket) {
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
@@ -110,12 +104,10 @@ export function SimulationControls({
           attempt_id: string;
           end_all: boolean;
           previous_chat_id?: string;
-          department_id: string;
         } = {
           chat_id: targetChatId,
           attempt_id: attemptId,
           end_all: false,
-          department_id: simulation.departmentId,
         };
         if (previousChatId) {
           continueData.previous_chat_id = previousChatId;
@@ -127,19 +119,13 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [currentChatId, socket, isConnected, attemptId, simulation?.departmentId]
+    [currentChatId, socket, attemptId]
   );
 
   // End all chats function
   const endAllChats = useCallback(
     async (previousChatMap?: Record<string, string | null>) => {
-      if (
-        !simulation ||
-        !attempt ||
-        !currentChatId ||
-        !socket ||
-        !isConnected
-      ) {
+      if (!attempt || !currentChatId || !socket) {
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
@@ -153,12 +139,10 @@ export function SimulationControls({
           attempt_id: string;
           end_all: boolean;
           previous_chat_map?: Record<string, string | null>;
-          department_id: string;
         } = {
           chat_id: currentChatId!, // Non-null assertion: already checked above
           attempt_id: attemptId,
           end_all: true,
-          department_id: simulation.departmentId!, // Non-null assertion: already checked above
         };
         if (previousChatMap) {
           continueData.previous_chat_map = previousChatMap;
@@ -170,7 +154,7 @@ export function SimulationControls({
         setEndingAction(null);
       }
     },
-    [simulation, attempt, currentChatId, attemptId, socket, isConnected]
+    [attempt, currentChatId, attemptId, socket]
   );
 
   // Listen for WebSocket events to reset loading state and handle grading

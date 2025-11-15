@@ -696,12 +696,12 @@ export default function AttemptChat({
           }
         }
       }
-
-      if (data.success) {
-        toast.success(data.message);
-      } else {
-        toast.error(data.message);
-      }
+      // already doing so in simulation controls
+      // if (data.success) {
+      //   toast.success(data.message);
+      // } else {
+      //   toast.error(data.message);
+      // }
     };
 
     const handleEndAllCompleted = async (data: {

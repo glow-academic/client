@@ -122,22 +122,22 @@ async def _create_chat_for_scenario_inline(
     """
     from agents import gen_trace_id
 
-    # Get scenario by ID
+    # Get parent scenario by ID (NEVER modify the original scenario)
     sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
-    old_scenario = await conn.fetchrow(sql, scenario_id)
-    if not old_scenario:
+    parent_scenario = await conn.fetchrow(sql, scenario_id)
+    if not parent_scenario:
         return None
 
     # Randomly fill any null attributes using SQL files
-    scenario = dict(old_scenario)
+    scenario = dict(parent_scenario)
     import random
 
-    scenario_id_uuid = scenario["id"]
+    parent_scenario_id_uuid = scenario["id"]
 
     # Step 1: Select department_id first
     # Priority 1: Get department_ids from scenario_departments junction table
     sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
-    scenario_dept_rows = await conn.fetch(sql, scenario_id_uuid)
+    scenario_dept_rows = await conn.fetch(sql, parent_scenario_id_uuid)
     scenario_dept_ids = [row["department_id"] for row in scenario_dept_rows]
 
     selected_dept_id: uuid.UUID | None = None
@@ -186,7 +186,7 @@ async def _create_chat_for_scenario_inline(
     # Step 2: Get all randomization data in a single query
     sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
     dept_uuids = [uuid.UUID(selected_dept_id_str)]
-    result = await conn.fetchrow(sql, dept_uuids, scenario_id_uuid)
+    result = await conn.fetchrow(sql, dept_uuids, parent_scenario_id_uuid)
 
     if not result:
         raise ValueError("Failed to fetch randomization data")
@@ -274,12 +274,12 @@ async def _create_chat_for_scenario_inline(
     for d in active_documents:
         documents_by_id[d["id"]] = d
 
-    # Step 3: Get personas (priority: existing links, then random selection)
+    # Step 3: Get personas (priority: existing links from parent, then random selection)
     scenario_persona_ids: list[uuid.UUID] = []
 
-    # Priority 1: Check for existing persona links in database
+    # Priority 1: Check for existing persona links in parent scenario
     sql = load_sql("sql/v3/scenarios/get_scenario_persona_links.sql")
-    existing_persona_links = await conn.fetchrow(sql, scenario_id_uuid)
+    existing_persona_links = await conn.fetchrow(sql, parent_scenario_id_uuid)
     if existing_persona_links and existing_persona_links.get("persona_ids"):
         scenario_persona_ids = [
             uuid.UUID(p) for p in existing_persona_links["persona_ids"]
@@ -301,39 +301,29 @@ async def _create_chat_for_scenario_inline(
         else:
             logger.info("No active personas found")
 
-    # Step 4: Update persona links (delete existing, insert new)
-    if scenario_persona_ids:
-        sql = load_sql("sql/v3/scenarios/delete_scenario_personas.sql")
-        await conn.execute(sql, scenario_id_uuid)
-
-        # Insert all selected personas
-        sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
-        for pid in scenario_persona_ids:
-            await conn.execute(sql, scenario_id_uuid, pid, True)
-
-    # Step 5: Get objectives (first 3 by idx)
+    # Step 4: Get objectives from parent scenario (first 3 by idx)
     sql = load_sql("sql/v3/scenarios/get_scenario_objectives_top_n.sql")
-    objectives_data = await conn.fetch(sql, scenario_id_uuid, 3)
+    objectives_data = await conn.fetch(sql, parent_scenario_id_uuid, 3)
     scenario_objectives = [obj["objective"] for obj in objectives_data]
     logger.info(
-        f"Found {len(scenario_objectives)} objectives for scenario: {scenario_objectives}"
+        f"Found {len(scenario_objectives)} objectives from parent scenario: {scenario_objectives}"
     )
 
-    # Step 6: Get most recent active problem statement
+    # Step 5: Get most recent active problem statement from parent scenario
     sql = load_sql("sql/v3/scenarios/get_scenario_problem_statement_active.sql")
-    problem_statement_row = await conn.fetchrow(sql, scenario_id_uuid)
+    problem_statement_row = await conn.fetchrow(sql, parent_scenario_id_uuid)
     scenario_problem_statement = (
         problem_statement_row["problem_statement"] if problem_statement_row else None
     )
-    logger.info(f"Found problem statement: {scenario_problem_statement}")
+    logger.info(f"Found problem statement from parent: {scenario_problem_statement}")
 
-    # Step 7: Get existing documents and parameters from junction tables
+    # Step 6: Get existing documents and parameters from parent scenario junction tables
     sql = load_sql("sql/v3/scenarios/get_scenario_document_links.sql")
-    doc_links = await conn.fetch(sql, scenario_id_uuid)
+    doc_links = await conn.fetch(sql, parent_scenario_id_uuid)
     existing_doc_ids = [link["document_id"] for link in doc_links]
 
     sql = load_sql("sql/v3/scenarios/get_scenario_parameter_links.sql")
-    param_links = await conn.fetch(sql, scenario_id_uuid)
+    param_links = await conn.fetch(sql, parent_scenario_id_uuid)
     existing_param_ids = [link["parameter_item_id"] for link in param_links]
 
     # Step 8: Random document selection if documents still don't exist
@@ -409,35 +399,105 @@ async def _create_chat_for_scenario_inline(
             f"Scenario already has {len(existing_param_ids)} parameter items, keeping them"
         )
 
-    # Step 10: Update document and parameter links
+    # Step 7: Create NEW child scenario variant (NEVER modify parent scenario)
+    # Copy attributes from parent scenario
+    sql = load_sql("sql/v3/scenarios/insert_scenario_variant.sql")
+    new_scenario_row = await conn.fetchrow(
+        sql,
+        scenario["name"],  # scenario name ($1)
+        True,  # generated = True ($2)
+        True,  # active = True ($3)
+        scenario["hints_enabled"],  # hints_enabled ($4)
+        scenario["objectives_enabled"],  # objectives_enabled ($5)
+        scenario["image_input_enabled"],  # image_input_enabled ($6)
+        scenario["copy_paste_allowed"],  # copy_paste_allowed ($7)
+        scenario["input_guardrail_enabled"],  # input_guardrail_enabled ($8)
+        scenario["output_guardrail_enabled"],  # output_guardrail_enabled ($9)
+    )
+    new_scenario_id = new_scenario_row["id"]
+    logger.info(
+        f"Created child scenario variant {new_scenario_id} for parent {parent_scenario_id_uuid}"
+    )
+
+    # Step 8: Copy problem statement to child scenario
+    if scenario_problem_statement:
+        sql = load_sql("sql/v3/scenarios/insert_scenario_problem_statement.sql")
+        await conn.fetchrow(
+            sql,
+            new_scenario_id,
+            scenario_problem_statement,
+            True,  # active = True
+        )
+        logger.info(f"Created problem statement for child scenario {new_scenario_id}")
+
+    # Step 9: Copy objectives to child scenario
+    if scenario_objectives:
+        sql = load_sql("sql/v3/scenarios/insert_scenario_objective.sql")
+        for idx, objective in enumerate(scenario_objectives[:3]):  # Limit to 3
+            await conn.execute(sql, new_scenario_id, idx, objective)
+        logger.info(
+            f"Inserted {min(len(scenario_objectives), 3)} objectives for child scenario {new_scenario_id}"
+        )
+
+    # Step 10: Create scenario_tree edge linking parent -> child
+    sql = load_sql("sql/v3/scenarios/insert_scenario_tree_edge.sql")
+    await conn.execute(
+        sql,
+        parent_scenario_id_uuid,  # parent (original scenario from simulation)
+        new_scenario_id,  # child (new variant)
+        True,  # active
+    )
+    logger.info(
+        f"Created scenario_tree edge: parent={parent_scenario_id_uuid} -> child={new_scenario_id}"
+    )
+
+    # Step 11: Link personas to child scenario (not parent)
+    # Note: Only ONE persona can be active per scenario (constraint: scenario_personas_one_active_per_scenario)
+    if scenario_persona_ids:
+        sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
+        for idx, pid in enumerate(scenario_persona_ids):
+            # Only the first persona is active, rest are inactive
+            is_active = idx == 0
+            await conn.execute(sql, new_scenario_id, pid, is_active)
+        logger.info(
+            f"Linked {len(scenario_persona_ids)} persona(s) to child scenario {new_scenario_id}"
+        )
+
+    # Step 12: Link documents to child scenario (not parent)
     if scenario_documents:
-        # Delete existing documents first (simplified - just insert, let DB handle conflicts)
         sql = load_sql("sql/v3/scenarios/insert_scenario_document_link.sql")
         for doc_id in scenario_documents:
-            await conn.execute(sql, scenario_id_uuid, doc_id, True)
+            await conn.execute(sql, new_scenario_id, doc_id, True)
+        logger.info(
+            f"Linked {len(scenario_documents)} document(s) to child scenario {new_scenario_id}"
+        )
 
+    # Step 13: Link parameter items to child scenario (not parent)
     if scenario_parameter_item_ids:
-        # Delete existing parameters first (simplified - just insert, let DB handle conflicts)
         sql = load_sql("sql/v3/scenarios/insert_scenario_parameter_link.sql")
         for param_id in scenario_parameter_item_ids:
-            await conn.execute(sql, scenario_id_uuid, param_id, True)
+            await conn.execute(sql, new_scenario_id, param_id, True)
+        logger.info(
+            f"Linked {len(scenario_parameter_item_ids)} parameter item(s) to child scenario {new_scenario_id}"
+        )
 
-    # Return updated scenario with filled attributes
-    scenario["objectives"] = scenario_objectives
-    scenario["problem_statement"] = scenario_problem_statement
-    scenario["department_id"] = selected_dept_id
+    # Step 14: Link department to child scenario (not parent)
+    sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
+    await conn.execute(sql, new_scenario_id, selected_dept_id, True)
+    logger.info(
+        f"Linked department {selected_dept_id} to child scenario {new_scenario_id}"
+    )
 
-    # Set chat title and generate trace_id
+    # Step 15: Create chat using child scenario ID (not parent)
     chat_title = scenario["name"]
     trace_id = gen_trace_id()
 
-    # Create chat using SQL
     sql = load_sql("sql/v3/simulations/create_simulation_chat.sql")
     chat = await conn.fetchrow(
         sql,
         datetime.now(UTC),
         chat_title,
-        scenario_id,
+        str(new_scenario_id),  # Use child scenario ID, not parent
         attempt_id,
         mark_completed,
         trace_id,
