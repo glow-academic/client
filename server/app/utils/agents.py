@@ -99,3 +99,4 @@ class GenericAgent:
             agent_instance.tool_use_behavior = self.tool_use_behavior
 
         return agent_instance
+

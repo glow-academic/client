@@ -6,15 +6,12 @@ import uuid
 from typing import Any
 
 import pytest
-from app.utils.agent_helpers import (
-    build_guardrail_agent,
-    build_hint_agent,
-    emit_grading_progress,
-    emit_hint_progress,
-    get_input_guardrails,
-    get_output_guardrails,
-    run_guardrail_evaluation,
-)
+from app.utils.agent_helpers import (build_guardrail_agent, build_hint_agent,
+                                     emit_grading_progress, emit_hint_progress,
+                                     get_input_guardrails,
+                                     get_output_guardrails,
+                                     run_guardrail_evaluation)
+from app.utils.agent_tools import create_guardrail_tools, create_hint_tools
 
 
 class TestEmit_Grading_Progress:
@@ -98,7 +95,8 @@ class TestBuild_Hint_Agent:
             "custom_model": None,
         }
 
-        agent = build_hint_agent(context)
+        hint_tools = create_hint_tools()
+        agent = build_hint_agent(context, hint_tools)
         assert agent is not None
         assert agent.agent_name == "Test Agent"
 
@@ -120,7 +118,8 @@ class TestBuild_Guardrail_Agent:
             "custom_model": None,
         }
 
-        agent = build_guardrail_agent(context)
+        guardrail_tools = create_guardrail_tools()
+        agent = build_guardrail_agent(context, guardrail_tools)
         assert agent is not None
         assert agent.agent_name == "Guardrail Agent"
 

@@ -227,7 +227,7 @@ async def check_simulation_service(conn: asyncpg.Connection) -> HealthCheckItem:
                 )
 
             # Use GenericAgent to test AI provider
-            from app.agents.generic import GenericAgent
+            from app.utils.agents import GenericAgent
 
             generic_agent = GenericAgent(
                 agent_name=agent["name"],
@@ -297,7 +297,7 @@ async def check_assistant_service(conn: asyncpg.Connection) -> HealthCheckItem:
                 )
 
             # Test AI provider using GenericAgent
-            from app.agents.generic import GenericAgent
+            from app.utils.agents import GenericAgent
 
             ai_healthy = False
             try:

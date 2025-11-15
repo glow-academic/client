@@ -7,10 +7,10 @@ from typing import Any
 
 from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
 from agents.items import TResponseInputItem
-from app.agents.generic import GenericAgent
 from app.db import get_pool
 from app.utils.agent_tools import (create_scenario_tools, scenario_progress,
                                    scenario_results)
+from app.utils.agents import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document import format_document_info

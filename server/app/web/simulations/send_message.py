@@ -9,19 +9,315 @@ from typing import Any
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.agents.generic import GenericAgent
 from app.db import get_pool
-from app.utils.agent_helpers import get_output_guardrails
+from app.utils.agent_helpers import (build_hint_agent, emit_hint_progress,
+                                     get_output_guardrails)
+from app.utils.agent_tools import (create_hint_tools, hint_progress,
+                                   hint_results)
+from app.utils.agents import GenericAgent
 from app.utils.chat import (format_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext
 from app.utils.document import format_document_info
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import (_generate_hints_background,
-                                       get_sio_instance)
+from app.web.simulations.utils import get_sio_instance
 from openai.types.responses import ResponseTextDeltaEvent
 
 logger = logging.getLogger(__name__)
+
+
+async def _generate_hints_background_inline(
+    chat_id: uuid.UUID,
+    message_id: uuid.UUID,
+    department_id: uuid.UUID,
+    sio_instance: Any,
+) -> None:
+    """
+    Background task to generate hints for a completed simulation message.
+    Runs independently and emits progress via Socket.IO.
+    Inlined from simulations/utils.py to remove abstraction layer.
+    """
+    pool = get_pool()
+    if not pool:
+        logger.error("Database connection pool not available for hint generation")
+        return
+
+    async with pool.acquire() as conn:
+        try:
+            logger.info(f"Background hint generation started for message {message_id}")
+            
+            # Clear previous results
+            hint_results.clear()
+            hint_progress.clear()
+            
+            # Get all hint context data using SQL file
+            sql = load_sql("sql/v3/agents/get_hint_run_context.sql")
+            context_row = await conn.fetchrow(sql, str(message_id), str(chat_id), str(department_id))
+            
+            if not context_row:
+                raise ValueError(
+                    f"Message {message_id} in chat {chat_id} not found or "
+                    f"no hint agent configured for department {department_id}"
+                )
+            
+            # Parse JSON array for documents
+            documents = (
+                json.loads(context_row["documents"])
+                if isinstance(context_row["documents"], str)
+                else context_row["documents"]
+            )
+            
+            # Resolve guest profile if needed
+            profile_id = context_row["profile_id"]
+            if not profile_id:
+                sql_guest = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+                guest_row = await conn.fetchrow(sql_guest)
+                if guest_row:
+                    profile_id = guest_row["id"]
+            
+            context = {
+                "message_id": context_row["message_id"],
+                "message_created_at": context_row["message_created_at"],
+                "chat_id": context_row["chat_id"],
+                "attempt_id": context_row["attempt_id"],
+                "scenario_id": context_row["scenario_id"],
+                "trace_id": context_row["trace_id"],
+                "chat_title": context_row["chat_title"],
+                "simulation_id": context_row["simulation_id"],
+                "problem_statement": context_row["problem_statement"],
+                "agent_id": context_row["agent_id"],
+                "agent_name": context_row["agent_name"],
+                "system_prompt": context_row["system_prompt"],
+                "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                "reasoning": context_row["reasoning"],
+                "model_id": context_row["model_id"],
+                "model_name": context_row["model_name"],
+                "custom_model": context_row["custom_model"],
+                "provider_id": context_row["provider_id"],
+                "provider_name": context_row["provider_name"],
+                "base_url": context_row["base_url"],
+                "api_key": context_row["api_key"],
+                "profile_id": profile_id,
+                "documents": documents,
+                "req_per_day": context_row["req_per_day"],
+                "runs_today_count": context_row["runs_today_count"],
+                "earliest_run_created_at": context_row["earliest_run_created_at"],
+            }
+            
+            # Extract data from context
+            chat = {
+                "id": uuid.UUID(context["chat_id"]),
+                "attempt_id": uuid.UUID(context["attempt_id"]),
+                "scenario_id": uuid.UUID(context["scenario_id"]),
+                "trace_id": context["trace_id"],
+                "title": context["chat_title"],
+            }
+
+            attempt = {
+                "id": uuid.UUID(context["attempt_id"]),
+                "simulation_id": uuid.UUID(context["simulation_id"]),
+            }
+
+            message_created_at = context["message_created_at"]
+
+            logger.info(
+                f"Starting hint generation for chat {chat_id}, message {message_id}"
+            )
+
+            # Emit start event
+            await emit_hint_progress(
+                {
+                    "type": "start",
+                    "message": "Starting hint generation",
+                    "chat_id": str(chat_id),
+                    "message_id": str(message_id),
+                },
+                sio_instance,
+                chat_id,
+            )
+
+            # Build input items
+            input_items: list[TResponseInputItem] = []
+
+            # Format document info if documents are available (no images needed for hints)
+            if context["documents"]:
+                document_info = format_document_info(context["documents"], False)
+                input_items.append(document_info)
+
+            # Get all messages for the chat using SQL file
+            sql = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+            message_rows = await conn.fetch(sql, str(chat_id))
+            all_messages = [dict(row) for row in message_rows]
+
+            # Filter messages up to and including the target message
+            messages = [
+                msg for msg in all_messages if msg["created_at"] <= message_created_at
+            ]
+
+            # Build conversation history
+            conversation_history = get_simulation_conversation_history(messages)
+
+            # Format scenario from context
+            chat_scenario = format_chat_scenario(context["problem_statement"])
+            input_items.insert(0, chat_scenario)
+            input_items.extend(conversation_history)
+
+            # Check rate limit
+            profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+            if not profile_id_uuid:
+                raise ValueError("Profile not found. Please contact support.")
+            
+            req_per_day = context["req_per_day"]
+            runs_today_count = context["runs_today_count"]
+            
+            if req_per_day is not None and runs_today_count >= req_per_day:
+                from datetime import timedelta
+                from zoneinfo import ZoneInfo
+                earliest_run_created_at = context["earliest_run_created_at"]
+                if earliest_run_created_at:
+                    next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                    eastern_tz = ZoneInfo("America/New_York")
+                    next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                    error_message = (
+                        f"Daily request limit of {req_per_day} reached. "
+                        f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                        f"{next_allowed_et.strftime('%B %d, %Y')}."
+                    )
+                else:
+                    error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
+                raise ValueError(error_message)
+
+            # Build hint agent from context
+            hint_tools = create_hint_tools()
+            hint_agent = build_hint_agent(context, hint_tools)
+
+            # Create model run with all junction records using SQL file
+            sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+            model_run_row = await conn.fetchrow(
+                sql_create_run,
+                str(department_id),
+                context["model_id"],
+                context["agent_id"],
+                "agent",
+                context["profile_id"],
+            )
+            model_run_id = uuid.UUID(model_run_row["model_run_id"])
+
+            # Run the hint agent
+            logger.info("Running hint agent with parallel tool calls...")
+            with trace(
+                chat["title"], trace_id=chat["trace_id"], group_id=str(attempt["id"])
+            ):
+                result = await Runner.run(
+                    hint_agent.agent(),
+                    input=input_items,
+                    context=DebugContext(conn=conn, model_run_id=model_run_id),
+                )
+
+            # Update token usage using SQL file
+            usage = result.context_wrapper.usage
+            sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+            await conn.execute(
+                sql_update_tokens,
+                str(model_run_id),
+                usage.input_tokens,
+                usage.output_tokens,
+            )
+
+            logger.info("Hint agent completed successfully")
+
+            # Extract hints from global storage
+            hint_1 = hint_results.get("hint_1", "")
+            hint_2 = hint_results.get("hint_2", "")
+            hint_3 = hint_results.get("hint_3", "")
+
+            # Log what was generated
+            hints_generated = sum([bool(hint_1), bool(hint_2), bool(hint_3)])
+            logger.info(f"Generated {hints_generated}/3 hints")
+
+            if hints_generated < 3:
+                logger.warning(
+                    f"Not all hints were generated for message {message_id}. "
+                    f"Got: hint_1={bool(hint_1)}, hint_2={bool(hint_2)}, hint_3={bool(hint_3)}"
+                )
+
+            # Create SimulationHints records using direct SQL
+            hint_ids: list[dict[str, Any]] = []
+            for i, hint_text in enumerate([hint_1, hint_2, hint_3], 1):
+                if hint_text:  # Only save non-empty hints
+                    # Get the next idx for this message
+                    sql_max_idx = """
+                        SELECT COALESCE(MAX(idx), -1) + 1 as next_idx
+                        FROM simulation_hints
+                        WHERE simulation_message_id = $1::uuid
+                    """
+                    max_idx_row = await conn.fetchrow(sql_max_idx, str(message_id))
+                    next_idx = max_idx_row["next_idx"] if max_idx_row else 0
+                    
+                    # Insert the hint
+                    sql_insert = """
+                        INSERT INTO simulation_hints (simulation_message_id, idx, hint)
+                        VALUES ($1::uuid, $2, $3)
+                        RETURNING simulation_message_id::text, idx
+                    """
+                    hint_result_row = await conn.fetchrow(
+                        sql_insert, str(message_id), next_idx, hint_text
+                    )
+                    hint_result = {
+                        "simulation_message_id": hint_result_row["simulation_message_id"],
+                        "idx": hint_result_row["idx"],
+                    }
+                    hint_ids.append(hint_result)
+                    logger.info(
+                        f"Created hint {i} (idx={hint_result['idx']}): {hint_text[:80]}..."
+                    )
+
+            logger.info(
+                f"Successfully generated {len(hint_ids)} hints for message {message_id} "
+                f"in chat {chat_id}"
+            )
+
+            # Emit completion event
+            await emit_hint_progress(
+                {
+                    "type": "complete",
+                    "message": "Hint generation completed successfully",
+                    "chat_id": str(chat_id),
+                    "message_id": str(message_id),
+                    "hint_ids": [
+                        f"{h['simulation_message_id']}_{h['idx']}" for h in hint_ids
+                    ],
+                    "hints_count": len(hint_ids),
+                },
+                sio_instance,
+                chat_id,
+            )
+            
+            logger.info(
+                f"Background hint generation completed: {len(hint_ids)} hints created"
+            )
+        except Exception as e:
+            logger.error(
+                f"Background hint generation failed for message {message_id}: {e}",
+                exc_info=True,
+            )
+            
+            # Emit error event
+            if sio_instance:
+                try:
+                    await sio_instance.emit(
+                        "hint_generation_progress",
+                        {
+                            "type": "error",
+                            "message": f"Hint generation failed: {str(e)}",
+                            "error": str(e),
+                            "chat_id": str(chat_id),
+                            "message_id": str(message_id),
+                        },
+                        room=f"simulation_{chat_id}",
+                    )
+                except Exception as emit_error:
+                    logger.warning(f"Failed to emit error event: {emit_error}")
 
 
 async def handle_send_simulation_message(sid: str, data: dict[str, Any]) -> None:
@@ -520,7 +816,7 @@ async def process_simulation_message_websocket(
                         logger.warning(f"Failed to get department_id for hint generation in chat {chat_id}")
                     else:
                         asyncio.create_task(
-                            _generate_hints_background(
+                            _generate_hints_background_inline(
                                 chat_id=chat_id,
                                 message_id=assistant_message["id"],
                                 department_id=uuid.UUID(hint_dept_id),

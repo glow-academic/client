@@ -12,8 +12,8 @@ from agents import Runner, trace
 from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
                           TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
-from app.agents.generic import GenericAgent
 from app.db import get_pool
+from app.utils.agents import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql

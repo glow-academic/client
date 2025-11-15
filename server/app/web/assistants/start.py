@@ -5,7 +5,7 @@ import uuid
 from typing import Any
 
 from agents import Runner, gen_trace_id, trace
-from app.agents.generic import GenericAgent
+from app.utils.agents import GenericAgent
 from app.db import get_pool
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql

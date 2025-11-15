@@ -13,11 +13,10 @@ from agents import (Agent, GuardrailFunctionOutput, InputGuardrail,
                     OutputGuardrail, RunContextWrapper, Runner, TContext,
                     ToolsToFinalOutputResult, trace)
 from agents.items import TResponseInputItem
-from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.utils.agent_tools import (create_guardrail_tools, create_hint_tools,
-                                   guardrail_progress, guardrail_results,
+from app.utils.agent_tools import (guardrail_progress, guardrail_results,
                                    hint_progress)
+from app.utils.agents import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
 from fastapi import Depends
@@ -60,18 +59,16 @@ async def emit_hint_progress(
             logger.warning(f"Failed to emit hint progress: {e}")
 
 
-def build_hint_agent(context: dict[str, Any]) -> GenericAgent:
+def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericAgent:
     """Create the hint generation agent from context data.
 
     Args:
         context: Context dict with agent, model, and provider data
+        hint_tools: List of hint tools to use (created by caller)
 
     Returns:
         GenericAgent instance configured for hint generation
     """
-    # Create hint tools
-    hint_tools = create_hint_tools()
-
     # Create tool use behavior - require all 3 hint tools to be called
     def tool_use_behavior(
         tool_context: Any, tool_results: list[Any]
@@ -109,18 +106,16 @@ def build_hint_agent(context: dict[str, Any]) -> GenericAgent:
     )
 
 
-def build_guardrail_agent(context: dict[str, Any]) -> GenericAgent:
+def build_guardrail_agent(context: dict[str, Any], guardrail_tools: list[Any]) -> GenericAgent:
     """Create the internal agent that powers the guardrail from context data.
 
     Args:
         context: Dict containing agent, model, and provider data from service layer
+        guardrail_tools: List of guardrail tools to use (created by caller)
 
     Returns:
         GenericAgent configured for guardrail evaluation
     """
-    # Create guardrail tools
-    guardrail_tools = create_guardrail_tools()
-
     # Create tool use behavior to wait for evaluation tool to be called
     def tool_use_behavior(
         tool_context: Any, tool_results: list[Any]
@@ -170,7 +165,9 @@ async def run_guardrail_evaluation(
     guardrail_progress.clear()
 
     # Build guardrail agent from context
-    guardrail_agent = build_guardrail_agent(context)
+    from app.utils.agent_tools import create_guardrail_tools
+    guardrail_tools = create_guardrail_tools()
+    guardrail_agent = build_guardrail_agent(context, guardrail_tools)
 
     # Check rate limit (already included in context query)
     profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None

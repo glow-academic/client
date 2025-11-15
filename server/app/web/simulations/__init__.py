@@ -1,11 +1,15 @@
 """Simulation WebSocket event router."""
 
+import importlib
 import logging
 from typing import Any
 
 import socketio  # type: ignore
 
-from app.web.simulations.continue import handle_continue_simulation
+# Import continue module using importlib since 'continue' is a Python keyword
+continue_module = importlib.import_module("app.web.simulations.continue")
+handle_continue_simulation = continue_module.handle_continue_simulation
+
 from app.web.simulations.send_message import handle_send_simulation_message
 from app.web.simulations.start import handle_start_simulation
 from app.web.simulations.stop import handle_stop_simulation
